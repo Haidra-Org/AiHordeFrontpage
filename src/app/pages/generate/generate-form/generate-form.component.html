@@ -762,7 +762,7 @@
             <div class="gs-opt" [class.gs-opt--urged]="hiresSuggested()">
               <label
                 class="gs-switch gs-switch-row"
-                [class.gs-locked]="isSectionLocked('sampling')"
+                [class.gs-locked]="isFieldLocked('hires_fix')"
               >
                 <span>{{ "generate.form.hires_fix_label" | transloco }}</span>
                 <input type="checkbox" formControlName="hires_fix" />
@@ -866,7 +866,7 @@
             <div class="gs-grid-sampling">
               <div
                 appTutAnchor="steps"
-                [class.gs-locked]="isSectionLocked('sampling')"
+                [class.gs-locked]="isFieldLocked('steps')"
               >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-steps">
@@ -928,7 +928,7 @@
               </div>
               <div
                 appTutAnchor="cfg"
-                [class.gs-locked]="isSectionLocked('sampling')"
+                [class.gs-locked]="isFieldLocked('cfg_scale')"
               >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-cfg">
@@ -989,7 +989,7 @@
               </div>
               <div
                 appTutAnchor="sampler"
-                [class.gs-locked]="isSectionLocked('sampling')"
+                [class.gs-locked]="isFieldLocked('sampler_name')"
               >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-sampler">
@@ -1059,7 +1059,7 @@
               </div>
               <div
                 appTutAnchor="scheduler"
-                [class.gs-locked]="isSectionLocked('sampling')"
+                [class.gs-locked]="isFieldLocked('scheduler')"
               >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-scheduler">
@@ -1121,7 +1121,7 @@
               </div>
               <div
                 appTutAnchor="clip_skip"
-                [class.gs-locked]="isSectionLocked('sampling')"
+                [class.gs-locked]="isFieldLocked('clip_skip')"
               >
                 <div class="gs-field-head">
                   <label class="gs-slabel" for="generate-clip">
@@ -1161,12 +1161,11 @@
                 />
               </div>
             </div>
+            <!-- Not drawn as frozen by a style: a style has no way to name eta,
+                 the noise scale or any other solver knob, so the request carries
+                 whatever is entered here whichever style is on. -->
             @if (samplerContract()) {
-              <div
-                class="gs-hairline pt-3"
-                appTutAnchor="advanced_sampling"
-                [class.gs-locked]="isSectionLocked('sampling')"
-              >
+              <div class="gs-hairline pt-3" appTutAnchor="advanced_sampling">
                 <div class="gs-adv-head">
                   <button
                     type="button"
@@ -1570,8 +1569,14 @@
                   ></span> </label
                 ><app-gs-help topic="nsfw" />
               </div>
+              <!-- The horde censors only where adult content is not allowed, so
+                   the switch is dimmed and frozen while it is. What it holds is
+                   kept, and its help stays reachable either way. -->
               <div class="gs-opt">
-                <label class="gs-switch gs-switch-row">
+                <label
+                  class="gs-switch gs-switch-row"
+                  [class.gs-locked]="censorInert()"
+                >
                   <span>{{
                     "generate.form.censor_nsfw_label" | transloco
                   }}</span>
@@ -1897,6 +1902,11 @@
                       }
                     </div>
                   }
+                  <!-- The full list, for a reader who wants to look one up
+                       before naming it here. -->
+                  <a class="gs-textlink mt-1.5" routerLink="/details/workers">
+                    {{ "generate.form.worker_see_all" | transloco }}
+                  </a>
                   <ng-container
                     *ngTemplateOutlet="
                       lintLines;

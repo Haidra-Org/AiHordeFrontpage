@@ -475,6 +475,41 @@ describe('GenerateComponent', () => {
       expect(component.qrSupported()).toBe(true);
     });
 
+    it('answers for the model a style pins, not the pick it replaces', () => {
+      baselines.set({
+        'Stable Cascade 1.0': 'stable_cascade',
+        flux: 'flux_1',
+      });
+      component.form.controls.model.setValue('Stable Cascade 1.0');
+      expect(component.remixSupported()).toBe(true);
+
+      // The Test style pins 'flux', which is the model the request would run on.
+      component.form.controls.styleName.setValue('Test');
+
+      expect(component.effectiveModel()).toBe('flux');
+      expect(component.remixSupported()).toBe(false);
+    });
+
+    it('answers for the form again once the model is taken back from the style', () => {
+      baselines.set({
+        'Stable Cascade 1.0': 'stable_cascade',
+        flux: 'flux_1',
+      });
+      component.form.patchValue({
+        model: 'Stable Cascade 1.0',
+        styleName: 'Test',
+      });
+      expect(component.remixSupported()).toBe(false);
+
+      component.form.controls.styleDetach.setValue({
+        style: 'Test',
+        sections: ['model'],
+      });
+
+      expect(component.effectiveModel()).toBe('Stable Cascade 1.0');
+      expect(component.remixSupported()).toBe(true);
+    });
+
     it('strips a stale qrText from built requests when the model cannot serve it', () => {
       baselines.set({
         'Stable Cascade 1.0': 'stable_cascade',

@@ -239,6 +239,49 @@ const GROUP_BY_SECTION: Readonly<Partial<Record<SectionId, GroupId>>> = {
   workflows: 'transparent',
 };
 
+/** A form field a style can freeze, named as the form's control names it. */
+export type LockedField =
+  | 'model'
+  | 'width'
+  | 'height'
+  | 'steps'
+  | 'cfg_scale'
+  | 'sampler_name'
+  | 'clip_skip'
+  | 'scheduler'
+  | 'hires_fix';
+
+/** The section each freezable field is handed back with. */
+const LOCKED_FIELD_SECTION: Readonly<Record<LockedField, StyleLockSection>> = {
+  model: 'model',
+  width: 'dimensions',
+  height: 'dimensions',
+  steps: 'sampling',
+  cfg_scale: 'sampling',
+  sampler_name: 'sampling',
+  clip_skip: 'sampling',
+  scheduler: 'sampling',
+  hires_fix: 'sampling',
+};
+
+const LOCKED_FIELDS = Object.keys(
+  LOCKED_FIELD_SECTION,
+) as readonly LockedField[];
+
+/** Whether `forced` names a value for `field`. */
+function stylePinsField(
+  forced: StyleForcedParams,
+  field: LockedField,
+): boolean {
+  // A style names a schedule only through its karras flag, and the request
+  // keeps the reader's schedule otherwise, so the control locks only when the
+  // request really carries the style's value.
+  if (field === 'scheduler') {
+    return forced.karras !== undefined;
+  }
+  return forced[field] !== undefined;
+}
+
 /** The fields each group owns, for the mark that says it holds a changed value. */
 const GROUP_FIELDS: Readonly<
   Record<GroupId, readonly (keyof GenerateFormValue)[]>
@@ -1500,9 +1543,53 @@ export class GenerateFormComponent implements OnInit {
           this.transloco.translate('generate.groups.sampling_cfg', {
             value: value.cfg_scale,
           }),
+          value.clip_skip === DEFAULT_GENERATE_FORM_VALUE.clip_skip
+            ? null
+            : this.transloco.translate('generate.groups.sampling_clip', {
+                value: value.clip_skip,
+              }),
+          value.scheduler === DEFAULT_GENERATE_FORM_VALUE.scheduler
+            ? null
+            : this.transloco.translate('generate.groups.sampling_schedule', {
+                value: value.scheduler,
+              }),
+          ...this.samplingKnobParts(value),
         ])
       : '';
   });
+
+  /**
+   * Every solver knob carrying something other than the worker's default, each
+   * named as its own field names it. They are submitted like any other setting,
+   * so a folded group that leaves them out says the group holds less than it
+   * does.
+   */
+  private samplingKnobParts(value: GenerateFormValue): string[] {
+    const parts: string[] = [];
+    const knob = (field: string, entered: string | number): void => {
+      parts.push(
+        this.transloco.translate('generate.groups.sampling_knob', {
+          label: this.transloco.translate<string>(
+            `generate.form.${field}_label`,
+          ),
+          value: entered,
+        }),
+      );
+    };
+    for (const name of SAMPLER_SETTING_NAMES) {
+      const entered = value[name];
+      if (entered !== null) {
+        knob(name, entered);
+      }
+    }
+    if (value.sampler_solver_type !== '') {
+      knob('sampler_solver_type', value.sampler_solver_type);
+    }
+    if (value.flow_shift !== null) {
+      knob('flow_shift', value.flow_shift);
+    }
+    return parts;
+  }
 
   public readonly lorasSummary = computed(() => {
     const value = this.value();
@@ -1532,11 +1619,38 @@ export class GenerateFormComponent implements OnInit {
               ? 'generate.groups.output_nsfw_on'
               : 'generate.groups.output_nsfw_off',
           ),
+          // The horde censors only where adult content is not allowed, so the
+          // censor is worth a word only in that half of the switch.
+          value.nsfw
+            ? null
+            : this.transloco.translate(
+                value.censor_nsfw
+                  ? 'generate.groups.output_censor_on'
+                  : 'generate.groups.output_censor_off',
+              ),
           value.shared
             ? this.transloco.translate('generate.groups.output_shared')
             : null,
         ])
       : '';
+  });
+
+  /**
+   * Whether the censor switch is offered. The horde acts on it only where adult
+   * content is not allowed, so while it is allowed the switch is frozen at
+   * whatever it holds rather than inviting an answer nothing reads.
+   */
+  public censorInert(): boolean {
+    return this.value()?.nsfw === true;
+  }
+
+  /**
+   * Freeze the censor while adult content is allowed. Disabling keeps the
+   * stored answer: the request is built from the raw value, so the reader's
+   * setting comes back the moment adult content is blocked again.
+   */
+  private readonly censorAvailabilitySync = effect(() => {
+    this.setDisabled(this.form().controls.censor_nsfw, this.censorInert());
   });
 
   public readonly hordeSummary = computed(() => {
@@ -1937,24 +2051,58 @@ export class GenerateFormComponent implements OnInit {
    * style would silently override.
    */
   private readonly lockedControlSync = effect(() => {
-    const forced = this.forcedParams();
-    const detached = this.detachedSections();
     const controls = this.form().controls;
-    const pins = (section: StyleLockSection, value: unknown): boolean =>
-      value !== undefined && !detached.includes(section);
-    this.setDisabled(controls.model, pins('model', forced?.model));
-    this.setDisabled(controls.width, pins('dimensions', forced?.width));
-    this.setDisabled(controls.height, pins('dimensions', forced?.height));
-    this.setDisabled(controls.steps, pins('sampling', forced?.steps));
-    this.setDisabled(controls.cfg_scale, pins('sampling', forced?.cfg_scale));
-    this.setDisabled(
-      controls.sampler_name,
-      pins('sampling', forced?.sampler_name),
-    );
-    this.setDisabled(controls.clip_skip, pins('sampling', forced?.clip_skip));
-    this.setDisabled(controls.scheduler, pins('sampling', forced?.karras));
-    this.setDisabled(controls.hires_fix, pins('sampling', forced?.hires_fix));
+    for (const field of LOCKED_FIELDS) {
+      this.setDisabled(controls[field], this.isFieldLocked(field));
+    }
+    this.syncPinnedModel();
   });
+
+  /**
+   * Whether the style freezes `field`. This is the answer the panel paints
+   * with: the section-wide answer is too coarse, and a style pinning only the
+   * steps would have every other sampling knob drawn as frozen while it is
+   * still editable.
+   */
+  public isFieldLocked(field: LockedField): boolean {
+    const forced = this.forcedParams();
+    return (
+      forced !== null &&
+      stylePinsField(forced, field) &&
+      !this.detachedSections().includes(LOCKED_FIELD_SECTION[field])
+    );
+  }
+
+  /**
+   * The model the reader picked before a style pinned one over it, so clearing
+   * the style hands their own pick back rather than leaving the style's behind.
+   */
+  private modelBeforePin: string | null = null;
+
+  /**
+   * Show the model a style pins in the model field itself. The request already
+   * runs on that model, so a field left showing the reader's own pick names a
+   * model nothing will use.
+   */
+  private syncPinnedModel(): void {
+    const control = this.form().controls.model;
+    const pinned = this.isFieldLocked('model')
+      ? (this.forcedParams()?.model ?? null)
+      : null;
+    if (pinned !== null) {
+      if (this.modelBeforePin === null) {
+        this.modelBeforePin = control.value;
+      }
+      if (control.value !== pinned) {
+        control.setValue(pinned);
+      }
+      return;
+    }
+    if (this.modelBeforePin !== null) {
+      control.setValue(this.modelBeforePin);
+      this.modelBeforePin = null;
+    }
+  }
 
   private setDisabled(control: AbstractControl, disabled: boolean): void {
     if (control.disabled === disabled) {
@@ -2040,6 +2188,9 @@ export class GenerateFormComponent implements OnInit {
       }
     };
     if (section === 'model') {
+      // The reader carries on from the style's model, so the pick they had
+      // before it is no longer waiting to come back.
+      this.modelBeforePin = null;
       set(controls.model, forced.model);
     }
     if (section === 'dimensions') {
@@ -2094,8 +2245,7 @@ export class GenerateFormComponent implements OnInit {
 
   /**
    * The concrete model a selected style forces, so the hint can name it rather
-   * than only flagging that a model is set (the model field keeps showing the
-   * user's own pick, which is what made the forced model easy to miss).
+   * than only flagging that a model is set.
    */
   public styleModelText(): string | null {
     return this.forcedParams()?.model ?? null;

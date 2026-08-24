@@ -84,6 +84,7 @@ import {
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
+  detachedStyleSections,
   kudosAffordability,
   kudosBreakdown,
   modelWaitEstimate,
@@ -330,6 +331,30 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   );
 
   /**
+   * Whether the selected style pins a model over the form's own pick, with the
+   * reader not having taken the model back from it.
+   */
+  private readonly stylePinsModel = computed(() => {
+    const forced = this.forcedParams();
+    return (
+      forced?.model !== undefined &&
+      !detachedStyleSections(this.formValue()).includes('model')
+    );
+  });
+
+  /**
+   * The model the request would actually run on: the one a style pins, else the
+   * form's own pick. Every model-dependent answer reads this, so what a style
+   * applies decides which features are offered and which sizes are advised
+   * rather than the pick it replaced.
+   */
+  public readonly effectiveModel = computed(() =>
+    this.stylePinsModel()
+      ? (this.forcedParams()?.model ?? '')
+      : this.formValue().model,
+  );
+
+  /**
    * Whether the selected model's baseline can serve a remix request. Null when
    * no model is picked or the model reference has not loaded, which the source
    * section reads as "leave the mode offered".
@@ -348,7 +373,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * the reference has not loaded. Drives the control panel's size guidance.
    */
   public readonly modelBaseline = computed(() => {
-    const model = this.formValue().model.trim();
+    const model = this.effectiveModel().trim();
     // Read the signal unconditionally so this recomputes when the reference
     // lands after the form has already settled.
     const baselines = this.modelReference.baselines();
@@ -367,7 +392,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       const value = this.formValue();
       // Read unconditionally so the answers refresh when the reference lands.
       const baselines = this.modelReference.baselines();
-      return requestModelNames(value.model, value.extraModels).map((name) => ({
+      // A style that pins a model replaces the whole list, so the extra models
+      // are no part of the request that would be sent.
+      const extras = this.stylePinsModel() ? [] : value.extraModels;
+      return requestModelNames(this.effectiveModel(), extras).map((name) => ({
         name,
         baseline:
           baselines === null ? null : this.modelReference.baselineFor(name),
@@ -377,7 +405,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** The settings the selected model recommends, or null when it names none. */
   public readonly modelRequirements = computed(() => {
-    const model = this.formValue().model.trim();
+    const model = this.effectiveModel().trim();
     const requirements = this.modelReference.requirements();
     return requirements === null || model === ''
       ? null
@@ -761,12 +789,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
-   * Ask the model reference whether the form's selected model supports a
-   * feature. "Any model" and a reference that has not loaded both answer null,
+   * Ask the model reference whether the model the request would run on supports
+   * a feature. "Any model" and a reference that has not loaded both answer null,
    * because gating is guidance and must never lock a user out on a guess.
    */
   private modelSupport(supports: (model: string) => boolean): boolean | null {
-    const model = this.formValue().model.trim();
+    const model = this.effectiveModel().trim();
     // Read the baselines signal unconditionally so this recomputes when the
     // reference lands after the form has already settled.
     const loaded = this.modelReference.baselines() !== null;

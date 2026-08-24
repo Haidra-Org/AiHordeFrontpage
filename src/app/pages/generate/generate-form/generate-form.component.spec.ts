@@ -2847,3 +2847,157 @@ describe('GenerateFormComponent changed-settings ledger', () => {
     );
   });
 });
+
+describe('GenerateFormComponent pinned model', () => {
+  it('shows the model the style pins rather than the pick it replaces', async () => {
+    const { form } = await createComponent(FORCED);
+
+    expect(form.controls.model.value).toBe(FORCED.model);
+    expect(form.controls.model.disabled).toBe(true);
+  });
+
+  it('hands the reader their own model back when the style stops pinning one', async () => {
+    const { fixture, form } = await createComponent(FORCED);
+    expect(form.controls.model.value).toBe(FORCED.model);
+
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+
+    expect(form.controls.model.value).toBe('my model');
+    expect(form.controls.model.disabled).toBe(false);
+  });
+
+  it('carries on from the style model once the reader takes the model back', async () => {
+    const { fixture, component, form } = await createComponent(FORCED);
+
+    component.detachSection('model');
+    fixture.detectChanges();
+
+    expect(form.controls.model.disabled).toBe(false);
+    expect(form.controls.model.value).toBe(FORCED.model);
+  });
+});
+
+describe('GenerateFormComponent sampling locks', () => {
+  it('freezes only the knobs a partial style names', async () => {
+    const { component, form } = await createComponent({ steps: 12 });
+
+    expect(component.isFieldLocked('steps')).toBe(true);
+    for (const field of [
+      'cfg_scale',
+      'sampler_name',
+      'clip_skip',
+      'scheduler',
+      'hires_fix',
+    ] as const) {
+      expect(component.isFieldLocked(field)).toBe(false);
+      expect(form.controls[field].disabled).toBe(false);
+    }
+  });
+
+  it('leaves the schedule free when a style pins only the sampler', async () => {
+    const { component, form } = await createComponent({
+      sampler_name: 'k_euler',
+    });
+
+    expect(component.isFieldLocked('scheduler')).toBe(false);
+    expect(form.controls.scheduler.disabled).toBe(false);
+  });
+
+  it('freezes the schedule when a style names karras', async () => {
+    const { component, form } = await createComponent({ karras: true });
+
+    expect(component.isFieldLocked('scheduler')).toBe(true);
+    expect(form.controls.scheduler.disabled).toBe(true);
+  });
+});
+
+/** The fragments a summary line is made of. Translation is not loaded here, so
+ *  each fragment comes back as the key that words it. */
+function summaryParts(summary: string): string[] {
+  return summary.split(' · ');
+}
+
+describe('GenerateFormComponent sampling summary', () => {
+  it('says nothing about a clip skip or a schedule left as it started', async () => {
+    const { component } = await createComponent(null);
+
+    const parts = summaryParts(component.samplingSummary());
+    expect(parts).not.toContain('generate.groups.sampling_clip');
+    expect(parts).not.toContain('generate.groups.sampling_schedule');
+    expect(parts).not.toContain('generate.groups.sampling_knob');
+  });
+
+  it('names the clip skip, the schedule and every solver knob carrying a value', async () => {
+    const { fixture, component, form } = await createComponent(null);
+
+    form.patchValue({
+      clip_skip: 2,
+      scheduler: 'normal',
+      sampler_eta: 0.5,
+      sampler_s_noise: 1.2,
+    });
+    fixture.detectChanges();
+
+    const parts = summaryParts(component.samplingSummary());
+    expect(parts).toContain('generate.groups.sampling_clip');
+    expect(parts).toContain('generate.groups.sampling_schedule');
+    // The eta and the noise scale, one fragment each.
+    expect(
+      parts.filter((part) => part === 'generate.groups.sampling_knob'),
+    ).toHaveLength(2);
+  });
+
+  it('words the clip skip, the schedule and a knob by their own labels', () => {
+    expect(en['generate.groups.sampling_clip']).toBe('CLIP skip {{ value }}');
+    expect(en['generate.groups.sampling_schedule']).toBe(
+      'Schedule {{ value }}',
+    );
+    expect(en['generate.groups.sampling_knob']).toBe('{{ label }} {{ value }}');
+  });
+});
+
+describe('GenerateFormComponent censor switch', () => {
+  it('reports the censor while adult content is blocked', async () => {
+    const { fixture, component, form } = await createComponent(null);
+
+    fixture.detectChanges();
+    expect(summaryParts(component.outputSummary())).toContain(
+      'generate.groups.output_censor_on',
+    );
+
+    form.controls.censor_nsfw.setValue(false);
+    fixture.detectChanges();
+    expect(summaryParts(component.outputSummary())).toContain(
+      'generate.groups.output_censor_off',
+    );
+  });
+
+  it('says nothing about the censor while adult content is allowed', async () => {
+    const { fixture, component, form } = await createComponent(null);
+
+    form.controls.nsfw.setValue(true);
+    fixture.detectChanges();
+
+    const parts = summaryParts(component.outputSummary());
+    expect(parts).not.toContain('generate.groups.output_censor_on');
+    expect(parts).not.toContain('generate.groups.output_censor_off');
+  });
+
+  it('freezes the switch while adult content is allowed, keeping what it holds', async () => {
+    const { fixture, component, form } = await createComponent(null);
+
+    form.controls.nsfw.setValue(true);
+    fixture.detectChanges();
+
+    expect(component.censorInert()).toBe(true);
+    expect(form.controls.censor_nsfw.disabled).toBe(true);
+    expect(form.getRawValue().censor_nsfw).toBe(true);
+
+    form.controls.nsfw.setValue(false);
+    fixture.detectChanges();
+
+    expect(form.controls.censor_nsfw.disabled).toBe(false);
+    expect(form.getRawValue().censor_nsfw).toBe(true);
+  });
+});

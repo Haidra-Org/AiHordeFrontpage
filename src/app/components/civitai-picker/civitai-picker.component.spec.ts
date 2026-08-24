@@ -318,4 +318,18 @@ describe('CivitaiPickerComponent', () => {
       });
     });
   });
+
+  describe('the column count', () => {
+    it('shows the count the grid is actually drawing', () => {
+      start();
+
+      const select = fixture.nativeElement.querySelector(
+        '.gs-cv-cols select',
+      ) as HTMLSelectElement;
+      // The options are rendered from inside the select, so a count written on
+      // the select itself lands before there is anything to match it against.
+      expect(component.columns()).toBe(3);
+      expect(select.value).toBe('3');
+    });
+  });
 });

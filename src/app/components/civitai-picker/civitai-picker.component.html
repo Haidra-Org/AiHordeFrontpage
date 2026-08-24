@@ -27,9 +27,14 @@
       </label>
       <label class="gs-cv-cols">
         <span>{{ "generate.civitai.columns_label" | transloco }}</span>
-        <select [value]="columns()" (change)="setColumns(selectValue($event))">
+        <!-- Marked on the option rather than set on the select: the options are
+             rendered from inside, so a value written on the select lands before
+             any option exists and the browser falls back to the first one. -->
+        <select (change)="setColumns(selectValue($event))">
           @for (option of columnOptions; track option) {
-            <option [value]="option">{{ option }}</option>
+            <option [value]="option" [selected]="option === columns()">
+              {{ option }}
+            </option>
           }
         </select>
       </label>
