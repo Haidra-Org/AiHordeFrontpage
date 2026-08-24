@@ -159,6 +159,15 @@ const CROP_INK = '#22c55e';
  *  as a surface, over a dark checker as well as a light one. */
 const FRAME_TINT = 'rgba(245, 158, 11, 0.22)';
 const CROP_TINT = 'rgba(15, 23, 42, 0.45)';
+/** The two halos the brush ring picks between, by the ink's own luminance. */
+const RING_HALO_DARK = 'rgba(15, 23, 42, 0.85)';
+const RING_HALO_LIGHT = 'rgba(255, 255, 255, 0.9)';
+/** The picture's own edge, so a white sheet is not lost in a light ground. */
+const DOC_EDGE_INK = 'rgba(100, 116, 139, 0.55)';
+const DOC_SHADOW_INK = '#0f172a';
+/** In screen pixels, held there however far the view is zoomed. */
+const DOC_SHADOW_BLUR = 16;
+const DOC_SHADOW_OFFSET_Y = 3;
 /**
  * How far the pointer has to travel on screen before a stroke takes another
  * point. Points closer than this make `tension` smoothing knot up; measuring it
@@ -170,6 +179,27 @@ const SCREEN_POINT_SPACING = 3;
 const STROKE_TENSION = 0.3;
 /** The checker that says which part of the sheet is see-through, in screen px. */
 const CHECKER_SQUARE = 8;
+/**
+ * How light a hex colour reads, on the sRGB relative luminance the contrast
+ * rules use. Anything that is not a hex colour is treated as mid grey, which
+ * only decides which way a halo goes.
+ */
+function relativeLuminance(hex: string): number {
+  const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) {
+    return 0.5;
+  }
+  const digits =
+    match[1].length === 3
+      ? match[1].replace(/./g, (character) => character + character)
+      : match[1];
+  const channels = [0, 2, 4].map((start) => {
+    const value = parseInt(digits.slice(start, start + 2), 16) / 255;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
 const SHAPE_INK_ATTR = 'editorInk';
 const SHAPE_EDITABLE_ATTR = 'editorShapeEditable';
 /** A second finger arriving this quickly means "pinch", not "start drawing". */
@@ -407,6 +437,8 @@ export class SourceEditorComponent {
   private cropTransformer: Transformer | null = null;
   private cropShade: Rect | null = null;
   private brushRing: Circle | null = null;
+  private brushRingHalo: Circle | null = null;
+  private docEdge: Rect | null = null;
   private dimRects: Rect[] = [];
   private resizeObserver: ResizeObserver | null = null;
   private readonly scrollHintTeardowns: (() => void)[] = [];
@@ -710,6 +742,8 @@ export class SourceEditorComponent {
 
   public setColor(value: string): void {
     this.color.set(value);
+    // The ring wears the ink, so it is wrong the moment the ink changes.
+    this.updateBrushRing();
   }
 
   public setBackground(value: string): void {
@@ -911,8 +945,29 @@ export class SourceEditorComponent {
       height: this.docRect.height,
       fillPatternImage: pattern,
       listening: false,
+      // The picture sits on the editor's ground the way a card sits on the page.
+      // Without that lift a white sheet has no edge at all against a light
+      // ground, and the reader cannot see where the picture stops.
+      shadowColor: DOC_SHADOW_INK,
+      shadowOpacity: 0.22,
     });
     this.groundLayer.add(this.groundRect);
+    if (this.uiLayer) {
+      // Drawn over the picture rather than under it, so the line is not half
+      // hidden by the picture's own outermost pixels.
+      this.docEdge = new konva.Rect({
+        x: this.docRect.x,
+        y: this.docRect.y,
+        width: this.docRect.width,
+        height: this.docRect.height,
+        stroke: DOC_EDGE_INK,
+        strokeWidth: 1,
+        strokeScaleEnabled: false,
+        listening: false,
+      });
+      this.uiLayer.add(this.docEdge);
+    }
+    this.syncGround();
   }
 
   /** Hold the checker at a constant size on screen however far the view zooms. */
@@ -925,6 +980,14 @@ export class SourceEditorComponent {
       height: this.docRect.height,
       fillPatternScaleX: 1 / scale,
       fillPatternScaleY: 1 / scale,
+      shadowBlur: DOC_SHADOW_BLUR / scale,
+      shadowOffsetY: DOC_SHADOW_OFFSET_Y / scale,
+    });
+    this.docEdge?.setAttrs({
+      x: this.docRect.x,
+      y: this.docRect.y,
+      width: this.docRect.width,
+      height: this.docRect.height,
     });
   }
 
@@ -1423,6 +1486,20 @@ export class SourceEditorComponent {
     if (!konva || !this.uiLayer) {
       return;
     }
+    // Two concentric rings, the wider one first so it sits behind: the ink alone
+    // disappears whenever it matches what is under it, white ink on a white
+    // sheet being the worst case, so a halo of the opposite luminance is drawn
+    // under it and the ink line stays a crisp single pixel on top.
+    this.brushRingHalo = new konva.Circle({
+      x: 0,
+      y: 0,
+      radius: 0,
+      stroke: RING_HALO_DARK,
+      strokeWidth: 3,
+      strokeScaleEnabled: false,
+      listening: false,
+      visible: false,
+    });
     this.brushRing = new konva.Circle({
       x: 0,
       y: 0,
@@ -1430,41 +1507,48 @@ export class SourceEditorComponent {
       stroke: '#0f172a',
       strokeWidth: 1,
       strokeScaleEnabled: false,
-      shadowColor: '#ffffff',
-      shadowBlur: 0,
       listening: false,
       visible: false,
     });
-    this.uiLayer.add(this.brushRing);
+    this.uiLayer.add(this.brushRingHalo, this.brushRing);
+  }
+
+  /** The halo that keeps the ring readable whatever the ink sits on. */
+  private ringHalo(ink: string): string {
+    return relativeLuminance(ink) > 0.5 ? RING_HALO_DARK : RING_HALO_LIGHT;
   }
 
   /** Show exactly how much of the picture the next stroke will cover. */
   private updateBrushRing(): void {
     const ring = this.brushRing;
-    if (!ring) {
+    const halo = this.brushRingHalo;
+    if (!ring || !halo) {
       return;
     }
     const painting = this.tool() === 'brush' || this.tool() === 'eraser';
-    ring.setAttrs({
-      radius: this.imageBrushSize() / 2,
-      stroke: this.ink() === 'mask' ? MASK_INK : this.color(),
-      // The ring only appears once the pointer has said where it is.
-      visible: painting && ring.visible(),
-    });
+    const ink = this.ink() === 'mask' ? MASK_INK : this.color();
+    const radius = this.imageBrushSize() / 2;
+    // The ring only appears once the pointer has said where it is.
+    const visible = painting && ring.visible();
+    ring.setAttrs({ radius, stroke: ink, visible });
+    halo.setAttrs({ radius, stroke: this.ringHalo(ink), visible });
   }
 
   private moveBrushRing(point: { x: number; y: number }): void {
     const ring = this.brushRing;
-    if (!ring) {
+    const halo = this.brushRingHalo;
+    if (!ring || !halo) {
       return;
     }
     const painting = this.tool() === 'brush' || this.tool() === 'eraser';
-    ring.setAttrs({
+    const attrs = {
       x: point.x,
       y: point.y,
       radius: this.imageBrushSize() / 2,
       visible: painting,
-    });
+    };
+    ring.setAttrs(attrs);
+    halo.setAttrs(attrs);
   }
 
   // -- panning -------------------------------------------------------------
@@ -2058,6 +2142,7 @@ export class SourceEditorComponent {
     const ringVisible = this.brushRing?.visible() ?? false;
     this.transformer?.nodes([]);
     this.brushRing?.visible(false);
+    this.brushRingHalo?.visible(false);
     stage.scale({ x: 1, y: 1 });
     stage.position({ x: 0, y: 0 });
     try {
@@ -2084,6 +2169,7 @@ export class SourceEditorComponent {
       stage.position(position);
       this.transformer?.nodes(transformerNodes);
       this.brushRing?.visible(ringVisible);
+      this.brushRingHalo?.visible(ringVisible);
     }
   }
 
