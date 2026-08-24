@@ -34,10 +34,9 @@ export const QR_CODE_BASELINES: readonly string[] = [
 ];
 
 /**
- * Baselines the layerdiffuse pipeline has weights for (SD 1.5 and SDXL). A
- * transparent request against any other baseline is not refused: the worker
- * software leaves the graph unrewired and returns an ordinary opaque picture,
- * so this is guidance rather than something the horde would reject on.
+ * Baselines the layerdiffuse pipeline has weights for (SD 1.5 and SDXL). The
+ * horde does not refuse a transparent request on another baseline, so this is
+ * guidance rather than something it would reject on.
  */
 export const TRANSPARENT_BASELINES: readonly string[] = [
   'stable_diffusion_1',
