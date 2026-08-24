@@ -1325,7 +1325,10 @@
   .gen-studio .gs-submitrow--pinned .gs-sublabel {
     display: none;
   }
-  .gen-studio .gs-submitrow--pinned .gs-genbtn {
+  /* Docked or in the flow, the button takes whatever the row leaves it: on a
+     phone the row wraps and the button fills its own line, so the two states
+     read as the same button rather than a large one and a small one. */
+  .gen-studio .gs-submitrow .gs-genbtn {
     min-width: 0;
     flex: 1 1 auto;
   }

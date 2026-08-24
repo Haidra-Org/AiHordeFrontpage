@@ -611,7 +611,7 @@
   "generate.help.dock_close_tutorial": "Back to the tutorial",
   "generate.help.sheet_label": "Setting reference",
   "generate.sheet.show": "Show",
-  "generate.sheet.fill": "Full screen",
+  "generate.sheet.fill": "Expand",
   "generate.sheet.shrink": "Shrink",
   "generate.sheet.hide": "Hide",
   "generate.sheet.close": "Dismiss",
