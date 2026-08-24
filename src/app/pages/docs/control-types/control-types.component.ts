@@ -4,7 +4,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { GsControlGalleryComponent } from '../../../components/gs-control-gallery/gs-control-gallery.component';
-import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ANNOTATION_DETECTOR_GROUPS,
@@ -33,24 +32,6 @@ const GALLERY_WORLDS: readonly string[] = [
 ];
 
 /**
- * The mode each group's strength strip was rendered against.
- *
- * The dial is the same field whichever mode is in play, and what changes is how
- * hard that kind of map can pull. So each group is read against the one of its
- * own members the library swept, rather than against a single strip standing in
- * for all seven kinds of guidance.
- */
-const GROUP_STRENGTH_TYPE: Readonly<Record<string, string>> = {
-  edges: 'canny',
-  lines: 'mlsd',
-  depth: 'depth_anything_v2',
-  surface: 'normal_bae',
-  pose: 'openpose',
-  regions: 'oneformer_ade20k',
-  colour: 'tile',
-};
-
-/**
  * The further line a mode carries beyond what it reads.
  *
  * `hough` is the older spelling of `mlsd` and the horde still accepts it, so it
@@ -68,8 +49,6 @@ interface ControlGroup {
   labelKey: string;
   introKey: string;
   types: readonly string[];
-  /** The mode the group's strength strip was swept against, if one was. */
-  strengthType: string | null;
 }
 
 /**
@@ -80,8 +59,7 @@ interface ControlGroup {
  * not enough to choose a group, because the difference between holding an
  * outline and holding a distance is something a reader has to see. So this is
  * one page rather than thirty-three: the modes in the picker's own grouping and
- * order, each shown as the render it produced, and each group read against the
- * strength dial that decides how hard its kind of map pulls.
+ * order, each shown as the render it produced.
  */
 @Component({
   selector: 'app-docs-control-types',
@@ -91,7 +69,6 @@ interface ControlGroup {
     IconComponent,
     GsAnchorLinkComponent,
     GsControlGalleryComponent,
-    GsSweepScrubComponent,
   ],
   templateUrl: './control-types.component.html',
   host: {
@@ -126,7 +103,6 @@ export class DocsControlTypesComponent {
       labelKey: annotationGroupLabelKey(group.id),
       introKey: `generate.control_types.group_${group.id}`,
       types: group.types,
-      strengthType: GROUP_STRENGTH_TYPE[group.id] ?? null,
     }));
 
   constructor() {

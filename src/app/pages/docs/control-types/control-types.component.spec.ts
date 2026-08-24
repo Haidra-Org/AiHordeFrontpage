@@ -74,6 +74,13 @@ describe('DocsControlTypesComponent', () => {
 
   it('lays out one tile per mode the picker offers', () => {
     expect(all('.gs-ref-map').length).toBe(TYPE_COUNT);
+    expect(TYPE_COUNT).toBe(33);
+  });
+
+  it('leaves the strength dial to the mode it belongs to', () => {
+    // The dial is read per mode, inside the layer a tile opens, so the page
+    // body carries none of its own.
+    expect(all('app-gs-sweep-scrub').length).toBe(0);
   });
 
   it('says nothing was published where the library has no example', () => {

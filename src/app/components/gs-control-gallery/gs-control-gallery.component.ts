@@ -12,12 +12,17 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsAnchorLinkComponent } from '../gs-anchor-link/gs-anchor-link.component';
+import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 import {
   SweepLibraryService,
   SweepStop,
   SweepStrip,
 } from '../../services/sweep-library.service';
 import { docsControlTypeAnchor } from '../../content/docs-links';
+
+/** What Tab can land on inside the layer: the close button, the tiles' links and the strip's controls. */
+const LAYER_FOCUSABLE_SELECTOR =
+  'a[href], button, [tabindex]:not([tabindex="-1"]), input, select, textarea';
 
 /** One frame of an example, and what it is. */
 interface ControlFrame {
@@ -71,7 +76,12 @@ interface ControlTile {
  */
 @Component({
   selector: 'app-gs-control-gallery',
-  imports: [TranslocoPipe, IconComponent, GsAnchorLinkComponent],
+  imports: [
+    TranslocoPipe,
+    IconComponent,
+    GsAnchorLinkComponent,
+    GsSweepScrubComponent,
+  ],
   template: `
     <ul class="gs-ref-maps-grid">
       @for (tile of tiles(); track tile.type) {
@@ -190,6 +200,17 @@ interface ControlTile {
               <p class="gs-ctl-caption">{{ world.caption }}</p>
             </section>
           }
+
+          <!-- How hard this mode's own maps pull, under the examples of what
+               they are. The dial is the same field for every mode and what
+               changes is what that kind of map can do with it, so it is read
+               here rather than once for a whole group. -->
+          <app-gs-sweep-scrub
+            parameter="control_strength"
+            [controlType]="shown.type"
+            [startExpanded]="true"
+            register="filmcard"
+          />
         </div>
       </div>
     }
@@ -284,8 +305,10 @@ export class GsControlGalleryComponent {
   }
 
   /**
-   * Escape shuts the layer, and Tab is held inside it. The layer is pictures
-   * and one way out, so the way out is the only tab stop it needs.
+   * Escape shuts the layer, and Tab cycles inside it. The layer carries the
+   * detector's strength strip as well as its pictures, so its controls have to
+   * stay reachable: Tab wraps from the last focusable to the first and Shift
+   * Tab the other way, and never leaves for the page behind.
    */
   public onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
@@ -293,9 +316,29 @@ export class GsControlGalleryComponent {
       this.close();
       return;
     }
-    if (event.key === 'Tab') {
+    if (event.key !== 'Tab') {
+      return;
+    }
+    const panel = this.panel()?.nativeElement;
+    if (!panel) {
+      return;
+    }
+    const focusables = Array.from(
+      panel.querySelectorAll<HTMLElement>(LAYER_FOCUSABLE_SELECTOR),
+    ).filter((element) => !element.hasAttribute('disabled'));
+    if (focusables.length === 0) {
       event.preventDefault();
-      this.closeButton()?.nativeElement.focus();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === panel)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (active === last || active === panel)) {
+      event.preventDefault();
+      first.focus();
     }
   }
 

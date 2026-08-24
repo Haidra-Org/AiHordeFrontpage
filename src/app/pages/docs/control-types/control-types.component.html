@@ -38,17 +38,6 @@
         [descriptionKeys]="descriptionKeys"
         [noteKeys]="noteKeys"
       />
-
-      <!-- How hard this kind of map pulls, read on one of the group's own
-           modes. The dial is the same field everywhere; what a group needs to
-           know is what its own maps do with it. -->
-      @if (group.strengthType; as type) {
-        <app-gs-sweep-scrub
-          parameter="control_strength"
-          [controlType]="type"
-          register="filmcard"
-        />
-      }
     </section>
   }
 

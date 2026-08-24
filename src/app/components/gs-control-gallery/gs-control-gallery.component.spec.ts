@@ -15,7 +15,11 @@ import en from '../../../assets/i18n/en.json';
 const WORLD_ONE = 'controlnet-gallery/deliberate/courier-ink';
 const WORLD_TWO = 'controlnet-gallery/anything-diffusion/fox-shrine-ink';
 
-/** Two examples of the same two modes, which is the shape the page reads. */
+/**
+ * Two examples of the same two modes, and a strength strip for one of them:
+ * the shape the page reads, including a mode the library has swept the dial
+ * against and one it has not.
+ */
 const INDEX = {
   schema_version: 1,
   seed: 1312,
@@ -28,8 +32,55 @@ const INDEX = {
       'fox-shrine-ink',
       'The fox shrine',
     ),
+    strength('canny'),
   ],
 };
+
+/** A full-range strength strip, keyed to the mode it was rendered against. */
+function strength(type: string): unknown {
+  return {
+    strip_id: `control-strength/${type}/deliberate/courier-ink`,
+    parameter: 'control_strength',
+    presentation: 'strip',
+    caption: `How hard a ${type} map holds the render.`,
+    complete: true,
+    image_model: {
+      slug: 'deliberate',
+      name: 'Deliberate',
+      baseline: 'stable_diffusion_1',
+      note: '',
+    },
+    scene: {
+      scene_id: 'courier-ink',
+      label: 'The courier',
+      prompt: 'a courier',
+    },
+    varying: ['control_strength'],
+    stops: [
+      {
+        value: 0.5,
+        label: '0_5',
+        caption: 'Barely held.',
+        file: `control-strength/${type}/deliberate/courier-ink/001_0_5.webp`,
+        control_type: type,
+      },
+      {
+        value: 1,
+        label: '1',
+        caption: 'Held to the map.',
+        file: `control-strength/${type}/deliberate/courier-ink/002_1.webp`,
+        control_type: type,
+      },
+      {
+        value: 2,
+        label: '2',
+        caption: 'Held past what the prompt asked for.',
+        file: `control-strength/${type}/deliberate/courier-ink/003_2.webp`,
+        control_type: type,
+      },
+    ],
+  };
+}
 
 function world(
   stripId: string,
@@ -181,6 +232,29 @@ describe('GsControlGalleryComponent', () => {
     ]);
   });
 
+  it('reads the strength dial against the mode the layer is showing', async () => {
+    await setUp();
+    openTile(0);
+
+    const scrub = find<HTMLElement>('.gs-ctl-body app-gs-sweep-scrub');
+    expect(scrub).not.toBeNull();
+    expect(scrub!.querySelector('.gs-sweep')).not.toBeNull();
+    expect(scrub!.textContent).toContain('Held to the map.');
+  });
+
+  it('says nothing where the library has swept no strength for the mode', async () => {
+    await setUp();
+    openTile(1);
+
+    // openpose has examples but no strength strip, and the layer is still the
+    // three worlds rather than an error or an empty plate.
+    expect(all('.gs-ctl-world').length).toBe(2);
+    expect(
+      find<HTMLElement>('.gs-ctl-body app-gs-sweep-scrub')!.childElementCount,
+    ) //
+      .toBe(0);
+  });
+
   it('closes on escape and hands focus back to the tile that opened it', async () => {
     await setUp();
     const tile = all<HTMLButtonElement>('.gs-ref-zoom')[1];
@@ -199,5 +273,39 @@ describe('GsControlGalleryComponent', () => {
 
     expect(find('.gs-ctl-body')).toBeNull();
     expect(document.activeElement).toBe(tile);
+  });
+
+  it('keeps Tab inside the layer and wraps it at both ends', async () => {
+    await setUp();
+    openTile(0);
+    const body = find<HTMLElement>('.gs-ctl-body')!;
+    const focusables = Array.from(
+      body.querySelectorAll<HTMLElement>(
+        'a[href], button, [tabindex]:not([tabindex="-1"]), input, select, textarea',
+      ),
+    );
+    expect(focusables.length).toBeGreaterThan(1);
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    last.focus();
+    const forward = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      bubbles: true,
+      cancelable: true,
+    });
+    last.dispatchEvent(forward);
+    expect(forward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(first);
+
+    const backward = new KeyboardEvent('keydown', {
+      key: 'Tab',
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    first.dispatchEvent(backward);
+    expect(backward.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(last);
   });
 });

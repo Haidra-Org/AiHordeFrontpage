@@ -12902,12 +12902,6 @@ app-gs-compare-wipe {
 }
 
 /* ------- control types: one mode, read on three examples ------------- */
-/* The strength strip belongs to the group above it rather than to the page, so
-   it is set in from the tiles it is a footnote to. */
-.gen-studio .gs-ref-maps-group app-gs-sweep-scrub {
-  display: block;
-  margin-top: var(--gs-space-4);
-}
 .gen-studio .gs-ctl-body {
   display: flex;
   flex-direction: column;
@@ -12977,6 +12971,11 @@ app-gs-compare-wipe {
   font-size: var(--gs-text-sm);
   line-height: 1.6;
   color: var(--gs-ink-2);
+}
+/* The strength strip belongs to the mode the layer is showing, so it sits with
+   the examples of that mode rather than under a whole group of them. */
+.gen-studio .gs-ctl-body app-gs-sweep-scrub {
+  display: block;
 }
 
 /* ------- settings reference: one entry ------------------------------- */
