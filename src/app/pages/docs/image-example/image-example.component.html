@@ -516,6 +516,21 @@
                   <dt>{{ "generate.tutorials.meta_seed" | transloco }}</dt>
                   <dd class="gs-mono">{{ detail.meta.seed }}</dd>
                 </div>
+                <!-- Where the picture was made. A controlled pair is rendered on
+                     one machine so that nothing but the setting differs, and the
+                     page says so rather than letting the manifest's API imply
+                     the live horde. -->
+                <div class="gs-tut-meta-row">
+                  <dt>{{ "generate.tutorials.meta_made_with" | transloco }}</dt>
+                  <dd>
+                    {{
+                      (detail.meta.runner === "local"
+                        ? "generate.tutorials.meta_made_with_local"
+                        : "generate.tutorials.meta_made_with_horde"
+                      ) | transloco
+                    }}
+                  </dd>
+                </div>
                 <!-- Only a run through the horde was charged; a render on the
                      worker software directly has no kudos line to show. -->
                 @if (detail.meta.kudos_charged !== undefined) {

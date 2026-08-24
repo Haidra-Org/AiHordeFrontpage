@@ -49,6 +49,8 @@ export interface ExampleManifest {
 export interface ExampleMeta {
   model?: string;
   seed?: string;
+  /** Set to `local` when the flow was rendered on the worker software directly. */
+  runner?: string;
   kudos_charged?: number;
   wall_time_seconds?: number;
   deviations?: string;
