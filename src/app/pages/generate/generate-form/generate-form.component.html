@@ -328,35 +328,39 @@
           </div>
         </section>
 
-        <!-- Negative prompt (one row by default; drag the grip to grow it). The
-           help glyph sits beside the field because the row carries no label to
-           host it. -->
-        <div class="flex flex-wrap items-start gap-1.5">
-          <textarea
-            class="gs-neg-input min-w-0 flex-1"
-            appTutAnchor="negative_prompt"
-            formControlName="negativePrompt"
-            rows="1"
-            appRememberedHeight="aihorde.generate.negative_height"
-            [placeholder]="
-              'generate.form.negative_prompt_placeholder' | transloco
-            "
-            [attr.aria-label]="
-              'generate.form.negative_prompt_label' | transloco
-            "
-            (keydown.control.enter)="onSubmitShortcut()"
-            (keydown.meta.enter)="onSubmitShortcut()"
-          ></textarea>
-          <button
-            type="button"
-            class="gs-prompt-expand gs-prompt-expand--inline"
-            (click)="openPromptEditor('negative')"
-            [attr.aria-label]="'generate.form.negative_expand' | transloco"
-            [title]="'generate.form.negative_expand' | transloco"
-          >
-            <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-          </button>
-          <app-gs-help topic="negative" />
+        <!-- Negative prompt (one row by default; drag the grip to grow it). It
+           carries its name as well as the placeholder: the placeholder explains
+           the field to a reader meeting it, the label names it for one who
+           already knows the term. -->
+        <div appTutAnchor="negative_prompt">
+          <div class="gs-field-head">
+            <label class="gs-slabel" for="generate-negative-prompt">
+              {{ "generate.form.negative_prompt_label" | transloco }} </label
+            ><app-gs-help topic="negative" />
+          </div>
+          <div class="flex flex-wrap items-start gap-1.5">
+            <textarea
+              id="generate-negative-prompt"
+              class="gs-neg-input min-w-0 flex-1"
+              formControlName="negativePrompt"
+              rows="1"
+              appRememberedHeight="aihorde.generate.negative_height"
+              [placeholder]="
+                'generate.form.negative_prompt_placeholder' | transloco
+              "
+              (keydown.control.enter)="onSubmitShortcut()"
+              (keydown.meta.enter)="onSubmitShortcut()"
+            ></textarea>
+            <button
+              type="button"
+              class="gs-prompt-expand gs-prompt-expand--inline"
+              (click)="openPromptEditor('negative')"
+              [attr.aria-label]="'generate.form.negative_expand' | transloco"
+              [title]="'generate.form.negative_expand' | transloco"
+            >
+              <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+            </button>
+          </div>
         </div>
 
         @if (promptEditor(); as field) {

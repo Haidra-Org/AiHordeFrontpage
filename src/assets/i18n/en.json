@@ -435,7 +435,7 @@
   "generate.form.ledger_facefixer_strength": "Face fix strength",
   "generate.form.ledger_allow_downgrade": "Allow downgrade",
   "generate.form.ledger_styleName": "Style",
-  "generate.form.ledger_negativePrompt": "What to avoid",
+  "generate.form.ledger_negativePrompt": "Negative prompt",
   "generate.form.ledger_n": "Batch count",
   "generate.form.ledger_sampler_name": "Sampler",
   "generate.form.ledger_cfg_scale": "Guidance",
