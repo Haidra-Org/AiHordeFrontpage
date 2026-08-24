@@ -67,19 +67,7 @@ const ENUMERATED_KEYS: readonly string[] = [
  * decision rather than a guess, so they are carried here until one is made. The
  * list may only shrink.
  */
-const UNRESOLVED_ALLOWLIST: readonly string[] = [
-  'admin.users.deleted_warning',
-  'admin.workers.type.interrogation',
-  'styles.nsfw',
-  'teams.delete_confirm',
-  'teams.delete_team',
-  'teams.delete_warning',
-  'teams.deleting',
-  'teams.edit_team',
-  'teams.saving',
-  'transfer.target_valid_shared_key',
-  'workers.stats.queued',
-];
+const UNRESOLVED_ALLOWLIST: readonly string[] = [];
 
 /**
  * Lines with nothing asking for them. Most are copy left behind by earlier
