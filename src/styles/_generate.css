@@ -12338,6 +12338,13 @@ app-gs-compare-wipe {
   gap: 5px;
   margin-top: 12px;
 }
+/* Over a read the picker shares the article's measure so its left edge and the
+   prose line up. */
+.gen-studio .gs-learn-levels--read {
+  width: 100%;
+  max-width: 72ch;
+  margin-inline: auto;
+}
 .gen-studio .gs-learn-levels-label {
   font-size: 10px;
   font-weight: 700;
@@ -12367,6 +12374,11 @@ app-gs-compare-wipe {
   flex: 1 1 320px;
   min-width: 0;
   max-width: 33%;
+}
+/* A track is read rather than worked, so it has no example beside it to leave
+   room for: the column takes the pane and bounds itself by its measure. */
+.gen-studio .gs-learn-main--read {
+  max-width: none;
 }
 .gen-studio .gs-learn-example {
   flex: 0 1 220px;
@@ -16073,12 +16085,17 @@ html:has(app-gs-sheet) {
   flex-direction: column;
   gap: var(--gs-space-6);
   margin-top: var(--gs-space-3);
+  width: 100%;
+  max-width: 72ch;
+  margin-inline: auto;
 }
+/* The measure is the article's, not each section's, so the prose and the
+   pictures under it share one column edge. */
 .gen-studio .gs-learn-read-sec {
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-2);
-  max-width: 72ch;
+  max-width: 100%;
 }
 .gen-studio .gs-learn-read-sec .gs-cap-eyebrow,
 .gen-studio .gs-learn-read-sec .gs-guide-head {

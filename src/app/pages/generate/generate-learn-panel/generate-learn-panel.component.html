@@ -5,7 +5,7 @@
      header rather than beside the step it happens to be read on. The name is
      said out loud rather than only to a screen reader: three unlabelled words
      leave a reader guessing what they are choosing between. -->
-<div class="gs-learn-levels">
+<div class="gs-learn-levels" [class.gs-learn-levels--read]="conceptTrack()">
   <span class="gs-learn-levels-label">{{
     "generate.learn.level_label" | transloco
   }}</span>
@@ -33,7 +33,7 @@
   <p class="gs-guide-lead">{{ "generate.learn.loading" | transloco }}</p>
 } @else {
   <div class="gs-learn-body">
-    <div class="gs-learn-main">
+    <div class="gs-learn-main" [class.gs-learn-main--read]="conceptTrack()">
       <!-- The step count is drawn in the pane's header; this copy is the one
            a screen reader hears change, so it stays and stays out of sight. -->
       <p class="sr-only" role="status" aria-live="polite">
