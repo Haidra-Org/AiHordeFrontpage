@@ -87,7 +87,7 @@ describe('DocsControlTypesComponent', () => {
     const lead = el().querySelector('.gs-ref-lead')?.textContent ?? '';
 
     expect(lead).toContain('three pictures');
-    expect(lead).toContain('how hard its control maps hold a render');
+    expect(lead).toContain('as you raise the control strength');
   });
 
   it('gives every published mode a way in that says what it opens', () => {

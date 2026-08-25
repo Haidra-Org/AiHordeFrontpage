@@ -216,7 +216,7 @@ describe('GsControlGalleryComponent', () => {
     await setUp();
 
     const notes = all('.gs-ref-map-note').map((node) => node.textContent ?? '');
-    expect(notes[0]).toContain('Hard outlines');
+    expect(notes[0]).toContain('Finds hard outlines');
     expect(notes[1]).toContain('hough');
   });
 
@@ -231,7 +231,7 @@ describe('GsControlGalleryComponent', () => {
     expect(band.querySelector('.gs-ctl-group')?.textContent) //
       .toContain('Edges and outlines');
     expect(band.querySelector('.gs-ctl-lead')?.textContent) //
-      .toContain('Hard outlines');
+      .toContain('Finds hard outlines');
     expect(band.querySelector('.gs-sweep-viewer-x')).not.toBeNull();
   });
 
@@ -240,7 +240,7 @@ describe('GsControlGalleryComponent', () => {
     openTile(0);
 
     expect(all('.gs-ctl-over').map((node) => (node.textContent ?? '').trim())) //
-      .toEqual(['Starting picture', 'Control map', 'Render']);
+      .toEqual(['Starting picture', 'Control map', 'Finished image']);
     expect(find('.gs-ctl-model')!.textContent?.trim()).toBe('Deliberate');
     expect(find('.gs-ctl-meta')!.textContent).toContain('Rendered on');
   });
@@ -249,7 +249,9 @@ describe('GsControlGalleryComponent', () => {
     await setUp();
     openTile(0);
 
-    expect(find('.gs-ctl-head')!.textContent).toContain('How hard it holds');
+    expect(find('.gs-ctl-head')!.textContent).toContain(
+      'What control strength does',
+    );
     expect(find('.gs-ctl-dial app-gs-sweep-scrub')).not.toBeNull();
   });
 

@@ -608,10 +608,12 @@ describe('GenerateSourceImageComponent folding', () => {
     expect(en['generate.groups.source_inpainting']).toBe('Inpainting');
     expect(en['generate.groups.source_outpainting']).toBe('Outpainting');
     expect(en['generate.groups.source_controlnet']).toBe(
-      'Guided drawing: {{ name }}',
+      'ControlNet: {{ name }}',
     );
     expect(en['generate.groups.source_denoise']).toBe('denoise {{ value }}');
-    expect(en['generate.groups.source_strength']).toBe('strength {{ value }}');
+    expect(en['generate.groups.source_strength']).toBe(
+      'control strength {{ value }}',
+    );
     expect(en['generate.groups.source_map_supplied']).toBe('map supplied');
     expect(en['generate.groups.source_map_back']).toBe('map back');
   });
