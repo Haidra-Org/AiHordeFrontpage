@@ -1022,7 +1022,110 @@
           "control_group": "pose",
           "control_map": "controlnet-gallery/deliberate/courier-ink/023_openpose_map.webp"
         }
-      ]
+      ],
+      "subject": "anchor"
+    },
+    {
+      "strip_id": "controlnet-gallery/deliberate/skyharbor-tower-ink",
+      "parameter": "controlnet_gallery",
+      "presentation": "triptych",
+      "caption": "The source is a building: straight edges, repeated windows, and a long run of perspective.",
+      "rationale": "One example per guidance mode, on one source, one model and one seed.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "The SD1.5 model the ControlNet recipes are known good on."
+      },
+      "scene": {
+        "scene_id": "skyharbor-tower-ink",
+        "label": "The mooring tower, asked for at dusk in rain",
+        "prompt": "a mooring tower at dusk in rain"
+      },
+      "source_image": "controlnet-gallery/deliberate/skyharbor-tower-ink/source.webp",
+      "source_width": 512,
+      "source_height": 512,
+      "held": { "width": 512, "height": 512 },
+      "varying": ["control_type"],
+      "stops": [
+        {
+          "value": "canny",
+          "label": "canny",
+          "caption": "Canny on the mooring tower.",
+          "file": "controlnet-gallery/deliberate/skyharbor-tower-ink/001_canny.webp",
+          "sidecar": "controlnet-gallery/deliberate/skyharbor-tower-ink/001_canny.json",
+          "width": 512,
+          "height": 512,
+          "control_type": "canny",
+          "control_group": "edges",
+          "control_map": "controlnet-gallery/deliberate/skyharbor-tower-ink/001_canny_map.webp"
+        },
+        {
+          "value": "openpose",
+          "label": "openpose",
+          "caption": "Openpose on the mooring tower.",
+          "file": "controlnet-gallery/deliberate/skyharbor-tower-ink/023_openpose.webp",
+          "sidecar": "controlnet-gallery/deliberate/skyharbor-tower-ink/023_openpose.json",
+          "width": 512,
+          "height": 512,
+          "control_type": "openpose",
+          "control_group": "pose",
+          "control_map": "controlnet-gallery/deliberate/skyharbor-tower-ink/023_openpose_map.webp"
+        }
+      ],
+      "subject": "building"
+    },
+    {
+      "strip_id": "controlnet-gallery/deliberate/skyharbor-poster-ink",
+      "parameter": "controlnet_gallery",
+      "presentation": "triptych",
+      "caption": "The source is flat colour with no shading in it at all.",
+      "rationale": "One example per guidance mode, on one source, one model and one seed.",
+      "complete": true,
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "The SD1.5 model the ControlNet recipes are known good on."
+      },
+      "scene": {
+        "scene_id": "skyharbor-poster-ink",
+        "label": "The zeppelin, asked for in ink and watercolour",
+        "prompt": "a zeppelin poster in flat colour"
+      },
+      "source_image": "controlnet-gallery/deliberate/skyharbor-poster-ink/source.webp",
+      "source_width": 512,
+      "source_height": 512,
+      "held": { "width": 512, "height": 512 },
+      "varying": ["control_type"],
+      "stops": [
+        {
+          "value": "canny",
+          "label": "canny",
+          "caption": "Canny on the zeppelin.",
+          "file": "controlnet-gallery/deliberate/skyharbor-poster-ink/001_canny.webp",
+          "sidecar": "controlnet-gallery/deliberate/skyharbor-poster-ink/001_canny.json",
+          "width": 512,
+          "height": 512,
+          "control_type": "canny",
+          "control_group": "edges",
+          "control_map": "controlnet-gallery/deliberate/skyharbor-poster-ink/001_canny_map.webp"
+        },
+        {
+          "value": "openpose",
+          "label": "openpose",
+          "caption": "Openpose on the zeppelin.",
+          "file": "controlnet-gallery/deliberate/skyharbor-poster-ink/023_openpose.webp",
+          "sidecar": "controlnet-gallery/deliberate/skyharbor-poster-ink/023_openpose.json",
+          "width": 512,
+          "height": 512,
+          "control_type": "openpose",
+          "control_group": "pose",
+          "control_map": "controlnet-gallery/deliberate/skyharbor-poster-ink/023_openpose_map.webp"
+        }
+      ],
+      "subject": "flat"
     },
     {
       "strip_id": "control-strength/albedobase-xl/cloud-sea",

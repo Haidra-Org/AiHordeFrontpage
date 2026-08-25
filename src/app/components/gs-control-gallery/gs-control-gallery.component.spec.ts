@@ -8,23 +8,37 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it } from 'vitest';
-import { GsControlGalleryComponent } from './gs-control-gallery.component';
+import {
+  ControlWorldStrips,
+  GsControlGalleryComponent,
+} from './gs-control-gallery.component';
 import { environment } from '../../../environments/environment';
 import en from '../../../assets/i18n/en.json';
 
 const WORLD_ONE = 'controlnet-gallery/deliberate/courier-ink';
+const WORLD_ONE_BUILDING = 'controlnet-gallery/deliberate/skyharbor-tower-ink';
 const WORLD_TWO = 'controlnet-gallery/anything-diffusion/fox-shrine-ink';
 
 /**
- * Two examples of the same two modes, and a strength strip for one of them:
- * the shape the page reads, including a mode the library has swept the dial
- * against and one it has not.
+ * Two examples of the same two modes, one of them published on a second kind
+ * of source picture, and a strength strip for one mode: the shape the page
+ * reads, including a mode the library has swept the dial against and one it
+ * has not.
  */
 const INDEX = {
   schema_version: 1,
   seed: 1312,
   strips: [
     world(WORLD_ONE, 'deliberate', 'Deliberate', 'courier-ink', 'The courier'),
+    world(
+      WORLD_ONE_BUILDING,
+      'deliberate',
+      'Deliberate',
+      'skyharbor-tower-ink',
+      'The mooring tower, asked for at dusk in rain',
+      'building',
+      'The source is a building: straight edges and a long run of perspective.',
+    ),
     world(
       WORLD_TWO,
       'anything-diffusion',
@@ -88,12 +102,15 @@ function world(
   name: string,
   sceneId: string,
   label: string,
+  subject = 'anchor',
+  caption = '',
 ): unknown {
   return {
     strip_id: stripId,
     parameter: 'controlnet_gallery',
     presentation: 'triptych',
-    caption: '',
+    subject,
+    caption,
     complete: true,
     image_model: { slug, name, baseline: 'stable_diffusion_1', note: '' },
     scene: { scene_id: sceneId, label, prompt: 'a courier' },
@@ -141,7 +158,10 @@ function world(
 })
 class HostComponent {
   public types: readonly string[] = ['canny', 'openpose', 'seg'];
-  public worlds: readonly string[] = [WORLD_ONE, WORLD_TWO];
+  public worlds: readonly ControlWorldStrips[] = [
+    { anchor: WORLD_ONE, building: WORLD_ONE_BUILDING },
+    { anchor: WORLD_TWO },
+  ];
   public descriptionKeys: Readonly<Record<string, string>> = {
     canny: 'alchemy.annotation.detector.canny',
     openpose: 'alchemy.annotation.detector.openpose',
@@ -344,9 +364,11 @@ describe('GsControlGalleryComponent', () => {
     await setUp();
     openTile(0);
 
-    const group = find<HTMLElement>('.gs-ctl-switch')!;
+    const group = find<HTMLElement>('.gs-ctl-switch--world')!;
     expect(group.getAttribute('role')).toBe('radiogroup');
-    const options = all<HTMLButtonElement>('.gs-ctl-switch-opt');
+    const options = all<HTMLButtonElement>(
+      '.gs-ctl-switch--world .gs-ctl-switch-opt',
+    );
     // The library labels the second scene with a clause; the switcher is one
     // row of options, so it carries what stands before the first comma.
     expect(options.map((option) => (option.textContent ?? '').trim())) //
@@ -359,7 +381,9 @@ describe('GsControlGalleryComponent', () => {
     await setUp();
     openTile(0);
 
-    all<HTMLButtonElement>('.gs-ctl-switch-opt')[1].click();
+    all<HTMLButtonElement>(
+      '.gs-ctl-switch--world .gs-ctl-switch-opt',
+    )[1].click();
     fixture.detectChanges();
 
     expect(find('.gs-ctl-world')!.textContent) //
@@ -369,10 +393,111 @@ describe('GsControlGalleryComponent', () => {
     ).toBe(`${environment.evidenceBaseUrl}/${WORLD_TWO}/source.webp`);
   });
 
+  it('offers the kinds of picture the example was published on', async () => {
+    await setUp();
+    openTile(0);
+
+    const options = all<HTMLButtonElement>(
+      '.gs-ctl-switch--subject .gs-ctl-switch-opt',
+    );
+    // The first example carries a second kind of picture and the third kind
+    // is unpublished, so it is not offered.
+    expect(options.map((option) => (option.textContent ?? '').trim())) //
+      .toEqual(['Character', 'Building']);
+    expect(options[0].getAttribute('aria-checked')).toBe('true');
+    expect(options[1].getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('changes the source picture without leaving the example', async () => {
+    await setUp();
+    openTile(0);
+
+    all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1] //
+      .click();
+    fixture.detectChanges();
+
+    const world = find<HTMLElement>('.gs-ctl-world')!;
+    expect(
+      Array.from(world.querySelectorAll<HTMLImageElement>('img')).map((image) =>
+        image.getAttribute('src'),
+      )[0],
+    ).toBe(`${environment.evidenceBaseUrl}/${WORLD_ONE_BUILDING}/source.webp`);
+    expect(world.textContent).toContain('straight edges');
+    // The example is still the one that was chosen before the picture changed.
+    expect(
+      all<HTMLButtonElement>('.gs-ctl-switch--world .gs-ctl-switch-opt')[0] //
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  it('keeps the kind of picture when another example is chosen', async () => {
+    await setUp();
+    openTile(0);
+    all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1] //
+      .click();
+    fixture.detectChanges();
+
+    all<HTMLButtonElement>('.gs-ctl-switch--world .gs-ctl-switch-opt')[1] //
+      .click();
+    fixture.detectChanges();
+
+    // The second example was published on its own picture only, so that is
+    // what is shown and what the switcher says is showing.
+    expect(all('.gs-ctl-switch--subject').length).toBe(0);
+    expect(find('.gs-ctl-world')!.textContent).toContain('The fox shrine');
+
+    all<HTMLButtonElement>('.gs-ctl-switch--world .gs-ctl-switch-opt')[0] //
+      .click();
+    fixture.detectChanges();
+    expect(
+      all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1] //
+        .getAttribute('aria-checked'),
+    ).toBe('true');
+  });
+
+  it('moves between the kinds of picture on the arrows', async () => {
+    await setUp();
+    openTile(0);
+
+    all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[0] //
+      .dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowRight',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    fixture.detectChanges();
+
+    expect(find('.gs-ctl-world')!.textContent).toContain('straight edges');
+    expect(document.activeElement).toBe(
+      all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1],
+    );
+  });
+
+  it('steps the full-size pictures within the kind of picture on show', async () => {
+    await setUp();
+    openTile(0);
+    all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1] //
+      .click();
+    fixture.detectChanges();
+
+    all<HTMLButtonElement>('.gs-ctl-shot')[0].click();
+    fixture.detectChanges();
+
+    // Only the first example was published on a building, so that is the whole
+    // run: three frames rather than the six the other picture offers.
+    expect(
+      find('app-gs-shot-viewer .gs-tut-viewer-count')?.textContent,
+    ).toContain('1 of 3');
+  });
+
   it('moves between the examples on the arrows and wraps at both ends', async () => {
     await setUp();
     openTile(0);
-    const options = all<HTMLButtonElement>('.gs-ctl-switch-opt');
+    const options = all<HTMLButtonElement>(
+      '.gs-ctl-switch--world .gs-ctl-switch-opt',
+    );
 
     options[0].dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -384,10 +509,12 @@ describe('GsControlGalleryComponent', () => {
     fixture.detectChanges();
     expect(find('.gs-ctl-world')!.textContent).toContain('The fox shrine');
     expect(document.activeElement).toBe(
-      all<HTMLButtonElement>('.gs-ctl-switch-opt')[1],
+      all<HTMLButtonElement>('.gs-ctl-switch--world .gs-ctl-switch-opt')[1],
     );
 
-    all<HTMLButtonElement>('.gs-ctl-switch-opt')[1].dispatchEvent(
+    all<HTMLButtonElement>(
+      '.gs-ctl-switch--world .gs-ctl-switch-opt',
+    )[1].dispatchEvent(
       new KeyboardEvent('keydown', {
         key: 'ArrowRight',
         bubbles: true,
@@ -432,7 +559,7 @@ describe('GsControlGalleryComponent', () => {
     // openpose has examples but no strength strip, and the layer is still the
     // example and its switcher rather than an error or an empty plate.
     expect(all('.gs-ctl-world').length).toBe(1);
-    expect(all('.gs-ctl-switch-opt').length).toBe(2);
+    expect(all('.gs-ctl-switch--world .gs-ctl-switch-opt').length).toBe(2);
     expect(find('.gs-ctl-body app-gs-sweep-scrub')).toBeNull();
   });
 

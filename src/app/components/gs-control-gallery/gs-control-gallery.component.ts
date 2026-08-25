@@ -23,8 +23,35 @@ import {
   SweepLibraryService,
   SweepStop,
   SweepStrip,
+  SweepSubject,
 } from '../../services/sweep-library.service';
 import { docsControlTypeAnchor } from '../../content/docs-links';
+
+/**
+ * The kinds of source picture an example is published on, in the order the
+ * switcher offers them. The first is the one every example is cut from, and the
+ * other two are the pictures that break the detectors the first one flatters.
+ */
+const SUBJECT_ORDER: readonly SweepSubject[] = ['anchor', 'building', 'flat'];
+
+/** What each kind of source picture is called where a reader can see it. */
+const SUBJECT_LABEL_KEYS: Readonly<Record<SweepSubject, string>> = {
+  anchor: 'generate.control_types.subject_anchor',
+  building: 'generate.control_types.subject_building',
+  flat: 'generate.control_types.subject_flat',
+};
+
+/**
+ * The strips one example was published as, by the library's own `strip_id`: the
+ * same detectors on the same model, run on each kind of source picture. Only
+ * `anchor` is required, because the library may be published a picture at a
+ * time and an example is worth showing before all three have been rendered.
+ */
+export interface ControlWorldStrips {
+  anchor: string;
+  building?: string;
+  flat?: string;
+}
 
 /** What Tab can land on inside the layer: the close button, the tiles' links and the strip's controls. */
 const LAYER_FOCUSABLE_SELECTOR =
@@ -45,18 +72,12 @@ interface ControlFrame {
   height: number | null;
 }
 
-/** One example of a guidance mode: what it began with, what the detector drew, and what came back. */
-interface ControlWorld {
+/** One reading of a guidance mode: what it began with, what the detector drew, and what came back. */
+interface ControlTake {
+  subject: SweepSubject;
+  /** What that kind of source picture is called on the switcher. */
+  labelKey: string;
   stripId: string;
-  /** What the scene is, as the library labels it. */
-  scene: string;
-  /**
-   * The same scene in the two or three words the switcher can carry. The
-   * library's labels run to a clause, and three clauses in a row of options
-   * wrap into a block a reader has to read rather than a control they can
-   * glance at, so everything after the first comma is dropped.
-   */
-  sceneShort: string;
   /** The checkpoint it was rendered on, which differs between the examples. */
   model: string;
   /** The source, the map and the render, in the order the story runs. */
@@ -64,6 +85,27 @@ interface ControlWorld {
   /** The render on its own, which is what the tile is cut from. */
   render: string;
   caption: string;
+  /**
+   * What this kind of source picture is, where the library says. Written only
+   * where the picture is the point, so a reading without one carries what the
+   * example's own picture said.
+   */
+  note: string;
+}
+
+/** One example a guidance mode is read on, and the pictures it was run against. */
+interface ControlWorld {
+  /** The example's own strip, which is what the tiles and the order are cut from. */
+  stripId: string;
+  /**
+   * The scene in the two or three words the switcher can carry. The library's
+   * labels run to a clause, and three clauses in a row of options wrap into a
+   * block a reader has to read rather than a control they can glance at, so
+   * everything after the first comma is dropped.
+   */
+  sceneShort: string;
+  /** Every kind of source picture published of this example, in the switcher's order. */
+  takes: readonly ControlTake[];
 }
 
 /** One guidance mode as the gallery lays it out. */
@@ -233,44 +275,89 @@ interface ControlShot {
             </button>
           </header>
 
-          @if (shown.worlds.length > 1) {
-            <!-- The switcher says what it switches. Three named options with
-                 nothing over them read as a caption a reader can press by
-                 accident rather than as the choice the whole layer turns on. -->
-            <div class="gs-ctl-picker">
-              <span class="gs-ctl-picker-label">
-                {{ 'generate.control_types.worlds_pick' | transloco }}
-              </span>
-              <div
-                class="gs-seg gs-ctl-switch"
-                role="radiogroup"
-                [attr.aria-label]="
-                  'generate.control_types.worlds_label' | transloco
-                "
-              >
-                @for (
-                  option of shown.worlds;
-                  track option.stripId;
-                  let i = $index
-                ) {
-                  <button
-                    #worldOption
-                    type="button"
-                    class="gs-seg-opt gs-ctl-switch-opt"
-                    role="radio"
-                    [attr.aria-checked]="i === worldIndex()"
-                    [attr.tabindex]="i === worldIndex() ? 0 : -1"
-                    (click)="pickWorld(i)"
-                    (keydown)="onSwitchKeydown($event, i)"
+          <!-- Two choices side by side rather than one after the other: which
+               example, and which kind of picture it was run on. They are the
+               same question asked twice, and a reader holding one of them
+               fixed while they move the other has to see both at once. -->
+          @if (shown.worlds.length > 1 || subjectOptions().length > 1) {
+            <div class="gs-ctl-pickers">
+              @if (shown.worlds.length > 1) {
+                <!-- The switcher says what it switches. Three named options
+                     with nothing over them read as a caption a reader can
+                     press by accident rather than as the choice the whole
+                     layer turns on. -->
+                <div class="gs-ctl-picker">
+                  <span class="gs-ctl-picker-label">
+                    {{ 'generate.control_types.worlds_pick' | transloco }}
+                  </span>
+                  <div
+                    class="gs-seg gs-ctl-switch gs-ctl-switch--world"
+                    role="radiogroup"
+                    [attr.aria-label]="
+                      'generate.control_types.worlds_label' | transloco
+                    "
                   >
-                    {{ option.sceneShort }}
-                  </button>
-                }
-              </div>
+                    @for (
+                      option of shown.worlds;
+                      track option.stripId;
+                      let i = $index
+                    ) {
+                      <button
+                        #worldOption
+                        type="button"
+                        class="gs-seg-opt gs-ctl-switch-opt"
+                        role="radio"
+                        [attr.aria-checked]="i === worldIndex()"
+                        [attr.tabindex]="i === worldIndex() ? 0 : -1"
+                        (click)="pickWorld(i)"
+                        (keydown)="onSwitchKeydown($event, i)"
+                      >
+                        {{ option.sceneShort }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+
+              @if (subjectOptions().length > 1) {
+                <div class="gs-ctl-picker">
+                  <span class="gs-ctl-picker-label">
+                    {{ 'generate.control_types.subjects_pick' | transloco }}
+                  </span>
+                  <div
+                    class="gs-seg gs-ctl-switch gs-ctl-switch--subject"
+                    role="radiogroup"
+                    [attr.aria-label]="
+                      'generate.control_types.subjects_label' | transloco
+                    "
+                  >
+                    @for (
+                      option of subjectOptions();
+                      track option.subject;
+                      let i = $index
+                    ) {
+                      <button
+                        #subjectOption
+                        type="button"
+                        class="gs-seg-opt gs-ctl-switch-opt"
+                        role="radio"
+                        [attr.aria-checked]="option.subject === subjectShown()"
+                        [attr.tabindex]="
+                          option.subject === subjectShown() ? 0 : -1
+                        "
+                        (click)="pickSubject(option.subject)"
+                        (keydown)="onSubjectKeydown($event, i)"
+                      >
+                        {{ option.labelKey | transloco }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           }
 
-          @if (shownWorld(); as onShow) {
+          @if (shownTake(); as onShow) {
             <section class="gs-ctl-world">
               <!-- The three read left to right as the thing that happened: the
                    picture the detector was given, what it drew from it, and
@@ -338,6 +425,9 @@ interface ControlShot {
                 }
               </div>
               <p class="gs-ctl-caption">{{ onShow.caption }}</p>
+              @if (onShow.note) {
+                <p class="gs-ctl-caption gs-ctl-note">{{ onShow.note }}</p>
+              }
               <p class="gs-ctl-meta">
                 {{ 'generate.control_types.rendered_on' | transloco }}
                 <span class="gs-ctl-model">{{ onShow.model }}</span>
@@ -401,11 +491,12 @@ export class GsControlGalleryComponent {
   /** The modes this group holds, in the picker's own order. */
   public readonly types = input.required<readonly string[]>();
   /**
-   * The published strips the examples are taken from, by the library's own
-   * `strip_id`. The first is the one the tiles are cut from, so the grid reads
-   * as one shoot; the rest are what the layer's switcher offers.
+   * The published strips the examples are taken from, one entry per example
+   * and one `strip_id` per kind of source picture. The first entry's own
+   * picture is what the tiles are cut from, so the grid reads as one shoot;
+   * the rest are what the layer's two switchers offer.
    */
-  public readonly worlds = input.required<readonly string[]>();
+  public readonly worlds = input.required<readonly ControlWorldStrips[]>();
   /** The i18n key describing a mode, by mode. */
   public readonly descriptionKeys =
     input.required<Readonly<Record<string, string>>>();
@@ -428,6 +519,9 @@ export class GsControlGalleryComponent {
   private readonly chosen = signal(0);
   public readonly worldIndex = this.chosen.asReadonly();
 
+  /** Which kind of source picture the layer is showing that example on. */
+  private readonly chosenSubject = signal<SweepSubject>('anchor');
+
   /** Which picture is open at full size, or null while none is. */
   private readonly enlarged = signal<number | null>(null);
   public readonly shotAt = computed(() => this.enlarged() ?? 0);
@@ -443,13 +537,8 @@ export class GsControlGalleryComponent {
     viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   private readonly worldOptions =
     viewChildren<ElementRef<HTMLButtonElement>>('worldOption');
-
-  /** The named strips, in the order they were named, and only the ones published. */
-  private readonly strips = computed<readonly SweepStrip[]>(() =>
-    this.worlds()
-      .map((stripId) => this.sweeps.stripById(stripId))
-      .filter((strip): strip is SweepStrip => strip !== null),
-  );
+  private readonly subjectOptionButtons =
+    viewChildren<ElementRef<HTMLButtonElement>>('subjectOption');
 
   /** The one example on show, or null while the layer is shut. */
   public readonly shownWorld = computed<ControlWorld | null>(() => {
@@ -460,14 +549,46 @@ export class GsControlGalleryComponent {
     return tile.worlds[this.chosen()] ?? tile.worlds[0] ?? null;
   });
 
+  /**
+   * The one reading on show: the chosen example on the chosen kind of picture,
+   * falling back to that example's own picture where the library has published
+   * no other. Null while the layer is shut.
+   */
+  public readonly shownTake = computed<ControlTake | null>(() => {
+    const world = this.shownWorld();
+    if (!world) {
+      return null;
+    }
+    const wanted = this.chosenSubject();
+    return (
+      world.takes.find((take) => take.subject === wanted) ??
+      world.takes[0] ??
+      null
+    );
+  });
+
+  /** Which kind of picture is actually on show, which is what the switcher marks. */
+  public readonly subjectShown = computed<SweepSubject>(
+    () => this.shownTake()?.subject ?? 'anchor',
+  );
+
+  /**
+   * The kinds of picture the chosen example was published on. Read off that
+   * example rather than off the mode, so the switcher never offers a picture
+   * that would fall back to another one when it was pressed.
+   */
+  public readonly subjectOptions = computed<readonly ControlTake[]>(
+    () => this.shownWorld()?.takes ?? [],
+  );
+
   public readonly tiles = computed<readonly ControlTile[]>(() => {
-    const strips = this.strips();
     const descriptions = this.descriptionKeys();
     const names = this.nameKeys();
     const notes = this.noteKeys();
+    const sources = this.worlds();
     return this.types().map((type) => {
-      const worlds = strips
-        .map((strip) => this.worldFor(strip, type))
+      const worlds = sources
+        .map((source) => this.worldFor(source, type))
         .filter((world): world is ControlWorld => world !== null);
       return {
         type,
@@ -475,7 +596,7 @@ export class GsControlGalleryComponent {
         nameKey: names[type] ?? '',
         descriptionKey: descriptions[type] ?? '',
         noteKey: notes[type] ?? null,
-        thumb: worlds[0]?.render ?? null,
+        thumb: worlds[0]?.takes[0]?.render ?? null,
         worlds,
       };
     });
@@ -500,14 +621,23 @@ export class GsControlGalleryComponent {
    * each one in the order the story runs. Stepping through them at full size
    * is how a reader compares one frame across the examples, which is the whole
    * question the switcher asks them to hold in their head.
+   *
+   * Held to the kind of picture on show, so stepping changes one thing at a
+   * time: a run that swapped the source picture as well as the example would
+   * answer neither of the two questions the layer puts.
    */
   public readonly shots = computed<readonly ControlShot[]>(() => {
     const tile = this.shown();
     if (!tile) {
       return [];
     }
-    return tile.worlds.flatMap((world, worldIndex) =>
-      world.frames
+    const subject = this.subjectShown();
+    return tile.worlds.flatMap((world, worldIndex) => {
+      const take = world.takes.find((one) => one.subject === subject);
+      if (!take) {
+        return [];
+      }
+      return take.frames
         .filter((frame) => frame.src !== null)
         .map((frame) => ({
           src: frame.src as string,
@@ -517,8 +647,8 @@ export class GsControlGalleryComponent {
           world: world.sceneShort,
           width: frame.width,
           height: frame.height,
-        })),
-    );
+        }));
+    });
   });
 
   /**
@@ -565,11 +695,12 @@ export class GsControlGalleryComponent {
     });
   }
 
-  /** The layer opens on the example the tile was cut from, which is the first. */
+  /** The layer opens on the example and the picture the tile was cut from. */
   public open(tile: ControlTile, event: Event): void {
     const trigger = event.currentTarget;
     this.opener = trigger instanceof HTMLElement ? trigger : null;
     this.chosen.set(0);
+    this.chosenSubject.set('anchor');
     this.enlarged.set(null);
     this.shown.set(tile);
   }
@@ -635,33 +766,32 @@ export class GsControlGalleryComponent {
     this.chosen.set(index);
   }
 
+  /** The same example on another kind of source picture. */
+  public pickSubject(subject: SweepSubject): void {
+    this.chosenSubject.set(subject);
+  }
+
+  /** The kinds of picture are a radio group, moved through as the examples are. */
+  public onSubjectKeydown(event: KeyboardEvent, index: number): void {
+    const options = this.subjectOptions();
+    const next = stepIndex(event.key, index, options.length);
+    if (next === null) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.chosenSubject.set(options[next].subject);
+    this.subjectOptionButtons()[next]?.nativeElement.focus();
+  }
+
   /**
    * The switcher is a radio group, so the arrows move between the examples and
    * carry the choice with them, and Tab passes the whole group by.
    */
   public onSwitchKeydown(event: KeyboardEvent, index: number): void {
-    const count = this.shown()?.worlds.length ?? 0;
-    if (count === 0) {
+    const next = stepIndex(event.key, index, this.shown()?.worlds.length ?? 0);
+    if (next === null) {
       return;
-    }
-    let next: number;
-    switch (event.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        next = (index + 1) % count;
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        next = (index - 1 + count) % count;
-        break;
-      case 'Home':
-        next = 0;
-        break;
-      case 'End':
-        next = count - 1;
-        break;
-      default:
-        return;
     }
     event.preventDefault();
     event.stopPropagation();
@@ -713,19 +843,48 @@ export class GsControlGalleryComponent {
     }
   }
 
-  private worldFor(strip: SweepStrip, type: string): ControlWorld | null {
-    const stop = strip.stops.find((frame) => frame.control_type === type);
-    return stop ? this.exampleOf(strip, stop) : null;
+  /**
+   * One example of a mode, on every kind of source picture the library has
+   * published it against. The example's own picture supplies the label and the
+   * standing note, so the switcher reads the same whichever picture is on show
+   * and a picture published without a note of its own carries that one.
+   */
+  private worldFor(
+    source: ControlWorldStrips,
+    type: string,
+  ): ControlWorld | null {
+    const anchor = this.sweeps.stripById(source.anchor);
+    const takes = SUBJECT_ORDER.flatMap((subject) => {
+      const strip = this.sweeps.stripById(source[subject] ?? '');
+      const stop = strip?.stops.find((frame) => frame.control_type === type);
+      return strip && stop
+        ? [this.takeOf(strip, stop, subject, anchor?.caption ?? '')]
+        : [];
+    });
+    if (takes.length === 0) {
+      return null;
+    }
+    const named = anchor ?? this.sweeps.stripById(takes[0].stripId);
+    return {
+      stripId: source.anchor,
+      sceneShort: (named?.scene.label ?? '').split(',')[0].trim(),
+      takes,
+    };
   }
 
-  private exampleOf(strip: SweepStrip, stop: SweepStop): ControlWorld {
+  private takeOf(
+    strip: SweepStrip,
+    stop: SweepStop,
+    subject: SweepSubject,
+    fallbackNote: string,
+  ): ControlTake {
     const render = this.sweeps.imageUrl(stop);
     const renderWidth = stop.width ?? strip.held?.width ?? null;
     const renderHeight = stop.height ?? strip.held?.height ?? null;
     return {
+      subject,
+      labelKey: SUBJECT_LABEL_KEYS[subject],
       stripId: strip.strip_id,
-      scene: strip.scene.label,
-      sceneShort: strip.scene.label.split(',')[0].trim(),
       model: strip.image_model.name,
       frames: [
         {
@@ -757,6 +916,32 @@ export class GsControlGalleryComponent {
       ],
       render,
       caption: stop.caption,
+      note: strip.caption || fallbackNote,
     };
+  }
+}
+
+/**
+ * Where an arrow, Home or End lands in a row of options, or null for a key the
+ * row does not answer to. The row wraps at both ends, because a choice between
+ * three is a ring rather than a ladder.
+ */
+function stepIndex(key: string, index: number, count: number): number | null {
+  if (count === 0) {
+    return null;
+  }
+  switch (key) {
+    case 'ArrowRight':
+    case 'ArrowDown':
+      return (index + 1) % count;
+    case 'ArrowLeft':
+    case 'ArrowUp':
+      return (index - 1 + count) % count;
+    case 'Home':
+      return 0;
+    case 'End':
+      return count - 1;
+    default:
+      return null;
   }
 }

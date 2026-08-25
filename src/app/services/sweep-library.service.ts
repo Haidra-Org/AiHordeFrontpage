@@ -94,6 +94,15 @@ export type SweepPresentation =
   | 'tile_repeat_3x3'
   | 'triptych';
 
+/**
+ * Which kind of source picture a strip was rendered from, where one sweep runs
+ * on a set of them. The control gallery renders every detector on a character,
+ * on a building and on a flat-colour drawing, and a surface offering those as
+ * alternatives to each other needs to know which is which. Absent on every
+ * strip that has only one source to be read against.
+ */
+export type SweepSubject = 'anchor' | 'building' | 'flat';
+
 /** One side of a grid plate: what it varies, and the values it varies it over. */
 export interface SweepGridAxis {
   /** API field name this axis varies, e.g. `cfg_scale`. */
@@ -162,6 +171,8 @@ export interface SweepStrip {
   complete: boolean;
   image_model: SweepStripModel;
   scene: SweepStripScene;
+  /** Which kind of source picture it was rendered from, where it names one. */
+  subject?: SweepSubject | null;
   /** The request the strip held fixed, which is where its size is recorded. */
   held?: SweepHeld | null;
   /** Ordered low to high; the middle one is used as the collapsed preview. */

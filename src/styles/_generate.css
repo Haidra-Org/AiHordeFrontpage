@@ -14015,6 +14015,16 @@ app-gs-compare-wipe {
 /* The choice is labelled and set on its own line: the options are scene names,
    and a row of scene names with nothing over it reads as a caption rather than
    as the control the rest of the layer answers to. */
+/* The two choices stand side by side while there is room for them and stack
+   when there is not, so which example and which kind of picture read as one
+   pair of controls rather than as a control and an afterthought. */
+.gen-studio .gs-ctl-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gs-space-2) var(--gs-space-4);
+  min-width: 0;
+}
 .gen-studio .gs-ctl-picker {
   display: flex;
   flex-wrap: wrap;
@@ -14030,8 +14040,9 @@ app-gs-compare-wipe {
 }
 /* Three examples are one choice rather than three sections, so the switcher is
    a radio group: Tab passes it as a single stop and the arrows move inside it.
-   It holds one line at every width and scrolls sideways if it must, because a
-   control that reflows into a block stops reading as a choice between three. */
+   It holds one line wherever the row has room, because a control that reflows
+   into a block reads less clearly as one choice; below 600px the options wrap
+   rather than clip (see the phone rule under it). */
 .gen-studio .gs-ctl-switch {
   align-self: flex-start;
   max-width: 100%;
@@ -14041,6 +14052,19 @@ app-gs-compare-wipe {
   /* The shared track is a shade off the panel it sits on, which is enough
      where the reader already knows a control is there and not enough here. */
   border: 1px solid var(--gs-field-border);
+}
+/* On a phone the three named options do not fit one row, and a hidden
+   scrollbar would leave the third clipped with nothing to say so; the
+   options wrap instead, and each label sits over its control. */
+@media (max-width: 599.98px) {
+  .gen-studio .gs-ctl-picker {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .gen-studio .gs-ctl-switch {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
 }
 .gen-studio .gs-ctl-switch::-webkit-scrollbar {
   display: none;
@@ -14062,6 +14086,12 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-ctl-switch-opt:hover:not([aria-checked="true"]) {
   color: var(--gs-ink);
+}
+/* The shared control marks its choice with aria-pressed, so its hover rule
+   would otherwise lighten the chosen option here (aria-checked) onto the
+   active track. */
+.gen-studio .gs-ctl-switch-opt[aria-checked="true"]:hover:not(:disabled) {
+  color: var(--gs-seg-active-ink);
 }
 .gen-studio .gs-ctl-world {
   display: flex;
@@ -14159,6 +14189,13 @@ app-gs-compare-wipe {
   font-size: var(--gs-text-md);
   line-height: 1.6;
   color: var(--gs-ink-2);
+}
+/* What the source picture is, under what the detector did with it: it is the
+   same line for all thirty-three modes on that picture, so it is set quieter
+   than the line about this mode. */
+.gen-studio .gs-ctl-note {
+  font-size: var(--gs-text-sm);
+  color: var(--gs-label);
 }
 .gen-studio .gs-ctl-meta {
   display: flex;

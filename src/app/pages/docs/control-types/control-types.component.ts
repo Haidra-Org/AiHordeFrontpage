@@ -3,7 +3,10 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
-import { GsControlGalleryComponent } from '../../../components/gs-control-gallery/gs-control-gallery.component';
+import {
+  ControlWorldStrips,
+  GsControlGalleryComponent,
+} from '../../../components/gs-control-gallery/gs-control-gallery.component';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ANNOTATION_DETECTOR_GROUPS,
@@ -21,15 +24,28 @@ import { setPageMeta } from '../../../helper/page-meta';
 /**
  * The published examples the gallery is cut from, world one first.
  *
- * One mode read on three worlds rather than on one: a detector that holds a
+ * One mode read on three examples rather than on one, and each of those on a
+ * character, a building and a flat-colour drawing: a detector that holds a
  * photographed face says nothing about what it does to a shrine gate or to a
  * machine, and a reader choosing between thirty-three of them is choosing for
  * their own picture rather than for the library's.
  */
-const GALLERY_WORLDS: readonly string[] = [
-  'controlnet-gallery/deliberate/courier-ink',
-  'controlnet-gallery/anything-diffusion/fox-shrine-ink',
-  'controlnet-gallery/deliberate/robot-gardener-ink',
+const GALLERY_WORLDS: readonly ControlWorldStrips[] = [
+  {
+    anchor: 'controlnet-gallery/deliberate/courier-ink',
+    building: 'controlnet-gallery/deliberate/skyharbor-tower-ink',
+    flat: 'controlnet-gallery/deliberate/skyharbor-poster-ink',
+  },
+  {
+    anchor: 'controlnet-gallery/anything-diffusion/fox-shrine-ink',
+    building: 'controlnet-gallery/anything-diffusion/shrine-gate-ink',
+    flat: 'controlnet-gallery/anything-diffusion/shrine-gate-flat-ink',
+  },
+  {
+    anchor: 'controlnet-gallery/deliberate/robot-gardener-ink',
+    building: 'controlnet-gallery/deliberate/glasshouse-ink',
+    flat: 'controlnet-gallery/deliberate/robot-gardener-flat-ink',
+  },
 ];
 
 /**

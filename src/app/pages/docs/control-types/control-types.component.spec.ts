@@ -88,6 +88,9 @@ describe('DocsControlTypesComponent', () => {
 
     expect(lead).toContain('three pictures');
     expect(lead).toContain('as you raise the control strength');
+    // And that each of those examples comes on more than one kind of picture,
+    // which is the second choice the layer offers.
+    expect(lead).toContain('a character, a building and a flat colour drawing');
   });
 
   it('gives every published mode a way in that says what it opens', () => {
