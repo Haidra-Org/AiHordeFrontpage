@@ -438,39 +438,46 @@
 
       <!-- footer -->
       <footer class="gs-footer">
-        <label class="gs-switch gs-footer-meta">
-          <input
-            type="checkbox"
-            [checked]="slowWorkers()"
-            [disabled]="isSubmitting()"
-            (change)="toggleSlowWorkers()"
-          />
-          <span class="gs-switch-track"
-            ><span class="gs-switch-knob"></span
-          ></span>
-          {{ "alchemy.slow_workers" | transloco }}
-        </label>
-        <button
-          type="button"
-          class="gs-genbtn"
-          [disabled]="!canSubmit()"
-          (click)="submit()"
+        <!-- The readings sit in their own row, as in the image studio, so the
+             footer rules that put the action at its own width on the right
+             apply here too instead of the button flowing inline after a switch. -->
+        <div
+          class="gs-footer-meta flex flex-wrap items-center justify-between gap-3"
         >
-          @if (isSubmitting()) {
-            <app-icon name="spinner" class="gs-ico-sm gs-spin" />
-          } @else {
-            <app-icon name="beaker" class="gs-ico-sm" />
-          }
-          @if (!hasSource()) {
-            {{ "alchemy.submit.need_source" | transloco }}
-          } @else if (selectedCount() === 0) {
-            {{ "alchemy.submit.need_operation" | transloco }}
-          } @else if (missingDetector()) {
-            {{ "alchemy.annotation.need_detector" | transloco }}
-          } @else {
-            {{ "alchemy.submit.button" | transloco }}
-          }
-        </button>
+          <label class="gs-switch">
+            <input
+              type="checkbox"
+              [checked]="slowWorkers()"
+              [disabled]="isSubmitting()"
+              (change)="toggleSlowWorkers()"
+            />
+            <span class="gs-switch-track"
+              ><span class="gs-switch-knob"></span
+            ></span>
+            {{ "alchemy.slow_workers" | transloco }}
+          </label>
+          <button
+            type="button"
+            class="gs-genbtn"
+            [disabled]="!canSubmit()"
+            (click)="submit()"
+          >
+            @if (isSubmitting()) {
+              <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+            } @else {
+              <app-icon name="beaker" class="gs-ico-sm" />
+            }
+            @if (!hasSource()) {
+              {{ "alchemy.submit.need_source" | transloco }}
+            } @else if (selectedCount() === 0) {
+              {{ "alchemy.submit.need_operation" | transloco }}
+            } @else if (missingDetector()) {
+              {{ "alchemy.annotation.need_detector" | transloco }}
+            } @else {
+              {{ "alchemy.submit.button" | transloco }}
+            }
+          </button>
+        </div>
         <div class="gs-submit-hint">
           @if (canSubmit()) {
             {{ "alchemy.submit.hint_ready" | transloco }}
