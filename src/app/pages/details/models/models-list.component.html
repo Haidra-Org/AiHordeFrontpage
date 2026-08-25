@@ -315,6 +315,13 @@
                     <span aria-hidden="true">×</span>
                   </button>
                 }
+                <a
+                  class="btn-source-control btn-sm shrink-0"
+                  [routerLink]="'/generate/image'"
+                  [queryParams]="{ model: model.name }"
+                >
+                  {{ "details.models.try_model" | transloco }}
+                </a>
               </div>
 
               <!-- Workers -->

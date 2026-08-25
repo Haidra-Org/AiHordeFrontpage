@@ -171,6 +171,12 @@ export class GenerateSourceImageComponent implements OnInit {
    * control in this card. Shown as written, under the control it names.
    */
   public readonly fieldRejection = input<FieldRejection | null>(null);
+  /**
+   * Whether the settings in the form arrived in a link, which can carry what to
+   * do to a picture but never the picture. One plain line asking for one, until
+   * there is one.
+   */
+  public readonly linkSourceMissing = input(false);
 
   public readonly stateChange = output<GenerateSourceState>();
 

@@ -39,6 +39,13 @@
   </div>
 
   @if (mode() !== "none") {
+    <!-- Settings can travel in a link; the picture they work on cannot. -->
+    @if (linkSourceMissing() && !sourceImage()) {
+      <p class="gs-req">
+        {{ "generate.link.source_missing" | transloco }}
+      </p>
+    }
+
     <label
       class="gs-add-tile"
       [class.gs-chip--active]="dragActive()"

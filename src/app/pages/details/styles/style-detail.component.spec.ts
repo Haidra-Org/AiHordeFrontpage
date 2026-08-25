@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, provideRouter } from '@angular/router';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import en from '../../../../assets/i18n/en.json';
+import { ImageStyle } from '../../../types/style';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { StyleDetailComponent } from './style-detail.component';
@@ -106,5 +109,67 @@ describe('StyleDetailComponent', () => {
     expect(errorSpy).toHaveBeenCalledWith(
       'Failed to copy style details to clipboard.',
     );
+  });
+});
+
+describe('StyleDetailComponent link into the studio', () => {
+  it('offers an image style a way into the studio', async () => {
+    const style: ImageStyle = {
+      id: 'style-1',
+      name: 'Watercolour',
+      prompt: '{p}, watercolour ### {np}',
+      public: true,
+      nsfw: false,
+      use_count: 3,
+      creator: 'somebody#1',
+      examples: [],
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [
+        StyleDetailComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: of({ type: 'image', styleId: 'style-1' }),
+            snapshot: { params: { type: 'image', styleId: 'style-1' } },
+          },
+        },
+        {
+          provide: StyleService,
+          useValue: {
+            getImageStyle: vi.fn().mockReturnValue(of(style)),
+            getTextStyle: vi.fn().mockReturnValue(of(null)),
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            currentUser: signal(null),
+            isLoggedIn: signal(false),
+            isInitialized: signal(true),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const detail = TestBed.createComponent(StyleDetailComponent);
+    detail.detectChanges();
+
+    const link = detail.nativeElement.querySelector(
+      'a[href^="/generate/image"]',
+    ) as HTMLAnchorElement | null;
+    expect(link).not.toBeNull();
+    expect(link?.getAttribute('href')).toBe(
+      '/generate/image?style=Watercolour',
+    );
+    expect(link?.textContent?.trim()).toBe('Use this style');
   });
 });

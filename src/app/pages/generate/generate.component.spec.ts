@@ -3,7 +3,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { provideRouter } from '@angular/router';
+import { convertToParamMap, provideRouter } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import en from '../../../assets/i18n/en.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -31,7 +32,9 @@ import { LocalGenerationJob } from '../../types/generation-job';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
+  buildImageRequest,
 } from './generate-form.model';
+import { studioLinkParams } from './studio-link';
 
 describe('GenerateComponent', () => {
   let fixture: ComponentFixture<GenerateComponent>;
@@ -44,6 +47,8 @@ describe('GenerateComponent', () => {
   let getJobImages: ReturnType<typeof vi.fn>;
   let jobs: WritableSignal<LocalGenerationJob[]>;
   let baselines: WritableSignal<ModelBaselineMap | null>;
+  let linkQuery: Record<string, string>;
+  let navigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
@@ -54,6 +59,8 @@ describe('GenerateComponent', () => {
     getJobImages = vi.fn().mockResolvedValue([]);
     jobs = signal<LocalGenerationJob[]>([]);
     baselines = signal<ModelBaselineMap | null>(null);
+    linkQuery = {};
+    navigate = vi.fn().mockResolvedValue(true);
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -61,6 +68,19 @@ describe('GenerateComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        {
+          // The studio reads its opening settings off the address it was
+          // reached by, so a test drives that address directly.
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              get queryParamMap() {
+                return convertToParamMap(linkQuery);
+              },
+            },
+          },
+        },
+        { provide: Router, useValue: { navigate } },
         { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
         {
           provide: GenerationQueueService,
@@ -1323,6 +1343,131 @@ describe('GenerateComponent', () => {
       panel.remove();
     });
   });
+
+  describe('settings carried in the address', () => {
+    /** Stand the studio up again on a given address. */
+    function openLink(query: Record<string, string>): void {
+      fixture.destroy();
+      linkQuery = query;
+      fixture = TestBed.createComponent(GenerateComponent);
+      component = fixture.componentInstance;
+    }
+
+    it('writes a model named openly, without asking first', () => {
+      openLink({ model: 'Deliberate' });
+
+      expect(component.form.controls.model.value).toBe('Deliberate');
+      expect(component.pendingLoad()).toBeNull();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('offers a packed request for review rather than writing it in', () => {
+      const request = buildImageRequest({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        prompt: 'a fox in the snow',
+        steps: 42,
+      });
+      openLink({ ...studioLinkParams(request, null) });
+
+      expect(component.pendingLoad()?.steps).toBe(42);
+      expect(component.form.controls.steps.value).not.toBe(42);
+    });
+
+    it('takes the packed request back out of the address', () => {
+      openLink({
+        ...studioLinkParams(
+          buildImageRequest({ ...DEFAULT_GENERATE_FORM_VALUE }),
+          null,
+        ),
+        model: 'Deliberate',
+      });
+
+      expect(navigate).toHaveBeenCalledTimes(1);
+      const options = navigate.mock.calls[0][1] as {
+        queryParams: Record<string, string>;
+        replaceUrl: boolean;
+      };
+      expect(options.queryParams).toEqual({ model: 'Deliberate' });
+      expect(options.replaceUrl).toBe(true);
+    });
+
+    it('drops a style the horde no longer publishes, and says so', () => {
+      openLink({ style: 'Retired' });
+
+      expect(component.form.controls.styleName.value).toBe('');
+      expect(toastError).toHaveBeenCalledWith('generate.link.style_gone', {
+        transloco: true,
+      });
+    });
+
+    it('keeps a style that is still published', () => {
+      openLink({ style: 'Test' });
+
+      expect(component.form.controls.styleName.value).toBe('Test');
+      expect(toastError).not.toHaveBeenCalled();
+    });
+
+    it('keeps the mode a sourced request came with, and asks for the picture', () => {
+      const request = buildImageRequest(
+        {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          prompt: 'a fox',
+          sourceMode: 'img2img',
+          steps: 24,
+        },
+        { hasSourceImage: true },
+      );
+      expect(request.source_processing).toBe('img2img');
+      openLink({ ...studioLinkParams(request, null) });
+
+      component.onApplyPresetSelection(
+        { localId: 'link', keys: ['steps'], mode: 'replace' },
+        ['steps'],
+      );
+
+      expect(component.form.controls.sourceMode.value).toBe('img2img');
+      expect(component.linkSourceMissing()).toBe(true);
+    });
+
+    it('stops asking for the picture once one is added', () => {
+      const request = buildImageRequest(
+        {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          prompt: 'a fox',
+          sourceMode: 'img2img',
+        },
+        { hasSourceImage: true },
+      );
+      openLink({ ...studioLinkParams(request, null) });
+      component.onApplyPresetSelection(
+        { localId: 'link', keys: ['steps'], mode: 'replace' },
+        ['steps'],
+      );
+
+      component.onSourceState({
+        mode: 'img2img',
+        sourceBlob: new Blob(['x']),
+        maskBlob: null,
+        valid: true,
+      });
+
+      expect(component.linkSourceMissing()).toBe(false);
+    });
+
+    it('leaves a plain preset dropping back to no source at all', () => {
+      component.onApplyPreset({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        sourceMode: 'img2img',
+      });
+      component.onApplyPresetSelection(
+        { localId: 'preset', keys: ['steps'], mode: 'replace' },
+        ['steps'],
+      );
+
+      expect(component.form.controls.sourceMode.value).toBe('none');
+      expect(component.linkSourceMissing()).toBe(false);
+    });
+  });
 });
 
 /**
@@ -1334,6 +1479,7 @@ async function createPaneOnlyStudio(): Promise<void> {
   await TestBed.configureTestingModule({
     imports: [GenerateComponent],
     providers: [
+      provideRouter([]),
       { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
       {
         provide: GenerationQueueService,

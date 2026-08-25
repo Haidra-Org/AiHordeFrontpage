@@ -141,6 +141,16 @@
 
           <!-- Actions -->
           <div class="style-detail-actions">
+            @if (isImageStyle() && style(); as picked) {
+              <a
+                class="btn-source-control btn-sm"
+                [routerLink]="'/generate/image'"
+                [queryParams]="{ style: picked.name }"
+              >
+                {{ "styles.use_style" | transloco }}
+              </a>
+            }
+
             <button
               type="button"
               class="btn-source-control btn-sm"

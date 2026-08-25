@@ -16,6 +16,7 @@ import {
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
@@ -118,6 +119,7 @@ import {
   rejectionWatchValue,
   warningsInSection,
 } from './request-lint';
+import { StudioLinkPayload, parseStudioLink } from './studio-link';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -217,6 +219,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly tutorial = inject(TutorialEngineService);
   private readonly tryIt = inject(GsTryItService);
   private readonly sweeps = inject(SweepLibraryService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   /** The reference entry the mobile sheet is showing, if any. */
   public readonly helpDock = inject(GsHelpDockService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -231,12 +235,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** The results pane, the skip link's target. */
   private readonly resultsRef =
     viewChild<ElementRef<HTMLElement>>('resultsPane');
-
-  /**
-   * When true the page's own intro/title block is suppressed and the component
-   * does not claim the document title, so it can be hosted inside another page's
-   * shell (e.g. the profile generations tab) without duplicating chrome.
-   */
 
   public readonly form = createGenerateForm(
     coerceFormValue(this.db.get(STORAGE_KEY)),
@@ -267,6 +265,13 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     signal<GenerateSourceState>(DEFAULT_SOURCE_STATE);
   /** Whether the source section's validation hint should be shown. */
   public readonly sourceValidationVisible = signal(false);
+
+  /**
+   * Whether the settings that arrived in a link describe work on a picture the
+   * link could not carry. The section says so once, and stops as soon as a
+   * picture is added.
+   */
+  public readonly linkSourceMissing = signal(false);
 
   /** The built request shown in the pre-submit preview modal, or null. */
   public readonly previewRequest = signal<unknown>(null);
@@ -577,6 +582,22 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private sourceBase64: string | null = null;
   private cachedSourceBlob: Blob | null = null;
 
+  /**
+   * The source mode a link asked for, held while its settings wait in the
+   * review panel. A link cannot carry the picture, so the mode has to survive
+   * the apply that would otherwise drop it, and the section asks for one.
+   */
+  private pendingLinkSourceMode: GenerateSourceMode | null = null;
+
+  /**
+   * A style name that arrived in a link, held until the styles have loaded so
+   * a name nobody publishes any more can be answered rather than sit selected.
+   */
+  private pinnedStyleName: string | null = null;
+
+  /** Whether the published styles have landed, so a pinned name can be judged. */
+  private stylesLoaded = false;
+
   constructor() {
     afterNextRender(() => {
       setPageTitle(
@@ -608,6 +629,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         .subscribe(() => this.onFormChanged());
       this.refreshForcedParams();
       void this.updateKudos();
+      this.applyStudioLink();
     }
 
     // The sweep strips a field's `?` note offers should be of the model the
@@ -894,7 +916,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     offeredKeys: readonly (keyof GenerateFormValue)[],
   ): void {
     const pending = this.pendingLoad();
+    const linkSourceMode = this.pendingLinkSourceMode;
     this.pendingLoad.set(null);
+    this.pendingLinkSourceMode = null;
     this.loadTitleKey.set('generate.form.load_title');
     this.formRef()?.focusPresetsButton();
     if (!pending || event.keys.length === 0) {
@@ -913,8 +937,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         }
       }
       // Nothing here can re-attach a source image, so a replace has to leave the
-      // form describing a plain txt2img rather than a mode with no image.
-      next.sourceMode = DEFAULT_GENERATE_FORM_VALUE.sourceMode;
+      // form describing a plain txt2img rather than a mode with no image. The
+      // one exception is a link, which named a mode the reader chose to follow:
+      // that mode stands, and the source section asks for the missing picture.
+      next.sourceMode =
+        linkSourceMode ?? DEFAULT_GENERATE_FORM_VALUE.sourceMode;
+      this.linkSourceMissing.set(linkSourceMode !== null);
       this.sourceState.set(DEFAULT_SOURCE_STATE);
       this.cachedSourceBlob = null;
       this.sourceBase64 = null;
@@ -1233,6 +1261,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (state.valid) {
       this.sourceValidationVisible.set(false);
     }
+    if (state.sourceBlob !== null) {
+      this.linkSourceMissing.set(false);
+    }
     if (state.sourceBlob !== this.cachedSourceBlob) {
       this.cachedSourceBlob = state.sourceBlob;
       if (!this.isBrowser || state.sourceBlob === null) {
@@ -1307,9 +1338,113 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
             names: group.styleNames,
           })),
         );
+        this.stylesLoaded = true;
         // A style may already be selected from persisted state; surface its hints.
         this.refreshForcedParams();
+        this.answerPinnedStyle();
       });
+  }
+
+  /**
+   * Open the studio on whatever the address it was reached by carried.
+   *
+   * A model or a style named openly in the address is written in as it stands:
+   * it is one field, and the reader could read it in the link they followed. A
+   * whole request goes to the same review panel a saved preset goes through,
+   * so settings already in the form are never replaced without a look first.
+   */
+  private applyStudioLink(): void {
+    const payload = parseStudioLink(this.route.snapshot.queryParamMap);
+    if (payload === null) {
+      return;
+    }
+    this.pinnedStyleName = payload.styleName;
+    if (payload.kind === 'simple') {
+      this.applyLinkedFields(payload);
+    } else {
+      this.offerLinkedRequest(payload);
+    }
+    // The styles may already have landed, in which case nothing is waiting to
+    // ask on this link's behalf and the answer is due now.
+    this.answerPinnedStyle();
+    this.dropPackedParam();
+  }
+
+  /** Write the one or two fields a readable link names. */
+  private applyLinkedFields(payload: StudioLinkPayload): void {
+    const fields: Partial<GenerateFormValue> = {};
+    const model = payload.request.models?.[0];
+    if (model !== undefined && model !== '') {
+      fields.model = model;
+    }
+    if (payload.styleName !== null) {
+      fields.styleName = payload.styleName;
+    }
+    if (Object.keys(fields).length > 0) {
+      this.applyFields(fields);
+    }
+  }
+
+  /** Hold a link's whole request in the review panel under its own heading. */
+  private offerLinkedRequest(payload: StudioLinkPayload): void {
+    const settings = requestToFormValue(payload.request);
+    if (payload.styleName !== null) {
+      settings.styleName = payload.styleName;
+    }
+    // The picture itself cannot travel in an address, so a request that works
+    // on one arrives wanting one. The mode is kept and the section asks.
+    this.pendingLinkSourceMode =
+      settings.sourceMode === 'none' ? null : settings.sourceMode;
+    this.openBulkApply(settings);
+    this.loadTitleKey.set('generate.link.review_title');
+  }
+
+  /**
+   * Take the packed request back out of the address once it has been offered,
+   * so a reload does not put the same settings up a second time. A model or a
+   * style named openly stays: it is what the reader followed.
+   */
+  private dropPackedParam(): void {
+    if (!this.route.snapshot.queryParamMap.has('r')) {
+      return;
+    }
+    const map = this.route.snapshot.queryParamMap;
+    const queryParams: Params = {};
+    for (const key of ['model', 'style']) {
+      const value = map.get(key);
+      if (value !== null) {
+        queryParams[key] = value;
+      }
+    }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      replaceUrl: true,
+    });
+  }
+
+  /**
+   * Answer a style name that arrived in a link once the published styles are
+   * known. A name that is no longer among them is dropped rather than left
+   * selected, because a style that resolves to nothing quietly changes nothing.
+   */
+  private answerPinnedStyle(): void {
+    const pinned = this.pinnedStyleName;
+    if (pinned === null || !this.stylesLoaded) {
+      return;
+    }
+    this.pinnedStyleName = null;
+    if (this.stylePresets().has(pinned)) {
+      return;
+    }
+    if (this.form.controls.styleName.value === pinned) {
+      this.form.controls.styleName.setValue('');
+    }
+    const waiting = this.pendingLoad();
+    if (waiting !== null && waiting.styleName === pinned) {
+      this.pendingLoad.set({ ...waiting, styleName: '' });
+    }
+    this.toast.error('generate.link.style_gone', { transloco: true });
   }
 
   private persist(): void {
