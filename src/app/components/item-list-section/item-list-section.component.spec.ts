@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, signal, WritableSignal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import {
   ItemListSectionComponent,
@@ -88,6 +89,7 @@ describe('ItemListSectionComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
+      providers: [provideRouter([])],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TestHostComponent);
@@ -135,6 +137,30 @@ describe('ItemListSectionComponent', () => {
 
     expect(el.textContent).toContain('Lucid Creations');
     expect(el.textContent).toContain('ArtBot');
+  });
+
+  it('should route a link into this site in the same tab', () => {
+    host.items.set([makeItem({ link: '/generate/image' })]);
+    fixture.detectChanges();
+
+    const anchor = el.querySelector<HTMLAnchorElement>(
+      '.table-cell-actions a.btn-purple',
+    );
+    expect(anchor?.getAttribute('href')).toBe('/generate/image');
+    expect(anchor?.getAttribute('target')).toBeNull();
+    expect(anchor?.classList.contains('external-link')).toBe(false);
+  });
+
+  it('should open a link to another site in a new tab', () => {
+    host.items.set([makeItem({ link: 'https://example.com' })]);
+    fixture.detectChanges();
+
+    const anchor = el.querySelector<HTMLAnchorElement>(
+      '.table-cell-actions a.btn-purple',
+    );
+    expect(anchor?.getAttribute('href')).toBe('https://example.com');
+    expect(anchor?.getAttribute('target')).toBe('_blank');
+    expect(anchor?.classList.contains('external-link')).toBe(true);
   });
 
   it('should display item descriptions', () => {

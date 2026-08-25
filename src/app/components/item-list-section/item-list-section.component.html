@@ -95,20 +95,30 @@
                 </div>
               </div>
               <div class="tools-grid-card-actions">
-                <a
-                  [href]="item.link"
-                  target="_blank"
-                  [class]="
-                    'btn-purple btn-md' +
-                    (isDiscordLink(item.link) ? '' : ' external-link')
-                  "
-                  (click)="$event.stopPropagation()"
-                >
-                  @if (isDiscordLink(item.link)) {
-                    <app-icon name="discord" class="tools-icon-sm" />
-                  }
-                  {{ getButtonText(item) }}
-                </a>
+                @if (isInternalLink(item.link)) {
+                  <a
+                    [routerLink]="item.link"
+                    class="btn-purple btn-md"
+                    (click)="$event.stopPropagation()"
+                  >
+                    {{ getButtonText(item) }}
+                  </a>
+                } @else {
+                  <a
+                    [href]="item.link"
+                    target="_blank"
+                    [class]="
+                      'btn-purple btn-md' +
+                      (isDiscordLink(item.link) ? '' : ' external-link')
+                    "
+                    (click)="$event.stopPropagation()"
+                  >
+                    @if (isDiscordLink(item.link)) {
+                      <app-icon name="discord" class="tools-icon-sm" />
+                    }
+                    {{ getButtonText(item) }}
+                  </a>
+                }
                 @if (item.sourceControlLink) {
                   <a
                     [href]="item.sourceControlLink"
@@ -201,21 +211,32 @@
 
                 <!-- Actions Zone -->
                 <div class="table-cell-actions">
-                  <a
-                    [href]="item.link"
-                    target="_blank"
-                    [class]="
-                      'btn-purple btn-md' +
-                      (isDiscordLink(item.link) ? '' : ' external-link')
-                    "
-                    (click)="$event.stopPropagation()"
-                    [title]="getButtonText(item)"
-                  >
-                    @if (isDiscordLink(item.link)) {
-                      <app-icon name="discord" class="tools-icon-sm" />
-                    }
-                    {{ getButtonText(item) }}
-                  </a>
+                  @if (isInternalLink(item.link)) {
+                    <a
+                      [routerLink]="item.link"
+                      class="btn-purple btn-md"
+                      (click)="$event.stopPropagation()"
+                      [title]="getButtonText(item)"
+                    >
+                      {{ getButtonText(item) }}
+                    </a>
+                  } @else {
+                    <a
+                      [href]="item.link"
+                      target="_blank"
+                      [class]="
+                        'btn-purple btn-md' +
+                        (isDiscordLink(item.link) ? '' : ' external-link')
+                      "
+                      (click)="$event.stopPropagation()"
+                      [title]="getButtonText(item)"
+                    >
+                      @if (isDiscordLink(item.link)) {
+                        <app-icon name="discord" class="tools-icon-sm" />
+                      }
+                      {{ getButtonText(item) }}
+                    </a>
+                  }
                   <app-icon
                     name="chevron-down"
                     class="chevron-icon-sm"
@@ -286,13 +307,19 @@
 
                       <!-- Action links in expanded view -->
                       <div class="detail-actions">
-                        <a
-                          [href]="item.link"
-                          target="_blank"
-                          class="btn-purple btn-md external-link"
-                        >
-                          {{ getButtonText(item) }}
-                        </a>
+                        @if (isInternalLink(item.link)) {
+                          <a [routerLink]="item.link" class="btn-purple btn-md">
+                            {{ getButtonText(item) }}
+                          </a>
+                        } @else {
+                          <a
+                            [href]="item.link"
+                            target="_blank"
+                            class="btn-purple btn-md external-link"
+                          >
+                            {{ getButtonText(item) }}
+                          </a>
+                        }
                         @if (item.sourceControlLink) {
                           <a
                             [href]="item.sourceControlLink"

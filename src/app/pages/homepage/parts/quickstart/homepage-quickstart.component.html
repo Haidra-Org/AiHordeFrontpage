@@ -56,13 +56,8 @@
                 [innerHTML]="'quickstart.try_frontend_description' | transloco"
               ></p>
               <div class="cta-actions">
-                <a
-                  href="https://artbot.site"
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  class="btn-purple external-link"
-                >
-                  {{ "quickstart.try_artbot_button" | transloco }}
+                <a routerLink="/generate/image" class="btn-purple">
+                  {{ "quickstart.try_generate_button" | transloco }}
                 </a>
                 <a routerLink="/guis/" class="btn-primary">
                   {{ "quickstart.explore_all_frontends" | transloco }}

@@ -12,6 +12,7 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
 import { EnumDisplayService } from '../../services/enum-display.service';
 import { EnumDisplayPipe } from '../../pipes/enum-display.pipe';
@@ -46,6 +47,7 @@ export interface DisplayItem {
 @Component({
   selector: 'app-item-list-section',
   imports: [
+    RouterLink,
     TranslocoModule,
     EnumDisplayPipe,
     InfoTooltipComponent,
@@ -174,6 +176,11 @@ export class ItemListSectionComponent {
     } catch {
       return 'Source';
     }
+  }
+
+  /** Links into this site are routed in the same tab rather than opened out. */
+  public isInternalLink(url: string): boolean {
+    return url.startsWith('/');
   }
 
   public isDiscordLink(url: string): boolean {
