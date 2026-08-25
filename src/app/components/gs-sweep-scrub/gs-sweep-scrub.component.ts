@@ -145,6 +145,17 @@ const LOUPE_PX = 200;
  */
 const WIDE_HOST_PX = 860;
 
+/**
+ * The host width, in pixels, under which the explorer is an offer rather than
+ * an instrument. Below it the stage, the rail and the controls are all in the
+ * room at once and none of them has enough of it, so the card names the sweep
+ * and the press opens the pictures at full size instead. It is the same number
+ * as `@container gs-sweep (min-width: 480px)` in src/styles/_generate.css,
+ * where the inline layout starts asking for the room it needs; the two have to
+ * agree about which shape the explorer is in.
+ */
+export const LAUNCHER_HOST_PX = 480;
+
 /** How the stops under the stage are laid out. */
 type StopLayout = 'grid' | 'strip';
 
@@ -194,6 +205,12 @@ const FILM_EDGE_PX = 8;
  * between neighbouring stops are actually readable at, with the stops a swipe
  * or an arrow away and the starting picture a wipe away.
  *
+ * In a surface narrower than the plate's own first breakpoint the card is a
+ * launcher: the same preview standing still, and one press that goes straight
+ * to full size. Squeezing the stage, the rail and the controls into a phone
+ * sheet gives the reader all three at a size none of them works at, and a state
+ * that folded open there would follow them from page to page.
+ *
  * A strip of two frames is a before and an after rather than a range, so it is
  * the wipe in every state, with the divider as its only control. Frames the
  * index marks `tile_repeat_3x3` are single tiles, and are laid out as a
@@ -231,6 +248,7 @@ const FILM_EDGE_PX = 8;
               | transloco: { value: valueTextOf(stop) }
           "
           loading="lazy"
+          decoding="async"
         />
         <span class="gs-sweep-solo-cap">
           {{ 'generate.sweeps.tile_solo_label' | transloco }}
@@ -258,6 +276,7 @@ const FILM_EDGE_PX = 8;
                 [src]="mediaUrl(stop)"
                 alt=""
                 loading="lazy"
+                decoding="async"
                 (load)="onFrameLoad($event)"
               />
             }
@@ -276,6 +295,7 @@ const FILM_EDGE_PX = 8;
               | transloco: { value: valueTextOf(stop) }
           "
           loading="lazy"
+          decoding="async"
           (load)="onFrameLoad($event)"
         />
       }
@@ -284,14 +304,19 @@ const FILM_EDGE_PX = 8;
     <!-- The two sides of a before-and-after strip, wiped over each other. The
          chips are the sides' labels: the same token the caption under a range
          strip carries, so "Tiling On" reads the same wherever it is said. -->
-    <ng-template #pairWipe let-sides="sides" let-inViewer="inViewer">
+    <ng-template
+      #pairWipe
+      let-sides="sides"
+      let-inViewer="inViewer"
+      let-still="still"
+    >
       <app-gs-compare-wipe
         [beforeSrc]="mediaUrl(sides[0])"
         [afterSrc]="mediaUrl(sides[1])"
         [beforeAlt]="frameAlt(sides[0])"
         [afterAlt]="frameAlt(sides[1])"
         [tiled]="tiled()"
-        [sideBySide]="!wiped()"
+        [sideBySide]="!!still || !wiped()"
         [handleOnly]="true"
         [fit]="!!inViewer"
         [fitWidth]="fitBox()?.width ?? null"
@@ -541,6 +566,8 @@ const FILM_EDGE_PX = 8;
           class="gs-sweep-frame"
           [src]="heldUrl()!"
           [alt]="compareAltText()"
+          loading="lazy"
+          decoding="async"
         />
       } @else if (compareUrl()) {
         <ng-container
@@ -594,7 +621,41 @@ const FILM_EDGE_PX = 8;
 
     @if (strip()) {
       <div class="gs-sweep">
-        @if (expanded()) {
+        @if (launcher()) {
+          <!-- Too little room for the instrument, so the offer is the whole of
+               it: what this is, what it shows, and the press that opens the
+               pictures at a size the differences can be read at. The preview
+               pair stands still here; there is no divider to drag and no plate
+               to unfold. -->
+          <div class="gs-sweep-card gs-sweep-card--launch">
+            @if (showPreview() && previewPair(); as sides) {
+              <span class="gs-sweep-card-stage">
+                <ng-container
+                  [ngTemplateOutlet]="pairWipe"
+                  [ngTemplateOutletContext]="{ sides: sides, still: true }"
+                />
+              </span>
+            }
+            <span class="gs-sweep-card-text">
+              @if (!filmcard()) {
+                <ng-container [ngTemplateOutlet]="badge" />
+              }
+              <span class="gs-sweep-card-title">
+                {{ parameterLabelKey() | transloco }}
+              </span>
+              <span class="gs-sweep-card-line">{{ firstCaptionLine() }}</span>
+              <button
+                #opener
+                type="button"
+                class="gs-sweep-card-door"
+                (click)="openViewer()"
+              >
+                {{ 'generate.sweeps.card_launch' | transloco }}
+                <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+              </button>
+            </span>
+          </div>
+        } @else if (expanded()) {
           <div class="gs-plate" [class.is-wide]="wide()">
             <div class="gs-plate-head">
               <ng-container [ngTemplateOutlet]="badge" />
@@ -748,6 +809,8 @@ const FILM_EDGE_PX = 8;
                                 [src]="thumbUrl(option)"
                                 alt=""
                                 loading="lazy"
+                                decoding="async"
+                                fetchpriority="low"
                               />
                               <!-- A cut detail is not the frame, and a reader
                                    comparing textures has to know which they
@@ -830,6 +893,8 @@ const FILM_EDGE_PX = 8;
                               [src]="thumbUrl(option)"
                               alt=""
                               loading="lazy"
+                              decoding="async"
+                              fetchpriority="low"
                             />
                             @if (option.crop) {
                               <span class="gs-sweep-crop-tag">{{
@@ -1249,8 +1314,14 @@ export class GsSweepScrubComponent {
   public readonly register = input<'full' | 'filmcard'>('full');
 
   private readonly cursor = signal<number | null>(null);
+  /**
+   * Whether the inline plate stands open. A host too narrow for the plate has
+   * nothing to open, so the state is dropped rather than carried: a strip a
+   * reader opened on a wide page must not arrive open in a phone-sized sheet on
+   * the next one.
+   */
   private readonly open = linkedSignal(
-    () => !this.viewerFirst() && this.startExpanded(),
+    () => !this.viewerFirst() && !this.launcher() && this.startExpanded(),
   );
   private readonly loaded = signal(false);
   private readonly viewer = signal(false);
@@ -1410,6 +1481,17 @@ export class GsSweepScrubComponent {
 
   /** Whether the host is wide enough for a panel beside the stage. */
   public readonly wide = computed(() => this.hostWidth() >= WIDE_HOST_PX);
+
+  /**
+   * Whether the explorer is a way in rather than the instrument itself. A host
+   * of no width has not been measured yet, and the inline explorer is what an
+   * unmeasured host gets: a card that turned itself into a launcher for the one
+   * frame before the first measurement would flicker on every page.
+   */
+  public readonly launcher = computed(() => {
+    const width = this.hostWidth();
+    return width > 0 && width < LAUNCHER_HOST_PX;
+  });
 
   /** The panel area this setting belongs to, for the badge and its hue. */
   private readonly identity = computed(() =>
@@ -2016,6 +2098,11 @@ export class GsSweepScrubComponent {
     // shape changes rather than once, because the same explorer moves between
     // shapes as its surface resizes.
     effect(() => {
+      if (this.launcher()) {
+        // A launcher lays no stops out, so it has nothing to remember and no
+        // business reading what another surface remembered.
+        return;
+      }
       const remembered = this.rememberedLayout(this.wide());
       if (remembered) {
         this.layoutAsked.set(remembered);
@@ -2126,10 +2213,6 @@ export class GsSweepScrubComponent {
       : this.sweeps.imageUrl(stop);
   }
 
-  /**
-   * The copy a surface draws: the file's own pixels once the full-size view is
-   * being asked for them, and the smaller copy everywhere else.
-   */
   /**
    * Which copy of a frame to draw. Which host is showing it is no longer part
    * of the answer: the plate zooms as the full-size view does, and a reader
@@ -3108,7 +3191,10 @@ export class GsSweepScrubComponent {
     for (const offset of [-1, 1]) {
       const stop = strip.stops[this.index() + offset];
       if (stop) {
-        new Image().src = this.sweeps.imageUrl(stop);
+        // The copy the stage will draw, not the file behind it: warming the
+        // full-size frame while the stage draws the bounded one fetches every
+        // neighbour twice, in two sizes, on the way through a strip.
+        new Image().src = this.mediaUrl(stop);
       }
     }
   }
@@ -3199,8 +3285,13 @@ export class GsSweepScrubComponent {
     this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
+  /**
+   * Whether the reader has asked for less data, however their browser lets them
+   * say it. The media query is the standard answer and the connection's own
+   * flag is the one most phones actually set, so both are honoured.
+   */
   private reducedData(): boolean {
-    return this.mediaMatches('(prefers-reduced-data: reduce)');
+    return this.mediaMatches('(prefers-reduced-data: reduce)') || savesData();
   }
 
   private reducedMotion(): boolean {
@@ -3264,4 +3355,21 @@ function near(a: number, b: number): boolean {
 function firstNumber(text: string): number | null {
   const found = /-?\d+(\.\d+)?/.exec(text);
   return found ? Number(found[0]) : null;
+}
+
+/**
+ * The part of the Network Information API a data-saving reader is asking with.
+ * It is not in the DOM's own types, and it is the flag a phone on a metered
+ * connection actually sets.
+ */
+interface NavigatorWithConnection extends Navigator {
+  connection?: { saveData?: boolean };
+}
+
+/** Whether the browser says the reader is saving data. */
+function savesData(): boolean {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+  return (navigator as NavigatorWithConnection).connection?.saveData === true;
 }

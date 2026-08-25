@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CropSide, GsCropPairComponent } from './gs-crop-pair.component';
 import en from '../../../assets/i18n/en.json';
 
@@ -26,6 +26,33 @@ class HostComponent {
   });
 }
 
+/**
+ * Minimal fake ResizeObserver. The pair decides between the wipe and the still
+ * preview on the room its host has, and jsdom lays nothing out, so the test
+ * hands it a number when it wants one.
+ */
+class FakeResizeObserver {
+  public static instances: FakeResizeObserver[] = [];
+  public readonly callback: ResizeObserverCallback;
+
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+    FakeResizeObserver.instances.push(this);
+  }
+
+  public observe(): void {
+    // The test decides when a measurement arrives.
+  }
+
+  public unobserve(): void {
+    // Nothing to stop watching.
+  }
+
+  public disconnect(): void {
+    // Nothing to stop watching.
+  }
+}
+
 describe('GsCropPairComponent', () => {
   let fixture: ComponentFixture<HostComponent>;
 
@@ -37,7 +64,23 @@ describe('GsCropPairComponent', () => {
       (badge) => badge.textContent?.replace(/\s+/g, ' ').trim() ?? '',
     );
 
+  /** Tell everything that measures itself how much room it has. */
+  const reportWidth = (width: number): void => {
+    for (const observer of FakeResizeObserver.instances) {
+      observer.callback(
+        [{ contentRect: { width } } as unknown as ResizeObserverEntry],
+        observer as unknown as ResizeObserver,
+      );
+    }
+    fixture.detectChanges();
+  };
+
   beforeEach(async () => {
+    FakeResizeObserver.instances = [];
+    vi.stubGlobal(
+      'ResizeObserver',
+      FakeResizeObserver as unknown as typeof ResizeObserver,
+    );
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -50,6 +93,10 @@ describe('GsCropPairComponent', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('wipes the two crops against each other in one bounded box', () => {
@@ -93,5 +140,22 @@ describe('GsCropPairComponent', () => {
     expect(notes).toEqual([
       translations['generate.sweeps.match_note'].replace('{{ factor }}', '4'),
     ]);
+  });
+
+  it('stands still, both crops in the room, on a host too narrow to wipe', () => {
+    reportWidth(366);
+
+    expect(el().querySelector('.gs-wipe-divider')).toBeNull();
+    expect(el().querySelectorAll('.gs-wipe-img').length).toBe(2);
+    // No box: the crops are scaled into the column rather than held at their
+    // own pixels, which is the reading the press to full size gives.
+    const wipe = el().querySelector<HTMLElement>('.gs-wipe');
+    expect(wipe?.style.getPropertyValue('--gs-wipe-box-w')).toBe('auto');
+  });
+
+  it('keeps the wipe where the room is there for it', () => {
+    reportWidth(590);
+
+    expect(el().querySelector('.gs-wipe-divider')).not.toBeNull();
   });
 });

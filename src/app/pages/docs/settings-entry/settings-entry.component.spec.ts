@@ -97,6 +97,14 @@ describe('DocsSettingsEntryComponent', () => {
     expect(find('.gs-ref-foot')).toBeNull();
   });
 
+  it('resolves a URL that names the API field to the setting it belongs to', async () => {
+    await setUp('cfg_scale');
+
+    expect(find('.gs-ref-title')?.textContent?.trim()).toBe(
+      translations['generate.help.cfg.title'],
+    );
+  });
+
   it('offers the way back to the index', async () => {
     await setUp('steps');
 

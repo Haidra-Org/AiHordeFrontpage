@@ -837,7 +837,7 @@ describe('GsSweepScrubComponent', () => {
 
     it('leads with the filmstrip on a narrow host and offers the grid', async () => {
       await setUp({ startExpanded: true });
-      reportWidth(420);
+      reportWidth(500);
 
       expect(find('.gs-sweep-film')).not.toBeNull();
       expect(find('.gs-sweep-options')).toBeNull();
@@ -895,7 +895,7 @@ describe('GsSweepScrubComponent', () => {
     it('holds the filmstrip still while a drag is in flight', async () => {
       localStorage.clear();
       await setUp({ startExpanded: true });
-      reportWidth(420);
+      reportWidth(500);
       const strip = find<HTMLElement>('.gs-sweep-film')!;
       expect(strip.classList.contains('is-dragging')).toBe(false);
 
@@ -1197,6 +1197,68 @@ describe('GsSweepScrubComponent', () => {
 
       expect(find('.gs-plate')).toBeNull();
       expect(find('.gs-sweep-card')).not.toBeNull();
+    });
+  });
+
+  describe('a host too narrow for the instrument', () => {
+    it('stands as a launcher: the pair still, the words, one press', async () => {
+      await setUp();
+      reportWidth(366);
+
+      expect(find('.gs-sweep-card--launch')).not.toBeNull();
+      // Nothing to drag and nothing to unfold: the divider is gone with the
+      // instrument it belonged to.
+      expect(find('.gs-sweep-card-stage .gs-wipe-divider')).toBeNull();
+      expect(all('.gs-sweep-card-stage .gs-wipe-img')).toHaveLength(2);
+      expect(find('.gs-sweep-card-title')?.textContent?.trim()).toBe('Steps');
+      expect(find('.gs-sweep-card-line')?.textContent?.trim()).toBe(
+        'How far the sampler gets to run before the picture is handed back.',
+      );
+      expect(find('.gs-sweep-card-door')?.textContent?.trim()).toBe(
+        en['generate.sweeps.card_launch'],
+      );
+    });
+
+    it('keeps the instrument where the room is there for it', async () => {
+      await setUp();
+      reportWidth(590);
+
+      expect(find('.gs-sweep-card--launch')).toBeNull();
+      expect(find('.gs-sweep-card-stage .gs-wipe-divider')).not.toBeNull();
+    });
+
+    it('takes the press straight to the full-size view, with its controls', async () => {
+      await setUp();
+      reportWidth(366);
+
+      find<HTMLButtonElement>('.gs-sweep-card-door')!.click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+      expect(find('.gs-plate')).toBeNull();
+      expect(find('.gs-sweep-dialog-param')?.textContent?.trim()).toBe('Steps');
+      expect(find('.gs-sweep-dialog-steps')).not.toBeNull();
+      expect(all('dialog[open] .gs-sweep-scale').length).toBeGreaterThan(0);
+    });
+
+    it('does not open, however the surface asks', async () => {
+      await setUp({ startExpanded: true });
+      reportWidth(366);
+
+      expect(find('.gs-plate')).toBeNull();
+      expect(find('.gs-sweep-card--launch')).not.toBeNull();
+    });
+
+    it('neither reads nor writes what a wider surface remembered', async () => {
+      await setUp();
+      const read = vi.spyOn(Storage.prototype, 'getItem');
+      const written = vi.spyOn(Storage.prototype, 'setItem');
+
+      reportWidth(366);
+
+      expect(find('.gs-sweep-card--launch')).not.toBeNull();
+      expect(read).not.toHaveBeenCalled();
+      expect(written).not.toHaveBeenCalled();
     });
   });
 

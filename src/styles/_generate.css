@@ -10043,6 +10043,33 @@ app-gs-sweep-scrub {
   display: none;
 }
 
+/* The launcher register, for a surface too narrow to hold the instrument. The
+   preview leads across the top rather than standing in a 132px column beside
+   the words: it is the only picture the card has, and split into two halves in
+   that column neither half is worth looking at. Both frames whole, at the size
+   the room allows, with the press to full size under them. */
+.gen-studio .gs-sweep-card--launch {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
+  contain-intrinsic-size: auto 260px;
+}
+.gen-studio .gs-sweep-card--launch .gs-sweep-card-stage {
+  padding: var(--gs-space-2);
+  background: none;
+}
+.gen-studio .gs-sweep-card--launch .gs-sweep-card-stage app-gs-compare-wipe,
+.gen-studio .gs-sweep-card--launch .gs-sweep-card-stage .gs-wipe {
+  height: auto;
+}
+.gen-studio .gs-sweep-card--launch .gs-sweep-card-stage .gs-wipe-img {
+  height: auto;
+  max-height: 30vh;
+  object-fit: contain;
+}
+.gen-studio .gs-sweep-card--launch .gs-sweep-card-text {
+  padding-top: 0;
+}
+
 /* ------- the plate --------------------------------------------------- */
 
 /* The open state, on the dark ground every rendered frame in the studio is
@@ -10767,6 +10794,9 @@ app-gs-sweep-scrub {
 /* Container queries, not viewport queries: the same component stands in a
    documentation column, in a dock beside the form, and in a phone sheet, and
    only one of those has anything to do with the window. */
+/* The same 480 the component branches on as `LAUNCHER_HOST_PX`: under it the
+   explorer is a card with a way in rather than the instrument, so this is the
+   first width at which the inline layout is worth widening. */
 @container gs-sweep (min-width: 480px) {
   .gen-studio .gs-sweep-options--frames {
     --gs-sweep-option-min: 132px;
@@ -13926,7 +13956,10 @@ app-gs-compare-wipe {
 .gen-studio .gs-ctl-band {
   position: sticky;
   top: 0;
-  z-index: 1;
+  /* Above the corner glyphs and the size badges the pictures carry, which sit
+     at 2 on their own frames: they pass under the band rather than over it.
+     Still well under the layer itself, which owns the ground and the close. */
+  z-index: 3;
   flex: none;
   display: flex;
   align-items: flex-start;

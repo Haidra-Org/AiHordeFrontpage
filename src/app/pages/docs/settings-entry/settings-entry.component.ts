@@ -27,6 +27,7 @@ import {
   settingLeadKey,
   settingSection,
   settingTitleKey,
+  settingIdFor,
 } from '../../../content/settings';
 
 /** The origin a setting chip stowed in the navigation state, if it is one. */
@@ -110,10 +111,15 @@ export class DocsSettingsEntryComponent {
     }
   }
 
-  /** The setting on screen, or null while the URL names one there is none of. */
-  public readonly topic = computed(() =>
-    hasReference(this.param()) ? this.param() : null,
-  );
+  /**
+   * The setting on screen, or null while the URL names one there is none of.
+   * The URL may carry an API field or sweep name (cfg_scale) for a setting
+   * whose id differs (cfg); the id is what every key is built from.
+   */
+  public readonly topic = computed(() => {
+    const id = settingIdFor(this.param());
+    return hasReference(id) ? id : null;
+  });
 
   /** The area the entry on screen belongs to, to tell a crossing from a step. */
   private readonly section = computed(() => {

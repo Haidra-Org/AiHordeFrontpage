@@ -1,13 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  ElementRef,
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { GsCompareWipeComponent } from '../gs-compare-wipe/gs-compare-wipe.component';
 import { GsPixelBadgeComponent } from '../gs-pixel-badge/gs-pixel-badge.component';
+import { LAUNCHER_HOST_PX } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 
 /** One side of the pair: a published crop, and what it is a crop of. */
 export interface CropSide {
@@ -33,6 +37,12 @@ export interface CropSide {
  * 2048-pixel enlargement) the smaller is drawn up to meet the larger rather
  * than the larger being reduced to meet it, and the side that was enlarged says
  * so: reducing the enlargement would throw away the one thing being compared.
+ *
+ * In a surface narrower than the width the sweep explorer needs for its own
+ * instrument, the pair is a preview instead: both crops beside each other,
+ * scaled into the room, with nothing to drag. The press to the whole picture at
+ * true size is the reading there, and the surface holding this already offers
+ * it under the pair.
  */
 @Component({
   selector: 'app-gs-crop-pair',
@@ -51,9 +61,10 @@ export interface CropSide {
       "
       [beforeNote]="notes().before"
       [afterNote]="notes().after"
-      [fit]="true"
-      [fitWidth]="box().width"
-      [fitHeight]="box().height"
+      [sideBySide]="launcher()"
+      [fit]="!launcher()"
+      [fitWidth]="launcher() ? null : box().width"
+      [fitHeight]="launcher() ? null : box().height"
     />
 
     <!-- Under the pair rather than on it: the divider already carries a tag in
@@ -81,9 +92,31 @@ export interface CropSide {
 })
 export class GsCropPairComponent {
   private readonly transloco = inject(TranslocoService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   public readonly before = input.required<CropSide>();
   public readonly after = input.required<CropSide>();
+
+  /** How wide the surface holding the pair is, as its own container. */
+  private readonly hostWidth = signal(0);
+
+  /**
+   * Whether the pair stands still rather than being wiped. Under the width the
+   * explorer needs for its own instrument, a divider across a crop the column
+   * cannot even hold whole is a control with nowhere to travel: the two crops
+   * are laid out beside each other, scaled into the room, and the press to the
+   * whole picture at true size is the way to the reading. A host of no width
+   * has not been measured yet and gets the wipe, which is what it had.
+   */
+  public readonly launcher = computed(() => {
+    const width = this.hostWidth();
+    return width > 0 && width < LAUNCHER_HOST_PX;
+  });
+
+  constructor() {
+    this.observeHostWidth();
+  }
 
   /** The larger of the two crops, which is the size the pair is read at. */
   private readonly larger = computed(() =>
@@ -121,6 +154,18 @@ export class GsCropPairComponent {
       ? { before: note, after: '' }
       : { before: '', after: note };
   });
+
+  private observeHostWidth(): void {
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const element = this.host.nativeElement;
+    const observer = new ResizeObserver((entries) => {
+      this.hostWidth.set(entries[0]?.contentRect.width ?? element.offsetWidth);
+    });
+    observer.observe(element);
+    this.destroyRef.onDestroy(() => observer.disconnect());
+  }
 
   /** How many device pixels the display draws per CSS pixel. */
   private pixelRatio(): number {

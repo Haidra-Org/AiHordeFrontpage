@@ -1198,6 +1198,7 @@
   "generate.sweeps.enlarged_pair_title": "The same picture both ways, full size",
   "generate.sweeps.card_door": "Drag to explore {{ n }} pictures",
   "generate.sweeps.card_door_pair": "Drag to compare the two",
+  "generate.sweeps.card_launch": "See it in action",
   "generate.sweeps.stage_role": "picture explorer",
   "generate.sweeps.compare_group": "Compare against",
   "generate.sweeps.why": "Why it looks like this",
