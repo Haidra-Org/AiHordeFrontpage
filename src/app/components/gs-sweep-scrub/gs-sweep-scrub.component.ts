@@ -2092,7 +2092,7 @@ export class GsSweepScrubComponent {
       const dragging = this.dragging();
       const cell = this.filmCells()[at]?.nativeElement;
       const strip = cell?.parentElement?.parentElement;
-      if (!cell?.scrollIntoView || !strip) {
+      if (!cell || !strip) {
         return;
       }
       const box = cell.getBoundingClientRect();
@@ -2105,9 +2105,11 @@ export class GsSweepScrubComponent {
       ) {
         return;
       }
-      cell.scrollIntoView({
-        block: 'nearest',
-        inline: 'center',
+      // The lane alone moves: scrollIntoView would also scroll every ancestor
+      // to reach a filmstrip below the fold, which on a phone drops the reader
+      // onto the strip the moment a layer holding one opens.
+      strip.scrollBy({
+        left: box.left + box.width / 2 - (lane.left + lane.width / 2),
         behavior: dragging || this.reducedMotion() ? 'auto' : 'smooth',
       });
     });
