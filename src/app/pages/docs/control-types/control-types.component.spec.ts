@@ -107,6 +107,17 @@ describe('DocsControlTypesComponent', () => {
     expect(all('.gs-ref-map-gap').length).toBe(TYPE_COUNT - 2);
   });
 
+  it('heads an opened mode with the name a reader would say aloud', () => {
+    all<HTMLButtonElement>('.gs-ref-zoom')[0].click();
+    fixture.detectChanges();
+
+    // The tile carries the horde's own id and the layer says it as a name,
+    // with the id kept beside it for the request that has to carry it.
+    expect(el().querySelector('.gs-ctl-title')?.textContent?.trim()) //
+      .toBe('Canny');
+    expect(el().querySelector('.gs-ctl-id')?.textContent?.trim()).toBe('canny');
+  });
+
   it('names hough on the mlsd tile rather than giving it one of its own', () => {
     const mlsd = el().querySelector('#gs-ref-ctl-mlsd');
 

@@ -9506,6 +9506,48 @@
   text-transform: uppercase;
   color: var(--gs-label);
 }
+/* A surface that opened a set rather than a single picture: a step back, a
+   step on, and where in the set the reader is. The count is tabular so the
+   band does not shift under the arrows as the number changes. */
+.gs-tut-viewer-steps {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+}
+.gs-tut-viewer-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-ink-2);
+  cursor: pointer;
+}
+.gs-tut-viewer-step:hover {
+  background: var(--gs-seg-track);
+  color: var(--gs-ink);
+}
+.gs-tut-viewer-step:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: -2px;
+}
+.gs-tut-viewer-count {
+  min-width: 5ch;
+  text-align: center;
+  font-size: var(--gs-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--gs-ink-2);
+}
+@media (pointer: coarse) {
+  .gs-tut-viewer-step {
+    width: 44px;
+    height: 44px;
+  }
+}
 /* Square by its own measure rather than the control height: it sits in the
    layer's title band, where a thumb has to reach it at every pointer type. The
    ring turns inwards because the button is flush with the band's edge. */
@@ -12979,31 +13021,91 @@ app-gs-compare-wipe {
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-3);
-  max-width: min(58rem, 100%);
+  max-width: min(64rem, 100%);
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* The area's hue on the layer's own top edge, which is the mark the page's
+     sections already wear: a layer opened from one belongs to it. */
+  border-top: 3px solid var(--gs-sec, var(--gs-blue));
 }
-/* The head carries its own padding; everything under it takes the same measure
+/* The band carries its own padding; everything under it takes the same measure
    rather than running to the layer's edge. */
-.gen-studio .gs-ctl-body > *:not(.gs-sweep-viewer-top) {
+.gen-studio .gs-ctl-body > *:not(.gs-ctl-band) {
   margin-inline: var(--gs-space-4);
 }
-.gen-studio .gs-ctl-top {
+/* A title bar rather than a line of text: tinted in the area's hue, ruled off
+   from the body, and held at the top while the rest scrolls under it, so the
+   name of what is being read never leaves the screen. */
+.gen-studio .gs-ctl-band {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  flex: none;
+  display: flex;
   align-items: flex-start;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-3) var(--gs-space-2) var(--gs-space-3)
+    var(--gs-space-4);
+  /* The tint over an opaque ground rather than on its own: the area tints are
+     mixed with transparent on the dark theme, and a band that lets the page
+     through is a band the pictures scroll up behind. */
+  background:
+    linear-gradient(
+      var(--gs-sec-tint, transparent),
+      var(--gs-sec-tint, transparent)
+    ),
+    var(--gs-panel);
+  border-bottom: 1px solid var(--gs-sec-tint-border, var(--gs-border));
+  /* The band is held at the top while the pictures pass under it, so it casts
+     the same soft edge a sheet's header does rather than meeting them flat. */
+  box-shadow: 0 6px 12px -10px rgb(0 0 0 / 45%);
 }
-/* The name, what group it reads for, and its one line, in one row: a reader who
-   followed an anchor straight to a detector arrives with none of that. */
+.gen-studio .gs-ctl-band .gs-sweep-viewer-x {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+}
 .gen-studio .gs-ctl-ident {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+  min-width: 0;
+}
+.gen-studio .gs-ctl-ident-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--gs-space-1) var(--gs-space-2);
   min-width: 0;
 }
-.gen-studio .gs-ctl-ident .gs-sweep-viewer-name {
-  flex: none;
+.gen-studio .gs-ctl-title {
+  margin: 0;
+  font-size: var(--gs-text-xl);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--gs-ink);
 }
+/* The horde's own name for the detector, which is what a request carries and
+   what every other client calls it. The heading says it the way a reader would
+   say it aloud; this is the spelling they have to type, so the two stand
+   together rather than one replacing the other. */
+.gen-studio .gs-ctl-id {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--gs-space-1);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-panel);
+  border: 1px solid var(--gs-border-soft);
+  font-size: var(--gs-text-xs);
+  color: var(--gs-ink-2);
+  overflow-wrap: anywhere;
+}
+/* On the band's own tint the chip takes the panel ground: a tinted pill on a
+   tinted band is a shape with no edge. */
 .gen-studio .gs-ctl-group {
   display: inline-flex;
   align-items: center;
@@ -13011,23 +13113,54 @@ app-gs-compare-wipe {
   padding: 0 var(--gs-space-2);
   border-radius: var(--gs-radius-pill);
   border: 1px solid var(--gs-sec-tint-border, var(--gs-border));
-  background: var(--gs-sec-tint, var(--gs-field-soft));
+  background: var(--gs-panel);
   font-size: var(--gs-text-xs);
   font-weight: 600;
   color: var(--gs-ink);
 }
 .gen-studio .gs-ctl-lead {
-  flex: 1 1 16rem;
   margin: 0;
-  font-size: var(--gs-text-sm);
+  max-width: 68ch;
+  font-size: var(--gs-text-md);
   line-height: 1.5;
   color: var(--gs-ink-2);
 }
+/* The choice is labelled and set on its own line: the options are scene names,
+   and a row of scene names with nothing over it reads as a caption rather than
+   as the control the rest of the layer answers to. */
+.gen-studio .gs-ctl-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-1) var(--gs-space-2);
+  min-width: 0;
+}
+.gen-studio .gs-ctl-picker-label {
+  flex: none;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-ink-2);
+}
 /* Three examples are one choice rather than three sections, so the switcher is
-   a radio group: Tab passes it as a single stop and the arrows move inside it. */
+   a radio group: Tab passes it as a single stop and the arrows move inside it.
+   It holds one line at every width and scrolls sideways if it must, because a
+   control that reflows into a block stops reading as a choice between three. */
 .gen-studio .gs-ctl-switch {
   align-self: flex-start;
-  flex-wrap: wrap;
+  max-width: 100%;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* The shared track is a shade off the panel it sits on, which is enough
+     where the reader already knows a control is there and not enough here. */
+  border: 1px solid var(--gs-field-border);
+}
+.gen-studio .gs-ctl-switch::-webkit-scrollbar {
+  display: none;
+}
+.gen-studio .gs-ctl-switch-opt {
+  flex: none;
+  white-space: nowrap;
 }
 .gen-studio .gs-ctl-switch-opt[aria-checked="true"] {
   background: var(--gs-seg-active);
@@ -13048,14 +13181,16 @@ app-gs-compare-wipe {
   flex-direction: column;
   gap: var(--gs-space-2);
 }
-/* The three frames stay side by side: the whole claim is that the map came from
-   the source and the render came from the map, and a column of three pictures
-   reads as three unrelated ones. The render takes the room the other two do not
-   need, because what a source and a map are is legible small and what the
-   detector did to the render is not. */
-.gen-studio .gs-ctl-row {
+/* The three frames are one row and the same size: the claim is that the map
+   came from the picture and the render came from the map, and a row where one
+   of the three is bigger is an argument about which of them matters. What
+   marks the render out is its ring and its label, not its measure. */
+.gen-studio .gs-ctl-strip {
+  --gs-ctl-over: 22px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.7fr);
+  grid-template-columns:
+    minmax(0, 1fr) auto minmax(0, 1fr) auto
+    minmax(0, 1fr);
   gap: var(--gs-space-2);
   align-items: start;
 }
@@ -13066,50 +13201,167 @@ app-gs-compare-wipe {
   margin: 0;
   min-width: 0;
 }
-.gen-studio .gs-ctl-frame img {
-  width: 100%;
-  height: auto;
-  /* A ceiling rather than a size: it keeps the caption under the row inside a
-     laptop screen, and sits above what the widest column asks for, so a square
-     render is not letterboxed to reach it. */
-  max-height: min(50vh, 460px);
-  object-fit: contain;
-  border-radius: var(--gs-radius-sm);
-  border: 1px solid var(--gs-card-border);
-  background: var(--gs-stage);
-}
-.gen-studio .gs-ctl-frame figcaption {
-  font-size: var(--gs-text-xs);
+/* Above the picture rather than under it: three captions of three different
+   lengths under three pictures break the row's bottom edge, and what each
+   frame is has to be read before the picture, not after it. */
+.gen-studio .gs-ctl-over {
+  min-height: var(--gs-ctl-over);
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+  text-transform: uppercase;
   color: var(--gs-ink-2);
+}
+.gen-studio .gs-ctl-frame--render .gs-ctl-over {
+  color: var(--gs-ink);
+}
+/* Every frame opens at full size, so every frame is a button around a picture
+   and nothing else: it keeps the stage the picture sits on and takes the lift
+   and the corner glyph the gallery's tiles already use. */
+.gen-studio .gs-ctl-shot {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 1px solid var(--gs-card-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-stage);
+  cursor: zoom-in;
+  transition:
+    transform var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-ctl-frame--render .gs-ctl-shot {
+  border: 2px solid var(--gs-sec, var(--gs-blue));
+}
+.gen-studio .gs-ctl-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.gen-studio .gs-ctl-shot:hover,
+.gen-studio .gs-ctl-shot:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-ctl-shot:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-ctl-shot:hover .gs-ctl-zoom-glyph,
+.gen-studio .gs-ctl-shot:focus-visible .gs-ctl-zoom-glyph {
+  color: var(--gs-ink);
+  opacity: 1;
+}
+/* The glyph is set against the pictures rather than the frames: the labels
+   above them are where a frame starts, so the arrow is pushed past that band
+   and centred on the row of pictures itself. */
+.gen-studio .gs-ctl-arrow {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  padding-top: var(--gs-ctl-over);
+  color: var(--gs-muted);
 }
 .gen-studio .gs-ctl-caption {
   margin: 0;
-  font-size: var(--gs-text-sm);
+  max-width: 72ch;
+  font-size: var(--gs-text-md);
   line-height: 1.6;
   color: var(--gs-ink-2);
 }
-.gen-studio .gs-ctl-world-model {
+.gen-studio .gs-ctl-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin: 0;
   font-size: var(--gs-text-xs);
-  color: var(--gs-ink-2);
+  color: var(--gs-label);
+}
+/* The checkpoint differs between the examples, so it is a thing the reader can
+   see at a glance rather than a name trailing off the end of a sentence. */
+.gen-studio .gs-ctl-model {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--gs-space-2);
+  border-radius: var(--gs-radius-pill);
+  border: 1px solid var(--gs-border);
+  background: var(--gs-card);
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+/* The strength strip belongs to the mode the layer is showing, so it sits with
+   the examples of that mode rather than under a whole group of them, and it is
+   headed: a reader scrolling past the pictures meets a second thing to read
+   rather than something left over from the first. */
+.gen-studio .gs-ctl-dial {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  padding-top: var(--gs-space-3);
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-ctl-head {
+  margin: 0;
+  font-size: var(--gs-text-lg);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ctl-dial app-gs-sweep-scrub {
+  display: block;
 }
 /* On a phone the row breaks rather than shrinking to three thumbnails: the
-   source and the map read together at half the width, and the render, which is
-   what the reader is here to look at, takes the line under them. */
+   picture and the map read together at half the width, and the render, which
+   is what the reader is here to look at, takes the line under them. The arrows
+   go with the row they belonged to; the labels stay. */
 @media (max-width: 560px) {
-  .gen-studio .gs-ctl-row {
+  .gen-studio .gs-ctl-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gen-studio .gs-ctl-arrow {
+    display: none;
   }
   .gen-studio .gs-ctl-frame--render {
     grid-column: 1 / -1;
   }
-  .gen-studio .gs-ctl-body > *:not(.gs-sweep-viewer-top) {
+  .gen-studio .gs-ctl-body > *:not(.gs-ctl-band) {
     margin-inline: var(--gs-space-3);
   }
+  .gen-studio .gs-ctl-band {
+    padding: var(--gs-space-2-5) var(--gs-space-1) var(--gs-space-2-5)
+      var(--gs-space-3);
+  }
+  .gen-studio .gs-ctl-title {
+    font-size: var(--gs-text-lg);
+  }
 }
-/* The strength strip belongs to the mode the layer is showing, so it sits with
-   the examples of that mode rather than under a whole group of them. */
-.gen-studio .gs-ctl-body app-gs-sweep-scrub {
-  display: block;
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-ctl-shot {
+    transition: none;
+  }
+  .gen-studio .gs-ctl-shot:hover,
+  .gen-studio .gs-ctl-shot:focus-visible {
+    transform: none;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-ctl-band {
+    border-bottom-color: CanvasText;
+  }
+  .gen-studio .gs-ctl-shot,
+  .gen-studio .gs-ctl-frame--render .gs-ctl-shot,
+  .gen-studio .gs-ctl-id,
+  .gen-studio .gs-ctl-group,
+  .gen-studio .gs-ctl-model {
+    border-color: CanvasText;
+  }
 }
 
 /* ------- settings reference: one entry ------------------------------- */

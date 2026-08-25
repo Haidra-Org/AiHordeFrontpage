@@ -14,6 +14,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { GsAnchorLinkComponent } from '../gs-anchor-link/gs-anchor-link.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
+import { GsShotViewerComponent } from '../gs-shot-viewer/gs-shot-viewer.component';
 import {
   SweepLibraryService,
   SweepStop,
@@ -38,6 +39,13 @@ interface ControlWorld {
   stripId: string;
   /** What the scene is, as the library labels it. */
   scene: string;
+  /**
+   * The same scene in the two or three words the switcher can carry. The
+   * library's labels run to a clause, and three clauses in a row of options
+   * wrap into a block a reader has to read rather than a control they can
+   * glance at, so everything after the first comma is dropped.
+   */
+  sceneShort: string;
   /** The checkpoint it was rendered on, which differs between the examples. */
   model: string;
   /** The source, the map and the render, in the order the story runs. */
@@ -51,6 +59,8 @@ interface ControlWorld {
 interface ControlTile {
   type: string;
   anchorId: string;
+  /** The mode named as a reader would say it, which heads the layer. */
+  nameKey: string;
   /** What the mode reads, in the picker's own words. */
   descriptionKey: string;
   /** A further line only some modes need, e.g. the name they used to go by. */
@@ -59,6 +69,19 @@ interface ControlTile {
   thumb: string | null;
   /** Every example published of this mode, in the order they were named. */
   worlds: readonly ControlWorld[];
+}
+
+/** One picture the layer can open at full size, and what it is. */
+interface ControlShot {
+  src: string;
+  /** Which example it belongs to, so opening it carries the layer with it. */
+  worldIndex: number;
+  /** Which of the three it is, matching {@link ControlFrame.key}. */
+  key: string;
+  /** What the frame is, e.g. the control map. */
+  labelKey: string;
+  /** The example it was taken from, in the switcher's own short words. */
+  world: string;
 }
 
 /**
@@ -85,6 +108,7 @@ interface ControlTile {
     IconComponent,
     GsAnchorLinkComponent,
     GsSweepScrubComponent,
+    GsShotViewerComponent,
   ],
   template: `
     <ul class="gs-ref-maps-grid">
@@ -163,16 +187,23 @@ interface ControlTile {
           tabindex="-1"
           [attr.aria-label]="
             'generate.control_types.layer_label'
-              | transloco: { name: shown.type }
+              | transloco: { name: shown.nameKey | transloco }
           "
           (keydown)="onKeydown($event)"
         >
-          <div class="gs-sweep-viewer-top gs-ctl-top">
+          <!-- One band across the top rather than a name with a paragraph
+               beside it: a reader who followed an anchor lands here knowing
+               none of it, and what they need first is which detector this is,
+               what it reads for, and the name a request has to carry. -->
+          <header class="gs-ctl-band">
             <div class="gs-ctl-ident">
-              <span class="gs-sweep-viewer-name gs-mono">{{ shown.type }}</span>
-              @if (groupLabelKey(); as groupKey) {
-                <span class="gs-ctl-group">{{ groupKey | transloco }}</span>
-              }
+              <div class="gs-ctl-ident-row">
+                <h2 class="gs-ctl-title">{{ shown.nameKey | transloco }}</h2>
+                @if (groupLabelKey(); as groupKey) {
+                  <span class="gs-ctl-group">{{ groupKey | transloco }}</span>
+                }
+                <span class="gs-ctl-id gs-mono">{{ shown.type }}</span>
+              </div>
               <p class="gs-ctl-lead">{{ shown.descriptionKey | transloco }}</p>
             </div>
             <button
@@ -186,66 +217,105 @@ interface ControlTile {
             >
               <app-icon name="x-mark" class="gs-ico-sm" />
             </button>
-          </div>
+          </header>
 
           @if (shown.worlds.length > 1) {
-            <div
-              class="gs-seg gs-ctl-switch"
-              role="radiogroup"
-              [attr.aria-label]="
-                'generate.control_types.worlds_label' | transloco
-              "
-            >
-              @for (
-                option of shown.worlds;
-                track option.stripId;
-                let i = $index
-              ) {
-                <button
-                  #worldOption
-                  type="button"
-                  class="gs-seg-opt gs-ctl-switch-opt"
-                  role="radio"
-                  [attr.aria-checked]="i === worldIndex()"
-                  [attr.tabindex]="i === worldIndex() ? 0 : -1"
-                  (click)="pickWorld(i)"
-                  (keydown)="onSwitchKeydown($event, i)"
-                >
-                  {{ option.scene }}
-                </button>
-              }
+            <!-- The switcher says what it switches. Three named options with
+                 nothing over them read as a caption a reader can press by
+                 accident rather than as the choice the whole layer turns on. -->
+            <div class="gs-ctl-picker">
+              <span class="gs-ctl-picker-label">
+                {{ 'generate.control_types.worlds_pick' | transloco }}
+              </span>
+              <div
+                class="gs-seg gs-ctl-switch"
+                role="radiogroup"
+                [attr.aria-label]="
+                  'generate.control_types.worlds_label' | transloco
+                "
+              >
+                @for (
+                  option of shown.worlds;
+                  track option.stripId;
+                  let i = $index
+                ) {
+                  <button
+                    #worldOption
+                    type="button"
+                    class="gs-seg-opt gs-ctl-switch-opt"
+                    role="radio"
+                    [attr.aria-checked]="i === worldIndex()"
+                    [attr.tabindex]="i === worldIndex() ? 0 : -1"
+                    (click)="pickWorld(i)"
+                    (keydown)="onSwitchKeydown($event, i)"
+                  >
+                    {{ option.sceneShort }}
+                  </button>
+                }
+              </div>
             </div>
           }
 
           @if (shownWorld(); as onShow) {
             <section class="gs-ctl-world">
-              <div class="gs-ctl-row">
-                @for (frame of onShow.frames; track frame.key) {
+              <!-- The three read left to right as the thing that happened: the
+                   picture the detector was given, what it drew from it, and
+                   what the render made of that. The arrows between them are
+                   the claim the page rests on, so they are drawn rather than
+                   left to the order of the pictures. -->
+              <div class="gs-ctl-strip">
+                @for (
+                  frame of onShow.frames;
+                  track frame.key;
+                  let last = $last
+                ) {
                   <figure
                     class="gs-ctl-frame"
                     [class.gs-ctl-frame--render]="frame.key === 'render'"
                   >
+                    <figcaption class="gs-ctl-over">
+                      {{ frame.labelKey | transloco }}
+                    </figcaption>
                     @if (frame.src; as src) {
-                      <img
-                        [src]="src"
-                        [alt]="frame.altKey | transloco: { name: shown.type }"
-                        loading="lazy"
-                        decoding="async"
-                      />
+                      <button
+                        type="button"
+                        class="gs-ctl-shot"
+                        [attr.aria-label]="
+                          'generate.control_types.frame_enlarge'
+                            | transloco: { frame: frame.labelKey | transloco }
+                        "
+                        (click)="enlarge(frame.key, $event)"
+                      >
+                        <img
+                          [src]="src"
+                          [alt]="frame.altKey | transloco: { name: shown.type }"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <span class="gs-ctl-zoom-glyph" aria-hidden="true">
+                          <app-icon
+                            name="arrows-pointing-out"
+                            class="gs-ico-sm"
+                          />
+                        </span>
+                      </button>
                     } @else {
                       <span class="gs-ref-map-gap">
                         {{ 'generate.control_types.missing' | transloco }}
                       </span>
                     }
-                    <figcaption>{{ frame.labelKey | transloco }}</figcaption>
                   </figure>
+                  @if (!last) {
+                    <span class="gs-ctl-arrow" aria-hidden="true">
+                      <app-icon name="arrow-right" class="gs-ico-sm" />
+                    </span>
+                  }
                 }
               </div>
-              <p class="gs-ctl-caption">
-                {{ onShow.caption }}
-                <span class="gs-ctl-world-model gs-mono">{{
-                  onShow.model
-                }}</span>
+              <p class="gs-ctl-caption">{{ onShow.caption }}</p>
+              <p class="gs-ctl-meta">
+                {{ 'generate.control_types.rendered_on' | transloco }}
+                <span class="gs-ctl-model">{{ onShow.model }}</span>
               </p>
             </section>
           }
@@ -253,15 +323,47 @@ interface ControlTile {
           <!-- How hard this mode's own maps pull, under the example of what
                they are. The dial is the same field for every mode and what
                changes is what that kind of map can do with it, so it is read
-               here rather than once for a whole group. -->
-          <app-gs-sweep-scrub
-            parameter="control_strength"
-            [controlType]="shown.type"
-            [startExpanded]="true"
-            register="filmcard"
-          />
+               here rather than once for a whole group. It carries a heading of
+               its own, so it reads as the layer's second half rather than as
+               something left under the pictures. -->
+          @if (hasStrength()) {
+            <section class="gs-ctl-dial">
+              <h3 class="gs-ctl-head">
+                {{ 'generate.control_types.strength_head' | transloco }}
+              </h3>
+              <app-gs-sweep-scrub
+                parameter="control_strength"
+                [controlType]="shown.type"
+                [startExpanded]="true"
+                register="filmcard"
+              />
+            </section>
+          }
         </div>
       </div>
+
+      <!-- Any one of the three at the size the row cannot give it, on the same
+           layer every other evidence picture opens onto. What it steps through
+           is this detector on every example it was published on, so a reader
+           comparing one frame across the worlds never has to shut it. -->
+      @if (shot(); as picture) {
+        <app-gs-shot-viewer
+          [src]="picture.src"
+          [label]="
+            'generate.control_types.enlarged'
+              | transloco
+                : {
+                    frame: picture.labelKey | transloco,
+                    world: picture.world,
+                  }
+          "
+          [at]="shotAt() + 1"
+          [count]="shots().length"
+          (previous)="stepShot(-1)"
+          (next)="stepShot(1)"
+          (closed)="closeShot()"
+        />
+      }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -280,6 +382,8 @@ export class GsControlGalleryComponent {
   /** The i18n key describing a mode, by mode. */
   public readonly descriptionKeys =
     input.required<Readonly<Record<string, string>>>();
+  /** The i18n key naming a mode aloud, by mode. */
+  public readonly nameKeys = input<Readonly<Record<string, string>>>({});
   /** A further line for the modes that need one, by mode. */
   public readonly noteKeys = input<Readonly<Record<string, string>>>({});
   /**
@@ -297,8 +401,14 @@ export class GsControlGalleryComponent {
   private readonly chosen = signal(0);
   public readonly worldIndex = this.chosen.asReadonly();
 
+  /** Which picture is open at full size, or null while none is. */
+  private readonly enlarged = signal<number | null>(null);
+  public readonly shotAt = computed(() => this.enlarged() ?? 0);
+
   /** The tile that opened the layer, so closing hands focus back to it. */
   private opener: HTMLElement | null = null;
+  /** The frame that opened the full-size layer, for the same reason. */
+  private shotOpener: HTMLElement | null = null;
   private focusedPanel: HTMLElement | null = null;
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
@@ -326,6 +436,7 @@ export class GsControlGalleryComponent {
   public readonly tiles = computed<readonly ControlTile[]>(() => {
     const strips = this.strips();
     const descriptions = this.descriptionKeys();
+    const names = this.nameKeys();
     const notes = this.noteKeys();
     return this.types().map((type) => {
       const worlds = strips
@@ -334,12 +445,57 @@ export class GsControlGalleryComponent {
       return {
         type,
         anchorId: docsControlTypeAnchor(type),
+        nameKey: names[type] ?? '',
         descriptionKey: descriptions[type] ?? '',
         noteKey: notes[type] ?? null,
         thumb: worlds[0]?.render ?? null,
         worlds,
       };
     });
+  });
+
+  /**
+   * Whether the dial was ever swept against this mode. The strip is what the
+   * heading over it promises, so a mode the library never swept says nothing
+   * rather than heading an empty space.
+   */
+  public readonly hasStrength = computed(() => {
+    const tile = this.shown();
+    return (
+      tile !== null &&
+      this.sweeps.strip('control_strength', undefined, undefined, tile.type) !==
+        null
+    );
+  });
+
+  /**
+   * Every published picture of the mode on show, example by example and within
+   * each one in the order the story runs. Stepping through them at full size
+   * is how a reader compares one frame across the examples, which is the whole
+   * question the switcher asks them to hold in their head.
+   */
+  public readonly shots = computed<readonly ControlShot[]>(() => {
+    const tile = this.shown();
+    if (!tile) {
+      return [];
+    }
+    return tile.worlds.flatMap((world, worldIndex) =>
+      world.frames
+        .filter((frame) => frame.src !== null)
+        .map((frame) => ({
+          src: frame.src as string,
+          worldIndex,
+          key: frame.key,
+          labelKey: frame.labelKey,
+          world: world.sceneShort,
+        })),
+    );
+  });
+
+  /** The picture open at full size, or null while none is. */
+  public readonly shot = computed<ControlShot | null>(() => {
+    const at = this.enlarged();
+    return at === null ? null : (this.shots()[at] ?? null);
   });
 
   constructor() {
@@ -359,15 +515,59 @@ export class GsControlGalleryComponent {
     const trigger = event.currentTarget;
     this.opener = trigger instanceof HTMLElement ? trigger : null;
     this.chosen.set(0);
+    this.enlarged.set(null);
     this.shown.set(tile);
   }
 
   public close(): void {
     const trigger = this.opener;
     this.opener = null;
+    this.shotOpener = null;
     this.focusedPanel = null;
+    this.enlarged.set(null);
     this.shown.set(null);
     trigger?.focus();
+  }
+
+  /** One frame of the example on show, at the size the row cannot give it. */
+  public enlarge(key: string, event: Event): void {
+    const trigger = event.currentTarget;
+    this.shotOpener = trigger instanceof HTMLElement ? trigger : null;
+    const at = this.shots().findIndex(
+      (picture) => picture.worldIndex === this.chosen() && picture.key === key,
+    );
+    if (at >= 0) {
+      this.enlarged.set(at);
+    }
+  }
+
+  /**
+   * The next or the previous picture, wrapping at both ends. Stepping past the
+   * last frame of an example lands on the next example's first, and the layer
+   * behind follows it: closing on a picture of the shrine and finding the
+   * courier underneath would be the layer telling the reader they are
+   * somewhere they are not.
+   */
+  public stepShot(delta: number): void {
+    const pictures = this.shots();
+    const at = this.enlarged();
+    if (at === null || pictures.length === 0) {
+      return;
+    }
+    const next = (at + delta + pictures.length) % pictures.length;
+    this.enlarged.set(next);
+    this.chosen.set(pictures[next].worldIndex);
+  }
+
+  public closeShot(): void {
+    const trigger = this.shotOpener;
+    this.shotOpener = null;
+    this.enlarged.set(null);
+    if (trigger?.isConnected) {
+      trigger.focus();
+    } else {
+      this.panel()?.nativeElement.focus();
+    }
   }
 
   public onBackdrop(event: MouseEvent): void {
@@ -468,6 +668,7 @@ export class GsControlGalleryComponent {
     return {
       stripId: strip.strip_id,
       scene: strip.scene.label,
+      sceneShort: strip.scene.label.split(',')[0].trim(),
       model: strip.image_model.name,
       frames: [
         {

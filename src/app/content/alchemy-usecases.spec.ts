@@ -11,6 +11,7 @@ import {
   alchemyUseCaseNoteKey,
   alchemyUseCaseTitleKey,
   annotationDetectorDescriptionKey,
+  annotationDetectorNameKey,
   annotationGroupLabelKey,
 } from './alchemy-usecases';
 import {
@@ -198,6 +199,15 @@ describe('annotation detector groups', () => {
     const translations = en as Record<string, string>;
     const missing = grouped.filter(
       (type) => !translations[annotationDetectorDescriptionKey(type)],
+    );
+
+    expect(missing).toEqual([]);
+  });
+
+  it('names every detector in words a reader would say aloud', () => {
+    const translations = en as Record<string, string>;
+    const missing = grouped.filter(
+      (type) => !translations[annotationDetectorNameKey(type)],
     );
 
     expect(missing).toEqual([]);

@@ -8,6 +8,7 @@ import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ANNOTATION_DETECTOR_GROUPS,
   annotationDetectorDescriptionKey,
+  annotationDetectorNameKey,
   annotationGroupLabelKey,
 } from '../../../content/alchemy-usecases';
 import {
@@ -93,6 +94,14 @@ export class DocsControlTypesComponent {
           type,
           annotationDetectorDescriptionKey(type),
         ]),
+      ),
+    );
+
+  /** The i18n key naming each mode aloud, which the layer heads itself with. */
+  public readonly nameKeys: Readonly<Record<string, string>> =
+    Object.fromEntries(
+      ANNOTATION_DETECTOR_GROUPS.flatMap((group) =>
+        group.types.map((type) => [type, annotationDetectorNameKey(type)]),
       ),
     );
 

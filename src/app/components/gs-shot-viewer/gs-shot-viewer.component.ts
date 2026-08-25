@@ -23,6 +23,12 @@ import { IconComponent } from '../icon/icon.component';
  * Anything the calling surface wants said under the picture is projected: the
  * walkthrough puts what the run cost there, and the documentation page, which
  * says it in the step prose already, puts nothing.
+ *
+ * A surface with a set of pictures rather than one hands over how many there
+ * are and where in the set this one is, and the band grows a step back, a step
+ * on and a count. The arrows move the same way from the keyboard. A surface
+ * that opens a single picture says none of that and meets the layer it always
+ * met.
  */
 @Component({
   selector: 'app-gs-shot-viewer',
@@ -40,7 +46,33 @@ import { IconComponent } from '../icon/icon.component';
       (keydown)="onKeydown($event)"
     >
       <div class="gs-tut-viewer-top">
-        <span class="gs-tut-viewer-name">{{ label() }}</span>
+        <span class="gs-tut-viewer-name" aria-live="polite">{{ label() }}</span>
+        @if (count() > 1) {
+          <div class="gs-tut-viewer-steps">
+            <button
+              type="button"
+              class="gs-tut-viewer-step"
+              [attr.aria-label]="'generate.tutorials.enlarge_prev' | transloco"
+              (click)="previous.emit()"
+            >
+              <app-icon name="chevron-left" class="gs-ico-sm" />
+            </button>
+            <span class="gs-tut-viewer-count">
+              {{
+                'generate.tutorials.enlarge_step'
+                  | transloco: { at: at(), count: count() }
+              }}
+            </span>
+            <button
+              type="button"
+              class="gs-tut-viewer-step"
+              [attr.aria-label]="'generate.tutorials.enlarge_next' | transloco"
+              (click)="next.emit()"
+            >
+              <app-icon name="chevron-right" class="gs-ico-sm" />
+            </button>
+          </div>
+        }
         <button
           #close
           type="button"
@@ -80,8 +112,17 @@ export class GsShotViewerComponent {
   public readonly label = input.required<string>();
   /** Whether the picture is read through rather than read on the card. */
   public readonly alpha = input(false);
+  /**
+   * How many pictures the calling surface is offering, and which of them this
+   * one is, counting from one. A surface that opens one picture leaves both
+   * alone and the layer carries nothing but its close.
+   */
+  public readonly count = input(0);
+  public readonly at = input(0);
 
   public readonly closed = output<void>();
+  public readonly previous = output<void>();
+  public readonly next = output<void>();
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly close = viewChild<ElementRef<HTMLButtonElement>>('close');
@@ -102,8 +143,9 @@ export class GsShotViewerComponent {
   }
 
   /**
-   * Escape closes. Tab is held inside the layer by hand: the panel carries one
-   * control, so keeping focus on it is the whole trap.
+   * Escape closes, the arrows step where the caller offers more than one
+   * picture, and Tab is held inside the layer by hand: it cycles the band's
+   * own controls and never reaches the surface that opened it.
    */
   public onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
@@ -111,9 +153,29 @@ export class GsShotViewerComponent {
       this.closed.emit();
       return;
     }
-    if (event.key === 'Tab') {
+    if (
+      this.count() > 1 &&
+      (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+    ) {
       event.preventDefault();
-      this.close()?.nativeElement.focus();
+      event.stopPropagation();
+      (event.key === 'ArrowLeft' ? this.previous : this.next).emit();
+      return;
     }
+    if (event.key !== 'Tab') {
+      return;
+    }
+    event.preventDefault();
+    const panel = this.panel()?.nativeElement;
+    const buttons = panel
+      ? Array.from(panel.querySelectorAll<HTMLElement>('button'))
+      : [];
+    if (buttons.length === 0) {
+      return;
+    }
+    const at = buttons.indexOf(document.activeElement as HTMLElement);
+    const step = event.shiftKey ? -1 : 1;
+    const next = at < 0 ? 0 : (at + step + buttons.length) % buttons.length;
+    buttons[next].focus();
   }
 }

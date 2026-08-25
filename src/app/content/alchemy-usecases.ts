@@ -178,6 +178,18 @@ export function annotationDetectorDescriptionKey(
   return `alchemy.annotation.detector.${type}`;
 }
 
+/**
+ * The i18n key naming one detector as a reader would say it aloud, e.g.
+ * `Depth Anything v2` for `depth_anything_v2`.
+ *
+ * The horde's own name is the id and stays the thing a request is matched by,
+ * so this never replaces it: a surface that gives a detector a heading shows
+ * the name there and keeps the id beside it.
+ */
+export function annotationDetectorNameKey(type: AnnotationControlType): string {
+  return `alchemy.annotation.detector_name.${type}`;
+}
+
 export interface AlchemyUseCase {
   id: AlchemyUseCaseId;
   /**

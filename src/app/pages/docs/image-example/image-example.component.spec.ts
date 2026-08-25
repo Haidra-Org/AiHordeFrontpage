@@ -124,6 +124,11 @@ const CHROME_KEYS = [
   'enlarge',
   'enlarge_close',
   'enlarged_title',
+  // The full-size layer is shared, and a surface that opens a set of pictures
+  // rather than one steps through them from its band.
+  'enlarge_prev',
+  'enlarge_next',
+  'enlarge_step',
   'evidence_note',
   'meta_model',
   'meta_seed',

@@ -30,7 +30,7 @@ const INDEX = {
       'anything-diffusion',
       'Anything Diffusion',
       'fox-shrine-ink',
-      'The fox shrine',
+      'The fox shrine, in ink and vermilion',
     ),
     strength('canny'),
   ],
@@ -127,6 +127,7 @@ function world(
     [types]="types"
     [worlds]="worlds"
     [descriptionKeys]="descriptionKeys"
+    [nameKeys]="nameKeys"
     [noteKeys]="noteKeys"
     [groupLabelKey]="groupLabelKey"
   />`,
@@ -138,6 +139,11 @@ class HostComponent {
     canny: 'alchemy.annotation.detector.canny',
     openpose: 'alchemy.annotation.detector.openpose',
     seg: 'alchemy.annotation.detector.seg',
+  };
+  public nameKeys: Readonly<Record<string, string>> = {
+    canny: 'alchemy.annotation.detector_name.canny',
+    openpose: 'alchemy.annotation.detector_name.openpose',
+    seg: 'alchemy.annotation.detector_name.seg',
   };
   public noteKeys: Readonly<Record<string, string>> = {
     canny: 'generate.control_types.note_hough',
@@ -214,17 +220,37 @@ describe('GsControlGalleryComponent', () => {
     expect(notes[1]).toContain('hough');
   });
 
-  it('names the mode, the group it reads for and its one line, in the head', async () => {
+  it('heads the layer with the mode said aloud, its group and its own id', async () => {
     await setUp();
     openTile(0);
 
-    const head = find<HTMLElement>('.gs-ctl-top')!;
-    expect(head.textContent).toContain('canny');
-    expect(head.querySelector('.gs-ctl-group')?.textContent) //
+    const band = find<HTMLElement>('.gs-ctl-band')!;
+    expect(band.querySelector('.gs-ctl-title')?.textContent?.trim()) //
+      .toBe('Canny');
+    expect(band.querySelector('.gs-ctl-id')?.textContent?.trim()).toBe('canny');
+    expect(band.querySelector('.gs-ctl-group')?.textContent) //
       .toContain('Edges and outlines');
-    expect(head.querySelector('.gs-ctl-lead')?.textContent) //
+    expect(band.querySelector('.gs-ctl-lead')?.textContent) //
       .toContain('Hard outlines');
-    expect(head.querySelector('.gs-sweep-viewer-x')).not.toBeNull();
+    expect(band.querySelector('.gs-sweep-viewer-x')).not.toBeNull();
+  });
+
+  it('labels each frame above it and says what the render ran on', async () => {
+    await setUp();
+    openTile(0);
+
+    expect(all('.gs-ctl-over').map((node) => (node.textContent ?? '').trim())) //
+      .toEqual(['Starting picture', 'Control map', 'Render']);
+    expect(find('.gs-ctl-model')!.textContent?.trim()).toBe('Deliberate');
+    expect(find('.gs-ctl-meta')!.textContent).toContain('Rendered on');
+  });
+
+  it('heads the strength strip so it reads as its own section', async () => {
+    await setUp();
+    openTile(0);
+
+    expect(find('.gs-ctl-head')!.textContent).toContain('How hard it holds');
+    expect(find('.gs-ctl-dial app-gs-sweep-scrub')).not.toBeNull();
   });
 
   it('shows one example at a time, with its source, its map and its render', async () => {
@@ -253,6 +279,8 @@ describe('GsControlGalleryComponent', () => {
     const group = find<HTMLElement>('.gs-ctl-switch')!;
     expect(group.getAttribute('role')).toBe('radiogroup');
     const options = all<HTMLButtonElement>('.gs-ctl-switch-opt');
+    // The library labels the second scene with a clause; the switcher is one
+    // row of options, so it carries what stands before the first comma.
     expect(options.map((option) => (option.textContent ?? '').trim())) //
       .toEqual(['The courier', 'The fox shrine']);
     expect(options[0].getAttribute('aria-checked')).toBe('true');
@@ -267,7 +295,7 @@ describe('GsControlGalleryComponent', () => {
     fixture.detectChanges();
 
     expect(find('.gs-ctl-world')!.textContent) //
-      .toContain('Canny on The fox shrine.');
+      .toContain('Canny on The fox shrine,');
     expect(
       all<HTMLImageElement>('.gs-ctl-frame img')[0].getAttribute('src'),
     ).toBe(`${environment.evidenceBaseUrl}/${WORLD_TWO}/source.webp`);
@@ -337,10 +365,72 @@ describe('GsControlGalleryComponent', () => {
     // example and its switcher rather than an error or an empty plate.
     expect(all('.gs-ctl-world').length).toBe(1);
     expect(all('.gs-ctl-switch-opt').length).toBe(2);
+    expect(find('.gs-ctl-body app-gs-sweep-scrub')).toBeNull();
+  });
+
+  it('opens any frame at full size, and says which picture it is', async () => {
+    await setUp();
+    openTile(0);
+
+    all<HTMLButtonElement>('.gs-ctl-shot')[1].click();
+    fixture.detectChanges();
+
+    const viewer = find<HTMLElement>('app-gs-shot-viewer')!;
+    expect(viewer.querySelector('img')?.getAttribute('src')) //
+      .toBe(`${environment.evidenceBaseUrl}/${WORLD_ONE}/001_canny_map.webp`);
+    expect(viewer.querySelector('.gs-tut-viewer-name')?.textContent) //
+      .toContain('Control map, The courier');
+    expect(viewer.querySelector('.gs-tut-viewer-count')?.textContent) //
+      .toContain('2 of 6');
+  });
+
+  it('steps through the frames of every example without shutting', async () => {
+    await setUp();
+    openTile(0);
+    all<HTMLButtonElement>('.gs-ctl-shot')[2].click();
+    fixture.detectChanges();
+
+    // Past the last frame of the first example is the first frame of the
+    // second, and the layer behind follows it to that example.
+    all<HTMLButtonElement>('.gs-tut-viewer-step')[1].click();
+    fixture.detectChanges();
+
+    const viewer = find<HTMLElement>('app-gs-shot-viewer')!;
+    expect(viewer.querySelector('img')?.getAttribute('src')) //
+      .toBe(`${environment.evidenceBaseUrl}/${WORLD_TWO}/source.webp`);
+    expect(viewer.querySelector('.gs-tut-viewer-name')?.textContent) //
+      .toContain('Starting picture, The fox shrine');
+    expect(find('.gs-ctl-world')!.textContent).toContain('The fox shrine');
+
+    // And back the way it came.
+    all<HTMLButtonElement>('.gs-tut-viewer-step')[0].click();
+    fixture.detectChanges();
     expect(
-      find<HTMLElement>('.gs-ctl-body app-gs-sweep-scrub')!.childElementCount,
-    ) //
-      .toBe(0);
+      find<HTMLElement>('app-gs-shot-viewer')!
+        .querySelector('img')
+        ?.getAttribute('src'),
+    ).toBe(`${environment.evidenceBaseUrl}/${WORLD_ONE}/001_canny.webp`);
+  });
+
+  it('shuts the full-size picture on escape and leaves the layer open', async () => {
+    await setUp();
+    openTile(0);
+    const frame = all<HTMLButtonElement>('.gs-ctl-shot')[0];
+    frame.click();
+    fixture.detectChanges();
+
+    find<HTMLElement>('.gs-tut-viewer-body')!.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(find('app-gs-shot-viewer')).toBeNull();
+    expect(find('.gs-ctl-body')).not.toBeNull();
+    expect(document.activeElement).toBe(frame);
   });
 
   it('closes on escape and hands focus back to the tile that opened it', async () => {
