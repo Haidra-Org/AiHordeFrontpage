@@ -17265,3 +17265,17 @@ html:has(app-gs-sheet) {
   background: var(--gs-sec-source-tint);
   color: var(--gs-sec-source);
 }
+
+/* ------- installed app landing --------------------------------------- */
+/* The landing's doors take the width they are given rather than the column
+   measure a door keeps inside a panel, and sit two to a row on a wide screen,
+   so each fills its row's height and neither of a pair looks the smaller
+   press. The blue strip narrows with them: at this size it is a mark rather
+   than a panel. */
+.gs-app-landing .gs-app-landing-door {
+  max-width: none;
+  height: 100%;
+}
+.gs-app-landing .gs-app-landing-door .gs-door-panel {
+  flex-basis: 56px;
+}

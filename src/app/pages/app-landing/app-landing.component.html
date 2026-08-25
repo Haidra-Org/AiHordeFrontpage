@@ -1,0 +1,44 @@
+<div class="gs-app-landing-inner">
+  <header class="gs-app-landing-top">
+    <img
+      class="gs-app-landing-mark"
+      src="/app-icon-192.png"
+      alt=""
+      width="72"
+      height="72"
+    />
+    <h1 class="gs-app-landing-name">{{ "app_title" | transloco }}</h1>
+    <p class="gs-app-landing-lead">{{ "app_landing.lead" | transloco }}</p>
+  </header>
+
+  <div class="gs-app-landing-doors">
+    @for (door of doors; track door.id) {
+      <app-gs-door
+        kind="studio"
+        [icon]="door.icon"
+        controlClass="gs-app-landing-door"
+        [title]="door.titleKey | transloco"
+        [meta]="door.noteKey | transloco"
+        (entered)="enter(door.link)"
+      />
+    }
+    <!-- The account door says who is signed in where anybody is, because an
+         installed window shows no header and that is the only place the reader
+         can check it. -->
+    @let account = user();
+    <app-gs-door
+      kind="studio"
+      icon="user-circle"
+      controlClass="gs-app-landing-door"
+      [eyebrow]="account ? account.username : null"
+      [title]="'app_landing.account_title' | transloco"
+      [meta]="
+        account
+          ? ('app_landing.account_kudos'
+            | transloco: { kudos: kudos() | number })
+          : ('app_landing.account_note' | transloco)
+      "
+      (entered)="enter(accountLink)"
+    />
+  </div>
+</div>

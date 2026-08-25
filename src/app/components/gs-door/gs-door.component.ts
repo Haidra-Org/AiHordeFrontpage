@@ -47,7 +47,7 @@ import { IconComponent } from '../icon/icon.component';
         </span>
       } @else if (kind() === 'studio') {
         <span class="gs-door-panel" aria-hidden="true">
-          <app-icon name="adjustments-horizontal" />
+          <app-icon [name]="icon() ?? 'adjustments-horizontal'" />
         </span>
       } @else {
         <span class="gs-door-sheet" aria-hidden="true">
@@ -86,6 +86,11 @@ export class GsDoorComponent {
    * tutorial, which wears the tutorials' own mark and hue wherever it starts.
    */
   public readonly kind = input.required<'grid' | 'studio' | 'tutorial'>();
+  /**
+   * The glyph on a studio door where the place it leads to has a mark of its
+   * own (the picture, the flask, the cap); null takes the panel's sliders.
+   */
+  public readonly icon = input<string | null>(null);
   /** The badge over the title, already translated, or null where there is none. */
   public readonly eyebrow = input<string | null>(null);
   /** Where the door goes, in the caller's own words. */

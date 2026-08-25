@@ -11,6 +11,16 @@ export const routes: Routes = [
       ),
   },
   {
+    // Where an installed copy of the site opens: the manifest's start_url. An
+    // installed window has no address bar and no memory of how the reader got
+    // in, so this is a page of doors rather than the front page.
+    path: 'app',
+    loadComponent: () =>
+      import('./pages/app-landing/app-landing.component').then(
+        (c) => c.AppLandingComponent,
+      ),
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('./pages/profile/profile-shell.component').then(

@@ -77,8 +77,19 @@ export class AppComponent implements OnInit {
   private readonly onStudioRoute = computed(() =>
     isStudioRoute(this.currentUrl()),
   );
-  public readonly hideFooter = this.onStudioRoute;
-  public readonly hideFloatingControls = this.onStudioRoute;
+  /**
+   * The installed app's front screen is four presses; the link tree and the
+   * floating controls would make it a page with a start menu on top.
+   */
+  private readonly onAppLanding = computed(
+    () => this.currentUrl().split('?')[0].replace(/\/$/, '') === '/app',
+  );
+  public readonly hideFooter = computed(
+    () => this.onStudioRoute() || this.onAppLanding(),
+  );
+  public readonly hideFloatingControls = computed(
+    () => this.onStudioRoute() || this.onAppLanding(),
+  );
 
   ngOnInit(): void {
     this.viewportScroller.setOffset(() => {

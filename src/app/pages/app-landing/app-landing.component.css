@@ -1,0 +1,62 @@
+:host {
+  display: block;
+  min-height: 60vh;
+  padding: var(--gs-space-6) var(--gs-space-4) var(--gs-space-8);
+  background: var(--gs-canvas);
+  color: var(--gs-ink);
+}
+
+.gs-app-landing-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-6);
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.gs-app-landing-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gs-space-2);
+  text-align: center;
+}
+
+.gs-app-landing-mark {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--gs-radius-md);
+}
+
+.gs-app-landing-name {
+  margin: 0;
+  font-size: clamp(28px, 6vw, 40px);
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.gs-app-landing-lead {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--gs-ink-2);
+}
+
+/* Rows share one height, so a note that wraps does not make its door the
+   taller press of a pair. */
+.gs-app-landing-doors {
+  display: grid;
+  grid-auto-rows: 1fr;
+  align-items: stretch;
+  gap: var(--gs-space-3);
+}
+
+.gs-app-landing-doors app-gs-door {
+  display: block;
+  height: 100%;
+}
+
+@media (min-width: 900px) {
+  .gs-app-landing-doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

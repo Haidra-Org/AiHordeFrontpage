@@ -60,7 +60,24 @@
     <link rel="manifest" href="site.webmanifest" />
     <link rel="mask-icon" href="safari-pinned-tab.svg" color="#5bbad5" />
     <meta name="msapplication-TileColor" content="#2d89ef" />
-    <meta name="theme-color" content="#ffffff" />
+    <!-- The canvas the app is drawn on, so the browser's own chrome and the
+         installed window's title bar continue the page rather than cut it. -->
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: light)"
+      content="#eceef3"
+    />
+    <meta
+      name="theme-color"
+      media="(prefers-color-scheme: dark)"
+      content="#0f1115"
+    />
+
+    <!-- Installed on iOS, where the manifest is not read: the same standalone
+         window, name and canvas the manifest asks for elsewhere. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="AI Horde" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
   <body>
     <app-root></app-root>
