@@ -343,11 +343,11 @@ describe('GenerateLearnPanelComponent', () => {
       fixture.detectChanges();
       await serveLibrary(stubIndex);
 
-      expect(query('.gs-sweep-offer')).toHaveLength(1);
-      // The capsule names the setting and its payload, so two of them on one
-      // page are told apart before either is opened.
+      expect(query('.gs-sweep-card')).toHaveLength(1);
+      // The card names the setting and says what a press does, so two of them
+      // on one page are told apart before either is opened.
       expect(text()).toContain('Sampling · Interactive explorer');
-      expect(text()).toContain('3 frames · 4 → 30');
+      expect(text()).toContain('Drag to explore 3 pictures');
     });
 
     it('offers nothing to the registers that are past needing it', () => {
@@ -355,7 +355,7 @@ describe('GenerateLearnPanelComponent', () => {
       engine.goTo(3);
       fixture.detectChanges();
 
-      expect(query('.gs-sweep-offer')).toHaveLength(0);
+      expect(query('.gs-sweep-card')).toHaveLength(0);
       TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
     });
 
@@ -365,7 +365,7 @@ describe('GenerateLearnPanelComponent', () => {
       engine.goTo(5);
       fixture.detectChanges();
 
-      expect(query('.gs-sweep-offer')).toHaveLength(0);
+      expect(query('.gs-sweep-card')).toHaveLength(0);
       TestBed.inject(HttpTestingController).expectNone(SWEEP_INDEX);
     });
 
@@ -377,9 +377,9 @@ describe('GenerateLearnPanelComponent', () => {
       fixture.detectChanges();
       await serveLibrary(stubIndex);
 
-      expect(query('.gs-sweep-offer')).toHaveLength(0);
+      expect(query('.gs-sweep-card')).toHaveLength(0);
       // Every section's strip is open at once, since the whole track is one read.
-      expect(query('.gs-sweep-open').length).toBeGreaterThanOrEqual(1);
+      expect(query('.gs-plate').length).toBeGreaterThanOrEqual(1);
       // Both readings of the render, as one viewer with a choice in it.
       const variants = query<HTMLButtonElement>('.gs-sweep-variant').slice(
         0,

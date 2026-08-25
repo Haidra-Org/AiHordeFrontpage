@@ -230,8 +230,8 @@ describe('GsParamEntryComponent', () => {
 
     // The setting's own evidence is the page's subject and is already open on
     // it; anything further about the same setting is offered rather than shown.
-    expect(all('.gs-sweep-open')).toHaveLength(1);
-    expect(all('.gs-sweep-offer')).toHaveLength(1);
+    expect(all('.gs-plate')).toHaveLength(1);
+    expect(all('.gs-sweep-card')).toHaveLength(1);
   });
 
   it('gives peer strips the same card and opens none of them', async () => {
@@ -242,11 +242,11 @@ describe('GsParamEntryComponent', () => {
     // off the page here.
     await setUp({ topic: 'sampler_settings' });
 
-    const folded = all('.gs-sweep-offer');
-    expect(all('.gs-sweep-open')).toHaveLength(0);
+    const folded = all('.gs-sweep-card');
+    expect(all('.gs-plate')).toHaveLength(0);
     expect(folded.length).toBeGreaterThan(0);
     for (const card of folded) {
-      expect(card.classList.contains('gs-cap--film')).toBe(false);
+      expect(card.classList.contains('gs-sweep-card--film')).toBe(false);
     }
   });
 
@@ -257,16 +257,17 @@ describe('GsParamEntryComponent', () => {
     // values, which the capsule has to say: everything around it is shaped like
     // a comparison, and a reader who takes it for one reads it backwards. The
     // compact card would say none of that, so the timeline does not take it.
-    const folded = all('.gs-sweep-offer');
-    expect(folded[0].classList.contains('gs-cap--film')).toBe(false);
+    const folded = all('.gs-sweep-card');
+    expect(folded[0].classList.contains('gs-sweep-card--film')).toBe(false);
     expect(folded[0].querySelector('.gs-cap-eyebrow')?.textContent).toContain(
       'One picture, pass by pass',
     );
-    expect(folded[0].querySelector('.gs-cap-title')?.textContent?.trim()).toBe(
-      translations['generate.help.step_preview.title'],
-    );
-    expect(folded[0].querySelector('.gs-cap-meta')).not.toBeNull();
-    expect(folded[0].querySelector('.gs-cap-go')).not.toBeNull();
+    expect(
+      folded[0].querySelector('.gs-sweep-card-title')?.textContent?.trim(),
+    ).toBe(translations['generate.help.step_preview.title']);
+    // A line about the strip, and a door that names the press.
+    expect(folded[0].querySelector('.gs-sweep-card-line')).not.toBeNull();
+    expect(folded[0].querySelector('.gs-sweep-card-door')).not.toBeNull();
   });
 
   it('says what a timeline is before showing one, and only there', async () => {

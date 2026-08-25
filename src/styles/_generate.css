@@ -118,6 +118,9 @@
   --gs-stage-ink: #e7eaf0;
   /* 4.6:1 on --gs-stage: the quiet ink on the plate still carries meta text. */
   --gs-stage-label: #9aa1ad;
+  /* The pane the controls that sit on a frame are drawn on. Dark enough that
+     the stage ink clears 4.5:1 over the brightest picture behind it. */
+  --gs-stage-scrim: rgb(14 16 22 / 88%);
 }
 
 /* The dark half, lightened to clear 3:1 on the dark panel and card. */
@@ -9895,9 +9898,737 @@
    widget parked in it: hairline edge, zone tint, no fill of its own. */
 app-gs-sweep-scrub {
   display: block;
+  container: gs-sweep / inline-size;
 }
 .gen-studio .gs-sweep {
   margin-top: 9px;
+}
+
+/* ------- the explorer: card, plate, stage, viewer -------------------- */
+
+/* Three states, one job: the picture and the control that changes it on screen
+   together, at every width. The shape is decided by the room this explorer has
+   rather than by the room the window has, because the same component stands in
+   a documentation column, in a dock beside the form, and in a phone sheet, and
+   only one of those has anything to do with the viewport. */
+
+/* ------- the collapsed card ------------------------------------------ */
+
+/* The offer is the difference itself: two frames with the divider already in
+   the middle, so the card previews what a drag does rather than announcing
+   that a sweep exists. A press anywhere opens the plate; the divider is the one
+   thing on the card that can be moved without opening it. */
+.gen-studio .gs-sweep-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 132px) minmax(0, 1fr);
+  align-items: stretch;
+  max-width: 520px;
+  overflow: hidden;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-card);
+  color: var(--gs-ink);
+  cursor: pointer;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 140px;
+  transition: border-color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-sweep-card:hover,
+.gen-studio .gs-sweep-card:focus-within {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-sweep-card-stage {
+  display: block;
+  position: relative;
+  align-self: stretch;
+  min-width: 0;
+  background: var(--gs-stage);
+}
+.gen-studio .gs-sweep-card-stage app-gs-compare-wipe,
+.gen-studio .gs-sweep-card-stage .gs-wipe {
+  height: 100%;
+}
+.gen-studio .gs-sweep-card-stage .gs-wipe-img {
+  height: 100%;
+  object-fit: cover;
+}
+/* The pair on the card is a preview rather than a reading: the corner tags name
+   two values the reader has no context for yet, and the title under them is
+   what the card is actually saying. */
+.gen-studio .gs-sweep-card-stage .gs-wipe-tag {
+  display: none;
+}
+.gen-studio .gs-sweep-card-text {
+  display: block;
+  min-width: 0;
+  padding: var(--gs-space-3);
+}
+.gen-studio .gs-sweep-card-title {
+  display: block;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-lg);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-sweep-card-line {
+  display: block;
+  margin-top: var(--gs-space-1);
+  font-size: var(--gs-text-sm);
+  line-height: 1.5;
+  color: var(--gs-muted);
+}
+/* The verb door: what a press does, said as the thing it does. A chevron on its
+   own is an affordance without a promise, and the card is asking for a press
+   from inside prose the reader was not looking for it in. */
+.gen-studio .gs-sweep-card-door {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  min-height: 32px;
+  margin-top: var(--gs-space-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-blue);
+  cursor: pointer;
+}
+.dark .gen-studio .gs-sweep-card-door {
+  color: var(--gs-pop-accent);
+}
+/* The door's reach: a press anywhere on the card presses this button, so the
+   card is one press without a second control being invented for the pointer. */
+.gen-studio .gs-sweep-card-door::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+/* Drawn over that reach, which is the whole of what makes the divider the one
+   thing on the card that moves without opening it. */
+.gen-studio .gs-sweep-card-stage .gs-wipe-divider {
+  z-index: 1;
+}
+.gen-studio .gs-sweep-card-door:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+  border-radius: var(--gs-radius-sm);
+}
+/* The compact register, for the surfaces that carry several of these in a row.
+   Same card, same plate, a third of the height. */
+.gen-studio .gs-sweep-card--film {
+  grid-template-columns: minmax(0, 88px) minmax(0, 1fr);
+  max-width: 440px;
+  contain-intrinsic-size: auto 92px;
+}
+.gen-studio .gs-sweep-card--film .gs-sweep-card-text {
+  padding: var(--gs-space-2-5);
+}
+.gen-studio .gs-sweep-card--film .gs-sweep-card-title {
+  margin-top: 0;
+  font-size: var(--gs-text-sm);
+}
+.gen-studio .gs-sweep-card--film .gs-sweep-card-line {
+  display: none;
+}
+
+/* ------- the plate --------------------------------------------------- */
+
+/* The open state, on the dark ground every rendered frame in the studio is
+   judged against. The plate is unmistakably not the page it sits in, and the
+   stage inside it is unmistakably not the plate. */
+.gen-studio .gs-plate {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-stage);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gs-space-3);
+  padding: 0 var(--gs-space-3) var(--gs-space-3);
+}
+.gen-studio .gs-plate-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  min-width: 0;
+}
+
+/* ------- the stage --------------------------------------------------- */
+
+/* How tall the picture may stand on the page: high enough to read, low enough
+   that the control that changes it is on the same screen. The full-size view
+   has no such bound, which is the whole of what it is for.
+
+   The picture, with everything that steers it over it rather than under it. The
+   inset edge is what keeps a frame from hard-cutting against the plate: a
+   rendered picture judged on a dark ground wants the ground to close around it
+   rather than stop at it. */
+.gen-studio .gs-plate-col .gs-sweep-stage {
+  max-height: min(48vh, 440px);
+}
+.gen-studio .gs-plate-col .gs-sweep-stage .gs-sweep-frame,
+.gen-studio .gs-plate-col .gs-sweep-stage .gs-wipe-img {
+  max-height: min(48vh, 440px);
+}
+.gen-studio .gs-sweep-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-stage);
+  box-shadow:
+    inset 0 0 0 1px var(--gs-stage-rim),
+    inset 0 14px 32px -22px rgb(0 0 0 / 95%),
+    inset 0 -14px 32px -22px rgb(0 0 0 / 95%);
+  touch-action: pan-y;
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-stage:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+.gen-studio .gs-sweep-stage .gs-sweep-frame,
+.gen-studio .gs-sweep-stage .gs-wipe-img {
+  display: block;
+  width: 100%;
+  object-fit: contain;
+}
+.gen-studio .gs-sweep-stage app-gs-compare-wipe {
+  display: block;
+  width: 100%;
+}
+/* The value, in the corner the eye reaches first, on a smoked pane so it holds
+   its contrast over a frame that could be any colour at all. */
+.gen-studio .gs-sweep-pill {
+  position: absolute;
+  top: var(--gs-space-2);
+  left: var(--gs-space-2);
+  max-width: calc(100% - var(--gs-space-8));
+  padding: 4px var(--gs-space-2);
+  overflow: hidden;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-stage-scrim);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-xs);
+  line-height: 1.3;
+  color: var(--gs-stage-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* What the frame can be held against, where the strip was made from something:
+   the picture it was painted over, and the map a detector drew from it. */
+.gen-studio .gs-sweep-chips {
+  position: absolute;
+  top: var(--gs-space-2);
+  right: var(--gs-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-sweep-chip {
+  min-height: 28px;
+  padding: 0 var(--gs-space-2);
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-stage-scrim);
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-stage-ink);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-chip:hover {
+  border-color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-chip.is-on {
+  border-color: var(--gs-stage-ink);
+  background: var(--gs-stage-ink);
+  color: var(--gs-stage);
+}
+.gen-studio .gs-sweep-expand {
+  position: absolute;
+  right: var(--gs-space-2);
+  bottom: var(--gs-space-2);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-stage-scrim);
+  color: var(--gs-stage-ink);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-expand:hover {
+  border-color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-chip:focus-visible,
+.gen-studio .gs-sweep-expand:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+
+/* ------- the filmstrip ----------------------------------------------- */
+
+/* Every stop in a row that snaps, the one on show enlarged and lit. A count
+   says how many frames there are; only the strip says what they look like and
+   how far along the reader has come. */
+.gen-studio .gs-sweep-film {
+  display: flex;
+  gap: var(--gs-space-2);
+  margin: 0;
+  padding: var(--gs-space-1) 0;
+  overflow-x: auto;
+  list-style: none;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.gen-studio .gs-sweep-film::-webkit-scrollbar {
+  display: none;
+}
+.gen-studio .gs-sweep-film-cell {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+}
+.gen-studio .gs-sweep-film-go {
+  display: grid;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+/* Every thumbnail is the same box, whichever one is on show: a frame that
+   grows as the reader reaches it moves the two beside it, and a row that
+   reflows under a dragging finger reads as the control fighting back. The mark
+   is a ring and full weight, which cost no layout. */
+.gen-studio .gs-sweep-film-img {
+  display: block;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--gs-radius-sm);
+  outline: 1px solid var(--gs-stage-rim);
+  outline-offset: -1px;
+  object-fit: cover;
+  opacity: 0.55;
+  transition: opacity var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-sweep-film-go:hover .gs-sweep-film-img {
+  opacity: 0.85;
+}
+.gen-studio .gs-sweep-film-go.is-at .gs-sweep-film-img {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: -2px;
+  opacity: 1;
+}
+/* Snapping is for a row the reader flicks. Under a drag on the stage or the
+   rail the strip is being driven from elsewhere, and a snap point pulling
+   against that is what makes it rattle. */
+.gen-studio .gs-sweep-film.is-dragging {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+.gen-studio .gs-sweep-film-value {
+  display: block;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-2xs);
+  line-height: 1.3;
+  color: var(--gs-stage-label);
+  text-align: center;
+}
+.gen-studio .gs-sweep-film-go.is-at .gs-sweep-film-value {
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-film-go:focus-visible {
+  border-radius: var(--gs-radius-sm);
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+
+/* ------- the grid of every stop -------------------------------------- */
+
+/* Frames drawn large enough to compare, which is the question a sweep is
+   asked. Five across at a documentation page's width; two or three on a phone,
+   where the filmstrip leads and this is what the reader opens to lay the whole
+   set out. */
+.gen-studio .gs-sweep-options--frames {
+  --gs-sweep-option-min: 104px;
+
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-sweep-options--frames .gs-sweep-option-frame {
+  position: relative;
+  display: block;
+}
+.gen-studio .gs-sweep-options--frames .gs-sweep-plate-cell {
+  display: block;
+  width: 100%;
+  border-radius: var(--gs-radius-sm);
+}
+.gen-studio .gs-sweep-options--frames .gs-sweep-plate-cell.is-at {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+.gen-studio .gs-sweep-options--frames .gs-sweep-option-cap {
+  color: var(--gs-stage-label);
+}
+/* The glyph appears where a pointer can reach it and stays for a keyboard,
+   which has no other way to ask for the frame full size from the grid. */
+.gen-studio .gs-sweep-expand--cell {
+  width: 28px;
+  height: 28px;
+  opacity: 0;
+}
+.gen-studio .gs-sweep-option-frame:hover .gs-sweep-expand--cell,
+.gen-studio .gs-sweep-expand--cell:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .gen-studio .gs-sweep-expand--cell {
+    opacity: 1;
+  }
+}
+
+/* ------- the plate's foot and its details ---------------------------- */
+
+.gen-studio .gs-plate-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding-top: var(--gs-space-1);
+}
+.gen-studio .gs-plate-details-go,
+.gen-studio .gs-plate-sheet-go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  min-height: 32px;
+  padding: 0 var(--gs-space-2);
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-stage-label);
+  cursor: pointer;
+}
+.gen-studio .gs-plate-details-go:hover,
+.gen-studio .gs-plate-sheet-go:hover,
+.gen-studio .gs-plate-details-go[aria-expanded="true"],
+.gen-studio .gs-plate-sheet-go[aria-pressed="true"] {
+  border-color: var(--gs-stage-label);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-details-go:focus-visible,
+.gen-studio .gs-plate-sheet-go:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+/* Provenance is one step down from the picture: what was held, what was asked
+   for, and where to read more. On a phone it rises from the bottom edge over
+   the plate; where there is room it stands beside the stage instead. Same
+   markup either way. */
+.gen-studio .gs-plate-details {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  max-height: 78%;
+  padding: var(--gs-space-3);
+  overflow-y: auto;
+  border-top: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-md) var(--gs-radius-md) 0 0;
+  background: var(--gs-stage);
+  box-shadow: 0 -18px 44px -14px rgb(0 0 0 / 85%);
+  overscroll-behavior: contain;
+}
+.gen-studio .gs-plate-details:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: -2px;
+}
+.gen-studio .gs-plate-details-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin-bottom: var(--gs-space-2);
+}
+.gen-studio .gs-plate-details-head .gs-cap-eyebrow {
+  flex: 1;
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-plate-held {
+  display: grid;
+  gap: var(--gs-space-1);
+  margin: 0 0 var(--gs-space-2-5);
+}
+.gen-studio .gs-plate-held-row {
+  display: flex;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
+  line-height: 1.5;
+}
+.gen-studio .gs-plate-held-row dt {
+  flex: 0 0 96px;
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-plate-held-row dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-sidecar {
+  display: inline-block;
+  margin-top: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-2-5);
+  padding-top: var(--gs-space-2);
+  border-top: 1px solid var(--gs-stage-rim);
+}
+
+/* ------- the full-size view ------------------------------------------ */
+
+/* A native dialog, so the browser owns the top layer, the focus trap, the inert
+   background and Escape. Every one of those is a thing a hand-built layer gets
+   subtly wrong, and this one has to work inside a phone sheet that traps focus
+   of its own.
+
+   The opening is a plain CSS rise rather than a view transition between the two
+   frames: promoting an element to the top layer from inside a transition's DOM
+   update crashes the renderer on current Chromium, and a picture that grows
+   nicely is not worth a blank tab. */
+@keyframes gs-sweep-dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.gen-studio dialog.gs-sweep-dialog {
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  border: 0;
+  background: var(--gs-stage);
+  color: var(--gs-stage-ink);
+}
+.gen-studio dialog.gs-sweep-dialog[open] {
+  animation: gs-sweep-dialog-in var(--gs-dur) var(--gs-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio dialog.gs-sweep-dialog[open] {
+    animation: none;
+  }
+}
+.gen-studio dialog.gs-sweep-dialog::backdrop {
+  background: rgb(0 0 0 / 82%);
+}
+.gen-studio .gs-sweep-dialog-body {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: var(--gs-space-2);
+  height: 100%;
+  padding: var(--gs-space-3);
+}
+.gen-studio .gs-sweep-dialog-top {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-sweep-dialog-what {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--gs-space-2);
+  min-width: 0;
+}
+.gen-studio .gs-sweep-dialog-what .gs-cap-eyebrow {
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-sweep-dialog-param {
+  font-size: var(--gs-text-lg);
+  font-weight: 700;
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-dialog-x {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-stage-ink);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-dialog-x:hover {
+  border-color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-stage--big {
+  height: 100%;
+  max-height: none;
+  cursor: default;
+  touch-action: none;
+}
+/* Full size is the whole reason this view exists, so the frame takes whichever
+   of the two dimensions runs out first rather than the width every time: a
+   portrait picture held to the width of a phone is drawn at a third of the
+   screen it was opened to fill. */
+.gen-studio .gs-sweep-stage--big .gs-sweep-frame {
+  width: auto;
+  max-width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+}
+.gen-studio .gs-sweep-stage--big .gs-wipe-img {
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+}
+.gen-studio .gs-sweep-stage--big .gs-sweep-frame {
+  transform: translate(var(--gs-sweep-pan-x, 0), var(--gs-sweep-pan-y, 0))
+    scale(var(--gs-sweep-zoom, 1));
+  transform-origin: center;
+}
+.gen-studio .gs-sweep-dialog-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gs-space-3);
+}
+.gen-studio .gs-sweep-dialog-step {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-stage-ink);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-dialog-step:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.gen-studio .gs-sweep-dialog-step:hover:not(:disabled) {
+  border-color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-dialog-pos {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-sm);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-dialog-x:focus-visible,
+.gen-studio .gs-sweep-dialog-step:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+
+/* ------- the room the explorer has ----------------------------------- */
+
+/* Container queries, not viewport queries: the same component stands in a
+   documentation column, in a dock beside the form, and in a phone sheet, and
+   only one of those has anything to do with the window. */
+@container gs-sweep (min-width: 480px) {
+  .gen-studio .gs-sweep-options--frames {
+    --gs-sweep-option-min: 132px;
+  }
+}
+@container gs-sweep (min-width: 860px) {
+  /* The grid carries the comparison here, so the strip can afford a thumbnail
+     a reader can actually recognise a frame in. */
+  .gen-studio .gs-sweep-film-img {
+    width: 88px;
+    height: 88px;
+  }
+  .gen-studio .gs-sweep-options--frames {
+    --gs-sweep-option-min: 170px;
+  }
+}
+@container gs-sweep (min-width: 860px) {
+  /* The panel takes its column only when it is open. Reserving it while the
+     details are folded away narrows the stage and the grid by 300px for
+     nothing, which is exactly what the reader is not looking at. */
+  .gen-studio .gs-plate-main.is-detailed {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  }
+  /* With room beside the stage the details are a panel rather than a sheet:
+     provenance read next to the picture it is about, instead of over it. */
+  .gen-studio .gs-plate-details {
+    position: static;
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--gs-stage-rim);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .gen-studio .gs-plate-col .gs-sweep-stage,
+  .gen-studio .gs-plate-col .gs-sweep-stage .gs-sweep-frame,
+  .gen-studio .gs-plate-col .gs-sweep-stage .gs-wipe-img {
+    max-height: 440px;
+  }
+}
+
+/* A coarse pointer gets the room a finger needs on everything it can press. */
+@media (pointer: coarse) {
+  .gen-studio .gs-sweep-chip,
+  .gen-studio .gs-sweep-expand,
+  .gen-studio .gs-plate-details-go,
+  .gen-studio .gs-plate-sheet-go,
+  .gen-studio .gs-sweep-card-door {
+    min-height: 44px;
+  }
+  .gen-studio .gs-sweep-expand {
+    width: 44px;
+  }
+  .gen-studio .gs-sweep-card-stage .gs-wipe-divider {
+    width: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-sweep-card,
+  .gen-studio .gs-sweep-film-img {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .gen-studio .gs-sweep-card,
+  .gen-studio .gs-plate,
+  .gen-studio .gs-sweep-stage,
+  .gen-studio .gs-sweep-chip,
+  .gen-studio .gs-sweep-expand,
+  .gen-studio .gs-plate-details,
+  .gen-studio .gs-sweep-dialog-step,
+  .gen-studio .gs-sweep-dialog-x {
+    border: 1px solid CanvasText;
+  }
+  .gen-studio .gs-sweep-film-go.is-at .gs-sweep-film-img {
+    outline-color: Highlight;
+  }
 }
 /* ------- the evidence capsule ---------------------------------------- */
 
@@ -10035,58 +10766,7 @@ app-gs-sweep-scrub {
   border-color: var(--gs-pop-accent);
   color: var(--gs-pop-accent);
 }
-/* The compact register, for the surfaces that carry many of these in a row: the
-   guide's steps and a reference entry's secondary strips. Two frames instead of
-   three, no eyebrow, one line of meta, a third of the height. It is the same
-   card and opens the same plate. */
-.gen-studio .gs-cap--film .gs-cap-peek {
-  flex: 0 0 66px;
-  gap: var(--gs-space-1);
-  padding: var(--gs-space-1) var(--gs-space-1);
-}
-.gen-studio .gs-cap--film .gs-cap-peek::before,
-.gen-studio .gs-cap--film .gs-cap-peek::after {
-  display: none;
-}
-.gen-studio .gs-cap--film {
-  align-items: center;
-  gap: var(--gs-space-3);
-  /* Held to a measure of its own: run to the column's full width and the
-     chevron ends up a hand's width from the words it belongs to. */
-  max-width: 440px;
-}
-.gen-studio .gs-cap--film .gs-cap-text {
-  padding: var(--gs-space-2) var(--gs-space-2) var(--gs-space-2) 0;
-}
-.gen-studio .gs-cap--film .gs-cap-title {
-  margin-top: 0;
-  font-size: var(--gs-text-sm);
-}
-.gen-studio .gs-cap--film .gs-cap-meta {
-  font-size: var(--gs-text-xs);
-}
-.gen-studio .gs-cap--film .gs-cap-go {
-  width: 22px;
-  height: 22px;
-  border: 0;
-  margin-right: var(--gs-space-3);
-}
 
-/* ------- the open plate ---------------------------------------------- */
-
-/* Everything the open state has, inside one bounded dark plate: the header, the
-   frame, its caption, the rail, and the way back out. Before this the frame sat
-   on the page with a bare slider and a floating link under it, and neither read
-   as belonging to the pictures. */
-.gen-studio .gs-sweep-open {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--gs-stage-rim);
-  border-radius: var(--gs-radius-md);
-  background: var(--gs-stage);
-  color: var(--gs-stage-ink);
-  max-width: 640px;
-}
 .gen-studio .gs-plate-head {
   display: flex;
   align-items: center;
@@ -10121,10 +10801,7 @@ app-gs-sweep-scrub {
   border-color: var(--gs-stage-label);
   color: var(--gs-stage-ink);
 }
-.gen-studio .gs-plate-body {
-  min-width: 0;
-  padding: 0 var(--gs-space-4);
-}
+
 /* The footer: what this frame is, where in the strip it is, and the way to the
    full-size view. All three used to be somewhere else. The row wraps rather
    than growing: a strip that varies a piece of prompt text puts a whole
@@ -10137,23 +10814,7 @@ app-gs-sweep-scrub {
   min-width: 0;
   padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-3);
 }
-.gen-studio .gs-plate-value {
-  min-width: 0;
-  max-width: 100%;
-  padding: var(--gs-space-1) var(--gs-space-2);
-  border: 1px solid var(--gs-stage-rim);
-  border-radius: var(--gs-radius-sm);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
-  font-size: var(--gs-text-sm);
-  color: var(--gs-stage-ink);
-  overflow-wrap: anywhere;
-}
-.gen-studio .gs-plate-pos {
-  font-size: var(--gs-text-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--gs-stage-label);
-  white-space: nowrap;
-}
+
 .gen-studio .gs-plate-grow {
   flex: 1;
 }
@@ -10172,38 +10833,7 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate-link:hover {
   color: var(--gs-stage-ink);
 }
-/* The provenance line: what model made the pictures, always, and the way to
-   the record itself. It closes the plate, so it is quieter than the foot and
-   separated by the same rim the plate's edges use. */
-.gen-studio .gs-plate-provenance {
-  display: flex;
-  align-items: center;
-  gap: var(--gs-space-3);
-  min-width: 0;
-  padding: 0 var(--gs-space-4) var(--gs-space-3);
-}
-/* The way into the record reads as the disclosure it is: a bordered control in
-   the plate's own chrome, its chevron pointing at what a press will do. */
-.gen-studio .gs-plate-request-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--gs-space-2);
-  min-height: 32px;
-  padding: var(--gs-space-1) var(--gs-space-3);
-  border: 1px solid var(--gs-stage-rim);
-  border-radius: var(--gs-radius-sm);
-  background: none;
-  font-size: var(--gs-text-xs);
-  font-weight: 600;
-  color: var(--gs-stage-label);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.gen-studio .gs-plate-request-toggle:hover,
-.gen-studio .gs-plate-request-toggle[aria-expanded="true"] {
-  color: var(--gs-stage-ink);
-  border-color: var(--gs-stage-label);
-}
+
 .gen-studio .gs-plate-model {
   min-width: 0;
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -10244,11 +10874,9 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate .gs-sweep-caption,
 .gen-studio .gs-plate .gs-sweep-caption-batch,
-.gen-studio .gs-plate .gs-sweep-caption-value,
 .gen-studio .gs-plate .gs-sweep-loading,
 .gen-studio .gs-plate .gs-sweep-pair-cap,
-.gen-studio .gs-plate .gs-sweep-solo-cap,
-.gen-studio .gs-plate .gs-sweep-source-cap {
+.gen-studio .gs-plate .gs-sweep-solo-cap {
   color: var(--gs-stage-label);
 }
 /* The controls that were quiet blue links on the page are quiet plate ink here:
@@ -10257,11 +10885,9 @@ app-gs-sweep-scrub {
    a way off it. */
 .gen-studio .gs-plate .gs-sweep-why,
 .gen-studio .gs-plate .gs-sweep-why-link,
-.gen-studio .gs-plate .gs-sweep-pair-enlarge,
 .gen-studio .gs-plate .gs-sweep-pair-mode,
 .dark .gen-studio .gs-plate .gs-sweep-why,
 .dark .gen-studio .gs-plate .gs-sweep-why-link,
-.dark .gen-studio .gs-plate .gs-sweep-pair-enlarge,
 .dark .gen-studio .gs-plate .gs-sweep-pair-mode {
   color: var(--gs-stage-label);
   text-decoration: underline;
@@ -10269,7 +10895,6 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate .gs-sweep-why:hover,
 .gen-studio .gs-plate .gs-sweep-why-link:hover,
-.gen-studio .gs-plate .gs-sweep-pair-enlarge:hover,
 .gen-studio .gs-plate .gs-sweep-pair-mode:hover {
   color: var(--gs-stage-ink);
 }
@@ -10283,8 +10908,18 @@ app-gs-sweep-scrub {
 }
 /* The choice of which reading to show sits in the plate's header band, so it is
    read as a control over these pictures rather than as prose beside them. */
+/* The two readings of a parameter, and the note that says which is which, on
+   one row: stacked, they cost the plate a whole band of height before the
+   picture the reader came for. */
 .gen-studio .gs-plate-controls {
-  padding: 0 var(--gs-space-4) var(--gs-space-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: 0 var(--gs-space-3) var(--gs-space-2);
+}
+.gen-studio .gs-plate-controls .gs-sweep-why-body {
+  flex-basis: 100%;
 }
 .gen-studio .gs-plate-controls .gs-sweep-variants {
   margin-bottom: 0;
@@ -10466,9 +11101,6 @@ app-gs-sweep-scrub {
   .gen-studio .gs-tickrail-tick.is-at::after {
     outline: 2px solid Highlight;
   }
-  .gen-studio .gs-plate-value {
-    border-color: CanvasText;
-  }
 }
 
 /* ------- the doors ---------------------------------------------------- */
@@ -10537,9 +11169,7 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-ref-entry--page .gs-ref-try-door {
   max-width: 640px;
 }
-.gen-studio .gs-sweep-figure {
-  margin: 0;
-}
+
 /* The frame is the affordance, so the button around it adds nothing but the
    cursor and the focus ring the image cannot carry itself. */
 .gen-studio .gs-sweep-zoom {
@@ -10569,17 +11199,7 @@ app-gs-sweep-scrub + app-gs-door {
   max-height: min(42vh, 460px);
   object-fit: contain;
 }
-/* Frames of one strip can differ in shape (a resolution sweep by its nature, a
-   sketch-sourced strip by its sources), and a stage that takes each frame's own
-   height bounces the whole plate as the reader scrubs. The single-frame stage
-   is one fixed letterbox: the frame element itself carries the stage's height
-   and letterboxes its picture, so every stop renders in the same box. The pair
-   and the tiled plate keep their own layouts. */
-.gen-studio .gs-sweep-figure img.gs-sweep-frame {
-  width: 100%;
-  height: min(42vh, 460px);
-  object-fit: contain;
-}
+
 /* The setting and its value lead the caption as one token, and the sentence
    about what it did to the picture wraps under it on a narrow column. */
 .gen-studio .gs-sweep-caption {
@@ -10606,18 +11226,7 @@ app-gs-sweep-scrub + app-gs-door {
   font-size: var(--gs-text-xs);
   color: var(--gs-muted);
 }
-/* The strips that vary a piece of prompt text have no field to name, so they
-   keep the eyebrow the chip replaced everywhere else. */
-.gen-studio .gs-sweep-caption-value {
-  min-width: 0;
-  font-size: var(--gs-text-xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  /* --gs-label lands a hair under 4.5:1 on the note's tinted plate in the
-     light theme at this size; the secondary ink clears it in both themes. */
-  color: var(--gs-ink-2);
-}
+
 .gen-studio .gs-sweep-loading {
   font-size: var(--gs-text-sm);
   color: var(--gs-muted);
@@ -10766,9 +11375,7 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-top {
   border-bottom-color: var(--gs-stage-rim);
 }
-.gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-param {
-  color: var(--gs-stage-ink);
-}
+
 .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-name,
 .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-x {
   color: var(--gs-stage-label);
@@ -10776,42 +11383,7 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-x:hover {
   color: var(--gs-stage-ink);
 }
-/* Under the picture the controls need the room a heading above them did not:
-   the toggle is a row of buttons rather than a line of prose, and set tight
-   against the caption it reads as part of it. */
-.gen-studio .gs-sweep-viewer-scroll .gs-plate-controls {
-  padding-top: var(--gs-space-3);
-}
-.gen-studio .gs-sweep-viewer-scroll .gs-plate-controls .gs-sweep-variants {
-  margin-bottom: var(--gs-space-2);
-}
-/* The scrubber is docked rather than scrolled: a lane the reader has to find
-   by scrolling is a lane they do not know is there, and stepping the strip is
-   the whole reason the layer opened. */
-.gen-studio .gs-sweep-viewer-dock {
-  flex: none;
-  padding: var(--gs-space-2) var(--gs-space-4) var(--gs-space-2);
-  border-top: 1px solid var(--gs-stage-rim);
-}
-.gen-studio .gs-sweep-viewer-dock .gs-tickrail-box,
-.gen-studio .gs-sweep-viewer-dock .gs-plate-foot {
-  padding: 0;
-}
-.gen-studio .gs-sweep-viewer-dock .gs-plate-foot {
-  margin-top: var(--gs-space-2);
-}
-/* Everything below the band scrolls together, and the scroll stops at the
-   layer's own edge rather than running on into the page behind it. */
-.gen-studio .gs-sweep-viewer-scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  padding-bottom: var(--gs-space-3);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-/* Full size is the whole reason the layer exists, so the letterboxed stage the
-   plate holds its frames in is given the room the page could not. */
-.gen-studio .gs-sweep-viewer-body .gs-sweep-figure img.gs-sweep-frame,
+
 .gen-studio .gs-sweep-viewer-body img.gs-sweep-frame {
   height: min(52vh, 620px);
   max-height: min(52vh, 620px);
@@ -10825,21 +11397,7 @@ app-gs-sweep-scrub + app-gs-door {
     var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border-results);
 }
-/* What the plate's head says, in the layer: the badge and the setting's name
-   over the value on show. The layer is the only view a phone gets, so the
-   value has to arrive named rather than as a bare token. */
-.gen-studio .gs-sweep-viewer-what {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--gs-space-2);
-  min-width: 0;
-}
-.gen-studio .gs-sweep-viewer-param {
-  font-size: var(--gs-text-md);
-  font-weight: 600;
-  color: var(--gs-ink);
-}
+
 .gen-studio .gs-sweep-viewer-name {
   flex: 1;
   min-width: 0;
@@ -10850,11 +11408,7 @@ app-gs-sweep-scrub + app-gs-door {
   text-transform: uppercase;
   color: var(--gs-label);
 }
-/* Under the setting's name the value is a row of its own height rather than the
-   stretched child of a column. */
-.gen-studio .gs-sweep-viewer-what .gs-sweep-viewer-name {
-  flex: none;
-}
+
 /* A chip in the title row is a token rather than an eyebrow, and drops the
    eyebrow's treatment so it reads the same here as it does on the page. */
 .gen-studio .gs-sweep-viewer-name .gs-setting-chip {
@@ -10929,9 +11483,7 @@ app-gs-sweep-scrub + app-gs-door {
     padding: var(--gs-space-1) var(--gs-space-1) var(--gs-space-1)
       var(--gs-space-3);
   }
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-what {
-    flex-wrap: nowrap;
-  }
+
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-cap-eyebrow {
     flex: 0 1 auto;
     min-width: 0;
@@ -10939,42 +11491,22 @@ app-gs-sweep-scrub + app-gs-door {
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-param {
-    flex: 0 0 auto;
-    white-space: nowrap;
-  }
-  /* The frame runs the full width and is capped so the caption under it and
-     the lane below that are both on screen before anything is scrolled. */
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-body {
-    padding: 0;
-  }
-  .gen-studio
-    .gs-sweep-viewer-body.gs-plate
-    .gs-sweep-figure
-    img.gs-sweep-frame,
+
   .gen-studio .gs-sweep-viewer-body.gs-plate img.gs-sweep-frame {
     height: min(56dvh, 100vw);
     max-height: min(56dvh, 100vw);
     border-radius: 0;
   }
-  /* The words keep a margin the picture does not need. */
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-caption,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-loading,
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-pair-caps,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-options,
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-sources,
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-controls,
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-provenance,
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-request,
-  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-sweep-viewer-dock {
+  .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-request {
     padding-left: var(--gs-space-3);
     padding-right: var(--gs-space-3);
   }
   .gen-studio .gs-sweep-viewer-body.gs-plate .gs-plate-controls {
     padding-top: var(--gs-space-2);
-  }
-  .gen-studio .gs-sweep-viewer-dock .gs-plate-foot {
-    margin-top: var(--gs-space-1);
   }
 }
 
@@ -10986,15 +11518,7 @@ app-gs-sweep-scrub + app-gs-door {
   margin: 0;
   min-width: 0;
 }
-/* One sentence per side, under the half it belongs to. They stay two columns in
-   both presentations: the wipe's halves are left and right, and so are the
-   frames the fallback lays out. */
-.gen-studio .gs-sweep-pair-caps {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--gs-space-2);
-  margin-top: var(--gs-space-2);
-}
+
 .gen-studio .gs-sweep-pair-cap {
   display: block;
   min-width: 0;
@@ -11002,21 +11526,7 @@ app-gs-sweep-scrub + app-gs-door {
   font-size: var(--gs-text-md-docs, var(--gs-text-sm));
   color: var(--gs-ink-2);
 }
-/* The frame is the divider's now, so the way to full size is a line of its own,
-   in the same quiet register as the control that folds the strip away. */
-.gen-studio .gs-sweep-pair-enlarge {
-  min-height: 44px;
-  padding: 0 var(--gs-space-1);
-  font-size: var(--gs-text-sm);
-  font-weight: 600;
-  color: var(--gs-blue);
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-.dark .gen-studio .gs-sweep-pair-enlarge {
-  color: var(--gs-pop-accent);
-}
+
 /* The other reading of a pair, offered under it in the same quiet voice as the
    way to full size: it is a second look at the same two frames rather than a
    control over what they are. */
@@ -11033,11 +11543,6 @@ app-gs-sweep-scrub + app-gs-door {
 }
 .dark .gen-studio .gs-sweep-pair-mode {
   color: var(--gs-pop-accent);
-}
-.gen-studio .gs-sweep-viewer-wipe {
-  min-width: 0;
-  max-width: 100%;
-  margin: var(--gs-space-3) auto 0;
 }
 
 /* ------- the before/after wipe --------------------------------------- */
@@ -11276,38 +11781,6 @@ app-gs-compare-wipe {
   /* Same AA constraint as the sweep caption's own eyebrow: --gs-label lands
      under 4.5:1 on the tinted note plate at this size in the light theme. */
   color: var(--gs-ink-2);
-}
-
-/* The source and, where a detector drew one, the map beside it: two of the same
-   plate rather than one above the other, because they are read against each
-   other. They wrap on a narrow plate instead of shrinking below the size at
-   which a map's lines are visible at all. */
-.gen-studio .gs-sweep-sources {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gs-space-2) var(--gs-space-4);
-  margin: 0 0 var(--gs-space-2);
-}
-.gen-studio .gs-sweep-source {
-  display: flex;
-  align-items: center;
-  gap: var(--gs-space-2);
-  margin: 0;
-}
-.gen-studio .gs-sweep-source-img {
-  flex: 0 0 auto;
-  width: 64px;
-  height: 64px;
-  border-radius: var(--gs-radius-sm);
-  object-fit: cover;
-  background: var(--gs-field);
-}
-.gen-studio .gs-sweep-source-cap {
-  font-size: var(--gs-text-xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--gs-label);
 }
 
 /* The two readings of one number, offered as a choice rather than as a second
@@ -13383,13 +13856,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-entry {
   display: block;
 }
-/* The routed page is a reading column, and a figure that ran its whole width
-   would be a picture of a setting blown up past the point of being looked at.
-   The open plate keeps a measure of its own, aligned with the prose it belongs
-   to; the collapsed capsule carries its own on every surface. */
-.gen-studio .gs-ref-entry--page .gs-sweep-open {
-  max-width: 640px;
-}
+
 .gen-studio .gs-ref-head {
   display: flex;
   align-items: center;
@@ -15334,8 +15801,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-ref-onward,
 .gen-studio .gs-ref-shot,
 .gen-studio .gs-tut-evidence,
-.gen-studio .gs-cap,
-.gen-studio .gs-sweep-open {
+.gen-studio .gs-cap {
   box-shadow: var(--gs-elev-1);
   transition:
     box-shadow var(--gs-dur-fast) var(--gs-ease),
@@ -15417,7 +15883,6 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-ref-shot,
   .gen-studio .gs-tut-evidence,
   .gen-studio .gs-cap,
-  .gen-studio .gs-sweep-open,
   .gen-studio .gs-world,
   .gen-studio .gs-ref-chip,
   .gen-studio .gs-setting-chip:not(.gs-setting-chip--inline),

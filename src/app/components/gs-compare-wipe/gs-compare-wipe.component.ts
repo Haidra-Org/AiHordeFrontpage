@@ -47,7 +47,8 @@ const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
  * the difference between them is usually in one place: laid out side by side
  * the reader has to carry half the picture across the gap in their head, which
  * is exactly the work a wipe does for them. The divider is theirs to move, by
- * drag, by press anywhere on the picture, or from the keyboard.
+ * drag, by press anywhere on the picture (unless the caller has kept the
+ * presses for itself), or from the keyboard.
  *
  * Below the width at which each half stops being legible the wipe stops being
  * the better reading and the pair is shown side by side instead. That fallback
@@ -176,6 +177,13 @@ export class GsCompareWipeComponent {
    * different pictures the divider reads as a collage, and the caller says so.
    */
   public readonly sideBySide = input(false);
+  /**
+   * Move the divider only from the divider itself. A pair standing inside a
+   * surface that is itself pressable (the sweep's collapsed card, which opens
+   * on a press anywhere) cannot also claim every press on the picture, or the
+   * one control the card offers becomes the only thing on it that does nothing.
+   */
+  public readonly handleOnly = input(false);
 
   /** The first frame to arrive, for callers showing a note until one does. */
   public readonly imageLoad = output<void>();
@@ -233,6 +241,15 @@ export class GsCompareWipeComponent {
    */
   public onPointerDown(event: PointerEvent): void {
     if (!this.wiping()) {
+      return;
+    }
+    if (
+      this.handleOnly() &&
+      !(
+        event.target instanceof Element &&
+        event.target.closest('.gs-wipe-divider')
+      )
+    ) {
       return;
     }
     this.dragging = true;

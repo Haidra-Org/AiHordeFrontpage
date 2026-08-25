@@ -10,7 +10,6 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GsSweepScrubComponent } from './gs-sweep-scrub.component';
 import { SweepLibraryService } from '../../services/sweep-library.service';
-import { ScrollLockService } from '../../helper/scroll-lock';
 import { environment } from '../../../environments/environment';
 import en from '../../../assets/i18n/en.json';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
@@ -36,8 +35,10 @@ class HostComponent {
 }
 
 /**
- * Minimal fake ResizeObserver: the wipe decides between its two presentations
- * on the width it is given, and jsdom lays nothing out to give it one.
+ * Minimal fake ResizeObserver. Two things measure themselves: the wipe decides
+ * between its two presentations on the width it is given, and the explorer
+ * decides between a sheet and a panel on the room its host has. jsdom lays
+ * nothing out, so the test hands both a number when it wants one.
  */
 class FakeResizeObserver {
   public static instances: FakeResizeObserver[] = [];
@@ -61,14 +62,16 @@ class FakeResizeObserver {
   }
 }
 
-/** The test DOM has no media queries at all, so the flag is installed. */
-function stubReducedData(reduced: boolean): void {
+/** The test DOM has no media queries at all, so the flags are installed. */
+function stubMedia(flags: { reducedData?: boolean; reducedMotion?: boolean }) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
     value: (query: string) =>
       ({
-        matches: reduced && query.includes('prefers-reduced-data'),
+        matches:
+          (!!flags.reducedData && query.includes('prefers-reduced-data')) ||
+          (!!flags.reducedMotion && query.includes('prefers-reduced-motion')),
         media: query,
         addEventListener: () => undefined,
         removeEventListener: () => undefined,
@@ -89,21 +92,30 @@ describe('GsSweepScrubComponent', () => {
   const text = (): string =>
     el().textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
-  /** The tick rail, of the plate on the page or of the layer over it. */
-  const rail = (scope = ''): HTMLElement =>
-    find<HTMLElement>(`${scope} .gs-tickrail`.trim())!;
+  /**
+   * Open the plate the way a reader does. A press anywhere on the card lands
+   * on the door, which reaches over the whole of it; jsdom does not do hit
+   * testing, so the test presses the door itself.
+   */
+  const openPlate = (): void => {
+    find<HTMLButtonElement>('.gs-sweep-card-door')!.click();
+    fixture.detectChanges();
+  };
+
+  /** The tick rail. */
+  const rail = (): HTMLElement => find<HTMLElement>('.gs-tickrail')!;
 
   /** A key pressed on a rail, as the browser would deliver it. */
-  const railKey = (key: string, scope = ''): void => {
-    rail(scope).dispatchEvent(
+  const railKey = (key: string): void => {
+    rail().dispatchEvent(
       new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
     );
     fixture.detectChanges();
   };
 
   /** A press on one of the rail's slits. */
-  const clickTick = (at: number, scope = ''): void => {
-    all<HTMLElement>(`${scope} .gs-tickrail-tick`.trim())[at].click();
+  const clickTick = (at: number): void => {
+    all<HTMLElement>('.gs-tickrail-tick')[at].click();
     fixture.detectChanges();
   };
 
@@ -111,8 +123,8 @@ describe('GsSweepScrubComponent', () => {
    * Tell the lane how wide it is. jsdom lays nothing out, and the scrubber
    * reads a position across a measured width.
    */
-  const railWidth = (width: number, scope = ''): void => {
-    vi.spyOn(rail(scope), 'getBoundingClientRect').mockReturnValue({
+  const railWidth = (width: number): void => {
+    vi.spyOn(rail(), 'getBoundingClientRect').mockReturnValue({
       left: 0,
       width,
       right: width,
@@ -130,8 +142,8 @@ describe('GsSweepScrubComponent', () => {
    * PointerEvent, so the mouse event of the same name stands in for one; a
    * pointer without an id is one nothing can capture.
    */
-  const railPointer = (type: string, clientX: number, scope = ''): void => {
-    rail(scope).dispatchEvent(
+  const railPointer = (type: string, clientX: number): void => {
+    rail().dispatchEvent(
       new MouseEvent(type, {
         clientX,
         clientY: 22,
@@ -142,7 +154,26 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
   };
 
-  /** Tell whatever the wipe is watching how much room the pair has. */
+  /** A pointer event on any element, in the shape the handlers read. */
+  const pointer = (
+    target: Element,
+    type: string,
+    init: { clientX?: number; clientY?: number; pointerId?: number },
+  ): void => {
+    const event = new MouseEvent(type, {
+      clientX: init.clientX ?? 0,
+      clientY: init.clientY ?? 0,
+      bubbles: true,
+      cancelable: true,
+    });
+    Object.defineProperty(event, 'pointerId', {
+      value: init.pointerId ?? 1,
+    });
+    target.dispatchEvent(event);
+    fixture.detectChanges();
+  };
+
+  /** Tell everything that measures itself how much room it has. */
   const reportWidth = (width: number): void => {
     for (const observer of FakeResizeObserver.instances) {
       observer.callback(
@@ -153,12 +184,15 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
   };
 
+  const dialog = (): HTMLDialogElement =>
+    find<HTMLDialogElement>('dialog.gs-sweep-dialog')!;
+
   async function setUp(options?: {
     reducedData?: boolean;
     empty?: boolean;
     /** What the studio is set to, as the baseline the library maps. */
     studioBaseline?: string;
-    /** What the surface hosting the scrubber names, if it names anything. */
+    /** What the surface hosting the explorer names, if it names anything. */
     modelSlug?: string;
     /** Which sweep to put on show; the steps strip unless said otherwise. */
     parameter?: string;
@@ -166,12 +200,12 @@ describe('GsSweepScrubComponent', () => {
     controlType?: string;
     /** Whether the surface opens the strip without waiting to be asked. */
     startExpanded?: boolean;
-    /** Whether the offer opens the full-size layer instead of the plate. */
+    /** Whether the offer opens the full-size view instead of the plate. */
     viewerFirst?: boolean;
     /** Which collapsed card the surface asks for. */
     register?: 'full' | 'filmcard';
   }): Promise<void> {
-    stubReducedData(options?.reducedData ?? false);
+    stubMedia({ reducedData: options?.reducedData ?? false });
     FakeResizeObserver.instances = [];
     vi.stubGlobal(
       'ResizeObserver',
@@ -189,8 +223,8 @@ describe('GsSweepScrubComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        // The folded sampler note links into the reference, so the links in it
-        // need a router to resolve against.
+        // The folded sampler note and the details links resolve against a
+        // router.
         provideRouter([]),
       ],
     }).compileComponents();
@@ -236,942 +270,354 @@ describe('GsSweepScrubComponent', () => {
     expect(find('.gs-sweep')).toBeNull();
   });
 
-  it('offers the sweep collapsed, leading with three of its own frames', async () => {
-    await setUp();
-
-    expect(find('.gs-sweep-offer')).not.toBeNull();
-    expect(find('.gs-sweep-frame')).toBeNull();
-    // The two ends and the middle: the card advertises the range it holds
-    // rather than one arbitrary picture out of it.
-    const peek = all<HTMLImageElement>('.gs-cap-peek-frame');
-    expect(peek.map((frame) => frame.getAttribute('src'))).toEqual([
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
-    ]);
-    for (const frame of peek) {
-      expect(frame.getAttribute('loading')).toBe('lazy');
-    }
-    // The badge names the area of the panel, and the meta states the payload in
-    // numbers rather than describing it in a sentence.
-    expect(text()).toContain('Sampling · Interactive explorer');
-    expect(text()).toContain('3 frames · 4 → 30');
-  });
-
-  it('carries one card per frame count in the compact register', async () => {
-    await setUp({ register: 'filmcard' });
-
-    expect(find('.gs-sweep-offer')?.classList.contains('gs-cap--film')).toBe(
-      true,
-    );
-    // Two frames rather than three, and the payload without the range: the
-    // register exists for the surfaces that stack several of these.
-    expect(
-      all<HTMLImageElement>('.gs-cap-peek-frame').map((frame) =>
-        frame.getAttribute('src'),
-      ),
-    ).toEqual([
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
-    ]);
-    expect(text()).toContain('3 frames');
-    expect(text()).not.toContain('Interactive explorer');
-
-    // The same plate, opened in place.
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-open')).not.toBeNull();
-    expect(find('.gs-tickrail')).not.toBeNull();
-  });
-
-  it('keeps even the preview behind a tap when data is being saved', async () => {
-    await setUp({ reducedData: true });
-
-    expect(find('.gs-sweep-offer')).not.toBeNull();
-    expect(find('.gs-cap-peek')).toBeNull();
-  });
-
-  it('expands to the large frame, its caption and a scrubber', async () => {
-    await setUp();
-
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    expect(find<HTMLImageElement>('.gs-sweep-frame')?.getAttribute('src')).toBe(
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
-    );
-    expect(el().textContent).toContain('The face and the light have settled.');
-    expect(text()).toContain('Steps 12');
-    expect(find('.gs-tickrail')).not.toBeNull();
-    // The plate says where in the strip the reader is, inside the plate.
-    expect(find('.gs-plate-pos')?.textContent?.trim()).toBe('2 / 3');
-    expect(find('.gs-plate-value')?.textContent?.trim()).toBe('Steps 12');
-    // The stub marks this stop as picked from a batch of 4, and curation is
-    // disclosed rather than hidden.
-    expect(find('.gs-sweep-caption-batch')?.textContent).toContain(
-      'Picked from a batch of 4.',
-    );
-  });
-
-  it('carries slider semantics on the rail and moves with the keyboard', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    // One slit per frame, and the whole rail is the slider rather than every
-    // slit being a tab stop of its own.
-    expect(all('.gs-tickrail-tick')).toHaveLength(3);
-    expect(rail().getAttribute('role')).toBe('slider');
-    expect(rail().getAttribute('tabindex')).toBe('0');
-    expect(rail().getAttribute('aria-label')).toBe(
-      en['generate.sweeps.slider_label'],
-    );
-    expect(rail().getAttribute('aria-valuemin')).toBe('1');
-    expect(rail().getAttribute('aria-valuemax')).toBe('3');
-    expect(rail().getAttribute('aria-valuenow')).toBe('2');
-    expect(rail().getAttribute('aria-valuetext')).toBe('12');
-    // The ends are labelled with what they were rendered at, not with 0 and 2,
-    // and the lane says what it is for between them.
-    expect(
-      all('.gs-tickrail-ends span').map((end) => end.textContent?.trim()),
-    ).toEqual(['4', en['generate.sweeps.rail_hint'], '30']);
-
-    railKey('ArrowRight');
-
-    expect(rail().getAttribute('aria-valuenow')).toBe('3');
-    expect(rail().getAttribute('aria-valuetext')).toBe('30');
-    expect(text()).toContain('Steps 30');
-    expect(el().textContent).toContain('Past here the picture stops changing');
-
-    // The ends hold rather than wrapping round to the other one.
-    railKey('ArrowRight');
-    expect(rail().getAttribute('aria-valuenow')).toBe('3');
-    railKey('Home');
-    expect(rail().getAttribute('aria-valuenow')).toBe('1');
-  });
-
-  it('jumps to the frame whose slit was pressed', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    clickTick(2);
-
-    expect(rail().getAttribute('aria-valuenow')).toBe('3');
-    expect(find<HTMLImageElement>('.gs-sweep-frame')?.getAttribute('src')).toBe(
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
-    );
-
-    clickTick(0);
-    expect(rail().getAttribute('aria-valuenow')).toBe('1');
-  });
-
-  it('takes a press anywhere on the lane to the nearest stop', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-    railWidth(300);
-
-    // Three stops share the lane, so their slits stand at 50px, 150px and
-    // 250px. None of these presses lands on one.
-    railPointer('pointerdown', 240);
-    expect(rail().getAttribute('aria-valuenow')).toBe('3');
-
-    railPointer('pointerdown', 30);
-    expect(rail().getAttribute('aria-valuenow')).toBe('1');
-
-    railPointer('pointerdown', 160);
-    expect(rail().getAttribute('aria-valuenow')).toBe('2');
-  });
-
-  it('keeps snapping while a drag runs, and stops when it is let go', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-    railWidth(300);
-
-    railPointer('pointerdown', 30);
-    expect(rail().getAttribute('aria-valuenow')).toBe('1');
-
-    railPointer('pointermove', 160);
-    expect(rail().getAttribute('aria-valuenow')).toBe('2');
-    railPointer('pointermove', 290);
-    expect(rail().getAttribute('aria-valuenow')).toBe('3');
-
-    railPointer('pointerup', 290);
-    // Nothing is being dragged, so the pointer passing back over the lane
-    // leaves the strip where the reader left it.
-    railPointer('pointermove', 10);
-    expect(rail().getAttribute('aria-valuenow')).toBe('3');
-  });
-
-  it('puts each end number at the position of its own slit', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    const ticks = all<HTMLElement>('.gs-tickrail-tick');
-    const ends = all<HTMLElement>('.gs-tickrail-end');
-
-    expect(ends).toHaveLength(2);
-    expect(ends[0].style.left).toBe(ticks[0].style.left);
-    expect(ends[1].style.left).toBe(ticks[ticks.length - 1].style.left);
-    // The slits stand in the middle of their share of the lane rather than at
-    // its two edges, which is what the numbers now read from.
-    expect(ticks[0].style.left).not.toBe('0%');
-  });
-
-  it('shows the strip for the model the studio is set to', async () => {
-    await setUp({ studioBaseline: 'stable_diffusion_1' });
-
-    expect(
-      find<HTMLImageElement>('.gs-cap-peek-frame')?.getAttribute('src'),
-    ).toBe(
-      `${environment.evidenceBaseUrl}/steps/deliberate/landscape/001_8.webp`,
-    );
-  });
-
-  it('lets a surface that names a model override the studio', async () => {
-    await setUp({
-      studioBaseline: 'stable_diffusion_1',
-      modelSlug: 'albedobase-xl',
-    });
-
-    expect(
-      find<HTMLImageElement>('.gs-cap-peek-frame')?.getAttribute('src'),
-    ).toBe(
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
-    );
-  });
-
-  it('opens the frame full size, focused, and closes on Escape', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    const trigger = find<HTMLButtonElement>('.gs-sweep-zoom')!;
-    trigger.click();
-    fixture.detectChanges();
-
-    const panel = find<HTMLElement>('.gs-sweep-viewer-body')!;
-    expect(panel.getAttribute('role')).toBe('dialog');
-    expect(panel.getAttribute('aria-modal')).toBe('true');
-    expect(
-      find<HTMLImageElement>(
-        '.gs-sweep-viewer-body img.gs-sweep-frame',
-      )!.getAttribute('src'),
-    ).toBe(
-      `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
-    );
-    expect(document.activeElement).toBe(panel);
-
-    panel.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-viewer')).toBeNull();
-    // Focus comes back where it was, not to the top of the document.
-    expect(document.activeElement).toBe(find('.gs-sweep-zoom'));
-  });
-
-  it('keeps Tab inside the enlarged view', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-    fixture.detectChanges();
-
-    const panel = find<HTMLElement>('.gs-sweep-viewer-body')!;
-    const tab = new KeyboardEvent('keydown', {
-      key: 'Tab',
-      bubbles: true,
-      cancelable: true,
-    });
-    panel.dispatchEvent(tab);
-    fixture.detectChanges();
-
-    expect(tab.defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(find('.gs-sweep-viewer-x'));
-  });
-
-  it('closes the enlarged view from its backdrop and its close button', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-    fixture.detectChanges();
-
-    find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
-    fixture.detectChanges();
-    expect(find('.gs-sweep-viewer')).toBeNull();
-
-    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-    fixture.detectChanges();
-    find<HTMLElement>('.gs-sweep-viewer')!.click();
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-viewer')).toBeNull();
-    // A press that lands on the panel itself is not a press outside it.
-    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-    fixture.detectChanges();
-    find<HTMLElement>('.gs-sweep-viewer-body')!.click();
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-viewer')).not.toBeNull();
-  });
-
-  describe('two-frame strips', () => {
-    // These used to be laid out side by side with a heading each. The pair is
-    // now handed to the wipe, which carries both sides and their names itself
-    // and falls back to that same side-by-side layout on a narrow column.
-    it('hands both frames to the wipe, named by their chips, with no slider', async () => {
-      await setUp({ parameter: 'tiling' });
-
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      expect(find('.gs-wipe')).not.toBeNull();
-      expect(find('.gs-tickrail')).toBeNull();
-      // The index labels these `off`/`on`, which is a filename, not a heading.
-      expect(
-        all('.gs-wipe-tag').map((n) =>
-          n.textContent?.replace(/\s+/g, ' ').trim(),
-        ),
-      ).toEqual([
-        `Tiling ${en['generate.sweeps.state_off']}`,
-        `Tiling ${en['generate.sweeps.state_on']}`,
-      ]);
-      expect(all('.gs-wipe-tag app-gs-setting-chip')).toHaveLength(2);
-      expect(el().textContent).toContain('Every join is a hard line.');
-      expect(el().textContent).toContain('The grain runs on across each join.');
-    });
-
-    it('lays the pair side by side where the wipe would be too narrow', async () => {
-      await setUp({ parameter: 'tiling' });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      reportWidth(200);
-
-      expect(find('.gs-wipe')!.classList.contains('is-wiping')).toBe(false);
-      expect(find('.gs-wipe-divider')).toBeNull();
-      expect(all('.gs-wipe-tag')).toHaveLength(2);
-      expect(all('.gs-wipe-tiled')).toHaveLength(2);
-    });
-
-    it('enlarges the pair as one wipe and gives focus back to the control', async () => {
-      await setUp({ parameter: 'tiling' });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      find<HTMLButtonElement>('.gs-sweep-pair-enlarge')!.click();
-      fixture.detectChanges();
-
-      expect(
-        find<HTMLElement>('.gs-sweep-viewer-body')!.getAttribute('aria-label'),
-      ).toBe(en['generate.sweeps.enlarged_pair_title']);
-      // The layer shows the comparison, not one side lifted out of it.
-      expect(find('.gs-sweep-viewer-body .gs-wipe')).not.toBeNull();
-      expect(find('.gs-sweep-viewer-body img.gs-sweep-frame')).toBeNull();
-
-      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
-      fixture.detectChanges();
-
-      expect(document.activeElement).toBe(find('.gs-sweep-pair-enlarge'));
-    });
-
-    it('keeps the wipe divider in the Tab cycle of the enlarged view', async () => {
-      await setUp({ parameter: 'tiling' });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-      find<HTMLButtonElement>('.gs-sweep-pair-enlarge')!.click();
-      fixture.detectChanges();
-
-      const panel = find<HTMLElement>('.gs-sweep-viewer-body')!;
-      panel.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'Tab',
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-      fixture.detectChanges();
-
-      expect(document.activeElement).toBe(find('.gs-sweep-viewer-x'));
-      panel.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'Tab',
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-      fixture.detectChanges();
-
-      expect(document.activeElement).toBe(
-        find('.gs-sweep-viewer-body .gs-wipe-divider'),
-      );
-    });
-  });
-
-  it('lays a tiled strip out as a plate of nine beside the tile itself', async () => {
-    await setUp({ parameter: 'tiling' });
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    const [first] = all<HTMLElement>('.gs-wipe-tiled');
-    expect(first.getAttribute('role')).toBe('img');
-    expect(first.getAttribute('aria-label')).toContain('repeated nine times');
-    const copies = Array.from(first.querySelectorAll<HTMLImageElement>('img'));
-    expect(copies).toHaveLength(9);
-    for (const copy of copies) {
-      expect(copy.getAttribute('src')).toBe(
-        `${environment.evidenceBaseUrl}/tiling/deliberate/texture/001_off.webp`,
-      );
-      expect(copy.getAttribute('loading')).toBe('lazy');
-    }
-
-    // The plate says whether the joins show; the tile on its own says what was
-    // rendered. Both stops carry one, and neither is behind a toggle.
-    const solos = all<HTMLImageElement>('.gs-sweep-solo-img');
-    expect(solos.map((solo) => solo.getAttribute('src'))).toEqual([
-      `${environment.evidenceBaseUrl}/tiling/deliberate/texture/001_off.webp`,
-      `${environment.evidenceBaseUrl}/tiling/deliberate/texture/002_on.webp`,
-    ]);
-    expect(solos[0].getAttribute('alt')).toContain('single tile');
-  });
-
-  it('names a strip that varies the wording by the wording, not by a setting', async () => {
-    await setUp({ parameter: 'prompt_emphasis' });
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    // The label on these stops is a filename token, so it is never read out.
-    expect(find('.gs-sweep-caption-value')?.textContent?.trim()).toBe(
-      'Prompted with (watercolor painting:1.0)',
-    );
-    expect(rail().getAttribute('aria-valuetext')).toBe('1');
-    expect(find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('alt')).toBe(
-      'The same picture rendered at 1',
-    );
-
-    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-    fixture.detectChanges();
-
-    expect(
-      find(
-        '.gs-sweep-viewer-body .gs-sweep-caption-value',
-      )?.textContent?.trim(),
-    ).toBe('Prompted with (watercolor painting:1.0)');
-  });
-
-  it('shows the image a denoising strip was painted over', async () => {
-    await setUp({ parameter: 'denoising_strength' });
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    expect(
-      find<HTMLImageElement>('.gs-sweep-source-img')!.getAttribute('src'),
-    ).toBe(
-      `${environment.evidenceBaseUrl}/denoising-strength/deliberate/place/source.webp`,
-    );
-    expect(el().textContent).toContain(en['generate.sweeps.source_label']);
-
-    find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-viewer-body .gs-sweep-source-img')).not.toBeNull();
-  });
-
-  it('shows the map beside the source on a strip a detector guided', async () => {
-    await setUp({ parameter: 'control_strength', controlType: 'canny' });
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    expect(
-      find<HTMLImageElement>('.gs-sweep-map-img')!.getAttribute('src'),
-    ).toBe(
-      `${environment.evidenceBaseUrl}/control-strength/canny/deliberate/courier-ink/source_map.webp`,
-    );
-    expect(find<HTMLImageElement>('.gs-sweep-map-img')!.alt).toBe(
-      en['generate.sweeps.control_map_label'],
-    );
-    expect(el().textContent).toContain(en['generate.sweeps.control_map_label']);
-    // Beside the starting image rather than instead of it, and the same plate.
-    expect(all('.gs-sweep-sources .gs-sweep-source-img')).toHaveLength(2);
-
-    // Two stops, so the strip is a wipe and its own control is the way to
-    // full size; the pair goes with the source and the map either way.
-    find<HTMLButtonElement>('.gs-sweep-pair-enlarge')!.click();
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-viewer-body .gs-sweep-map-img')).not.toBeNull();
-  });
-
-  it('shows no map where the strip carries none', async () => {
-    await setUp({ parameter: 'denoising_strength' });
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
-
-    expect(find('.gs-sweep-source-img')).not.toBeNull();
-    expect(find('.gs-sweep-map-img')).toBeNull();
-    expect(el().textContent).not.toContain(
-      en['generate.sweeps.control_map_label'],
-    );
-  });
-
-  describe('the second reading of steps', () => {
-    it('swaps to the converging strip and keeps the slider where it was', async () => {
+  describe('the collapsed card', () => {
+    it('previews the difference as a pair with a divider, not the existence of a sweep', async () => {
       await setUp();
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
 
-      railKey('End');
-
-      const [base, alternate] = all<HTMLButtonElement>('.gs-sweep-variant');
-      expect(base.getAttribute('aria-pressed')).toBe('true');
-
-      alternate.click();
-      fixture.detectChanges();
-
-      expect(alternate.getAttribute('aria-pressed')).toBe('true');
-      expect(rail().getAttribute('aria-valuenow')).toBe('3');
-      expect(
-        find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
-      ).toBe(
-        `${environment.evidenceBaseUrl}/steps-converging/albedobase-xl/person/003_30.webp`,
-      );
-      expect(el().textContent).toContain('Settled, and the same picture');
-    });
-
-    it('names the two readings of a per-step render in their own words', async () => {
-      // The same toggle, and nothing about samplers on it: the pair is the
-      // canvas against the model's guess, which raises no such question.
-      await setUp({ parameter: 'step_preview', startExpanded: true });
-
-      const [base, alternate] = all<HTMLButtonElement>('.gs-sweep-variant');
-      expect(base.textContent?.trim()).toBe(
-        en['generate.sweeps.preview_variant_base'],
-      );
-      expect(alternate.textContent?.trim()).toBe(
-        en['generate.sweeps.preview_variant_alt'],
-      );
-      expect(find('.gs-sweep-why')).toBeNull();
-
-      // A timeline opens on its first frame rather than the middle of its
-      // range: the static a render starts from is what the rest of it is read
-      // against. The stops are labelled `step_1` for the filename's sake; the
-      // chip says what was actually rendered.
-      expect(rail().getAttribute('aria-valuenow')).toBe('1');
-      expect(text()).toContain('Step 1');
-      expect(text()).not.toContain('step_1');
-
-      alternate.click();
-      fixture.detectChanges();
-
-      expect(
-        find<HTMLImageElement>('.gs-sweep-frame')!.getAttribute('src'),
-      ).toBe(
-        `${environment.evidenceBaseUrl}/step-preview-guess/albedobase-xl/courier/001_step_01.webp`,
-      );
-      expect(text()).toContain('Step 1');
-    });
-
-    it('badges a per-step render as one picture rather than a comparison', async () => {
-      // The concepts read shows this one already open, where the badge is the
-      // only thing saying the frames are one render over time. Both readings of
-      // the pair are, so the toggle does not change what it is.
-      await setUp({ parameter: 'step_preview', startExpanded: true });
-
-      expect(find('.gs-plate-head .gs-cap-eyebrow')?.textContent?.trim()).toBe(
-        'Sampling · One picture, pass by pass',
-      );
-      expect(text()).not.toContain('Interactive explorer');
-
-      all<HTMLButtonElement>('.gs-sweep-variant')[1].click();
-      fixture.detectChanges();
-
-      expect(text()).toContain('One picture, pass by pass');
-
-      // A strip of several renders at different values keeps the explorer badge.
-      await setUp({ parameter: 'cfg_scale', startExpanded: true });
-
-      expect(find('.gs-plate-head .gs-cap-eyebrow')?.textContent?.trim()).toBe(
-        'Sampling · Interactive explorer',
-      );
-      expect(text()).not.toContain('One picture, pass by pass');
-    });
-
-    it('offers no choice on a parameter with only one reading published', async () => {
-      await setUp({ parameter: 'cfg_scale' });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      expect(all('.gs-sweep-variant')).toHaveLength(0);
-    });
-  });
-
-  describe('the full-size view', () => {
-    const openZoom = (): void => {
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-      find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-      fixture.detectChanges();
-    };
-
-    const arrow = (key: string): void => {
-      find<HTMLElement>('.gs-sweep-viewer-body')!.dispatchEvent(
-        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
-      );
-      fixture.detectChanges();
-    };
-
-    it('carries the scrubber with it and steps with the arrow keys', async () => {
-      await setUp();
-      openZoom();
-
-      const layer = '.gs-sweep-viewer-body';
-      expect(rail(layer).getAttribute('aria-valuenow')).toBe('2');
-      expect(rail(layer).getAttribute('aria-valuemax')).toBe('3');
-
-      arrow('ArrowRight');
-      expect(rail(layer).getAttribute('aria-valuenow')).toBe('3');
-      expect(rail(layer).getAttribute('aria-valuetext')).toBe('30');
-      expect(
-        find<HTMLImageElement>(
-          '.gs-sweep-viewer-body img.gs-sweep-frame',
-        )!.getAttribute('src'),
-      ).toBe(
+      const sides = all<HTMLImageElement>('.gs-sweep-card-stage .gs-wipe-img');
+      expect(sides.map((frame) => frame.getAttribute('src'))).toEqual([
+        `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/001_4.webp`,
         `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/003_30.webp`,
-      );
-
-      // The edge holds rather than wrapping round to the other end.
-      arrow('ArrowRight');
-      expect(rail(layer).getAttribute('aria-valuenow')).toBe('3');
-
-      arrow('ArrowLeft');
-      arrow('ArrowLeft');
-      expect(rail(layer).getAttribute('aria-valuenow')).toBe('1');
+      ]);
+      for (const frame of sides) {
+        expect(frame.getAttribute('loading')).toBe('lazy');
+      }
+      // The divider is on the card from the start, so the pair reads as
+      // something to move rather than as two pictures side by side.
+      expect(find('.gs-sweep-card-stage .gs-wipe-divider')).not.toBeNull();
     });
 
-    it('leaves the strip on the stop the reader scrubbed to', async () => {
+    it('names the setting, says one line about the strip, and names the press', async () => {
       await setUp();
-      openZoom();
-      arrow('ArrowRight');
-      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+
+      expect(find('.gs-sweep-card-title')?.textContent?.trim()).toBe('Steps');
+      // The first sentence of the strip's own caption. The rest is what the
+      // plate folds under "Why it looks like this".
+      expect(find('.gs-sweep-card-line')?.textContent?.trim()).toBe(
+        'How far the sampler gets to run before the picture is handed back.',
+      );
+      expect(find('.gs-sweep-card-door')?.textContent?.trim()).toBe(
+        'Drag to explore 3 pictures',
+      );
+      expect(text()).toContain('Sampling · Interactive explorer');
+    });
+
+    it('takes the pair the strip names for its preview', async () => {
+      await setUp();
+
+      // The stub names 0 and 2 on the steps strip; a strip that names none
+      // falls back to the setting's default against the last stop.
+      const sides = all<HTMLImageElement>('.gs-sweep-card-stage .gs-wipe-img');
+      expect(sides[0].getAttribute('src')).toContain('001_4.webp');
+      expect(sides[1].getAttribute('src')).toContain('003_30.webp');
+    });
+
+    it('opens the plate from the door that reaches over the card', async () => {
+      await setUp();
+      // The door is a button with a word and a focus ring, and its reach is
+      // what makes a press anywhere on the card open the plate.
+      expect(find('.gs-sweep-card-door')?.tagName).toBe('BUTTON');
+      openPlate();
+
+      expect(find('.gs-plate')).not.toBeNull();
+      expect(find('.gs-sweep-stage')).not.toBeNull();
+      expect(find('.gs-sweep-card')).toBeNull();
+    });
+
+    it('leaves the divider draggable without opening', async () => {
+      await setUp();
+
+      find<HTMLElement>('.gs-sweep-card-stage .gs-wipe-divider')!.click();
       fixture.detectChanges();
 
-      expect(rail().getAttribute('aria-valuenow')).toBe('3');
-      expect(text()).toContain('Steps 30');
+      expect(find('.gs-plate')).toBeNull();
+      expect(find('.gs-sweep-card')).not.toBeNull();
     });
 
-    it('scrubs from the rail inside the layer', async () => {
-      await setUp();
-      openZoom();
+    it('drops the badge and the line in the compact register', async () => {
+      await setUp({ register: 'filmcard' });
 
-      clickTick(0, '.gs-sweep-viewer-body');
-
-      expect(text()).toContain('Barely resolved');
-    });
-
-    it('offers the pair of readings inside the layer, without closing it', async () => {
-      await setUp();
-      openZoom();
-
-      const variants = all<HTMLButtonElement>(
-        '.gs-sweep-viewer-body .gs-sweep-variant',
-      );
-      expect(variants).toHaveLength(2);
-
-      variants[1].click();
-      fixture.detectChanges();
-
-      expect(find('.gs-sweep-viewer')).not.toBeNull();
       expect(
-        find<HTMLImageElement>(
-          '.gs-sweep-viewer-body img.gs-sweep-frame',
-        )!.getAttribute('src'),
+        find('.gs-sweep-card')?.classList.contains('gs-sweep-card--film'),
+      ).toBe(true);
+      expect(text()).not.toContain('Interactive explorer');
+      expect(find('.gs-sweep-card-title')?.textContent?.trim()).toBe('Steps');
+
+      openPlate();
+      expect(find('.gs-plate')).not.toBeNull();
+    });
+
+    it('keeps even the preview behind a press when data is being saved', async () => {
+      await setUp({ reducedData: true });
+
+      expect(find('.gs-sweep-card')).not.toBeNull();
+      expect(find('.gs-sweep-card-stage')).toBeNull();
+    });
+  });
+
+  describe('the open plate', () => {
+    it('puts the frame on the stage with its value, and the rail and strip under it', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(
+        find<HTMLImageElement>('.gs-sweep-stage .gs-sweep-frame')?.getAttribute(
+          'src',
+        ),
       ).toBe(
-        `${environment.evidenceBaseUrl}/steps-converging/albedobase-xl/person/002_12.webp`,
+        `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
       );
-    });
-
-    it('names the frame by its value rather than by its filename token', async () => {
-      // The denoising strip labels 0.15 as `0_15`, which is a filename.
-      await setUp({ parameter: 'denoising_strength' });
-      openZoom();
-
-      // The value on show is said once, on the lane the reader is working.
-      const chip = (): string =>
-        find('.gs-sweep-viewer-dock .gs-setting-chip')
-          ?.textContent?.replace(/\s+/g, ' ')
-          .trim() ?? '';
-
-      expect(chip()).toBe('Denoise 0.5');
-      arrow('ArrowLeft');
-      expect(chip()).toBe('Denoise 0.15');
-    });
-  });
-
-  it('opens already expanded where the page is about the one setting', async () => {
-    await setUp({ startExpanded: true });
-
-    expect(find('.gs-sweep-offer')).toBeNull();
-    expect(find('.gs-sweep-frame')).not.toBeNull();
-    expect(find('.gs-tickrail')).not.toBeNull();
-  });
-
-  describe('stops that are names rather than numbers', () => {
-    const tiles = (): HTMLButtonElement[] =>
-      all<HTMLButtonElement>('.gs-sweep-options .gs-sweep-plate-cell');
-
-    it('lays the alternatives out at once instead of scrubbing them', async () => {
-      await setUp({ parameter: 'scheduler', startExpanded: true });
-
-      expect(tiles()).toHaveLength(3);
-      // Nothing lies between two named stops, so there is no lane to move
-      // along and no single frame the plate is parked on.
-      expect(find('.gs-tickrail')).toBeNull();
-      expect(find('.gs-sweep-frame')).toBeNull();
-      expect(find('.gs-plate-foot')).toBeNull();
-    });
-
-    it('carries the value and the sentence on every tile', async () => {
-      await setUp({ parameter: 'scheduler', startExpanded: true });
-      const captions = all<HTMLElement>('.gs-sweep-option-cap');
-
-      expect(captions).toHaveLength(3);
-      expect(captions[1].textContent).toContain('karras');
-      expect(captions[1].textContent).toContain('More of the steps');
-      expect(tiles()[1].getAttribute('aria-label')).toBe(
-        'See this example larger: karras',
-      );
-    });
-
-    it('opens one tile full size, and keeps the plate on it', async () => {
-      await setUp({ parameter: 'scheduler', startExpanded: true });
-
-      tiles()[2].click();
-      fixture.detectChanges();
-
-      expect(find('.gs-sweep-viewer')).not.toBeNull();
-      expect(text()).toContain('A shorter ramp');
-      // The press moves the plate onto that frame too, so the provenance under
-      // it is about the picture the reader just looked at.
-      expect(tiles()[2].classList.contains('is-at')).toBe(true);
-    });
-
-    it('lays two named alternatives out rather than wiping them', async () => {
-      await setUp({ parameter: 'sampler_solver_type', startExpanded: true });
-
-      expect(tiles()).toHaveLength(2);
-      expect(find('.gs-sweep-pair')).toBeNull();
-    });
-
-    it('counts the alternatives rather than naming two ends', async () => {
-      await setUp({ parameter: 'scheduler' });
-
-      // The offer of a range reads "first to last"; a set of names has no ends.
-      expect(text()).toContain('3 frames');
-      expect(text()).not.toContain('→');
-    });
-
-    it('leaves a range strip on its scrubber', async () => {
-      await setUp({ parameter: 'denoising_strength', startExpanded: true });
-
-      expect(find('.gs-sweep-options')).toBeNull();
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 12');
       expect(find('.gs-tickrail')).not.toBeNull();
-    });
-  });
-
-  describe('a surface that has no room for the plate', () => {
-    it('takes the offer straight to the full-size view', async () => {
-      await setUp({ viewerFirst: true });
-
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      expect(find('.gs-sweep-viewer')).not.toBeNull();
-      // Nothing opens behind the layer: the plate is what does not fit here.
-      expect(find('.gs-sweep-open')).toBeNull();
-      expect(find('.gs-sweep-viewer .gs-sweep-frame')).not.toBeNull();
-      // The layer stands on its own, so it names the setting as well as the
-      // value, and carries the lane.
-      expect(find('.gs-sweep-viewer-param')?.textContent?.trim()).toBe('Steps');
-      expect(find('.gs-sweep-viewer-top .gs-cap-eyebrow')).not.toBeNull();
-      expect(find('.gs-sweep-viewer-body .gs-tickrail')).not.toBeNull();
+      expect(all('.gs-sweep-film-cell')).toHaveLength(3);
+      expect(find('.gs-sweep-expand')).not.toBeNull();
     });
 
-    it('comes back to the offer when the layer is closed', async () => {
-      await setUp({ viewerFirst: true });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
+    it('carries the stop caption and folds the strip caption under a disclosure', async () => {
+      await setUp({ startExpanded: true });
 
-      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
-      fixture.detectChanges();
-
-      expect(find('.gs-sweep-viewer')).toBeNull();
-      expect(find('.gs-sweep-open')).toBeNull();
-      expect(find('.gs-sweep-offer')).not.toBeNull();
-      expect(document.activeElement).toBe(find('.gs-sweep-offer'));
-    });
-
-    it('ignores a surface that also asks for the plate to be open', async () => {
-      await setUp({ viewerFirst: true, startExpanded: true });
-
-      expect(find('.gs-sweep-offer')).not.toBeNull();
-      expect(find('.gs-sweep-open')).toBeNull();
-    });
-
-    it('offers the sampler note in the layer, where the plate is not', async () => {
-      await setUp({ viewerFirst: true });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      const why = find<HTMLButtonElement>(
-        '.gs-sweep-viewer-body .gs-sweep-why',
+      expect(find('.gs-sweep-caption-text')?.textContent?.trim()).toBe(
+        'The face and the light have settled.',
       );
-      expect(why).not.toBeNull();
+      // The strip's own caption is the same sentence at every stop, so it is
+      // one step quieter than the caption of the frame on show.
+      expect(text()).not.toContain('How far the sampler gets to run');
 
-      why!.click();
+      find<HTMLButtonElement>('.gs-plate-col > .gs-sweep-why')!.click();
       fixture.detectChanges();
 
-      expect(find('.gs-sweep-viewer-body .gs-sweep-why-body')).not.toBeNull();
-    });
-
-    it('unfolds the note among the controls, above the pictures and the lane', async () => {
-      await setUp({ viewerFirst: true });
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      const why = find<HTMLButtonElement>(
-        '.gs-sweep-viewer-body .gs-sweep-why',
-      )!;
-      expect(why.getAttribute('aria-expanded')).toBe('false');
-
-      why.click();
-      fixture.detectChanges();
-
-      expect(why.getAttribute('aria-expanded')).toBe('true');
-
-      // The note belongs to the controls' own flow rather than to a layer over
-      // the picture, so it stands between the toggle that raised it and
-      // everything it pushes down.
-      const controls = find('.gs-sweep-viewer-body .gs-plate-controls')!;
-      const body = find('.gs-sweep-viewer-body .gs-sweep-why-body')!;
-      expect(body.parentElement).toBe(controls);
-      expect(
-        body.compareDocumentPosition(
-          find('.gs-sweep-viewer-body .gs-tickrail')!,
-        ) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
-
-      // The way on to the reference survives the move.
-      expect(body.querySelector('.gs-sweep-why-link')).not.toBeNull();
-    });
-  });
-
-  describe('the one explorer, in the plate and in the layer', () => {
-    /** What the reader steers the strip with, wherever the strip is drawn. */
-    const controls = (scope: string): Record<string, boolean> => ({
-      rail: !!find(`${scope} .gs-tickrail`),
-      caption: !!find(`${scope} .gs-sweep-caption`),
-      position: !!find(`${scope} .gs-plate-pos`),
-      request: !!find(`${scope} .gs-plate-request-toggle`),
-      model: !!find(`${scope} .gs-plate-model`),
-      variants: all(`${scope} .gs-sweep-variant`).length === 2,
-    });
-
-    it('gives the layer everything the plate has', async () => {
-      await setUp();
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-
-      const plate = controls('.gs-sweep-open');
-      expect(plate).toEqual({
-        rail: true,
-        caption: true,
-        position: true,
-        request: true,
-        model: true,
-        variants: true,
-      });
-
-      find<HTMLButtonElement>('.gs-sweep-zoom')!.click();
-      fixture.detectChanges();
-
-      expect(controls('.gs-sweep-viewer-body')).toEqual(plate);
-      // The way to full size is the one thing the layer has no use for.
-      expect(find('.gs-sweep-viewer-body .gs-plate-link')).toBeNull();
-    });
-
-    it('carries the plate of alternatives into the layer, tile by tile', async () => {
-      await setUp({ parameter: 'scheduler', startExpanded: true });
-
-      all<HTMLButtonElement>('.gs-sweep-open .gs-sweep-plate-cell')[0].click();
-      fixture.detectChanges();
-
-      const cells = all<HTMLButtonElement>(
-        '.gs-sweep-viewer-body .gs-sweep-plate-cell',
+      expect(text()).toContain(
+        'How far the sampler gets to run before the picture is handed back.',
       );
-      expect(cells).toHaveLength(3);
-      // One of them is on show above the plate, at the size the layer is for.
-      expect(
-        find<HTMLImageElement>(
-          '.gs-sweep-viewer-body img.gs-sweep-frame',
-        )!.getAttribute('src'),
-      ).toBe(
-        find<HTMLImageElement>('.gs-sweep-plate-img')!.getAttribute('src'),
+    });
+
+    it('discloses a frame picked from a batch', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(find('.gs-sweep-caption-batch')?.textContent).toContain(
+        'Picked from a batch of 4.',
       );
-      expect(
-        find('.gs-sweep-viewer-body .gs-plate-pos')?.textContent,
-      ).toContain('1');
+    });
+
+    it('is a focusable region that says what it is and steps from the keyboard', async () => {
+      await setUp({ startExpanded: true });
+      const stage = find<HTMLElement>('.gs-sweep-stage')!;
+
+      expect(stage.getAttribute('tabindex')).toBe('0');
+      expect(stage.getAttribute('aria-roledescription')).toBe(
+        en['generate.sweeps.stage_role'],
+      );
+      expect(stage.getAttribute('aria-label')).toBe('Steps');
+
+      stage.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'ArrowRight',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+
+      stage.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Home',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 4');
+    });
+
+    it('scrubs on a horizontal drag across the stage', async () => {
+      await setUp({ startExpanded: true });
+      const stage = find<HTMLElement>('.gs-sweep-stage')!;
+      vi.spyOn(stage, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        width: 300,
+        right: 300,
+        top: 0,
+        bottom: 300,
+        height: 300,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRect);
+
+      pointer(stage, 'pointerdown', { clientX: 150, clientY: 150 });
+      pointer(stage, 'pointermove', { clientX: 260, clientY: 152 });
+
+      // One hundred pixels across a three-stop strip drawn 300 wide is one
+      // stop along, and the drag counts from where the press landed.
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+
+      // The gesture is a drag, so the press it produced does not also open the
+      // full-size view.
+      pointer(stage, 'pointerup', { clientX: 260, clientY: 152 });
+      stage.click();
+      fixture.detectChanges();
+      expect(dialog().open).toBe(false);
+    });
+
+    it('moves the plate from the filmstrip and marks the stop on show', async () => {
+      await setUp({ startExpanded: true });
+
+      const cells = all<HTMLButtonElement>('.gs-sweep-film-go');
+      expect(cells[1].getAttribute('aria-current')).toBe('true');
+      expect(cells[2].getAttribute('aria-label')).toBe('Show 30');
 
       cells[2].click();
       fixture.detectChanges();
 
-      // A tile enlarges in place: the layer stays open on the one pressed.
-      expect(find('.gs-sweep-viewer')).not.toBeNull();
-      expect(text()).toContain('A shorter ramp');
-      expect(cells[2].classList.contains('is-at')).toBe(true);
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+      expect(cells[2].getAttribute('aria-current')).toBe('true');
+      expect(all('.gs-sweep-film-img')[2].getAttribute('loading')).toBe('lazy');
     });
 
-    it('freezes the page behind the layer while it is open', async () => {
-      await setUp({ viewerFirst: true });
-      const lock = TestBed.inject(ScrollLockService);
-      const acquire = vi.spyOn(lock, 'acquire');
-      const release = vi.spyOn(lock, 'release');
+    it('carries slider semantics on the rail and moves with the keyboard', async () => {
+      await setUp({ startExpanded: true });
 
-      find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-      fixture.detectChanges();
-      expect(acquire).toHaveBeenCalledTimes(1);
+      expect(all('.gs-tickrail-tick')).toHaveLength(3);
+      expect(rail().getAttribute('role')).toBe('slider');
+      expect(rail().getAttribute('tabindex')).toBe('0');
+      expect(rail().getAttribute('aria-label')).toBe(
+        en['generate.sweeps.slider_label'],
+      );
+      expect(rail().getAttribute('aria-valuemin')).toBe('1');
+      expect(rail().getAttribute('aria-valuemax')).toBe('3');
+      expect(rail().getAttribute('aria-valuenow')).toBe('2');
+      expect(rail().getAttribute('aria-valuetext')).toBe('12');
 
-      find<HTMLButtonElement>('.gs-sweep-viewer-x')!.click();
+      railKey('ArrowRight');
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
+      expect(rail().getAttribute('aria-valuetext')).toBe('30');
+
+      railKey('Home');
+      expect(rail().getAttribute('aria-valuenow')).toBe('1');
+      railKey('End');
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
+      // The ends hold rather than wrapping round.
+      railKey('ArrowRight');
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
+    });
+
+    it('jumps to the frame whose slit was pressed', async () => {
+      await setUp({ startExpanded: true });
+
+      clickTick(2);
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+      clickTick(0);
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 4');
+    });
+
+    it('takes a press anywhere on the lane to the nearest stop', async () => {
+      await setUp({ startExpanded: true });
+      railWidth(300);
+
+      railPointer('pointerdown', 20);
+      expect(rail().getAttribute('aria-valuenow')).toBe('1');
+      railPointer('pointerup', 20);
+
+      railPointer('pointerdown', 290);
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
+    });
+
+    it('keeps snapping while a drag runs, and stops when it is let go', async () => {
+      await setUp({ startExpanded: true });
+      railWidth(300);
+
+      railPointer('pointerdown', 20);
+      railPointer('pointermove', 160);
+      expect(rail().getAttribute('aria-valuenow')).toBe('2');
+
+      railPointer('pointerup', 160);
+      railPointer('pointermove', 290);
+      expect(rail().getAttribute('aria-valuenow')).toBe('2');
+    });
+
+    it('puts each end number at the position of its own slit', async () => {
+      await setUp({ startExpanded: true });
+
+      const ticks = all<HTMLElement>('.gs-tickrail-tick');
+      const ends = all<HTMLElement>('.gs-tickrail-end');
+
+      expect(ends).toHaveLength(2);
+      expect(ends[0].style.left).toBe(ticks[0].style.left);
+      expect(ends[1].style.left).toBe(ticks[ticks.length - 1].style.left);
+      expect(ticks[0].style.left).not.toBe('0%');
+    });
+
+    it('collapses back to the card', async () => {
+      await setUp({ startExpanded: true });
+
+      find<HTMLButtonElement>('.gs-plate-head .gs-plate-x')!.click();
       fixture.detectChanges();
-      expect(release).toHaveBeenCalledTimes(1);
+
+      expect(find('.gs-plate')).toBeNull();
+      expect(find('.gs-sweep-card')).not.toBeNull();
     });
   });
 
-  it('collapses from the plate back to the capsule', async () => {
-    await setUp();
-    find<HTMLButtonElement>('.gs-sweep-offer')!.click();
-    fixture.detectChanges();
+  describe('the pictures a frame is held against', () => {
+    it('offers the starting picture as a chip and wipes the frame against it', async () => {
+      await setUp({ parameter: 'denoising_strength', startExpanded: true });
 
-    // The way out is a control in the plate's own corner rather than a link
-    // floating under the picture.
-    find<HTMLButtonElement>('.gs-plate-head .gs-plate-x')!.click();
-    fixture.detectChanges();
+      const chips = all<HTMLButtonElement>('.gs-sweep-chip');
+      expect(chips).toHaveLength(1);
+      expect(chips[0].textContent?.trim()).toBe(
+        en['generate.sweeps.source_label'],
+      );
+      expect(chips[0].getAttribute('aria-pressed')).toBe('false');
 
-    expect(find('.gs-sweep-frame')).toBeNull();
-    expect(find('.gs-sweep-offer')).not.toBeNull();
-    expect(all('.gs-cap-peek-frame')).toHaveLength(3);
+      chips[0].click();
+      fixture.detectChanges();
+
+      expect(
+        find<HTMLImageElement>('.gs-sweep-stage .gs-wipe-img')?.getAttribute(
+          'src',
+        ),
+      ).toBe(
+        `${environment.evidenceBaseUrl}/denoising-strength/deliberate/place/source.webp`,
+      );
+      expect(
+        find<HTMLButtonElement>('.gs-sweep-chip')?.getAttribute('aria-pressed'),
+      ).toBe('true');
+    });
+
+    it('offers the control map beside the starting picture where a detector drew one', async () => {
+      await setUp({
+        parameter: 'control_strength',
+        controlType: 'canny',
+        startExpanded: true,
+      });
+
+      const chips = all<HTMLButtonElement>('.gs-sweep-chip');
+      expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
+        en['generate.sweeps.source_label'],
+        en['generate.sweeps.control_map_label'],
+      ]);
+
+      chips[1].click();
+      fixture.detectChanges();
+
+      expect(
+        find<HTMLImageElement>('.gs-sweep-stage .gs-wipe-img')?.getAttribute(
+          'src',
+        ),
+      ).toBe(
+        `${environment.evidenceBaseUrl}/control-strength/canny/deliberate/courier-ink/source_map.webp`,
+      );
+    });
+
+    it('offers nothing to compare where the strip was made from nothing', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(all('.gs-sweep-chip')).toHaveLength(0);
+      expect(text()).not.toContain(en['generate.sweeps.control_map_label']);
+    });
   });
 
-  describe('provenance', () => {
-    const requestToggle = (): HTMLButtonElement =>
-      find<HTMLButtonElement>('.gs-plate-request-toggle')!;
-
+  describe('the details', () => {
     /** Answer the sidecar fetch for one library path. */
     const flushSidecar = async (
       path: string,
@@ -1190,34 +636,48 @@ describe('GsSweepScrubComponent', () => {
       fixture.detectChanges();
     };
 
-    it('names the model behind the pictures, family included', async () => {
+    const openDetails = (): void => {
+      find<HTMLButtonElement>('.gs-plate-details-go')!.click();
+      fixture.detectChanges();
+    };
+
+    it('keeps provenance one step down from the picture', async () => {
       await setUp({ startExpanded: true });
 
+      expect(find('.gs-plate-details')).toBeNull();
+      expect(text()).not.toContain('AlbedoBase XL (SDXL) · SDXL');
+
+      openDetails();
+
+      expect(find('.gs-plate-details')).not.toBeNull();
       expect(find('.gs-plate-model')?.textContent?.trim()).toBe(
         'AlbedoBase XL (SDXL) · SDXL',
       );
+      expect(text()).toContain(en['generate.sweeps.held_constant']);
+      expect(document.activeElement).toBe(find('.gs-plate-details'));
     });
 
-    it('unfolds the full request of the frame on show', async () => {
+    it('carries the request, the record link and the setting links', async () => {
       await setUp({ startExpanded: true });
-
-      requestToggle().click();
-      fixture.detectChanges();
+      openDetails();
       await flushSidecar('steps/albedobase-xl/person/002_12.json', {
         model_requested: 'AlbedoBase XL (SDXL)',
         params: { steps: 12, cfg_scale: 7 },
       });
 
-      // The chips read the record the way the worked examples read a request,
-      // and the record itself sits under them for whoever wants the file.
       expect(find('.gs-plate-request .gs-recipe')).not.toBeNull();
       expect(find('.gs-plate-raw')?.textContent).toContain('"cfg_scale": 7');
+      expect(
+        find<HTMLAnchorElement>('.gs-plate-sidecar')?.getAttribute('href'),
+      ).toBe(
+        `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.json`,
+      );
+      expect(all('.gs-plate-links .gs-plate-link').length).toBeGreaterThan(0);
     });
 
     it('fetches the record again when the reader scrubs on', async () => {
       await setUp({ startExpanded: true });
-      requestToggle().click();
-      fixture.detectChanges();
+      openDetails();
       await flushSidecar('steps/albedobase-xl/person/002_12.json', {
         params: { steps: 12 },
       });
@@ -1232,20 +692,16 @@ describe('GsSweepScrubComponent', () => {
 
     it('reads a record once, however often it is asked for', async () => {
       await setUp({ startExpanded: true });
-      requestToggle().click();
-      fixture.detectChanges();
+      openDetails();
       await flushSidecar('steps/albedobase-xl/person/002_12.json', {
         params: { steps: 12 },
       });
 
-      requestToggle().click();
-      fixture.detectChanges();
-      requestToggle().click();
+      openDetails();
+      openDetails();
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
 
-      // The record is immutable once published, so the second look is served
-      // from what the first one fetched.
       http.expectNone(
         `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.json`,
       );
@@ -1254,15 +710,450 @@ describe('GsSweepScrubComponent', () => {
 
     it('says so when the record cannot be loaded', async () => {
       await setUp({ startExpanded: true });
-
-      requestToggle().click();
-      fixture.detectChanges();
+      openDetails();
       await flushSidecar('steps/albedobase-xl/person/002_12.json', null);
 
       expect(find('.gs-plate-request')?.textContent).toContain(
         'could not be loaded',
       );
       expect(find('.gs-plate-raw')).toBeNull();
+    });
+
+    it('closes on Escape and hands focus back to the handle', async () => {
+      await setUp({ startExpanded: true });
+      openDetails();
+
+      find<HTMLElement>('.gs-plate-details')!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+      fixture.detectChanges();
+
+      expect(find('.gs-plate-details')).toBeNull();
+    });
+  });
+
+  describe('how the stops are laid out', () => {
+    it('leads with the grid where the host is wide enough to compare in it', async () => {
+      await setUp({ startExpanded: true });
+      reportWidth(1000);
+
+      expect(find('.gs-sweep-film')).toBeNull();
+      expect(
+        all('.gs-sweep-options--frames .gs-sweep-plate-cell'),
+      ).toHaveLength(3);
+      // The stage stays: the grid is another way of choosing a stop rather
+      // than another way of showing one.
+      expect(find('.gs-sweep-stage')).not.toBeNull();
+      expect(all('.gs-sweep-option-cap')[1].textContent).toContain('12');
+      expect(find('.gs-plate-sheet-go')?.textContent?.trim()).toBe(
+        en['generate.sweeps.layout_strip'],
+      );
+    });
+
+    it('leads with the filmstrip on a narrow host and offers the grid', async () => {
+      await setUp({ startExpanded: true });
+      reportWidth(420);
+
+      expect(find('.gs-sweep-film')).not.toBeNull();
+      expect(find('.gs-sweep-options')).toBeNull();
+      expect(find('.gs-plate-sheet-go')?.textContent?.trim()).toBe(
+        en['generate.sweeps.layout_grid'],
+      );
+
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-film')).toBeNull();
+      expect(
+        all('.gs-sweep-options--frames .gs-sweep-plate-cell'),
+      ).toHaveLength(3);
+    });
+
+    it('collapses the grid to the strip and remembers the answer for that shape', async () => {
+      localStorage.clear();
+      await setUp({ startExpanded: true });
+      reportWidth(1000);
+
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
+      expect(find('.gs-sweep-film')).not.toBeNull();
+      expect(localStorage.getItem('gs-sweep-layout-wide')).toBe('strip');
+
+      await setUp({ startExpanded: true });
+      reportWidth(1000);
+      expect(find('.gs-sweep-film')).not.toBeNull();
+      localStorage.clear();
+    });
+
+    it('picks a stop from the grid and takes one full size', async () => {
+      localStorage.clear();
+      await setUp({ startExpanded: true });
+      reportWidth(1000);
+
+      const cells = all<HTMLButtonElement>(
+        '.gs-sweep-options--frames .gs-sweep-plate-cell',
+      );
+      cells[2].click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+      expect(cells[2].getAttribute('aria-current')).toBe('true');
+      expect(dialog().open).toBe(false);
+
+      all<HTMLButtonElement>('.gs-sweep-expand--cell')[0].click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+      expect(find('.gs-sweep-dialog-pos')?.textContent?.trim()).toBe('1 / 3');
+    });
+
+    it('holds the filmstrip still while a drag is in flight', async () => {
+      localStorage.clear();
+      await setUp({ startExpanded: true });
+      reportWidth(420);
+      const strip = find<HTMLElement>('.gs-sweep-film')!;
+      expect(strip.classList.contains('is-dragging')).toBe(false);
+
+      railWidth(300);
+      railPointer('pointerdown', 20);
+      expect(
+        find<HTMLElement>('.gs-sweep-film')!.classList.contains('is-dragging'),
+      ).toBe(true);
+
+      railPointer('pointerup', 20);
+      expect(
+        find<HTMLElement>('.gs-sweep-film')!.classList.contains('is-dragging'),
+      ).toBe(false);
+    });
+  });
+
+  describe('the full-size view', () => {
+    const openViewer = (): void => {
+      find<HTMLElement>('.gs-sweep-stage')!.click();
+      fixture.detectChanges();
+    };
+
+    it('opens from a press on the stage and shows the same frame', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+
+      expect(dialog().open).toBe(true);
+      expect(
+        find<HTMLImageElement>(
+          '.gs-sweep-stage--big .gs-sweep-frame',
+        )?.getAttribute('src'),
+      ).toBe(
+        `${environment.evidenceBaseUrl}/steps/albedobase-xl/person/002_12.webp`,
+      );
+      expect(dialog().getAttribute('aria-label')).toBe(
+        'The example rendered at 12, full size',
+      );
+    });
+
+    it('opens from the expand glyph as well as the picture', async () => {
+      await setUp({ startExpanded: true });
+
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+    });
+
+    it('steps between the stops, and holds at the ends', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+
+      const steps = all<HTMLButtonElement>('.gs-sweep-dialog-step');
+      expect(find('.gs-sweep-dialog-pos')?.textContent?.trim()).toBe('2 / 3');
+
+      steps[1].click();
+      fixture.detectChanges();
+      expect(find('.gs-sweep-dialog-pos')?.textContent?.trim()).toBe('3 / 3');
+      expect(all<HTMLButtonElement>('.gs-sweep-dialog-step')[1].disabled).toBe(
+        true,
+      );
+
+      all<HTMLButtonElement>('.gs-sweep-dialog-step')[0].click();
+      fixture.detectChanges();
+      expect(find('.gs-sweep-dialog-pos')?.textContent?.trim()).toBe('2 / 3');
+    });
+
+    it('steps on a swipe across and closes on a swipe down', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+      const stage = find<HTMLElement>('.gs-sweep-stage--big')!;
+
+      pointer(stage, 'pointerdown', { clientX: 200, clientY: 200 });
+      pointer(stage, 'pointerup', { clientX: 80, clientY: 206 });
+      expect(find('.gs-sweep-dialog-pos')?.textContent?.trim()).toBe('3 / 3');
+
+      pointer(stage, 'pointerdown', { clientX: 200, clientY: 100 });
+      pointer(stage, 'pointerup', { clientX: 204, clientY: 300 });
+      expect(dialog().open).toBe(false);
+    });
+
+    it('pinches the frame between two fingers', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+      const stage = find<HTMLElement>('.gs-sweep-stage--big')!;
+
+      pointer(stage, 'pointerdown', { clientX: 100, clientY: 0, pointerId: 1 });
+      pointer(stage, 'pointerdown', { clientX: 200, clientY: 0, pointerId: 2 });
+      pointer(stage, 'pointermove', { clientX: 300, clientY: 0, pointerId: 2 });
+
+      expect(stage.style.getPropertyValue('--gs-sweep-zoom')).toBe('2');
+    });
+
+    it('closes from its own control and hands focus back', async () => {
+      await setUp({ startExpanded: true });
+      const expand = find<HTMLButtonElement>('.gs-sweep-expand')!;
+      expand.focus();
+      expand.click();
+      fixture.detectChanges();
+
+      find<HTMLButtonElement>('.gs-sweep-dialog-x')!.click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(false);
+      expect(document.activeElement).toBe(find('.gs-sweep-expand'));
+    });
+
+    it('closes when the browser closes the dialog, however it was asked', async () => {
+      await setUp({ startExpanded: true });
+      const expand = find<HTMLButtonElement>('.gs-sweep-expand')!;
+      expand.focus();
+      expand.click();
+      fixture.detectChanges();
+
+      // What Escape does, from the browser's side of the dialog: the element
+      // closes itself and says so, and the component has to follow rather than
+      // wait to be told by one of its own controls.
+      dialog().dispatchEvent(new Event('close'));
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-dialog-body')).toBeNull();
+      expect(document.activeElement).toBe(find('.gs-sweep-expand'));
+    });
+
+    it('holds one position for the plate and the view together', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+
+      all<HTMLButtonElement>('.gs-sweep-dialog-step')[1].click();
+      fixture.detectChanges();
+      find<HTMLButtonElement>('.gs-sweep-dialog-x')!.click();
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+    });
+  });
+
+  describe('two-frame strips', () => {
+    it('wipes the pair over each other rather than scrubbing between them', async () => {
+      await setUp({ parameter: 'tiling', startExpanded: true });
+      reportWidth(600);
+
+      expect(all('.gs-sweep-stage .gs-wipe-tiled')).toHaveLength(2);
+      expect(find('.gs-wipe-divider')).not.toBeNull();
+      // Nothing lies between a before and an after.
+      expect(find('.gs-tickrail')).toBeNull();
+      expect(find('.gs-sweep-film')).toBeNull();
+      expect(find('.gs-sweep-dialog-steps')).toBeNull();
+    });
+
+    it('names the two sides with the chips the rest of the studio uses', async () => {
+      await setUp({ parameter: 'tiling', startExpanded: true });
+      reportWidth(600);
+
+      const tags = all<HTMLElement>('.gs-sweep-stage .gs-wipe-tag');
+      expect(tags[0].textContent).toContain('Off');
+      expect(tags[1].textContent).toContain('On');
+    });
+
+    it('lays a tiled pair out beside the tile that was rendered', async () => {
+      await setUp({ parameter: 'tiling', startExpanded: true });
+
+      expect(all('.gs-sweep-solos .gs-sweep-solo-img')).toHaveLength(2);
+      expect(text()).toContain(en['generate.sweeps.tile_solo_label']);
+    });
+
+    it('keeps the presentation toggle for the pairs that start apart', async () => {
+      await setUp({ parameter: 'sampler_solver_type', startExpanded: true });
+
+      // Only the pairs the studio deliberately sets apart carry the choice;
+      // for the rest the wipe is the better reading and asking would be noise.
+      expect(find('.gs-sweep-pair-mode')).toBeNull();
+      expect(find('.gs-wipe-divider')).not.toBeNull();
+    });
+
+    it('reads both captions under the pair', async () => {
+      await setUp({ parameter: 'tiling', startExpanded: true });
+
+      expect(all('.gs-sweep-pair-cap')).toHaveLength(2);
+    });
+
+    it('previews the pair on the card as the pair itself', async () => {
+      await setUp({ parameter: 'tiling' });
+
+      expect(find('.gs-sweep-card-door')?.textContent?.trim()).toBe(
+        en['generate.sweeps.card_door_pair'],
+      );
+    });
+  });
+
+  describe('which strip is shown', () => {
+    it('shows the strip for the model the studio is set to', async () => {
+      await setUp({
+        studioBaseline: 'stable_diffusion_1',
+        startExpanded: true,
+      });
+
+      expect(
+        find<HTMLImageElement>('.gs-sweep-stage .gs-sweep-frame')?.getAttribute(
+          'src',
+        ),
+      ).toContain('/steps/deliberate/landscape/');
+    });
+
+    it('lets a surface that names a model override the studio', async () => {
+      await setUp({
+        studioBaseline: 'stable_diffusion_1',
+        modelSlug: 'albedobase-xl',
+        startExpanded: true,
+      });
+
+      expect(
+        find<HTMLImageElement>('.gs-sweep-stage .gs-sweep-frame')?.getAttribute(
+          'src',
+        ),
+      ).toContain('/steps/albedobase-xl/person/');
+    });
+
+    it('picks the strip rendered against the guidance mode the surface names', async () => {
+      await setUp({
+        parameter: 'control_strength',
+        controlType: 'canny',
+        startExpanded: true,
+      });
+
+      expect(text()).toContain(en['generate.sweeps.control_map_label']);
+    });
+
+    it('renders nothing for a parameter the library has no strip for', async () => {
+      await setUp({ parameter: 'karras' });
+
+      expect(find('.gs-sweep')).toBeNull();
+    });
+  });
+
+  describe('the second reading of a parameter', () => {
+    it('swaps to the converging strip and keeps the position', async () => {
+      await setUp({ startExpanded: true });
+
+      railKey('End');
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+
+      const variants = all<HTMLButtonElement>('.gs-sweep-variant');
+      expect(variants).toHaveLength(2);
+      variants[1].click();
+      fixture.detectChanges();
+
+      expect(variants[1].getAttribute('aria-pressed')).toBe('true');
+      expect(
+        find<HTMLImageElement>('.gs-sweep-stage .gs-sweep-frame')?.getAttribute(
+          'src',
+        ),
+      ).toContain('/steps-converging/');
+      expect(rail().getAttribute('aria-valuenow')).toBe('3');
+    });
+
+    it('folds the note that says which kind of sampler is which', async () => {
+      await setUp({ startExpanded: true });
+
+      const why = find<HTMLButtonElement>('.gs-plate-controls .gs-sweep-why')!;
+      expect(why.getAttribute('aria-expanded')).toBe('false');
+
+      why.click();
+      fixture.detectChanges();
+
+      expect(text()).toContain('Re-rollers, the ancestral and SDE samplers');
+      expect(find('.gs-sweep-why-link')).not.toBeNull();
+    });
+  });
+
+  describe('a surface that has no room for the plate', () => {
+    it('takes the offer straight to the full-size view', async () => {
+      await setUp({ viewerFirst: true });
+
+      find<HTMLButtonElement>('.gs-sweep-card-door')!.click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+      // Nothing opens behind it: the plate is what does not fit here.
+      expect(find('.gs-plate')).toBeNull();
+      expect(find('.gs-sweep-dialog-param')?.textContent?.trim()).toBe('Steps');
+      expect(find('.gs-sweep-dialog-steps')).not.toBeNull();
+    });
+
+    it('comes back to the offer when the view is closed', async () => {
+      await setUp({ viewerFirst: true });
+      find<HTMLButtonElement>('.gs-sweep-card-door')!.click();
+      fixture.detectChanges();
+
+      find<HTMLButtonElement>('.gs-sweep-dialog-x')!.click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(false);
+      expect(find('.gs-sweep-card')).not.toBeNull();
+    });
+
+    it('ignores startExpanded, which has nothing to open here', async () => {
+      await setUp({ viewerFirst: true, startExpanded: true });
+
+      expect(find('.gs-plate')).toBeNull();
+      expect(find('.gs-sweep-card')).not.toBeNull();
+    });
+  });
+
+  describe('the copy it asks the ledger for', () => {
+    it('reads every line it names out of the translation file', () => {
+      const wanted = [
+        'generate.sweeps.card_door',
+        'generate.sweeps.card_door_pair',
+        'generate.sweeps.stage_role',
+        'generate.sweeps.compare_group',
+        'generate.sweeps.why',
+        'generate.sweeps.details',
+        'generate.sweeps.details_close',
+        'generate.sweeps.layout_grid',
+        'generate.sweeps.layout_strip',
+        'generate.sweeps.stop_enlarge',
+        'generate.sweeps.stop_go',
+        'generate.sweeps.stop_prev',
+        'generate.sweeps.stop_next',
+        'generate.sweeps.held_label',
+        'generate.sweeps.model_label',
+        'generate.sweeps.scene_label',
+        'generate.sweeps.sidecar_link',
+        'generate.sweeps.links_label',
+        'generate.sweeps.setting_page',
+      ];
+      const ledger = en as Record<string, string>;
+
+      const missing = wanted.filter((key) => !ledger[key]);
+      expect(missing).toEqual([]);
+    });
+
+    it('says nothing in the vocabulary of the code', () => {
+      const ledger = en as Record<string, string>;
+      const lines = Object.entries(ledger)
+        .filter(([key]) => key.startsWith('generate.sweeps.'))
+        .map(([, line]) => line);
+
+      for (const line of lines) {
+        expect(line).not.toMatch(/\bstrip_id\b|\bsidecar\b|\bindex\.json\b/);
+        expect(line).not.toContain('—');
+      }
     });
   });
 });

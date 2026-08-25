@@ -97,6 +97,18 @@ export interface SweepStripScene {
   prompt: string;
 }
 
+/**
+ * The two frames a strip is previewed by while it is collapsed, as positions in
+ * {@link SweepStrip.stops}. The generator names them per strip, because the
+ * interesting difference is not always between the two ends: a strip whose top
+ * half all looks alike previews the pair that actually differs. Null, or
+ * absent, leaves the choice to the surface showing it.
+ */
+export interface SweepPreviewPair {
+  left_index: number;
+  right_index: number;
+}
+
 /** A single parameter swept across one model and one scene. */
 export interface SweepStrip {
   strip_id: string;
@@ -110,6 +122,11 @@ export interface SweepStrip {
   scene: SweepStripScene;
   /** Ordered low to high; the middle one is used as the collapsed preview. */
   stops: SweepStop[];
+  /**
+   * The two stops the collapsed preview wipes between, where the strip names
+   * them. Null on the strips that leave it to the reader's surface.
+   */
+  preview?: SweepPreviewPair | null;
   /** The axes of a `grid` strip, and null on every other presentation. */
   grid?: SweepGrid | null;
   /**

@@ -318,22 +318,26 @@ describe('GenerateLearnSheetComponent', () => {
       await settle();
       await serveSweeps();
 
-      const offer = first<HTMLButtonElement>('.gs-sweep-offer');
-      expect(offer).toBeTruthy();
-      expect(query('.gs-sweep-open')).toHaveLength(0);
+      const card = first<HTMLElement>('.gs-sweep-card');
+      expect(card).toBeTruthy();
+      expect(query('.gs-plate')).toHaveLength(0);
 
-      offer.click();
+      const door = card.querySelector<HTMLButtonElement>(
+        '.gs-sweep-card-door',
+      )!;
+      door.focus();
+      door.click();
       await settle();
 
-      expect(query('.gs-sweep-viewer')).toHaveLength(1);
+      expect(query('.gs-sweep-dialog-body')).toHaveLength(1);
       // Nothing opens behind it: the plate is what has no room here.
-      expect(query('.gs-sweep-open')).toHaveLength(0);
+      expect(query('.gs-plate')).toHaveLength(0);
 
-      first<HTMLButtonElement>('.gs-sweep-viewer-x').click();
+      first<HTMLButtonElement>('.gs-sweep-dialog-x').click();
       await settle();
 
-      expect(query('.gs-sweep-viewer')).toHaveLength(0);
-      expect(document.activeElement).toBe(offer);
+      expect(query('.gs-sweep-dialog-body')).toHaveLength(0);
+      expect(document.activeElement).toBe(door);
     });
   });
 

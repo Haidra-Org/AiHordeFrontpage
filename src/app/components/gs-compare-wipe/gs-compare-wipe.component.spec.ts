@@ -41,6 +41,7 @@ class FakeResizeObserver {
     [beforeAlt]="beforeAlt"
     [afterAlt]="afterAlt"
     [tiled]="tiled"
+    [handleOnly]="handleOnly"
     (imageLoad)="loads = loads + 1"
   />`,
 })
@@ -52,6 +53,7 @@ class HostComponent {
   public beforeAlt = 'The scene before';
   public afterAlt = 'The scene after';
   public tiled = false;
+  public handleOnly = false;
   public loads = 0;
 }
 
@@ -283,6 +285,27 @@ describe('GsCompareWipeComponent', () => {
     expect(sides[0].getAttribute('aria-label')).toBe('The scene before');
     expect(sides[0].querySelectorAll('img')).toHaveLength(9);
     expect(all('.gs-wipe-img')).toHaveLength(0);
+  });
+
+  it('leaves the picture alone where the caller has kept the presses', () => {
+    fixture.componentInstance.handleOnly = true;
+    render();
+    widthIs(400);
+
+    // The card around this pair opens on a press anywhere, so a press on the
+    // picture is the card's rather than the divider's.
+    pointer('pointerdown', 100);
+    expect(at()).toBe('50%');
+
+    divider()!.dispatchEvent(
+      new MouseEvent('pointerdown', {
+        clientX: 300,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fixture.detectChanges();
+    expect(at()).toBe('75%');
   });
 
   it('says once that a picture has arrived', () => {

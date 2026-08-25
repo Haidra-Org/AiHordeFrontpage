@@ -4,6 +4,7 @@
   "strips": [
     {
       "strip_id": "steps/albedobase-xl/person",
+      "preview": { "left_index": 0, "right_index": 2 },
       "parameter": "steps",
       "presentation": "strip",
       "caption": "How far the sampler gets to run before the picture is handed back.",
