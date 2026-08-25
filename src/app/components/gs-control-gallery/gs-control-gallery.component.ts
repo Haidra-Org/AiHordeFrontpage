@@ -446,9 +446,17 @@ interface ControlShot {
               <h3 class="gs-ctl-head">
                 {{ 'generate.control_types.strength_head' | transloco }}
               </h3>
+              @if (strengthOffSubject()) {
+                <p class="gs-ctl-caption gs-ctl-note">
+                  {{
+                    'generate.control_types.strength_on_character' | transloco
+                  }}
+                </p>
+              }
               <app-gs-sweep-scrub
                 parameter="control_strength"
                 [controlType]="shown.type"
+                [sceneId]="strengthScene()"
                 [startExpanded]="true"
                 register="filmcard"
               />
@@ -603,17 +611,61 @@ export class GsControlGalleryComponent {
   });
 
   /**
+   * The dial's strip for the mode on show, on the kind of picture the reader
+   * chose where the library swept one and on the character picture otherwise.
+   * Null when the dial was never swept against this mode at all.
+   */
+  public readonly strengthStrip = computed<SweepStrip | null>(() => {
+    const tile = this.shown();
+    if (!tile) {
+      return null;
+    }
+    const subject = this.subjectShown();
+    const onSubject =
+      subject === 'anchor'
+        ? null
+        : this.sweeps.strip(
+            'control_strength',
+            undefined,
+            undefined,
+            tile.type,
+            subject,
+          );
+    return (
+      onSubject ??
+      this.sweeps.strip('control_strength', undefined, undefined, tile.type)
+    );
+  });
+
+  /**
    * Whether the dial was ever swept against this mode. The strip is what the
    * heading over it promises, so a mode the library never swept says nothing
    * rather than heading an empty space.
    */
-  public readonly hasStrength = computed(() => {
-    const tile = this.shown();
-    return (
-      tile !== null &&
-      this.sweeps.strip('control_strength', undefined, undefined, tile.type) !==
-        null
-    );
+  public readonly hasStrength = computed(() => this.strengthStrip() !== null);
+
+  /**
+   * The scene the dial's strip is to be read from, and undefined while it is
+   * the one the mode answers with anyway. Naming it is how the kind of picture
+   * the reader chose reaches the strip below.
+   */
+  public readonly strengthScene = computed<string | undefined>(() => {
+    const strip = this.strengthStrip();
+    const subject = this.subjectShown();
+    return strip && subject !== 'anchor' && strip.subject === subject
+      ? strip.scene.scene_id
+      : undefined;
+  });
+
+  /**
+   * Whether the dial is being read from a picture other than the one the reader
+   * chose, which is the one thing about it they cannot see for themselves.
+   */
+  public readonly strengthOffSubject = computed(() => {
+    const strip = this.strengthStrip();
+    return strip !== null && this.subjectShown() !== 'anchor'
+      ? strip.subject !== this.subjectShown()
+      : false;
   });
 
   /**

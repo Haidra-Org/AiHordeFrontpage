@@ -1196,6 +1196,82 @@
           "control_type": "canny"
         }
       ]
+    },
+    {
+      "strip_id": "control-strength/canny/deliberate/skyharbor-tower-ink",
+      "parameter": "control_strength",
+      "presentation": "strip",
+      "caption": "How hard an outline map holds a building.",
+      "complete": true,
+      "subject": "building",
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "The SD1.5 model the ControlNet recipes are known good on."
+      },
+      "scene": {
+        "scene_id": "skyharbor-tower-ink",
+        "label": "The tower, asked for in ink and watercolour",
+        "prompt": "ink and watercolour illustration of a harbour control tower"
+      },
+      "source_image": "control-strength/canny/deliberate/skyharbor-tower-ink/source.webp",
+      "control_map": "control-strength/canny/deliberate/skyharbor-tower-ink/source_map.webp",
+      "varying": ["control_strength"],
+      "stops": [
+        {
+          "value": 1.25,
+          "label": "1_25",
+          "caption": "The loosest of the eight.",
+          "file": "control-strength/canny/deliberate/skyharbor-tower-ink/001_1_25.webp",
+          "control_type": "canny"
+        },
+        {
+          "value": 1.6,
+          "label": "1_6",
+          "caption": "The strictest reading of the outline.",
+          "file": "control-strength/canny/deliberate/skyharbor-tower-ink/008_1_6.webp",
+          "control_type": "canny"
+        }
+      ]
+    },
+    {
+      "strip_id": "control-strength/canny/deliberate/skyharbor-poster-ink",
+      "parameter": "control_strength",
+      "presentation": "strip",
+      "caption": "How hard an outline map holds a flat drawing.",
+      "complete": true,
+      "subject": "flat",
+      "image_model": {
+        "slug": "deliberate",
+        "name": "Deliberate",
+        "baseline": "stable_diffusion_1",
+        "note": "The SD1.5 model the ControlNet recipes are known good on."
+      },
+      "scene": {
+        "scene_id": "skyharbor-poster-ink",
+        "label": "The poster, asked for in flat colour",
+        "prompt": "flat colour poster of a harbour skyline"
+      },
+      "source_image": "control-strength/canny/deliberate/skyharbor-poster-ink/source.webp",
+      "control_map": "control-strength/canny/deliberate/skyharbor-poster-ink/source_map.webp",
+      "varying": ["control_strength"],
+      "stops": [
+        {
+          "value": 1.25,
+          "label": "1_25",
+          "caption": "The loosest of the eight.",
+          "file": "control-strength/canny/deliberate/skyharbor-poster-ink/001_1_25.webp",
+          "control_type": "canny"
+        },
+        {
+          "value": 1.6,
+          "label": "1_6",
+          "caption": "The strictest reading of the outline.",
+          "file": "control-strength/canny/deliberate/skyharbor-poster-ink/008_1_6.webp",
+          "control_type": "canny"
+        }
+      ]
     }
   ]
 }

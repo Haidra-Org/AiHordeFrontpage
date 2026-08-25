@@ -367,18 +367,26 @@ export class SweepLibraryService {
    * names none is only offered the strips that name none either: a strip
    * rendered against a detector is about that detector, and handing it to a
    * surface that never asked about one would answer a question nobody put.
+   *
+   * `subject` holds the answer to the kind of source picture the caller is
+   * showing, for the parameters the library swept on more than one. A caller
+   * that names none is offered any of them, so the surfaces that never ask
+   * about the source picture keep the strip they always had.
    */
   public strip(
     parameter: string,
     modelSlug?: string,
     sceneId?: string,
     controlType?: string,
+    subject?: SweepSubject,
   ): SweepStrip | null {
     const wanted = controlType ?? null;
     return this.best(
       parameter,
       (entry) =>
-        entry.presentation !== 'grid' && stripControlType(entry) === wanted,
+        entry.presentation !== 'grid' &&
+        stripControlType(entry) === wanted &&
+        (subject === undefined || entry.subject === subject),
       modelSlug,
       sceneId,
     );

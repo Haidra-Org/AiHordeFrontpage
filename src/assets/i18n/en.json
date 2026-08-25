@@ -1806,6 +1806,7 @@
   "generate.control_types.enlarged": "{{ frame }}, {{ world }}",
   "generate.control_types.rendered_on": "Rendered on",
   "generate.control_types.strength_head": "What control strength does",
+  "generate.control_types.strength_on_character": "These strength examples were run on the character picture.",
   "generate.control_types.source_alt": "The picture {{ name }} was read from",
   "generate.control_types.map_alt": "The control map {{ name }} drew",
   "generate.control_types.render_alt": "The image {{ name }} guided",

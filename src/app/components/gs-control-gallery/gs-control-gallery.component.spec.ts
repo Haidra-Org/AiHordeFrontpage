@@ -25,6 +25,14 @@ const WORLD_TWO = 'controlnet-gallery/anything-diffusion/fox-shrine-ink';
  * reads, including a mode the library has swept the dial against and one it
  * has not.
  */
+/** The dial swept on a building, which is the picture the anchor is not. */
+const STRENGTH_BUILDING = strength(
+  'canny',
+  'building',
+  'skyharbor-tower-ink',
+  'Held to the map on a building.',
+);
+
 const INDEX = {
   schema_version: 1,
   seed: 1312,
@@ -47,17 +55,35 @@ const INDEX = {
       'The fox shrine, in ink and vermilion',
     ),
     strength('canny'),
+    STRENGTH_BUILDING,
   ],
 };
 
-/** A full-range strength strip, keyed to the mode it was rendered against. */
-function strength(type: string): unknown {
+/** The same library before the dial had been swept on any other picture. */
+const INDEX_ANCHOR_ONLY = {
+  ...INDEX,
+  strips: INDEX.strips.filter((strip) => strip !== STRENGTH_BUILDING),
+};
+
+/**
+ * A full-range strength strip, keyed to the mode it was rendered against and to
+ * the kind of source picture it was run on. The character one is published
+ * without a `subject`, as the library's own first strips are.
+ */
+function strength(
+  type: string,
+  subject: string | null = null,
+  sceneId = 'courier-ink',
+  held = 'Held to the map.',
+): unknown {
+  const base = `control-strength/${type}/deliberate/${sceneId}`;
   return {
-    strip_id: `control-strength/${type}/deliberate/courier-ink`,
+    strip_id: base,
     parameter: 'control_strength',
     presentation: 'strip',
     caption: `How hard a ${type} map holds the render.`,
     complete: true,
+    ...(subject === null ? {} : { subject }),
     image_model: {
       slug: 'deliberate',
       name: 'Deliberate',
@@ -65,7 +91,7 @@ function strength(type: string): unknown {
       note: '',
     },
     scene: {
-      scene_id: 'courier-ink',
+      scene_id: sceneId,
       label: 'The courier',
       prompt: 'a courier',
     },
@@ -75,21 +101,21 @@ function strength(type: string): unknown {
         value: 0.5,
         label: '0_5',
         caption: 'Barely held.',
-        file: `control-strength/${type}/deliberate/courier-ink/001_0_5.webp`,
+        file: `${base}/001_0_5.webp`,
         control_type: type,
       },
       {
         value: 1,
         label: '1',
-        caption: 'Held to the map.',
-        file: `control-strength/${type}/deliberate/courier-ink/002_1.webp`,
+        caption: held,
+        file: `${base}/002_1.webp`,
         control_type: type,
       },
       {
         value: 2,
         label: '2',
         caption: 'Held past what the prompt asked for.',
-        file: `control-strength/${type}/deliberate/courier-ink/003_2.webp`,
+        file: `${base}/003_2.webp`,
         control_type: type,
       },
     ],
@@ -187,7 +213,7 @@ describe('GsControlGalleryComponent', () => {
   const find = <T extends Element>(selector: string): T | null =>
     el().querySelector<T>(selector);
 
-  async function setUp(): Promise<void> {
+  async function setUp(index: object = INDEX): Promise<void> {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -207,7 +233,7 @@ describe('GsControlGalleryComponent', () => {
     fixture = TestBed.createComponent(HostComponent);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
-    http.expectOne(`${environment.evidenceBaseUrl}/index.json`).flush(INDEX);
+    http.expectOne(`${environment.evidenceBaseUrl}/index.json`).flush(index);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -550,6 +576,40 @@ describe('GsControlGalleryComponent', () => {
     expect(scrub).not.toBeNull();
     expect(scrub!.querySelector('.gs-sweep')).not.toBeNull();
     expect(scrub!.textContent).toContain('Held to the map.');
+  });
+
+  it('keeps the strength dial on the character picture while it is chosen', async () => {
+    await setUp();
+    openTile(0);
+
+    const scrub = find<HTMLElement>('.gs-ctl-dial app-gs-sweep-scrub')!;
+    expect(scrub.textContent).toContain('Held to the map.');
+    expect(find('.gs-ctl-dial .gs-ctl-note')).toBeNull();
+  });
+
+  it('reads the strength dial on the kind of picture that was chosen', async () => {
+    await setUp();
+    openTile(0);
+    all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1] //
+      .click();
+    fixture.detectChanges();
+
+    const scrub = find<HTMLElement>('.gs-ctl-dial app-gs-sweep-scrub')!;
+    expect(scrub.textContent).toContain('Held to the map on a building.');
+    expect(find('.gs-ctl-dial .gs-ctl-note')).toBeNull();
+  });
+
+  it('says which picture the strength examples were run on where it differs', async () => {
+    await setUp(INDEX_ANCHOR_ONLY);
+    openTile(0);
+    all<HTMLButtonElement>('.gs-ctl-switch--subject .gs-ctl-switch-opt')[1] //
+      .click();
+    fixture.detectChanges();
+
+    expect(find('.gs-ctl-dial .gs-ctl-note')!.textContent) //
+      .toContain('run on the character picture');
+    expect(find<HTMLElement>('.gs-ctl-dial app-gs-sweep-scrub')!.textContent) //
+      .toContain('Held to the map.');
   });
 
   it('says nothing where the library has swept no strength for the mode', async () => {
