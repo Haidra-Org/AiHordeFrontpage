@@ -11,14 +11,6 @@ export const profileRoutes: Routes = [
       ),
   },
   {
-    path: 'generations',
-    data: { tabKey: 'generations' },
-    loadComponent: () =>
-      import('./tabs/generations/profile-generations.component').then(
-        (c) => c.ProfileGenerationsComponent,
-      ),
-  },
-  {
     path: 'records',
     data: { tabKey: 'records' },
     loadComponent: () =>

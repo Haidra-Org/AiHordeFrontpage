@@ -3,18 +3,14 @@ import { NavItem } from './nav-item';
 
 export const NAV_ITEMS: NavItem[] = [
   { labelKey: 'home', routerLink: '/', exact: true },
+  // The two things a reader can do on this site, reachable in one press. They
+  // used to sit under the GUIs list, where the label promised other people's
+  // software and the entries were ours.
+  { labelKey: 'generate.nav_link', routerLink: '/generate/image' },
+  { labelKey: 'alchemy.nav_link', routerLink: '/generate/alchemy' },
   { labelKey: 'mission.nav_link', routerLink: '/mission/' },
   { labelKey: 'news', routerLink: '/news/' },
-  {
-    labelKey: 'guis_and_tools',
-    dropdownId: 'guis-and-tools',
-    activeRoutePrefix: '/guis',
-    children: [
-      { labelKey: 'nav.guis_and_tools.full_list', routerLink: '/guis/' },
-      { labelKey: 'generate.nav_link', routerLink: '/generate/image' },
-      { labelKey: 'alchemy.nav_link', routerLink: '/generate/alchemy' },
-    ],
-  },
+  { labelKey: 'guis_and_tools', routerLink: '/guis/' },
   {
     labelKey: 'docs.nav_link',
     dropdownId: 'docs',

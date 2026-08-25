@@ -8,7 +8,6 @@ import {
   computed,
   effect,
   inject,
-  input,
   PLATFORM_ID,
   signal,
   untracked,
@@ -238,7 +237,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * does not claim the document title, so it can be hosted inside another page's
    * shell (e.g. the profile generations tab) without duplicating chrome.
    */
-  public readonly embedded = input(false);
 
   public readonly form = createGenerateForm(
     coerceFormValue(this.db.get(STORAGE_KEY)),
@@ -581,14 +579,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   constructor() {
     afterNextRender(() => {
-      if (!this.embedded()) {
-        setPageTitle(
-          this.translator,
-          this.title,
-          this.destroyRef,
-          'generate.title',
-        );
-      }
+      setPageTitle(
+        this.translator,
+        this.title,
+        this.destroyRef,
+        'generate.title',
+      );
     });
 
     if (this.isBrowser) {
@@ -701,7 +697,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** Panel-width controls are desktop-only; mobile stacks panes vertically. */
   public panelCanExpand(): boolean {
-    return !this.embedded() && !this.isNarrow();
+    return !this.isNarrow();
   }
 
   /** The CSS mobile breakpoint as a signal: crossing it re-renders what it

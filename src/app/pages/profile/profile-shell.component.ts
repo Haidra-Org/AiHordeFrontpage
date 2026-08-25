@@ -169,11 +169,6 @@ export class ProfileShellComponent implements OnInit {
       iconName: 'user-circle',
     },
     {
-      slug: 'generations',
-      labelKey: 'profile.tabs.your_generations',
-      iconName: 'lightning',
-    },
-    {
       slug: 'records',
       labelKey: 'profile.tabs.detailed_records',
       iconName: 'clipboard',

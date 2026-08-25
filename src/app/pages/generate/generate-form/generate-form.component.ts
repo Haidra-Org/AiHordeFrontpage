@@ -570,7 +570,7 @@ export class GenerateFormComponent implements OnInit {
   public readonly styleGroups = input<StylePickerGroup[]>([]);
   /** Current control-panel width; drives the reflow and the expand control. */
   public readonly panelSize = input<PanelSize>('normal');
-  /** Whether the expand/collapse control is offered (off when embedded). */
+  /** Whether the expand/collapse control is offered (off on a narrow screen). */
   public readonly expandable = input(true);
   /**
    * Whether the studio is stacked rather than side by side. The parent owns the
@@ -624,9 +624,9 @@ export class GenerateFormComponent implements OnInit {
   public readonly reviewBeforeSend = input(false);
 
   /**
-   * Whether keeping Generate on screen is on offer at all. False where the
-   * panel is a guest on another page: the bar belongs to the studio's own
-   * screen, which is the only place it has a bottom to sit above.
+   * Whether keeping Generate on screen is on offer at all. The docked bar
+   * belongs to the studio's own screen, which is the only place it has a bottom
+   * to sit above, so a host that draws the panel elsewhere leaves this off.
    */
   public readonly pinnable = input(false);
 

@@ -10,6 +10,11 @@
     "section": null
   },
   {
+    "question": "Can I generate images on this site?",
+    "answer": "<p>Yes. Open <a href='/generate/image'>Generate Images</a>, write a prompt, choose a model, and press Generate. The picture comes back on the same page, and nothing is installed. You can start with the anonymous API key <strong>0000000000</strong> (10 zeros); registering gets you your own key and a shorter wait.</p><p>Every setting in the panel is explained in the <a href='/docs/image'>image generation docs</a>, which also walk through complete examples you can copy step by step. To change a picture you already have, <a href='/generate/alchemy'>Alchemy</a> makes it larger, repairs faces, removes the background, or writes a caption for it.</p>",
+    "section": null
+  },
+  {
     "question": "Is this some sort of blockchain or cryptocurrency project?",
     "answer": "<p><strong>No!</strong> The AI Horde is a completely centralized service that does not involve any blockchain technology or cryptocurrency. We explicitly reject the use of blockchain technologies and have no plans to integrate with them in any way.</p><p>Kudos, the priority system used in the horde, are a centralized point system that has no inherent monetary value and cannot be traded for currency. They are designed to encourage positive community behavior and resource sharing, not to function as a cryptocurrency.</p>",
     "section": null

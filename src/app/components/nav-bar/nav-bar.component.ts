@@ -116,8 +116,9 @@ export class NavBarComponent implements OnInit, OnDestroy {
     if (item.activeRoutePrefix && url.startsWith(item.activeRoutePrefix)) {
       return true;
     }
-    // Children may live under unrelated routes (e.g. /guis and /alchemy), so
-    // fall back to matching any child link rather than a single shared prefix.
+    // Children may live under routes unrelated to the trigger's prefix (the
+    // docs menu holds /faq alongside /docs), so fall back to matching any child
+    // link rather than a single shared prefix.
     return (item.children ?? []).some(
       (child) => child.routerLink && url.startsWith(child.routerLink),
     );

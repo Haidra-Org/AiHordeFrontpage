@@ -1,9 +1,8 @@
 <div
-  class="gen-studio gs-workspace"
+  class="gen-studio gs-workspace gs-workspace--full"
   [class.gs-tut-on]="tutorialActive()"
-  [class.gs-workspace--full]="!embedded()"
-  [class.gs-workspace--wide]="!embedded() && panelSize() === 'double'"
-  [class.gs-workspace--max]="!embedded() && panelSize() === 'full'"
+  [class.gs-workspace--wide]="panelSize() === 'double'"
+  [class.gs-workspace--max]="panelSize() === 'full'"
   appStudioImageDrop
   #imageDrop="studioImageDrop"
   (imageFile)="onDroppedImage($event)"
@@ -51,7 +50,7 @@
       [lintWarnings]="lintWarnings()"
       [fieldRejection]="fieldRejection()"
       [reviewBeforeSend]="reviewBeforeSend()"
-      [pinnable]="!embedded()"
+      [pinnable]="true"
       [pinGenerate]="pinGenerate()"
       (panelSizeChange)="panelSize.set($event)"
       (reviewBeforeSendChange)="setReviewBeforeSend($event)"

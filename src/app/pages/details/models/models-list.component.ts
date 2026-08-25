@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { combineLatest, finalize } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
@@ -46,6 +46,7 @@ interface ModelSuggestion {
 @Component({
   selector: 'app-models-list',
   imports: [
+    RouterLink,
     TranslocoPipe,
     DecimalPipe,
     UnitTooltipComponent,
