@@ -42,5 +42,8 @@ export class GenerateShellComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.fullscreen.setTarget(null);
+    // The in-page mode marks the body, so leaving the studio has to take the
+    // mark with it or the next page arrives with no nav bar.
+    this.fullscreen.exitImmersive();
   }
 }

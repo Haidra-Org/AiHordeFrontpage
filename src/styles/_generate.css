@@ -882,6 +882,38 @@
   }
 }
 
+/* ------- whole screen, the page's own ------------------------------ */
+/* Every iPhone keeps its fullscreen for video, so on a phone the studio takes
+   the screen from the page instead: the site's bars stand down and what is left
+   is the studio. The mark is on the body because the nav bar and the footer are
+   not inside the studio; the studio shell clears it as it leaves, so no other
+   page can arrive without its chrome.
+
+   Wide, nothing here applies: the class is only ever set on a phone. */
+body.gs-immersive {
+  /* Nothing has to clear a bar that is not drawn. Everything pinned to the foot
+     of the screen reads this, so one line moves them all down. */
+  --gs-tabbar-height: 0px;
+}
+body.gs-immersive .nav-shell,
+body.gs-immersive .footer-shell,
+body.gs-immersive app-floating-controls {
+  display: none;
+}
+body.gs-immersive .wrapper,
+body.gs-immersive .wrapper--flush {
+  padding-top: 0;
+}
+body.gs-immersive .gen-studio .gs-subtabs {
+  display: none;
+}
+body.gs-immersive .gen-studio.gs-shell {
+  min-height: 100dvh;
+}
+body.gs-immersive .gen-studio .gs-shell-outlet {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* ------- panel expand (double / full width) ------------------------ */
 .gen-studio .gs-expand {
   display: inline-flex;

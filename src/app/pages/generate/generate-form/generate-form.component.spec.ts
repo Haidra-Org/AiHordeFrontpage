@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component, PLATFORM_ID, signal, viewChild } from '@angular/core';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FIELD_LABEL_KEY,
   GROUP_IDS,
@@ -2732,16 +2732,25 @@ describe('GenerateFormComponent Options list', () => {
    * constructor from the document, so the two cases are separate providers
    * rather than a property a test can move.
    */
-  function fullscreenStub(available: boolean): FullscreenService {
+  function fullscreenStub(
+    available: boolean,
+    phone = false,
+  ): FullscreenService {
     return {
       available,
       active: signal(false),
+      immersive: signal(false),
+      filling: signal(false),
+      phone: signal(phone),
       toggle: (): Promise<void> => Promise.resolve(),
       setTarget: (): void => undefined,
     } as unknown as FullscreenService;
   }
 
-  async function render(available = false): Promise<{
+  async function render(
+    available = false,
+    phone = false,
+  ): Promise<{
     host: HTMLElement;
     fixture: ComponentFixture<GenerateFormComponent>;
   }> {
@@ -2755,7 +2764,10 @@ describe('GenerateFormComponent Options list', () => {
       ],
       providers: [
         provideRouter([]),
-        { provide: FullscreenService, useValue: fullscreenStub(available) },
+        {
+          provide: FullscreenService,
+          useValue: fullscreenStub(available, phone),
+        },
       ],
     }).compileComponents();
 
@@ -2846,6 +2858,70 @@ describe('GenerateFormComponent Options list', () => {
     openOptions(host, fixture);
 
     expect(optionRow(host, en['generate.shell.fullscreen'])).not.toBeNull();
+  });
+
+  it('offers full screen on a phone whose browser has none', async () => {
+    // Every iPhone: no fullscreen for an ordinary element, and the screen is
+    // where the studio needs the room most, so the row stands anyway.
+    const { host, fixture } = await render(false, true);
+    openOptions(host, fixture);
+
+    expect(optionRow(host, en['generate.shell.fullscreen'])).not.toBeNull();
+  });
+
+  it('stands the page down when that row is pressed on such a phone', async () => {
+    // The real service here: what the row does is put the mark on the body,
+    // which is what the site's bars read.
+    const matchMedia = vi.fn().mockReturnValue({
+      matches: true,
+      media: '',
+      addEventListener: (): void => undefined,
+      removeEventListener: (): void => undefined,
+      // The CDK's breakpoint observer still reaches for the old pair.
+      addListener: (): void => undefined,
+      removeListener: (): void => undefined,
+    });
+    vi.stubGlobal('matchMedia', matchMedia);
+    try {
+      await TestBed.configureTestingModule({
+        imports: [
+          GenerateFormComponent,
+          TranslocoTestingModule.forRoot({
+            langs: { en },
+            translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+          }),
+        ],
+        providers: [provideRouter([])],
+      }).compileComponents();
+
+      const fixture = TestBed.createComponent(GenerateFormComponent);
+      fixture.componentRef.setInput(
+        'form',
+        createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a fox' }),
+      );
+      fixture.componentRef.setInput('pinnable', true);
+      fixture.detectChanges();
+      const host = fixture.nativeElement as HTMLElement;
+      const fullscreen = TestBed.inject(FullscreenService);
+
+      expect(fullscreen.available).toBe(false);
+      expect(fullscreen.phone()).toBe(true);
+
+      openOptions(host, fixture);
+      const row = optionRow(host, en['generate.shell.fullscreen']);
+      expect(row).not.toBeNull();
+      row!.click();
+      await Promise.resolve();
+
+      expect(fullscreen.immersive()).toBe(true);
+      expect(document.body.classList.contains('gs-immersive')).toBe(true);
+
+      await fullscreen.exit();
+      expect(document.body.classList.contains('gs-immersive')).toBe(false);
+    } finally {
+      document.body.classList.remove('gs-immersive');
+      vi.unstubAllGlobals();
+    }
   });
 
   it('is the bottom sheet rather than a popover on a phone', async () => {

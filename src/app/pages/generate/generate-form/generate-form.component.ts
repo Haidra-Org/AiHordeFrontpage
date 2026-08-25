@@ -2615,7 +2615,7 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public fullscreenLabelKey(): string {
-    return this.fullscreen.active()
+    return this.fullscreen.filling()
       ? 'generate.shell.fullscreen_exit'
       : 'generate.shell.fullscreen';
   }

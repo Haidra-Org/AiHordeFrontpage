@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FullscreenService,
   restoreFocusOnFullscreenExit,
@@ -15,8 +15,26 @@ interface FakeDocument {
   webkitExitFullscreen?: () => Promise<void>;
   addEventListener: (type: string, handler: () => void) => void;
   activeElement: Element | null;
-  body: Element | null;
+  body: HTMLElement | null;
 }
+
+/**
+ * Stand in for the viewport the service asks about. jsdom answers every media
+ * query with `false`, so a phone has to be said outright.
+ */
+const sayPhone = (phone: boolean): void => {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({
+      matches: phone,
+      media: '',
+      addEventListener: (): void => undefined,
+      removeEventListener: (): void => undefined,
+      addListener: (): void => undefined,
+      removeListener: (): void => undefined,
+    })),
+  );
+};
 
 /**
  * jsdom has no fullscreen of its own, so the document the service talks to is
@@ -30,7 +48,7 @@ const makeDocument = (
   const doc: FakeDocument = {
     fullscreenElement: null,
     activeElement: null,
-    body: null,
+    body: document.createElement('body'),
     addEventListener: (type, handler) => handlers.set(type, handler),
   };
 
@@ -84,6 +102,7 @@ const serviceWith = (doc: FakeDocument): FullscreenService => {
 
 describe('FullscreenService', () => {
   beforeEach(() => TestBed.resetTestingModule());
+  afterEach(() => vi.unstubAllGlobals());
 
   it('offers nothing where the browser keeps the screen for video', async () => {
     // An iPhone answers to neither name, so the controls that would call this
@@ -202,6 +221,73 @@ describe('FullscreenService', () => {
 
     service.setTarget(borrowedFrom);
     expect(service.target()).toBe(shell);
+  });
+
+  it('fills the screen from the page alone where the browser has no such thing', async () => {
+    // Every iPhone. Nothing is asked of the browser and the studio still gets
+    // the screen; the mark on the body is what the site's bars read.
+    sayPhone(true);
+    const { doc } = makeDocument('none');
+    const service = serviceWith(doc);
+
+    expect(service.available).toBe(false);
+    expect(service.phone()).toBe(true);
+
+    await service.toggle();
+
+    expect(service.immersive()).toBe(true);
+    expect(service.filling()).toBe(true);
+    expect(doc.body?.classList.contains('gs-immersive')).toBe(true);
+
+    await service.toggle();
+
+    expect(service.filling()).toBe(false);
+    expect(doc.body?.classList.contains('gs-immersive')).toBe(false);
+  });
+
+  it('asks the browser as well where the browser has one', async () => {
+    sayPhone(true);
+    const { doc } = makeDocument('standard');
+    const service = serviceWith(doc);
+    const element = makeElement(doc, 'standard');
+    service.setTarget(element);
+
+    await service.toggle();
+
+    expect(doc.fullscreenElement).toBe(element);
+    expect(service.immersive()).toBe(true);
+
+    await service.toggle();
+
+    expect(doc.fullscreenElement).toBeNull();
+    expect(service.immersive()).toBe(false);
+  });
+
+  it('leaves the page as it is where the pointer is not a finger', async () => {
+    sayPhone(false);
+    const { doc } = makeDocument('standard');
+    const service = serviceWith(doc);
+    service.setTarget(makeElement(doc, 'standard'));
+
+    await service.toggle();
+
+    expect(service.active()).toBe(true);
+    expect(service.immersive()).toBe(false);
+    expect(doc.body?.classList.contains('gs-immersive')).toBe(false);
+  });
+
+  it('gives the chrome back when the studio leaves the page', async () => {
+    // The studio shell calls this as it is destroyed, which is every navigation
+    // away: the next page must not arrive without a nav bar.
+    sayPhone(true);
+    const { doc } = makeDocument('none');
+    const service = serviceWith(doc);
+    await service.toggle();
+
+    service.exitImmersive();
+
+    expect(service.immersive()).toBe(false);
+    expect(doc.body?.classList.contains('gs-immersive')).toBe(false);
   });
 
   it('stays out of the way once the shell that owned the element is gone', async () => {

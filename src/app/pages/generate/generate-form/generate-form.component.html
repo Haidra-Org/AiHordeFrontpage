@@ -2766,17 +2766,19 @@
       }}</span>
     </button>
   }
-  <!-- Nothing is drawn where the browser only ever gives the screen to video. -->
-  @if (fullscreen.available) {
+  <!-- A phone gets this whether or not the browser has a fullscreen of its own:
+       where it has none, the page stands its own bars down instead. Wide with
+       no support at all, nothing is drawn. -->
+  @if (fullscreen.available || fullscreen.phone()) {
     <button
       type="button"
       class="gs-opt-row"
-      [attr.aria-pressed]="fullscreen.active()"
+      [attr.aria-pressed]="fullscreen.filling()"
       (click)="toggleFullscreen()"
     >
       <app-icon
         [name]="
-          fullscreen.active() ? 'arrows-pointing-in' : 'arrows-pointing-out'
+          fullscreen.filling() ? 'arrows-pointing-in' : 'arrows-pointing-out'
         "
         class="gs-ico-sm"
         aria-hidden="true"

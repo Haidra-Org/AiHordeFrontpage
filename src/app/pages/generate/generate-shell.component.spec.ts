@@ -2,7 +2,7 @@ import { Component, WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateShellComponent } from './generate-shell.component';
 import { GlossaryService } from '../../services/glossary.service';
 import { FullscreenService } from '../../services/fullscreen.service';
@@ -36,6 +36,10 @@ describe('GenerateShellComponent', () => {
     const fullscreen = {
       available: true,
       active: fullscreenActive.asReadonly(),
+      immersive: signal(false),
+      phone: signal(false),
+      // The one state the shell draws from: either route to the whole screen.
+      filling: fullscreenActive.asReadonly(),
       setTarget: () => undefined,
       toggle: () => Promise.resolve(),
       enter: () => Promise.resolve(),
@@ -43,6 +47,7 @@ describe('GenerateShellComponent', () => {
         fullscreenActive.set(false);
         return Promise.resolve();
       },
+      exitImmersive: () => undefined,
     } as unknown as FullscreenService;
 
     await TestBed.configureTestingModule({
@@ -187,5 +192,61 @@ describe('GenerateShellComponent', () => {
     ]) {
       expect(translations[key]).toBeTruthy();
     }
+  });
+});
+
+describe('GenerateShellComponent in-page whole screen', () => {
+  afterEach(() => {
+    document.body.classList.remove('gs-immersive');
+    vi.unstubAllGlobals();
+  });
+
+  it('takes the in-page mode with it when the reader leaves the studio', async () => {
+    // The real service here: the mark is on the body, which outlives this
+    // component, so a page reached from the studio would otherwise arrive with
+    // no nav bar and no way to ask for one back.
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        matches: true,
+        media: '',
+        addEventListener: (): void => undefined,
+        removeEventListener: (): void => undefined,
+        // The CDK's breakpoint observer still reaches for the old pair.
+        addListener: (): void => undefined,
+        removeListener: (): void => undefined,
+      })),
+    );
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateShellComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const shell = TestBed.createComponent(GenerateShellComponent);
+    shell.detectChanges();
+    const fullscreen = TestBed.inject(FullscreenService);
+
+    expect(fullscreen.available).toBe(false);
+    expect(fullscreen.phone()).toBe(true);
+
+    await fullscreen.toggle();
+    shell.detectChanges();
+
+    expect(fullscreen.immersive()).toBe(true);
+    expect(document.body.classList.contains('gs-immersive')).toBe(true);
+    expect(
+      (shell.nativeElement as HTMLElement).querySelector('.gs-fs-exit'),
+    ).not.toBeNull();
+
+    shell.destroy();
+
+    expect(fullscreen.immersive()).toBe(false);
+    expect(document.body.classList.contains('gs-immersive')).toBe(false);
   });
 });

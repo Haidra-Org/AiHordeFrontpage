@@ -7,8 +7,9 @@
 
   <!-- The way back to the page, drawn only while the studio has the screen.
        Escape and the system gesture do the same thing; this is for the reader
-       on a phone, who has neither. -->
-  @if (fullscreen.active()) {
+       on a phone, who has neither, and it is the only way back out of the
+       in-page mode. -->
+  @if (fullscreen.filling()) {
     <button
       type="button"
       class="gs-fs-exit"

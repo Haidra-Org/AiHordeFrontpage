@@ -17,8 +17,9 @@ import {
  *
  * It is the same button both ways round: pressed means the studio has the
  * screen, and pressing it again gives it back. On a browser that only ever
- * shows video that way, nothing is drawn at all rather than a control that
- * would do nothing.
+ * shows video that way, a phone still gets the control: the page fills the
+ * screen on its own there. Wide, with no browser support at all, nothing is
+ * drawn rather than a control that would do nothing.
  *
  * Leaving by the floating button takes that button off the page with it, so
  * focus would land on nothing; this one takes it back when that happens.
@@ -28,19 +29,19 @@ import {
   imports: [TranslocoPipe, IconComponent],
   host: { class: 'contents' },
   template: `
-    @if (fullscreen.available) {
+    @if (fullscreen.available || fullscreen.phone()) {
       <button
         #toggle
         type="button"
         class="gs-mini-btn"
         (click)="fullscreen.toggle()"
-        [attr.aria-pressed]="fullscreen.active()"
+        [attr.aria-pressed]="fullscreen.filling()"
         [attr.aria-label]="labelKey() | transloco"
         [title]="labelKey() | transloco"
       >
         <app-icon
           [name]="
-            fullscreen.active() ? 'arrows-pointing-in' : 'arrows-pointing-out'
+            fullscreen.filling() ? 'arrows-pointing-in' : 'arrows-pointing-out'
           "
           class="gs-ico-sm"
         />
@@ -59,7 +60,7 @@ export class FullscreenToggleComponent {
   }
 
   labelKey(): string {
-    return this.fullscreen.active()
+    return this.fullscreen.filling()
       ? 'generate.shell.fullscreen_exit'
       : 'generate.shell.fullscreen';
   }
