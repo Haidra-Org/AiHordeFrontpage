@@ -10083,6 +10083,11 @@ app-gs-sweep-scrub {
   place-items: center;
   min-width: 0;
   overflow: hidden;
+  /* Everything that stands on the picture is ordered against everything else on
+     the picture and against nothing beyond it. Without this the chips and the
+     value would be ordered against the page and would ride over a sticky page
+     header on the way past it. */
+  isolation: isolate;
   border-radius: var(--gs-radius-sm);
   background: var(--gs-stage);
   box-shadow:
@@ -10106,13 +10111,25 @@ app-gs-sweep-scrub {
   display: block;
   width: 100%;
 }
-/* The value, in the corner the eye reaches first, on a smoked pane so it holds
-   its contrast over a frame that could be any colour at all. */
-.gen-studio .gs-sweep-pill {
+/* The value and the size, in the corner the eye reaches first, on a smoked pane
+   so they hold their contrast over a frame that could be any colour at all.
+   They stack rather than sit side by side: the value is what the reader came
+   for and the size is what stops them mistaking two frames drawn the same size
+   on the page for two frames of the same size. */
+.gen-studio .gs-sweep-titles {
   position: absolute;
   top: var(--gs-space-2);
   left: var(--gs-space-2);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gs-space-1);
   max-width: calc(100% - var(--gs-space-8));
+  pointer-events: none;
+}
+.gen-studio .gs-sweep-pill {
+  max-width: 100%;
   padding: 4px var(--gs-space-2);
   overflow: hidden;
   border-radius: var(--gs-radius-pill);
@@ -10131,6 +10148,7 @@ app-gs-sweep-scrub {
   position: absolute;
   top: var(--gs-space-2);
   right: var(--gs-space-2);
+  z-index: 4;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -10155,10 +10173,20 @@ app-gs-sweep-scrub {
   background: var(--gs-stage-ink);
   color: var(--gs-stage);
 }
-.gen-studio .gs-sweep-expand {
+/* The glyphs the picture itself offers, in one row in the corner: the lens and
+   the way to full size. A row rather than two corners, because they are the
+   same kind of thing and a reader hunting the second one in another corner has
+   been given two controls to learn instead of one place to look. */
+.gen-studio .gs-sweep-glyphs {
   position: absolute;
   right: var(--gs-space-2);
   bottom: var(--gs-space-2);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-sweep-expand {
   display: grid;
   place-items: center;
   width: 32px;
@@ -10172,10 +10200,95 @@ app-gs-sweep-scrub {
 .gen-studio .gs-sweep-expand:hover {
   border-color: var(--gs-stage-ink);
 }
+.gen-studio .gs-sweep-expand.is-on {
+  border-color: var(--gs-stage-ink);
+  background: var(--gs-stage-ink);
+  color: var(--gs-stage);
+}
+/* The tags name the halves of a comparison and the glyphs are pressed, so the
+   tags stand clear of the row rather than under it. */
+.gen-studio .gs-sweep-stage .gs-wipe.is-wiping .gs-wipe-tag {
+  bottom: calc(var(--gs-space-2) + 38px);
+}
 .gen-studio .gs-sweep-chip:focus-visible,
 .gen-studio .gs-sweep-expand:focus-visible {
   outline: 2px solid var(--gs-stage-ink);
   outline-offset: 2px;
+}
+
+/* ------- how big the picture is, and how much of it is on screen ----- */
+
+/* One badge, wherever a picture is shown. On the stage it rides the same
+   smoked pane as the value above it; in a contact sheet it is a line of the
+   caption. */
+.gen-studio .gs-pixels {
+  display: block;
+  min-width: 0;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-2xs);
+  line-height: 1.3;
+}
+.gen-studio .gs-pixels-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-pixels--stage {
+  padding: 3px var(--gs-space-2);
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-stage-scrim);
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-pixels--cell {
+  color: var(--gs-ink-2);
+}
+
+/* The lens: a round window on the picture's own pixels, following the pointer.
+   Two rings rather than one, so the edge clears 3:1 against a render of any
+   colour on either side of it. */
+.gen-studio .gs-sweep-lens {
+  position: absolute;
+  z-index: 5;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  border: 2px solid var(--gs-stage-ink);
+  border-radius: var(--gs-radius-pill);
+  box-shadow: 0 0 0 1px var(--gs-stage);
+  background: var(--gs-stage);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.gen-studio .gs-sweep-lens-half {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+/* With a comparison up the lens is split: the picture being held against on the
+   left, the frame on the right, the same pixels of each. A hairline between
+   them says where one stops. */
+.gen-studio .gs-sweep-lens-half--after.is-split {
+  clip-path: inset(0 0 0 50%);
+  border-left: 1px solid var(--gs-stage-ink);
+}
+
+/* A thumbnail showing a cut detail says so: whole frames of an upscaler strip
+   are the same picture at this size, and the crop is not the frame. */
+.gen-studio .gs-sweep-crop-tag {
+  position: absolute;
+  top: var(--gs-space-1);
+  left: var(--gs-space-1);
+  z-index: 2;
+  padding: 1px 5px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-stage-scrim);
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gs-stage-ink);
+  pointer-events: none;
 }
 
 /* ------- the filmstrip ----------------------------------------------- */
@@ -10203,6 +10316,7 @@ app-gs-sweep-scrub {
   scroll-snap-align: center;
 }
 .gen-studio .gs-sweep-film-go {
+  position: relative;
   display: grid;
   gap: 2px;
   padding: 0;
@@ -10273,6 +10387,7 @@ app-gs-sweep-scrub {
   display: block;
 }
 .gen-studio .gs-sweep-options--frames .gs-sweep-plate-cell {
+  position: relative;
   display: block;
   width: 100%;
   border-radius: var(--gs-radius-sm);
@@ -10286,7 +10401,12 @@ app-gs-sweep-scrub {
 }
 /* The glyph appears where a pointer can reach it and stays for a keyboard,
    which has no other way to ask for the frame full size from the grid. */
+/* The cell's own glyph keeps the corner the stage's row used to hold. */
 .gen-studio .gs-sweep-expand--cell {
+  position: absolute;
+  right: var(--gs-space-2);
+  bottom: var(--gs-space-2);
+  z-index: 2;
   width: 28px;
   height: 28px;
   opacity: 0;
@@ -10501,15 +10621,64 @@ app-gs-sweep-scrub {
   max-height: none;
   object-fit: contain;
 }
-.gen-studio .gs-sweep-stage--big .gs-wipe-img {
+/* A comparison in the full-size view is held in the same box the single frame
+   is: one box, clamped to the room, both sides drawn into the whole of it. Two
+   layers each taking the room's width would run off the bottom of it, and a
+   divider between two differently-sized boxes compares nothing. */
+.gen-studio .gs-sweep-stage--big app-gs-compare-wipe {
+  display: grid;
+  place-items: center;
+  width: 100%;
   height: 100%;
-  max-height: none;
+  min-height: 0;
+}
+.gen-studio .gs-sweep-stage--big .gs-wipe-img,
+.gen-studio .gs-sweep-stage--big .gs-wipe-tiled {
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+}
+.gen-studio .gs-sweep-stage--big.is-pannable {
+  cursor: grab;
+}
+.gen-studio .gs-sweep-stage--big.is-pannable:active {
+  cursor: grabbing;
 }
 .gen-studio .gs-sweep-stage--big .gs-sweep-frame {
   transform: translate(var(--gs-sweep-pan-x, 0), var(--gs-sweep-pan-y, 0))
     scale(var(--gs-sweep-zoom, 1));
   transform-origin: center;
+}
+/* How close in, as three named sizes. Fit is the picture whole; 100% is one
+   pixel of the file per pixel of the display, which is the only place two
+   upscalers can honestly be told apart; 200% is the resampling itself. */
+.gen-studio .gs-sweep-scales {
+  display: flex;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-sweep-scale {
+  min-height: 32px;
+  padding: 0 var(--gs-space-2);
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-pill);
+  background: none;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-stage-ink);
+  cursor: pointer;
+}
+.gen-studio .gs-sweep-scale:hover {
+  border-color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-scale.is-on {
+  border-color: var(--gs-stage-ink);
+  background: var(--gs-stage-ink);
+  color: var(--gs-stage);
+}
+.gen-studio .gs-sweep-scale:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
 }
 .gen-studio .gs-sweep-dialog-steps {
   display: flex;
@@ -10594,6 +10763,7 @@ app-gs-sweep-scrub {
 /* A coarse pointer gets the room a finger needs on everything it can press. */
 @media (pointer: coarse) {
   .gen-studio .gs-sweep-chip,
+  .gen-studio .gs-sweep-scale,
   .gen-studio .gs-sweep-expand,
   .gen-studio .gs-plate-details-go,
   .gen-studio .gs-plate-sheet-go,
@@ -10605,6 +10775,9 @@ app-gs-sweep-scrub {
   }
   .gen-studio .gs-sweep-card-stage .gs-wipe-divider {
     width: 44px;
+  }
+  .gen-studio .gs-sweep-stage .gs-wipe.is-wiping .gs-wipe-tag {
+    bottom: calc(var(--gs-space-2) + 50px);
   }
 }
 
@@ -10620,7 +10793,9 @@ app-gs-sweep-scrub {
   .gen-studio .gs-plate,
   .gen-studio .gs-sweep-stage,
   .gen-studio .gs-sweep-chip,
+  .gen-studio .gs-sweep-scale,
   .gen-studio .gs-sweep-expand,
+  .gen-studio .gs-sweep-lens,
   .gen-studio .gs-plate-details,
   .gen-studio .gs-sweep-dialog-step,
   .gen-studio .gs-sweep-dialog-x {
@@ -11202,6 +11377,17 @@ app-gs-sweep-scrub + app-gs-door {
 
 /* The setting and its value lead the caption as one token, and the sentence
    about what it did to the picture wraps under it on a narrow column. */
+/* Under a contact sheet every stop already carries its own caption beside its
+   own frame, and the stage's caption would be one of them said twice. It stays
+   in the page, where it is still what a scrub is announced through. */
+.gen-studio .gs-sweep-caption.is-quiet {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
 .gen-studio .gs-sweep-caption {
   display: grid;
   flex-wrap: wrap;
@@ -11620,6 +11806,8 @@ app-gs-compare-wipe {
   display: block;
   position: relative;
   overflow: hidden;
+  /* The tags and the divider are ordered against the pair and nothing else. */
+  isolation: isolate;
   border-radius: 7px;
   /* The divider is dragged across the picture, so the picture cannot also be a
      surface the browser pans and selects under the same finger. */
@@ -11629,6 +11817,13 @@ app-gs-compare-wipe {
 .gen-studio .gs-wipe.is-wiping .gs-wipe-media--after {
   position: absolute;
   inset: 0;
+}
+/* The clip sits on the picture rather than on the layer holding it, so that a
+   pair drawn closer in is cut at the same place in the picture rather than at
+   the same place on the screen: the divider moves with the pixels it is
+   dividing. Without a zoom the two are the same cut. */
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-img,
+.gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-tiled {
   clip-path: inset(0 0 0 var(--gs-wipe-at, 50%));
 }
 .gen-studio .gs-wipe.is-wiping .gs-wipe-media--after .gs-wipe-img,
@@ -11649,12 +11844,53 @@ app-gs-compare-wipe {
 .gen-studio .gs-wipe.is-wiping .gs-wipe-tile {
   -webkit-user-drag: none;
 }
+/* Both sides drawn into one box the caller bounds: the box takes the shape of
+   the pictures and the largest size the room allows, and each side is drawn
+   into the whole of it. A pair that is not the same size on both sides is
+   enlarged to the larger side's box rather than the larger one being reduced,
+   and the tag under it says so, so the divider always has the same pixels on
+   both sides of itself. */
+.gen-studio .gs-wipe.is-fitted {
+  width: var(--gs-wipe-box-w, auto);
+  height: var(--gs-wipe-box-h, auto);
+  max-width: 100%;
+  max-height: 100%;
+  margin-inline: auto;
+}
+.gen-studio .gs-wipe.is-fitted .gs-wipe-img,
+.gen-studio .gs-wipe.is-fitted .gs-wipe-tiled {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+}
+/* Drawn closer in: both sides take the same view, and the frame stops clipping
+   to the picture's own box so the enlargement can use the room around it. */
+.gen-studio .gs-wipe.is-zoomed {
+  overflow: visible;
+}
+.gen-studio .gs-wipe.is-zoomed .gs-wipe-img,
+.gen-studio .gs-wipe.is-zoomed .gs-wipe-tiled {
+  transform: translate(var(--gs-wipe-pan-x, 0), var(--gs-wipe-pan-y, 0))
+    scale(var(--gs-wipe-zoom, 1));
+  transform-origin: center;
+}
+/* What had to be done to a side to make the comparison fair, under its name. */
+.gen-studio .gs-wipe-note {
+  display: block;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
 /* The tag sits on the card tone rather than on a wash of the picture: it has to
-   clear AA over whatever the render happens to be, in both themes. */
+   clear AA over whatever the render happens to be, in both themes. It never
+   takes a press: it names the half it sits in, and the controls the surface
+   puts in the same corner are what a press there is meant for. */
 .gen-studio .gs-wipe.is-wiping .gs-wipe-tag {
   position: absolute;
   bottom: 7px;
-  z-index: 2;
+  z-index: 1;
+  pointer-events: none;
   padding: 3px 7px;
   border: 1px solid var(--gs-border);
   border-radius: 7px;
@@ -11673,7 +11909,13 @@ app-gs-compare-wipe {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: var(--gs-wipe-at, 50%);
+  /* Where the cut lands once the pair has been drawn closer in and dragged
+     about: the same arithmetic the picture's own transform does, so the bar
+     stays over the join it is drawing. Both terms fall away at rest. */
+  left: calc(
+    50% + var(--gs-wipe-pan-x, 0px) + (var(--gs-wipe-at, 50%) - 50%) *
+      var(--gs-wipe-zoom, 1)
+  );
   z-index: 3;
   display: flex;
   align-items: center;
@@ -11924,9 +12166,20 @@ app-gs-compare-wipe {
   align-items: flex-start;
   gap: var(--gs-space-1);
 }
-.gen-studio .gs-sweep-option-cap .gs-setting-chip {
+/* The value a frame was rendered at, on its own. A name and a value wrapping
+   to two lines under every tile of a contact sheet is the setting's name said
+   as many times as there are frames; the plate's title says it once. A value
+   that is a name of its own (a sampler) is cut rather than allowed to set the
+   height of the row. */
+.gen-studio .gs-sweep-value {
   max-width: 100%;
-  font-size: var(--gs-text-2xs);
+  overflow: hidden;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-stage-ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 /* Three lines is a sentence about the frame; a gallery of forty would otherwise
    be as tall as its longest caption forty times over. */

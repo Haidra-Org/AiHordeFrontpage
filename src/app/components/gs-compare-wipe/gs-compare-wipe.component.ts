@@ -39,6 +39,11 @@ const KEY_MOVES: Readonly<Record<string, number>> = {
  */
 const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
+/** A CSS length that is exact enough to draw against and short enough to read. */
+function round(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 /**
  * Two renders of one scene, one over the other, with a divider the reader wipes
  * across them.
@@ -96,7 +101,14 @@ const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
       #stage
       class="gs-wipe"
       [class.is-wiping]="wiping()"
+      [class.is-fitted]="fitted()"
+      [class.is-zoomed]="zoomed()"
       [style.--gs-wipe-at]="atCss()"
+      [style.--gs-wipe-zoom]="zoom()"
+      [style.--gs-wipe-pan-x.px]="panX()"
+      [style.--gs-wipe-pan-y.px]="panY()"
+      [style.--gs-wipe-box-w]="boxCss().width"
+      [style.--gs-wipe-box-h]="boxCss().height"
       (pointerdown)="onPointerDown($event)"
       (pointermove)="onPointerMove($event)"
       (pointerup)="endDrag()"
@@ -112,6 +124,9 @@ const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
         <ng-content select="[wipe-before]">{{
           beforeLabel() || ('generate.compare.before' | transloco)
         }}</ng-content>
+        @if (beforeNote()) {
+          <span class="gs-wipe-note">{{ beforeNote() }}</span>
+        }
       </span>
 
       <div class="gs-wipe-media gs-wipe-media--after">
@@ -124,6 +139,9 @@ const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
         <ng-content select="[wipe-after]">{{
           afterLabel() || ('generate.compare.after' | transloco)
         }}</ng-content>
+        @if (afterNote()) {
+          <span class="gs-wipe-note">{{ afterNote() }}</span>
+        }
       </span>
 
       @if (wiping()) {
@@ -184,6 +202,37 @@ export class GsCompareWipeComponent {
    * one control the card offers becomes the only thing on it that does nothing.
    */
   public readonly handleOnly = input(false);
+  /**
+   * Hold both sides in one box that clamps to the room the caller gives it,
+   * rather than letting the pair's own pixels set the height. A wipe inside a
+   * full-screen view has a box to fill and two pictures that may not be the
+   * same size as each other: one box, both sides drawn into it, is what makes
+   * the divider compare the same pixels on both sides of itself.
+   */
+  public readonly fit = input(false);
+  /**
+   * How big that box is, in CSS pixels. The caller knows which of the two sides
+   * is the larger and so which one's pixels the pair is being read at, and a
+   * measured box is the only way the smaller side is enlarged to meet the
+   * larger rather than the larger being reduced to meet it. Null leaves the box
+   * to the pictures themselves.
+   */
+  public readonly fitWidth = input<number | null>(null);
+  public readonly fitHeight = input<number | null>(null);
+  /**
+   * How far in the pair is drawn, and how far it has been dragged from centre.
+   * Both sides take the same view, and the divider is carried with them, so
+   * what is on either side of it stays the same pair of pixels at every zoom.
+   */
+  public readonly zoom = input(1);
+  public readonly panX = input(0);
+  public readonly panY = input(0);
+  /**
+   * A line under each side's tag for what had to be done to it to make the
+   * comparison fair, e.g. that the smaller side was enlarged to match.
+   */
+  public readonly beforeNote = input('');
+  public readonly afterNote = input('');
 
   /** The first frame to arrive, for callers showing a note until one does. */
   public readonly imageLoad = output<void>();
@@ -204,6 +253,25 @@ export class GsCompareWipeComponent {
   public readonly rounded = computed(() => Math.round(this.at()));
 
   public readonly atCss = computed(() => `${this.at()}%`);
+
+  /** Whether both sides are being drawn into one box the caller bounds. */
+  public readonly fitted = computed(() => this.fit() && this.wiping());
+
+  /** Whether the pair is drawn at anything other than the size it was given. */
+  public readonly zoomed = computed(() => this.zoom() !== 1);
+
+  /**
+   * The box in CSS pixels, or `auto` while the caller has measured nothing. A
+   * pair whose caller measures nothing is drawn at whatever the pictures make
+   * of the room, which is what a pair without a box does anyway.
+   */
+  public readonly boxCss = computed(() => {
+    const width = this.fitWidth();
+    const height = this.fitHeight();
+    return width && height && width > 0 && height > 0
+      ? { width: `${round(width)}px`, height: `${round(height)}px` }
+      : { width: 'auto', height: 'auto' };
+  });
 
   /**
    * Whether the pair is being wiped rather than laid out side by side. A width
@@ -252,6 +320,11 @@ export class GsCompareWipeComponent {
     ) {
       return;
     }
+    // The press belongs to the divider from here on. A wipe often stands on a
+    // surface that is itself dragged (the sweep's stage scrubs through stops),
+    // and a press that reached both would move the divider and the picture
+    // under it at once.
+    event.stopPropagation();
     this.dragging = true;
     const stage = this.stage()?.nativeElement;
     if (
@@ -303,7 +376,12 @@ export class GsCompareWipeComponent {
     }
   }
 
-  /** Where a pointer at this page position falls across the pair. */
+  /**
+   * Where a pointer at this page position falls across the pair, in the
+   * picture's own pixels rather than the box's. The two are the same until the
+   * pair is zoomed or dragged, and once it is, the divider has to follow the
+   * pointer over the picture rather than over the frame around it.
+   */
   private pointTo(clientX: number): void {
     const stage = this.stage()?.nativeElement;
     if (!stage) {
@@ -313,7 +391,9 @@ export class GsCompareWipeComponent {
     if (box.width <= 0) {
       return;
     }
-    this.setPercent(((clientX - box.left) / box.width) * 100);
+    const centre = box.left + box.width / 2;
+    const across = (clientX - centre - this.panX()) / (box.width * this.zoom());
+    this.setPercent((across + 0.5) * 100);
   }
 
   /**

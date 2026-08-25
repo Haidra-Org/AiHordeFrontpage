@@ -576,6 +576,10 @@
         "label": "A place",
         "prompt": "a wide valley under a low sun"
       },
+      "held": {
+        "width": 512,
+        "height": 512
+      },
       "varying": ["denoising_strength"],
       "source_image": "denoising-strength/deliberate/place/source.webp",
       "stops": [
@@ -827,7 +831,17 @@
           "label": "karras",
           "caption": "More of the steps spent at the low-noise end.",
           "file": "scheduler/albedobase-xl/person/002_karras.webp",
-          "sidecar": "scheduler/albedobase-xl/person/002_karras.json"
+          "sidecar": "scheduler/albedobase-xl/person/002_karras.json",
+          "width": 2048,
+          "height": 2048,
+          "fit": "scheduler/albedobase-xl/person/002_karras.fit.webp",
+          "crop": {
+            "file": "scheduler/albedobase-xl/person/002_karras.crop.webp",
+            "width": 512,
+            "height": 512,
+            "x": 760,
+            "y": 420
+          }
         },
         {
           "value": "simple",

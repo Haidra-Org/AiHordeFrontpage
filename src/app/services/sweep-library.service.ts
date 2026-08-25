@@ -3,10 +3,42 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
+/**
+ * A cropped detail of one frame, published beside it. A row of upscaler stops
+ * is indistinguishable at thumbnail size, because the difference between two
+ * upscalers lives in a few hundred pixels; the crop is those pixels.
+ */
+export interface SweepCrop {
+  /** Path to the cropped image relative to the library root. */
+  file: string;
+  /** The crop's own size in pixels. */
+  width: number;
+  height: number;
+  /** Where the crop was taken from in the frame, in the frame's pixels. */
+  x: number;
+  y: number;
+}
+
 /** One frame of a sweep: the parameter value it was rendered at. */
 export interface SweepStop {
   /** The parameter value, in the type the API takes it in. */
   value: string | number | boolean;
+  /**
+   * What this frame is in pixels, where the strip varies it. A strip whose
+   * stops are all one size records it once on the strip instead, and a reader
+   * of these fields falls back to that.
+   */
+  width?: number;
+  height?: number;
+  /**
+   * Path to a smaller copy of the frame, relative to the library root, where
+   * the library publishes one. It is what every surface short of the full-size
+   * view at true pixels draws, so a page of 4096-pixel upscales is not a page
+   * of 4096-pixel downloads.
+   */
+  fit?: string | null;
+  /** The detail crop the thumbnails draw, where the library publishes one. */
+  crop?: SweepCrop | null;
   /** The value as a token safe to read out and to put in a filename, e.g. `12` or `off`. */
   label: string;
   /** One line about what this frame shows, in the same voice as the studio. */
@@ -109,6 +141,16 @@ export interface SweepPreviewPair {
   right_index: number;
 }
 
+/**
+ * What a strip held fixed while it swept one setting. The generator records the
+ * whole request here; only the size is read back, as the size every stop is
+ * unless a stop says otherwise.
+ */
+export interface SweepHeld {
+  width?: number;
+  height?: number;
+}
+
 /** A single parameter swept across one model and one scene. */
 export interface SweepStrip {
   strip_id: string;
@@ -120,6 +162,8 @@ export interface SweepStrip {
   complete: boolean;
   image_model: SweepStripModel;
   scene: SweepStripScene;
+  /** The request the strip held fixed, which is where its size is recorded. */
+  held?: SweepHeld | null;
   /** Ordered low to high; the middle one is used as the collapsed preview. */
   stops: SweepStop[];
   /**

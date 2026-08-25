@@ -42,6 +42,10 @@ import {
   SweepStop,
   sweepIsCategorical,
 } from '../../services/sweep-library.service';
+import {
+  GsPixelBadgeComponent,
+  PixelSize,
+} from '../gs-pixel-badge/gs-pixel-badge.component';
 import { docsSettingLink } from '../../content/docs-links';
 import { useScrollLock } from '../../helper/scroll-lock';
 
@@ -105,9 +109,29 @@ const SWIPE_STEP_PX = 48;
 /** How far a swipe has to travel down the viewer to close it. */
 const SWIPE_CLOSE_PX = 96;
 
-/** The range a pinch may scale the viewer's frame within. */
-const ZOOM_MIN = 1;
-const ZOOM_MAX = 4;
+/**
+ * How close in the full-size view may be drawn, as image pixels per device
+ * pixel. 1 is one pixel of the file per pixel of the display, which is the
+ * point of the whole exercise: below it a difference between two upscalers is
+ * being resampled away, and above it the reader is inspecting the resampling.
+ * The floor is whatever the picture fits at, computed per picture.
+ */
+const ZOOM_CEILING = 4;
+
+/** The two named steps above Fit, and what the pills call them. */
+const ZOOM_STEPS = [
+  { id: 'full', scale: 1, labelKey: 'generate.sweeps.zoom_full' },
+  { id: 'double', scale: 2, labelKey: 'generate.sweeps.zoom_double' },
+] as const;
+
+/** Which named step a zoom is at, or `fit` while it is at the fitted size. */
+type ZoomStep = 'fit' | 'full' | 'double';
+
+/** Where the reader's zoom is kept for the rest of the session. */
+const ZOOM_KEY = 'gs-sweep-zoom';
+
+/** How wide the lens is, and so how much of the picture it holds at true size. */
+const LOUPE_PX = 200;
 
 /**
  * The host width, in pixels, at which the plate stops being one column: the
@@ -187,6 +211,7 @@ const FILM_EDGE_PX = 8;
     NgTemplateOutlet,
     RouterLink,
     GsCompareWipeComponent,
+    GsPixelBadgeComponent,
     GsSettingChipComponent,
     GsRecipeChipsComponent,
   ],
@@ -215,7 +240,7 @@ const FILM_EDGE_PX = 8;
     <!-- One frame, however this strip's frames have to be drawn. A tiled strip
          has no single image to hang alt text on, so the nine copies are one
          labelled group and the copies themselves are decoration. -->
-    <ng-template #frame let-stop="stop" let-cls="cls">
+    <ng-template #frame let-stop="stop" let-cls="cls" let-inViewer="inViewer">
       @if (tiled()) {
         <span [class]="cls" class="gs-sweep-tileset">
           <span
@@ -229,10 +254,10 @@ const FILM_EDGE_PX = 8;
             @for (cell of tileCells; track cell) {
               <img
                 class="gs-sweep-tile"
-                [src]="frameUrl(stop)"
+                [src]="mediaUrl(stop, !!inViewer)"
                 alt=""
                 loading="lazy"
-                (load)="onFrameLoad()"
+                (load)="onFrameLoad($event)"
               />
             }
           </span>
@@ -244,13 +269,13 @@ const FILM_EDGE_PX = 8;
       } @else {
         <img
           [class]="cls"
-          [src]="frameUrl(stop)"
+          [src]="mediaUrl(stop, !!inViewer)"
           [alt]="
             'generate.sweeps.frame_alt'
               | transloco: { value: valueTextOf(stop) }
           "
           loading="lazy"
-          (load)="onFrameLoad()"
+          (load)="onFrameLoad($event)"
         />
       }
     </ng-template>
@@ -258,15 +283,26 @@ const FILM_EDGE_PX = 8;
     <!-- The two sides of a before-and-after strip, wiped over each other. The
          chips are the sides' labels: the same token the caption under a range
          strip carries, so "Tiling On" reads the same wherever it is said. -->
-    <ng-template #pairWipe let-sides="sides" let-handleOnly="handleOnly">
+    <ng-template
+      #pairWipe
+      let-sides="sides"
+      let-handleOnly="handleOnly"
+      let-inViewer="inViewer"
+    >
       <app-gs-compare-wipe
-        [beforeSrc]="frameUrl(sides[0])"
-        [afterSrc]="frameUrl(sides[1])"
+        [beforeSrc]="mediaUrl(sides[0], !!inViewer)"
+        [afterSrc]="mediaUrl(sides[1], !!inViewer)"
         [beforeAlt]="frameAlt(sides[0])"
         [afterAlt]="frameAlt(sides[1])"
         [tiled]="tiled()"
         [sideBySide]="!wiped()"
         [handleOnly]="!!handleOnly"
+        [fit]="!!inViewer"
+        [fitWidth]="fitBox()?.width ?? null"
+        [fitHeight]="fitBox()?.height ?? null"
+        [zoom]="inViewer ? zoomFactor() : 1"
+        [panX]="inViewer ? panX() : 0"
+        [panY]="inViewer ? panY() : 0"
         (imageLoad)="onFrameLoad()"
       >
         <app-gs-setting-chip
@@ -287,14 +323,22 @@ const FILM_EDGE_PX = 8;
          the source the low end of a denoising strip looks like a weak render
          rather than a faithful one; without the map a strength strip is a dial
          with nothing at the far end of it. -->
-    <ng-template #againstWipe>
+    <ng-template #againstWipe let-inViewer="inViewer">
       <app-gs-compare-wipe
         [beforeSrc]="compareUrl()!"
-        [afterSrc]="frameUrl(stop())"
+        [afterSrc]="mediaUrl(stop(), !!inViewer)"
         [beforeAlt]="compareAlt()"
         [afterAlt]="frameAlt(stop())"
         [beforeLabel]="compareAlt()"
         [afterLabel]="valueTextOf(stop())"
+        [beforeNote]="matchNotes().before"
+        [afterNote]="matchNotes().after"
+        [fit]="!!inViewer"
+        [fitWidth]="fitBox()?.width ?? null"
+        [fitHeight]="fitBox()?.height ?? null"
+        [zoom]="inViewer ? zoomFactor() : 1"
+        [panX]="inViewer ? panX() : 0"
+        [panY]="inViewer ? panY() : 0"
         (imageLoad)="onFrameLoad()"
       />
     </ng-template>
@@ -389,7 +433,21 @@ const FILM_EDGE_PX = 8;
          frame rather than under it, so the reader never loses the picture to
          read what it is. -->
     <ng-template #stageChrome let-inViewer="inViewer">
-      <span class="gs-sweep-pill">{{ pillText() }}</span>
+      <span class="gs-sweep-titles">
+        <span class="gs-sweep-pill">{{ pillText() }}</span>
+        <!-- Two frames drawn the same size on the page can be four times apart
+             in pixels, and on an upscaler strip that difference is the whole
+             subject. The size is said wherever the picture is. -->
+        @if (viewSize(); as size) {
+          <app-gs-pixel-badge
+            class="gs-pixels--stage"
+            [attr.aria-live]="inViewer ? 'polite' : null"
+            [width]="size.width"
+            [height]="size.height"
+            [shown]="inViewer ? shownPercent() : null"
+          />
+        }
+      </span>
       @if (comparisons().length > 0) {
         <span
           class="gs-sweep-chips"
@@ -409,23 +467,42 @@ const FILM_EDGE_PX = 8;
           }
         </span>
       }
-      @if (!inViewer) {
-        <button
-          #opener
-          type="button"
-          class="gs-sweep-expand"
-          [attr.aria-label]="'generate.sweeps.enlarge' | transloco"
-          (click)="openViewer(); $event.stopPropagation()"
-        >
-          <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-        </button>
-      }
+      <span class="gs-sweep-glyphs">
+        @if (finePointer()) {
+          <button
+            type="button"
+            class="gs-sweep-expand"
+            [class.is-on]="loupeOn()"
+            [attr.aria-pressed]="loupeOn()"
+            [attr.aria-label]="
+              (loupeOn()
+                ? 'generate.sweeps.loupe_off'
+                : 'generate.sweeps.loupe_on'
+              ) | transloco
+            "
+            (click)="toggleLoupe(); $event.stopPropagation()"
+          >
+            <app-icon name="magnifying-glass" class="gs-ico-sm" />
+          </button>
+        }
+        @if (!inViewer) {
+          <button
+            #opener
+            type="button"
+            class="gs-sweep-expand"
+            [attr.aria-label]="'generate.sweeps.enlarge' | transloco"
+            (click)="openViewer(); $event.stopPropagation()"
+          >
+            <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+          </button>
+        }
+      </span>
     </ng-template>
 
     <!-- The picture itself, whatever it currently is: the pair wiped over each
          other, the frame against what it is held to, the thing being held up
          while a finger rests on the stage, or the frame on its own. -->
-    <ng-template #stageMedia>
+    <ng-template #stageMedia let-inViewer="inViewer">
       @if (held() && heldUrl()) {
         <img
           class="gs-sweep-frame"
@@ -433,11 +510,18 @@ const FILM_EDGE_PX = 8;
           [alt]="compareAltText()"
         />
       } @else if (compareUrl()) {
-        <ng-container [ngTemplateOutlet]="againstWipe" />
+        <ng-container
+          [ngTemplateOutlet]="againstWipe"
+          [ngTemplateOutletContext]="{ inViewer: inViewer }"
+        />
       } @else if (pairSides(); as sides) {
         <ng-container
           [ngTemplateOutlet]="pairWipe"
-          [ngTemplateOutletContext]="{ sides: sides, handleOnly: false }"
+          [ngTemplateOutletContext]="{
+            sides: sides,
+            handleOnly: false,
+            inViewer: inViewer,
+          }"
         />
       } @else {
         <ng-container
@@ -445,8 +529,37 @@ const FILM_EDGE_PX = 8;
           [ngTemplateOutletContext]="{
             stop: stop(),
             cls: 'gs-sweep-frame',
+            inViewer: inViewer,
           }"
         />
+      }
+      <!-- The lens: a round window on the same picture at its own pixels,
+           following the pointer. With a comparison up it is split down the
+           middle, the two sides showing the same pixels of each picture, which
+           is the one reading a divider across a whole frame cannot give. -->
+      @if (loupeOn() && lensAt(); as at) {
+        <span
+          class="gs-sweep-lens"
+          aria-hidden="true"
+          [style.left.px]="at.x"
+          [style.top.px]="at.y"
+        >
+          @if (compareUrl(); as against) {
+            <span
+              class="gs-sweep-lens-half gs-sweep-lens-half--before"
+              [style.background-image]="'url(' + against + ')'"
+              [style.background-size]="at.backgroundSize"
+              [style.background-position]="at.backgroundPosition"
+            ></span>
+          }
+          <span
+            class="gs-sweep-lens-half gs-sweep-lens-half--after"
+            [class.is-split]="!!compareUrl()"
+            [style.background-image]="'url(' + fullUrl(stop()) + ')'"
+            [style.background-size]="at.backgroundSize"
+            [style.background-position]="at.backgroundPosition"
+          ></span>
+        </span>
       }
     </ng-template>
 
@@ -488,13 +601,17 @@ const FILM_EDGE_PX = 8;
                   "
                   [attr.aria-label]="parameterLabelKey() | transloco"
                   (keydown)="onStageKeydown($event)"
-                  (click)="onStagePress()"
+                  (click)="onStagePress($event)"
                   (pointerdown)="onStagePointerDown($event)"
                   (pointermove)="onStagePointerMove($event)"
                   (pointerup)="onStagePointerUp()"
                   (pointercancel)="onStagePointerUp()"
+                  (pointerleave)="onStageLeave()"
                 >
-                  <ng-container [ngTemplateOutlet]="stageMedia" />
+                  <ng-container
+                    [ngTemplateOutlet]="stageMedia"
+                    [ngTemplateOutletContext]="{ inViewer: false }"
+                  />
                   <ng-container
                     [ngTemplateOutlet]="stageChrome"
                     [ngTemplateOutletContext]="{ inViewer: false }"
@@ -582,25 +699,35 @@ const FILM_EDGE_PX = 8;
                                 index() === i ? 'true' : null
                               "
                               [attr.aria-label]="
-                                'generate.sweeps.stop_go'
-                                  | transloco: { value: valueTextOf(option) }
+                                (option.crop
+                                  ? 'generate.sweeps.stop_go_detail'
+                                  : 'generate.sweeps.stop_go'
+                                ) | transloco: { value: namedValue(option) }
                               "
                               (click)="goToStop(i)"
                               (dblclick)="openStopViewer(i)"
                             >
                               <img
                                 class="gs-sweep-plate-img"
-                                [src]="frameUrl(option)"
+                                [src]="thumbUrl(option)"
                                 alt=""
                                 loading="lazy"
                               />
+                              <!-- A cut detail is not the frame, and a reader
+                                   comparing textures has to know which they
+                                   are looking at. -->
+                              @if (option.crop) {
+                                <span class="gs-sweep-crop-tag">{{
+                                  'generate.sweeps.crop_tag' | transloco
+                                }}</span>
+                              }
                             </button>
                             <button
                               type="button"
                               class="gs-sweep-expand gs-sweep-expand--cell"
                               [attr.aria-label]="
                                 'generate.sweeps.stop_enlarge'
-                                  | transloco: { value: valueTextOf(option) }
+                                  | transloco: { value: namedValue(option) }
                               "
                               (click)="openStopViewer(i)"
                             >
@@ -611,11 +738,23 @@ const FILM_EDGE_PX = 8;
                             </button>
                           </span>
                           <span class="gs-sweep-option-cap">
-                            <app-gs-setting-chip
-                              [glyph]="false"
-                              [settingId]="activeParameter()"
-                              [value]="option.value"
-                            />
+                            <!-- The value alone. The setting's name is on the
+                                 plate's title and on the stage, and repeating
+                                 it under every frame of a forty-frame sheet is
+                                 the same two words forty times. The button's
+                                 own name still says both. -->
+                            <span
+                              class="gs-sweep-value"
+                              [title]="valueTextOf(option)"
+                              >{{ valueTextOf(option) }}</span
+                            >
+                            @if (stopDiffers(option)) {
+                              <app-gs-pixel-badge
+                                class="gs-pixels--cell"
+                                [width]="stopSize(option)?.width"
+                                [height]="stopSize(option)?.height"
+                              />
+                            }
                             <span class="gs-sweep-option-text">{{
                               option.caption
                             }}</span>
@@ -646,16 +785,21 @@ const FILM_EDGE_PX = 8;
                             [attr.aria-current]="index() === i ? 'true' : null"
                             [attr.aria-label]="
                               'generate.sweeps.stop_go'
-                                | transloco: { value: valueTextOf(option) }
+                                | transloco: { value: namedValue(option) }
                             "
                             (click)="goToStop(i)"
                           >
                             <img
                               class="gs-sweep-film-img"
-                              [src]="frameUrl(option)"
+                              [src]="thumbUrl(option)"
                               alt=""
                               loading="lazy"
                             />
+                            @if (option.crop) {
+                              <span class="gs-sweep-crop-tag">{{
+                                'generate.sweeps.crop_tag' | transloco
+                              }}</span>
+                            }
                             <span class="gs-sweep-film-value">{{
                               valueTextOf(option)
                             }}</span>
@@ -669,7 +813,12 @@ const FILM_EDGE_PX = 8;
                 <!-- What this value did to the picture. The caption is the live
                      region, so a scrub announces the frame it landed on rather
                      than a bare number. -->
-                <p class="gs-sweep-caption" role="status" aria-live="polite">
+                <p
+                  class="gs-sweep-caption"
+                  [class.is-quiet]="gridOn()"
+                  role="status"
+                  aria-live="polite"
+                >
                   @if (showsPair()) {
                     @for (side of pairSides()!; track side.file) {
                       <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
@@ -922,6 +1071,32 @@ const FILM_EDGE_PX = 8;
                     {{ parameterLabelKey() | transloco }}
                   </span>
                 </span>
+                <span
+                  class="gs-sweep-scales"
+                  role="group"
+                  [attr.aria-label]="'generate.sweeps.zoom_group' | transloco"
+                >
+                  <button
+                    type="button"
+                    class="gs-sweep-scale"
+                    [class.is-on]="zoomStep() === 'fit'"
+                    [attr.aria-pressed]="zoomStep() === 'fit'"
+                    (click)="zoomTo(null)"
+                  >
+                    {{ 'generate.sweeps.zoom_fit' | transloco }}
+                  </button>
+                  @for (step of zoomSteps; track step.id) {
+                    <button
+                      type="button"
+                      class="gs-sweep-scale"
+                      [class.is-on]="zoomStep() === step.id"
+                      [attr.aria-pressed]="zoomStep() === step.id"
+                      (click)="zoomTo(step.scale)"
+                    >
+                      {{ step.labelKey | transloco }}
+                    </button>
+                  }
+                </span>
                 <button
                   type="button"
                   class="gs-sweep-dialog-x"
@@ -937,15 +1112,22 @@ const FILM_EDGE_PX = 8;
               <div
                 #viewerStage
                 class="gs-sweep-stage gs-sweep-stage--big"
-                [style.--gs-sweep-zoom]="zoom()"
+                [class.is-pannable]="pannable()"
+                [style.--gs-sweep-zoom]="zoomFactor()"
                 [style.--gs-sweep-pan-x.px]="panX()"
                 [style.--gs-sweep-pan-y.px]="panY()"
                 (pointerdown)="onViewerPointerDown($event)"
                 (pointermove)="onViewerPointerMove($event)"
                 (pointerup)="onViewerPointerUp($event)"
                 (pointercancel)="onViewerPointerUp($event)"
+                (pointerleave)="onStageLeave()"
+                (wheel)="onViewerWheel($event)"
+                (dblclick)="onViewerDoubleClick($event)"
               >
-                <ng-container [ngTemplateOutlet]="stageMedia" />
+                <ng-container
+                  [ngTemplateOutlet]="stageMedia"
+                  [ngTemplateOutletContext]="{ inViewer: true }"
+                />
                 <ng-container
                   [ngTemplateOutlet]="stageChrome"
                   [ngTemplateOutletContext]="{ inViewer: true }"
@@ -1003,6 +1185,11 @@ const FILM_EDGE_PX = 8;
     // other surface tints from, so a capsule wears its section without the
     // component knowing what colour that is.
     '[class]': 'identityClass()',
+    // The keys for how close in the picture is drawn are taken here rather
+    // than on the full-size view's own body, which is a box rather than a
+    // control and has no business holding focus. The dialog is a child of this
+    // element even while the browser has it in the top layer.
+    '(keydown)': 'onViewKeydown($event)',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -1074,8 +1261,41 @@ export class GsSweepScrubComponent {
   /** Whether a drag is currently moving the strip, on the stage or on the rail. */
   private readonly scrubDrag = signal(false);
 
-  private readonly zoomAt = signal(1);
+  /**
+   * How close in the full-size view is drawn, in image pixels per device pixel,
+   * or null while it stands at whatever the picture fits at. An absolute scale
+   * rather than a multiplier, because the reader's question is "am I looking at
+   * the real pixels" and only one number answers that.
+   */
+  private readonly zoomAsked = signal<number | null>(null);
+  /**
+   * Whether the reader has moved the zoom themselves. A view they set is kept
+   * as they step between stops, because holding one detail still while the
+   * pictures change under it is what a detail comparison is; a view they never
+   * touched is refitted to each picture.
+   */
+  private readonly zoomTouched = signal(false);
   private readonly pan = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+  /** The room the full-size view gives the picture, in CSS pixels. */
+  private readonly viewBox = signal<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+  /**
+   * The size of the frame as the browser found it. The index says what every
+   * frame is, and this is the answer only for the strips published before it
+   * did.
+   */
+  private readonly measuredFrame = signal<PixelSize | null>(null);
+  /** Whether the lens follows the pointer over the picture. */
+  private readonly loupe = signal(false);
+  /** Where the lens is and what it is holding up, or null while it is away. */
+  private readonly lens = signal<{
+    x: number;
+    y: number;
+    backgroundSize: string;
+    backgroundPosition: string;
+  } | null>(null);
 
   /** The nine copies of a tiled frame, as something the template can repeat. */
   public readonly tileCells = TILE_CELLS;
@@ -1094,14 +1314,19 @@ export class GsSweepScrubComponent {
   /** Whether a finger is resting on the stage, holding the comparison up. */
   public readonly held = this.holding.asReadonly();
   public readonly compareWith = this.against.asReadonly();
-  public readonly zoom = this.zoomAt.asReadonly();
   /** Whether the filmstrip is under a drag, and so holds still and unsnapped. */
   public readonly dragging = this.scrubDrag.asReadonly();
   public readonly panX = computed(() => this.pan().x);
   public readonly panY = computed(() => this.pan().y);
+  /** Whether the lens is armed. It is a pointer's tool and asks for a pointer. */
+  public readonly loupeOn = computed(() => this.loupe() && this.finePointer());
+  public readonly lensAt = this.lens.asReadonly();
+  public readonly zoomSteps = ZOOM_STEPS;
 
   private readonly viewerRef =
     viewChild<ElementRef<HTMLDialogElement>>('viewer');
+  private readonly viewerStageRef =
+    viewChild<ElementRef<HTMLElement>>('viewerStage');
   private readonly detailsRef = viewChild<ElementRef<HTMLElement>>('details');
   private readonly openerRefs = viewChildren<ElementRef<HTMLElement>>('opener');
   private readonly filmCells =
@@ -1491,6 +1716,154 @@ export class GsSweepScrubComponent {
       : `${name} ${this.valueTextOf(stop)}`;
   });
 
+  /* ---------- what the pictures are, in pixels ---------- */
+
+  /** The size the whole strip was rendered at, where the index records one. */
+  public readonly heldSize = computed<PixelSize | null>(() =>
+    pixelSize(this.strip()?.held),
+  );
+
+  /**
+   * What one stop is in pixels. Its own size wins, because a strip that changes
+   * the size is exactly the strip a reader is asking this about; a strip that
+   * holds it says so once, on the strip.
+   */
+  public stopSize(stop: SweepStop | null | undefined): PixelSize | null {
+    return (stop ? pixelSize(stop) : null) ?? this.heldSize();
+  }
+
+  /** Whether this stop is a different size from the rest of the strip. */
+  public stopDiffers(stop: SweepStop): boolean {
+    const own = pixelSize(stop);
+    const held = this.heldSize();
+    return (
+      !!own && (!held || own.width !== held.width || own.height !== held.height)
+    );
+  }
+
+  /** The current frame's size, however the surface can come by it. */
+  public readonly frameSize = computed<PixelSize | null>(
+    () =>
+      this.stopSize(this.stops()[this.index()]) ?? this.measuredFrame() ?? null,
+  );
+
+  /** The size of the picture the frame is being held against, once it has loaded. */
+  private readonly comparedSize = signal<PixelSize | null>(null);
+
+  /**
+   * The size the view is being read at: the larger of the two sides when a
+   * comparison is up. A 512-pixel source held against a 2048-pixel upscale is
+   * read at 2048, with the source enlarged to meet it, because reducing the
+   * upscale would throw away the only thing the pair is being compared for.
+   */
+  public readonly viewSize = computed<PixelSize | null>(() => {
+    const frame = this.frameSize();
+    const against = this.compareUrl() ? this.comparedSize() : null;
+    if (!frame) {
+      return against;
+    }
+    if (!against) {
+      return frame;
+    }
+    return against.width > frame.width ? against : frame;
+  });
+
+  /**
+   * What had to be done to each side of the comparison to make it fair, for the
+   * tags. Only the smaller side carries a note, and only where both sizes are
+   * known: a note the surface had to guess at is worse than no note.
+   */
+  public readonly matchNotes = computed<{ before: string; after: string }>(
+    () => {
+      const frame = this.frameSize();
+      const against = this.compareUrl() ? this.comparedSize() : null;
+      const blank = { before: '', after: '' };
+      if (!frame || !against || frame.width === against.width) {
+        return blank;
+      }
+      const factor =
+        Math.max(frame.width, against.width) /
+        Math.min(frame.width, against.width);
+      const note = this.transloco.translate('generate.sweeps.match_note', {
+        factor: Math.round(factor * 10) / 10,
+      });
+      return against.width < frame.width
+        ? { before: note, after: '' }
+        : { before: '', after: note };
+    },
+  );
+
+  /**
+   * The box the full-size view holds both sides of a comparison in, in CSS
+   * pixels: the picture at the size it fits the room at. Both sides are drawn
+   * into the whole of it, so the smaller of two sides is enlarged to meet the
+   * larger rather than the larger being reduced to meet it.
+   */
+  public readonly fitBox = computed<{ width: number; height: number } | null>(
+    () => {
+      const size = this.viewSize();
+      const box = this.viewBox();
+      if (!size || box.width <= 0) {
+        return null;
+      }
+      const drawn = this.fitScale() / this.pixelRatio();
+      return { width: size.width * drawn, height: size.height * drawn };
+    },
+  );
+
+  /* ---------- how close in the full-size view is drawn ---------- */
+
+  /**
+   * The scale at which the picture fits the room the view gives it, in image
+   * pixels per device pixel. It is the floor of the zoom and the meaning of the
+   * Fit pill, and it moves with the room and with the picture.
+   */
+  public readonly fitScale = computed(() => {
+    const size = this.viewSize();
+    const box = this.viewBox();
+    if (!size || size.width <= 0 || box.width <= 0 || box.height <= 0) {
+      return 1;
+    }
+    const ratio = this.pixelRatio();
+    return Math.min(
+      (box.width * ratio) / size.width,
+      (box.height * ratio) / size.height,
+    );
+  });
+
+  /** How close in the view is drawn, in image pixels per device pixel. */
+  public readonly zoomScale = computed(
+    () => this.zoomAsked() ?? this.fitScale(),
+  );
+
+  /** The same, as the multiplier the frame's own layout is scaled by. */
+  public readonly zoomFactor = computed(() => {
+    const fit = this.fitScale();
+    return fit > 0 ? this.zoomScale() / fit : 1;
+  });
+
+  /** What the badge says the view is drawing the picture at. */
+  public readonly shownPercent = computed(() => this.zoomScale() * 100);
+
+  /** Which of the named steps the view is at, or null between two of them. */
+  public readonly zoomStep = computed<ZoomStep | null>(() => {
+    const asked = this.zoomAsked();
+    if (asked === null) {
+      return 'fit';
+    }
+    const step = ZOOM_STEPS.find((entry) => near(asked, entry.scale));
+    return step ? step.id : null;
+  });
+
+  /**
+   * Whether the view is asking for the file's own pixels. Below that the
+   * smaller published copy is what every surface draws, so a page of upscales
+   * is not a page of upscale-sized downloads.
+   */
+  public readonly wantsFullPixels = computed(
+    () => this.viewerOpen() && this.zoomScale() >= 1,
+  );
+
   /**
    * A reader on a metered connection is offered the sweep in words and fetches
    * nothing, the collapsed card's own frames included, until they choose to.
@@ -1569,6 +1942,29 @@ export class GsSweepScrubComponent {
   constructor() {
     void this.sweeps.ensureLoaded();
     this.observeHostWidth();
+    this.observeViewBox();
+
+    // What the picture being compared against is, in pixels. The index says
+    // nothing about a source image or a detector's map, so the only place the
+    // answer exists is the file, and the pair cannot be labelled honestly
+    // without it.
+    effect(() => {
+      const against = this.compareUrl();
+      this.comparedSize.set(null);
+      if (!against || typeof Image === 'undefined') {
+        return;
+      }
+      const probe = new Image();
+      probe.onload = () => {
+        if (this.compareUrl() === against && probe.naturalWidth > 0) {
+          this.comparedSize.set({
+            width: probe.naturalWidth,
+            height: probe.naturalHeight,
+          });
+        }
+      };
+      probe.src = against;
+    });
 
     // What the reader last asked for on a host of this shape. Read whenever the
     // shape changes rather than once, because the same explorer moves between
@@ -1671,7 +2067,40 @@ export class GsSweepScrubComponent {
     });
   }
 
+  /**
+   * The copy of a frame a stage draws: the smaller one the library published
+   * beside it where there is one. A stage never has the room for a 4096-pixel
+   * file, and asking for it is a download the reader never sees the point of.
+   */
   public frameUrl(stop: SweepStop): string {
+    return stop.fit
+      ? this.sweeps.assetUrl(stop.fit)
+      : this.sweeps.imageUrl(stop);
+  }
+
+  /**
+   * The copy a surface draws: the file's own pixels once the full-size view is
+   * being asked for them, and the smaller copy everywhere else.
+   */
+  public mediaUrl(stop: SweepStop, inViewer: boolean): string {
+    return inViewer && this.wantsFullPixels()
+      ? this.sweeps.imageUrl(stop)
+      : this.frameUrl(stop);
+  }
+
+  /**
+   * The copy a thumbnail draws: the detail the library cut, where it cut one.
+   * Whole frames of an upscaler strip are the same picture at thumbnail size,
+   * and what separates two upscalers is a few hundred pixels of texture.
+   */
+  public thumbUrl(stop: SweepStop): string {
+    return stop.crop
+      ? this.sweeps.assetUrl(stop.crop.file)
+      : this.frameUrl(stop);
+  }
+
+  /** The file itself, at the pixels it was rendered at. */
+  public fullUrl(stop: SweepStop): string {
     return this.sweeps.imageUrl(stop);
   }
 
@@ -1694,6 +2123,16 @@ export class GsSweepScrubComponent {
       );
     }
     return String(stop.value);
+  }
+
+  /**
+   * The setting and the value one frame was rendered at, said in full. The
+   * frames themselves show the value alone, because the setting is the one
+   * thing every frame in a strip has in common; a reader being read to gets
+   * both, because "12" on its own is a number with no subject.
+   */
+  public namedValue(stop: SweepStop): string {
+    return `${this.transloco.translate(this.parameterLabelKey())} ${this.valueTextOf(stop)}`;
   }
 
   /**
@@ -1782,6 +2221,13 @@ export class GsSweepScrubComponent {
       this.openerRefs()[0]?.nativeElement ??
       null;
     this.resetZoom();
+    // A reader who set a view once is reading every picture at it, however many
+    // pictures they open on the way through a page.
+    const remembered = this.rememberedZoom();
+    if (remembered !== null) {
+      this.zoomAsked.set(remembered);
+      this.zoomTouched.set(true);
+    }
     this.viewer.set(true);
   }
 
@@ -1816,11 +2262,34 @@ export class GsSweepScrubComponent {
   public goToStop(to: number): void {
     const at = this.clampStop(to);
     this.cursor.set(at);
+    // A view the reader set is held across the change, because holding one
+    // detail still while the picture under it changes is the comparison they
+    // set it up for. A view they never touched is refitted to the new picture.
+    if (!this.zoomTouched()) {
+      this.zoomAsked.set(null);
+      this.pan.set({ x: 0, y: 0 });
+    }
     this.prefetchNeighbours();
   }
 
-  public onFrameLoad(): void {
+  /**
+   * A frame has arrived. Its own size is read only where the index published
+   * none: the index is the answer, and a size taken off the element is the
+   * answer for the strips rendered before the index carried one.
+   */
+  public onFrameLoad(event?: Event): void {
     this.loaded.set(true);
+    const image = event?.target;
+    if (
+      this.stopSize(this.stops()[this.index()]) === null &&
+      image instanceof HTMLImageElement &&
+      image.naturalWidth > 0
+    ) {
+      this.measuredFrame.set({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+    }
   }
 
   /* ---------- the stage ---------- */
@@ -1849,15 +2318,26 @@ export class GsSweepScrubComponent {
   }
 
   /** A press on the stage opens the frame, unless it turned into something else. */
-  public onStagePress(): void {
+  public onStagePress(event: Event): void {
     const press = this.stagePress;
-    if (press?.scrubbing || press?.moved || this.holding()) {
+    if (
+      fromStageControl(event.target) ||
+      press?.scrubbing ||
+      press?.moved ||
+      this.holding()
+    ) {
       return;
     }
     this.openViewer();
   }
 
   public onStagePointerDown(event: PointerEvent): void {
+    // The divider, the chips and the glyphs stand on the picture and are the
+    // controls a press there is meant for. Scrubbing under them would move the
+    // frame while the reader was aiming at something else on it.
+    if (fromStageControl(event.target)) {
+      return;
+    }
     const stage = event.currentTarget;
     const width =
       stage instanceof HTMLElement ? stage.getBoundingClientRect().width : 0;
@@ -1880,6 +2360,7 @@ export class GsSweepScrubComponent {
    * page.
    */
   public onStagePointerMove(event: PointerEvent): void {
+    this.trackLens(event);
     const press = this.stagePress;
     if (!press || !this.scrubbable()) {
       return;
@@ -1903,6 +2384,11 @@ export class GsSweepScrubComponent {
     }
   }
 
+  /** The lens follows the pointer, so it leaves with it. */
+  public onStageLeave(): void {
+    this.lens.set(null);
+  }
+
   public onStagePointerUp(): void {
     this.cancelHold();
     this.holding.set(false);
@@ -1924,15 +2410,17 @@ export class GsSweepScrubComponent {
       y: event.clientY,
     });
     if (this.viewerPointers.size === 2) {
-      this.pinchFrom = { spread: this.pointerSpread(), zoom: this.zoomAt() };
+      this.pinchFrom = { spread: this.pointerSpread(), zoom: this.zoomScale() };
     }
   }
 
   /**
-   * Two fingers pinch the frame; one drags it about once it is zoomed in, and
-   * decides between the stops and the way out once it is not.
+   * Two fingers pinch the frame; one drags it about once the picture is larger
+   * than the room it is in, and decides between the stops and the way out once
+   * it is not.
    */
   public onViewerPointerMove(event: PointerEvent): void {
+    this.trackLens(event);
     const from = this.viewerPointers.get(event.pointerId);
     if (!from) {
       return;
@@ -1948,11 +2436,94 @@ export class GsSweepScrubComponent {
       }
       return;
     }
-    if (this.zoomAt() > ZOOM_MIN) {
-      this.pan.update((at) => ({
-        x: at.x + (event.clientX - previous.x),
-        y: at.y + (event.clientY - previous.y),
-      }));
+    if (this.pannable()) {
+      this.panBy(event.clientX - previous.x, event.clientY - previous.y);
+    }
+  }
+
+  /**
+   * A wheel over the picture moves between the fitted size and the sizes above
+   * it without stopping at them, about the pointer, so the detail under the
+   * cursor is the detail that grows. The page behind is inert and frozen while
+   * this view is open, so the gesture is this view's to take.
+   */
+  public onViewerWheel(event: WheelEvent): void {
+    event.preventDefault();
+    const factor = Math.exp(-event.deltaY / 320);
+    this.setZoom(this.zoomScale() * factor, event);
+  }
+
+  /** Two presses swap between fitted and true pixels, about the pointer. */
+  public onViewerDoubleClick(event: MouseEvent): void {
+    this.setZoom(
+      this.zoomStep() === 'fit' ? 1 : this.fitScale(),
+      event,
+      this.zoomStep() !== 'fit',
+    );
+  }
+
+  /**
+   * The keys the picture answers: closer, further, back to fitted, the lens.
+   * The first three belong to the full-size view; the lens belongs to whichever
+   * picture the reader is standing on, which is the stage or the view.
+   */
+  public onViewKeydown(event: KeyboardEvent): void {
+    const onStage =
+      event.target instanceof Element &&
+      !!event.target.closest('.gs-sweep-stage');
+    if (event.key === 'l' || event.key === 'L') {
+      if (this.viewerOpen() || onStage) {
+        event.preventDefault();
+        this.toggleLoupe();
+      }
+      return;
+    }
+    if (!this.viewerOpen()) {
+      return;
+    }
+    if (event.key === '+' || event.key === '=') {
+      event.preventDefault();
+      this.setZoom(this.zoomScale() * 1.25);
+      return;
+    }
+    if (event.key === '-' || event.key === '_') {
+      event.preventDefault();
+      this.setZoom(this.zoomScale() / 1.25);
+      return;
+    }
+    if (event.key === '0') {
+      event.preventDefault();
+      this.zoomTo(null);
+    }
+  }
+
+  /** Go to one of the named sizes; null is whatever the picture fits at. */
+  public zoomTo(scale: number | null): void {
+    if (scale === null) {
+      this.zoomAsked.set(null);
+      this.zoomTouched.set(false);
+      this.pan.set({ x: 0, y: 0 });
+      this.rememberZoom(null);
+      return;
+    }
+    this.setZoom(scale, undefined, true);
+  }
+
+  /** Whether the picture is larger than the room, and so worth dragging about. */
+  public readonly pannable = computed(() => {
+    const over = this.overflow();
+    return over.x > 0.5 || over.y > 0.5;
+  });
+
+  /** Whether the lens is worth offering: it is a pointer's tool. */
+  public finePointer(): boolean {
+    return this.mediaMatches('(pointer: fine)');
+  }
+
+  public toggleLoupe(): void {
+    this.loupe.update((on) => !on);
+    if (!this.loupe()) {
+      this.lens.set(null);
     }
   }
 
@@ -1963,7 +2534,7 @@ export class GsSweepScrubComponent {
     if (this.viewerPointers.size < 2) {
       this.pinchFrom = null;
     }
-    if (!from || this.zoomAt() > ZOOM_MIN) {
+    if (!from || this.pannable()) {
       return;
     }
     const dx = event.clientX - from.x;
@@ -2104,19 +2675,166 @@ export class GsSweepScrubComponent {
     return Math.min(Math.max(at, 0), Math.max(this.lastIndex(), 0));
   }
 
-  private setZoom(to: number): void {
-    const held = Math.min(Math.max(to, ZOOM_MIN), ZOOM_MAX);
-    this.zoomAt.set(Math.round(held * 100) / 100);
-    if (held === ZOOM_MIN) {
-      this.pan.set({ x: 0, y: 0 });
+  /**
+   * How far the picture has to spill out of the room before it is worth
+   * dragging about, in CSS pixels either side of centre.
+   */
+  private readonly overflow = computed(() => {
+    const size = this.viewSize();
+    const box = this.viewBox();
+    if (!size || box.width <= 0) {
+      return { x: 0, y: 0 };
     }
+    const ratio = this.pixelRatio();
+    const scale = this.zoomScale();
+    return {
+      x: Math.max(0, ((size.width / ratio) * scale - box.width) / 2),
+      y: Math.max(0, ((size.height / ratio) * scale - box.height) / 2),
+    };
+  });
+
+  /**
+   * Draw the picture at this many image pixels per device pixel, holding
+   * whatever is under the pointer where it is. Landing back on the fitted size
+   * is the fitted size again rather than a number that happens to equal it, so
+   * the Fit pill lights and a change of picture refits.
+   */
+  private setZoom(
+    to: number,
+    anchor?: { clientX: number; clientY: number },
+    touched = true,
+  ): void {
+    const fit = this.fitScale();
+    const held = Math.min(
+      Math.max(to, Math.min(fit, 1)),
+      Math.max(fit, ZOOM_CEILING),
+    );
+    const before = this.zoomScale();
+    if (near(held, fit)) {
+      this.zoomAsked.set(null);
+      this.pan.set({ x: 0, y: 0 });
+      this.zoomTouched.set(false);
+      this.rememberZoom(null);
+      return;
+    }
+    this.zoomAsked.set(Math.round(held * 1000) / 1000);
+    if (touched) {
+      this.zoomTouched.set(true);
+    }
+    this.rememberZoom(this.zoomAsked());
+    this.anchorPan(anchor, before, held);
+  }
+
+  /** Keep the point under the pointer under it as the picture grows. */
+  private anchorPan(
+    anchor: { clientX: number; clientY: number } | undefined,
+    before: number,
+    after: number,
+  ): void {
+    const stage = this.viewerStageRef()?.nativeElement;
+    const at = this.pan();
+    if (!anchor || !stage || before <= 0) {
+      this.setPan(at.x * (after / before), at.y * (after / before));
+      return;
+    }
+    const box = stage.getBoundingClientRect();
+    const dx = anchor.clientX - (box.left + box.width / 2);
+    const dy = anchor.clientY - (box.top + box.height / 2);
+    const step = after / before;
+    this.setPan(dx - (dx - at.x) * step, dy - (dy - at.y) * step);
+  }
+
+  private panBy(dx: number, dy: number): void {
+    const at = this.pan();
+    this.setPan(at.x + dx, at.y + dy);
+  }
+
+  /** The picture may be dragged about, but not off the edge of the room. */
+  private setPan(x: number, y: number): void {
+    const over = this.overflow();
+    this.pan.set({
+      x: Math.round(Math.min(Math.max(x, -over.x), over.x)),
+      y: Math.round(Math.min(Math.max(y, -over.y), over.y)),
+    });
   }
 
   private resetZoom(): void {
-    this.zoomAt.set(1);
+    this.zoomAsked.set(null);
+    this.zoomTouched.set(false);
     this.pan.set({ x: 0, y: 0 });
     this.viewerPointers.clear();
     this.pinchFrom = null;
+  }
+
+  /** The view the reader last asked for, for the rest of this session. */
+  private rememberZoom(scale: number | null): void {
+    try {
+      if (scale === null) {
+        sessionStorage.removeItem(ZOOM_KEY);
+      } else {
+        sessionStorage.setItem(ZOOM_KEY, String(scale));
+      }
+    } catch {
+      // Storage the browser will not hand over simply remembers nothing.
+    }
+  }
+
+  private rememberedZoom(): number | null {
+    try {
+      const stored = Number(sessionStorage.getItem(ZOOM_KEY));
+      return Number.isFinite(stored) && stored > 0 ? stored : null;
+    } catch {
+      // Storage the browser will not hand over simply remembers nothing.
+      return null;
+    }
+  }
+
+  /**
+   * Where the lens is over the picture, and which of the picture's own pixels
+   * it is holding up. The picture's drawn rectangle is what the arithmetic is
+   * against rather than the stage's, because a letterboxed frame leaves ground
+   * on two sides that is not part of the picture at all.
+   */
+  private trackLens(event: PointerEvent | MouseEvent): void {
+    if (!this.loupeOn()) {
+      return;
+    }
+    const stage = event.currentTarget;
+    const size = this.viewSize();
+    if (!(stage instanceof HTMLElement) || !size) {
+      return;
+    }
+    const media = stage.querySelector(
+      '.gs-sweep-frame, .gs-wipe-media--before .gs-wipe-img, .gs-wipe-media--before .gs-wipe-tiled',
+    );
+    if (!(media instanceof HTMLElement)) {
+      this.lens.set(null);
+      return;
+    }
+    const box = stage.getBoundingClientRect();
+    const drawn = media.getBoundingClientRect();
+    const across = (event.clientX - drawn.left) / drawn.width;
+    const down = (event.clientY - drawn.top) / drawn.height;
+    if (drawn.width <= 0 || across < 0 || across > 1 || down < 0 || down > 1) {
+      this.lens.set(null);
+      return;
+    }
+    const ratio = this.pixelRatio();
+    const trueWidth = size.width / ratio;
+    const trueHeight = size.height / ratio;
+    this.lens.set({
+      x: Math.round(event.clientX - box.left),
+      y: Math.round(event.clientY - box.top),
+      backgroundSize: `${Math.round(trueWidth)}px ${Math.round(trueHeight)}px`,
+      backgroundPosition: `${Math.round(LOUPE_PX / 2 - across * trueWidth)}px ${Math.round(LOUPE_PX / 2 - down * trueHeight)}px`,
+    });
+  }
+
+  /** How many device pixels the display draws per CSS pixel. */
+  private pixelRatio(): number {
+    return typeof window !== 'undefined' && window.devicePixelRatio > 0
+      ? window.devicePixelRatio
+      : 1;
   }
 
   private pointerSpread(): number {
@@ -2215,6 +2933,40 @@ export class GsSweepScrubComponent {
    * cannot make on their own: whether the contact sheet is offered, and whether
    * the details are a sheet or a panel.
    */
+  /**
+   * Watch the room the full-size view gives the picture. Every number the view
+   * reads out is against it: what the picture fits at, what "shown at" means,
+   * and how far it may be dragged.
+   */
+  private observeViewBox(): void {
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    let watched: HTMLElement | null = null;
+    const observer = new ResizeObserver((entries) => {
+      const box = entries[0]?.contentRect;
+      if (box) {
+        this.viewBox.set({ width: box.width || 0, height: box.height || 0 });
+      }
+    });
+    afterRenderEffect(() => {
+      const stage = this.viewerStageRef()?.nativeElement ?? null;
+      if (stage === watched) {
+        return;
+      }
+      if (watched) {
+        observer.unobserve(watched);
+      }
+      watched = stage;
+      if (stage) {
+        observer.observe(stage);
+      } else {
+        this.viewBox.set({ width: 0, height: 0 });
+      }
+    });
+    this.destroyRef.onDestroy(() => observer.disconnect());
+  }
+
   private observeHostWidth(): void {
     if (typeof ResizeObserver === 'undefined') {
       return;
@@ -2251,6 +3003,41 @@ export class GsSweepScrubComponent {
  */
 function isSlider(target: EventTarget | null): boolean {
   return target instanceof Element && target.getAttribute('role') === 'slider';
+}
+
+/**
+ * Whether a press landed on something standing on the picture rather than on
+ * the picture: a pair being wiped, the compare chips, the value and the size,
+ * and the glyphs. Each of those is its own control, and the stage's own
+ * gestures would otherwise run under the reader's aim.
+ *
+ * A wipe is on the list whole rather than by its divider, because a wipe on the
+ * stage takes a press anywhere on itself to move the divider there. A drag that
+ * ends away from where it started reports its press against whatever the two
+ * ends have in common, which is the pair rather than the divider, so a rule
+ * written against the divider alone would let every drag through.
+ */
+function fromStageControl(target: EventTarget | null): boolean {
+  return (
+    target instanceof Element &&
+    !!target.closest(
+      '.gs-wipe, .gs-sweep-chips, .gs-sweep-titles, .gs-sweep-glyphs',
+    )
+  );
+}
+
+/** A size read off whatever carries one, or null where nothing does. */
+function pixelSize(
+  from: { width?: number; height?: number } | null | undefined,
+): PixelSize | null {
+  return from && from.width && from.height
+    ? { width: from.width, height: from.height }
+    : null;
+}
+
+/** Whether two scales are the same view, allowing for the arithmetic. */
+function near(a: number, b: number): boolean {
+  return Math.abs(a - b) < 0.005;
 }
 
 /** The first number in a value or a band, e.g. `20` out of `"20-40"`. */

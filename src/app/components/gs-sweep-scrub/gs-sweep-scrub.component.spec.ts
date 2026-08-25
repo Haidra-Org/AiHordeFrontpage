@@ -63,7 +63,11 @@ class FakeResizeObserver {
 }
 
 /** The test DOM has no media queries at all, so the flags are installed. */
-function stubMedia(flags: { reducedData?: boolean; reducedMotion?: boolean }) {
+function stubMedia(flags: {
+  reducedData?: boolean;
+  reducedMotion?: boolean;
+  finePointer?: boolean;
+}) {
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     writable: true,
@@ -71,7 +75,8 @@ function stubMedia(flags: { reducedData?: boolean; reducedMotion?: boolean }) {
       ({
         matches:
           (!!flags.reducedData && query.includes('prefers-reduced-data')) ||
-          (!!flags.reducedMotion && query.includes('prefers-reduced-motion')),
+          (!!flags.reducedMotion && query.includes('prefers-reduced-motion')) ||
+          (!!flags.finePointer && query.includes('pointer: fine')),
         media: query,
         addEventListener: () => undefined,
         removeEventListener: () => undefined,
@@ -184,6 +189,66 @@ describe('GsSweepScrubComponent', () => {
     fixture.detectChanges();
   };
 
+  /**
+   * The same, with a height: the full-size view's arithmetic is against both,
+   * because what a picture fits at is whichever of the two runs out first.
+   */
+  const reportBox = (width: number, height: number): void => {
+    for (const observer of FakeResizeObserver.instances) {
+      observer.callback(
+        [{ contentRect: { width, height } } as unknown as ResizeObserverEntry],
+        observer as unknown as ResizeObserver,
+      );
+    }
+    fixture.detectChanges();
+  };
+
+  /** Hand an element the rectangle jsdom will not lay out for it. */
+  const boxOf = (
+    element: Element,
+    left: number,
+    top: number,
+    width: number,
+    height: number,
+  ): void => {
+    vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({
+      left,
+      top,
+      width,
+      height,
+      right: left + width,
+      bottom: top + height,
+      x: left,
+      y: top,
+      toJSON: () => ({}),
+    } as DOMRect);
+  };
+
+  /**
+   * What the size badge reads. The full-size view is the surface being asked
+   * whenever it is up, and the plate's own stage is still behind it.
+   */
+  const badge = (): Element | null => {
+    const inViewer = el().querySelector('dialog[open] .gs-pixels--stage');
+    return inViewer ?? el().querySelector('.gs-pixels--stage');
+  };
+  const badgeText = (): string =>
+    badge()?.querySelector('.gs-pixels-text')?.textContent?.trim() ?? '';
+
+  /** The compare chip that holds the frame against its starting picture. */
+  const compareChip = (): HTMLButtonElement =>
+    find<HTMLButtonElement>('.gs-sweep-chip')!;
+
+  /** Where the strip currently stands, as the rail reads it out. */
+  const railAt = (): string | null =>
+    find('.gs-tickrail')?.getAttribute('aria-valuenow') ?? null;
+
+  /** One of the three named sizes in the full-size view. */
+  const zoomPill = (label: string): HTMLButtonElement =>
+    all<HTMLButtonElement>('.gs-sweep-scale').find(
+      (pill) => pill.textContent?.trim() === label,
+    )!;
+
   const dialog = (): HTMLDialogElement =>
     find<HTMLDialogElement>('dialog.gs-sweep-dialog')!;
 
@@ -204,13 +269,26 @@ describe('GsSweepScrubComponent', () => {
     viewerFirst?: boolean;
     /** Which collapsed card the surface asks for. */
     register?: 'full' | 'filmcard';
+    /** Whether the reader has a pointer the lens is worth offering to. */
+    finePointer?: boolean;
   }): Promise<void> {
-    stubMedia({ reducedData: options?.reducedData ?? false });
+    stubMedia({
+      reducedData: options?.reducedData ?? false,
+      finePointer: options?.finePointer ?? false,
+    });
     FakeResizeObserver.instances = [];
     vi.stubGlobal(
       'ResizeObserver',
       FakeResizeObserver as unknown as typeof ResizeObserver,
     );
+    try {
+      // The view the reader last asked for lasts a session, and one test is not
+      // the next test's session. What is remembered for longer (the layout) is
+      // left alone, because a spec of its own is about exactly that.
+      sessionStorage.clear();
+    } catch {
+      // A DOM without storage starts with nothing remembered anyway.
+    }
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -464,7 +542,7 @@ describe('GsSweepScrubComponent', () => {
 
       const cells = all<HTMLButtonElement>('.gs-sweep-film-go');
       expect(cells[1].getAttribute('aria-current')).toBe('true');
-      expect(cells[2].getAttribute('aria-label')).toBe('Show 30');
+      expect(cells[2].getAttribute('aria-label')).toBe('Show Steps 30');
 
       cells[2].click();
       fixture.detectChanges();
@@ -1112,6 +1190,350 @@ describe('GsSweepScrubComponent', () => {
 
       expect(find('.gs-plate')).toBeNull();
       expect(find('.gs-sweep-card')).not.toBeNull();
+    });
+  });
+
+  describe('how big the picture is', () => {
+    it('says the size the whole strip was rendered at, on the stage', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(badgeText()).toBe('1024 × 1024');
+    });
+
+    it('prefers a stop of its own size over the strip it stands in', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+
+      // The strip was rendered at 1024; the second stop says it is 2048, and a
+      // stop that says so is the answer for that stop.
+      expect(badgeText()).toBe('1024 × 1024');
+      all<HTMLButtonElement>('.gs-sweep-film-go')[1].click();
+      fixture.detectChanges();
+      expect(badgeText()).toBe('2048 × 2048');
+    });
+
+    it('marks only the stops of a different size in the contact sheet', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+      reportWidth(900);
+
+      const cells = all('.gs-sweep-options--frames .gs-pixels--cell');
+      expect(cells).toHaveLength(1);
+      expect(cells[0].textContent?.trim()).toBe('2048 × 2048');
+    });
+
+    it('says what the full-size view is drawing it at, and keeps saying it', async () => {
+      await setUp({ startExpanded: true });
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+      reportBox(800, 600);
+
+      // 600 of room for 1024 of picture is the shorter side, so that is what
+      // the picture fits at.
+      expect(badgeText()).toBe('1024 × 1024 · shown at 59%');
+      zoomPill('100%').click();
+      fixture.detectChanges();
+      expect(badgeText()).toBe('1024 × 1024 · shown at 100%');
+    });
+
+    it('announces the size politely in the full-size view and not on the plate', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(badge()?.getAttribute('aria-live')).toBeNull();
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+
+      expect(badge()?.getAttribute('aria-live')).toBe('polite');
+    });
+  });
+
+  describe('how close in the full-size view draws', () => {
+    /** Open the picture full size with a measured room around it. */
+    const openBig = async (options?: {
+      parameter?: string;
+      finePointer?: boolean;
+    }): Promise<void> => {
+      await setUp({
+        startExpanded: true,
+        parameter: options?.parameter,
+        finePointer: options?.finePointer,
+      });
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+      reportBox(800, 600);
+    };
+
+    it('offers the picture whole, its own pixels, and twice them', async () => {
+      await openBig();
+
+      expect(
+        all('.gs-sweep-scale').map((pill) => pill.textContent?.trim()),
+      ).toEqual(['Fit', '100%', '200%']);
+      expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('moves between the three and lights the one it is at', async () => {
+      await openBig();
+
+      zoomPill('200%').click();
+      fixture.detectChanges();
+      expect(zoomPill('200%').getAttribute('aria-pressed')).toBe('true');
+      expect(badgeText()).toBe('1024 × 1024 · shown at 200%');
+
+      zoomPill('Fit').click();
+      fixture.detectChanges();
+      expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
+      expect(badgeText()).toBe('1024 × 1024 · shown at 59%');
+    });
+
+    it('answers the keys for closer, further and back to the whole picture', async () => {
+      await openBig();
+      const body = find<HTMLElement>('.gs-sweep-dialog-body')!;
+      // The keys are taken by the explorer itself, from wherever inside the
+      // full-size view they are pressed.
+      const key = (name: string): void => {
+        body.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: name,
+            bubbles: true,
+            cancelable: true,
+          }),
+        );
+        fixture.detectChanges();
+      };
+
+      zoomPill('100%').click();
+      fixture.detectChanges();
+      key('+');
+      expect(badgeText()).toBe('1024 × 1024 · shown at 125%');
+      key('-');
+      expect(badgeText()).toBe('1024 × 1024 · shown at 100%');
+      key('0');
+      expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('asks for the file itself only once the reader wants its pixels', async () => {
+      await openBig({ parameter: 'scheduler' });
+      all<HTMLButtonElement>('.gs-sweep-film-go')[1].click();
+      fixture.detectChanges();
+
+      const frame = (): string | null =>
+        find<HTMLImageElement>(
+          '.gs-sweep-stage--big .gs-sweep-frame',
+        )?.getAttribute('src') ?? null;
+      expect(frame()).toBe(
+        `${environment.evidenceBaseUrl}/scheduler/albedobase-xl/person/002_karras.fit.webp`,
+      );
+
+      zoomPill('100%').click();
+      fixture.detectChanges();
+      expect(frame()).toBe(
+        `${environment.evidenceBaseUrl}/scheduler/albedobase-xl/person/002_karras.webp`,
+      );
+    });
+
+    it('holds a view the reader set as the picture under it changes', async () => {
+      await openBig();
+      zoomPill('200%').click();
+      fixture.detectChanges();
+
+      find<HTMLButtonElement>('.gs-sweep-dialog-step')!.click();
+      fixture.detectChanges();
+
+      expect(zoomPill('200%').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('refits a view the reader never touched', async () => {
+      await openBig();
+
+      find<HTMLButtonElement>('.gs-sweep-dialog-step')!.click();
+      fixture.detectChanges();
+
+      expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('carries the same view into both sides of a comparison', async () => {
+      await setUp({ parameter: 'denoising_strength', startExpanded: true });
+      compareChip().click();
+      fixture.detectChanges();
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+      reportBox(800, 600);
+
+      const wipe = (): HTMLElement =>
+        find<HTMLElement>('.gs-sweep-stage--big .gs-wipe')!;
+      expect(wipe().classList.contains('is-zoomed')).toBe(false);
+
+      zoomPill('200%').click();
+      fixture.detectChanges();
+
+      // One number drives both layers and the divider between them, so the two
+      // sides are the same pixels however far in the reader has gone.
+      expect(wipe().classList.contains('is-zoomed')).toBe(true);
+      expect(wipe().style.getPropertyValue('--gs-wipe-zoom')).not.toBe('1');
+      expect(wipe().style.getPropertyValue('--gs-wipe-pan-x')).toBe('0px');
+    });
+  });
+
+  describe('the divider, the tags and the glyph on one picture', () => {
+    /** A strip whose stage carries a wipe: a frame over its starting picture. */
+    const openCompared = async (): Promise<void> => {
+      await setUp({ parameter: 'denoising_strength', startExpanded: true });
+      compareChip().click();
+      fixture.detectChanges();
+    };
+
+    it('moves the divider without moving the strip under it', async () => {
+      await openCompared();
+      const divider = find<HTMLElement>('.gs-wipe-divider')!;
+      const before = railAt();
+
+      pointer(divider, 'pointerdown', { clientX: 100, clientY: 40 });
+      pointer(divider, 'pointermove', { clientX: 260, clientY: 44 });
+      pointer(divider, 'pointerup', { clientX: 260, clientY: 44 });
+
+      expect(railAt()).toBe(before);
+    });
+
+    it('opens the picture full size when the glyph is pressed over a wipe', async () => {
+      await openCompared();
+
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+    });
+
+    it('does not take a press on the pair for a press on the picture', async () => {
+      await openCompared();
+
+      find<HTMLElement>('.gs-plate-col .gs-wipe')!.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('does not take a press on a side tag for a press on the picture', async () => {
+      await openCompared();
+
+      find<HTMLElement>('.gs-wipe-tag')!.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
+    it('holds both sides of a comparison in one box in the full-size view', async () => {
+      await openCompared();
+      expect(
+        find('.gs-plate-col .gs-wipe')?.classList.contains('is-fitted'),
+      ).toBe(false);
+
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+
+      const wipe = find<HTMLElement>('.gs-sweep-stage--big .gs-wipe')!;
+      expect(wipe.classList.contains('is-fitted')).toBe(true);
+      reportBox(800, 600);
+      // 600 of room for a 512-pixel square picture, so the box is the room's
+      // shorter side and the two sides are drawn into the whole of it.
+      expect(wipe.style.getPropertyValue('--gs-wipe-box-w')).toBe('600px');
+      expect(wipe.style.getPropertyValue('--gs-wipe-box-h')).toBe('600px');
+    });
+  });
+
+  describe('the lens', () => {
+    /** The lens toggle, which is the one glyph on the stage that presses in. */
+    const loupe = (): HTMLButtonElement | null =>
+      find<HTMLButtonElement>('.gs-sweep-glyphs button[aria-pressed]');
+
+    it('is offered to a pointer and to nothing else', async () => {
+      await setUp({ startExpanded: true });
+      expect(loupe()).toBeNull();
+
+      await setUp({ startExpanded: true, finePointer: true });
+      expect(loupe()).not.toBeNull();
+    });
+
+    it('follows the pointer over the picture once it is armed', async () => {
+      await setUp({ startExpanded: true, finePointer: true });
+      const stage = find<HTMLElement>('.gs-plate-col .gs-sweep-stage')!;
+      boxOf(stage, 0, 0, 400, 400);
+      boxOf(find<HTMLElement>('.gs-sweep-frame')!, 0, 0, 400, 400);
+
+      loupe()!.click();
+      fixture.detectChanges();
+      pointer(stage, 'pointermove', { clientX: 200, clientY: 200 });
+
+      const lens = find<HTMLElement>('.gs-sweep-lens')!;
+      expect(lens).not.toBeNull();
+      expect(lens.style.left).toBe('200px');
+      // The middle of a 1024-pixel picture, held at the middle of the lens.
+      expect(lens.style.backgroundPosition).toBe('');
+      expect(
+        find<HTMLElement>('.gs-sweep-lens-half')!.style.backgroundPosition,
+      ).toBe('-412px -412px');
+    });
+
+    it('splits down the middle while a comparison is up', async () => {
+      await setUp({
+        parameter: 'denoising_strength',
+        startExpanded: true,
+        finePointer: true,
+      });
+      compareChip().click();
+      fixture.detectChanges();
+      const stage = find<HTMLElement>('.gs-plate-col .gs-sweep-stage')!;
+      boxOf(stage, 0, 0, 400, 400);
+      boxOf(
+        find<HTMLElement>('.gs-wipe-media--before .gs-wipe-img')!,
+        0,
+        0,
+        400,
+        400,
+      );
+
+      loupe()!.click();
+      fixture.detectChanges();
+      pointer(stage, 'pointermove', { clientX: 120, clientY: 160 });
+
+      const halves = all('.gs-sweep-lens-half');
+      expect(halves).toHaveLength(2);
+      expect(halves[1].classList.contains('is-split')).toBe(true);
+    });
+
+    it('leaves with the pointer', async () => {
+      await setUp({ startExpanded: true, finePointer: true });
+      const stage = find<HTMLElement>('.gs-plate-col .gs-sweep-stage')!;
+      boxOf(stage, 0, 0, 400, 400);
+      boxOf(find<HTMLElement>('.gs-sweep-frame')!, 0, 0, 400, 400);
+      loupe()!.click();
+      fixture.detectChanges();
+      pointer(stage, 'pointermove', { clientX: 200, clientY: 200 });
+      expect(find('.gs-sweep-lens')).not.toBeNull();
+
+      stage.dispatchEvent(new MouseEvent('pointerleave', { bubbles: false }));
+      fixture.detectChanges();
+
+      expect(find('.gs-sweep-lens')).toBeNull();
+    });
+  });
+
+  describe('what a frame in a sheet is captioned with', () => {
+    it('shows the value alone and says the setting in the button name', async () => {
+      await setUp({ parameter: 'scheduler', startExpanded: true });
+      reportWidth(900);
+
+      expect(
+        all('.gs-sweep-option-cap .gs-sweep-value').map((cell) =>
+          cell.textContent?.trim(),
+        ),
+      ).toEqual(['normal', 'karras', 'simple']);
+      expect(all('.gs-sweep-option-cap .gs-setting-chip')).toHaveLength(0);
+      expect(find('.gs-sweep-plate-cell')?.getAttribute('aria-label')).toBe(
+        'Show Schedule normal',
+      );
     });
   });
 

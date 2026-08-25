@@ -42,6 +42,12 @@ class FakeResizeObserver {
     [afterAlt]="afterAlt"
     [tiled]="tiled"
     [handleOnly]="handleOnly"
+    [fit]="fit"
+    [fitWidth]="fitWidth"
+    [fitHeight]="fitHeight"
+    [zoom]="zoom"
+    [panX]="panX"
+    [beforeNote]="beforeNote"
     (imageLoad)="loads = loads + 1"
   />`,
 })
@@ -54,6 +60,12 @@ class HostComponent {
   public afterAlt = 'The scene after';
   public tiled = false;
   public handleOnly = false;
+  public fit = false;
+  public fitWidth: number | null = null;
+  public fitHeight: number | null = null;
+  public zoom = 1;
+  public panX = 0;
+  public beforeNote = '';
   public loads = 0;
 }
 
@@ -306,6 +318,84 @@ describe('GsCompareWipeComponent', () => {
     );
     fixture.detectChanges();
     expect(at()).toBe('75%');
+  });
+
+  describe('one box, however close in the pair is drawn', () => {
+    it("holds both sides in a box of the caller's shape when it is asked to", () => {
+      fixture.componentInstance.fit = true;
+      fixture.componentInstance.fitWidth = 480.24;
+      fixture.componentInstance.fitHeight = 320;
+      render();
+      measure(600);
+
+      expect(stage().classList.contains('is-fitted')).toBe(true);
+      expect(stage().style.getPropertyValue('--gs-wipe-box-w')).toBe('480.2px');
+      expect(stage().style.getPropertyValue('--gs-wipe-box-h')).toBe('320px');
+    });
+
+    it('leaves the box alone until it is asked', () => {
+      render();
+      measure(600);
+
+      expect(stage().classList.contains('is-fitted')).toBe(false);
+      expect(stage().classList.contains('is-zoomed')).toBe(false);
+    });
+
+    it('carries the view it is given to both sides', () => {
+      fixture.componentInstance.zoom = 2;
+      fixture.componentInstance.panX = 40;
+      render();
+      measure(600);
+
+      expect(stage().classList.contains('is-zoomed')).toBe(true);
+      expect(stage().style.getPropertyValue('--gs-wipe-zoom')).toBe('2');
+      expect(stage().style.getPropertyValue('--gs-wipe-pan-x')).toBe('40px');
+    });
+
+    it('reads a press in the picture rather than in the frame around it', () => {
+      fixture.componentInstance.zoom = 2;
+      render();
+      measure(400);
+      widthIs(400);
+
+      // At twice the size only the middle half of the picture is in the frame,
+      // so a quarter of the way across the frame is 37.5% of the way across
+      // the picture, and that is where the divider has to land.
+      pointer('pointerdown', 100);
+
+      expect(at()).toBe('37.5%');
+    });
+
+    it('says on the tag what had to be done to a side to make it match', () => {
+      fixture.componentInstance.beforeNote = 'Enlarged 4x to match';
+      render();
+      measure(600);
+
+      expect(
+        find('.gs-wipe-tag--before .gs-wipe-note')?.textContent?.trim(),
+      ).toBe('Enlarged 4x to match');
+      expect(find('.gs-wipe-tag--after .gs-wipe-note')).toBeNull();
+    });
+
+    it('keeps a press on the divider from reaching the surface under it', () => {
+      render();
+      measure(600);
+      let reached = 0;
+      el().addEventListener('pointerdown', () => {
+        reached = reached + 1;
+      });
+
+      divider()!.dispatchEvent(
+        new MouseEvent('pointerdown', {
+          clientX: 120,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+
+      expect(reached).toBe(0);
+    });
   });
 
   it('says once that a picture has arrived', () => {
