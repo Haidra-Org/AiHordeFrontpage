@@ -325,28 +325,42 @@
           }
         </div>
       }
-      <label class="gs-switch gs-switch-row">
-        <span>{{ "generate.source.image_is_control_label" | transloco }}</span>
-        <input
-          type="checkbox"
-          [formControl]="form().controls.image_is_control"
-        />
-        <span class="gs-switch-track"
-          ><span class="gs-switch-knob"></span
-        ></span>
-      </label>
-      <label class="gs-switch gs-switch-row">
-        <span>{{
-          "generate.source.return_control_map_label" | transloco
-        }}</span>
-        <input
-          type="checkbox"
-          [formControl]="form().controls.return_control_map"
-        />
-        <span class="gs-switch-track"
-          ><span class="gs-switch-knob"></span
-        ></span>
-      </label>
+      <!-- Both switches are about the map itself: where it comes from, and
+           whether the reader gets it rather than a render made from it. Read
+           loose they are two unrelated flags at the end of the card, so they
+           stand under one name with the note that explains what a map is. -->
+      <div class="flex flex-col gap-2">
+        <div class="gs-field-head">
+          <span class="gs-slabel">{{
+            "generate.source.control_map_head" | transloco
+          }}</span>
+          <app-gs-help topic="control_map" />
+        </div>
+        <label class="gs-switch gs-switch-row">
+          <span>{{
+            "generate.source.image_is_control_label" | transloco
+          }}</span>
+          <input
+            type="checkbox"
+            [formControl]="form().controls.image_is_control"
+          />
+          <span class="gs-switch-track"
+            ><span class="gs-switch-knob"></span
+          ></span>
+        </label>
+        <label class="gs-switch gs-switch-row">
+          <span>{{
+            "generate.source.return_control_map_label" | transloco
+          }}</span>
+          <input
+            type="checkbox"
+            [formControl]="form().controls.return_control_map"
+          />
+          <span class="gs-switch-track"
+            ><span class="gs-switch-knob"></span
+          ></span>
+        </label>
+      </div>
     }
 
     @if (mode() === "img2img") {

@@ -21,6 +21,7 @@ import {
   sweepVariantPair,
 } from './settings';
 import { FACE_FIXERS } from '../pages/generate/generate-form.model';
+import { DOCS_IMAGE_CONTROL_TYPES, docsAlchemyUseCaseLink } from './docs-links';
 import { GLOSSARY_TERMS } from '../services/glossary.service';
 import en from '../../assets/i18n/en.json';
 
@@ -173,6 +174,38 @@ describe('settings registry', () => {
     ]);
 
     expect(missing).toEqual([]);
+  });
+
+  it('sends the finishing tools to the alchemy page that runs the same job', () => {
+    // Upscaling, face repair and background removal are each one tool offered
+    // twice: after a render here, and on a finished picture in alchemy. The
+    // page about the tool is written once, so the settings point at it.
+    const pages = (id: string): readonly string[] =>
+      (settingEntry(id)?.reference?.links ?? []).map((link) => link.routerLink);
+
+    expect(pages('upscaler')).toEqual([docsAlchemyUseCaseLink('enlarge')]);
+    expect(pages('facefixer')).toEqual([docsAlchemyUseCaseLink('fix_faces')]);
+    expect(pages('facefixer_strength')).toEqual([
+      docsAlchemyUseCaseLink('fix_faces'),
+    ]);
+    expect(pages('strip_background')).toEqual([
+      docsAlchemyUseCaseLink('cut_out'),
+    ]);
+    expect(settingSection('strip_background')).toBe('finishing');
+  });
+
+  it('reads the control map as one subject the source card names', () => {
+    // The two switches under it are about where the map comes from and whether
+    // the reader gets it back, which is one page rather than two.
+    expect(settingSection('control_map')).toBe('source');
+    expect(
+      (settingEntry('control_map')?.reference?.links ?? []).map(
+        (link) => link.routerLink,
+      ),
+    ).toEqual([
+      docsAlchemyUseCaseLink('control_map'),
+      DOCS_IMAGE_CONTROL_TYPES,
+    ]);
   });
 
   it('offers try-it values the form would accept, aimed at a real row', () => {

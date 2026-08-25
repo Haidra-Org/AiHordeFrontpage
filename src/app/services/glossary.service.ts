@@ -547,6 +547,11 @@ const GLOSSARY_TERM_DEFINITIONS: GlossaryTerm[] = [
     titleKey: 'help.glossary.terms.control_map.title',
     bodyKey: 'help.glossary.terms.control_map.body',
     category: 'capabilities',
+    // The word is also a setting's id, and the two pages answer different
+    // questions: the studio's entry is about where the map a render is held to
+    // comes from, and the page a reader who has just met the word wants is the
+    // one about making one.
+    docs: { area: 'alchemy', id: 'control_map' },
   },
 
   // Units & Metrics

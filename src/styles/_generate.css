@@ -13319,6 +13319,47 @@ app-gs-compare-wipe {
   margin-right: 8px;
 }
 
+/* The pages the note names, in one wrapping line under it. They take the row
+   below the picture offer so the offer stays the loudest way on, and they take
+   the full width for the same reason the note does: whichever row of a wrapping
+   label line opened the note, the reading after it belongs under all of them. */
+.gen-studio .gs-help-links {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--gs-space-1) var(--gs-space-3);
+  margin: var(--gs-space-1) 0 0;
+  font-size: var(--gs-text-sm);
+}
+.gen-studio .gs-help-links-head {
+  color: var(--gs-ink-2);
+  font-weight: 600;
+}
+.gen-studio .gs-help-link {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  color: var(--gs-blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+.gen-studio .gs-help-link:hover {
+  text-decoration: underline;
+}
+.gen-studio .gs-help-link:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+/* --gs-blue sinks into the dark page at 2.8:1, so the note's links take the
+   lighter blue the reference entries already use there. */
+.dark .gen-studio .gs-help-link {
+  color: #93c5fd;
+}
+.dark .gen-studio .gs-help-link:focus-visible {
+  outline-color: #93c5fd;
+}
+
 /* ------- the docked reference entry --------------------------------- */
 
 /* Only the side-by-side layout has a pane to dock into. Below that width the

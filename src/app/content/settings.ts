@@ -1,6 +1,6 @@
 import { GenerateFormValue } from '../pages/generate/generate-form.model';
 import { ImagePostProcessor } from '../types/style';
-import { DOCS_IMAGE_CONTROL_TYPES } from './docs-links';
+import { DOCS_IMAGE_CONTROL_TYPES, docsAlchemyUseCaseLink } from './docs-links';
 import { SectionId, PANEL_SECTION_IDS } from './sections';
 
 /**
@@ -312,6 +312,21 @@ const CONTROL_TYPES_LINK: SettingLink = {
 };
 
 /**
+ * The alchemy page that runs the same tool on a picture that is already made.
+ *
+ * Upscaling, face repair, background removal and control map extraction are one
+ * thing each, offered twice: as a step after a render here, and as a job of its
+ * own in alchemy. The page about the tool is written once, in alchemy, so the
+ * finishing settings point at it rather than restating it.
+ */
+function alchemyLink(useCaseId: string): SettingLink {
+  return {
+    labelKey: `generate.reference.link_alchemy_${useCaseId}`,
+    routerLink: docsAlchemyUseCaseLink(useCaseId),
+  };
+}
+
+/**
  * Every setting the studio names or explains, in the order the reference reads
  * them: by section, and within a section in the order the panel shows them.
  *
@@ -592,6 +607,18 @@ export const SETTINGS: readonly SettingEntry[] = [
     // detector at all, which is the QR workflow's own.
     sweeps: { strip: 'control_strength', stripControlType: 'canny' },
   },
+  {
+    // The map itself, as against the two settings about how it is read. Both
+    // switches beside it are about where the map comes from and whether the
+    // reader gets to see it, which is one subject rather than two.
+    id: 'control_map',
+    section: 'source',
+    reference: {
+      related: ['control_type', 'control_strength', 'source'],
+      links: [alchemyLink('control_map'), CONTROL_TYPES_LINK],
+      glossaryTerms: ['controlnet'],
+    },
+  },
 
   // --- sampling ---
   {
@@ -833,6 +860,7 @@ export const SETTINGS: readonly SettingEntry[] = [
         quality: 'generate.reference.quality_upscaler',
       },
       related: ['hires', 'facefixer'],
+      links: [alchemyLink('enlarge')],
     },
   },
   {
@@ -845,6 +873,7 @@ export const SETTINGS: readonly SettingEntry[] = [
         quality: 'generate.reference.quality_facefixer',
       },
       related: ['facefixer_strength', 'upscaler'],
+      links: [alchemyLink('fix_faces')],
     },
   },
   {
@@ -861,6 +890,25 @@ export const SETTINGS: readonly SettingEntry[] = [
         },
       ],
       related: ['facefixer'],
+      links: [alchemyLink('fix_faces')],
+    },
+  },
+  {
+    // The switch that hands the picture to the background remover once it is
+    // made. It is the alchemy tool run as a finishing step, so the entry says
+    // what it leaves behind and sends the reader to the page about the tool.
+    id: 'strip_background',
+    section: 'finishing',
+    reference: {
+      // The remover runs after the render, so it adds time. What it adds to the
+      // price is not something this app works out, and a guessed row is worse
+      // than none.
+      tradeoffs: {
+        speed: 'slower',
+        quality: 'generate.reference.quality_strip_background',
+      },
+      related: ['upscaler', 'facefixer'],
+      links: [alchemyLink('cut_out')],
     },
   },
   {

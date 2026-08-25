@@ -1550,19 +1550,21 @@
                 />
               </div>
             }
-            <label class="gs-switch gs-switch-row">
-              <span>{{
-                "generate.form.strip_background_label" | transloco
-              }}</span>
-              <input
-                type="checkbox"
-                [checked]="stripBackground()"
-                (change)="onStripBackgroundChange($event)"
-              />
-              <span class="gs-switch-track"
-                ><span class="gs-switch-knob"></span
-              ></span>
-            </label>
+            <div class="gs-opt">
+              <label class="gs-switch gs-switch-row">
+                <span>{{
+                  "generate.form.strip_background_label" | transloco
+                }}</span>
+                <input
+                  type="checkbox"
+                  [checked]="stripBackground()"
+                  (change)="onStripBackgroundChange($event)"
+                />
+                <span class="gs-switch-track"
+                  ><span class="gs-switch-knob"></span
+                ></span> </label
+              ><app-gs-help topic="strip_background" />
+            </div>
           </app-gs-group>
         </section>
 

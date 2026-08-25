@@ -9,9 +9,11 @@ import {
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { RouterLink } from '@angular/router';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { GsHelpService } from '../../services/gs-help.service';
 import { referenceTopic } from '../../content/reference-topics';
+import { SettingLink } from '../../content/settings';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -28,11 +30,16 @@ import { IconComponent } from '../icon/icon.component';
  * expanding on hover or on tab-focus would shift the rest of the form under the
  * pointer while the reader is aiming at something else.
  *
- * The note is prose and nothing else. It used to mount the parameter sweeps
- * under itself, which pushed the field it was describing off the screen the
- * moment anyone asked what the field was; the pictures, the numbers and the
+ * The note is prose and the ways out of it. It used to mount the parameter
+ * sweeps under itself, which pushed the field it was describing off the screen
+ * the moment anyone asked what the field was; the pictures, the numbers and the
  * depth now live in the setting's reference entry, and the note offers the way
  * to it rather than becoming it.
+ *
+ * The ways out are the subject's own `links`, the same pages the reference entry
+ * lists. A reader who opens a note about the face fixer wants the page about
+ * repairing faces from where they are asking, not after a second hop through the
+ * entry, and the note is the first place the question is asked.
  *
  * Which words a topic has, and whether there is an entry behind it, is asked of
  * the reference registries rather than known here: the same `?` sits beside an
@@ -40,7 +47,7 @@ import { IconComponent } from '../icon/icon.component';
  */
 @Component({
   selector: 'app-gs-help',
-  imports: [TranslocoPipe, IconComponent],
+  imports: [TranslocoPipe, IconComponent, RouterLink],
   template: `
     <button
       #trigger
@@ -109,6 +116,21 @@ import { IconComponent } from '../icon/icon.component';
           </span>
         </button>
       }
+      <!-- Written last so the picture, where there is one, stays the loudest
+           offer under the note, and the pages read as further reading rather
+           than as competition for it. -->
+      @if (links().length > 0) {
+        <p class="gs-help-links">
+          <span class="gs-help-links-head">{{
+            'generate.help.read_more' | transloco
+          }}</span>
+          @for (link of links(); track link.routerLink) {
+            <a class="gs-help-link" [routerLink]="link.routerLink">
+              {{ link.labelKey | transloco }}
+            </a>
+          }
+        </p>
+      }
     }
   `,
   host: {
@@ -148,6 +170,16 @@ export class GsHelpComponent {
 
   /** Whether the reference has an entry this note can send a reader on to. */
   public readonly hasEntry = computed(() => this.subject()?.hasEntry ?? false);
+
+  /**
+   * The pages the subject names, whichever registry named them. Present on a
+   * note whether or not the subject has an entry: a link is a page that exists
+   * elsewhere in the site, and it answers the reader's question with or without
+   * a written entry behind the `?`.
+   */
+  public readonly links = computed<readonly SettingLink[]>(
+    () => this.subject()?.links ?? [],
+  );
 
   /**
    * Whether the offer can be kept: an entry to open, and a strip or a plate the

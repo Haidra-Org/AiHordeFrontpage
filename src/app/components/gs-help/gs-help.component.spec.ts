@@ -6,11 +6,13 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GsHelpComponent } from './gs-help.component';
 import { GsHelpService } from '../../services/gs-help.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { hasReference } from '../../content/settings';
+import { referenceTopic } from '../../content/reference-topics';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import { environment } from '../../../environments/environment';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
@@ -20,6 +22,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
     <app-gs-help topic="steps" />
     <app-gs-help topic="sampling" />
     <app-gs-help topic="prompt_emphasis" />
+    <app-gs-help topic="control_type" />
   `,
   imports: [GsHelpComponent],
 })
@@ -64,7 +67,11 @@ describe('GsHelpComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
     }).compileComponents();
     TestBed.inject(GsHelpService).close();
     TestBed.inject(GsHelpDockService).close();
@@ -73,7 +80,7 @@ describe('GsHelpComponent', () => {
   it('starts collapsed with no note rendered', () => {
     const { triggers, notes } = setup();
 
-    expect(triggers()).toHaveLength(3);
+    expect(triggers()).toHaveLength(4);
     expect(notes()).toHaveLength(0);
     for (const trigger of triggers()) {
       expect(trigger.getAttribute('aria-expanded')).toBe('false');
@@ -220,6 +227,42 @@ describe('GsHelpComponent', () => {
 
       expect(hasReference('sampling')).toBe(false);
       expect(fixture.nativeElement.querySelector('.gs-help-see')).toBeNull();
+    });
+  });
+
+  describe('the pages the note names', () => {
+    it('lists the links the subject names, each a route into the site', () => {
+      const { fixture, click } = setup();
+
+      // The fourth trigger is `control_type`, whose entry names the page that
+      // shows what each mode keeps.
+      click(3);
+
+      const host = fixture.nativeElement as HTMLElement;
+      const links = Array.from(
+        host.querySelectorAll<HTMLAnchorElement>('.gs-help-link'),
+      );
+      const expected = referenceTopic('control_type')?.links ?? [];
+      expect(expected.length).toBeGreaterThan(0);
+      expect(links).toHaveLength(expected.length);
+      expect(links.map((link) => link.getAttribute('href'))).toEqual(
+        expected.map((link) => link.routerLink),
+      );
+      // The words are the entry's own, so a link cannot come to say one thing
+      // beside the field and another on the page.
+      expect(links.map((link) => link.textContent?.trim())).toEqual(
+        expected.map((link) => link.labelKey),
+      );
+    });
+
+    it('writes no lead-in where the subject names no page', () => {
+      const { fixture, click } = setup();
+
+      // `steps` has an entry and nothing outside the reference to point at.
+      click(0);
+
+      expect(referenceTopic('steps')?.links).toEqual([]);
+      expect(fixture.nativeElement.querySelector('.gs-help-links')).toBeNull();
     });
   });
 
