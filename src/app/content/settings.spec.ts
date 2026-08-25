@@ -21,7 +21,11 @@ import {
   sweepVariantPair,
 } from './settings';
 import { FACE_FIXERS } from '../pages/generate/generate-form.model';
-import { DOCS_IMAGE_CONTROL_TYPES, docsAlchemyUseCaseLink } from './docs-links';
+import {
+  DOCS_IMAGE_CONTROL_TYPES,
+  docsAlchemyUseCaseLink,
+  docsSettingLink,
+} from './docs-links';
 import { GLOSSARY_TERMS } from '../services/glossary.service';
 import en from '../../assets/i18n/en.json';
 
@@ -192,6 +196,17 @@ describe('settings registry', () => {
       docsAlchemyUseCaseLink('cut_out'),
     ]);
     expect(settingSection('strip_background')).toBe('finishing');
+  });
+
+  it('hands the denoise reader on to the setting that holds the map', () => {
+    // Under a control type the denoise no longer stands in for the weight on
+    // the map, so the page saying so has to be one press from the page about
+    // that weight.
+    expect(
+      (settingEntry('denoise')?.reference?.links ?? []).map(
+        (link) => link.routerLink,
+      ),
+    ).toEqual([docsSettingLink('control_strength')]);
   });
 
   it('reads the control map as one subject the source card names', () => {

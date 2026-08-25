@@ -1,6 +1,10 @@
 import { GenerateFormValue } from '../pages/generate/generate-form.model';
 import { ImagePostProcessor } from '../types/style';
-import { DOCS_IMAGE_CONTROL_TYPES, docsAlchemyUseCaseLink } from './docs-links';
+import {
+  DOCS_IMAGE_CONTROL_TYPES,
+  docsAlchemyUseCaseLink,
+  docsSettingLink,
+} from './docs-links';
 import { SectionId, PANEL_SECTION_IDS } from './sections';
 
 /**
@@ -311,6 +315,12 @@ const CONTROL_TYPES_LINK: SettingLink = {
   routerLink: DOCS_IMAGE_CONTROL_TYPES,
 };
 
+/** The weight on the control map, which the denoise page hands the reader to. */
+const CONTROL_STRENGTH_LINK: SettingLink = {
+  labelKey: 'generate.reference.link_control_strength',
+  routerLink: docsSettingLink('control_strength'),
+};
+
 /**
  * The alchemy page that runs the same tool on a picture that is already made.
  *
@@ -572,6 +582,10 @@ export const SETTINGS: readonly SettingEntry[] = [
         },
       ],
       related: ['source', 'hires_denoise'],
+      // Under a control type the setting no longer decides how much of the
+      // picture survives, and the reader who has just been told that has to be
+      // able to reach the setting that does.
+      links: [CONTROL_STRENGTH_LINK],
     },
     sweeps: { strip: 'denoising_strength' },
   },

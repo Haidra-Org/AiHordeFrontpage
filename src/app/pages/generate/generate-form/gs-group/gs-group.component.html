@@ -12,34 +12,27 @@
        values, and a control competing with that line reads as one more thing
        to decide before the group has even been opened. -->
   <div class="gs-group-head">
-    <button
-      type="button"
-      class="gs-group-toggle"
-      [attr.aria-expanded]="open()"
-      [attr.aria-controls]="bodyId"
-      (click)="toggled.emit()"
-    >
-      <app-icon
-        class="gs-chev gs-group-chev"
-        [name]="open() ? 'chevron-down' : 'chevron-right'"
-      />
-      <span class="gs-sec-chip" aria-hidden="true">
-        <app-icon [name]="identity().icon" />
-      </span>
-      <span class="gs-group-name">{{ titleKey() | transloco }}</span>
-      <!-- An open group is showing the controls its summary would describe, so
-         the line stands down and leaves the head to the actions. -->
-      @if (summary() && !open()) {
-        <span class="gs-group-sum gs-mono">{{ summary() }}</span>
-      }
-      @if (changed()) {
-        <span
-          class="gs-group-dot"
-          role="img"
-          [attr.aria-label]="'generate.groups.changed' | transloco"
-        ></span>
-      }
-    </button>
+    @if (canFold()) {
+      <button
+        type="button"
+        class="gs-group-toggle"
+        [attr.aria-expanded]="open()"
+        [attr.aria-controls]="bodyId"
+        (click)="toggled.emit()"
+      >
+        <app-icon
+          class="gs-chev gs-group-chev"
+          [name]="open() ? 'chevron-down' : 'chevron-right'"
+        />
+        <ng-container *ngTemplateOutlet="headLine" />
+      </button>
+    } @else {
+      <!-- A group that cannot be closed yet reads as the same row without the
+           press: a chevron that folds nothing is a control that does nothing. -->
+      <div class="gs-group-toggle gs-group-toggle--static">
+        <ng-container *ngTemplateOutlet="headLine" />
+      </div>
+    }
     <!-- A folded group still has to report a problem inside it: the fold is the
          reader's, and the warning is not theirs to have dismissed. It sits
          outside the opening press so that it can take the reader to the control
@@ -65,3 +58,29 @@
     </div>
   }
 </section>
+
+<!-- Everything the head reads, whether or not it is a press: the mark, the
+     name, the picture the group is working on and the line of its values. -->
+<ng-template #headLine>
+  <span class="gs-sec-chip" aria-hidden="true">
+    <app-icon [name]="identity().icon" />
+  </span>
+  <span class="gs-group-name">{{ titleKey() | transloco }}</span>
+  @if (thumbUrl(); as thumb) {
+    @if (!open()) {
+      <img class="gs-group-thumb" [src]="thumb" alt="" />
+    }
+  }
+  <!-- An open group is showing the controls its summary would describe, so
+       the line stands down and leaves the head to the actions. -->
+  @if (summary() && !open()) {
+    <span class="gs-group-sum gs-mono">{{ summary() }}</span>
+  }
+  @if (changed()) {
+    <span
+      class="gs-group-dot"
+      role="img"
+      [attr.aria-label]="'generate.groups.changed' | transloco"
+    ></span>
+  }
+</ng-template>

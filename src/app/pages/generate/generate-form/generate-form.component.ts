@@ -7,6 +7,7 @@ import {
   OnInit,
   afterNextRender,
   computed,
+  contentChild,
   effect,
   inject,
   input,
@@ -28,6 +29,7 @@ import { merge } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
+import { GenerateSourceImageComponent } from '../generate-source-image/generate-source-image.component';
 import { FullscreenService } from '../../../services/fullscreen.service';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
@@ -1461,6 +1463,14 @@ export class GenerateFormComponent implements OnInit {
 
   private readonly groupsOpen = signal<Partial<Record<GroupId, boolean>>>({});
 
+  /**
+   * The source card, projected into the panel rather than held by it. It keeps
+   * its own fold, because it is open before there is anything to fold away, so
+   * folding everything has to reach it by hand rather than through the store
+   * the groups share.
+   */
+  private readonly sourceCard = contentChild(GenerateSourceImageComponent);
+
   /** Whether `group` is currently showing its controls rather than its values. */
   public isGroupOpen(group: GroupId): boolean {
     return this.groupsOpen()[group] ?? GROUP_OPEN_DEFAULT;
@@ -1472,13 +1482,17 @@ export class GenerateFormComponent implements OnInit {
 
   /** Whether anything is open to fold, which is what offers the action. */
   public anyGroupOpen(): boolean {
-    return GROUP_IDS.some((group) => this.isGroupOpen(group));
+    if (GROUP_IDS.some((group) => this.isGroupOpen(group))) {
+      return true;
+    }
+    const source = this.sourceCard();
+    return source !== undefined && source.canFold() && source.open();
   }
 
   /**
-   * Fold every group back up, returning the panel to the face it opens with.
-   * Written through the same store as a single fold, so the panel is still
-   * folded on the next visit.
+   * Fold every group back up, and the source card with them, returning the
+   * panel to the face it opens with. Written through the same stores as a
+   * single fold, so the panel is still folded on the next visit.
    */
   public foldAllGroups(): void {
     const next: Partial<Record<GroupId, boolean>> = { ...this.groupsOpen() };
@@ -1487,6 +1501,7 @@ export class GenerateFormComponent implements OnInit {
     }
     this.groupsOpen.set(next);
     this.db.store(GROUPS_OPEN_KEY, next);
+    this.sourceCard()?.fold();
   }
 
   /**

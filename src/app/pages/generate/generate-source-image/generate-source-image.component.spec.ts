@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import en from '../../../../assets/i18n/en.json';
 import {
   GenerateSourceImageComponent,
   GenerateSourceState,
@@ -12,14 +14,27 @@ import {
 } from '../generate-form.model';
 import { SourceImage } from '../../../helper/source-image';
 
+/** The folded card's line, split back into the values it was joined from. */
+function summaryParts(summary: string): string[] {
+  return summary.split(' · ');
+}
+
 async function createComponent(): Promise<{
   fixture: ComponentFixture<GenerateSourceImageComponent>;
   component: GenerateSourceImageComponent;
   form: GenerateFormGroup;
   states: GenerateSourceState[];
 }> {
+  // Transloco is needed even with the template thrown away: the card words its
+  // own folded summary, so the component asks for translations directly.
   await TestBed.configureTestingModule({
-    imports: [GenerateSourceImageComponent],
+    imports: [
+      GenerateSourceImageComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
     providers: [{ provide: PLATFORM_ID, useValue: 'browser' }],
   })
     .overrideComponent(GenerateSourceImageComponent, { set: { template: '' } })
@@ -466,5 +481,138 @@ describe('the masked choices inside a mode', () => {
     form.controls.width.setValue(1024);
     expect(component.outpaintHasRoom()).toBe(true);
     expect(component.valid()).toBe(true);
+  });
+});
+
+/**
+ * The card folds away once it has a picture, and its resting face is the one
+ * line saying what is being done to that picture.
+ */
+describe('GenerateSourceImageComponent folding', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('stays open until a picture is attached', async () => {
+    const { component } = await createComponent();
+    // Nothing to summarise and nowhere else to reach the picker from, so the
+    // card cannot be folded and reports itself open whatever is remembered.
+    expect(component.canFold()).toBe(false);
+    expect(component.open()).toBe(true);
+    expect(component.foldSummary()).toBe('');
+
+    component.setMode('img2img');
+    expect(component.canFold()).toBe(false);
+
+    component.sourceImage.set(fakeImage());
+    expect(component.canFold()).toBe(true);
+  });
+
+  it('remembers the fold for the next visit', async () => {
+    const { component } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    component.setMode('img2img');
+
+    component.toggleFold();
+    expect(component.open()).toBe(false);
+
+    TestBed.resetTestingModule();
+    const { component: second } = await createComponent();
+    second.sourceImage.set(fakeImage());
+    second.setMode('img2img');
+    expect(second.open()).toBe(false);
+
+    second.toggleFold();
+    expect(second.open()).toBe(true);
+
+    TestBed.resetTestingModule();
+    const { component: third } = await createComponent();
+    third.sourceImage.set(fakeImage());
+    third.setMode('img2img');
+    expect(third.open()).toBe(true);
+  });
+
+  it('folds with the panel, and only when it has something to fold', async () => {
+    const { component } = await createComponent();
+
+    // Nothing attached yet: the panel's fold leaves the picker where the
+    // reader can still reach it.
+    component.fold();
+    expect(component.open()).toBe(true);
+
+    component.sourceImage.set(fakeImage());
+    component.setMode('img2img');
+    component.fold();
+    expect(component.open()).toBe(false);
+  });
+
+  it('opens itself over a problem the reader has to answer', async () => {
+    const { fixture, component } = await createComponent();
+    component.sourceImage.set(fakeImage());
+    component.setMode('controlnet');
+    component.toggleFold();
+    expect(component.open()).toBe(false);
+
+    // A controlnet request with no control type is refused, and a fold is the
+    // reader's own: it never stands for the problem having been dealt with.
+    fixture.componentRef.setInput('showValidation', true);
+    expect(component.validationMessage()).toBe(
+      'generate.source.error_no_control_type',
+    );
+    expect(component.open()).toBe(true);
+  });
+
+  it('reads as the mode and the values in play', async () => {
+    const { component, form } = await createComponent();
+    component.sourceImage.set(fakeImage());
+
+    component.setMode('img2img');
+    expect(summaryParts(component.foldSummary())).toEqual([
+      'generate.groups.source_img2img',
+      'generate.groups.source_denoise',
+    ]);
+
+    component.setMode('inpainting');
+    expect(summaryParts(component.foldSummary())).toEqual([
+      'generate.groups.source_inpainting',
+    ]);
+    form.controls.outpaintEnabled.setValue(true);
+    expect(summaryParts(component.foldSummary())).toEqual([
+      'generate.groups.source_outpainting',
+    ]);
+    form.controls.outpaintEnabled.setValue(false);
+
+    component.setMode('controlnet');
+    form.controls.control_type.setValue('canny');
+    expect(summaryParts(component.foldSummary())).toEqual([
+      'generate.groups.source_controlnet',
+      'generate.groups.source_denoise',
+    ]);
+
+    // Only the values actually in play are named: an unset strength is the
+    // worker's own and says nothing here.
+    form.controls.control_strength.setValue(0.6);
+    form.controls.image_is_control.setValue(true);
+    form.controls.return_control_map.setValue(true);
+    expect(summaryParts(component.foldSummary())).toEqual([
+      'generate.groups.source_controlnet',
+      'generate.groups.source_denoise',
+      'generate.groups.source_strength',
+      'generate.groups.source_map_supplied',
+      'generate.groups.source_map_back',
+    ]);
+  });
+
+  it('words each part of that line from the ledger', () => {
+    expect(en['generate.groups.source_img2img']).toBe('Image to image');
+    expect(en['generate.groups.source_inpainting']).toBe('Inpainting');
+    expect(en['generate.groups.source_outpainting']).toBe('Outpainting');
+    expect(en['generate.groups.source_controlnet']).toBe(
+      'Guided drawing: {{ name }}',
+    );
+    expect(en['generate.groups.source_denoise']).toBe('denoise {{ value }}');
+    expect(en['generate.groups.source_strength']).toBe('strength {{ value }}');
+    expect(en['generate.groups.source_map_supplied']).toBe('map supplied');
+    expect(en['generate.groups.source_map_back']).toBe('map back');
   });
 });

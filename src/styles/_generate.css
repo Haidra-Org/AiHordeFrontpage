@@ -1000,6 +1000,21 @@
 .gen-studio .gs-group-toggle:hover {
   background: var(--gs-sec-tint, transparent);
 }
+/* The same row where there is nothing to fold: no pointer, no hover answer. */
+.gen-studio .gs-group-toggle--static:hover {
+  background: transparent;
+}
+/* The picture a folded card is working on, small enough to sit inside the row
+   and still be recognisable. It carries no words: the summary beside it says
+   what is being done to it. */
+.gen-studio .gs-group-thumb {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 1px solid var(--gs-card-border);
+  border-radius: var(--gs-radius-sm);
+  object-fit: cover;
+}
 .gen-studio .gs-group-chev {
   flex: none;
   color: var(--gs-muted);

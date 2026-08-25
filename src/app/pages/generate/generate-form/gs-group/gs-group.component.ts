@@ -5,6 +5,7 @@ import {
   input,
   output,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../../components/icon/icon.component';
 import { SECTION_IDENTITIES, SectionId } from '../../../../content/sections';
@@ -23,7 +24,7 @@ let groupInstance = 0;
  */
 @Component({
   selector: 'app-gs-group',
-  imports: [IconComponent, TranslocoPipe],
+  imports: [NgTemplateOutlet, IconComponent, TranslocoPipe],
   templateUrl: './gs-group.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -34,6 +35,18 @@ export class GsGroupComponent {
   public readonly titleKey = input.required<string>();
   /** The group's values in one line, shown while it is closed. */
   public readonly summary = input('');
+  /**
+   * A picture of what the group is currently working on, drawn small at the
+   * head while the group is closed. Only the source image card has one: a
+   * folded card that has taken a picture has to show which picture.
+   */
+  public readonly thumbUrl = input<string | null>(null);
+  /**
+   * Whether the group may be closed at all. A group whose body holds the only
+   * way to give it anything to summarise stays open until it has been given
+   * one, because folding it away would put that control out of reach.
+   */
+  public readonly canFold = input(true);
   /** Whether anything inside differs from the value the form starts at. */
   public readonly changed = input(false);
   public readonly open = input(false);

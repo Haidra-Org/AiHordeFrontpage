@@ -1,11 +1,21 @@
-<div class="gs-card gs-sec--source flex flex-col gap-3" appTutAnchor="source">
-  <div class="gs-sec-head">
-    <span class="gs-card-title">
-      <span class="gs-sec-chip" aria-hidden="true"
-        ><app-icon name="sec-source"
-      /></span>
-      {{ "generate.source.section" | transloco }}
-    </span>
+<!-- The card folds like a settings group, and for the same reason: once it has
+     a picture, its resting face is the one line saying what is being done to
+     that picture. It cannot fold before it has one, because the picker that
+     gives it one lives inside the part a fold would put away. -->
+<app-gs-group
+  section="source"
+  titleKey="generate.source.section"
+  appTutAnchor="source"
+  [summary]="foldSummary()"
+  [thumbUrl]="previewUrl()"
+  [open]="open()"
+  [canFold]="canFold()"
+  (toggled)="toggleFold()"
+  [lintCount]="lintCount()"
+  [lintLabel]="lintLabel()"
+  (lintPressed)="openForLint()"
+>
+  <div class="gs-group-actions" groupActions>
     <app-gs-help topic="source" />
   </div>
 
@@ -157,37 +167,8 @@
       </div>
     }
 
-    @if (mode() === "img2img" || mode() === "controlnet") {
-      <div appTutAnchor="denoise">
-        <div class="gs-field-head">
-          <label class="gs-slabel" for="generate-denoise">
-            {{
-              "generate.source.denoise_label"
-                | transloco: { value: form().controls.denoising_strength.value }
-            }}
-          </label>
-          <app-gs-help topic="denoise" />
-        </div>
-        <input
-          id="generate-denoise"
-          class="gs-range gs-range--capped mt-1.5"
-          type="range"
-          [formControl]="form().controls.denoising_strength"
-          [min]="minDenoise"
-          [max]="maxDenoise"
-          [step]="denoiseStep"
-          [style.--gs-range-fill.%]="
-            rangeFill(
-              form().controls.denoising_strength.value,
-              minDenoise,
-              maxDenoise
-            )
-          "
-        />
-        <p class="gs-sublabel mt-1">
-          {{ "generate.source.denoise_hint" | transloco }}
-        </p>
-      </div>
+    @if (mode() === "img2img") {
+      <ng-container *ngTemplateOutlet="denoiseField" />
     }
 
     <!-- The guidance dials come with the controlnet choice: a mode the request
@@ -243,9 +224,6 @@
             </a>
           </p>
         }
-        <p class="gs-sublabel mt-1">
-          {{ "generate.source.control_type_hint" | transloco }}
-        </p>
         @if (rejectionFor("control_type"); as message) {
           <p
             id="generate-rejection-control_type"
@@ -257,9 +235,14 @@
           </p>
         }
       </div>
+      <!-- Denoising strength and the weight on the map are read together
+           here: with a control type set the first no longer decides how much of
+           the picture survives, and a reader who has just moved it has to meet
+           the setting that does. -->
+      <ng-container *ngTemplateOutlet="denoiseField" />
       <!-- The weight only means anything beside a chosen mode, and the horde
            refuses a request that carries one without the other, so the slider
-           arrives with the mode and leaves with it. -->
+           comes with the mode and leaves with it. -->
       @if (controlType() !== "") {
         <div appTutAnchor="control_strength">
           <div class="gs-field-head">
@@ -556,4 +539,47 @@
       />
     }
   }
-</div>
+</app-gs-group>
+
+<!-- Denoising strength, written once and placed twice: on its own for
+     image-to-image, and beside the control strength under a control type, where
+     the two are read as a pair. -->
+<ng-template #denoiseField>
+  <div appTutAnchor="denoise">
+    <div class="gs-field-head">
+      <label class="gs-slabel" for="generate-denoise">
+        {{
+          "generate.source.denoise_label"
+            | transloco: { value: form().controls.denoising_strength.value }
+        }}
+      </label>
+      <app-gs-help topic="denoise" />
+    </div>
+    <input
+      id="generate-denoise"
+      class="gs-range gs-range--capped mt-1.5"
+      type="range"
+      [formControl]="form().controls.denoising_strength"
+      [min]="minDenoise"
+      [max]="maxDenoise"
+      [step]="denoiseStep"
+      [style.--gs-range-fill.%]="
+        rangeFill(
+          form().controls.denoising_strength.value,
+          minDenoise,
+          maxDenoise
+        )
+      "
+    />
+    <!-- Beside a control type the setting means something different, so
+             the line under it says which of the two the reader is looking at.
+             The request carries the same field either way. -->
+    <p class="gs-sublabel mt-1">
+      @if (mode() === "controlnet") {
+        {{ "generate.source.denoise_hint_control" | transloco }}
+      } @else {
+        {{ "generate.source.denoise_hint" | transloco }}
+      }
+    </p>
+  </div>
+</ng-template>

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { Component, PLATFORM_ID, signal, viewChild } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   FIELD_LABEL_KEY,
@@ -33,6 +33,7 @@ import type { HordeWorker } from '../../../types/horde-worker';
 import { ToastService } from '../../../services/toast.service';
 import { FullscreenService } from '../../../services/fullscreen.service';
 import { DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
+import { GenerateSourceImageComponent } from '../generate-source-image/generate-source-image.component';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideRouter } from '@angular/router';
 import en from '../../../../assets/i18n/en.json';
@@ -3340,5 +3341,86 @@ describe('GenerateFormComponent worker picker keyboard', () => {
       options.every((option) => option.getAttribute('role') === 'option'),
     ).toBe(true);
     expect(options.filter((option) => option.tabIndex === 0).length).toBe(1);
+  });
+});
+
+/**
+ * The source card is projected into the panel and keeps its own fold, so the
+ * panel's one press has to reach it rather than the group store.
+ */
+describe('GenerateFormComponent folding the source card', () => {
+  @Component({
+    imports: [GenerateFormComponent, GenerateSourceImageComponent],
+    template: `<app-generate-form [form]="form">
+      <app-generate-source-image generateSourceImage [form]="form" />
+    </app-generate-form>`,
+  })
+  class HostComponent {
+    public readonly form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+    });
+    public readonly panel = viewChild.required(GenerateFormComponent);
+    public readonly card = viewChild.required(GenerateSourceImageComponent);
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  async function render(): Promise<{
+    host: HostComponent;
+    fixture: ComponentFixture<HostComponent>;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        HostComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: PLATFORM_ID, useValue: 'browser' },
+      ],
+    })
+      .overrideComponent(GenerateSourceImageComponent, {
+        set: { template: '' },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    return { host: fixture.componentInstance, fixture };
+  }
+
+  it('folds the card away with the groups, once it has a picture', async () => {
+    const { host, fixture } = await render();
+    const card = host.card();
+    card.sourceImage.set({
+      blob: new Blob([new Uint8Array([1])], { type: 'image/webp' }),
+      width: 640,
+      height: 480,
+    });
+    card.setMode('img2img');
+    fixture.detectChanges();
+
+    // An open card is something to fold, so the panel offers the press even
+    // with every group already folded.
+    host.panel().foldAllGroups();
+    fixture.detectChanges();
+    expect(card.open()).toBe(false);
+    expect(host.panel().anyGroupOpen()).toBe(false);
+  });
+
+  it('leaves the card open while it is the only way to reach the picker', async () => {
+    const { host, fixture } = await render();
+    expect(host.card().canFold()).toBe(false);
+
+    host.panel().foldAllGroups();
+    fixture.detectChanges();
+
+    expect(host.card().open()).toBe(true);
+    expect(host.panel().anyGroupOpen()).toBe(false);
   });
 });

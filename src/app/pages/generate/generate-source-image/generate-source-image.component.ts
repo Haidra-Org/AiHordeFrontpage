@@ -11,19 +11,24 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
+import { GsGroupComponent } from '../generate-form/gs-group/gs-group.component';
+import { DatabaseService } from '../../../services/database.service';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import {
   AnnotationControlType,
   ImageControlType,
 } from '../../../types/generation';
-import { annotationDetectorDescriptionKey } from '../../../content/alchemy-usecases';
+import {
+  annotationDetectorDescriptionKey,
+  annotationDetectorNameKey,
+} from '../../../content/alchemy-usecases';
 import {
   DOCS_IMAGE_CONTROL_TYPES,
   docsControlTypeAnchor,
@@ -67,6 +72,12 @@ import {
   type SourceEditorDoc,
   type SourceEditorResult,
 } from '../source-editor/source-editor.component';
+
+/** Where the reader's choice to fold this card away is remembered. */
+const SOURCE_OPEN_KEY = 'aihorde.generate.source_open';
+
+/** The separator the folded card reads its values between. */
+const SUMMARY_SEPARATOR = ' · ';
 
 /** One remix extra source image, in the order it is submitted. */
 export interface GenerateSourceExtra {
@@ -120,11 +131,13 @@ interface RemixExtra {
 @Component({
   selector: 'app-generate-source-image',
   imports: [
+    NgTemplateOutlet,
     ReactiveFormsModule,
     RouterLink,
     TranslocoPipe,
     IconComponent,
     GsHelpComponent,
+    GsGroupComponent,
     TutorialAnchorDirective,
     SourceEditorComponent,
   ],
@@ -134,6 +147,8 @@ interface RemixExtra {
 export class GenerateSourceImageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly db = inject(DatabaseService);
+  private readonly transloco = inject(TranslocoService);
 
   public readonly form = input.required<GenerateFormGroup>();
   /** When true, show a validation hint for whatever the current mode lacks. */
@@ -230,6 +245,13 @@ export class GenerateSourceImageComponent implements OnInit {
    * unset state: the request carries no strength and the worker uses its own.
    */
   public readonly controlStrength = signal<number | null>(null);
+  /**
+   * Mirrors of the three remaining values the folded card reads, kept in sync
+   * the same way, so its line repaints when one of them moves.
+   */
+  public readonly denoise = signal(1);
+  public readonly imageIsControl = signal(false);
+  public readonly returnControlMap = signal(false);
 
   /** The ways of starting from a picture the card offers. */
   public readonly modes = SOURCE_MODES;
@@ -339,6 +361,155 @@ export class GenerateSourceImageComponent implements OnInit {
     return null;
   });
 
+  // --- Folding --------------------------------------------------------------
+
+  /** The reader's own choice, whether or not the card can currently act on it. */
+  private readonly foldOpen = signal(true);
+
+  /**
+   * Whether the card may be folded away. The picker is the only way to give the
+   * card a picture, so a card with none stays open: folding it would put the
+   * one control it is asking for out of reach. A mode that takes no picture has
+   * nothing to fold either.
+   */
+  public readonly canFold = computed(
+    () => this.mode() !== 'none' && this.sourceImage() !== null,
+  );
+
+  /**
+   * Whether a problem is on show inside the card. A fold is the reader's own
+   * and stands for nothing having been dealt with, so a refusal or a missing
+   * value keeps the card open until it is answered.
+   */
+  private readonly hasProblem = computed(
+    () =>
+      this.rejectionFor('source') !== null ||
+      (this.showValidation() && this.validationMessage() !== null),
+  );
+
+  /** Whether the card is currently showing its controls. */
+  public readonly open = computed(
+    () => !this.canFold() || this.hasProblem() || this.foldOpen(),
+  );
+
+  /** Hold the reader's choice, and remember it for the next visit. */
+  private setFoldOpen(open: boolean): void {
+    this.foldOpen.set(open);
+    this.db.store(SOURCE_OPEN_KEY, open);
+  }
+
+  /** Fold the card away, or open it, and remember which for the next visit. */
+  public toggleFold(): void {
+    this.setFoldOpen(!this.open());
+  }
+
+  /**
+   * Fold the card away with the rest of the panel. A card that cannot fold on
+   * its own is left alone, so folding everything never puts the picker out of
+   * reach; a problem on show still keeps the card open until it is answered.
+   */
+  public fold(): void {
+    if (!this.canFold()) {
+      return;
+    }
+    this.setFoldOpen(false);
+  }
+
+  /** How many of this card's warnings the folded head has to report. */
+  public lintCount(): number {
+    return this.lintWarnings().length;
+  }
+
+  /** What that count says aloud, worded for the number. */
+  public lintLabel(): string {
+    const count = this.lintCount();
+    if (count === 0) {
+      return '';
+    }
+    const group: string = this.transloco.translate('generate.source.section');
+    return this.transloco.translate(
+      `generate.groups.lint_count${count === 1 ? '_one' : '_other'}`,
+      { count, group },
+    );
+  }
+
+  /** Pressed the count on the folded head: show the controls it is about. */
+  public openForLint(): void {
+    this.setFoldOpen(true);
+  }
+
+  /**
+   * What the card is doing, in one line: the way it is starting from a picture,
+   * then the values that are in play for that way. Read by sighted readers off
+   * the folded head and by everyone else as part of the press that opens it.
+   */
+  public readonly foldSummary = computed(() => {
+    const mode = this.mode();
+    if (mode === 'none' || !this.sourceImage()) {
+      return '';
+    }
+    const parts: (string | null)[] = [this.modePhrase(mode)];
+    if (mode === 'img2img' || mode === 'controlnet') {
+      parts.push(
+        this.transloco.translate('generate.groups.source_denoise', {
+          value: this.denoise(),
+        }),
+      );
+    }
+    if (mode === 'controlnet') {
+      const strength = this.controlStrength();
+      if (strength !== null) {
+        parts.push(
+          this.transloco.translate('generate.groups.source_strength', {
+            value: strength,
+          }),
+        );
+      }
+      if (this.imageIsControl()) {
+        parts.push(
+          this.transloco.translate('generate.groups.source_map_supplied'),
+        );
+      }
+      if (this.returnControlMap()) {
+        parts.push(this.transloco.translate('generate.groups.source_map_back'));
+      }
+    }
+    const extras = this.extras().length;
+    if (mode === 'remix' && extras > 0) {
+      parts.push(
+        this.transloco.translate(
+          `generate.groups.source_extras${extras === 1 ? '_one' : '_other'}`,
+          { count: extras },
+        ),
+      );
+    }
+    return parts
+      .filter((part): part is string => !!part)
+      .join(SUMMARY_SEPARATOR);
+  });
+
+  /** The way this card is starting from a picture, as a phrase. */
+  private modePhrase(mode: GenerateSourceMode): string {
+    if (mode === 'controlnet') {
+      const type = this.controlType();
+      if (type === '') {
+        return this.transloco.translate(
+          'generate.groups.source_controlnet_unset',
+        );
+      }
+      const name: string = this.transloco.translate(
+        annotationDetectorNameKey(canonicalControlType(type)),
+      );
+      return this.transloco.translate('generate.groups.source_controlnet', {
+        name,
+      });
+    }
+    if (mode === 'inpainting' && this.outpaintEnabled()) {
+      return this.transloco.translate('generate.groups.source_outpainting');
+    }
+    return this.transloco.translate(`generate.groups.source_${mode}`);
+  }
+
   constructor() {
     // The parent gates submission on the last emitted state, and validity
     // depends on `remixSupported`, which flips when the user changes model —
@@ -379,6 +550,22 @@ export class GenerateSourceImageComponent implements OnInit {
     this.controlStrength.set(controls.control_strength.value);
     this.maskEnabled.set(controls.maskEnabled.value);
     this.outpaintEnabled.set(controls.outpaintEnabled.value);
+    this.denoise.set(controls.denoising_strength.value);
+    this.imageIsControl.set(controls.image_is_control.value);
+    this.returnControlMap.set(controls.return_control_map.value);
+    const storedOpen = this.db.get(SOURCE_OPEN_KEY);
+    if (typeof storedOpen === 'boolean') {
+      this.foldOpen.set(storedOpen);
+    }
+    controls.denoising_strength.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.denoise.set(value));
+    controls.image_is_control.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.imageIsControl.set(value));
+    controls.return_control_map.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.returnControlMap.set(value));
     controls.sourceMode.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((mode) => this.onModeChanged(mode));
