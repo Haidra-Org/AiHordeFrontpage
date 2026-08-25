@@ -34,7 +34,10 @@ import {
 import { setPageTitle } from '../../helper/page-title';
 import { ActiveModel, mergeModelList } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
-import { ImageGenerationRequest } from '../../types/generation';
+import {
+  ImageExtraSourceImage,
+  ImageGenerationRequest,
+} from '../../types/generation';
 import { ImagePostProcessor } from '../../types/style';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
@@ -65,6 +68,7 @@ import {
 import { GenerateLearnSheetComponent } from './generate-learn-sheet/generate-learn-sheet.component';
 import { GsTutorialParkedComponent } from '../../components/gs-tutorial-parked/gs-tutorial-parked.component';
 import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.component';
+import { StudioPasteModalComponent } from './studio-paste-modal/studio-paste-modal.component';
 import { GenerateReviewModalComponent } from './generate-review-modal/generate-review-modal.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
@@ -119,7 +123,12 @@ import {
   rejectionWatchValue,
   warningsInSection,
 } from './request-lint';
-import { StudioLinkPayload, parseStudioLink } from './studio-link';
+import {
+  StudioLinkPayload,
+  parseStudioLink,
+  studioLinkAddress,
+} from './studio-link';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -127,6 +136,11 @@ const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   maskBlob: null,
   valid: true,
 };
+
+/** Whether two lists hold the same blobs in the same order. */
+function sameBlobs(a: readonly Blob[], b: readonly Blob[]): boolean {
+  return a.length === b.length && a.every((blob, index) => blob === b[index]);
+}
 
 const STORAGE_KEY = 'aihorde.generate.form';
 
@@ -189,6 +203,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     GenerateResultsPanelComponent,
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
+    StudioPasteModalComponent,
     GenerateReviewModalComponent,
     StudioImageDropDirective,
     GsSheetComponent,
@@ -275,6 +290,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** The built request shown in the pre-submit preview modal, or null. */
   public readonly previewRequest = signal<unknown>(null);
+
+  /** Whether the box that takes settings from somewhere else is showing. */
+  public readonly pasteOpen = signal(false);
 
   /**
    * Whether Generate stops at the review dialog instead of sending. Off by
@@ -581,6 +599,13 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** Base64 of the current source blob, recomputed only when the blob changes. */
   private sourceBase64: string | null = null;
   private cachedSourceBlob: Blob | null = null;
+  /**
+   * The remix extras as the request carries them, recomputed only when the
+   * attached blobs change. The horde prices a remix by everything it is given,
+   * so an estimate that left these off would quote a plain img2img.
+   */
+  private extraSourceImages: ImageExtraSourceImage[] = [];
+  private cachedExtraBlobs: readonly Blob[] = [];
 
   /**
    * The source mode a link asked for, held while its settings wait in the
@@ -883,6 +908,51 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.previewRequest.set(null);
   }
 
+  /**
+   * Hand these settings over as an address somebody else can open. The style is
+   * named openly beside the packed request rather than baked into it, so the
+   * recipient gets the style itself and whatever it forces, as it stands today.
+   */
+  public async copyStudioLink(): Promise<void> {
+    const effective = this.effectiveValue();
+    const request = buildImageRequest(effective, this.buildOptions(false));
+    const address = studioLinkAddress(
+      this.router,
+      request,
+      effective.styleName.trim() || null,
+    );
+    if (address === null) {
+      this.toast.error('generate.link.too_large', { transloco: true });
+      return;
+    }
+    if (await copyToClipboard(address)) {
+      this.toast.success('generate.link.copied', { transloco: true });
+    }
+  }
+
+  public openPaste(): void {
+    this.pasteOpen.set(true);
+  }
+
+  public closePaste(): void {
+    this.pasteOpen.set(false);
+  }
+
+  /**
+   * Settings pasted in go the way a followed link goes: through the review
+   * panel, so a draft already in the form is never replaced without a look.
+   */
+  public onPasted(payload: StudioLinkPayload): void {
+    this.pasteOpen.set(false);
+    if (payload.kind === 'simple') {
+      this.applyLinkedFields(payload);
+      return;
+    }
+    this.pinnedStyleName = payload.styleName;
+    this.offerLinkedRequest(payload);
+    this.answerPinnedStyle();
+  }
+
   /** Load a saved/recent preset (from the form's presets menu) into the form. */
   public onApplyPreset(value: GenerateFormValue): void {
     this.pendingLoad.set(value);
@@ -944,8 +1014,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         linkSourceMode ?? DEFAULT_GENERATE_FORM_VALUE.sourceMode;
       this.linkSourceMissing.set(linkSourceMode !== null);
       this.sourceState.set(DEFAULT_SOURCE_STATE);
-      this.cachedSourceBlob = null;
-      this.sourceBase64 = null;
+      this.clearSourceEncodings();
     } else {
       for (const key of event.keys) {
         // Index assignment is sound: pending and next share the field's type.
@@ -995,8 +1064,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     );
     if (usesSource) {
       this.sourceState.set(DEFAULT_SOURCE_STATE);
-      this.cachedSourceBlob = null;
-      this.sourceBase64 = null;
+      this.clearSourceEncodings();
     }
     this.form.setValue(next);
     this.form.markAsDirty();
@@ -1024,8 +1092,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     next.seed = event.seed ?? '';
     // A stale source blob would otherwise outlive the settings that wanted it.
     this.sourceState.set(DEFAULT_SOURCE_STATE);
-    this.cachedSourceBlob = null;
-    this.sourceBase64 = null;
+    this.clearSourceEncodings();
     this.form.setValue(next);
     this.form.markAsDirty();
     if (next.sourceMode !== 'none') {
@@ -1264,24 +1331,56 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (state.sourceBlob !== null) {
       this.linkSourceMissing.set(false);
     }
-    if (state.sourceBlob !== this.cachedSourceBlob) {
-      this.cachedSourceBlob = state.sourceBlob;
-      if (!this.isBrowser || state.sourceBlob === null) {
-        this.sourceBase64 = null;
-        void this.updateKudos();
-      } else {
-        void this.refreshSourceBase64(state.sourceBlob);
-      }
+    const extras = (state.extras ?? []).map((extra) => extra.blob);
+    if (
+      state.sourceBlob === this.cachedSourceBlob &&
+      sameBlobs(extras, this.cachedExtraBlobs)
+    ) {
+      return;
     }
+    this.cachedSourceBlob = state.sourceBlob;
+    this.cachedExtraBlobs = extras;
+    void this.refreshSourceBase64(state);
   }
 
-  private async refreshSourceBase64(blob: Blob): Promise<void> {
-    const encoded = await blobToBase64(blob);
-    // A newer blob may have arrived while this one encoded; only keep ours.
-    if (blob === this.cachedSourceBlob) {
-      this.sourceBase64 = encoded;
-      void this.updateKudos();
+  /** Forget the encoded pictures along with the source state they came from. */
+  private clearSourceEncodings(): void {
+    this.cachedSourceBlob = null;
+    this.sourceBase64 = null;
+    this.cachedExtraBlobs = [];
+    this.extraSourceImages = [];
+  }
+
+  /**
+   * Encode whatever the section now holds and re-estimate once, so attaching a
+   * picture and its remix extras in one go costs a single dry run.
+   */
+  private async refreshSourceBase64(state: GenerateSourceState): Promise<void> {
+    const blob = state.sourceBlob;
+    const extras = state.extras ?? [];
+    const encode = this.isBrowser;
+    const source = encode && blob !== null ? await blobToBase64(blob) : null;
+    const encodedExtras = encode
+      ? await Promise.all(
+          extras.map(async (extra) => ({
+            image: await blobToBase64(extra.blob),
+            strength: extra.strength,
+          })),
+        )
+      : [];
+    // Newer pictures may have arrived while these encoded; only keep ours.
+    if (
+      blob !== this.cachedSourceBlob ||
+      !sameBlobs(
+        extras.map((extra) => extra.blob),
+        this.cachedExtraBlobs,
+      )
+    ) {
+      return;
     }
+    this.sourceBase64 = source;
+    this.extraSourceImages = encodedExtras;
+    void this.updateKudos();
   }
 
   private buildEnqueueSources(
@@ -1473,6 +1572,17 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.workerPool.load();
     if (hasSourceImage && this.sourceBase64 !== null) {
       request.source_image = this.sourceBase64;
+    }
+    // A remix is priced by every picture it blends, so the extras go on the
+    // dry run under the same rule the submitted request attaches them by: only
+    // alongside a primary source image, which is the only shape the horde
+    // accepts them in.
+    if (
+      hasSourceImage &&
+      effective.sourceMode === 'remix' &&
+      this.extraSourceImages.length > 0
+    ) {
+      request.extra_source_images = this.extraSourceImages;
     }
     const seq = ++this.estimateSeq;
     this.estimating.set(true);

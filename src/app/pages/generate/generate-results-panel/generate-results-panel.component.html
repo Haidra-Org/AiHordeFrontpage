@@ -839,6 +839,24 @@
                           type="button"
                           class="gs-flip-item"
                           role="menuitem"
+                          (click)="copyImageLink(tile)"
+                        >
+                          <app-icon name="link" />
+                          {{ "generate.link.copy_image" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="copySettingsLink(tile)"
+                        >
+                          <app-icon name="link" />
+                          {{ "generate.link.copy_settings" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
                           [disabled]="!tile.thumb"
                           (click)="downloadTile(tile); unflip()"
                         >
@@ -1482,6 +1500,30 @@
   <button
     type="button"
     class="gs-opt-row"
+    (click)="closeViewerMoreAndFocus(); copyImageLink(view)"
+  >
+    <app-icon name="link" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.link.copy_image" | transloco
+      }}</span>
+    </span>
+  </button>
+  <button
+    type="button"
+    class="gs-opt-row"
+    (click)="closeViewerMoreAndFocus(); copySettingsLink(view)"
+  >
+    <app-icon name="link" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.link.copy_settings" | transloco
+      }}</span>
+    </span>
+  </button>
+  <button
+    type="button"
+    class="gs-opt-row"
     [disabled]="!view.thumb"
     (click)="closeViewerMoreAndFocus(); sendToAlchemy(view)"
   >
@@ -1622,6 +1664,24 @@
     >
       <app-icon name="adjustments-horizontal" />
       {{ "generate.results.copy_settings" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="copyImageLink(menu.tile)"
+    >
+      <app-icon name="link" />
+      {{ "generate.link.copy_image" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="copySettingsLink(menu.tile)"
+    >
+      <app-icon name="link" />
+      {{ "generate.link.copy_settings" | transloco }}
     </button>
     <button
       type="button"

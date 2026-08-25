@@ -33,6 +33,8 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { buildJobImageArchive, extensionFor } from '../generate-archive';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
+import { requestWithoutSeed, studioLinkAddress } from '../studio-link';
 import { embedWebpExifInBlob } from '../../../helper/webp-exif';
 import {
   ImageMetaError,
@@ -1535,6 +1537,46 @@ export class GenerateResultsPanelComponent {
     }
   }
 
+  /**
+   * An address that reopens the studio on this picture: the settings it was
+   * made with, and the seed the horde returned, so the same picture comes back.
+   */
+  public async copyImageLink(tile: ResultTile): Promise<void> {
+    await this.copyStudioLink(tile.applyRequest ?? tile.request, tile);
+  }
+
+  /** The same address with the seed let go, so the settings make a new picture. */
+  public async copySettingsLink(tile: ResultTile): Promise<void> {
+    const request = tile.applyRequest ?? tile.request;
+    await this.copyStudioLink(
+      request ? requestWithoutSeed(request) : undefined,
+      tile,
+    );
+  }
+
+  private async copyStudioLink(
+    request: ImageGenerationRequest | undefined,
+    tile: ResultTile,
+  ): Promise<void> {
+    this.closeTileMenu();
+    this.unflip();
+    if (!request) {
+      return;
+    }
+    const address = studioLinkAddress(
+      this.router,
+      request,
+      tile.styleName ?? null,
+    );
+    if (address === null) {
+      this.toast.error('generate.link.too_large', { transloco: true });
+      return;
+    }
+    if (await copyToClipboard(address)) {
+      this.toast.success('generate.link.copied', { transloco: true });
+    }
+  }
+
   /** The metadata panel's three actions, on the image the panel is showing. */
   public onQuickAction(action: ImageQuickAction, tile: ResultTile): void {
     if (action === 'variation') {
@@ -1635,7 +1677,7 @@ export class GenerateResultsPanelComponent {
     if (!blob) {
       return;
     }
-    const extension = blob.type.includes('png') ? 'png' : 'webp';
+    const extension = extensionFor(blob.type);
     const file = new File(
       [blob],
       `horde-${tile.seed ?? 'image'}.${extension}`,

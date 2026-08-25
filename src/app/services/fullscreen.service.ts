@@ -1,4 +1,12 @@
-import { Injectable, PLATFORM_ID, Signal, inject, signal } from '@angular/core';
+import {
+  EffectRef,
+  Injectable,
+  PLATFORM_ID,
+  Signal,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 
 /** The prefixed half of the API, which is all iPad Safari answers to. */
@@ -119,4 +127,35 @@ export class FullscreenService {
         (current === target || target.contains(current)),
     );
   };
+}
+
+/**
+ * Put focus back on `element` when the screen is given up.
+ *
+ * Leaving fullscreen often takes the control that was pressed away with it: a
+ * floating button disappears, a menu row closes with its list. Focus then falls
+ * to the document body and a keyboard has nowhere to carry on from. This puts
+ * it on the given control, and only when it did fall to the body, so it never
+ * takes focus back off something the reader moved to themselves.
+ *
+ * Call from an injection context; the returned handle follows that context's
+ * lifetime.
+ */
+export function restoreFocusOnFullscreenExit(
+  element: () => HTMLElement | null | undefined,
+): EffectRef {
+  const fullscreen = inject(FullscreenService);
+  const document = inject(DOCUMENT);
+  let wasActive = false;
+  return effect(() => {
+    const active = fullscreen.active();
+    const left = wasActive && !active;
+    wasActive = active;
+    if (!left) return;
+
+    const target = element();
+    if (target && document.activeElement === document.body) {
+      target.focus();
+    }
+  });
 }

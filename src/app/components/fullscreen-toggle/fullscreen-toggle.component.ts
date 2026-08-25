@@ -2,14 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  effect,
   inject,
   viewChild,
 } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
-import { FullscreenService } from '../../services/fullscreen.service';
+import {
+  FullscreenService,
+  restoreFocusOnFullscreenExit,
+} from '../../services/fullscreen.service';
 
 /**
  * The studio's way onto the whole screen, drawn with the other header tools.
@@ -51,23 +52,10 @@ import { FullscreenService } from '../../services/fullscreen.service';
 export class FullscreenToggleComponent {
   public readonly fullscreen = inject(FullscreenService);
 
-  private readonly document = inject(DOCUMENT);
   private readonly toggle = viewChild<ElementRef<HTMLButtonElement>>('toggle');
 
-  private wasActive = false;
-
   constructor() {
-    effect(() => {
-      const active = this.fullscreen.active();
-      const left = this.wasActive && !active;
-      this.wasActive = active;
-      if (!left) return;
-
-      const button = this.toggle()?.nativeElement;
-      if (button && this.document.activeElement === this.document.body) {
-        button.focus();
-      }
-    });
+    restoreFocusOnFullscreenExit(() => this.toggle()?.nativeElement);
   }
 
   labelKey(): string {

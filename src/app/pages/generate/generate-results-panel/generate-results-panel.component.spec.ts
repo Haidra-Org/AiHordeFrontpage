@@ -21,6 +21,7 @@ import {
   StoredJobImage,
 } from '../../../types/generation-job';
 import en from '../../../../assets/i18n/en.json';
+import { studioLinkFromText } from '../studio-link';
 
 const TRANSLATIONS = en as Record<string, string>;
 
@@ -76,6 +77,7 @@ describe('GenerateResultsPanelComponent', () => {
   let retry: ReturnType<typeof vi.fn>;
   let deleteJob: ReturnType<typeof vi.fn>;
   let toastSuccess: ReturnType<typeof vi.fn>;
+  let toastError: ReturnType<typeof vi.fn>;
   let getJobImages: ReturnType<typeof vi.fn>;
   let dbGet: ReturnType<typeof vi.fn>;
   let dbStore: ReturnType<typeof vi.fn>;
@@ -99,6 +101,7 @@ describe('GenerateResultsPanelComponent', () => {
     retry = vi.fn().mockResolvedValue('retry-1');
     deleteJob = vi.fn().mockResolvedValue(undefined);
     toastSuccess = vi.fn();
+    toastError = vi.fn();
     getJobImages = vi.fn().mockResolvedValue([]);
     dbGet = vi.fn().mockReturnValue(undefined);
     dbStore = vi.fn();
@@ -126,13 +129,35 @@ describe('GenerateResultsPanelComponent', () => {
         },
         {
           provide: ToastService,
-          useValue: { success: toastSuccess, warning: vi.fn() },
+          useValue: {
+            success: toastSuccess,
+            warning: vi.fn(),
+            error: toastError,
+          },
         },
         {
           provide: DatabaseService,
           useValue: { get: dbGet, store: dbStore },
         },
-        { provide: Router, useValue: { navigate } },
+        {
+          // Only the address building is exercised here; the studio's own
+          // routes are not loaded, so the tree is serialized by hand.
+          provide: Router,
+          useValue: {
+            navigate,
+            createUrlTree: (
+              commands: string[],
+              extras: { queryParams: Record<string, string> },
+            ) => ({ commands, extras }),
+            serializeUrl: (tree: {
+              commands: string[];
+              extras: { queryParams: Record<string, string> };
+            }) =>
+              `${tree.commands.join('/')}?${new URLSearchParams(
+                tree.extras.queryParams,
+              ).toString()}`,
+          },
+        },
         { provide: StudioHandoffService, useValue: handoff },
         {
           provide: TranslocoService,
@@ -630,6 +655,47 @@ describe('GenerateResultsPanelComponent', () => {
 
       expect(getJobImages).not.toHaveBeenCalled();
     });
+
+    it('names a shared file after the image type it actually holds', async () => {
+      const shared: File[] = [];
+      // Whether the platform shares at all is read once when the component is
+      // built, so the stubs go on before a second instance is created.
+      Object.defineProperty(navigator, 'share', {
+        configurable: true,
+        value: vi.fn((data: ShareData) => {
+          shared.push(...(data.files ?? []));
+          return Promise.resolve();
+        }),
+      });
+      Object.defineProperty(navigator, 'canShare', {
+        configurable: true,
+        value: vi.fn(() => true),
+      });
+      const sharing = TestBed.createComponent(GenerateResultsPanelComponent);
+      try {
+        getJobImages.mockResolvedValue([
+          {
+            ...resultImage('g', 'img'),
+            blob: new Blob(['x'], { type: 'image/gif' }),
+            mimeType: 'image/gif',
+          },
+        ]);
+        finishedJobs.set([job('g', 'done')]);
+        sharing.detectChanges();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        await sharing.componentInstance.shareImage(
+          sharing.componentInstance.viewerTiles()[0],
+        );
+
+        expect(shared.map((file) => file.name)).toEqual(['horde-img.gif']);
+      } finally {
+        sharing.destroy();
+        Reflect.deleteProperty(navigator, 'share');
+        Reflect.deleteProperty(navigator, 'canShare');
+      }
+    });
   });
 
   describe('handing an image on', () => {
@@ -756,6 +822,71 @@ describe('GenerateResultsPanelComponent', () => {
       await loadThumbnails();
 
       expect(component.styleOptions()).toEqual([]);
+    });
+  });
+
+  describe('copying an address for a result', () => {
+    let written: string[];
+
+    beforeEach(async () => {
+      written = [];
+      vi.stubGlobal('isSecureContext', true);
+      vi.stubGlobal('navigator', {
+        clipboard: {
+          writeText: (text: string) => {
+            written.push(text);
+            return Promise.resolve();
+          },
+        },
+      } as unknown as Navigator);
+      getJobImages.mockResolvedValue([resultImage('a', 'a-img')]);
+      finishedJobs.set([
+        {
+          ...job('a', 'done'),
+          styleName: 'Anime',
+          request: { prompt: 'a fox', params: { steps: 30 } },
+        },
+      ]);
+      await loadThumbnails();
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('carries the seed the horde returned, so the picture comes back', async () => {
+      await component.copyImageLink(component.visibleTiles()[0]);
+
+      expect(written).toHaveLength(1);
+      const payload = studioLinkFromText(written[0]);
+      expect(payload?.request.params?.seed).toBe('a-img');
+      expect(payload?.request.prompt).toBe('a fox');
+      expect(payload?.styleName).toBe('Anime');
+      expect(toastSuccess).toHaveBeenCalledWith('generate.link.copied', {
+        transloco: true,
+      });
+    });
+
+    it('lets the seed go for the settings on their own', async () => {
+      await component.copySettingsLink(component.visibleTiles()[0]);
+
+      const payload = studioLinkFromText(written[0]);
+      expect(payload?.request.params?.seed).toBeUndefined();
+      expect(payload?.request.params?.steps).toBe(30);
+    });
+
+    it('refuses a request too long to carry, and says where to go instead', async () => {
+      const tile = component.visibleTiles()[0];
+      // Nothing repeats, so the prompt cannot be packed down to a carryable size.
+      const prompt = Array.from({ length: 2000 }, (_, index) =>
+        ((index * 2654435761) % 1e9).toString(36),
+      ).join(' ');
+      await component.copyImageLink({ ...tile, applyRequest: { prompt } });
+
+      expect(written).toHaveLength(0);
+      expect(toastError).toHaveBeenCalledWith('generate.link.too_large', {
+        transloco: true,
+      });
     });
   });
 

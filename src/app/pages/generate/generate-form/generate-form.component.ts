@@ -30,7 +30,10 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
 import { GenerateSourceImageComponent } from '../generate-source-image/generate-source-image.component';
-import { FullscreenService } from '../../../services/fullscreen.service';
+import {
+  FullscreenService,
+  restoreFocusOnFullscreenExit,
+} from '../../../services/fullscreen.service';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
@@ -341,6 +344,26 @@ const GROUP_FIELDS: Readonly<
   qr: ['qrText', 'qrXOffset', 'qrYOffset', 'qrModuleDrawer'],
 };
 
+/**
+ * Settings a card owns only in some states.
+ *
+ * Control strength is set from two places: the source card sets it for a
+ * control type, and the QR card sets it for the code it draws. It belongs to
+ * whichever of them is in use, so the mark goes on the card the reader would
+ * open to find the value rather than on both.
+ */
+function sharedGroupFields(
+  group: GroupId,
+  value: GenerateFormValue,
+): readonly (keyof GenerateFormValue)[] {
+  const qrOwnsStrength =
+    value.qrText.trim() !== '' && value.control_type === '';
+  if (group === 'qr' && qrOwnsStrength) {
+    return ['control_strength'];
+  }
+  return [];
+}
+
 /** What each group is called, for a count that has to name the group it is in. */
 const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
   dimensions: 'generate.form.dimensions_section',
@@ -644,6 +667,10 @@ export class GenerateFormComponent implements OnInit {
   public readonly pinGenerateChange = output<boolean>();
   /** Ask the parent to open a preview of the request this form would submit. */
   public readonly preview = output<void>();
+  /** Ask the parent to copy an address that reopens the studio on this form. */
+  public readonly copyLink = output<void>();
+  /** Ask the parent to open the box that takes settings pasted from elsewhere. */
+  public readonly pasteSettings = output<void>();
   /** Load a saved/recent preset back into the form (via the parent's confirm). */
   public readonly applySettings = output<GenerateFormValue>();
 
@@ -1624,7 +1651,7 @@ export class GenerateFormComponent implements OnInit {
     if (!value) {
       return false;
     }
-    return GROUP_FIELDS[group].some(
+    return [...GROUP_FIELDS[group], ...sharedGroupFields(group, value)].some(
       (field) =>
         JSON.stringify(value[field]) !==
         JSON.stringify(DEFAULT_GENERATE_FORM_VALUE[field]),
@@ -1659,8 +1686,13 @@ export class GenerateFormComponent implements OnInit {
       return [];
     }
     const sections = new Map<LedgerSection, LedgerRow[]>();
+    // A setting two cards can own is listed under the one that has it, so the
+    // row leads to the control the value was actually set from.
+    const shared = new Set(sharedGroupFields('qr', value));
     for (const field of changedFields(value) as LedgerField[]) {
-      const section = FIELD_GROUP.get(field) ?? 'compose';
+      const section = shared.has(field)
+        ? 'qr'
+        : (FIELD_GROUP.get(field) ?? 'compose');
       const rows = sections.get(section) ?? [];
       rows.push({ field, labelKey: FIELD_LABEL_KEY[field] });
       sections.set(section, rows);
@@ -2555,6 +2587,27 @@ export class GenerateFormComponent implements OnInit {
     this.closeOptions();
     this.onPreview();
   }
+
+  /** Hand these settings to somebody else as a link they can open. */
+  public copyLinkFromOptions(): void {
+    this.closeOptionsAndFocus();
+    this.copyLink.emit();
+  }
+
+  /** Take settings somebody else handed over, as a link or as a request body. */
+  public pasteFromOptions(): void {
+    this.closeOptionsAndFocus();
+    this.pasteSettings.emit();
+  }
+
+  /**
+   * The full-screen row lives in the Options list, which closes behind it, and
+   * Escape or the floating button can end full screen with no row on the page
+   * at all. Either way focus goes back to the trigger the list opens from.
+   */
+  private readonly fullscreenFocus = restoreFocusOnFullscreenExit(
+    () => this.optionsBtn()?.nativeElement,
+  );
 
   public toggleFullscreen(): void {
     void this.fullscreen.toggle();

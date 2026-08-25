@@ -34,7 +34,7 @@ import {
   GenerateFormValue,
   buildImageRequest,
 } from './generate-form.model';
-import { studioLinkParams } from './studio-link';
+import { studioLinkFromText, studioLinkParams } from './studio-link';
 
 describe('GenerateComponent', () => {
   let fixture: ComponentFixture<GenerateComponent>;
@@ -80,7 +80,25 @@ describe('GenerateComponent', () => {
             },
           },
         },
-        { provide: Router, useValue: { navigate } },
+        {
+          // The studio's routes are not loaded here, so the tree the link
+          // builder makes is serialized by hand.
+          provide: Router,
+          useValue: {
+            navigate,
+            createUrlTree: (
+              commands: string[],
+              extras: { queryParams: Record<string, string> },
+            ) => ({ commands, extras }),
+            serializeUrl: (tree: {
+              commands: string[];
+              extras: { queryParams: Record<string, string> };
+            }) =>
+              `${tree.commands.join('/')}?${new URLSearchParams(
+                tree.extras.queryParams,
+              ).toString()}`,
+          },
+        },
         { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
         {
           provide: GenerationQueueService,
@@ -166,6 +184,50 @@ describe('GenerateComponent', () => {
 
     const request = estimateKudos.mock.calls[0][0] as ImageGenerationRequest;
     expect(request.prompt).toBe('_');
+  });
+
+  it('prices a remix by the pictures it blends, not the source alone', async () => {
+    estimateKudos.mockClear();
+    component.form.controls.sourceMode.setValue('remix');
+
+    component.onSourceState({
+      mode: 'remix',
+      sourceBlob: new Blob(['x'], { type: 'image/webp' }),
+      maskBlob: null,
+      extras: [
+        { blob: new Blob(['y'], { type: 'image/webp' }), strength: 0.5 },
+      ],
+      valid: true,
+    });
+    await vi.waitFor(() => expect(estimateKudos).toHaveBeenCalled());
+
+    const request = estimateKudos.mock.calls.at(-1)?.[0] as
+      | ImageGenerationRequest
+      | undefined;
+    expect(request?.source_image).toBeTypeOf('string');
+    expect(request?.extra_source_images).toHaveLength(1);
+    expect(request?.extra_source_images?.[0].strength).toBe(0.5);
+  });
+
+  it('leaves the extras off an estimate for any other source mode', async () => {
+    estimateKudos.mockClear();
+    component.form.controls.sourceMode.setValue('img2img');
+
+    component.onSourceState({
+      mode: 'img2img',
+      sourceBlob: new Blob(['x'], { type: 'image/webp' }),
+      maskBlob: null,
+      extras: [
+        { blob: new Blob(['y'], { type: 'image/webp' }), strength: 0.5 },
+      ],
+      valid: true,
+    });
+    await vi.waitFor(() => expect(estimateKudos).toHaveBeenCalled());
+
+    const request = estimateKudos.mock.calls.at(-1)?.[0] as
+      | ImageGenerationRequest
+      | undefined;
+    expect(request?.extra_source_images).toBeUndefined();
   });
 
   it('surfaces a genuine zero estimate as 0, not the dash', async () => {
@@ -1267,6 +1329,28 @@ describe('GenerateComponent', () => {
       expect(applied.styleName).toBe('');
     });
 
+    it('takes the style from the preset in replace mode, not from the form', () => {
+      component.form.patchValue({ styleName: 'Test' });
+      component.onApplyPreset(preset());
+
+      component.onApplyPresetSelection(
+        { localId: '', keys: ['prompt'], mode: 'replace' },
+        ['prompt', 'steps'],
+      );
+
+      expect(component.form.getRawValue().styleName).toBe('');
+
+      component.form.patchValue({ styleName: '' });
+      component.onApplyPreset({ ...preset(), styleName: 'Test' });
+
+      component.onApplyPresetSelection(
+        { localId: '', keys: ['prompt'], mode: 'replace' },
+        ['prompt', 'steps'],
+      );
+
+      expect(component.form.getRawValue().styleName).toBe('Test');
+    });
+
     it('leaves the form alone when the review is dismissed', () => {
       component.form.patchValue({ prompt: 'a fox' });
       component.onApplyPreset(preset());
@@ -1452,6 +1536,71 @@ describe('GenerateComponent', () => {
       });
 
       expect(component.linkSourceMissing()).toBe(false);
+    });
+
+    it('hands these settings over as an address, with the style named openly', async () => {
+      const written: string[] = [];
+      vi.stubGlobal('isSecureContext', true);
+      vi.stubGlobal('navigator', {
+        clipboard: {
+          writeText: (text: string) => {
+            written.push(text);
+            return Promise.resolve();
+          },
+        },
+      } as unknown as Navigator);
+      component.form.controls.prompt.setValue('a fox in the snow');
+      component.form.controls.styleName.setValue('Test');
+
+      await component.copyStudioLink();
+
+      expect(written).toHaveLength(1);
+      expect(written[0]).toContain('style=Test');
+      const payload = studioLinkFromText(written[0]);
+      expect(payload?.styleName).toBe('Test');
+      expect(payload?.request.prompt).toBe('a fox in the snow');
+      expect(toastSuccess).toHaveBeenCalledWith('generate.link.copied', {
+        transloco: true,
+      });
+      vi.unstubAllGlobals();
+    });
+
+    it('refuses to hand over settings too long to carry', async () => {
+      // Nothing repeats, so the prompt cannot be packed down to a carryable size.
+      component.form.controls.prompt.setValue(
+        Array.from({ length: 2000 }, (_, index) =>
+          ((index * 2654435761) % 1e9).toString(36),
+        ).join(' '),
+      );
+
+      await component.copyStudioLink();
+
+      expect(toastError).toHaveBeenCalledWith('generate.link.too_large', {
+        transloco: true,
+      });
+    });
+
+    it('sends pasted settings through the review panel, not into the form', () => {
+      component.onPasted({
+        request: { prompt: 'a fox', params: { steps: 44 } },
+        styleName: null,
+        kind: 'full',
+      });
+
+      expect(component.pasteOpen()).toBe(false);
+      expect(component.pendingLoad()?.steps).toBe(44);
+      expect(component.form.controls.steps.value).not.toBe(44);
+    });
+
+    it('writes a pasted address that only names a model', () => {
+      component.onPasted({
+        request: { prompt: '', models: ['Deliberate'] },
+        styleName: null,
+        kind: 'simple',
+      });
+
+      expect(component.form.controls.model.value).toBe('Deliberate');
+      expect(component.pendingLoad()).toBeNull();
     });
 
     it('leaves a plain preset dropping back to no source at all', () => {

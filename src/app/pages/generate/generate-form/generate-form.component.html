@@ -645,6 +645,15 @@
               <button
                 type="button"
                 class="gs-seg-opt"
+                [attr.aria-pressed]="sizeFamily() === 768"
+                [disabled]="isSectionLocked('dimensions')"
+                (click)="setSizeBase(768)"
+              >
+                {{ "generate.form.base_sd2" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-seg-opt"
                 [attr.aria-pressed]="sizeFamily() === 1024"
                 [disabled]="isSectionLocked('dimensions')"
                 (click)="setSizeBase(1024)"
@@ -2705,6 +2714,28 @@
     <span class="gs-opt-text">
       <span class="gs-opt-label">{{
         "generate.form.preview_request" | transloco
+      }}</span>
+    </span>
+  </button>
+  <button type="button" class="gs-opt-row" (click)="copyLinkFromOptions()">
+    <app-icon name="link" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.link.copy_link" | transloco
+      }}</span>
+      <span class="gs-opt-hint">{{
+        "generate.link.copy_link_hint" | transloco
+      }}</span>
+    </span>
+  </button>
+  <button type="button" class="gs-opt-row" (click)="pasteFromOptions()">
+    <app-icon name="clipboard-document" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.link.paste_title" | transloco
+      }}</span>
+      <span class="gs-opt-hint">{{
+        "generate.link.paste_hint" | transloco
       }}</span>
     </span>
   </button>

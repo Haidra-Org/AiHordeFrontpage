@@ -1,5 +1,5 @@
 import { deflateSync, inflateSync, strFromU8, strToU8 } from 'fflate';
-import type { ParamMap } from '@angular/router';
+import type { ParamMap, Params, Router } from '@angular/router';
 import type { ImageGenerationRequest } from '../../types/generation';
 
 /**
@@ -9,8 +9,15 @@ import type { ImageGenerationRequest } from '../../types/generation';
  */
 const STUDIO_LINK_VERSION = 1;
 
-/** Longest packed parameter worth unpacking, in characters of the URL. */
-const MAX_PACKED_CHARS = 4096;
+/**
+ * Longest packed parameter worth carrying, in characters of the address. Past
+ * this the link stops being something that survives being pasted about, so one
+ * is neither written nor read.
+ */
+export const STUDIO_LINK_MAX_PARAM_CHARS = 4096;
+
+/** Where a studio link points. */
+export const STUDIO_LINK_PATH = '/generate/image';
 
 /** Longest JSON a packed parameter may expand to, in bytes. */
 const MAX_UNPACKED_BYTES = 32768;
@@ -86,6 +93,46 @@ export function studioLinkParams(
   return { r: toBase64Url(deflateSync(strToU8(JSON.stringify(body)))) };
 }
 
+/**
+ * The address that reopens the studio on a request, or null when the request is
+ * too long to carry in one. A style is named openly beside the packed request
+ * rather than inside it, so the reader can see which one they are being handed.
+ */
+export function studioLinkAddress(
+  router: Router,
+  request: ImageGenerationRequest,
+  styleName: string | null,
+): string | null {
+  const packed = studioLinkParams(request, null);
+  if (packed.r.length > STUDIO_LINK_MAX_PARAM_CHARS) {
+    return null;
+  }
+  const queryParams: Params = { r: packed.r };
+  if (styleName !== null && styleName !== '') {
+    queryParams['style'] = styleName;
+  }
+  const tree = router.createUrlTree([STUDIO_LINK_PATH], { queryParams });
+  return new URL(
+    router.serializeUrl(tree),
+    globalThis.location.href,
+  ).toString();
+}
+
+/**
+ * The same request with the seed let go, so it describes the settings rather
+ * than the one picture they made.
+ */
+export function requestWithoutSeed(
+  request: ImageGenerationRequest,
+): ImageGenerationRequest {
+  if (request.params?.seed === undefined) {
+    return request;
+  }
+  const params = { ...request.params };
+  delete params.seed;
+  return { ...request, params };
+}
+
 /** Whether a decoded value can stand as a request for the form's decoder. */
 function isRequestLike(value: unknown): value is ImageGenerationRequest {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -111,7 +158,7 @@ function sanitizeRequest(raw: ImageGenerationRequest): ImageGenerationRequest {
 function unpackRequest(
   packed: string,
 ): { request: ImageGenerationRequest; styleName: string | null } | null {
-  if (packed.length === 0 || packed.length > MAX_PACKED_CHARS) {
+  if (packed.length === 0 || packed.length > STUDIO_LINK_MAX_PARAM_CHARS) {
     return null;
   }
   const bytes = fromBase64Url(packed);

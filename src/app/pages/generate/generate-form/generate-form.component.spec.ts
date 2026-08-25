@@ -1239,6 +1239,17 @@ describe('GenerateFormComponent settings groups', () => {
     };
   }
 
+  /** Which ledger section a changed setting is listed under. */
+  function sectionOf(
+    component: GenerateFormComponent,
+    field: keyof GenerateFormValue,
+  ): string | undefined {
+    return component
+      .ledgerSections()
+      .find((section) => section.rows.some((row) => row.field === field))
+      ?.section;
+  }
+
   /** The one line a named group shows while it is folded. */
   function groupNamed(host: HTMLElement, name: string): HTMLElement {
     const group = Array.from(
@@ -1306,6 +1317,25 @@ describe('GenerateFormComponent settings groups', () => {
     const { component: changed } = await render({ steps: 45 });
     expect(changed.groupChanged('sampling')).toBe(true);
     expect(changed.groupChanged('output')).toBe(false);
+  });
+
+  it('gives the QR card the control strength only when the code owns it', async () => {
+    // Control strength is set from two cards. With a control type picked it
+    // belongs to the source card, and marking the QR card for it would send
+    // the reader to a value that is not there.
+    const { component: qr } = await render({
+      qrText: 'https://aihorde.net',
+      control_strength: 0.4,
+    });
+    expect(sectionOf(qr, 'control_strength')).toBe('qr');
+
+    const { component: controlled } = await render({
+      qrText: 'https://aihorde.net',
+      control_type: 'canny',
+      control_strength: 0.4,
+    });
+    expect(sectionOf(controlled, 'control_strength')).toBe('compose');
+    expect(controlled.groupChanged('qr')).toBe(true);
   });
 
   it('starts every group folded, and remembers each one opened', async () => {

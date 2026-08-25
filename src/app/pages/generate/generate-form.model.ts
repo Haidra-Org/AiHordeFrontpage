@@ -383,10 +383,10 @@ export const DEFAULT_HIRES_DENOISE = 0.65;
 export const PIXEL_WARN_THRESHOLD = 1536 * 1536;
 
 /** The base resolution family a set of aspect presets is scaled to. */
-export type ModelSizeBase = 512 | 1024 | 1536;
+export type ModelSizeBase = 512 | 768 | 1024 | 1536;
 
 /** The family a model belongs to, before the hires pass lifts it. */
-export type ModelSizeFamily = 512 | 1024;
+export type ModelSizeFamily = 512 | 768 | 1024;
 
 export interface AspectPreset {
   /** Transloco key for the preset button label. */
@@ -400,10 +400,10 @@ export interface AspectPreset {
  * swap control turns a chosen shape on its side, so a reader picks a shape once
  * and an orientation once instead of reading a list of both.
  *
- * The 512 family stops at 16:9. Models trained at 512 stack a second subject
- * into the spare width at 21:9 rather than framing one subject wider, and the
- * shapes it does offer are the ones the 1024 family also offers, so lifting one
- * family to the next always lands on the same shape.
+ * The 512 and 768 families stop at 16:9. Models trained that small stack a
+ * second subject into the spare width at 21:9 rather than framing one subject
+ * wider, and the shapes they do offer are the ones the 1024 family also offers,
+ * so lifting one family to the next always lands on the same shape.
  *
  * The 1536 family is what a 1024 model is offered while the hires pass is on.
  * Its widest shape stays inside {@link PIXEL_WARN_THRESHOLD}, so choosing a
@@ -415,6 +415,12 @@ const ASPECT_PRESETS: Record<ModelSizeBase, readonly AspectPreset[]> = {
     { labelKey: 'generate.aspect.landscape_4_3', width: 704, height: 512 },
     { labelKey: 'generate.aspect.landscape_3_2', width: 768, height: 512 },
     { labelKey: 'generate.aspect.landscape_16_9', width: 896, height: 512 },
+  ],
+  768: [
+    { labelKey: 'generate.aspect.square', width: 768, height: 768 },
+    { labelKey: 'generate.aspect.landscape_4_3', width: 1024, height: 768 },
+    { labelKey: 'generate.aspect.landscape_3_2', width: 1152, height: 768 },
+    { labelKey: 'generate.aspect.landscape_16_9', width: 1344, height: 768 },
   ],
   1024: [
     { labelKey: 'generate.aspect.square', width: 1024, height: 1024 },
@@ -434,7 +440,7 @@ const ASPECT_PRESETS: Record<ModelSizeBase, readonly AspectPreset[]> = {
   ],
 };
 
-const ASPECT_BASES: readonly ModelSizeBase[] = [512, 1024, 1536];
+const ASPECT_BASES: readonly ModelSizeBase[] = [512, 768, 1024, 1536];
 
 export function buildAspectPresets(
   base: ModelSizeBase,
@@ -520,13 +526,17 @@ export function sizeFamilyFor(baseline: string | null): ModelSizeFamily | null {
   if (native === null) {
     return null;
   }
-  return native <= 768 ? 512 : 1024;
+  if (native <= 512) {
+    return 512;
+  }
+  return native <= 768 ? 768 : 1024;
 }
 
 /**
- * The family one step above `family`, which is what the hires pass is for: it
- * draws at the trained size and enlarges, so the sizes worth asking for while
- * it is on are the ones above what the model draws natively.
+ * The family above `family`, which is what the hires pass is for: it draws at
+ * the trained size and enlarges, so the sizes worth asking for while it is on
+ * are the ones above what the model draws natively. The two small families
+ * share a target: 1024 is already past what either holds in a single pass.
  */
 export function liftSizeBase(
   family: ModelSizeFamily,
@@ -535,7 +545,7 @@ export function liftSizeBase(
   if (!hiresFix) {
     return family;
   }
-  return family === 512 ? 1024 : 1536;
+  return family === 1024 ? 1536 : 1024;
 }
 
 /** The aspect-preset family to offer for `baseline`, or null when unknown. */

@@ -1,0 +1,59 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="close()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+>
+  <div class="gs-modal-panel gs-fadeup">
+    <div class="gs-modal-header">
+      <div class="gs-modal-title">
+        <app-icon name="clipboard-document" class="gs-ico-sm" />
+        {{ "generate.link.paste_title" | transloco }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="close()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-body">
+      <label class="gs-opt-label" for="studio-paste-box">
+        {{ "generate.link.paste_label" | transloco }}
+      </label>
+      <textarea
+        id="studio-paste-box"
+        class="gs-input gs-textarea"
+        rows="6"
+        [value]="text()"
+        (input)="onInput($event)"
+        [attr.placeholder]="'generate.link.paste_placeholder' | transloco"
+      ></textarea>
+      @if (error(); as message) {
+        <p class="gs-warn" role="alert">
+          <app-icon name="warning-triangle" class="gs-ico-sm" />
+          {{ message | transloco }}
+        </p>
+      }
+    </div>
+
+    <div class="gs-modal-footer">
+      <span class="gs-modal-foot-note">
+        {{ "generate.link.paste_note" | transloco }}
+      </span>
+      <button
+        type="button"
+        class="gs-modal-done"
+        [disabled]="text().trim() === ''"
+        (click)="apply()"
+      >
+        {{ "generate.link.paste_apply" | transloco }}
+      </button>
+    </div>
+  </div>
+</div>

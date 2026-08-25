@@ -57,6 +57,8 @@
       (pinGenerateChange)="setPinGenerate($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
+      (copyLink)="copyStudioLink()"
+      (pasteSettings)="openPaste()"
       (applySettings)="onApplyPreset($event)"
     >
       <app-generate-source-image
@@ -167,6 +169,13 @@
       [title]="'generate.form.preview_title' | transloco"
       [data]="request"
       (closed)="closePreview()"
+    />
+  }
+
+  @if (pasteOpen()) {
+    <app-studio-paste-modal
+      (applied)="onPasted($event)"
+      (closed)="closePaste()"
     />
   }
 

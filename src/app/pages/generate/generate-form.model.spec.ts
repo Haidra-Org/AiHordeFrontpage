@@ -1247,7 +1247,7 @@ describe('baseline size defaults', () => {
     expect(nativeSquareFor('stable_cascade')).toBe(1024);
     expect(nativeSquareFor('flux_1')).toBe(1024);
     expect(sizeBaseFor('stable_diffusion_1', false)).toBe(512);
-    expect(sizeBaseFor('stable_diffusion_2', false)).toBe(512);
+    expect(sizeBaseFor('stable_diffusion_2', false)).toBe(768);
     expect(sizeBaseFor('flux_1', false)).toBe(1024);
   });
 
@@ -1338,6 +1338,20 @@ describe('baseline size defaults', () => {
       ['generate.aspect.landscape_4_3', 704, 512],
       ['generate.aspect.landscape_3_2', 768, 512],
       ['generate.aspect.landscape_16_9', 896, 512],
+    ]);
+    // A 768 model is offered the same four shapes at its own size, so the
+    // chips match what it was trained on rather than the family below it.
+    expect(
+      buildAspectPresets(768).map((preset) => [
+        preset.labelKey,
+        preset.width,
+        preset.height,
+      ]),
+    ).toEqual([
+      ['generate.aspect.square', 768, 768],
+      ['generate.aspect.landscape_4_3', 1024, 768],
+      ['generate.aspect.landscape_3_2', 1152, 768],
+      ['generate.aspect.landscape_16_9', 1344, 768],
     ]);
     // What a 1024 model is offered while the hires pass is on.
     expect(

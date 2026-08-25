@@ -1,7 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { DOCUMENT } from '@angular/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { FullscreenService } from './fullscreen.service';
+import {
+  FullscreenService,
+  restoreFocusOnFullscreenExit,
+} from './fullscreen.service';
 
 interface FakeDocument {
   fullscreenEnabled?: boolean;
@@ -210,5 +213,69 @@ describe('FullscreenService', () => {
     await service.toggle();
 
     expect(doc.fullscreenElement).toBeNull();
+  });
+});
+
+describe('restoreFocusOnFullscreenExit', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  /** Enter and then leave the screen, flushing the effect each way. */
+  const enterAndLeave = async (service: FullscreenService): Promise<void> => {
+    await service.toggle();
+    TestBed.tick();
+    await service.toggle();
+    TestBed.tick();
+  };
+
+  it('hands focus back to the control when the exit left it on the body', async () => {
+    const { doc } = makeDocument('standard');
+    const service = serviceWith(doc);
+    service.setTarget(makeElement(doc, 'standard'));
+    const button = document.createElement('button');
+    const focus = vi.spyOn(button, 'focus');
+    doc.body = document.body;
+    doc.activeElement = document.body;
+    TestBed.runInInjectionContext(() =>
+      restoreFocusOnFullscreenExit(() => button),
+    );
+    TestBed.tick();
+
+    await enterAndLeave(service);
+
+    expect(focus).toHaveBeenCalledOnce();
+  });
+
+  it('leaves focus where the reader put it', async () => {
+    const { doc } = makeDocument('standard');
+    const service = serviceWith(doc);
+    service.setTarget(makeElement(doc, 'standard'));
+    const button = document.createElement('button');
+    const focus = vi.spyOn(button, 'focus');
+    doc.body = document.body;
+    doc.activeElement = document.createElement('input');
+    TestBed.runInInjectionContext(() =>
+      restoreFocusOnFullscreenExit(() => button),
+    );
+    TestBed.tick();
+
+    await enterAndLeave(service);
+
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('does nothing while the screen was never taken', () => {
+    const { doc } = makeDocument('standard');
+    serviceWith(doc);
+    const button = document.createElement('button');
+    const focus = vi.spyOn(button, 'focus');
+    doc.body = document.body;
+    doc.activeElement = document.body;
+    TestBed.runInInjectionContext(() =>
+      restoreFocusOnFullscreenExit(() => button),
+    );
+
+    TestBed.tick();
+
+    expect(focus).not.toHaveBeenCalled();
   });
 });
