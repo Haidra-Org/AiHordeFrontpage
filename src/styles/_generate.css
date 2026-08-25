@@ -217,9 +217,13 @@
   --gs-border-results: #eceef1;
   --gs-ink: #111827;
   --gs-ink-2: #374151;
-  --gs-label: #6b7280;
-  /* 4.6:1 on the white panel: muted text stays AA-legible at small sizes. */
-  --gs-muted: #737b88;
+  /* Both greys are measured against the deepest ground they sit on, the canvas,
+     rather than the white panel: labels and hints are drawn on the panel, on
+     the card and on the page floor, and the card is where most of them land.
+     Label 4.98:1 and muted 4.63:1 on the canvas, 5.34:1 and 4.97:1 on the card,
+     so small type clears AA wherever the pair is used. */
+  --gs-label: #5f6672;
+  --gs-muted: #636b78;
   --gs-field: #ffffff;
   --gs-field-soft: #fafafa;
   --gs-field-border: #d1d5db;
@@ -2851,6 +2855,12 @@
     var(--gs-sec, var(--gs-blue)) 62%,
     var(--gs-muted)
   );
+  /* The untravelled rail. The hairline border grey it used to take sat at
+     1.14:1 on the light card and 1.06:1 on the dark one, which is a rail only
+     someone who knows it is there can see. One mid grey serves both themes:
+     3.52:1 on the light card, 3.78:1 on the dark, clear of the 3:1 a control's
+     own boundary needs without weighing more than 4px of rail should. */
+  --gs-range-rail: #7c8391;
 }
 .gen-studio .gs-range::-webkit-slider-runnable-track {
   height: 4px;
@@ -2858,7 +2868,7 @@
   background: linear-gradient(
     to right,
     var(--gs-range-accent) 0 var(--gs-range-fill, 0%),
-    var(--gs-border) var(--gs-range-fill, 0%) 100%
+    var(--gs-range-rail) var(--gs-range-fill, 0%) 100%
   );
 }
 .gen-studio .gs-range::-webkit-slider-thumb {
@@ -2876,7 +2886,7 @@
 .gen-studio .gs-range::-moz-range-track {
   height: 4px;
   border-radius: var(--gs-radius-pill);
-  background: var(--gs-border);
+  background: var(--gs-range-rail);
 }
 .gen-studio .gs-range::-moz-range-progress {
   height: 4px;
@@ -2912,9 +2922,13 @@
 .dark .gen-studio .gs-range:focus-visible {
   outline-color: #93c5fd;
 }
+/* A 24px thumb under a thumb is a 24px target. The input grows to the 44px the
+   studio holds every touch control to while the rail and the thumb keep their
+   drawn size: both engines centre the 4px track in the box, so the extra height
+   is reachable ground either side of it and nothing moves. */
 @media (pointer: coarse) {
   .gen-studio .gs-range {
-    height: 24px;
+    height: 44px;
   }
   .gen-studio .gs-range::-webkit-slider-thumb {
     width: 24px;
@@ -7792,7 +7806,7 @@
   }
 }
 /* Which half of the pair is which, without competing with the text for weight.
-   Label rather than muted: muted sits at 4.3:1 on the light bands, under AA for
+   Label rather than muted: muted sits near 4.6:1 on the light bands, under AA for
    type this small. */
 .gen-studio .gs-hist-detail-label {
   margin: 0 0 1px;
@@ -14111,9 +14125,9 @@ app-gs-compare-wipe {
   color: var(--gs-seg-active-ink);
   box-shadow: var(--gs-elev-1);
 }
-/* The unchosen options take the body ink rather than the label grey the shared
-   segmented control uses: grey on the light theme's track lands at 4.4:1, and
-   these are the words a reader picks an example by. */
+/* The unchosen options take the body ink rather than the shared control's
+   label grey: these are the words a reader picks an example by, and the
+   darker ink keeps them read as choices beside the chosen one. */
 .gen-studio .gs-ctl-switch-opt[aria-checked="false"] {
   color: var(--gs-ink-2);
 }
