@@ -128,6 +128,7 @@ function world(
     [worlds]="worlds"
     [descriptionKeys]="descriptionKeys"
     [noteKeys]="noteKeys"
+    [groupLabelKey]="groupLabelKey"
   />`,
 })
 class HostComponent {
@@ -141,6 +142,7 @@ class HostComponent {
   public noteKeys: Readonly<Record<string, string>> = {
     canny: 'generate.control_types.note_hough',
   };
+  public groupLabelKey: string | null = 'alchemy.annotation.group_edges';
 }
 
 describe('GsControlGalleryComponent', () => {
@@ -212,15 +214,27 @@ describe('GsControlGalleryComponent', () => {
     expect(notes[1]).toContain('hough');
   });
 
-  it('shows every example of one mode, each with its source and its map', async () => {
+  it('names the mode, the group it reads for and its one line, in the head', async () => {
+    await setUp();
+    openTile(0);
+
+    const head = find<HTMLElement>('.gs-ctl-top')!;
+    expect(head.textContent).toContain('canny');
+    expect(head.querySelector('.gs-ctl-group')?.textContent) //
+      .toContain('Edges and outlines');
+    expect(head.querySelector('.gs-ctl-lead')?.textContent) //
+      .toContain('Hard outlines');
+    expect(head.querySelector('.gs-sweep-viewer-x')).not.toBeNull();
+  });
+
+  it('shows one example at a time, with its source, its map and its render', async () => {
     await setUp();
     openTile(0);
 
     const worlds = all('.gs-ctl-world');
-    expect(worlds.length).toBe(2);
-    expect(worlds[0].textContent).toContain('The courier');
-    expect(worlds[1].textContent).toContain('The fox shrine');
+    expect(worlds.length).toBe(1);
     expect(worlds[0].textContent).toContain('Canny on The courier.');
+    expect(worlds[0].textContent).not.toContain('The fox shrine');
 
     const frames = Array.from(
       worlds[0].querySelectorAll<HTMLImageElement>('.gs-ctl-frame img'),
@@ -230,6 +244,79 @@ describe('GsControlGalleryComponent', () => {
       `${environment.evidenceBaseUrl}/${WORLD_ONE}/001_canny_map.webp`,
       `${environment.evidenceBaseUrl}/${WORLD_ONE}/001_canny.webp`,
     ]);
+  });
+
+  it('offers the examples by the labels the library gives their scenes', async () => {
+    await setUp();
+    openTile(0);
+
+    const group = find<HTMLElement>('.gs-ctl-switch')!;
+    expect(group.getAttribute('role')).toBe('radiogroup');
+    const options = all<HTMLButtonElement>('.gs-ctl-switch-opt');
+    expect(options.map((option) => (option.textContent ?? '').trim())) //
+      .toEqual(['The courier', 'The fox shrine']);
+    expect(options[0].getAttribute('aria-checked')).toBe('true');
+    expect(options[1].getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('changes the example on show when another one is chosen', async () => {
+    await setUp();
+    openTile(0);
+
+    all<HTMLButtonElement>('.gs-ctl-switch-opt')[1].click();
+    fixture.detectChanges();
+
+    expect(find('.gs-ctl-world')!.textContent) //
+      .toContain('Canny on The fox shrine.');
+    expect(
+      all<HTMLImageElement>('.gs-ctl-frame img')[0].getAttribute('src'),
+    ).toBe(`${environment.evidenceBaseUrl}/${WORLD_TWO}/source.webp`);
+  });
+
+  it('moves between the examples on the arrows and wraps at both ends', async () => {
+    await setUp();
+    openTile(0);
+    const options = all<HTMLButtonElement>('.gs-ctl-switch-opt');
+
+    options[0].dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowRight',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fixture.detectChanges();
+    expect(find('.gs-ctl-world')!.textContent).toContain('The fox shrine');
+    expect(document.activeElement).toBe(
+      all<HTMLButtonElement>('.gs-ctl-switch-opt')[1],
+    );
+
+    all<HTMLButtonElement>('.gs-ctl-switch-opt')[1].dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowRight',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fixture.detectChanges();
+    expect(find('.gs-ctl-world')!.textContent).toContain('The courier');
+  });
+
+  it('opens the same layer from the words under the tile', async () => {
+    await setUp();
+
+    const doors = all<HTMLButtonElement>('.gs-ctl-more');
+    // Two modes are published and the third has nothing to open onto.
+    expect(doors.length).toBe(2);
+    expect(doors[0].textContent).toContain('See more examples');
+
+    doors[0].click();
+    fixture.detectChanges();
+
+    expect(find('.gs-ctl-body')).not.toBeNull();
+    expect(find('.gs-ctl-world')!.textContent).toContain(
+      'Canny on The courier',
+    );
   });
 
   it('reads the strength dial against the mode the layer is showing', async () => {
@@ -247,8 +334,9 @@ describe('GsControlGalleryComponent', () => {
     openTile(1);
 
     // openpose has examples but no strength strip, and the layer is still the
-    // three worlds rather than an error or an empty plate.
-    expect(all('.gs-ctl-world').length).toBe(2);
+    // example and its switcher rather than an error or an empty plate.
+    expect(all('.gs-ctl-world').length).toBe(1);
+    expect(all('.gs-ctl-switch-opt').length).toBe(2);
     expect(
       find<HTMLElement>('.gs-ctl-body app-gs-sweep-scrub')!.childElementCount,
     ) //
@@ -283,7 +371,7 @@ describe('GsControlGalleryComponent', () => {
       body.querySelectorAll<HTMLElement>(
         'a[href], button, [tabindex]:not([tabindex="-1"]), input, select, textarea',
       ),
-    );
+    ).filter((element) => element.getAttribute('tabindex') !== '-1');
     expect(focusables.length).toBeGreaterThan(1);
     const first = focusables[0];
     const last = focusables[focusables.length - 1];

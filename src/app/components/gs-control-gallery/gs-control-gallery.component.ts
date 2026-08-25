@@ -8,6 +8,7 @@ import {
   input,
   signal,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
@@ -67,8 +68,11 @@ interface ControlTile {
  * A mode is a claim about what survives from the source into the render, and a
  * single picture cannot settle it: an outline that holds a face on a photograph
  * may hold nothing on a shrine gate. So the tile is one render and the layer is
- * the same mode read three times, each example laid out as the picture it began
- * with, the map the detector drew, and what the render made of it.
+ * the same mode read on one example at a time, each laid out as the picture it
+ * began with, the map the detector drew, and what the render made of it, with a
+ * switcher between the examples rather than all of them stacked. Three examples
+ * stacked run past the bottom of a laptop screen and bury the strength dial
+ * under them; one example at a size that can be read does not.
  *
  * A mode the library has not published keeps its place and says so. The picker
  * will still run it, and a hole in the grid would read as a mode that does not
@@ -86,11 +90,11 @@ interface ControlTile {
     <ul class="gs-ref-maps-grid">
       @for (tile of tiles(); track tile.type) {
         <li [id]="tile.anchorId">
-          <figure class="gs-ref-map">
+          <figure class="gs-ref-map gs-ctl-tile">
             @if (tile.thumb; as thumb) {
               <button
                 type="button"
-                class="gs-ref-zoom"
+                class="gs-ref-zoom gs-ctl-zoom"
                 [attr.aria-label]="
                   'generate.control_types.enlarge'
                     | transloco: { name: tile.type }
@@ -106,6 +110,9 @@ interface ControlTile {
                   loading="lazy"
                   decoding="async"
                 />
+                <span class="gs-ctl-zoom-glyph" aria-hidden="true">
+                  <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+                </span>
               </button>
             } @else {
               <span class="gs-ref-map-gap">
@@ -125,6 +132,15 @@ interface ControlTile {
               </span>
               @if (tile.noteKey; as note) {
                 <span class="gs-ref-map-note">{{ note | transloco }}</span>
+              }
+              @if (tile.worlds.length > 0) {
+                <button
+                  type="button"
+                  class="gs-ref-link gs-ctl-more"
+                  (click)="open(tile, $event)"
+                >
+                  {{ 'generate.control_types.more' | transloco }}
+                </button>
               }
             </figcaption>
           </figure>
@@ -151,8 +167,14 @@ interface ControlTile {
           "
           (keydown)="onKeydown($event)"
         >
-          <div class="gs-sweep-viewer-top">
-            <span class="gs-sweep-viewer-name gs-mono">{{ shown.type }}</span>
+          <div class="gs-sweep-viewer-top gs-ctl-top">
+            <div class="gs-ctl-ident">
+              <span class="gs-sweep-viewer-name gs-mono">{{ shown.type }}</span>
+              @if (groupLabelKey(); as groupKey) {
+                <span class="gs-ctl-group">{{ groupKey | transloco }}</span>
+              }
+              <p class="gs-ctl-lead">{{ shown.descriptionKey | transloco }}</p>
+            </div>
             <button
               #closeButton
               type="button"
@@ -166,21 +188,43 @@ interface ControlTile {
             </button>
           </div>
 
-          <p class="gs-ctl-lead">
-            {{ shown.descriptionKey | transloco }}
-          </p>
+          @if (shown.worlds.length > 1) {
+            <div
+              class="gs-seg gs-ctl-switch"
+              role="radiogroup"
+              [attr.aria-label]="
+                'generate.control_types.worlds_label' | transloco
+              "
+            >
+              @for (
+                option of shown.worlds;
+                track option.stripId;
+                let i = $index
+              ) {
+                <button
+                  #worldOption
+                  type="button"
+                  class="gs-seg-opt gs-ctl-switch-opt"
+                  role="radio"
+                  [attr.aria-checked]="i === worldIndex()"
+                  [attr.tabindex]="i === worldIndex() ? 0 : -1"
+                  (click)="pickWorld(i)"
+                  (keydown)="onSwitchKeydown($event, i)"
+                >
+                  {{ option.scene }}
+                </button>
+              }
+            </div>
+          }
 
-          @for (world of shown.worlds; track world.stripId) {
+          @if (shownWorld(); as onShow) {
             <section class="gs-ctl-world">
-              <h3 class="gs-ctl-world-head">
-                {{ world.scene }}
-                <span class="gs-ctl-world-model gs-mono">{{
-                  world.model
-                }}</span>
-              </h3>
               <div class="gs-ctl-row">
-                @for (frame of world.frames; track frame.key) {
-                  <figure class="gs-ctl-frame">
+                @for (frame of onShow.frames; track frame.key) {
+                  <figure
+                    class="gs-ctl-frame"
+                    [class.gs-ctl-frame--render]="frame.key === 'render'"
+                  >
                     @if (frame.src; as src) {
                       <img
                         [src]="src"
@@ -197,11 +241,16 @@ interface ControlTile {
                   </figure>
                 }
               </div>
-              <p class="gs-ctl-caption">{{ world.caption }}</p>
+              <p class="gs-ctl-caption">
+                {{ onShow.caption }}
+                <span class="gs-ctl-world-model gs-mono">{{
+                  onShow.model
+                }}</span>
+              </p>
             </section>
           }
 
-          <!-- How hard this mode's own maps pull, under the examples of what
+          <!-- How hard this mode's own maps pull, under the example of what
                they are. The dial is the same field for every mode and what
                changes is what that kind of map can do with it, so it is read
                here rather than once for a whole group. -->
@@ -225,7 +274,7 @@ export class GsControlGalleryComponent {
   /**
    * The published strips the examples are taken from, by the library's own
    * `strip_id`. The first is the one the tiles are cut from, so the grid reads
-   * as one shoot; the rest are what the layer stacks under it.
+   * as one shoot; the rest are what the layer's switcher offers.
    */
   public readonly worlds = input.required<readonly string[]>();
   /** The i18n key describing a mode, by mode. */
@@ -233,10 +282,20 @@ export class GsControlGalleryComponent {
     input.required<Readonly<Record<string, string>>>();
   /** A further line for the modes that need one, by mode. */
   public readonly noteKeys = input<Readonly<Record<string, string>>>({});
+  /**
+   * The i18n key naming what this group of modes reads, which the layer says
+   * back. A reader who followed an anchor to `normalbae` arrives with nothing
+   * telling them which group they landed in.
+   */
+  public readonly groupLabelKey = input<string | null>(null);
 
   /** The mode the layer is showing, or null while it is shut. */
   private readonly shown = signal<ControlTile | null>(null);
   public readonly opened = this.shown.asReadonly();
+
+  /** Which example the layer is showing, as an index into the mode's own. */
+  private readonly chosen = signal(0);
+  public readonly worldIndex = this.chosen.asReadonly();
 
   /** The tile that opened the layer, so closing hands focus back to it. */
   private opener: HTMLElement | null = null;
@@ -245,6 +304,8 @@ export class GsControlGalleryComponent {
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly closeButton =
     viewChild<ElementRef<HTMLButtonElement>>('closeButton');
+  private readonly worldOptions =
+    viewChildren<ElementRef<HTMLButtonElement>>('worldOption');
 
   /** The named strips, in the order they were named, and only the ones published. */
   private readonly strips = computed<readonly SweepStrip[]>(() =>
@@ -252,6 +313,15 @@ export class GsControlGalleryComponent {
       .map((stripId) => this.sweeps.stripById(stripId))
       .filter((strip): strip is SweepStrip => strip !== null),
   );
+
+  /** The one example on show, or null while the layer is shut. */
+  public readonly shownWorld = computed<ControlWorld | null>(() => {
+    const tile = this.shown();
+    if (!tile) {
+      return null;
+    }
+    return tile.worlds[this.chosen()] ?? tile.worlds[0] ?? null;
+  });
 
   public readonly tiles = computed<readonly ControlTile[]>(() => {
     const strips = this.strips();
@@ -284,9 +354,11 @@ export class GsControlGalleryComponent {
     });
   }
 
+  /** The layer opens on the example the tile was cut from, which is the first. */
   public open(tile: ControlTile, event: Event): void {
     const trigger = event.currentTarget;
     this.opener = trigger instanceof HTMLElement ? trigger : null;
+    this.chosen.set(0);
     this.shown.set(tile);
   }
 
@@ -304,11 +376,51 @@ export class GsControlGalleryComponent {
     }
   }
 
+  public pickWorld(index: number): void {
+    this.chosen.set(index);
+  }
+
+  /**
+   * The switcher is a radio group, so the arrows move between the examples and
+   * carry the choice with them, and Tab passes the whole group by.
+   */
+  public onSwitchKeydown(event: KeyboardEvent, index: number): void {
+    const count = this.shown()?.worlds.length ?? 0;
+    if (count === 0) {
+      return;
+    }
+    let next: number;
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        next = (index + 1) % count;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        next = (index - 1 + count) % count;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = count - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.chosen.set(next);
+    this.worldOptions()[next]?.nativeElement.focus();
+  }
+
   /**
    * Escape shuts the layer, and Tab cycles inside it. The layer carries the
    * detector's strength strip as well as its pictures, so its controls have to
    * stay reachable: Tab wraps from the last focusable to the first and Shift
-   * Tab the other way, and never leaves for the page behind.
+   * Tab the other way, and never leaves for the page behind. The switcher's
+   * unchosen options are held out of the cycle, because a radio group is one
+   * stop for Tab and the arrows are what move inside it.
    */
   public onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
@@ -325,7 +437,11 @@ export class GsControlGalleryComponent {
     }
     const focusables = Array.from(
       panel.querySelectorAll<HTMLElement>(LAYER_FOCUSABLE_SELECTOR),
-    ).filter((element) => !element.hasAttribute('disabled'));
+    ).filter(
+      (element) =>
+        !element.hasAttribute('disabled') &&
+        element.getAttribute('tabindex') !== '-1',
+    );
     if (focusables.length === 0) {
       event.preventDefault();
       return;
@@ -344,10 +460,10 @@ export class GsControlGalleryComponent {
 
   private worldFor(strip: SweepStrip, type: string): ControlWorld | null {
     const stop = strip.stops.find((frame) => frame.control_type === type);
-    return stop ? this.world(strip, stop) : null;
+    return stop ? this.exampleOf(strip, stop) : null;
   }
 
-  private world(strip: SweepStrip, stop: SweepStop): ControlWorld {
+  private exampleOf(strip: SweepStrip, stop: SweepStop): ControlWorld {
     const render = this.sweeps.imageUrl(stop);
     return {
       stripId: strip.strip_id,

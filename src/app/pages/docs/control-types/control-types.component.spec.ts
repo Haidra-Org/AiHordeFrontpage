@@ -83,6 +83,23 @@ describe('DocsControlTypesComponent', () => {
     expect(all('app-gs-sweep-scrub').length).toBe(0);
   });
 
+  it('tells the reader on the lead what pressing a control type opens', () => {
+    const lead = el().querySelector('.gs-ref-lead')?.textContent ?? '';
+
+    expect(lead).toContain('three pictures');
+    expect(lead).toContain('how hard its control maps hold a render');
+  });
+
+  it('gives every published mode a way in that says what it opens', () => {
+    // The stub publishes canny and openpose, so two tiles have somewhere to
+    // go and the other thirty-one say nothing has been published for them.
+    const doors = all<HTMLButtonElement>('.gs-ctl-more');
+
+    expect(all('.gs-ref-map').length).toBe(33);
+    expect(doors.length).toBe(all('.gs-ref-zoom').length);
+    expect(doors[0].textContent).toContain('See more examples');
+  });
+
   it('says nothing was published where the library has no example', () => {
     // The stub publishes canny and openpose, so every other mode keeps its
     // place and says that nothing has been published for it.

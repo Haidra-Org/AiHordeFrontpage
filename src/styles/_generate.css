@@ -12911,52 +12911,153 @@ app-gs-compare-wipe {
   color: var(--gs-ink-2);
 }
 
-/* ------- control types: one mode, read on three examples ------------- */
+/* ------- control types: one mode, one example at a time -------------- */
+/* The tile is a way in rather than a picture that happens to be pressable: it
+   lifts under a pointer, carries a glyph in its corner, and says in words what
+   pressing it opens, for a reader who would not think to press a picture. The
+   lift is scoped to this gallery's own tiles: the same figure and the same
+   zoom button carry the alchemy page's control maps, which open nothing. */
+.gen-studio .gs-ctl-tile .gs-ctl-zoom {
+  position: relative;
+  transition:
+    transform var(--gs-dur-fast) var(--gs-ease),
+    box-shadow var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-ctl-tile .gs-ctl-zoom:hover,
+.gen-studio .gs-ctl-tile .gs-ctl-zoom:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: var(--gs-elev-2);
+}
+.gen-studio .gs-ctl-zoom-glyph {
+  position: absolute;
+  top: var(--gs-space-1);
+  right: var(--gs-space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--gs-radius-sm);
+  border: 1px solid var(--gs-card-border);
+  background: var(--gs-panel);
+  color: var(--gs-ink-2);
+  opacity: 0.88;
+}
+.gen-studio .gs-ctl-tile .gs-ctl-zoom:hover .gs-ctl-zoom-glyph,
+.gen-studio .gs-ctl-tile .gs-ctl-zoom:focus-visible .gs-ctl-zoom-glyph {
+  color: var(--gs-ink);
+  opacity: 1;
+}
+/* The named way in is a link under the caption rather than a second button
+   with a surface of its own: the picture above it is already the loud offer. */
+.gen-studio .gs-ctl-more {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-ctl-tile .gs-ctl-zoom {
+    transition: none;
+  }
+  .gen-studio .gs-ctl-tile .gs-ctl-zoom:hover,
+  .gen-studio .gs-ctl-tile .gs-ctl-zoom:focus-visible {
+    transform: none;
+  }
+}
+@media (forced-colors: active) {
+  .gen-studio .gs-ctl-zoom-glyph {
+    border-color: ButtonText;
+  }
+}
+
+/* The layer has to land in a laptop screen with the caption still in it, so it
+   shows one example at a size that can be read rather than three stacked at a
+   size that cannot. Only the strength dial sits below the fold. */
 .gen-studio .gs-ctl-body {
   display: flex;
   flex-direction: column;
-  gap: var(--gs-space-4);
+  gap: var(--gs-space-3);
   max-width: min(58rem, 100%);
-  /* Three worlds stacked run taller than any viewport, and the viewer body
-     only scrolls inside itself on narrow screens; this layer has to at every
-     width, or the wheel moves the page behind it and the lower worlds are
-     never reached. */
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+/* The head carries its own padding; everything under it takes the same measure
+   rather than running to the layer's edge. */
+.gen-studio .gs-ctl-body > *:not(.gs-sweep-viewer-top) {
+  margin-inline: var(--gs-space-4);
+}
+.gen-studio .gs-ctl-top {
+  align-items: flex-start;
+}
+/* The name, what group it reads for, and its one line, in one row: a reader who
+   followed an anchor straight to a detector arrives with none of that. */
+.gen-studio .gs-ctl-ident {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-1) var(--gs-space-2);
+  min-width: 0;
+}
+.gen-studio .gs-ctl-ident .gs-sweep-viewer-name {
+  flex: none;
+}
+.gen-studio .gs-ctl-group {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 var(--gs-space-2);
+  border-radius: var(--gs-radius-pill);
+  border: 1px solid var(--gs-sec-tint-border, var(--gs-border));
+  background: var(--gs-sec-tint, var(--gs-field-soft));
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-ink);
+}
 .gen-studio .gs-ctl-lead {
+  flex: 1 1 16rem;
   margin: 0;
   font-size: var(--gs-text-sm);
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--gs-ink-2);
+}
+/* Three examples are one choice rather than three sections, so the switcher is
+   a radio group: Tab passes it as a single stop and the arrows move inside it. */
+.gen-studio .gs-ctl-switch {
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+.gen-studio .gs-ctl-switch-opt[aria-checked="true"] {
+  background: var(--gs-seg-active);
+  color: var(--gs-seg-active-ink);
+  box-shadow: var(--gs-elev-1);
+}
+/* The unchosen options take the body ink rather than the label grey the shared
+   segmented control uses: grey on the light theme's track lands at 4.4:1, and
+   these are the words a reader picks an example by. */
+.gen-studio .gs-ctl-switch-opt[aria-checked="false"] {
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-ctl-switch-opt:hover:not([aria-checked="true"]) {
+  color: var(--gs-ink);
 }
 .gen-studio .gs-ctl-world {
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-2);
 }
-.gen-studio .gs-ctl-world-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--gs-space-2);
-  margin: 0;
-  font-size: var(--gs-text-sm);
-  font-weight: 600;
-  color: var(--gs-ink);
-}
-.gen-studio .gs-ctl-world-model {
-  font-size: var(--gs-text-xs);
-  font-weight: 400;
-  color: var(--gs-ink-2);
-}
-/* The three frames stay side by side at every width: the whole claim is that
-   the map came from the source and the render came from the map, and a column
-   of three pictures on a phone reads as three unrelated ones. */
+/* The three frames stay side by side: the whole claim is that the map came from
+   the source and the render came from the map, and a column of three pictures
+   reads as three unrelated ones. The render takes the room the other two do not
+   need, because what a source and a map are is legible small and what the
+   detector did to the render is not. */
 .gen-studio .gs-ctl-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.7fr);
   gap: var(--gs-space-2);
+  align-items: start;
 }
 .gen-studio .gs-ctl-frame {
   display: flex;
@@ -12968,6 +13069,11 @@ app-gs-compare-wipe {
 .gen-studio .gs-ctl-frame img {
   width: 100%;
   height: auto;
+  /* A ceiling rather than a size: it keeps the caption under the row inside a
+     laptop screen, and sits above what the widest column asks for, so a square
+     render is not letterboxed to reach it. */
+  max-height: min(50vh, 460px);
+  object-fit: contain;
   border-radius: var(--gs-radius-sm);
   border: 1px solid var(--gs-card-border);
   background: var(--gs-stage);
@@ -12981,6 +13087,24 @@ app-gs-compare-wipe {
   font-size: var(--gs-text-sm);
   line-height: 1.6;
   color: var(--gs-ink-2);
+}
+.gen-studio .gs-ctl-world-model {
+  font-size: var(--gs-text-xs);
+  color: var(--gs-ink-2);
+}
+/* On a phone the row breaks rather than shrinking to three thumbnails: the
+   source and the map read together at half the width, and the render, which is
+   what the reader is here to look at, takes the line under them. */
+@media (max-width: 560px) {
+  .gen-studio .gs-ctl-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .gen-studio .gs-ctl-frame--render {
+    grid-column: 1 / -1;
+  }
+  .gen-studio .gs-ctl-body > *:not(.gs-sweep-viewer-top) {
+    margin-inline: var(--gs-space-3);
+  }
 }
 /* The strength strip belongs to the mode the layer is showing, so it sits with
    the examples of that mode rather than under a whole group of them. */

@@ -1719,7 +1719,7 @@
   "generate.civitai.done": "Done · {{ count }} selected",
 
   "generate.control_types.head": "Control types",
-  "generate.control_types.lead": "What each way of holding a render to a source picture keeps, and what it leaves the model free to change.",
+  "generate.control_types.lead": "What each way of holding a render to a source picture keeps, and what it leaves the model free to change. Press any control type to see it on three pictures and to see how hard its control maps hold a render.",
   "generate.control_types.back": "All image documentation",
   "generate.control_types.body": "A ControlNet render never looks at your picture directly. A detector reads it first and writes a control map: outlines, a clean line drawing, how far away each part is, which way each surface faces, where the joints of a body are, or flat colour fields. The render is then held to that map. Choosing a control type is choosing what has to survive from your picture.",
   "generate.control_types.worlds": "Every control type here is shown on three pictures, because what a detector keeps depends on what it is given. Press one to see all three, each as the picture it started from, the control map the detector drew, and the render that map guided. Everything except the control type is held the same: one model, one prompt, one seed, one strength.",
@@ -1732,6 +1732,8 @@
   "generate.control_types.group_colour": "Holds the palette or the tones. The tile readers hold the picture itself, which is how detail is added to it or how it is enlarged under guidance.",
   "generate.control_types.note_hough": "Also accepted as hough, which is the older spelling of the same detector. Older workers understand that one.",
   "generate.control_types.enlarge": "See {{ name }} on all three pictures",
+  "generate.control_types.more": "See more examples",
+  "generate.control_types.worlds_label": "Which picture to show it on",
   "generate.control_types.tile_alt": "A render guided by {{ name }}",
   "generate.control_types.missing": "No example published yet.",
   "generate.control_types.layer_label": "{{ name }}, shown on three pictures",
