@@ -14,6 +14,7 @@ import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-par
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
+import { GsPixelBadgeComponent } from '../../../components/gs-pixel-badge/gs-pixel-badge.component';
 import { AlchemyResultComponent } from '../../../components/alchemy/alchemy-result/alchemy-result.component';
 import { AlchemyForm } from '../../../types/generation';
 import { SECTION_IDENTITIES } from '../../../content/sections';
@@ -52,6 +53,15 @@ interface EvidenceShot {
   answer: AlchemyForm | null;
   model: string | null;
   notes: string | null;
+  /**
+   * What went in and what came back, in pixels, as the manifest records them.
+   * The pair is drawn at one width on the page, so an enlarger's whole claim is
+   * invisible without them.
+   */
+  sourceWidth: number | null;
+  sourceHeight: number | null;
+  resultWidth: number | null;
+  resultHeight: number | null;
 }
 
 /** One detector's map in the control map gallery. */
@@ -60,6 +70,9 @@ interface ControlMapTile {
   type: string;
   result: string | null;
   notes: string | null;
+  /** The map's size in pixels, where the manifest records one. */
+  width: number | null;
+  height: number | null;
 }
 
 /** The detectors that read the same kind of structure, shown together. */
@@ -75,6 +88,9 @@ interface EnlargedMap {
   src: string;
   /** What the picture is: the detector's name, or the source's own label. */
   label: string;
+  /** Its size in pixels, where the manifest records one. */
+  width: number | null;
+  height: number | null;
 }
 
 /** One way onwards to the next thing the studio is used for. */
@@ -103,6 +119,7 @@ interface OnwardUseCase {
     GsAnchorLinkComponent,
     GsParamEntryComponent,
     GsShotViewerComponent,
+    GsPixelBadgeComponent,
     AlchemyResultComponent,
   ],
   templateUrl: './alchemy-usecase.component.html',
@@ -172,6 +189,10 @@ export class DocsAlchemyUseCaseComponent {
           : null,
         model: entry.model ?? null,
         notes: entry.notes ?? null,
+        sourceWidth: entry.source_width ?? null,
+        sourceHeight: entry.source_height ?? null,
+        resultWidth: entry.result_width ?? null,
+        resultHeight: entry.result_height ?? null,
       };
     });
   });
@@ -188,13 +209,19 @@ export class DocsAlchemyUseCaseComponent {
     () => this.useCase()?.forms.includes('annotation') ?? false,
   );
 
-  /** The one picture every map on the page was read out of. */
+  /** The one picture every map on the page was read out of, and what it is. */
   public readonly gallerySource = computed(() => {
     if (!this.isGallery()) {
       return null;
     }
     const entry = this.evidence.entryFor('control_map', 'annotation');
-    return entry ? this.evidence.assetUrl(entry.files.source) : null;
+    return entry
+      ? {
+          src: this.evidence.assetUrl(entry.files.source),
+          width: entry.source_width ?? null,
+          height: entry.source_height ?? null,
+        }
+      : null;
   });
 
   /**
@@ -219,16 +246,21 @@ export class DocsAlchemyUseCaseComponent {
             ? this.evidence.assetUrl(entry.files.result)
             : null,
           notes: entry?.notes ?? null,
+          width: entry?.result_width ?? null,
+          height: entry?.result_height ?? null,
         };
       }),
     }));
   });
 
   /** Open one map whole. The press is on the picture, so the picture is the way. */
-  public openMap(src: string, label: string, event: Event): void {
-    const trigger = event.currentTarget;
-    this.enlargedFrom = trigger instanceof HTMLElement ? trigger : null;
-    this.enlargedMap.set({ src, label });
+  public openMap(tile: ControlMapTile, event: Event): void {
+    this.enlargeTo(
+      { src: tile.result ?? '', label: tile.type },
+      tile.width,
+      tile.height,
+      event,
+    );
   }
 
   /**
@@ -236,12 +268,31 @@ export class DocsAlchemyUseCaseComponent {
    * the frame already wears, which the template cannot hand over: a pipe is not
    * allowed in an action.
    */
-  public openSource(src: string, event: Event): void {
-    this.openMap(
-      src,
-      this.transloco.translate('alchemy.usecases.evidence_source'),
+  public openSource(
+    source: { src: string; width: number | null; height: number | null },
+    event: Event,
+  ): void {
+    this.enlargeTo(
+      {
+        src: source.src,
+        label: this.transloco.translate('alchemy.usecases.evidence_source'),
+      },
+      source.width,
+      source.height,
       event,
     );
+  }
+
+  /** One picture on the enlarging layer, with whatever the manifest says it is. */
+  private enlargeTo(
+    picture: { src: string; label: string },
+    width: number | null,
+    height: number | null,
+    event: Event,
+  ): void {
+    const trigger = event.currentTarget;
+    this.enlargedFrom = trigger instanceof HTMLElement ? trigger : null;
+    this.enlargedMap.set({ ...picture, width, height });
   }
 
   public closeMap(): void {

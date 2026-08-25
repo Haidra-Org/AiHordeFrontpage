@@ -5,15 +5,19 @@ import {
   inject,
   input,
   output,
+  signal,
+  viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { GsTryItService } from '../../services/gs-try-it.service';
 import {
   GLOSSARY_TERMS,
   GlossaryService,
 } from '../../services/glossary.service';
 import { SectionIdentity } from '../../content/sections';
+import { AlchemyEvidenceService } from '../../services/alchemy-evidence.service';
+import { SweepLibraryService } from '../../services/sweep-library.service';
 import { STUDIO_IMAGE } from '../../content/docs-links';
 import { ReferenceTopic, referenceTopic } from '../../content/reference-topics';
 import {
@@ -22,12 +26,42 @@ import {
   SettingTradeoffs,
   sweepIsTimeline,
 } from '../../content/settings';
+import { ALCHEMY_TOPIC_PREFIX } from '../../content/reference-topics';
+import {
+  CropSide,
+  GsCropPairComponent,
+} from '../gs-crop-pair/gs-crop-pair.component';
 import { IconComponent } from '../icon/icon.component';
 import { GsAnchorLinkComponent } from '../gs-anchor-link/gs-anchor-link.component';
 import { GsDoorComponent } from '../gs-door/gs-door.component';
 import { GsProseComponent } from '../gs-prose/gs-prose.component';
 import { GsSweepGridComponent } from '../gs-sweep-grid/gs-sweep-grid.component';
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
+
+/**
+ * One matched pair of crops the entry shows, and how a reader moves it.
+ *
+ * A pair is always a reference frame against a chosen one, because the question
+ * a finishing pass raises is "compared to what": the first stop of a ladder, or
+ * the picture before the tool ran. Which frame is on the other side is the
+ * reader's, so the pair carries the choices and which one is taken.
+ */
+interface CropPair {
+  id: string;
+  /** What this pair is a comparison of, as a key the entry translates. */
+  titleKey: string;
+  before: CropSide;
+  after: CropSide;
+  /** What the chosen side may be, in the order the library published them. */
+  options: readonly { key: string; text: string }[];
+  chosen: string;
+  /**
+   * Which stop of the strip the chosen side is, so the door can open the
+   * explorer on it. Null for a pair the library published outside a strip,
+   * which has no explorer to open.
+   */
+  stopAt: number | null;
+}
 
 /** How the meta-line marks each kind of cost. */
 const TRADEOFF_ICONS = {
@@ -67,6 +101,7 @@ const TRADEOFF_ICONS = {
     GsProseComponent,
     GsSweepScrubComponent,
     GsSweepGridComponent,
+    GsCropPairComponent,
   ],
   template: `
     <!-- The prose is drawn by gs-prose, so a body may carry the site's inline
@@ -208,6 +243,7 @@ const TRADEOFF_ICONS = {
          sit beside something else the reader is doing and keep the offer. -->
     @if (sweepParameter(); as parameter) {
       <app-gs-sweep-scrub
+        #explorer
         [parameter]="parameter"
         [controlType]="sweepControlType()"
         [startExpanded]="opensItself()"
@@ -236,6 +272,76 @@ const TRADEOFF_ICONS = {
     }
     @if (sweepGridParameter(); as parameter) {
       <app-gs-sweep-grid [parameter]="parameter" [startExpanded]="onPage()" />
+    }
+
+    <!-- Where the difference actually is. A finishing pass moves a few hundred
+         pixels of a frame that is two thousand across, so the strip above it
+         settles nothing on its own: the library cuts the same rectangle from
+         both frames and the pair is read here at the size the claim can be
+         checked at. A subject the library published no crops for keeps the
+         strip and shows nothing here. -->
+    @if (cropPairs().length > 0) {
+      <section class="gs-ref-evidence" id="gs-ref-sec-evidence">
+        <h2 class="gs-guide-head">
+          {{ 'generate.reference.evidence_head' | transloco }}
+          <app-gs-anchor-link
+            targetId="gs-ref-sec-evidence"
+            [label]="'generate.reference.evidence_head' | transloco"
+          />
+        </h2>
+
+        @for (pair of cropPairs(); track pair.id) {
+          <figure class="gs-ref-pair">
+            <figcaption class="gs-ref-pair-head">
+              <span class="gs-ref-pair-name">
+                {{ pair.titleKey | transloco }}
+              </span>
+              <span class="gs-ref-pair-note">
+                {{ 'generate.reference.crop_note' | transloco }}
+              </span>
+            </figcaption>
+
+            @if (pair.options.length > 1) {
+              <div class="gs-ref-pair-pick">
+                <span class="gs-ref-pair-pick-label" [id]="pair.id + '-pick'">
+                  {{ 'generate.reference.crop_pick' | transloco }}
+                </span>
+                <div
+                  class="gs-ref-pair-opts"
+                  role="radiogroup"
+                  [attr.aria-labelledby]="pair.id + '-pick'"
+                >
+                  @for (option of pair.options; track option.key) {
+                    <button
+                      type="button"
+                      class="gs-chip gs-ref-pair-opt"
+                      role="radio"
+                      [class.is-on]="option.key === pair.chosen"
+                      [attr.aria-checked]="option.key === pair.chosen"
+                      (click)="chooseCrop(pair.id, option.key)"
+                    >
+                      {{ option.text }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <app-gs-crop-pair [before]="pair.before" [after]="pair.after" />
+
+            @if (pair.stopAt !== null) {
+              <app-gs-door
+                kind="grid"
+                controlClass="gs-ref-pair-door"
+                [title]="'generate.reference.crop_door' | transloco"
+                [meta]="'generate.reference.crop_door_note' | transloco"
+                [tiles]="[pair.before.src, pair.after.src]"
+                (entered)="openCropInExplorer(pair.stopAt)"
+              />
+            }
+          </figure>
+        }
+      </section>
     }
 
     @if (related().length > 0) {
@@ -308,8 +414,11 @@ const TRADEOFF_ICONS = {
 })
 export class GsParamEntryComponent {
   private readonly tryIt = inject(GsTryItService);
+  private readonly sweeps = inject(SweepLibraryService);
+  private readonly alchemy = inject(AlchemyEvidenceService);
   private readonly glossary = inject(GlossaryService);
   private readonly router = inject(Router);
+  private readonly transloco = inject(TranslocoService);
 
   /** The reference topic this entry is the long form of. */
   public readonly topic = input.required<string>();
@@ -484,5 +593,155 @@ export class GsParamEntryComponent {
   /** Open the dictionary at one of the words the entry leans on. */
   public openTerm(termId: string): void {
     this.glossary.open(termId);
+  }
+
+  constructor() {
+    // Both libraries answer with "nothing published" as readily as with
+    // pictures, and the section renders nothing either way, so they are asked
+    // for as the entry mounts rather than when a reader reaches the crops.
+    void this.sweeps.ensureLoaded();
+    void this.alchemy.ensureLoaded();
+  }
+
+  /* ---------- where the difference is, at true pixels ---------- */
+
+  /** The explorer of the entry's own strip, which the pair's door opens. */
+  private readonly explorer = viewChild('explorer', {
+    read: GsSweepScrubComponent,
+  });
+
+  /** Which frame each pair is being read against, by pair, once chosen. */
+  private readonly picked = signal<Readonly<Record<string, string>>>({});
+
+  /**
+   * Whether this entry may show a crop section at all. The alchemy pages carry
+   * their own evidence section around this component, so a second one here
+   * would put the same heading and the same anchor on the page twice; and the
+   * docked copy sits beside the studio, where a pair drawn at true pixels has
+   * no room to be read in.
+   */
+  private readonly showsCrops = computed(
+    () => this.onPage() && !this.topic().startsWith(ALCHEMY_TOPIC_PREFIX),
+  );
+
+  /**
+   * The pairs this entry has evidence for: the setting's own strip where the
+   * library cut crops from its stops, and the alchemy runs of the tool the
+   * setting hands the picture to. Both, where the library published both: one
+   * says what the tools differ in and the other says what running one does at
+   * all, and those are different questions.
+   */
+  public readonly cropPairs = computed<readonly CropPair[]>(() => {
+    if (!this.showsCrops()) {
+      return [];
+    }
+    return [this.stripPair(), this.alchemyPair()].filter(
+      (pair): pair is CropPair => pair !== null,
+    );
+  });
+
+  /** Read the other side of a pair against a different frame. */
+  public chooseCrop(pairId: string, key: string): void {
+    this.picked.update((current) => ({ ...current, [pairId]: key }));
+  }
+
+  /**
+   * Open the strip's explorer on the frame the pair is comparing, at the file's
+   * own pixels and centred on the crop. The pair says where the difference is;
+   * the explorer is where the rest of the frame is.
+   */
+  public openCropInExplorer(at: number): void {
+    this.explorer()?.openStopAtCrop(at);
+  }
+
+  /** The pair cut from the entry's own strip, where the library cut any. */
+  private stripPair(): CropPair | null {
+    const parameter = this.sweepParameter();
+    const strip = parameter
+      ? this.sweeps.strip(
+          parameter,
+          this.sweeps.studioModelSlug(),
+          undefined,
+          this.sweepControlType(),
+        )
+      : null;
+    const stops = (strip?.stops ?? []).filter((stop) => !!stop.crop);
+    if (stops.length < 2) {
+      return null;
+    }
+    const id = 'gs-ref-pair-strip';
+    const options = stops.slice(1).map((stop) => ({
+      key: stop.label,
+      text: String(stop.value),
+    }));
+    const chosen = this.chosenOf(id, options);
+    const against = stops.find((stop) => stop.label === chosen) ?? stops[1];
+    return {
+      id,
+      titleKey: 'generate.reference.crop_head_strip',
+      before: this.sideOf(stops[0].crop!.file, stops[0].crop!, stops[0].value),
+      after: this.sideOf(against.crop!.file, against.crop!, against.value),
+      options,
+      chosen,
+      stopAt: strip!.stops.indexOf(against),
+    };
+  }
+
+  /** The pair cut from the alchemy runs of the tool this setting reaches for. */
+  private alchemyPair(): CropPair | null {
+    const useCase = this.entry()?.alchemyEvidence;
+    const entries = useCase
+      ? this.alchemy
+          .entriesFor(useCase)
+          .filter((run) => !!run.source_crop && !!run.result_crop)
+      : [];
+    if (entries.length === 0) {
+      return null;
+    }
+    const id = 'gs-ref-pair-alchemy';
+    const options = entries.map((run) => ({ key: run.form, text: run.title }));
+    const chosen = this.chosenOf(id, options);
+    const run = entries.find((entry) => entry.form === chosen) ?? entries[0];
+    return {
+      id,
+      titleKey: 'generate.reference.crop_head_alchemy',
+      before: {
+        src: this.alchemy.assetUrl(run.source_crop!.file),
+        width: run.source_crop!.width,
+        height: run.source_crop!.height,
+        label: this.transloco.translate('alchemy.usecases.evidence_source'),
+      },
+      after: {
+        src: this.alchemy.assetUrl(run.result_crop!.file),
+        width: run.result_crop!.width,
+        height: run.result_crop!.height,
+        label: run.title,
+      },
+      options,
+      chosen,
+      stopAt: null,
+    };
+  }
+
+  /** The frame a pair is read against: the reader's choice, or the first one. */
+  private chosenOf(id: string, options: readonly { key: string }[]): string {
+    const asked = this.picked()[id];
+    return options.some((option) => option.key === asked)
+      ? asked
+      : (options[options.length - 1]?.key ?? '');
+  }
+
+  /** One side of a strip pair: the published crop, named by its own value. */
+  private sideOf(
+    file: string,
+    crop: { width: number; height: number },
+    value: string | number | boolean,
+  ): CropSide {
+    return {
+      src: this.sweeps.assetUrl(file),
+      width: crop.width,
+      height: crop.height,
+      label: String(value),
+    };
   }
 }

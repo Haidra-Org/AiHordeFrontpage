@@ -15,6 +15,7 @@ import {
   settingSection,
   settingSweepAlsoStrips,
   settingSweepGrid,
+  settingAlchemyEvidence,
   settingSweepStrip,
   settingSweepStripControlType,
   settingTitleKey,
@@ -267,6 +268,20 @@ describe('settings sweeps', () => {
     );
     expect(settingSweepStrip('cfg')).toBe('cfg_scale');
     expect(sweepVariantPair('cfg')).toBeNull();
+  });
+
+  it('gives the enlarger switch the strip the library swept for it', () => {
+    // The library sweeps the enlargers under the name of the alchemy form that
+    // runs them, and the setting and the form are the same list.
+    expect(settingSweepStrip('upscaler')).toBe('upscaler_form');
+    expect(settingIdFor('upscaler_form')).toBe('upscaler');
+  });
+
+  it('names the alchemy runs that are evidence about a finishing switch', () => {
+    expect(settingAlchemyEvidence('upscaler')).toBe('enlarge');
+    expect(settingAlchemyEvidence('facefixer')).toBe('fix_faces');
+    // A setting the alchemy studio has no tool for names none.
+    expect(settingAlchemyEvidence('steps')).toBeNull();
   });
 
   it('reaches a setting the same way through its API field name', () => {

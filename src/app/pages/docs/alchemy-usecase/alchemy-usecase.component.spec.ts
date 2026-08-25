@@ -46,6 +46,10 @@ const PUBLISHED: AlchemyEvidenceManifest = {
         result: 'enlarge/realesrgan.webp',
       },
       model: 'RealESRGAN_x4plus',
+      source_width: 512,
+      source_height: 512,
+      result_width: 2048,
+      result_height: 2048,
       notes: 'Rendered from the same source as every other stop.',
     },
   ],
@@ -87,6 +91,10 @@ const CONTROL_MAPS: AlchemyEvidenceManifest = {
     control_type: type,
     model: type,
     notes: `What ${type} reads.`,
+    source_width: 1024,
+    source_height: 1024,
+    result_width: 1024,
+    result_height: 1024,
     files: {
       source: 'sources/anchor.webp',
       ...(type === UNPUBLISHED
@@ -198,6 +206,34 @@ describe('DocsAlchemyUseCaseComponent', () => {
     expect(el().textContent).toContain(
       'Rendered from the same source as every other stop.',
     );
+  });
+
+  it('says what went in and what came back, in pixels, off the manifest', async () => {
+    await setUp('enlarge', PUBLISHED);
+
+    const badges = all<HTMLElement>('.gs-ref-shot-pic .gs-pixels-text').map(
+      (badge) => badge.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+
+    expect(badges).toEqual(['512 × 512', '2048 × 2048']);
+  });
+
+  it('carries that size onto the layer the picture opens on', async () => {
+    await setUp('control_map', CONTROL_MAPS);
+    all<HTMLButtonElement>('.gs-ref-maps-grid .gs-ref-zoom')[0].click();
+    fixture.detectChanges();
+
+    const image = find<HTMLImageElement>('.gs-tut-viewer-img')!;
+    image.getBoundingClientRect = () =>
+      ({ width: 512, height: 512 }) as DOMRect;
+    image.dispatchEvent(new Event('load'));
+    fixture.detectChanges();
+
+    expect(
+      find('.gs-tut-viewer-stage .gs-pixels-text')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim(),
+    ).toBe('1024 × 1024 · shown at 50%');
   });
 
   it('shows the words a describe-family form answered with', async () => {

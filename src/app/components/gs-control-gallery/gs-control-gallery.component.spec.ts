@@ -98,12 +98,17 @@ function world(
     image_model: { slug, name, baseline: 'stable_diffusion_1', note: '' },
     scene: { scene_id: sceneId, label, prompt: 'a courier' },
     source_image: `${stripId}/source.webp`,
+    source_width: 512,
+    source_height: 512,
+    held: { width: 512, height: 512 },
     stops: [
       {
         value: 'canny',
         label: 'canny',
         caption: `Canny on ${label}.`,
         file: `${stripId}/001_canny.webp`,
+        width: 512,
+        height: 512,
         control_type: 'canny',
         control_group: 'edges',
         control_map: `${stripId}/001_canny_map.webp`,
@@ -113,6 +118,8 @@ function world(
         label: 'openpose',
         caption: `Openpose on ${label}.`,
         file: `${stripId}/023_openpose.webp`,
+        width: 512,
+        height: 512,
         control_type: 'openpose',
         control_group: 'pose',
         control_map: `${stripId}/023_openpose_map.webp`,
@@ -243,6 +250,65 @@ describe('GsControlGalleryComponent', () => {
       .toEqual(['Starting picture', 'Control map', 'Finished image']);
     expect(find('.gs-ctl-model')!.textContent?.trim()).toBe('Deliberate');
     expect(find('.gs-ctl-meta')!.textContent).toContain('Rendered on');
+  });
+
+  it('says what each of the three frames is in pixels, from the index', async () => {
+    await setUp();
+    openTile(0);
+
+    const badges = all<HTMLElement>('.gs-ctl-shot .gs-pixels-text').map(
+      (badge) => badge.textContent?.replace(/\s+/g, ' ').trim(),
+    );
+
+    // The source and the render are stated by the index; the map is published
+    // without a size, so its frame carries none until the file has arrived.
+    expect(badges).toEqual(['512 × 512', '512 × 512']);
+  });
+
+  it('takes the map own size off the file, which is the only place it is', async () => {
+    await setUp();
+    openTile(0);
+
+    const map = all<HTMLImageElement>('.gs-ctl-shot img')[1];
+    Object.defineProperty(map, 'naturalWidth', {
+      value: 512,
+      configurable: true,
+    });
+    Object.defineProperty(map, 'naturalHeight', {
+      value: 512,
+      configurable: true,
+    });
+    map.dispatchEvent(new Event('load'));
+    fixture.detectChanges();
+
+    expect(all('.gs-ctl-shot .gs-pixels-text').length).toBe(3);
+  });
+
+  it('carries the size into the full-size view, with how far it is reduced', async () => {
+    await setUp();
+    openTile(0);
+    all<HTMLButtonElement>('.gs-ctl-shot')[2].click();
+    fixture.detectChanges();
+
+    const image = find<HTMLImageElement>('.gs-tut-viewer-img')!;
+    image.getBoundingClientRect = () =>
+      ({ width: 256, height: 256 }) as DOMRect;
+    Object.defineProperty(image, 'naturalWidth', {
+      value: 512,
+      configurable: true,
+    });
+    Object.defineProperty(image, 'naturalHeight', {
+      value: 512,
+      configurable: true,
+    });
+    image.dispatchEvent(new Event('load'));
+    fixture.detectChanges();
+
+    expect(
+      find('.gs-tut-viewer-stage .gs-pixels-text')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim(),
+    ).toBe('512 × 512 · shown at 50%');
   });
 
   it('heads the strength strip so it reads as its own section', async () => {

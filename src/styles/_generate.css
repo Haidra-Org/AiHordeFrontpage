@@ -9578,6 +9578,7 @@
   outline-offset: -2px;
 }
 .gs-tut-viewer-stage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9589,6 +9590,14 @@
    resolve against and a tall portrait runs past the panel's bottom edge. What
    is subtracted is the layer's own padding, the title band and the stage's
    inset. */
+/* Shrink-wrapped round the picture, so the size badge sits on the picture's
+   own bottom-left corner rather than in the letterboxing beside it. */
+.gs-tut-viewer-hold {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
 .gs-tut-viewer-img {
   min-height: 0;
   max-width: 100%;
@@ -10243,6 +10252,18 @@ app-gs-sweep-scrub {
 .gen-studio .gs-pixels--cell {
   color: var(--gs-ink-2);
 }
+/* On a picture rather than beside it: bottom left, clear of the top-right
+   glyphs every enlargeable frame carries, and out of the way of a pointer
+   reaching for the middle. The badge never takes a press, so it is passed
+   through to whatever it is standing on. */
+.gen-studio .gs-pixels--corner {
+  position: absolute;
+  z-index: 2;
+  bottom: var(--gs-space-1);
+  left: var(--gs-space-1);
+  max-width: calc(100% - var(--gs-space-4));
+  pointer-events: none;
+}
 
 /* The lens: a round window on the picture's own pixels, following the pointer.
    Two rings rather than one, so the edge clears 3:1 against a render of any
@@ -10644,10 +10665,36 @@ app-gs-sweep-scrub {
 .gen-studio .gs-sweep-stage--big.is-pannable:active {
   cursor: grabbing;
 }
-.gen-studio .gs-sweep-stage--big .gs-sweep-frame {
+.gen-studio .gs-sweep-stage .gs-sweep-frame {
   transform: translate(var(--gs-sweep-pan-x, 0), var(--gs-sweep-pan-y, 0))
     scale(var(--gs-sweep-zoom, 1));
   transform-origin: center;
+}
+/* A plate drawn closer in is a picture the reader is inside: the drag is the
+   picture's rather than the page's, and the cursor says as much. The stage
+   clips, so the enlargement never reaches the prose around it. */
+.gen-studio .gs-plate-col .gs-sweep-stage.is-zoomed {
+  touch-action: none;
+  cursor: grab;
+}
+.gen-studio .gs-plate-col .gs-sweep-stage.is-zoomed:active {
+  cursor: grabbing;
+}
+/* The height cap is what the picture fits inside; an enlargement of it is
+   allowed past that cap and held by the stage's own clipping instead. */
+.gen-studio .gs-plate-col .gs-sweep-stage.is-zoomed .gs-sweep-frame,
+.gen-studio .gs-plate-col .gs-sweep-stage.is-zoomed .gs-wipe-img {
+  max-height: min(48vh, 440px);
+}
+/* On the plate the picture's four corners are already spoken for by the value,
+   the compare chips and the glyphs, so the zoom takes the one that is free. */
+.gen-studio .gs-plate-col .gs-sweep-stage .gs-sweep-scales {
+  position: absolute;
+  z-index: 3;
+  left: var(--gs-space-2);
+  bottom: var(--gs-space-2);
+  flex-wrap: wrap;
+  max-width: calc(100% - 96px);
 }
 /* How close in, as three named sizes. Fit is the picture whole; 100% is one
    pixel of the file per pixel of the display, which is the only place two
@@ -13502,6 +13549,80 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-evidence {
   margin: var(--gs-space-6) 0 0;
 }
+
+/* ------- the matched pair, read at the picture's own pixels ---------- */
+
+/* One card per comparison, on the same chassis as the evidence figures beside
+   it: a heading line, the reader's choice of what to compare against, the pair
+   itself, and the way through to the whole picture. */
+.gen-studio .gs-ref-pair {
+  margin: var(--gs-space-4) 0 0;
+  padding: var(--gs-space-3);
+  border: 1px solid var(--gs-sec-tint-border, var(--gs-card-border));
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-card);
+}
+.gen-studio .gs-ref-pair-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--gs-space-2-5);
+}
+.gen-studio .gs-ref-pair-name {
+  font-size: var(--gs-text-sm);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-ref-pair-note {
+  font-size: var(--gs-text-xs);
+  line-height: 1.5;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-ref-pair-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin-bottom: var(--gs-space-2-5);
+}
+.gen-studio .gs-ref-pair-pick-label {
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-ref-pair-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-ref-pair-opt.is-on {
+  border-color: var(--gs-sec, var(--gs-blue));
+  background: var(--gs-sec-tint, var(--gs-blue-tint));
+  color: var(--gs-ink);
+}
+/* The pair is drawn at the crop's own pixels, which on a narrow column is
+   wider than the column: it is centred and allowed to shrink rather than
+   pushing the page sideways. */
+.gen-studio .gs-ref-pair-media {
+  display: block;
+  max-width: 100%;
+}
+/* Centred under the pair rather than pushed to the card's two edges: the pair
+   is drawn at the crop's own width and centred, and badges on the card's edges
+   would sit beside the picture instead of under it. */
+.gen-studio .gs-ref-pair-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--gs-space-4);
+  margin: var(--gs-space-2) 0 0;
+}
+.gen-studio .gs-ref-pair-door {
+  margin-top: var(--gs-space-2-5);
+}
 .gen-studio .gs-ref-shot {
   margin: var(--gs-space-4) 0 0;
   padding: var(--gs-space-3);
@@ -13543,6 +13664,19 @@ app-gs-compare-wipe {
   height: auto;
   border-radius: var(--gs-radius-sm);
   background: var(--gs-stage);
+}
+/* The picture on its own, so the size badge sits on its bottom-left corner
+   rather than beside the label under it. */
+.gen-studio .gs-ref-shot-pic {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+/* Every enlargeable frame is a button drawn tight around its picture, which is
+   what the badge inside it is positioned against. */
+.gen-studio .gs-ref-zoom,
+.gen-studio .gs-tut-stage {
+  position: relative;
 }
 .gen-studio .gs-ref-shot-frame--text {
   justify-content: space-between;

@@ -39,6 +39,7 @@ import {
 import { sectionIdentity } from '../../content/sections';
 import {
   SweepLibraryService,
+  SweepCrop,
   SweepStop,
   sweepIsCategorical,
 } from '../../services/sweep-library.service';
@@ -254,7 +255,7 @@ const FILM_EDGE_PX = 8;
             @for (cell of tileCells; track cell) {
               <img
                 class="gs-sweep-tile"
-                [src]="mediaUrl(stop, !!inViewer)"
+                [src]="mediaUrl(stop)"
                 alt=""
                 loading="lazy"
                 (load)="onFrameLoad($event)"
@@ -269,7 +270,7 @@ const FILM_EDGE_PX = 8;
       } @else {
         <img
           [class]="cls"
-          [src]="mediaUrl(stop, !!inViewer)"
+          [src]="mediaUrl(stop)"
           [alt]="
             'generate.sweeps.frame_alt'
               | transloco: { value: valueTextOf(stop) }
@@ -283,26 +284,21 @@ const FILM_EDGE_PX = 8;
     <!-- The two sides of a before-and-after strip, wiped over each other. The
          chips are the sides' labels: the same token the caption under a range
          strip carries, so "Tiling On" reads the same wherever it is said. -->
-    <ng-template
-      #pairWipe
-      let-sides="sides"
-      let-handleOnly="handleOnly"
-      let-inViewer="inViewer"
-    >
+    <ng-template #pairWipe let-sides="sides" let-inViewer="inViewer">
       <app-gs-compare-wipe
-        [beforeSrc]="mediaUrl(sides[0], !!inViewer)"
-        [afterSrc]="mediaUrl(sides[1], !!inViewer)"
+        [beforeSrc]="mediaUrl(sides[0])"
+        [afterSrc]="mediaUrl(sides[1])"
         [beforeAlt]="frameAlt(sides[0])"
         [afterAlt]="frameAlt(sides[1])"
         [tiled]="tiled()"
         [sideBySide]="!wiped()"
-        [handleOnly]="!!handleOnly"
+        [handleOnly]="true"
         [fit]="!!inViewer"
         [fitWidth]="fitBox()?.width ?? null"
         [fitHeight]="fitBox()?.height ?? null"
-        [zoom]="inViewer ? zoomFactor() : 1"
-        [panX]="inViewer ? panX() : 0"
-        [panY]="inViewer ? panY() : 0"
+        [zoom]="zoomFactor()"
+        [panX]="panX()"
+        [panY]="panY()"
         (imageLoad)="onFrameLoad()"
       >
         <app-gs-setting-chip
@@ -326,19 +322,20 @@ const FILM_EDGE_PX = 8;
     <ng-template #againstWipe let-inViewer="inViewer">
       <app-gs-compare-wipe
         [beforeSrc]="compareUrl()!"
-        [afterSrc]="mediaUrl(stop(), !!inViewer)"
+        [afterSrc]="mediaUrl(stop())"
         [beforeAlt]="compareAlt()"
         [afterAlt]="frameAlt(stop())"
         [beforeLabel]="compareAlt()"
         [afterLabel]="valueTextOf(stop())"
         [beforeNote]="matchNotes().before"
         [afterNote]="matchNotes().after"
+        [handleOnly]="true"
         [fit]="!!inViewer"
         [fitWidth]="fitBox()?.width ?? null"
         [fitHeight]="fitBox()?.height ?? null"
-        [zoom]="inViewer ? zoomFactor() : 1"
-        [panX]="inViewer ? panX() : 0"
-        [panY]="inViewer ? panY() : 0"
+        [zoom]="zoomFactor()"
+        [panX]="panX()"
+        [panY]="panY()"
         (imageLoad)="onFrameLoad()"
       />
     </ng-template>
@@ -444,7 +441,7 @@ const FILM_EDGE_PX = 8;
             [attr.aria-live]="inViewer ? 'polite' : null"
             [width]="size.width"
             [height]="size.height"
-            [shown]="inViewer ? shownPercent() : null"
+            [shown]="inViewer || zoomedIn() ? shownPercent() : null"
           />
         }
       </span>
@@ -466,6 +463,9 @@ const FILM_EDGE_PX = 8;
             </button>
           }
         </span>
+      }
+      @if (!inViewer && offersZoom()) {
+        <ng-container [ngTemplateOutlet]="scales" />
       }
       <span class="gs-sweep-glyphs">
         @if (finePointer()) {
@@ -499,6 +499,39 @@ const FILM_EDGE_PX = 8;
       </span>
     </ng-template>
 
+    <!-- How close in the picture is drawn. One control, offered wherever the
+         picture has more pixels than the room is drawing it in: Fit is the
+         picture whole, 100% is one pixel of the file per pixel of the display,
+         and 200% is the resampling itself. -->
+    <ng-template #scales>
+      <span
+        class="gs-sweep-scales"
+        role="group"
+        [attr.aria-label]="'generate.sweeps.zoom_group' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-sweep-scale"
+          [class.is-on]="zoomStep() === 'fit'"
+          [attr.aria-pressed]="zoomStep() === 'fit'"
+          (click)="zoomTo(null); $event.stopPropagation()"
+        >
+          {{ 'generate.sweeps.zoom_fit' | transloco }}
+        </button>
+        @for (step of zoomSteps; track step.id) {
+          <button
+            type="button"
+            class="gs-sweep-scale"
+            [class.is-on]="zoomStep() === step.id"
+            [attr.aria-pressed]="zoomStep() === step.id"
+            (click)="zoomTo(step.scale); $event.stopPropagation()"
+          >
+            {{ step.labelKey | transloco }}
+          </button>
+        }
+      </span>
+    </ng-template>
+
     <!-- The picture itself, whatever it currently is: the pair wiped over each
          other, the frame against what it is held to, the thing being held up
          while a finger rests on the stage, or the frame on its own. -->
@@ -517,11 +550,7 @@ const FILM_EDGE_PX = 8;
       } @else if (pairSides(); as sides) {
         <ng-container
           [ngTemplateOutlet]="pairWipe"
-          [ngTemplateOutletContext]="{
-            sides: sides,
-            handleOnly: false,
-            inViewer: inViewer,
-          }"
+          [ngTemplateOutletContext]="{ sides: sides, inViewer: inViewer }"
         />
       } @else {
         <ng-container
@@ -596,17 +625,24 @@ const FILM_EDGE_PX = 8;
                   class="gs-sweep-stage"
                   tabindex="0"
                   role="group"
+                  [class.is-pannable]="pannable()"
+                  [class.is-zoomed]="zoomedIn()"
+                  [style.--gs-sweep-zoom]="zoomFactor()"
+                  [style.--gs-sweep-pan-x.px]="panX()"
+                  [style.--gs-sweep-pan-y.px]="panY()"
                   [attr.aria-roledescription]="
                     'generate.sweeps.stage_role' | transloco
                   "
                   [attr.aria-label]="parameterLabelKey() | transloco"
                   (keydown)="onStageKeydown($event)"
                   (click)="onStagePress($event)"
-                  (pointerdown)="onStagePointerDown($event)"
-                  (pointermove)="onStagePointerMove($event)"
-                  (pointerup)="onStagePointerUp()"
-                  (pointercancel)="onStagePointerUp()"
+                  (pointerdown)="onPicturePointerDown($event)"
+                  (pointermove)="onPicturePointerMove($event, false)"
+                  (pointerup)="onPicturePointerUp($event, false)"
+                  (pointercancel)="onPicturePointerUp($event, false)"
                   (pointerleave)="onStageLeave()"
+                  (wheel)="onPictureWheel($event, false)"
+                  (dblclick)="onPictureDoublePress($event)"
                 >
                   <ng-container
                     [ngTemplateOutlet]="stageMedia"
@@ -1018,7 +1054,7 @@ const FILM_EDGE_PX = 8;
               <span class="gs-sweep-card-stage">
                 <ng-container
                   [ngTemplateOutlet]="pairWipe"
-                  [ngTemplateOutletContext]="{ sides: sides, handleOnly: true }"
+                  [ngTemplateOutletContext]="{ sides: sides }"
                 />
               </span>
             }
@@ -1071,32 +1107,7 @@ const FILM_EDGE_PX = 8;
                     {{ parameterLabelKey() | transloco }}
                   </span>
                 </span>
-                <span
-                  class="gs-sweep-scales"
-                  role="group"
-                  [attr.aria-label]="'generate.sweeps.zoom_group' | transloco"
-                >
-                  <button
-                    type="button"
-                    class="gs-sweep-scale"
-                    [class.is-on]="zoomStep() === 'fit'"
-                    [attr.aria-pressed]="zoomStep() === 'fit'"
-                    (click)="zoomTo(null)"
-                  >
-                    {{ 'generate.sweeps.zoom_fit' | transloco }}
-                  </button>
-                  @for (step of zoomSteps; track step.id) {
-                    <button
-                      type="button"
-                      class="gs-sweep-scale"
-                      [class.is-on]="zoomStep() === step.id"
-                      [attr.aria-pressed]="zoomStep() === step.id"
-                      (click)="zoomTo(step.scale)"
-                    >
-                      {{ step.labelKey | transloco }}
-                    </button>
-                  }
-                </span>
+                <ng-container [ngTemplateOutlet]="scales" />
                 <button
                   type="button"
                   class="gs-sweep-dialog-x"
@@ -1116,13 +1127,14 @@ const FILM_EDGE_PX = 8;
                 [style.--gs-sweep-zoom]="zoomFactor()"
                 [style.--gs-sweep-pan-x.px]="panX()"
                 [style.--gs-sweep-pan-y.px]="panY()"
-                (pointerdown)="onViewerPointerDown($event)"
-                (pointermove)="onViewerPointerMove($event)"
-                (pointerup)="onViewerPointerUp($event)"
-                (pointercancel)="onViewerPointerUp($event)"
+                [class.is-zoomed]="zoomedIn()"
+                (pointerdown)="onPicturePointerDown($event)"
+                (pointermove)="onPicturePointerMove($event, true)"
+                (pointerup)="onPicturePointerUp($event, true)"
+                (pointercancel)="onPicturePointerUp($event, true)"
                 (pointerleave)="onStageLeave()"
-                (wheel)="onViewerWheel($event)"
-                (dblclick)="onViewerDoubleClick($event)"
+                (wheel)="onPictureWheel($event, true)"
+                (dblclick)="onPictureDoublePress($event)"
               >
                 <ng-container
                   [ngTemplateOutlet]="stageMedia"
@@ -1276,6 +1288,12 @@ export class GsSweepScrubComponent {
    */
   private readonly zoomTouched = signal(false);
   private readonly pan = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+  /**
+   * The detail the view has been asked to open on, held until the room has been
+   * measured. Null both before a caller asks and once the view has been put
+   * where it was asked for.
+   */
+  private readonly wantedCrop = signal<SweepCrop | null>(null);
   /** The room the full-size view gives the picture, in CSS pixels. */
   private readonly viewBox = signal<{ width: number; height: number }>({
     width: 0,
@@ -1287,6 +1305,15 @@ export class GsSweepScrubComponent {
    * did.
    */
   private readonly measuredFrame = signal<PixelSize | null>(null);
+  /**
+   * The room the plate's own stage gives the picture, measured the same way the
+   * full-size view's is. The zoom is one model with two hosts, and the only
+   * thing that differs between them is how much room the picture has.
+   */
+  private readonly plateBox = signal<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
   /** Whether the lens follows the pointer over the picture. */
   private readonly loupe = signal(false);
   /** Where the lens is and what it is holding up, or null while it is away. */
@@ -1327,6 +1354,7 @@ export class GsSweepScrubComponent {
     viewChild<ElementRef<HTMLDialogElement>>('viewer');
   private readonly viewerStageRef =
     viewChild<ElementRef<HTMLElement>>('viewerStage');
+  private readonly plateStageRef = viewChild<ElementRef<HTMLElement>>('stage');
   private readonly detailsRef = viewChild<ElementRef<HTMLElement>>('details');
   private readonly openerRefs = viewChildren<ElementRef<HTMLElement>>('opener');
   private readonly filmCells =
@@ -1361,6 +1389,12 @@ export class GsSweepScrubComponent {
 
   /** The pinch's starting spread and scale, while two fingers are down. */
   private pinchFrom: { spread: number; zoom: number } | null = null;
+  /**
+   * Where the two fingers last were, between them. A pinch that only scaled
+   * would grow the picture about a point the reader is not holding; carrying
+   * the middle is what lets one gesture both place a detail and enlarge it.
+   */
+  private pinchAt: { x: number; y: number } | null = null;
 
   /**
    * What the card and the plate call the setting. Naming it is what separates
@@ -1799,10 +1833,20 @@ export class GsSweepScrubComponent {
    * into the whole of it, so the smaller of two sides is enlarged to meet the
    * larger rather than the larger being reduced to meet it.
    */
+  /**
+   * The room the picture currently has: the full-size view's while it is open,
+   * and the plate's stage otherwise. Everything the zoom is arithmetic against
+   * reads this rather than one host's box, which is what makes the two hosts
+   * one model instead of two.
+   */
+  private readonly box = computed(() =>
+    this.viewerOpen() ? this.viewBox() : this.plateBox(),
+  );
+
   public readonly fitBox = computed<{ width: number; height: number } | null>(
     () => {
       const size = this.viewSize();
-      const box = this.viewBox();
+      const box = this.box();
       if (!size || box.width <= 0) {
         return null;
       }
@@ -1820,7 +1864,7 @@ export class GsSweepScrubComponent {
    */
   public readonly fitScale = computed(() => {
     const size = this.viewSize();
-    const box = this.viewBox();
+    const box = this.box();
     if (!size || size.width <= 0 || box.width <= 0 || box.height <= 0) {
       return 1;
     }
@@ -1861,7 +1905,7 @@ export class GsSweepScrubComponent {
    * is not a page of upscale-sized downloads.
    */
   public readonly wantsFullPixels = computed(
-    () => this.viewerOpen() && this.zoomScale() >= 1,
+    () => (this.viewerOpen() || this.zoomTouched()) && this.zoomScale() >= 1,
   );
 
   /**
@@ -1943,6 +1987,8 @@ export class GsSweepScrubComponent {
     void this.sweeps.ensureLoaded();
     this.observeHostWidth();
     this.observeViewBox();
+    this.observePlateBox();
+    this.holdAskedCrop();
 
     // What the picture being compared against is, in pixels. The index says
     // nothing about a source image or a detector's map, so the only place the
@@ -2082,8 +2128,14 @@ export class GsSweepScrubComponent {
    * The copy a surface draws: the file's own pixels once the full-size view is
    * being asked for them, and the smaller copy everywhere else.
    */
-  public mediaUrl(stop: SweepStop, inViewer: boolean): string {
-    return inViewer && this.wantsFullPixels()
+  /**
+   * Which copy of a frame to draw. Which host is showing it is no longer part
+   * of the answer: the plate zooms as the full-size view does, and a reader
+   * looking at true pixels is owed the file rather than the smaller copy
+   * wherever they are standing.
+   */
+  public mediaUrl(stop: SweepStop): string {
+    return this.wantsFullPixels()
       ? this.sweeps.imageUrl(stop)
       : this.frameUrl(stop);
   }
@@ -2250,6 +2302,26 @@ export class GsSweepScrubComponent {
     this.openViewer();
   }
 
+  /**
+   * Take one stop full size at the file's own pixels, centred on the detail the
+   * library cut from it.
+   *
+   * A page that shows two crops beside each other has already picked the place
+   * where the difference lives; asking a reader to open the explorer, find that
+   * place again and zoom to it would be asking them to redo the work the crop
+   * did for them. A stop the library published no crop for opens on the whole
+   * frame, which is the same view the plate's own expand gives.
+   *
+   * The view is set once the room has been measured rather than here: the
+   * dialog has no size until it has rendered, and a zoom asked for against a
+   * box of zero resolves to the fitted size instead.
+   */
+  public openStopAtCrop(at: number): void {
+    this.goToStop(at);
+    this.openViewer();
+    this.wantedCrop.set(this.strip()?.stops[at]?.crop ?? null);
+  }
+
   public stepStop(delta: number): void {
     this.goToStop(this.index() + delta);
   }
@@ -2324,18 +2396,38 @@ export class GsSweepScrubComponent {
       fromStageControl(event.target) ||
       press?.scrubbing ||
       press?.moved ||
-      this.holding()
+      this.holding() ||
+      // A plate drawn closer in is a picture the reader is inside: the press
+      // there pans and toggles rather than leaving for another surface.
+      this.zoomedIn()
     ) {
       return;
     }
     this.openViewer();
   }
 
-  public onStagePointerDown(event: PointerEvent): void {
-    // The divider, the chips and the glyphs stand on the picture and are the
-    // controls a press there is meant for. Scrubbing under them would move the
-    // frame while the reader was aiming at something else on it.
+  /**
+   * A press on either picture. One gesture model, two hosts: what a drag does
+   * next depends on how close in the picture is drawn rather than on which
+   * surface it is drawn on.
+   *
+   * The divider, the chips and the glyphs stand on the picture and are the
+   * controls a press there is meant for; a gesture under them would move the
+   * picture while the reader was aiming at something else on it.
+   */
+  public onPicturePointerDown(event: PointerEvent): void {
     if (fromStageControl(event.target)) {
+      return;
+    }
+    this.viewerPointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
+    if (this.viewerPointers.size === 2) {
+      this.pinchFrom = { spread: this.pointerSpread(), zoom: this.zoomScale() };
+      this.pinchAt = this.pointerMiddle();
+      this.cancelHold();
+      this.stagePress = null;
       return;
     }
     const stage = event.currentTarget;
@@ -2349,20 +2441,62 @@ export class GsSweepScrubComponent {
       scrubbing: false,
       moved: false,
     };
-    if (this.comparisons().length > 0) {
+    if (!this.zoomedIn() && this.comparisons().length > 0) {
       this.holdTimer = setTimeout(() => this.holding.set(true), HOLD_MS);
     }
   }
 
   /**
-   * A drag across the stage scrubs, once it has said which way it is going: the
-   * stage sits in a page that scrolls, and a swipe down over it belongs to the
-   * page.
+   * What a drag does: two fingers always pinch and pan together; one finger
+   * pans once the picture is drawn larger than the room, and otherwise scrubs
+   * on the plate and waits to be read as a swipe in the full-size view.
+   *
+   * The plate sits in a page that scrolls, so a one-finger scrub has to say
+   * which way it is going before it claims the gesture. A pan does not: the
+   * picture is already larger than its room, and there is nowhere for a drag on
+   * it to have been meant for.
    */
-  public onStagePointerMove(event: PointerEvent): void {
+  public onPicturePointerMove(event: PointerEvent, inViewer: boolean): void {
     this.trackLens(event);
+    const from = this.viewerPointers.get(event.pointerId);
+    if (!from) {
+      return;
+    }
+    const previous = { ...from };
+    from.x = event.clientX;
+    from.y = event.clientY;
+
+    if (this.viewerPointers.size >= 2) {
+      const pinch = this.pinchFrom;
+      const spread = this.pointerSpread();
+      const middle = this.pointerMiddle();
+      // Two fingers move the picture as well as scale it, so a reader can put
+      // a detail where they want it and grow it in the same gesture.
+      if (this.pinchAt && middle) {
+        this.panBy(middle.x - this.pinchAt.x, middle.y - this.pinchAt.y);
+      }
+      this.pinchAt = middle;
+      if (pinch && pinch.spread > 0 && spread > 0) {
+        this.setZoom(
+          (spread / pinch.spread) * pinch.zoom,
+          middle ? { clientX: middle.x, clientY: middle.y } : undefined,
+        );
+      }
+      return;
+    }
+
+    if (this.zoomedIn()) {
+      this.cancelHold();
+      if (this.pannable()) {
+        this.panBy(event.clientX - previous.x, event.clientY - previous.y);
+      }
+      return;
+    }
+
+    // At Fit the full-size view reads the drag as a swipe when it ends, so
+    // nothing moves under the finger on the way.
     const press = this.stagePress;
-    if (!press || !this.scrubbable()) {
+    if (inViewer || !press || !this.scrubbable()) {
       return;
     }
     const dx = event.clientX - press.x;
@@ -2389,72 +2523,81 @@ export class GsSweepScrubComponent {
     this.lens.set(null);
   }
 
-  public onStagePointerUp(): void {
+  /**
+   * The end of a press. On the plate it is only bookkeeping; in the full-size
+   * view a drag that moved nothing under it is read as a swipe, across to the
+   * next stop or down to close, and only while the picture is at Fit: once it
+   * is larger than the room, a drag was a pan.
+   */
+  public onPicturePointerUp(event: PointerEvent, inViewer: boolean): void {
+    const from = this.viewerPointers.get(event.pointerId);
+    this.viewerPointers.delete(event.pointerId);
+    if (this.viewerPointers.size < 2) {
+      this.pinchFrom = null;
+      this.pinchAt = null;
+    }
     this.cancelHold();
     this.holding.set(false);
     this.scrubDrag.set(false);
-    // The press itself is cleared after the click it produced has been read.
     const press = this.stagePress;
+    // The press itself is cleared after the click it produced has been read.
     setTimeout(() => {
       if (this.stagePress === press) {
         this.stagePress = null;
       }
     }, 0);
-  }
-
-  /* ---------- the full-size view ---------- */
-
-  public onViewerPointerDown(event: PointerEvent): void {
-    this.viewerPointers.set(event.pointerId, {
-      x: event.clientX,
-      y: event.clientY,
-    });
-    if (this.viewerPointers.size === 2) {
-      this.pinchFrom = { spread: this.pointerSpread(), zoom: this.zoomScale() };
-    }
-  }
-
-  /**
-   * Two fingers pinch the frame; one drags it about once the picture is larger
-   * than the room it is in, and decides between the stops and the way out once
-   * it is not.
-   */
-  public onViewerPointerMove(event: PointerEvent): void {
-    this.trackLens(event);
-    const from = this.viewerPointers.get(event.pointerId);
-    if (!from) {
+    if (!inViewer || !from || this.zoomedIn()) {
       return;
     }
-    const previous = { ...from };
-    from.x = event.clientX;
-    from.y = event.clientY;
-    if (this.viewerPointers.size >= 2) {
-      const pinch = this.pinchFrom;
-      const spread = this.pointerSpread();
-      if (pinch && pinch.spread > 0) {
-        this.setZoom((spread / pinch.spread) * pinch.zoom);
-      }
+    const dx = event.clientX - from.x;
+    const dy = event.clientY - from.y;
+    if (dy > SWIPE_CLOSE_PX && Math.abs(dy) > Math.abs(dx)) {
+      this.closeViewer();
       return;
     }
-    if (this.pannable()) {
-      this.panBy(event.clientX - previous.x, event.clientY - previous.y);
+    if (
+      this.scrubbable() &&
+      Math.abs(dx) > SWIPE_STEP_PX &&
+      Math.abs(dx) > Math.abs(dy)
+    ) {
+      this.stepStop(dx < 0 ? 1 : -1);
     }
   }
 
   /**
    * A wheel over the picture moves between the fitted size and the sizes above
    * it without stopping at them, about the pointer, so the detail under the
-   * cursor is the detail that grows. The page behind is inert and frozen while
-   * this view is open, so the gesture is this view's to take.
+   * cursor is the detail that grows.
+   *
+   * In the full-size view the page behind is inert and frozen, so the plain
+   * wheel is this view's to take. On the plate it is not: the stage sits in a
+   * page the reader is scrolling through, and a plate that swallowed the wheel
+   * would trap them on it. There the wheel zooms with the platform's own zoom
+   * modifier held, and once the picture is already drawn larger than the stage,
+   * where a plain wheel is unambiguously about the picture.
    */
-  public onViewerWheel(event: WheelEvent): void {
+  public onPictureWheel(event: WheelEvent, inViewer: boolean): void {
+    if (!inViewer && !event.ctrlKey && !event.metaKey && !this.zoomedIn()) {
+      return;
+    }
     event.preventDefault();
     const factor = Math.exp(-event.deltaY / 320);
     this.setZoom(this.zoomScale() * factor, event);
   }
 
-  /** Two presses swap between fitted and true pixels, about the pointer. */
-  public onViewerDoubleClick(event: MouseEvent): void {
+  /**
+   * Two presses swap between fitted and true pixels, about the pointer.
+   *
+   * On the plate at Fit the first of the two has already opened the picture
+   * full size, which is what a press on the plate has always done; the pair
+   * therefore lands as "open it, at true pixels, here". Once the plate is
+   * zoomed a press no longer opens anything, and the two presses toggle in
+   * place as they do in the view.
+   */
+  public onPictureDoublePress(event: MouseEvent): void {
+    if (fromStageControl(event.target)) {
+      return;
+    }
     this.setZoom(
       this.zoomStep() === 'fit' ? 1 : this.fitScale(),
       event,
@@ -2463,9 +2606,13 @@ export class GsSweepScrubComponent {
   }
 
   /**
-   * The keys the picture answers: closer, further, back to fitted, the lens.
-   * The first three belong to the full-size view; the lens belongs to whichever
-   * picture the reader is standing on, which is the stage or the view.
+   * The keys the picture answers, on whichever host is showing it: closer,
+   * further, back to the whole picture, and the lens.
+   *
+   * Escape steps back rather than out: a reader who has zoomed in on a detail
+   * and presses it means "undo that", and only once the picture is whole again
+   * does the same key close the view. The dialog would otherwise close under
+   * them at the first press, losing the stop and the comparison with it.
    */
   public onViewKeydown(event: KeyboardEvent): void {
     const onStage =
@@ -2478,7 +2625,15 @@ export class GsSweepScrubComponent {
       }
       return;
     }
-    if (!this.viewerOpen()) {
+    if (!this.viewerOpen() && !onStage) {
+      return;
+    }
+    if (event.key === 'Escape') {
+      if (this.zoomedIn()) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.zoomTo(null);
+      }
       return;
     }
     if (event.key === '+' || event.key === '=') {
@@ -2515,6 +2670,26 @@ export class GsSweepScrubComponent {
     return over.x > 0.5 || over.y > 0.5;
   });
 
+  /**
+   * Whether the picture is drawn closer in than the room would draw it. It is
+   * the one thing the gesture model branches on: at Fit a drag steers the
+   * strip, and above Fit it moves the picture.
+   */
+  public readonly zoomedIn = computed(
+    () =>
+      this.zoomAsked() !== null && this.zoomScale() > this.fitScale() + 1e-3,
+  );
+
+  /**
+   * Whether the zoom is worth offering here. The pills appear where the picture
+   * has more pixels than the room is drawing it in, which is exactly where
+   * there is something to go and look at; a strip whose frames already fit
+   * inside the stage has nothing behind a 100% pill but the same picture.
+   */
+  public readonly offersZoom = computed(
+    () => this.fitScale() < 0.999 || this.zoomAsked() !== null,
+  );
+
   /** Whether the lens is worth offering: it is a pointer's tool. */
   public finePointer(): boolean {
     return this.mediaMatches('(pointer: fine)');
@@ -2524,31 +2699,6 @@ export class GsSweepScrubComponent {
     this.loupe.update((on) => !on);
     if (!this.loupe()) {
       this.lens.set(null);
-    }
-  }
-
-  /** A swipe across steps, a swipe down closes, and a pinch simply ends. */
-  public onViewerPointerUp(event: PointerEvent): void {
-    const from = this.viewerPointers.get(event.pointerId);
-    this.viewerPointers.delete(event.pointerId);
-    if (this.viewerPointers.size < 2) {
-      this.pinchFrom = null;
-    }
-    if (!from || this.pannable()) {
-      return;
-    }
-    const dx = event.clientX - from.x;
-    const dy = event.clientY - from.y;
-    if (dy > SWIPE_CLOSE_PX && Math.abs(dy) > Math.abs(dx)) {
-      this.closeViewer();
-      return;
-    }
-    if (
-      this.scrubbable() &&
-      Math.abs(dx) > SWIPE_STEP_PX &&
-      Math.abs(dx) > Math.abs(dy)
-    ) {
-      this.stepStop(dx < 0 ? 1 : -1);
     }
   }
 
@@ -2681,7 +2831,7 @@ export class GsSweepScrubComponent {
    */
   private readonly overflow = computed(() => {
     const size = this.viewSize();
-    const box = this.viewBox();
+    const box = this.box();
     if (!size || box.width <= 0) {
       return { x: 0, y: 0 };
     }
@@ -2762,8 +2912,34 @@ export class GsSweepScrubComponent {
     this.zoomAsked.set(null);
     this.zoomTouched.set(false);
     this.pan.set({ x: 0, y: 0 });
+    this.wantedCrop.set(null);
     this.viewerPointers.clear();
     this.pinchFrom = null;
+  }
+
+  /**
+   * Put the asked-for detail under the middle of the view at true pixels, once
+   * the view has a size to do the arithmetic against. The crop's rectangle is
+   * in the frame's own pixels, so where it lands on screen is that rectangle's
+   * middle carried to the middle of the room.
+   */
+  private holdAskedCrop(): void {
+    afterRenderEffect(() => {
+      const crop = this.wantedCrop();
+      const size = this.viewSize();
+      const box = this.box();
+      if (!crop || !size || box.width <= 0 || box.height <= 0) {
+        return;
+      }
+      this.zoomAsked.set(1);
+      this.zoomTouched.set(true);
+      const ratio = this.pixelRatio();
+      this.setPan(
+        (size.width / 2 - (crop.x + crop.width / 2)) / ratio,
+        (size.height / 2 - (crop.y + crop.height / 2)) / ratio,
+      );
+      this.wantedCrop.set(null);
+    });
   }
 
   /** The view the reader last asked for, for the rest of this session. */
@@ -2843,6 +3019,14 @@ export class GsSweepScrubComponent {
       return 0;
     }
     return Math.hypot(first.x - second.x, first.y - second.y);
+  }
+
+  /** The point between two fingers, which is what a pinch happens about. */
+  private pointerMiddle(): { x: number; y: number } | null {
+    const [first, second] = [...this.viewerPointers.values()];
+    return first && second
+      ? { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 }
+      : null;
   }
 
   private cancelHold(): void {
@@ -2967,6 +3151,40 @@ export class GsSweepScrubComponent {
     this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
+  /**
+   * Watch the room the plate's stage gives the picture. It is the same
+   * measurement the full-size view takes of its own stage, because the zoom is
+   * one model and the box is the only thing that differs between its hosts.
+   */
+  private observePlateBox(): void {
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    let watched: HTMLElement | null = null;
+    const observer = new ResizeObserver((entries) => {
+      const box = entries[0]?.contentRect;
+      if (box) {
+        this.plateBox.set({ width: box.width || 0, height: box.height || 0 });
+      }
+    });
+    afterRenderEffect(() => {
+      const stage = this.plateStageRef()?.nativeElement ?? null;
+      if (stage === watched) {
+        return;
+      }
+      if (watched) {
+        observer.unobserve(watched);
+      }
+      watched = stage;
+      if (stage) {
+        observer.observe(stage);
+      } else {
+        this.plateBox.set({ width: 0, height: 0 });
+      }
+    });
+    this.destroyRef.onDestroy(() => observer.disconnect());
+  }
+
   private observeHostWidth(): void {
     if (typeof ResizeObserver === 'undefined') {
       return;
@@ -3007,21 +3225,21 @@ function isSlider(target: EventTarget | null): boolean {
 
 /**
  * Whether a press landed on something standing on the picture rather than on
- * the picture: a pair being wiped, the compare chips, the value and the size,
- * and the glyphs. Each of those is its own control, and the stage's own
- * gestures would otherwise run under the reader's aim.
+ * the picture: the wipe's divider and its two side tags, the compare chips, the
+ * value and the size, the zoom pills, and the glyphs. Each of those is its own
+ * control, and the picture's own gestures would otherwise run under the
+ * reader's aim.
  *
- * A wipe is on the list whole rather than by its divider, because a wipe on the
- * stage takes a press anywhere on itself to move the divider there. A drag that
- * ends away from where it started reports its press against whatever the two
- * ends have in common, which is the pair rather than the divider, so a rule
- * written against the divider alone would let every drag through.
+ * The wipe itself is not on the list. A press anywhere on a pair used to move
+ * the divider there, which meant the whole picture had to be held back from the
+ * stage; the divider now moves from its handle alone, so every other press on a
+ * pair is a press on the picture and scrubs, pans or zooms like any other.
  */
 function fromStageControl(target: EventTarget | null): boolean {
   return (
     target instanceof Element &&
     !!target.closest(
-      '.gs-wipe, .gs-sweep-chips, .gs-sweep-titles, .gs-sweep-glyphs',
+      '.gs-wipe-divider, .gs-wipe-tag, .gs-sweep-chips, .gs-sweep-titles, .gs-sweep-glyphs, .gs-sweep-scales',
     )
   );
 }

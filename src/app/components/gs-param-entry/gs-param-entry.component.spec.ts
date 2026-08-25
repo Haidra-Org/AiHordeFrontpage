@@ -18,11 +18,51 @@ import {
   settingSweepStrip,
 } from '../../content/settings';
 import { alchemyUseCase } from '../../content/alchemy-usecases';
+import {
+  ALCHEMY_EVIDENCE_ROOT,
+  AlchemyEvidenceManifest,
+} from '../../content/alchemy-evidence';
 import { alchemyTopic } from '../../content/reference-topics';
 import en from '../../../assets/i18n/en.json';
 import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
 
 const translations = en as Record<string, string>;
+
+/**
+ * Two face repairs of one source, each published with the same rectangle cut
+ * from what went in and what came back. That pair is the only place the repair
+ * is visible at all, which is what the entry's evidence section is for.
+ */
+const REPAIRS: AlchemyEvidenceManifest = {
+  generated_against: 'https://aihorde.net/api/v2',
+  entries: ['GFPGAN', 'CodeFormers'].map((form) => ({
+    use_case: 'fix_faces',
+    form,
+    title: form,
+    files: {
+      source: 'sources/face.webp',
+      result: `fix_faces/${form}/result.webp`,
+    },
+    source_width: 806,
+    source_height: 808,
+    result_width: 806,
+    result_height: 808,
+    source_crop: {
+      file: `fix_faces/${form}/source_crop.webp`,
+      width: 451,
+      height: 339,
+      x: 161,
+      y: 242,
+    },
+    result_crop: {
+      file: `fix_faces/${form}/result_crop.webp`,
+      width: 451,
+      height: 339,
+      x: 161,
+      y: 242,
+    },
+  })),
+};
 
 @Component({
   imports: [GsParamEntryComponent],
@@ -48,6 +88,8 @@ describe('GsParamEntryComponent', () => {
     mode?: 'page' | 'dock';
     /** Language table to render against, for the entries not yet written. */
     langs?: Record<string, string>;
+    /** The alchemy runs the library has published, where any have been. */
+    published?: AlchemyEvidenceManifest;
   }): Promise<void> {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
@@ -76,6 +118,15 @@ describe('GsParamEntryComponent', () => {
       `${environment.evidenceBaseUrl}/index.json`,
     )) {
       request.flush(stubIndex);
+    }
+    for (const request of http.match(
+      `${ALCHEMY_EVIDENCE_ROOT}/manifest.json`,
+    )) {
+      if (options?.published) {
+        request.flush(options.published);
+      } else {
+        request.error(new ProgressEvent('error'), { status: 404 });
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, 0));
     fixture.detectChanges();
@@ -283,6 +334,90 @@ describe('GsParamEntryComponent', () => {
 
     expect(find('.gs-ref-strip-lead')).toBeNull();
     expect(el().textContent).not.toContain('One picture, pass by pass');
+  });
+
+  describe('where the difference is', () => {
+    const badges = (): (string | undefined)[] =>
+      all<HTMLElement>('.gs-ref-pair .gs-pixels-text').map((badge) =>
+        badge.textContent?.replace(/\s+/g, ' ').trim(),
+      );
+
+    it('reads the crops the library cut from the setting own strip', async () => {
+      await setUp({ topic: 'upscaler' });
+
+      expect(find('#gs-ref-sec-evidence')).not.toBeNull();
+      expect(find('.gs-ref-pair-name')?.textContent?.trim()).toBe(
+        translations['generate.reference.crop_head_strip'],
+      );
+      // The first stop is what the rest are read against, and the last is what
+      // the pair opens on until the reader picks another.
+      expect(badges()).toEqual([
+        'RealESRGAN_x4plus · 532 × 532',
+        '4x_AnimeSharp · 532 × 532',
+      ]);
+    });
+
+    it('offers the other stops, and reads the pair against the one chosen', async () => {
+      await setUp({ topic: 'upscaler' });
+
+      const options = all<HTMLButtonElement>('.gs-ref-pair-opt');
+      expect(options.map((option) => option.textContent?.trim())).toEqual([
+        'RealESRGAN_x2plus',
+        '4x_AnimeSharp',
+      ]);
+
+      options[0].click();
+      fixture.detectChanges();
+
+      // The half-size pass is a smaller crop, so it is drawn up to meet the
+      // one it is being read against rather than the other way round.
+      expect(badges()).toEqual([
+        'RealESRGAN_x4plus · 532 × 532',
+        'RealESRGAN_x2plus · 266 × 266',
+      ]);
+      expect(find('.gs-wipe-note')?.textContent?.trim()).toBe(
+        translations['generate.sweeps.match_note'].replace('{{ factor }}', '2'),
+      );
+    });
+
+    it('opens the explorer on that stop at the picture own pixels', async () => {
+      await setUp({ topic: 'upscaler' });
+
+      find<HTMLButtonElement>('.gs-ref-pair-door')!.click();
+      fixture.detectChanges();
+
+      const dialog = find<HTMLDialogElement>('dialog.gs-sweep-dialog');
+      expect(dialog?.hasAttribute('open')).toBe(true);
+      expect(el().textContent).toContain('4x_AnimeSharp');
+    });
+
+    it('reads the alchemy runs where the tool published the pair instead', async () => {
+      await setUp({ topic: 'facefixer', published: REPAIRS });
+
+      expect(find('.gs-ref-pair-name')?.textContent?.trim()).toBe(
+        translations['generate.reference.crop_head_alchemy'],
+      );
+      expect(badges()).toEqual([
+        `${translations['alchemy.usecases.evidence_source']} · 451 × 339`,
+        'CodeFormers · 451 × 339',
+      ]);
+      // Nothing to open: the runs are published outside a strip, so there is
+      // no explorer for a door to reach.
+      expect(find('.gs-ref-pair-door')).toBeNull();
+    });
+
+    it('says nothing at all where the library cut no crops', async () => {
+      await setUp({ topic: 'steps' });
+
+      expect(find('#gs-ref-sec-evidence')).toBeNull();
+      expect(find('.gs-ref-pair')).toBeNull();
+    });
+
+    it('keeps the crops off the copy that sits beside the studio', async () => {
+      await setUp({ topic: 'upscaler', mode: 'dock' });
+
+      expect(find('#gs-ref-sec-evidence')).toBeNull();
+    });
   });
 
   it('points on to its siblings, each wearing its own area mark', async () => {

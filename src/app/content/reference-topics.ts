@@ -21,6 +21,7 @@ import {
   settingNoteKey,
   settingReference,
   settingSection,
+  settingAlchemyEvidence,
   settingSweepAlsoStrips,
   settingSweepGrid,
   settingSweepStrip,
@@ -74,6 +75,13 @@ export interface ReferenceTopic {
   /** Whether the further strips stand as peers of the first rather than under it. */
   coequalStrips: boolean;
   grid: string | null;
+  /**
+   * The alchemy use case whose published runs are evidence about this subject,
+   * where one is. Null on the alchemy subjects themselves: their own page shows
+   * those runs already, and naming them here would put the same section on the
+   * page twice.
+   */
+  alchemyEvidence: string | null;
   /**
    * The named things the entry is about, where its subject is a family: the
    * eleven upscalers under "enlarge". Empty on a subject that is one thing.
@@ -149,6 +157,7 @@ function settingTopicFor(id: string): ReferenceTopic | null {
     alsoStrips: settingSweepAlsoStrips(id),
     coequalStrips: settingSweepsAreCoequal(id),
     grid: settingSweepGrid(id),
+    alchemyEvidence: settingAlchemyEvidence(id),
     variants: [],
   };
 }
@@ -185,6 +194,7 @@ function alchemyTopicFor(id: string): ReferenceTopic | null {
     alsoStrips: [],
     coequalStrips: false,
     grid: null,
+    alchemyEvidence: null,
     variants: useCase.forms.map((form) => ({
       id: form,
       titleKey: alchemyFormNameKey(form),

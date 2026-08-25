@@ -1,16 +1,21 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
+  afterRenderEffect,
+  computed,
   inject,
   input,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
+import { GsPixelBadgeComponent } from '../gs-pixel-badge/gs-pixel-badge.component';
 
 /**
  * One evidence picture, at the size a bounded stage cannot give it.
@@ -32,7 +37,7 @@ import { IconComponent } from '../icon/icon.component';
  */
 @Component({
   selector: 'app-gs-shot-viewer',
-  imports: [TranslocoPipe, IconComponent],
+  imports: [TranslocoPipe, IconComponent, GsPixelBadgeComponent],
   template: `
     <div
       #panel
@@ -84,12 +89,25 @@ import { IconComponent } from '../icon/icon.component';
         </button>
       </div>
       <div class="gs-tut-viewer-stage">
-        <img
-          class="gs-tut-viewer-img"
-          [class.gs-tut-img--alpha]="alpha()"
-          [src]="src()"
-          alt=""
-        />
+        <!-- The badge belongs on the picture rather than on the room around it,
+             so the picture is held in a box of its own size instead of being
+             centred loose in the stage. -->
+        <span class="gs-tut-viewer-hold">
+          <img
+            #shot
+            class="gs-tut-viewer-img"
+            [class.gs-tut-img--alpha]="alpha()"
+            [src]="src()"
+            alt=""
+            (load)="onLoad()"
+          />
+          <app-gs-pixel-badge
+            class="gs-pixels--stage gs-pixels--corner"
+            [width]="size()?.width"
+            [height]="size()?.height"
+            [shown]="shownPercent()"
+          />
+        </span>
       </div>
       <ng-content />
     </div>
@@ -106,6 +124,7 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class GsShotViewerComponent {
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   public readonly src = input.required<string>();
   /** What the picture is, in words: its title band and its accessible name. */
@@ -119,6 +138,14 @@ export class GsShotViewerComponent {
    */
   public readonly count = input(0);
   public readonly at = input(0);
+  /**
+   * The picture's own size in pixels, as the library that published it records
+   * it. Left alone the layer falls back to what the browser found once the file
+   * arrived, which is the same number for every picture that has one and the
+   * only number available for the pictures published without one.
+   */
+  public readonly width = input<number | null | undefined>(null);
+  public readonly height = input<number | null | undefined>(null);
 
   public readonly closed = output<void>();
   public readonly previous = output<void>();
@@ -126,13 +153,65 @@ export class GsShotViewerComponent {
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly close = viewChild<ElementRef<HTMLButtonElement>>('close');
+  private readonly shot = viewChild<ElementRef<HTMLImageElement>>('shot');
+
+  /** The size the browser found, for the pictures nothing declared one for. */
+  private readonly natural = signal<{ width: number; height: number } | null>(
+    null,
+  );
+  /** How wide the picture is actually drawn, in CSS pixels. */
+  private readonly drawn = signal(0);
+
+  /** What the picture is, however the layer can come by it. */
+  public readonly size = computed(
+    () =>
+      (this.width() && this.height()
+        ? { width: this.width()!, height: this.height()! }
+        : null) ?? this.natural(),
+  );
+
+  /**
+   * How much of the picture the layer is drawing, in image pixels per device
+   * pixel as a percentage. The layer letterboxes rather than zooms, so this is
+   * one number rather than a control, and it is the number that says whether a
+   * reader is looking at the real pixels or at a reduction of them.
+   */
+  public readonly shownPercent = computed(() => {
+    const size = this.size();
+    const drawn = this.drawn();
+    if (!size || size.width <= 0 || drawn <= 0) {
+      return null;
+    }
+    return ((drawn * this.pixelRatio()) / size.width) * 100;
+  });
 
   constructor() {
+    this.watchDrawnWidth();
     // The picture takes focus as it opens, so the key that closes it and the
     // button that dismisses it are where the reader already is.
     afterNextRender(() => this.panel()?.nativeElement.focus(), {
       injector: this.injector,
     });
+  }
+
+  /**
+   * The file has arrived, so the browser can be asked what it is and how wide
+   * it ended up. The two are asked separately: a picture whose size the caller
+   * declared still needs measuring, and one the browser cannot report a natural
+   * size for is still drawn at some width.
+   */
+  public onLoad(): void {
+    const image = this.shot()?.nativeElement;
+    if (!image) {
+      return;
+    }
+    if (image.naturalWidth > 0) {
+      this.natural.set({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
+    }
+    this.drawn.set(image.getBoundingClientRect().width);
   }
 
   /** The backdrop closes; a press that landed on the panel itself does not. */
@@ -177,5 +256,42 @@ export class GsShotViewerComponent {
     const step = event.shiftKey ? -1 : 1;
     const next = at < 0 ? 0 : (at + step + buttons.length) % buttons.length;
     buttons[next].focus();
+  }
+
+  /**
+   * Follow how wide the picture is being drawn. The layer letterboxes into
+   * whatever room the window has, so the answer changes with the window as well
+   * as with the picture, and a number measured once would be wrong the moment
+   * the reader resized.
+   */
+  private watchDrawnWidth(): void {
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    let watched: HTMLElement | null = null;
+    const observer = new ResizeObserver((entries) => {
+      this.drawn.set(entries[0]?.contentRect.width ?? 0);
+    });
+    afterRenderEffect(() => {
+      const image = this.shot()?.nativeElement ?? null;
+      if (image === watched) {
+        return;
+      }
+      if (watched) {
+        observer.unobserve(watched);
+      }
+      watched = image;
+      if (image) {
+        observer.observe(image);
+      }
+    });
+    this.destroyRef.onDestroy(() => observer.disconnect());
+  }
+
+  /** How many device pixels the display draws per CSS pixel. */
+  private pixelRatio(): number {
+    return typeof window !== 'undefined' && window.devicePixelRatio > 0
+      ? window.devicePixelRatio
+      : 1;
   }
 }

@@ -54,6 +54,10 @@ import {
 } from '../../../content/flows';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
+import {
+  GsPixelBadgeComponent,
+  PixelSize,
+} from '../../../components/gs-pixel-badge/gs-pixel-badge.component';
 import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
 import { GsCompareWipeComponent } from '../../../components/gs-compare-wipe/gs-compare-wipe.component';
 import { requestToFormValue } from '../../generate/generate-form.model';
@@ -127,6 +131,7 @@ const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
     GsWorldPickerComponent,
     GsCompareWipeComponent,
     GsShotViewerComponent,
+    GsPixelBadgeComponent,
   ],
   templateUrl: './image-example.component.html',
   host: {
@@ -169,6 +174,15 @@ export class DocsImageExampleComponent {
 
   /** Which stage the enlarged view was opened from, or null while it is shut. */
   private readonly enlargedAt = signal<number | null>(null);
+
+  /**
+   * What each published picture is in pixels, by its path, as the browser found
+   * it once the file arrived. The tutorial manifest lists a flow's files and
+   * what it was rendered on but nothing about their size, so this is the only
+   * answer available here; every other evidence surface takes the size from the
+   * library that published it.
+   */
+  private readonly measured = signal<Readonly<Record<string, PixelSize>>>({});
 
   /** Whether the evidence rail has the payload itself open under the chips. */
   public readonly rawOpen = signal(false);
@@ -381,6 +395,21 @@ export class DocsImageExampleComponent {
 
   public goToFlow(flowId: string): void {
     void this.router.navigateByUrl(docsExampleLink(flowId));
+  }
+
+  /** The size of one published picture, once the browser has found it. */
+  public shotSize(src: string): PixelSize | null {
+    return this.measured()[src] ?? null;
+  }
+
+  /** A picture has arrived, so the browser can be asked what it is. */
+  public onShotLoad(src: string, event: Event): void {
+    const image = event.target;
+    if (!(image instanceof HTMLImageElement) || !image.naturalWidth) {
+      return;
+    }
+    const size = { width: image.naturalWidth, height: image.naturalHeight };
+    this.measured.update((current) => ({ ...current, [src]: size }));
   }
 
   /** The picture the enlarged view is showing, if it is open. */

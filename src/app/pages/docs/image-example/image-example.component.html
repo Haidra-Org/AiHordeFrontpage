@@ -466,6 +466,15 @@
                       [src]="shot.src"
                       alt=""
                       loading="lazy"
+                      (load)="onShotLoad(shot.src, $event)"
+                    />
+                    <!-- The examples are published without their sizes, so
+                         what a picture is comes from the file itself once it
+                         has arrived. -->
+                    <app-gs-pixel-badge
+                      class="gs-pixels--stage gs-pixels--corner"
+                      [width]="shotSize(shot.src)?.width"
+                      [height]="shotSize(shot.src)?.height"
                     />
                   </button>
                   <figcaption class="gs-tut-shot-cap">

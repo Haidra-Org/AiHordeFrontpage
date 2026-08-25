@@ -902,6 +902,79 @@
       ]
     },
     {
+      "strip_id": "upscaler-form/albedobase-xl/courier",
+      "parameter": "upscaler_form",
+      "presentation": "strip",
+      "caption": "Every enlarger the horde runs, on one render.",
+      "complete": true,
+      "image_model": {
+        "slug": "albedobase-xl",
+        "name": "AlbedoBase XL (SDXL)",
+        "baseline": "stable_diffusion_xl",
+        "note": "A broad SDXL checkpoint that behaves predictably."
+      },
+      "scene": {
+        "scene_id": "courier",
+        "label": "The courier on the gondola deck",
+        "prompt": "a courier on an airship gondola deck at sunset"
+      },
+      "held": { "width": 1024, "height": 1024 },
+      "source_image": "upscaler-form/albedobase-xl/courier/source.webp",
+      "source_width": 512,
+      "source_height": 512,
+      "varying": ["upscaler_form"],
+      "stops": [
+        {
+          "value": "RealESRGAN_x4plus",
+          "label": "realesrgan_x4plus",
+          "caption": "Four times, and the cleanest of the general enlargers.",
+          "file": "upscaler-form/albedobase-xl/courier/001_realesrgan_x4plus.webp",
+          "width": 2048,
+          "height": 2048,
+          "fit": "upscaler-form/albedobase-xl/courier/001_realesrgan_x4plus_fit.webp",
+          "crop": {
+            "file": "upscaler-form/albedobase-xl/courier/001_realesrgan_x4plus_crop.webp",
+            "width": 532,
+            "height": 532,
+            "x": 1065,
+            "y": 184
+          }
+        },
+        {
+          "value": "RealESRGAN_x2plus",
+          "label": "realesrgan_x2plus",
+          "caption": "Twice, so half the pixels of the four-times pass.",
+          "file": "upscaler-form/albedobase-xl/courier/002_realesrgan_x2plus.webp",
+          "width": 1024,
+          "height": 1024,
+          "fit": null,
+          "crop": {
+            "file": "upscaler-form/albedobase-xl/courier/002_realesrgan_x2plus_crop.webp",
+            "width": 266,
+            "height": 266,
+            "x": 532,
+            "y": 92
+          }
+        },
+        {
+          "value": "4x_AnimeSharp",
+          "label": "4x_animesharp",
+          "caption": "Four times, drawn for line art rather than for photographs.",
+          "file": "upscaler-form/albedobase-xl/courier/005_4x_animesharp.webp",
+          "width": 2048,
+          "height": 2048,
+          "fit": "upscaler-form/albedobase-xl/courier/005_4x_animesharp_fit.webp",
+          "crop": {
+            "file": "upscaler-form/albedobase-xl/courier/005_4x_animesharp_crop.webp",
+            "width": 532,
+            "height": 532,
+            "x": 1065,
+            "y": 184
+          }
+        }
+      ]
+    },
+    {
       "strip_id": "controlnet-gallery/deliberate/courier-ink",
       "parameter": "controlnet_gallery",
       "presentation": "triptych",
@@ -920,6 +993,9 @@
         "prompt": "ink and watercolour illustration of a courier on an airship deck"
       },
       "source_image": "controlnet-gallery/deliberate/courier-ink/source.webp",
+      "source_width": 512,
+      "source_height": 512,
+      "held": { "width": 512, "height": 512 },
       "varying": ["control_type"],
       "stops": [
         {
@@ -928,6 +1004,8 @@
           "caption": "Canny drew one clean outline for everything it could find.",
           "file": "controlnet-gallery/deliberate/courier-ink/001_canny.webp",
           "sidecar": "controlnet-gallery/deliberate/courier-ink/001_canny.json",
+          "width": 512,
+          "height": 512,
           "control_type": "canny",
           "control_group": "edges",
           "control_map": "controlnet-gallery/deliberate/courier-ink/001_canny_map.webp"
@@ -938,6 +1016,8 @@
           "caption": "Openpose kept the stance and nothing else.",
           "file": "controlnet-gallery/deliberate/courier-ink/023_openpose.webp",
           "sidecar": "controlnet-gallery/deliberate/courier-ink/023_openpose.json",
+          "width": 512,
+          "height": 512,
           "control_type": "openpose",
           "control_group": "pose",
           "control_map": "controlnet-gallery/deliberate/courier-ink/023_openpose_map.webp"

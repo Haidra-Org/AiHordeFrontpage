@@ -41,12 +41,22 @@
 
             <div class="gs-ref-shot-pair">
               <span class="gs-ref-shot-frame">
-                <img
-                  [src]="shot.source"
-                  [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
-                  loading="lazy"
-                  decoding="async"
-                />
+                <!-- The two frames are drawn at one width, so the only place a
+                     reader can learn that the result is four times the source
+                     is the badge on each picture. -->
+                <span class="gs-ref-shot-pic">
+                  <img
+                    [src]="shot.source"
+                    [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <app-gs-pixel-badge
+                    class="gs-pixels--stage gs-pixels--corner"
+                    [width]="shot.sourceWidth"
+                    [height]="shot.sourceHeight"
+                  />
+                </span>
                 <span class="gs-ref-shot-label">
                   {{ "alchemy.usecases.evidence_source" | transloco }}
                 </span>
@@ -54,15 +64,22 @@
 
               @if (shot.result; as result) {
                 <span class="gs-ref-shot-frame">
-                  <img
-                    [src]="result"
-                    [alt]="
-                      'alchemy.usecases.evidence_result_alt'
-                        | transloco: { form: shot.formNameKey | transloco }
-                    "
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <span class="gs-ref-shot-pic">
+                    <img
+                      [src]="result"
+                      [alt]="
+                        'alchemy.usecases.evidence_result_alt'
+                          | transloco: { form: shot.formNameKey | transloco }
+                      "
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <app-gs-pixel-badge
+                      class="gs-pixels--stage gs-pixels--corner"
+                      [width]="shot.resultWidth"
+                      [height]="shot.resultHeight"
+                    />
+                  </span>
                   <span class="gs-ref-shot-label">
                     {{ "alchemy.usecases.evidence_result" | transloco }}
                   </span>
@@ -131,10 +148,15 @@
               (click)="openSource(source, $event)"
             >
               <img
-                [src]="source"
+                [src]="source.src"
                 [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
                 loading="lazy"
                 decoding="async"
+              />
+              <app-gs-pixel-badge
+                class="gs-pixels--stage gs-pixels--corner"
+                [width]="source.width"
+                [height]="source.height"
               />
             </button>
             <span class="gs-ref-shot-label">
@@ -173,7 +195,7 @@
                           'alchemy.usecases.control_map.enlarge'
                             | transloco: { name: tile.type }
                         "
-                        (click)="openMap(result, tile.type, $event)"
+                        (click)="openMap(tile, $event)"
                       >
                         <img
                           [src]="result"
@@ -213,6 +235,8 @@
       <app-gs-shot-viewer
         [src]="enlarged.src"
         [label]="enlarged.label"
+        [width]="enlarged.width"
+        [height]="enlarged.height"
         (closed)="closeMap()"
       />
     }

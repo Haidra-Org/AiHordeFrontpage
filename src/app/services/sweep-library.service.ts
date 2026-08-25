@@ -179,6 +179,13 @@ export interface SweepStrip {
    */
   source_image?: string | null;
   /**
+   * What that source is in pixels. A strip that starts from a picture is
+   * usually comparing what it began with against what it ended at, and the
+   * source is the one frame the stops' own sizes say nothing about.
+   */
+  source_width?: number;
+  source_height?: number;
+  /**
    * The map the strip's detector drew from that source, relative to the library
    * root, on the strips held to one guidance mode. What the whole strip was
    * guided by, so it belongs to the strip rather than to a frame. Null

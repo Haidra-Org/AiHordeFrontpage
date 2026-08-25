@@ -16,6 +16,10 @@ import { GsAnchorLinkComponent } from '../gs-anchor-link/gs-anchor-link.componen
 import { GsSweepScrubComponent } from '../gs-sweep-scrub/gs-sweep-scrub.component';
 import { GsShotViewerComponent } from '../gs-shot-viewer/gs-shot-viewer.component';
 import {
+  GsPixelBadgeComponent,
+  PixelSize,
+} from '../gs-pixel-badge/gs-pixel-badge.component';
+import {
   SweepLibraryService,
   SweepStop,
   SweepStrip,
@@ -32,6 +36,13 @@ interface ControlFrame {
   src: string | null;
   labelKey: string;
   altKey: string;
+  /**
+   * What the frame is in pixels, where the index says. It says the source's
+   * size on the strip and the render's on the stop; the map it publishes
+   * without one, and that frame falls back to what the browser found.
+   */
+  width: number | null;
+  height: number | null;
 }
 
 /** One example of a guidance mode: what it began with, what the detector drew, and what came back. */
@@ -82,6 +93,8 @@ interface ControlShot {
   labelKey: string;
   /** The example it was taken from, in the switcher's own short words. */
   world: string;
+  width: number | null;
+  height: number | null;
 }
 
 /**
@@ -109,6 +122,7 @@ interface ControlShot {
     GsAnchorLinkComponent,
     GsSweepScrubComponent,
     GsShotViewerComponent,
+    GsPixelBadgeComponent,
   ],
   template: `
     <ul class="gs-ref-maps-grid">
@@ -291,6 +305,7 @@ interface ControlShot {
                           [alt]="frame.altKey | transloco: { name: shown.type }"
                           loading="lazy"
                           decoding="async"
+                          (load)="onFrameLoad(src, $event)"
                         />
                         <span class="gs-ctl-zoom-glyph" aria-hidden="true">
                           <app-icon
@@ -298,6 +313,16 @@ interface ControlShot {
                             class="gs-ico-sm"
                           />
                         </span>
+                        <!-- Three frames of one story at three sizes: the
+                             source the detector read, the map it drew, and the
+                             render made from it. Which is which in pixels is
+                             the one thing a row of equal-width tiles cannot
+                             say. -->
+                        <app-gs-pixel-badge
+                          class="gs-pixels--stage gs-pixels--corner"
+                          [width]="frameSize(frame)?.width"
+                          [height]="frameSize(frame)?.height"
+                        />
                       </button>
                     } @else {
                       <span class="gs-ref-map-gap">
@@ -357,6 +382,8 @@ interface ControlShot {
                     world: picture.world,
                   }
           "
+          [width]="picture.width"
+          [height]="picture.height"
           [at]="shotAt() + 1"
           [count]="shots().length"
           (previous)="stepShot(-1)"
@@ -488,9 +515,37 @@ export class GsControlGalleryComponent {
           key: frame.key,
           labelKey: frame.labelKey,
           world: world.sceneShort,
+          width: frame.width,
+          height: frame.height,
         })),
     );
   });
+
+  /**
+   * The size the browser found for a picture, by its path, for the frames the
+   * index publishes no size for. The map is the one of the three: the detector
+   * writes it beside the render and the index records nothing about it. Keyed
+   * by path rather than by which of the three it is, so switching example or
+   * mode never reads the size of the map before it.
+   */
+  private readonly measured = signal<Readonly<Record<string, PixelSize>>>({});
+
+  /** What one frame is in pixels, from the index first and the file second. */
+  public frameSize(frame: ControlFrame): PixelSize | null {
+    return frame.width && frame.height
+      ? { width: frame.width, height: frame.height }
+      : (this.measured()[frame.src ?? ''] ?? null);
+  }
+
+  /** A frame has arrived, so the browser can be asked what it is. */
+  public onFrameLoad(src: string, event: Event): void {
+    const image = event.target;
+    if (!(image instanceof HTMLImageElement) || !image.naturalWidth) {
+      return;
+    }
+    const size = { width: image.naturalWidth, height: image.naturalHeight };
+    this.measured.update((current) => ({ ...current, [src]: size }));
+  }
 
   /** The picture open at full size, or null while none is. */
   public readonly shot = computed<ControlShot | null>(() => {
@@ -665,6 +720,8 @@ export class GsControlGalleryComponent {
 
   private exampleOf(strip: SweepStrip, stop: SweepStop): ControlWorld {
     const render = this.sweeps.imageUrl(stop);
+    const renderWidth = stop.width ?? strip.held?.width ?? null;
+    const renderHeight = stop.height ?? strip.held?.height ?? null;
     return {
       stripId: strip.strip_id,
       scene: strip.scene.label,
@@ -678,18 +735,24 @@ export class GsControlGalleryComponent {
             : null,
           labelKey: 'generate.control_types.layer_source',
           altKey: 'generate.control_types.source_alt',
+          width: strip.source_width ?? null,
+          height: strip.source_height ?? null,
         },
         {
           key: 'map',
           src: stop.control_map ? this.sweeps.assetUrl(stop.control_map) : null,
           labelKey: 'generate.control_types.layer_map',
           altKey: 'generate.control_types.map_alt',
+          width: null,
+          height: null,
         },
         {
           key: 'render',
           src: render,
           labelKey: 'generate.control_types.layer_render',
           altKey: 'generate.control_types.render_alt',
+          width: renderWidth,
+          height: renderHeight,
         },
       ],
       render,

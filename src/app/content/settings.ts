@@ -104,6 +104,14 @@ export interface SettingReference {
   related?: readonly string[];
   links?: readonly SettingLink[];
   /**
+   * The alchemy use case whose published runs are evidence about this setting,
+   * by its id. The panel's finishing switches hand the picture to the alchemy
+   * tools once it is made, so what those tools did to a real picture is what
+   * the setting does, and the library published it under the tool's name rather
+   * than under the switch's.
+   */
+  alchemyEvidence?: string;
+  /**
    * Dictionary terms this entry leans on, by {@link GLOSSARY_TERMS} id. Only the
    * horde's own vocabulary: a setting explained in ordinary words needs no
    * glossary, and a reader sent to a definition of what they are already reading
@@ -875,7 +883,11 @@ export const SETTINGS: readonly SettingEntry[] = [
       },
       related: ['hires', 'facefixer'],
       links: [alchemyLink('enlarge')],
+      alchemyEvidence: 'enlarge',
     },
+    // The library sweeps the enlargers by the name of the alchemy form that
+    // runs them, which is the same list this setting offers.
+    sweeps: { strip: 'upscaler_form' },
   },
   {
     id: 'facefixer',
@@ -888,6 +900,7 @@ export const SETTINGS: readonly SettingEntry[] = [
       },
       related: ['facefixer_strength', 'upscaler'],
       links: [alchemyLink('fix_faces')],
+      alchemyEvidence: 'fix_faces',
     },
   },
   {
@@ -1136,6 +1149,11 @@ export function settingSweepStrip(id: string): string | null {
 /** The guidance mode a setting's strip was rendered against, where it names one. */
 export function settingSweepStripControlType(id: string): string | null {
   return settingEntry(id)?.sweeps?.stripControlType ?? null;
+}
+
+/** The alchemy use case whose runs are evidence about a setting, where one is. */
+export function settingAlchemyEvidence(id: string): string | null {
+  return settingEntry(id)?.reference?.alchemyEvidence ?? null;
 }
 
 /** The further strips shown under a setting's primary one, in reading order. */

@@ -34,12 +34,47 @@ export interface AlchemyEvidenceFiles {
   result_json?: string;
 }
 
+/**
+ * A cropped detail of a run's source or its result, published beside it and cut
+ * from the same rectangle on both. A face repair moves a few hundred pixels of
+ * one face; at the size a page can give a whole picture, the pair looks
+ * identical, and the crop is where the difference actually is.
+ */
+export interface AlchemyEvidenceCrop {
+  /** Path to the cropped image relative to the library root. */
+  file: string;
+  /** The crop's own size in pixels. */
+  width: number;
+  height: number;
+  /** Where the crop was taken from, in the whole picture's pixels. */
+  x: number;
+  y: number;
+}
+
 /** One form, run once, on one source. */
 export interface AlchemyEvidenceEntry {
   use_case: string;
   form: string;
   title: string;
   files: AlchemyEvidenceFiles;
+  /**
+   * What went in and what came back, in pixels. An enlarger's whole claim is in
+   * these two numbers, and a page that draws both frames at the same width
+   * cannot make it: the sizes are said rather than shown.
+   */
+  source_width?: number;
+  source_height?: number;
+  result_width?: number;
+  result_height?: number;
+  /** The matched detail cut from each, where the library publishes them. */
+  source_crop?: AlchemyEvidenceCrop | null;
+  result_crop?: AlchemyEvidenceCrop | null;
+  /**
+   * A smaller copy of the result, relative to the library root, where the
+   * result is large enough that the library published one. It is what a page
+   * short of a full-size view draws.
+   */
+  result_fit?: string | null;
   /**
    * Which detector the run asked for, on the forms that take one. The control
    * map form is thirty-three runs on one source rather than one run, so the

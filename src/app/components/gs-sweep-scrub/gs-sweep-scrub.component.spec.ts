@@ -3,7 +3,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -26,6 +26,7 @@ import stubIndex from '../../testing/fixtures/sweep-index.stub.json';
   />`,
 })
 class HostComponent {
+  public readonly explorer = viewChild.required(GsSweepScrubComponent);
   public parameter = 'steps';
   public modelSlug: string | undefined = undefined;
   public controlType: string | undefined = undefined;
@@ -245,9 +246,15 @@ describe('GsSweepScrubComponent', () => {
 
   /** One of the three named sizes in the full-size view. */
   const zoomPill = (label: string): HTMLButtonElement =>
-    all<HTMLButtonElement>('.gs-sweep-scale').find(
+    all<HTMLButtonElement>('dialog[open] .gs-sweep-scale').find(
       (pill) => pill.textContent?.trim() === label,
     )!;
+
+  /** The same control on the plate, which now carries one of its own. */
+  const platePill = (label: string): HTMLButtonElement | undefined =>
+    all<HTMLButtonElement>('.gs-plate-col .gs-sweep-scale').find(
+      (pill) => pill.textContent?.trim() === label,
+    );
 
   const dialog = (): HTMLDialogElement =>
     find<HTMLDialogElement>('dialog.gs-sweep-dialog')!;
@@ -1245,6 +1252,214 @@ describe('GsSweepScrubComponent', () => {
     });
   });
 
+  describe('one zoom and pan model, on the plate as in the view', () => {
+    /** The plate, opened and measured, with the picture whole. */
+    const openPlate = async (): Promise<void> => {
+      await setUp({ startExpanded: true });
+      reportBox(800, 600);
+    };
+
+    const plateStage = (): HTMLElement =>
+      find<HTMLElement>('.gs-plate-col .gs-sweep-stage')!;
+
+    /** The plate's own badge, which is behind the view's while that is open. */
+    const plateBadge = (): string =>
+      find(
+        '.gs-plate-col .gs-pixels--stage .gs-pixels-text',
+      )?.textContent?.trim() ?? '';
+
+    /** Draw the picture closer in, the way a reader's pills do. */
+    const zoomPlateTo = (label: string): void => {
+      platePill(label)!.click();
+      fixture.detectChanges();
+    };
+
+    it('offers the zoom on the plate where the picture has pixels to spare', async () => {
+      await openPlate();
+
+      // 1024 of picture in 800 of room: there is something behind the pills.
+      expect(platePill('Fit')).toBeDefined();
+      expect(platePill('100%')).toBeDefined();
+      expect(platePill('200%')).toBeDefined();
+    });
+
+    it('says nothing about the zoom where the picture already fits', async () => {
+      await openPlate();
+      reportBox(2400, 2400);
+
+      expect(platePill('Fit')).toBeUndefined();
+    });
+
+    it('says how close in the plate is drawing the picture', async () => {
+      await openPlate();
+
+      expect(plateBadge()).toBe('1024 × 1024');
+      zoomPlateTo('100%');
+      expect(plateBadge()).toBe('1024 × 1024 · shown at 100%');
+    });
+
+    it('scrubs on a drag while the picture is whole', async () => {
+      await openPlate();
+      const stage = plateStage();
+      boxOf(stage, 0, 0, 600, 400);
+
+      pointer(stage, 'pointerdown', { clientX: 300, clientY: 200 });
+      pointer(stage, 'pointermove', { clientX: 100, clientY: 200 });
+      pointer(stage, 'pointerup', { clientX: 100, clientY: 200 });
+
+      expect(railAt()).toBe('1');
+      expect(stage.style.getPropertyValue('--gs-sweep-pan-x')).toBe('0px');
+    });
+
+    it('pans on the same drag once the picture is drawn closer in', async () => {
+      await openPlate();
+      zoomPlateTo('200%');
+      const stage = plateStage();
+      boxOf(stage, 0, 0, 600, 400);
+      const wasAt = railAt();
+
+      pointer(stage, 'pointerdown', { clientX: 300, clientY: 200 });
+      pointer(stage, 'pointermove', { clientX: 220, clientY: 160 });
+      pointer(stage, 'pointerup', { clientX: 220, clientY: 160 });
+
+      // The strip stayed where it was; the picture moved under the finger.
+      expect(railAt()).toBe(wasAt);
+      expect(stage.style.getPropertyValue('--gs-sweep-pan-x')).toBe('-80px');
+      expect(stage.style.getPropertyValue('--gs-sweep-pan-y')).toBe('-40px');
+    });
+
+    it('leaves the strip to the rail once the picture is being panned', async () => {
+      await openPlate();
+      zoomPlateTo('200%');
+
+      railKey('ArrowRight');
+
+      expect(railAt()).toBe('3');
+    });
+
+    it('pinches about the point between the two fingers', async () => {
+      await openPlate();
+      const stage = plateStage();
+      boxOf(stage, 0, 0, 600, 400);
+
+      pointer(stage, 'pointerdown', {
+        clientX: 280,
+        clientY: 200,
+        pointerId: 1,
+      });
+      pointer(stage, 'pointerdown', {
+        clientX: 320,
+        clientY: 200,
+        pointerId: 2,
+      });
+      // The fingers move apart to four times the spread they started at.
+      pointer(stage, 'pointermove', {
+        clientX: 220,
+        clientY: 200,
+        pointerId: 1,
+      });
+      pointer(stage, 'pointermove', {
+        clientX: 380,
+        clientY: 200,
+        pointerId: 2,
+      });
+
+      expect(plateBadge()).not.toBe('1024 × 1024');
+      expect(plateBadge()).toContain('shown at');
+
+      pointer(stage, 'pointerup', { clientX: 220, clientY: 200, pointerId: 1 });
+      pointer(stage, 'pointerup', { clientX: 380, clientY: 200, pointerId: 2 });
+      // A pinch is never read as a scrub when the fingers come off: the strip
+      // is still on the stop it opened at.
+      expect(railAt()).toBe('2');
+    });
+
+    it('toggles between whole and true pixels on two presses', async () => {
+      await openPlate();
+      zoomPlateTo('100%');
+      const stage = plateStage();
+      boxOf(stage, 0, 0, 600, 400);
+
+      stage.dispatchEvent(
+        new MouseEvent('dblclick', {
+          clientX: 300,
+          clientY: 200,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+
+      expect(platePill('Fit')?.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('leaves the plain wheel to the page until the picture is zoomed', async () => {
+      await openPlate();
+      const stage = plateStage();
+
+      const plain = new WheelEvent('wheel', {
+        deltaY: -240,
+        bubbles: true,
+        cancelable: true,
+      });
+      stage.dispatchEvent(plain);
+      fixture.detectChanges();
+      expect(plain.defaultPrevented).toBe(false);
+      expect(plateBadge()).toBe('1024 × 1024');
+
+      // The platform's own zoom modifier makes it the picture's.
+      const held = new WheelEvent('wheel', {
+        deltaY: -240,
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      stage.dispatchEvent(held);
+      fixture.detectChanges();
+      expect(held.defaultPrevented).toBe(true);
+      // 600 of room for 1024 of picture is what the picture fits at, and one
+      // notch of the wheel is a step up from there rather than a named size.
+      expect(plateBadge()).toBe('1024 × 1024 · shown at 124%');
+    });
+
+    it('keeps the divider to its handle while the picture is panned', async () => {
+      await setUp({ parameter: 'sampler_solver_type', startExpanded: true });
+      reportBox(800, 600);
+      const stage = plateStage();
+      boxOf(stage, 0, 0, 600, 400);
+      const divider = find<HTMLElement>('.gs-plate-col .gs-wipe-divider')!;
+
+      // A drag that starts on the divider is the divider's, and never the
+      // picture's: the picture stays where it is.
+      pointer(divider, 'pointerdown', { clientX: 300, clientY: 200 });
+      pointer(divider, 'pointermove', { clientX: 200, clientY: 200 });
+      pointer(divider, 'pointerup', { clientX: 200, clientY: 200 });
+
+      expect(stage.style.getPropertyValue('--gs-sweep-pan-x')).toBe('0px');
+    });
+
+    it('steps back to the whole picture on Escape before it closes', async () => {
+      await openPlate();
+      find<HTMLButtonElement>('.gs-sweep-expand')!.click();
+      fixture.detectChanges();
+      reportBox(800, 600);
+      zoomPill('200%').click();
+      fixture.detectChanges();
+
+      find<HTMLElement>('.gs-sweep-dialog-body')!.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'Escape',
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+      expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
   describe('how close in the full-size view draws', () => {
     /** Open the picture full size with a measured room around it. */
     const openBig = async (options?: {
@@ -1265,7 +1480,9 @@ describe('GsSweepScrubComponent', () => {
       await openBig();
 
       expect(
-        all('.gs-sweep-scale').map((pill) => pill.textContent?.trim()),
+        Array.from(
+          dialog().querySelectorAll<HTMLElement>('.gs-sweep-scale'),
+        ).map((pill) => pill.textContent?.trim()),
       ).toEqual(['Fit', '100%', '200%']);
       expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
     });
@@ -1307,6 +1524,36 @@ describe('GsSweepScrubComponent', () => {
       key('-');
       expect(badgeText()).toBe('1024 × 1024 · shown at 100%');
       key('0');
+      expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('opens a stop at its own pixels, centred on the detail crop', async () => {
+      await setUp({ parameter: 'upscaler_form', startExpanded: true });
+
+      fixture.componentInstance.explorer().openStopAtCrop(2);
+      fixture.detectChanges();
+      reportBox(800, 600);
+
+      expect(dialog().hasAttribute('open')).toBe(true);
+      // The third stop is a four-times pass, and the pair is read at the file's
+      // own pixels rather than at whatever the room fits.
+      expect(badgeText()).toBe('2048 × 2048 · shown at 100%');
+
+      // The crop sits at 1065,184 and is 532 across, so its middle is carried
+      // from where it lies to the middle of the room.
+      const stage = find<HTMLElement>('.gs-sweep-stage--big')!;
+      expect(stage.style.getPropertyValue('--gs-sweep-pan-x')).toBe('-307px');
+      expect(stage.style.getPropertyValue('--gs-sweep-pan-y')).toBe('574px');
+    });
+
+    it('opens a stop whole where the library cut no detail from it', async () => {
+      await setUp({ startExpanded: true });
+
+      fixture.componentInstance.explorer().openStopAtCrop(1);
+      fixture.detectChanges();
+      reportBox(800, 600);
+
+      expect(dialog().hasAttribute('open')).toBe(true);
       expect(zoomPill('Fit').getAttribute('aria-pressed')).toBe('true');
     });
 
@@ -1402,15 +1649,23 @@ describe('GsSweepScrubComponent', () => {
       expect(dialog().open).toBe(true);
     });
 
-    it('does not take a press on the pair for a press on the picture', async () => {
+    it('keeps the divider to its handle and leaves the rest to the picture', async () => {
       await openCompared();
 
+      // The divider is the one control on a pair; a press on it is not a press
+      // on the picture and opens nothing.
+      find<HTMLElement>('.gs-plate-col .gs-wipe-divider')!.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+      expect(dialog().open).toBe(false);
+
+      // Anywhere else on the pair is the picture, and the picture opens.
       find<HTMLElement>('.gs-plate-col .gs-wipe')!.dispatchEvent(
         new MouseEvent('click', { bubbles: true, cancelable: true }),
       );
       fixture.detectChanges();
-
-      expect(dialog().open).toBe(false);
+      expect(dialog().open).toBe(true);
     });
 
     it('does not take a press on a side tag for a press on the picture', async () => {

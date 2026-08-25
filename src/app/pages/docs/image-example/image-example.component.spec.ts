@@ -606,6 +606,33 @@ describe('DocsImageExampleComponent', () => {
     }
   });
 
+  it('says what each picture is in pixels, off the file it fetched', () => {
+    flushAll(harness);
+
+    // The tutorial manifest lists a flow's files and what it ran on, and
+    // nothing about their size, so the file itself is the only answer here.
+    expect(harness.query('.gs-tut-stage .gs-pixels-text')).toHaveLength(0);
+
+    const image = harness.query<HTMLImageElement>('.gs-tut-img')[0];
+    Object.defineProperty(image, 'naturalWidth', {
+      value: 1024,
+      configurable: true,
+    });
+    Object.defineProperty(image, 'naturalHeight', {
+      value: 1024,
+      configurable: true,
+    });
+    image.dispatchEvent(new Event('load'));
+    harness.fixture.detectChanges();
+
+    expect(
+      harness
+        .query<HTMLElement>('.gs-tut-stage .gs-pixels-text')[0]
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim(),
+    ).toBe('1024 × 1024');
+  });
+
   it('opens one picture enlarged and closes it on Escape', () => {
     flushAll(harness);
 
