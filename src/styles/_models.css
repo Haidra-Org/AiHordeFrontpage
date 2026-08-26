@@ -680,17 +680,22 @@
   .model-detail-workers {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--hd-space-1) var(--hd-space-2);
-    font-size: var(--hd-text-sm);
+    gap: var(--hd-space-2);
   }
 
-  .model-detail-workers a {
-    color: var(--hd-accent);
+  /* Worker names carry spaces and punctuation, so each one is a pill: the
+     border marks where a name ends and the ink reads on both themes, which
+     a run of accent-coloured text did not. */
+  .model-detail-worker {
+    color: var(--hd-ink);
     text-decoration: none;
   }
 
-  .model-detail-workers a:hover {
-    text-decoration: underline;
+  .model-detail-worker:hover {
+    color: var(--hd-ink);
+    border-color: var(--hd-sec, var(--hd-accent));
+    background: var(--hd-sec-tint, var(--hd-accent-tint));
+    text-decoration: none;
   }
 
   .model-detail-marks {

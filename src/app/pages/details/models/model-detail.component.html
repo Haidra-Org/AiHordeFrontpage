@@ -367,9 +367,11 @@
           } @else {
             <div class="model-detail-workers">
               @for (worker of namedWorkers(); track worker.id) {
-                <a [routerLink]="['/details/workers/id', worker.id]">{{
-                  worker.name
-                }}</a>
+                <a
+                  class="hd-chip model-detail-worker"
+                  [routerLink]="['/details/workers/id', worker.id]"
+                  >{{ worker.name }}</a
+                >
               }
             </div>
             @if (extraWorkers() > 0) {
