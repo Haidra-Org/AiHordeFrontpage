@@ -649,6 +649,8 @@ describe('GsSweepScrubComponent', () => {
 
       const chips = all<HTMLButtonElement>('.gs-sweep-chip');
       expect(chips).toHaveLength(1);
+      expect(find('.gs-sweep-chips--dock')).not.toBeNull();
+      expect(find('.gs-sweep-chips--overlay')).toBeNull();
       expect(chips[0].textContent?.trim()).toBe(
         en['generate.sweeps.source_label'],
       );
@@ -675,8 +677,11 @@ describe('GsSweepScrubComponent', () => {
         controlType: 'canny',
         startExpanded: true,
       });
+      reportWidth(900);
 
       const chips = all<HTMLButtonElement>('.gs-sweep-chip');
+      expect(find('.gs-sweep-chips--overlay')).not.toBeNull();
+      expect(find('.gs-sweep-chips--dock')).toBeNull();
       expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
         en['generate.sweeps.source_label'],
         en['generate.sweeps.control_map_label'],
@@ -1237,6 +1242,7 @@ describe('GsSweepScrubComponent', () => {
       expect(dialog().open).toBe(true);
       expect(find('.gs-plate')).toBeNull();
       expect(find('.gs-sweep-dialog-param')?.textContent?.trim()).toBe('Steps');
+      expect(find('dialog[open] .gs-tickrail')).not.toBeNull();
       expect(find('.gs-sweep-dialog-steps')).not.toBeNull();
       expect(all('dialog[open] .gs-sweep-scale').length).toBeGreaterThan(0);
     });

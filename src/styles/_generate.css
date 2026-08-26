@@ -10588,6 +10588,21 @@ app-gs-sweep-scrub {
   margin-left: auto;
   pointer-events: auto;
 }
+/* On constrained explorers the comparison belongs beside the instrument, not
+   over the subject. It becomes a full-width segmented row directly under the
+   stage; only a genuinely wide container puts the compact version back in the
+   image's top band. */
+.gen-studio .gs-sweep-chips--overlay {
+  display: flex;
+}
+.gen-studio .gs-sweep-chips--dock {
+  align-self: stretch;
+  margin: 0;
+  padding: var(--gs-space-1) var(--gs-space-4) 0;
+}
+.gen-studio .gs-sweep-chips--dock .gs-sweep-chip {
+  flex: 1 1 0;
+}
 .gen-studio .gs-sweep-chip {
   min-height: 28px;
   padding: 0 var(--gs-space-2);

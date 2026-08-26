@@ -450,14 +450,34 @@ const FILM_EDGE_PX = 8;
       }
     </ng-template>
 
-    <!-- What sits on the picture: the value, the pictures it is being held
-         against, and the way to full size. Everything on the stage is over the
-         frame rather than under it, so the reader never loses the picture to
-         read what it is. -->
+    <ng-template #compareControls let-placement="placement">
+      @if (comparisons().length > 0) {
+        <span
+          class="gs-sweep-chips"
+          [class.gs-sweep-chips--overlay]="placement === 'overlay'"
+          [class.gs-sweep-chips--dock]="placement === 'dock'"
+          role="group"
+          [attr.aria-label]="'generate.sweeps.compare_group' | transloco"
+        >
+          @for (against of comparisons(); track against.kind) {
+            <button
+              type="button"
+              class="gs-sweep-chip"
+              [class.is-on]="compareWith() === against.kind"
+              [attr.aria-pressed]="compareWith() === against.kind"
+              (click)="toggleCompare(against.kind); $event.stopPropagation()"
+            >
+              {{ against.labelKey | transloco }}
+            </button>
+          }
+        </span>
+      }
+    </ng-template>
+
+    <!-- What sits on the picture: its value and the way to full size. The
+         comparison controls only join them when the container is wide enough;
+         otherwise their twin below the stage keeps the subject unobscured. -->
     <ng-template #stageChrome let-inViewer="inViewer">
-      <!-- The value and what the frame is held against share one band along the
-           top, so that where the two cannot fit on a line the chips take the
-           line below rather than lying over the value. -->
       <span class="gs-sweep-topbar">
         <span class="gs-sweep-titles">
           <span class="gs-sweep-pill">{{ pillText() }}</span>
@@ -474,24 +494,11 @@ const FILM_EDGE_PX = 8;
             />
           }
         </span>
-        @if (comparisons().length > 0) {
-          <span
-            class="gs-sweep-chips"
-            role="group"
-            [attr.aria-label]="'generate.sweeps.compare_group' | transloco"
-          >
-            @for (against of comparisons(); track against.kind) {
-              <button
-                type="button"
-                class="gs-sweep-chip"
-                [class.is-on]="compareWith() === against.kind"
-                [attr.aria-pressed]="compareWith() === against.kind"
-                (click)="toggleCompare(against.kind); $event.stopPropagation()"
-              >
-                {{ against.labelKey | transloco }}
-              </button>
-            }
-          </span>
+        @if (wide()) {
+          <ng-container
+            [ngTemplateOutlet]="compareControls"
+            [ngTemplateOutletContext]="{ placement: 'overlay' }"
+          />
         }
       </span>
       @if (!inViewer && offersZoom()) {
@@ -719,6 +726,13 @@ const FILM_EDGE_PX = 8;
                     [ngTemplateOutletContext]="{ inViewer: false }"
                   />
                 </div>
+
+                @if (!wide()) {
+                  <ng-container
+                    [ngTemplateOutlet]="compareControls"
+                    [ngTemplateOutletContext]="{ placement: 'dock' }"
+                  />
+                }
 
                 @if (scrubbable()) {
                   <!-- One slit per frame rather than a track with a knob on
@@ -1216,7 +1230,68 @@ const FILM_EDGE_PX = 8;
                 />
               </div>
 
+              @if (!wide()) {
+                <ng-container
+                  [ngTemplateOutlet]="compareControls"
+                  [ngTemplateOutletContext]="{ placement: 'dock' }"
+                />
+              }
+
               @if (scrubbable()) {
+                <!-- Narrow hosts enter through this viewer instead of opening
+                     the inline plate, so they need the same direct scrub rail
+                     as the desktop instrument rather than only previous/next
+                     buttons. -->
+                <div class="gs-tickrail-box gs-tickrail-box--viewer">
+                  @let at = index();
+                  <div
+                    class="gs-tickrail"
+                    role="slider"
+                    tabindex="0"
+                    [attr.aria-label]="
+                      'generate.sweeps.slider_label' | transloco
+                    "
+                    aria-valuemin="1"
+                    [attr.aria-valuemax]="frameCount()"
+                    [attr.aria-valuenow]="at + 1"
+                    [attr.aria-valuetext]="valueTextOf(stopAt(at))"
+                    (click)="onRailPress($event)"
+                    (keydown)="onRailKeydown($event, at)"
+                    (pointerdown)="startRailDrag($event)"
+                    (pointermove)="onRailDrag($event)"
+                    (pointerup)="endRailDrag()"
+                    (pointercancel)="endRailDrag()"
+                  >
+                    @for (tick of stops(); track $index) {
+                      <span
+                        class="gs-tickrail-tick"
+                        [class.is-at]="$index === at"
+                        [style.left.%]="tickPercent($index)"
+                        [attr.data-at]="$index"
+                      ></span>
+                    }
+                  </div>
+                  <span class="gs-tickrail-ends">
+                    @if (showsEnds()) {
+                      <span
+                        class="gs-tickrail-end"
+                        [style.left.%]="labelPercent(0)"
+                        >{{ endValues().first }}</span
+                      >
+                    }
+                    <span class="gs-tickrail-hint" aria-hidden="true">{{
+                      'generate.sweeps.rail_hint' | transloco
+                    }}</span>
+                    @if (showsEnds()) {
+                      <span
+                        class="gs-tickrail-end"
+                        [style.left.%]="labelPercent(lastIndex())"
+                        >{{ endValues().last }}</span
+                      >
+                    }
+                  </span>
+                </div>
+
                 <div class="gs-sweep-dialog-steps">
                   <button
                     type="button"
