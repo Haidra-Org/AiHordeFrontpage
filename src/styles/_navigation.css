@@ -31,8 +31,8 @@
   }
 
   .dark .nav-shell {
-    background: rgb(17 24 39 / 0.82);
-    border-bottom-color: rgb(255 255 255 / 0.06);
+    background: var(--color-glass-surface-dark-floating);
+    border-bottom-color: var(--color-glass-border-dark-subtle);
     box-shadow: 0 1px 8px rgb(0 0 0 / 0.2);
   }
 
@@ -378,7 +378,7 @@
     @apply absolute top-full left-0 z-50;
     @apply min-w-48 mt-1 py-2;
     @apply rounded-lg;
-    background: var(--color-glass-surface-heavy);
+    background: var(--color-glass-surface-menu);
     border-color: var(--color-glass-border-strong);
     /* The overflow panel can carry every group the bar could not fit, which is
        taller than a short window. It scrolls within what is left below the bar
@@ -391,7 +391,7 @@
   }
 
   .dark .nav-dropdown-menu {
-    background: var(--color-glass-surface-dark-floating);
+    background: var(--color-glass-surface-dark-menu);
     border-color: var(--color-glass-border-dark-strong);
   }
 
