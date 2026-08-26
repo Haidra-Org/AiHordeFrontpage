@@ -11,20 +11,43 @@ import {
   baselineSupportsQrCode,
   baselineSupportsRemix,
   baselineSupportsTransparent,
-  coerceBaselineMap,
+  coerceRecordMap,
   coerceRequirements,
-  coerceModelNames,
-  coerceRequirementsMap,
+  coerceTextRecordMap,
   normalizeBaseline,
 } from './model-reference.service';
 
 const MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/image_generation';
+const TEXT_MODEL_REFERENCE_URL =
+  'https://models.aihorde.net/api/model_references/v1/text_generation';
 const CACHE_KEY = 'aihorde.generate.model_baselines';
-const CACHE_VERSION = 3;
+const TEXT_CACHE_KEY = 'aihorde.generate.text_model_reference';
+const CACHE_VERSION = 4;
 
 const REFERENCE_FIXTURE = {
-  Deliberate: { baseline: 'stable diffusion 1', nsfw: false },
+  Deliberate: {
+    baseline: 'stable diffusion 1',
+    nsfw: false,
+    inpainting: false,
+    type: 'ckpt',
+    description: 'A generalist model.',
+    version: '2',
+    style: 'generalist',
+    homepage: 'https://civitai.com/models/4823',
+    showcases: ['https://example.invalid/deliberate.webp', ''],
+    tags: ['photorealistic'],
+    trigger: ['deliberate style'],
+    size_on_disk_bytes: 2132780730,
+    optimization: 'lightning',
+    config: {
+      files: [{ path: 'Deliberate.ckpt', md5sum: 'ignored' }],
+      download: [
+        { file_name: 'Deliberate.ckpt', file_url: 'https://example.invalid/d' },
+        { file_path: '' },
+      ],
+    },
+  },
   'AlbedoBase XL (SDXL)': { baseline: 'stable_diffusion_xl' },
   'Stable Cascade 1.0': { baseline: 'Stable Cascade' },
   Flux: {
@@ -41,6 +64,22 @@ const REFERENCE_FIXTURE = {
   },
   NoBaseline: { nsfw: true },
   NotAnObject: 'nope',
+};
+
+const TEXT_FIXTURE = {
+  'acrastt/Marx-3B-V3': {
+    name: 'acrastt/Marx-3B-V3',
+    model_name: 'Marx-3B-V3',
+    baseline: 'StableLM-3B-4E1T',
+    parameters: 3000000000,
+    description: 'A 3B model.',
+    display_name: 'Marx 3B V3',
+    url: 'https://huggingface.co/acrastt/Marx-3B-V3',
+    tags: ['3B'],
+    nsfw: false,
+    settings: { temperature: 0.7, top_k: 40, top_p: 'nope' },
+  },
+  Plain: { baseline: 'llama' },
 };
 
 function setup(): {
@@ -67,20 +106,65 @@ describe('normalizeBaseline', () => {
   });
 });
 
-describe('coerceBaselineMap', () => {
-  it('keeps records with a baseline and drops the rest', () => {
-    const map = coerceBaselineMap(REFERENCE_FIXTURE);
-    expect(map).toEqual({
-      Deliberate: 'stable_diffusion_1',
-      'AlbedoBase XL (SDXL)': 'stable_diffusion_xl',
-      'Stable Cascade 1.0': 'stable_cascade',
-      Flux: 'flux_1',
-    });
+describe('coerceRecordMap', () => {
+  it('reads the fields a model page shows', () => {
+    const record = coerceRecordMap(REFERENCE_FIXTURE).get('Deliberate');
+
+    expect(record?.baseline).toBe('stable_diffusion_1');
+    expect(record?.description).toBe('A generalist model.');
+    expect(record?.homepage).toBe('https://civitai.com/models/4823');
+    expect(record?.showcases).toEqual([
+      'https://example.invalid/deliberate.webp',
+    ]);
+    expect(record?.tags).toEqual(['photorealistic']);
+    expect(record?.trigger).toEqual(['deliberate style']);
+    expect(record?.size_on_disk_bytes).toBe(2132780730);
+    expect(record?.optimization).toBe('lightning');
+    expect(record?.downloads).toEqual([
+      { file_name: 'Deliberate.ckpt', file_url: 'https://example.invalid/d' },
+    ]);
+  });
+
+  it('keeps a record that carries no baseline, and drops what is not one', () => {
+    const records = coerceRecordMap(REFERENCE_FIXTURE);
+
+    expect([...records.keys()]).toEqual([
+      'Deliberate',
+      'AlbedoBase XL (SDXL)',
+      'Stable Cascade 1.0',
+      'Flux',
+      'NoBaseline',
+    ]);
+    expect(records.get('NoBaseline')?.baseline).toBeNull();
+    expect(records.get('NoBaseline')?.nsfw).toBe(true);
+  });
+
+  it('reads back a record it wrote, downloads included', () => {
+    const once = coerceRecordMap(REFERENCE_FIXTURE);
+    const twice = coerceRecordMap(Object.fromEntries(once));
+
+    expect(twice.get('Deliberate')).toEqual(once.get('Deliberate'));
   });
 
   it('tolerates a non-object payload', () => {
-    expect(coerceBaselineMap(null)).toEqual({});
-    expect(coerceBaselineMap('nope')).toEqual({});
+    expect(coerceRecordMap(null).size).toBe(0);
+    expect(coerceRecordMap('nope').size).toBe(0);
+  });
+});
+
+describe('coerceTextRecordMap', () => {
+  it('reads the fields a text model page shows', () => {
+    const record = coerceTextRecordMap(TEXT_FIXTURE).get('acrastt/Marx-3B-V3');
+
+    expect(record?.display_name).toBe('Marx 3B V3');
+    expect(record?.baseline).toBe('StableLM-3B-4E1T');
+    expect(record?.parameters).toBe(3000000000);
+    expect(record?.settings).toEqual({ temperature: 0.7, top_k: 40 });
+    expect(record?.url).toBe('https://huggingface.co/acrastt/Marx-3B-V3');
+  });
+
+  it('leaves settings null when the record recommends none', () => {
+    expect(coerceTextRecordMap(TEXT_FIXTURE).get('Plain')?.settings).toBeNull();
   });
 });
 
@@ -124,26 +208,6 @@ describe('coerceRequirements', () => {
   });
 });
 
-describe('coerceRequirementsMap', () => {
-  it('keeps only the records that carry requirements', () => {
-    expect(coerceRequirementsMap(REFERENCE_FIXTURE)).toEqual({
-      Flux: {
-        min_steps: 3,
-        max_steps: 8,
-        min_cfg_scale: 1,
-        max_cfg_scale: 4,
-        clip_skip: 1,
-        samplers: ['k_euler'],
-        schedulers: ['karras'],
-      },
-    });
-  });
-
-  it('tolerates a non-object payload', () => {
-    expect(coerceRequirementsMap(null)).toEqual({});
-  });
-});
-
 describe('baseline capability rules', () => {
   it('allows remix only on Stable Cascade', () => {
     expect(baselineSupportsRemix('stable_cascade')).toBe(true);
@@ -167,22 +231,6 @@ describe('baseline capability rules', () => {
     expect(baselineSupportsRemix(null)).toBe(true);
     expect(baselineSupportsQrCode(null)).toBe(true);
     expect(baselineSupportsTransparent(null)).toBe(true);
-  });
-});
-
-describe('coerceModelNames', () => {
-  it('keeps every record, including one without a baseline', () => {
-    expect(coerceModelNames(REFERENCE_FIXTURE)).toEqual([
-      'Deliberate',
-      'AlbedoBase XL (SDXL)',
-      'Stable Cascade 1.0',
-      'Flux',
-      'NoBaseline',
-    ]);
-  });
-
-  it('tolerates a non-object payload', () => {
-    expect(coerceModelNames(null)).toEqual([]);
   });
 });
 
@@ -235,9 +283,9 @@ describe('ModelReferenceService', () => {
     const cached = JSON.parse(localStorage.getItem(CACHE_KEY) ?? 'null');
     expect(cached.version).toBe(CACHE_VERSION);
     expect(typeof cached.fetchedAt).toBe('number');
-    expect(cached.names).toContain('NoBaseline');
-    expect(cached.baselines['Flux']).toBe('flux_1');
-    expect(cached.requirements['Flux'].samplers).toEqual(['k_euler']);
+    expect(Object.keys(cached.records)).toContain('NoBaseline');
+    expect(cached.records['Flux'].baseline).toBe('flux_1');
+    expect(cached.records['Flux'].requirements.samplers).toEqual(['k_euler']);
   });
 
   it('serves a fresh cache without a request', () => {
@@ -246,9 +294,13 @@ describe('ModelReferenceService', () => {
       JSON.stringify({
         version: CACHE_VERSION,
         fetchedAt: Date.now(),
-        names: ['Deliberate', 'NoBaseline'],
-        baselines: { Deliberate: 'stable_diffusion_1' },
-        requirements: { Deliberate: { clip_skip: 2 } },
+        records: {
+          Deliberate: {
+            baseline: 'stable_diffusion_1',
+            requirements: { clip_skip: 2 },
+          },
+          NoBaseline: {},
+        },
       }),
     );
     const { service, http } = setup();
@@ -265,7 +317,7 @@ describe('ModelReferenceService', () => {
       CACHE_KEY,
       JSON.stringify({
         fetchedAt: Date.now(),
-        baselines: { Deliberate: 'stable_diffusion_1' },
+        records: { Deliberate: { baseline: 'stable_diffusion_1' } },
       }),
     );
     const { service, http } = setup();
@@ -282,8 +334,7 @@ describe('ModelReferenceService', () => {
       JSON.stringify({
         version: CACHE_VERSION,
         fetchedAt: Date.now() - MODEL_REFERENCE_TTL_MS - 1,
-        baselines: { Deliberate: 'stable_diffusion_1' },
-        requirements: {},
+        records: { Deliberate: { baseline: 'stable_diffusion_1' } },
       }),
     );
     const { service, http } = setup();
@@ -324,5 +375,68 @@ describe('ModelReferenceService', () => {
     service.load();
     http.expectNone(MODEL_REFERENCE_URL);
     expect(service.baselines()).not.toBeNull();
+  });
+});
+
+describe('ModelReferenceService text reference', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    TestBed.inject(HttpTestingController).verify();
+  });
+
+  it('asks for nothing until loadText() is called', () => {
+    const { service, http } = setup();
+    service.load();
+    http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
+
+    http.expectNone(TEXT_MODEL_REFERENCE_URL);
+    expect(service.textRecords()).toBeNull();
+  });
+
+  it('loads the text records and persists them under their own key', () => {
+    const { service, http } = setup();
+    service.loadText();
+    http.expectOne(TEXT_MODEL_REFERENCE_URL).flush(TEXT_FIXTURE);
+
+    expect(service.textLoading()).toBe(false);
+    expect(service.textNames()).toEqual(['acrastt/Marx-3B-V3', 'Plain']);
+    expect(service.textRecordFor('acrastt/Marx-3B-V3')?.parameters).toBe(
+      3000000000,
+    );
+    expect(service.textRecordFor('missing')).toBeNull();
+
+    const cached = JSON.parse(localStorage.getItem(TEXT_CACHE_KEY) ?? 'null');
+    expect(cached.version).toBe(CACHE_VERSION);
+    expect(cached.records['Plain'].baseline).toBe('llama');
+  });
+
+  it('serves a fresh text cache without a request', () => {
+    localStorage.setItem(
+      TEXT_CACHE_KEY,
+      JSON.stringify({
+        version: CACHE_VERSION,
+        fetchedAt: Date.now(),
+        records: { Plain: { baseline: 'llama' } },
+      }),
+    );
+    const { service, http } = setup();
+    service.loadText();
+
+    http.expectNone(TEXT_MODEL_REFERENCE_URL);
+    expect(service.textRecordFor('Plain')?.baseline).toBe('llama');
+  });
+
+  it('stays quiet when the text fetch fails', () => {
+    const { service, http } = setup();
+    service.loadText();
+    http
+      .expectOne(TEXT_MODEL_REFERENCE_URL)
+      .error(new ProgressEvent('error'), { status: 503, statusText: 'down' });
+
+    expect(service.textRecords()).toBeNull();
+    expect(service.textRecordFor('Plain')).toBeNull();
   });
 });

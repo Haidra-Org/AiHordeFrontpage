@@ -12,14 +12,25 @@ import { DatabaseService } from './database.service';
 const MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/image_generation';
 
+/**
+ * The same reference for the models the horde writes text with. It is fetched
+ * only when something asks for a text model, because most of the site never
+ * does and the text reference is several times the size of the image one.
+ */
+const TEXT_MODEL_REFERENCE_URL =
+  'https://models.aihorde.net/api/model_references/v1/text_generation';
+
 const CACHE_KEY = 'aihorde.generate.model_baselines';
+
+/** Where the text reference is kept. The image reference keeps its own key. */
+const TEXT_CACHE_KEY = 'aihorde.generate.text_model_reference';
 
 /**
  * Shape version of the persisted payload. A cache written by an older shape is
  * dropped rather than migrated, since a refetch costs one request and the data
  * is not user-owned.
  */
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 
 /** How long a persisted copy is served without a background refetch. */
 export const MODEL_REFERENCE_TTL_MS = 60 * 60 * 1000;
@@ -91,38 +102,89 @@ export interface ModelRequirements {
 /** Model name -> its recommended settings. Models without any are absent. */
 export type ModelRequirementsMap = Record<string, ModelRequirements>;
 
-interface CachedReference {
-  version: number;
-  fetchedAt: number;
-  names: string[];
-  baselines: ModelBaselineMap;
-  requirements: ModelRequirementsMap;
+/** One file a worker downloads to serve a model. */
+export interface ModelDownloadFile {
+  file_name: string | null;
+  file_url: string | null;
 }
 
 /**
- * Every record name in a raw reference payload. This is the universe of models
- * the pickers offer, so a record is kept whether or not it carries a baseline.
+ * One image model as the reference describes it. Every field the reference may
+ * leave out is null or empty here rather than absent, so a page can read it
+ * without asking whether the key is there.
+ *
+ * The checksums under `config.files` are dropped: they belong to the worker
+ * that downloads the weights, and nothing a reader is shown depends on them.
  */
-export function coerceModelNames(raw: unknown): string[] {
-  if (typeof raw !== 'object' || raw === null) {
-    return [];
-  }
-  return Object.entries(raw as Record<string, unknown>)
-    .filter(
-      ([name, value]) =>
-        name !== '' && typeof value === 'object' && value !== null,
-    )
-    .map(([name]) => name);
+export interface ModelReferenceRecord {
+  name: string;
+  /** Normalised by {@link normalizeBaseline}; null when the record has none. */
+  baseline: string | null;
+  type: string | null;
+  description: string | null;
+  version: string | null;
+  style: string | null;
+  nsfw: boolean;
+  inpainting: boolean;
+  homepage: string | null;
+  /** Addresses of the published sample pictures, in the reference's order. */
+  showcases: string[];
+  /** Words the model was trained to answer to. */
+  trigger: string[];
+  tags: string[];
+  size_on_disk_bytes: number | null;
+  min_bridge_version: number | null;
+  requirements: ModelRequirements | null;
+  downloads: ModelDownloadFile[];
+  optimization: string | null;
 }
 
-/** Re-read an already-flattened list of names, e.g. from the cache. */
-function coerceFlatNames(raw: unknown): string[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-  return raw.filter(
-    (name): name is string => typeof name === 'string' && name !== '',
-  );
+/** The sampling settings a text model's publisher recommends. */
+export interface TextModelSettings {
+  temperature?: number;
+  top_p?: number;
+  top_k?: number;
+  rep_pen?: number;
+}
+
+/**
+ * One text model as the reference describes it. Its `baseline` is the family
+ * the model was trained from ("StableLM-3B-4E1T") rather than one of the image
+ * baselines, so it is kept as published rather than normalised.
+ */
+export interface TextModelReferenceRecord {
+  name: string;
+  display_name: string | null;
+  model_name: string | null;
+  baseline: string | null;
+  /** Weight count, as a plain number of parameters. */
+  parameters: number | null;
+  description: string | null;
+  version: string | null;
+  style: string | null;
+  nsfw: boolean;
+  tags: string[];
+  url: string | null;
+  instruct_format: string | null;
+  settings: TextModelSettings | null;
+}
+
+/** Model name -> its full record. */
+export type ModelRecordMap = ReadonlyMap<string, ModelReferenceRecord>;
+
+/** Text model name -> its full record. */
+export type TextModelRecordMap = ReadonlyMap<string, TextModelReferenceRecord>;
+
+interface CachedReference {
+  version: number;
+  fetchedAt: number;
+  records: Record<string, ModelReferenceRecord>;
+}
+
+interface CachedTextReference {
+  version: number;
+  fetchedAt: number;
+  records: Record<string, TextModelReferenceRecord>;
 }
 
 /**
@@ -137,24 +199,6 @@ export function normalizeBaseline(raw: string): string {
     .toLowerCase()
     .replace(/[\s-]+/g, '_')
     .replace(/_+/g, '_');
-}
-
-/** Read the `baseline` of every record in a raw reference payload. */
-export function coerceBaselineMap(raw: unknown): ModelBaselineMap {
-  if (typeof raw !== 'object' || raw === null) {
-    return {};
-  }
-  const map: ModelBaselineMap = {};
-  for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof value !== 'object' || value === null) {
-      continue;
-    }
-    const baseline = (value as Record<string, unknown>)['baseline'];
-    if (typeof baseline === 'string' && baseline.trim() !== '') {
-      map[name] = normalizeBaseline(baseline);
-    }
-  }
-  return map;
 }
 
 const REQUIREMENT_NUMBER_KEYS = [
@@ -206,50 +250,168 @@ export function coerceRequirements(raw: unknown): ModelRequirements | null {
   return found ? result : null;
 }
 
-/** Read the `requirements` of every record in a raw reference payload. */
-export function coerceRequirementsMap(raw: unknown): ModelRequirementsMap {
-  if (typeof raw !== 'object' || raw === null) {
-    return {};
+/** A string field, or null when the reference left it out or left it empty. */
+function readText(source: Record<string, unknown>, key: string): string | null {
+  const value = source[key];
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
+}
+
+/** A number field, or null when it is missing or not a finite number. */
+function readNumber(
+  source: Record<string, unknown>,
+  key: string,
+): number | null {
+  const value = source[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/** The non-empty strings of a list field, or an empty list. */
+function readTextList(source: Record<string, unknown>, key: string): string[] {
+  const value = source[key];
+  if (!Array.isArray(value)) {
+    return [];
   }
-  const map: ModelRequirementsMap = {};
-  for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof value !== 'object' || value === null) {
+  return value.filter(
+    (entry): entry is string => typeof entry === 'string' && entry !== '',
+  );
+}
+
+/**
+ * The files a worker fetches to serve the model. The list is read from the
+ * record's `config.download`, and from a flat `downloads` when the record is
+ * being re-read from the cache, which keeps the already-parsed shape.
+ */
+function readDownloads(source: Record<string, unknown>): ModelDownloadFile[] {
+  const config = source['config'];
+  const fromConfig =
+    typeof config === 'object' && config !== null
+      ? (config as Record<string, unknown>)['download']
+      : undefined;
+  const raw = fromConfig ?? source['downloads'];
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const files: ModelDownloadFile[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'object' || entry === null) {
       continue;
     }
-    const requirements = coerceRequirements(
-      (value as Record<string, unknown>)['requirements'],
-    );
-    if (requirements) {
-      map[name] = requirements;
+    const record = entry as Record<string, unknown>;
+    const file: ModelDownloadFile = {
+      file_name: readText(record, 'file_name'),
+      file_url: readText(record, 'file_url'),
+    };
+    if (file.file_name !== null || file.file_url !== null) {
+      files.push(file);
+    }
+  }
+  return files;
+}
+
+/** Read one image record, keeping the fields the site shows. */
+export function coerceRecord(
+  name: string,
+  raw: unknown,
+): ModelReferenceRecord | null {
+  if (typeof raw !== 'object' || raw === null || name === '') {
+    return null;
+  }
+  const source = raw as Record<string, unknown>;
+  const baseline = readText(source, 'baseline');
+  return {
+    name,
+    baseline: baseline === null ? null : normalizeBaseline(baseline),
+    type: readText(source, 'type'),
+    description: readText(source, 'description'),
+    version: readText(source, 'version'),
+    style: readText(source, 'style'),
+    nsfw: source['nsfw'] === true,
+    inpainting: source['inpainting'] === true,
+    homepage: readText(source, 'homepage'),
+    showcases: readTextList(source, 'showcases'),
+    trigger: readTextList(source, 'trigger'),
+    tags: readTextList(source, 'tags'),
+    size_on_disk_bytes: readNumber(source, 'size_on_disk_bytes'),
+    min_bridge_version: readNumber(source, 'min_bridge_version'),
+    requirements: coerceRequirements(source['requirements']),
+    downloads: readDownloads(source),
+    optimization: readText(source, 'optimization'),
+  };
+}
+
+/** Read every image record in a reference payload, or in a cached copy of one. */
+export function coerceRecordMap(
+  raw: unknown,
+): Map<string, ModelReferenceRecord> {
+  const map = new Map<string, ModelReferenceRecord>();
+  if (typeof raw !== 'object' || raw === null) {
+    return map;
+  }
+  for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
+    const record = coerceRecord(name, value);
+    if (record) {
+      map.set(name, record);
     }
   }
   return map;
 }
 
-/** Re-read an already-flattened `name -> requirements` map from the cache. */
-function coerceFlatRequirementsMap(raw: unknown): ModelRequirementsMap {
+/** Read a text record's recommended sampling settings, or null when it has none. */
+function coerceTextSettings(raw: unknown): TextModelSettings | null {
   if (typeof raw !== 'object' || raw === null) {
-    return {};
+    return null;
   }
-  const map: ModelRequirementsMap = {};
-  for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-    const requirements = coerceRequirements(value);
-    if (requirements) {
-      map[name] = requirements;
+  const source = raw as Record<string, unknown>;
+  const settings: TextModelSettings = {};
+  let found = false;
+  for (const key of ['temperature', 'top_p', 'top_k', 'rep_pen'] as const) {
+    const value = readNumber(source, key);
+    if (value !== null) {
+      settings[key] = value;
+      found = true;
     }
   }
-  return map;
+  return found ? settings : null;
 }
 
-/** Re-read an already-flattened `name -> baseline` map, e.g. from the cache. */
-function coerceFlatBaselineMap(raw: unknown): ModelBaselineMap {
-  if (typeof raw !== 'object' || raw === null) {
-    return {};
+/** Read one text record, keeping the fields the site shows. */
+export function coerceTextRecord(
+  name: string,
+  raw: unknown,
+): TextModelReferenceRecord | null {
+  if (typeof raw !== 'object' || raw === null || name === '') {
+    return null;
   }
-  const map: ModelBaselineMap = {};
+  const source = raw as Record<string, unknown>;
+  return {
+    name,
+    display_name: readText(source, 'display_name'),
+    model_name: readText(source, 'model_name'),
+    baseline: readText(source, 'baseline'),
+    parameters: readNumber(source, 'parameters'),
+    description: readText(source, 'description'),
+    version: readText(source, 'version'),
+    style: readText(source, 'style'),
+    nsfw: source['nsfw'] === true,
+    tags: readTextList(source, 'tags'),
+    url: readText(source, 'url'),
+    instruct_format: readText(source, 'instruct_format'),
+    settings: coerceTextSettings(source['settings']),
+  };
+}
+
+/** Read every text record in a reference payload, or in a cached copy of one. */
+export function coerceTextRecordMap(
+  raw: unknown,
+): Map<string, TextModelReferenceRecord> {
+  const map = new Map<string, TextModelReferenceRecord>();
+  if (typeof raw !== 'object' || raw === null) {
+    return map;
+  }
   for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof value === 'string' && value.trim() !== '') {
-      map[name] = normalizeBaseline(value);
+    const record = coerceTextRecord(name, value);
+    if (record) {
+      map.set(name, record);
     }
   }
   return map;
@@ -289,13 +451,17 @@ export function baselineSupportsMask(baseline: string | null): boolean {
 }
 
 /**
- * Serves model baselines and per-model recommended settings to the generate
- * studio, so it can gate the features that only some baselines implement (Stable
- * Cascade remix, the SD 1.5 / SDXL QR-code workflow) and surface the settings a
- * model was published to work best at.
+ * Serves the official model reference: the models the horde knows about, the
+ * baseline each was trained from, the settings its publisher recommends, and
+ * everything else the reference publishes about it.
  *
- * Nothing is requested until {@link load} is called. A persisted copy is
- * published immediately and refetched in the background once it is older than
+ * The generate studio reads the baselines to gate the features that only some
+ * families implement (Stable Cascade remix, the SD 1.5 / SDXL QR-code
+ * workflow); the model pages read the whole record.
+ *
+ * Nothing is requested until {@link load} is called, and the text reference not
+ * until {@link loadText} is. A persisted copy is published immediately and
+ * refetched in the background once it is older than
  * {@link MODEL_REFERENCE_TTL_MS}. Every failure path is silent and leaves the
  * baselines signal null, which the `supports*` helpers read as "allow".
  */
@@ -305,22 +471,32 @@ export class ModelReferenceService {
   private readonly db = inject(DatabaseService);
 
   /**
-   * Every model the reference lists, or null while nothing has been loaded yet.
-   * This is what the model pickers offer, with the horde's worker counts laid
-   * over it, which `mergeModelList` in `types/active-model` does.
+   * Every image model the reference lists, or null while nothing has been
+   * loaded yet. This is what the model pickers offer, with the horde's worker
+   * counts laid over it, which `mergeModelList` in `types/active-model` does.
    */
   public readonly names = signal<string[] | null>(null);
   /** Known model baselines, or null while nothing has been loaded yet. */
   public readonly baselines = signal<ModelBaselineMap | null>(null);
   /** Recommended settings per model; null until something has been loaded. */
   public readonly requirements = signal<ModelRequirementsMap | null>(null);
+  /** The full image record per model; null until something has been loaded. */
+  public readonly records = signal<ModelRecordMap | null>(null);
   /** Whether a network round trip is in flight. */
   public readonly loading = signal(false);
 
+  /** Every text model the reference lists; null until {@link loadText}. */
+  public readonly textNames = signal<string[] | null>(null);
+  /** The full text record per model; null until {@link loadText}. */
+  public readonly textRecords = signal<TextModelRecordMap | null>(null);
+  /** Whether a text round trip is in flight. */
+  public readonly textLoading = signal(false);
+
   private started = false;
+  private textStarted = false;
 
   /**
-   * Publish any cached baselines and revalidate when they are stale. Safe to
+   * Publish any cached image reference and revalidate when it is stale. Safe to
    * call repeatedly; only the first call does any work.
    */
   public load(): void {
@@ -330,14 +506,31 @@ export class ModelReferenceService {
     this.started = true;
     const cached = this.readCache();
     if (cached) {
-      this.names.set(cached.names);
-      this.baselines.set(cached.baselines);
-      this.requirements.set(cached.requirements);
+      this.publish(coerceRecordMap(cached.records));
       if (this.now() - cached.fetchedAt < MODEL_REFERENCE_TTL_MS) {
         return;
       }
     }
     this.fetch();
+  }
+
+  /**
+   * The same for the text reference. It is kept apart from {@link load} because
+   * most of the site never asks for a text model.
+   */
+  public loadText(): void {
+    if (this.textStarted) {
+      return;
+    }
+    this.textStarted = true;
+    const cached = this.readTextCache();
+    if (cached) {
+      this.publishText(coerceTextRecordMap(cached.records));
+      if (this.now() - cached.fetchedAt < MODEL_REFERENCE_TTL_MS) {
+        return;
+      }
+    }
+    this.fetchText();
   }
 
   /**
@@ -364,6 +557,27 @@ export class ModelReferenceService {
     return this.requirements()?.[name] ?? null;
   }
 
+  /**
+   * Everything the reference publishes about `modelName`, or null when it lists
+   * no such model or has not loaded.
+   */
+  public recordFor(modelName: string): ModelReferenceRecord | null {
+    const name = modelName.trim();
+    if (name === '') {
+      return null;
+    }
+    return this.records()?.get(name) ?? null;
+  }
+
+  /** The same for a text model; null until {@link loadText} has answered. */
+  public textRecordFor(modelName: string): TextModelReferenceRecord | null {
+    const name = modelName.trim();
+    if (name === '') {
+      return null;
+    }
+    return this.textRecords()?.get(name) ?? null;
+  }
+
   /** Whether `modelName` can serve a remix request; permissive when unknown. */
   public supportsRemix(modelName: string): boolean {
     return baselineSupportsRemix(this.baselineFor(modelName));
@@ -379,6 +593,33 @@ export class ModelReferenceService {
     return baselineSupportsTransparent(this.baselineFor(modelName));
   }
 
+  /**
+   * Publish one parsed reference. The names, the baselines and the recommended
+   * settings are read back out of the records rather than parsed a second time,
+   * so the four signals cannot disagree about the same model.
+   */
+  private publish(records: ModelRecordMap): void {
+    const baselines: ModelBaselineMap = {};
+    const requirements: ModelRequirementsMap = {};
+    for (const record of records.values()) {
+      if (record.baseline !== null) {
+        baselines[record.name] = record.baseline;
+      }
+      if (record.requirements !== null) {
+        requirements[record.name] = record.requirements;
+      }
+    }
+    this.names.set([...records.keys()]);
+    this.baselines.set(baselines);
+    this.requirements.set(requirements);
+    this.records.set(records);
+  }
+
+  private publishText(records: TextModelRecordMap): void {
+    this.textNames.set([...records.keys()]);
+    this.textRecords.set(records);
+  }
+
   private fetch(): void {
     this.loading.set(true);
     this.http
@@ -389,27 +630,62 @@ export class ModelReferenceService {
         if (raw === null) {
           return;
         }
-        const baselines = coerceBaselineMap(raw);
-        if (Object.keys(baselines).length === 0) {
+        const records = coerceRecordMap(raw);
+        if (records.size === 0) {
           return;
         }
-        const names = coerceModelNames(raw);
-        const requirements = coerceRequirementsMap(raw);
-        this.names.set(names);
-        this.baselines.set(baselines);
-        this.requirements.set(requirements);
-        this.db.store(CACHE_KEY, {
+        this.publish(records);
+        this.persist(CACHE_KEY, {
           version: CACHE_VERSION,
           fetchedAt: this.now(),
-          names,
-          baselines,
-          requirements,
+          records: Object.fromEntries(records),
         } satisfies CachedReference);
       });
   }
 
-  private readCache(): CachedReference | null {
-    const raw = this.db.get(CACHE_KEY);
+  private fetchText(): void {
+    this.textLoading.set(true);
+    this.http
+      .get<unknown>(TEXT_MODEL_REFERENCE_URL)
+      .pipe(catchError(() => of(null)))
+      .subscribe((raw) => {
+        this.textLoading.set(false);
+        if (raw === null) {
+          return;
+        }
+        const records = coerceTextRecordMap(raw);
+        if (records.size === 0) {
+          return;
+        }
+        this.publishText(records);
+        this.persist(TEXT_CACHE_KEY, {
+          version: CACHE_VERSION,
+          fetchedAt: this.now(),
+          records: Object.fromEntries(records),
+        } satisfies CachedTextReference);
+      });
+  }
+
+  /**
+   * Keep a copy for the next visit. A storage box that will not take it costs
+   * one refetch, so a refusal is dropped rather than raised.
+   */
+  private persist(key: string, value: unknown): void {
+    try {
+      this.db.store(key, value);
+    } catch {
+      return;
+    }
+  }
+
+  /** The stored envelope, or null when it is absent or written by an older shape. */
+  private readEnvelope(key: string): Record<string, unknown> | null {
+    let raw: unknown;
+    try {
+      raw = this.db.get(key);
+    } catch {
+      return null;
+    }
     if (typeof raw !== 'object' || raw === null) {
       return null;
     }
@@ -420,17 +696,38 @@ export class ModelReferenceService {
     ) {
       return null;
     }
-    const baselines = coerceFlatBaselineMap(source['baselines']);
-    if (Object.keys(baselines).length === 0) {
+    return source;
+  }
+
+  private readCache(): CachedReference | null {
+    const source = this.readEnvelope(CACHE_KEY);
+    if (source === null) {
       return null;
     }
-    const names = coerceFlatNames(source['names']);
+    const records = coerceRecordMap(source['records']);
+    if (records.size === 0) {
+      return null;
+    }
     return {
       version: CACHE_VERSION,
-      fetchedAt: source['fetchedAt'],
-      names: names.length > 0 ? names : Object.keys(baselines),
-      baselines,
-      requirements: coerceFlatRequirementsMap(source['requirements']),
+      fetchedAt: source['fetchedAt'] as number,
+      records: Object.fromEntries(records),
+    };
+  }
+
+  private readTextCache(): CachedTextReference | null {
+    const source = this.readEnvelope(TEXT_CACHE_KEY);
+    if (source === null) {
+      return null;
+    }
+    const records = coerceTextRecordMap(source['records']);
+    if (records.size === 0) {
+      return null;
+    }
+    return {
+      version: CACHE_VERSION,
+      fetchedAt: source['fetchedAt'] as number,
+      records: Object.fromEntries(records),
     };
   }
 
