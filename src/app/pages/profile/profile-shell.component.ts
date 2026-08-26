@@ -12,14 +12,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import {
-  ActivatedRoute,
-  NavigationEnd,
-  Router,
-  RouterLink,
-  RouterLinkActive,
-  RouterOutlet,
-} from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   FormControl,
   FormGroup,
@@ -27,9 +20,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { filter, map, of, startWith, switchMap } from 'rxjs';
+import { map, of, switchMap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -46,9 +38,6 @@ import {
 } from '../../components/json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../components/icon/icon.component';
-import { UserBadgesComponent } from '../../components/user-badges/user-badges.component';
-import { UserKudosCardComponent } from '../../components/user-kudos-card/user-kudos-card.component';
-import { UserStatsSummaryComponent } from '../../components/user-stats-summary/user-stats-summary.component';
 
 const CONTACT_NAG_DISMISSED_STORAGE_KEY = 'profile_contact_nag_dismissed';
 
@@ -68,16 +57,12 @@ interface ProfileTabDefinition {
     RouterLinkActive,
     TranslocoPipe,
     ReactiveFormsModule,
-    ScrollFadeComponent,
     StickyHeaderDirective,
     ToggleCheckboxComponent,
     PageIntroComponent,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
     IconComponent,
-    UserBadgesComponent,
-    UserKudosCardComponent,
-    UserStatsSummaryComponent,
   ],
   templateUrl: './profile-shell.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -88,28 +73,10 @@ export class ProfileShellComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   public readonly auth = inject(AuthService);
   public readonly guideService = inject(PageGuideService);
   private readonly glossary = inject(GlossaryService);
   private readonly teamService = inject(TeamService);
-
-  // Active tab from route (mirrors details.component.ts pattern)
-  public readonly activeTabKey = toSignal(
-    this.router.events.pipe(
-      filter((e) => e instanceof NavigationEnd),
-      startWith(null),
-      map(() => {
-        let child = this.route.firstChild;
-        while (child?.firstChild) {
-          child = child.firstChild;
-        }
-        return (child?.snapshot?.data?.['tabKey'] as string) ?? 'profile';
-      }),
-    ),
-    { initialValue: 'profile' },
-  );
 
   // Asset counts for tab badges
   public readonly workerCount = computed(

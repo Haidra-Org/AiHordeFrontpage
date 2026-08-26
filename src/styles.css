@@ -88,6 +88,9 @@
 /* Details page tabs */
 @import "./styles/_details-tabs.css";
 
+/* Signed-in profile area */
+@import "./styles/_profile.css";
+
 /* Model list and single model pages */
 @import "./styles/_models.css";
 

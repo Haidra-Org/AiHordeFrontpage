@@ -2659,6 +2659,8 @@
   "educators.explanation": "Educator accounts are special accounts made available to teachers and educational institutions for classroom use of AI Horde.",
   "profile.title": "Profile",
   "profile.login_title": "Login",
+  "profile.lead": "Your kudos, workers, teams, styles and shared keys, in one place.",
+  "profile.login_lead": "Sign in with your API key to see your account. The key stays in this browser.",
   "profile.welcome": "Welcome, {{username}}!",
   "profile.login_description": "Enter your API key to view your account information.",
   "profile.no_auth_warning": "Note: Your API key is only used to securely fetch your profile data and is stored locally in your browser.",

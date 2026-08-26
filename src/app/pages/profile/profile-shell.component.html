@@ -9,8 +9,8 @@
 <section class="section-primary">
   <div class="container-page-header">
     <div class="place-center">
-      <div class="flex items-center justify-center gap-2">
-        <h1 class="heading-hero">
+      <div class="profile-heading-row">
+        <h1 class="details-title">
           @if (auth.isLoggedIn()) {
             {{
               "profile.welcome"
@@ -22,145 +22,139 @@
         </h1>
         @if (auth.isLoggedIn()) {
           <app-json-inspector-trigger
+            variant="hd"
             label="View profile raw JSON"
             (triggered)="openRawJson()"
           />
         }
       </div>
+      <p class="details-lead">
+        @if (auth.isLoggedIn()) {
+          {{ "profile.lead" | transloco }}
+        } @else {
+          {{ "profile.login_lead" | transloco }}
+        }
+      </p>
     </div>
   </div>
 </section>
 
 <section class="section-secondary">
-  <div class="">
-    <div class="grid-items">
-      <div class="text-secondary sm:text-lg">
-        @if (auth.isLoading() && !auth.isInitialized()) {
-          <!-- Auth Loading Skeleton -->
-          <div class="container-page-content">
-            <div class="card card-bg-primary card-full card-spaced">
-              <div class="skeleton-box" aria-busy="true">
-                <div class="skeleton-bar skeleton-bar-lg"></div>
-                <div class="skeleton-bar skeleton-bar-md"></div>
-                <div class="skeleton-bar skeleton-bar-sm"></div>
-              </div>
-              <app-user-badges [loading]="true" />
-              <app-user-kudos-card [loading]="true" />
-              <app-user-stats-summary [loading]="true" />
-            </div>
-          </div>
-        } @else if (!auth.isLoggedIn()) {
-          <!-- Login Form -->
-          <div class="container-centered-md profile-login-shell">
-            <app-page-intro pageKey="profile_guest" />
-            <div
-              class="profile-login-panel surface-glass surface-glass--elevated"
-            >
-              <p class="text-intro text-primary profile-login-description">
-                {{ "profile.login_description" | transloco }}
-              </p>
-
-              <p class="warning-banner profile-login-warning" role="note">
-                {{ "profile.no_auth_warning" | transloco }}
-              </p>
-
-              <form class="stack-md" [formGroup]="form" (ngSubmit)="login()">
-                <div class="form-field">
-                  <label class="form-label" for="profile-api-key">{{
-                    "profile.api_key" | transloco
-                  }}</label>
-                  <input
-                    id="profile-api-key"
-                    class="form-input"
-                    formControlName="apiKey"
-                    type="text"
-                    autocomplete="off"
-                  />
-                </div>
-                @if (loginError()) {
-                  <p class="text-error" role="alert" aria-live="assertive">
-                    <small>{{ "invalid_api_key" | transloco }}</small>
-                  </p>
-                }
-
-                <div>
-                  <app-toggle-checkbox
-                    [description]="'profile.remember_api_key' | transloco"
-                    formControlName="remember"
-                  />
-                </div>
-
-                <button
-                  class="btn-primary btn-responsive profile-login-submit"
-                  [disabled]="!form.valid || auth.isLoading()"
-                  [class.btn-disabled]="!form.valid || auth.isLoading()"
-                  type="submit"
-                >
-                  @if (auth.isLoading()) {
-                    {{ "profile.logging_in" | transloco }}
-                  } @else {
-                    {{ "profile.login_button" | transloco }}
-                  }
-                </button>
-              </form>
-
-              <p class="text-secondary profile-login-register border-divider">
-                {{ "profile.no_account" | transloco }}
-                <a
-                  href="https://aihorde.net/register"
-                  class="link external-link profile-login-register-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ "register_account" | transloco }}
-                </a>
-              </p>
-            </div>
-          </div>
-        } @else {
-          <!-- User Profile -->
-          <div class="container-page-content">
-            <!-- Tab Navigation -->
-            <app-scroll-fade
-              class="details-tabs details-tabs--glass details-tabs--connected"
-              role="tablist"
-              [appStickyHeader]="10"
-            >
-              @for (tab of tabs; track tab.slug) {
-                <a
-                  [routerLink]="tab.slug"
-                  class="details-tab"
-                  routerLinkActive="details-tab-active"
-                  role="tab"
-                  [attr.aria-selected]="activeTabKey() === tab.slug"
-                >
-                  <app-icon
-                    [name]="tab.iconName"
-                    class="icon-sm"
-                    aria-hidden="true"
-                  />
-                  {{ tab.labelKey | transloco }}
-                  @if (tab.badgeCount && tab.badgeCount() > 0) {
-                    <span class="text-secondary text-sm"
-                      >({{ tab.badgeCount() }})</span
-                    >
-                  }
-                  @if (tab.notificationDot && tab.notificationDot()) {
-                    <span
-                      class="nav-notification-dot"
-                      aria-hidden="true"
-                    ></span>
-                  }
-                </a>
-              }
-            </app-scroll-fade>
-
-            <div class="tab-content-panel">
-              <router-outlet />
-            </div>
-          </div>
-        }
+  <div class="container-page-content">
+    @if (auth.isLoading() && !auth.isInitialized()) {
+      <div class="profile-skeleton" aria-busy="true">
+        <span class="profile-skeleton-bar profile-skeleton-bar--title"></span>
+        <span class="profile-skeleton-bar profile-skeleton-bar--wide"></span>
+        <span class="profile-skeleton-bar"></span>
+        <span class="profile-skeleton-bar profile-skeleton-bar--wide"></span>
       </div>
-    </div>
+    } @else if (!auth.isLoggedIn()) {
+      <div class="profile-login">
+        <app-page-intro pageKey="profile_guest" />
+
+        <div class="hd-card profile-login-card">
+          <p class="profile-login-description">
+            {{ "profile.login_description" | transloco }}
+          </p>
+
+          <p class="profile-login-note" role="note">
+            {{ "profile.no_auth_warning" | transloco }}
+          </p>
+
+          <form
+            class="profile-login-form"
+            [formGroup]="form"
+            (ngSubmit)="login()"
+          >
+            <div class="profile-field">
+              <label class="hd-label" for="profile-api-key">{{
+                "profile.api_key" | transloco
+              }}</label>
+              <input
+                id="profile-api-key"
+                class="hd-input"
+                formControlName="apiKey"
+                type="text"
+                autocomplete="off"
+              />
+            </div>
+
+            @if (loginError()) {
+              <p class="profile-login-error" role="alert" aria-live="assertive">
+                {{ "invalid_api_key" | transloco }}
+              </p>
+            }
+
+            <app-toggle-checkbox
+              [description]="'profile.remember_api_key' | transloco"
+              formControlName="remember"
+            />
+
+            <button
+              class="hd-btn hd-btn--primary profile-login-submit"
+              [disabled]="!form.valid || auth.isLoading()"
+              type="submit"
+            >
+              @if (auth.isLoading()) {
+                {{ "profile.logging_in" | transloco }}
+              } @else {
+                {{ "profile.login_button" | transloco }}
+              }
+            </button>
+          </form>
+
+          <p class="profile-login-register">
+            {{ "profile.no_account" | transloco }}
+            <a
+              href="https://aihorde.net/register"
+              class="link external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ "register_account" | transloco }}
+            </a>
+          </p>
+        </div>
+      </div>
+    } @else {
+      <div class="details-shell">
+        <nav
+          class="details-nav hd-subtabs"
+          [appStickyHeader]="10"
+          [attr.aria-label]="'profile.title' | transloco"
+        >
+          <div class="hd-subtabs-scroll">
+            @for (tab of tabs; track tab.slug) {
+              <a
+                class="hd-subtab profile-subtab"
+                [routerLink]="tab.slug"
+                routerLinkActive="hd-subtab--active"
+                #tabLink="routerLinkActive"
+                [attr.aria-current]="tabLink.isActive ? 'page' : null"
+              >
+                <app-icon
+                  [name]="tab.iconName"
+                  class="icon-sm"
+                  aria-hidden="true"
+                />
+                {{ tab.labelKey | transloco }}
+                @if (tab.badgeCount && tab.badgeCount() > 0) {
+                  <span class="hd-badge profile-subtab-badge">{{
+                    tab.badgeCount()
+                  }}</span>
+                }
+                @if (tab.notificationDot && tab.notificationDot()) {
+                  <span class="nav-notification-dot" aria-hidden="true"></span>
+                }
+              </a>
+            }
+          </div>
+        </nav>
+
+        <div class="details-panel">
+          <router-outlet />
+        </div>
+      </div>
+    }
   </div>
 </section>

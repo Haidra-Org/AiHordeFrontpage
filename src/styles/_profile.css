@@ -1,0 +1,160 @@
+/* =================================================================
+   PROFILE (HD family)
+
+   The signed-in account area and the sign-in panel in front of it. The
+   shell reuses the /details chrome (`.details-shell`, `.details-nav`,
+   `.details-panel`, `.stat-tile`) so the two read as one site; this
+   sheet carries only what is particular to the profile.
+
+   Every rule reads an `--hd-*` token, so both themes come out of the
+   token file and no `.dark` rule belongs here.
+   ================================================================= */
+
+@layer components {
+  /* The raw-JSON control rides beside the heading rather than under it,
+     because it acts on the account the heading names. */
+  .profile-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  /* -----------------------------------------------------------------
+     SUB-TABS
+     ----------------------------------------------------------------- */
+
+  /* A finger gets the full row height to aim at; the tab is only as tall
+     as the bar, so the target comes from the bar rather than padding. */
+  @media (pointer: coarse) {
+    .profile-subtab {
+      min-height: 44px;
+    }
+  }
+
+  /* The count is read past, not read: it sits at the label's weight and
+     takes the quiet ink so the tab name stays the thing being scanned. */
+  .profile-subtab-badge {
+    min-height: 18px;
+    padding: 0 5px;
+    background: var(--hd-seg-track);
+    color: var(--hd-label);
+    font-size: var(--hd-text-2xs);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hd-subtab--active .profile-subtab-badge {
+    color: var(--hd-ink);
+  }
+
+  /* -----------------------------------------------------------------
+     LOADING
+     The account arrives in one response, so there is nothing to lay a
+     structured placeholder out against: four bars say the page is
+     coming and nothing more.
+     ----------------------------------------------------------------- */
+
+  .profile-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    padding: var(--hd-space-4);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  .profile-skeleton-bar {
+    height: 10px;
+    width: 40%;
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-border);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  .profile-skeleton-bar--title {
+    height: 18px;
+    width: 55%;
+  }
+
+  .profile-skeleton-bar--wide {
+    width: 70%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .profile-skeleton-bar {
+      animation: none;
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     SIGN IN
+     ----------------------------------------------------------------- */
+
+  .profile-login {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+    max-width: 34rem;
+    margin: 0 auto;
+  }
+
+  .profile-login-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .profile-login-description {
+    margin: 0;
+    font-size: var(--hd-text-md);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  /* The key is a credential, so the caution about where it goes is
+     marked as a note rather than left in the run of body text. Amber on
+     the edge, never as the only signal: the words say the same thing. */
+  .profile-login-note {
+    margin: 0;
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border-left: 3px solid var(--hd-changed);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  .profile-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  .profile-login-error {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-danger);
+  }
+
+  .profile-login-submit {
+    align-self: flex-start;
+  }
+
+  .profile-login-register {
+    margin: 0;
+    padding-top: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border);
+    font-size: var(--hd-text-sm);
+    color: var(--hd-muted);
+  }
+}
