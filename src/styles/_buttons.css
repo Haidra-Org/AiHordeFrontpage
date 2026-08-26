@@ -140,3 +140,33 @@
     }
   }
 }
+
+/* =================================================================
+   DESTRUCTIVE ACTION (HD family)
+   ================================================================= */
+
+@layer components {
+  /* A press that cannot be taken back keeps the plain button and
+     carries the warning on its edge: the family's red as a label is
+     4.46:1 on a card, and as a fill it would need a different ink in
+     each theme. */
+  .danger-action {
+    border-color: var(--hd-danger);
+  }
+
+  .danger-action:hover:not(:disabled) {
+    background: var(--hd-danger-tint);
+  }
+
+  /* A press that changes what a thing is doing but can be pressed
+     again to change it back. Amber has no tint in the family, so the
+     edge and the label carry it. */
+  .caution-action {
+    border-color: var(--hd-changed);
+    color: var(--hd-changed);
+  }
+
+  .caution-action:hover:not(:disabled) {
+    background: var(--hd-field-soft);
+  }
+}

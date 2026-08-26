@@ -137,7 +137,7 @@ export class WorkerRowComponent {
 
   public readonly rowClasses = computed(() => {
     const worker = this.worker();
-    let classes = 'worker-row';
+    let classes = 'hd-list-row worker-row';
 
     if (
       worker.maintenance_mode ||
@@ -152,16 +152,18 @@ export class WorkerRowComponent {
       classes += ' worker-row--highlighted';
     }
 
-    // Domain color tint
+    // The row takes its domain's plane identity and the row's own start
+    // edge reads it, so the hue is declared once rather than restated as
+    // a border rule per type.
     switch (worker.type) {
       case 'image':
-        classes += ' worker-row--image';
+        classes += ' domain-hue--image';
         break;
       case 'text':
-        classes += ' worker-row--text';
+        classes += ' domain-hue--text';
         break;
       case 'interrogation':
-        classes += ' worker-row--interrogation';
+        classes += ' domain-hue--alchemy';
         break;
     }
 

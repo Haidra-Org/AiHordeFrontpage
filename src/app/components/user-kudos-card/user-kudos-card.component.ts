@@ -17,63 +17,47 @@ import { UserKudosDetails, MonthlyKudos } from '../../types/horde-user';
   ],
   template: `
     @if (loading()) {
-      <h3 class="heading-card"><app-kudos-term /></h3>
-      <div class="data-grid-1-2-3" aria-busy="true">
-        <div class="data-item-box">
-          <span
-            class="skeleton-bar"
-            style="width: 3rem; height: 0.75rem;"
-          ></span>
-          <span
-            class="skeleton-bar"
-            style="width: 5rem; height: 1.5rem; margin-top: 0.5rem;"
-          ></span>
-        </div>
-        <div class="data-item-box">
-          <span
-            class="skeleton-bar"
-            style="width: 5rem; height: 0.75rem;"
-          ></span>
-          <span
-            class="skeleton-bar"
-            style="width: 4rem; height: 1.25rem; margin-top: 0.5rem;"
-          ></span>
-        </div>
+      <h3 class="hd-card-title"><app-kudos-term /></h3>
+      <div class="hd-stats" aria-busy="true">
+        @for (i of [1, 2]; track i) {
+          <div class="hd-stat">
+            <span class="hd-skeleton-bar"></span>
+            <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+          </div>
+        }
       </div>
-      <h4 class="section-title-sm">
+      <h4 class="hd-card-title">
         {{ 'profile.kudos_breakdown' | transloco }}
       </h4>
-      <div
-        aria-busy="true"
-        style="display: flex; flex-direction: column; gap: 0.5rem;"
-      >
+      <div class="kudos-card-skeleton" aria-busy="true">
         @for (i of [1, 2, 3, 4]; track i) {
-          <span class="skeleton-bar" style="height: 1.25rem;"></span>
+          <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
         }
       </div>
     } @else {
-      <h3 class="heading-card"><app-kudos-term /></h3>
+      <h3 class="hd-card-title">
+        <app-kudos-term />
+        @if (isOwnProfile()) {
+          <a
+            routerLink="/v2-transfer/"
+            class="hd-btn hd-btn--tonal hd-btn--dense kudos-card-action"
+          >
+            {{ 'profile.transfer_kudos' | transloco }}
+          </a>
+        }
+      </h3>
 
-      <div class="data-grid-1-2-3">
-        <div class="data-item-box">
-          <span class="data-label"><app-kudos-term /></span>
-          <div class="kudos-balance-row">
-            <span class="data-value text-brand-purple">{{
-              kudos() | formatNumber
-            }}</span>
-            @if (isOwnProfile()) {
-              <a routerLink="/v2-transfer/" class="btn-primary btn-sm">
-                {{ 'profile.transfer_kudos' | transloco }}
-              </a>
-            }
-          </div>
+      <div class="hd-stats">
+        <div class="hd-stat">
+          <span class="hd-stat-label"><app-kudos-term /></span>
+          <span class="hd-stat-value">{{ kudos() | formatNumber }}</span>
         </div>
         @if (monthlyKudos()?.amount) {
-          <div class="data-item-box">
-            <span class="data-label">{{
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
               'profile.kudos_recurring' | transloco
             }}</span>
-            <span class="data-value">{{
+            <span class="hd-stat-value">{{
               'profile.monthly_kudos'
                 | transloco: { amount: monthlyKudos()!.amount! | formatNumber }
             }}</span>
@@ -85,13 +69,13 @@ import { UserKudosDetails, MonthlyKudos } from '../../types/horde-user';
           !trusted()
         ) {
           <div
-            class="data-item-box"
+            class="hd-stat"
             [attr.title]="'profile.evaluating_kudos_tooltip' | transloco"
           >
-            <span class="data-label">{{
+            <span class="hd-stat-label">{{
               'profile.evaluating_kudos' | transloco
             }}</span>
-            <span class="data-value">{{
+            <span class="hd-stat-value">{{
               evaluatingKudos()! | formatNumber
             }}</span>
           </div>
@@ -99,21 +83,27 @@ import { UserKudosDetails, MonthlyKudos } from '../../types/horde-user';
       </div>
 
       @if (isOwnProfile() && kudos() < 100) {
-        <div class="info-box info-box--blue mt-4">
-          <h4 class="info-box-title">
+        <div class="hd-callout hd-callout--accent">
+          <p class="hd-callout-title">
             {{ 'profile.low_kudos_info_title' | transloco }}
-          </h4>
-          <p class="info-box-text">
+          </p>
+          <p class="hd-callout-body">
             {{ 'profile.low_kudos_info_message' | transloco }}
           </p>
-          <a routerLink="/faq/" fragment="kudos" class="info-box-link">
-            {{ 'profile.low_kudos_info_link' | transloco }} →
-          </a>
+          <div class="hd-callout-actions">
+            <a
+              routerLink="/faq/"
+              fragment="kudos"
+              class="hd-btn hd-btn--dense kudos-card-action"
+            >
+              {{ 'profile.low_kudos_info_link' | transloco }}
+            </a>
+          </div>
         </div>
       }
 
       @if (kudosDetails()) {
-        <h4 class="section-title-sm">
+        <h4 class="hd-card-title">
           {{ 'profile.kudos_breakdown' | transloco }}
         </h4>
         <app-kudos-breakdown-panel
@@ -125,6 +115,7 @@ import { UserKudosDetails, MonthlyKudos } from '../../types/horde-user';
       }
     }
   `,
+  host: { class: 'kudos-card' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserKudosCardComponent {

@@ -16,13 +16,11 @@ function createComponent(data: UserStatsInput = {}, loading = false) {
     template: `<app-user-stats-summary
       [user]="user()"
       [loading]="loading()"
-      [gridLayout]="layout()"
     />`,
   })
   class Host {
     user = input<UserStatsInput>(data);
     loading = input(loading);
-    layout = input<'compact' | 'wide'>('compact');
   }
 
   TestBed.configureTestingModule({
@@ -44,13 +42,6 @@ function createComponent(data: UserStatsInput = {}, loading = false) {
 }
 
 describe('UserStatsSummaryComponent', () => {
-  describe('gridClass', () => {
-    it('returns compact grid by default', () => {
-      const { stats } = createComponent();
-      expect(stats.gridClass()).toBe('data-grid-1-2');
-    });
-  });
-
   describe('imagesRequested', () => {
     it('prefers records.request.image when available', () => {
       const { stats } = createComponent({

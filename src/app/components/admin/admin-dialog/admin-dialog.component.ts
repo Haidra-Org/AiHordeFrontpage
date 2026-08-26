@@ -30,25 +30,25 @@ import { IconComponent } from '../../icon/icon.component';
         ></div>
         <div
           #dialogPanel
-          class="modal-panel modal-panel--lg"
+          class="modal-panel modal-panel--lg dialog-panel"
           role="dialog"
           aria-modal="true"
           [attr.aria-labelledby]="titleId"
           tabindex="-1"
         >
-          <h3 [id]="titleId" class="heading-admin-card mb-4">
+          <h3 [id]="titleId" class="modal-title">
             {{ title() }}
           </h3>
 
-          <div class="dialog-content mb-6">
+          <div class="dialog-body">
             <ng-content />
           </div>
 
-          <div class="flex justify-end gap-3">
+          <div class="dialog-actions">
             <button
               #cancelButton
               (click)="cancelled.emit()"
-              class="btn-muted"
+              class="hd-btn"
               type="button"
               [disabled]="loading()"
             >
@@ -58,8 +58,9 @@ import { IconComponent } from '../../icon/icon.component';
               #confirmButton
               (click)="confirmed.emit()"
               [disabled]="loading()"
-              class="btn-primary"
-              [class.btn-danger]="variant() === 'danger'"
+              class="hd-btn"
+              [class.hd-btn--primary]="variant() !== 'danger'"
+              [class.danger-action]="variant() === 'danger'"
               type="button"
             >
               @if (loading()) {

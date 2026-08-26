@@ -342,10 +342,10 @@ export class WorkerCardComponent {
 
   public getCardBackground(): string {
     const worker = this.worker();
-    let classes =
-      worker.maintenance_mode || worker.paused || worker.flagged
-        ? 'worker-card-issue'
-        : 'worker-card-normal';
+    let classes = 'hd-card worker-card';
+    if (worker.maintenance_mode || worker.paused || worker.flagged) {
+      classes += ' worker-card--issue';
+    }
 
     if (this.highlighted()) {
       classes += ' worker-card-highlighted';

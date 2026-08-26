@@ -81,7 +81,7 @@ describe('AdminDialogComponent', () => {
     host.open.set(true);
     fixture.detectChanges();
 
-    const title = fixture.nativeElement.querySelector('.heading-admin-card');
+    const title = fixture.nativeElement.querySelector('.modal-title');
     expect(title.textContent).toContain('Test Dialog');
   });
 
@@ -100,7 +100,8 @@ describe('AdminDialogComponent', () => {
     host.open.set(true);
     fixture.detectChanges();
 
-    const confirmButton = fixture.nativeElement.querySelector('.btn-primary');
+    const confirmButton =
+      fixture.nativeElement.querySelector('.hd-btn--primary');
     confirmButton.click();
     fixture.detectChanges();
 
@@ -111,7 +112,7 @@ describe('AdminDialogComponent', () => {
     host.open.set(true);
     fixture.detectChanges();
 
-    const cancelButton = fixture.nativeElement.querySelector('.btn-muted');
+    const cancelButton = fixture.nativeElement.querySelectorAll('.hd-btn')[0];
     cancelButton.click();
     fixture.detectChanges();
 
@@ -160,13 +161,14 @@ describe('AdminDialogComponent', () => {
     expect(spinner).not.toBeNull();
   });
 
-  it('should apply btn-danger class when variant is danger', () => {
+  it('marks the confirm press as destructive when variant is danger', () => {
     host.open.set(true);
     host.variant.set('danger');
     fixture.detectChanges();
 
-    const confirmButton = fixture.nativeElement.querySelector('.btn-primary');
-    expect(confirmButton.classList).toContain('btn-danger');
+    const confirmButton = fixture.nativeElement.querySelector('.danger-action');
+    expect(confirmButton).not.toBeNull();
+    expect(confirmButton.classList).not.toContain('hd-btn--primary');
   });
 
   it('should have aria-modal attribute for accessibility', () => {
@@ -181,7 +183,7 @@ describe('AdminDialogComponent', () => {
     host.open.set(true);
     fixture.detectChanges();
 
-    const content = fixture.nativeElement.querySelector('.dialog-content p');
+    const content = fixture.nativeElement.querySelector('.dialog-body p');
     expect(content.textContent).toContain('Dialog content');
   });
 

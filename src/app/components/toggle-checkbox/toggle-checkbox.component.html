@@ -1,34 +1,36 @@
-<div
-  class="toggle-checkbox-container"
-  [class.toggle-checkbox--unset]="triState() && isNull()"
+<label
+  class="hd-switch hd-switch-row toggle-check"
+  [class.toggle-check--unset]="triState() && isNull()"
+  for="input{{ random() }}"
 >
-  <label class="toggle-switch" for="input{{ random() }}">
-    <input
-      type="checkbox"
-      id="input{{ random() }}"
-      [checked]="isChecked()"
-      [disabled]="disabled()"
-      (click)="onCheckboxClick($event)"
-      (change)="!triState() ? onInputChange(input.checked) : null"
-      (blur)="onBlur()"
-      #input
-    />
-    <div
-      class="toggle-switch-track"
-      [class.toggle-switch-track--null]="triState() && isNull()"
-    ></div>
-    <div
-      class="toggle-switch-thumb"
-      [class.toggle-switch-thumb--null]="triState() && isNull()"
-    ></div>
-    <span class="checkbox-label">{{ description() }}</span>
-    @if (triState()) {
-      <span
-        class="toggle-unset-badge"
-        [class.toggle-unset-badge--hidden]="!isNull()"
-        >{{ "styles.form.unset" | transloco }}</span
-      >
-    }
+  <span class="toggle-check-name">
+    {{ description() }}
     <ng-content />
-  </label>
-</div>
+  </span>
+  @if (triState()) {
+    <span
+      class="hd-badge toggle-check-unset"
+      [class.toggle-check-unset--hidden]="!isNull()"
+      >{{ "styles.form.unset" | transloco }}</span
+    >
+  }
+  <input
+    type="checkbox"
+    id="input{{ random() }}"
+    [checked]="isChecked()"
+    [disabled]="disabled()"
+    (click)="onCheckboxClick($event)"
+    (change)="!triState() ? onInputChange(input.checked) : null"
+    (blur)="onBlur()"
+    #input
+  />
+  <span
+    class="hd-switch-track"
+    [class.toggle-check-track--unset]="triState() && isNull()"
+  >
+    <span
+      class="hd-switch-thumb"
+      [class.toggle-check-thumb--unset]="triState() && isNull()"
+    ></span>
+  </span>
+</label>

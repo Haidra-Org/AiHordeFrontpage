@@ -1,295 +1,302 @@
 /* =================================================================
-   SHARED KEY COMPONENT STYLES
-   
-   Uses Tailwind CSS v4 @apply directive.
+   SHARED KEYS (HD family)
+
+   A shared key is a spending allowance handed to someone else, so the
+   card is read as a set of limits and the form is read as a set of
+   decisions about them. Both are drawn on the profile's own register.
+
+   Every rule reads an `--hd-*` token, so both themes come out of the
+   token file and no `.dark` rule belongs here.
    ================================================================= */
 
 @layer components {
-  .shared-keys-container {
-    @apply w-full;
+  .shared-keys {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
   }
 
   .shared-keys-header {
-    @apply flex justify-between items-start gap-4 flex-wrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
   }
+
+  .shared-keys-heading {
+    display: flex;
+    flex: 1 1 22rem;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  /* The sentence framing a group, at reading size. */
+  .shared-key-lead {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  /* An aside about the group: true, but not what the reader came for. */
+  .shared-key-note {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    line-height: 1.5;
+    color: var(--hd-muted);
+  }
+
+  .shared-keys-compose {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .shared-keys-compose app-shared-key-form {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* The two answers a request can come back with. Red and green sit on
+     the edge and the plate; the words carry the message. */
+  .shared-key-callout--danger {
+    border-inline-start-color: var(--hd-danger);
+    background: var(--hd-danger-tint);
+  }
+
+  .shared-key-callout--success {
+    border-inline-start-color: var(--hd-green);
+    background: var(--hd-green-tint);
+  }
+
+  /* -----------------------------------------------------------------
+     CARD
+     ----------------------------------------------------------------- */
 
   .shared-key-grid {
-    @apply grid gap-3 mt-4;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--hd-space-2);
   }
 
-  /* Host element targeting — Angular wraps each card in <app-shared-key-card> */
+  /* Angular wraps each card in its own element, which has to carry the
+     stretch so a short card still fills its column. */
   .shared-key-grid > * {
     display: flex;
     min-width: 0;
   }
 
-  .shared-key-form {
-    @apply grid gap-5 mt-4;
-  }
-
-  .alert-body {
-    @apply m-0;
-  }
-
-  .shared-key-form-grid {
-    @apply grid gap-4;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  }
-
-  .shared-key-form-panel {
-    min-width: 0;
-  }
-
-  .shared-key-form-panel--identity {
-    min-width: 0;
-  }
-
-  .shared-key-form-eyebrow {
-    @apply m-0 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700;
-  }
-
-  .dark .shared-key-form-eyebrow {
-    @apply text-sky-300;
-  }
-
-  .shared-key-form-section-grid {
-    min-width: 0;
-  }
-
-  .shared-key-field-card {
-    min-width: 0;
-  }
-
-  .shared-key-field-card--full {
-    min-width: 0;
-  }
-
-  .shared-key-field-card__footer--stacked {
-    min-width: 0;
-  }
-
-  .shared-key-field-status-badge {
-    background: rgb(14 165 233 / 0.14);
-    border: 1px solid rgb(14 165 233 / 0.28);
-    color: rgb(3 105 161);
-  }
-
-  .dark .shared-key-field-status-badge {
-    background: rgb(14 165 233 / 0.16);
-    border-color: rgb(125 211 252 / 0.2);
-    color: rgb(186 230 253);
-  }
-
-  .shared-key-field-help {
-    @apply m-0;
-    max-width: 28rem;
-  }
-
-  .shared-key-field-inline-note {
-    @apply m-0 italic;
-  }
-
-  .shared-key-field-toggle {
-    @apply shrink-0;
-  }
-
-  .shared-key-presets {
-    @apply flex flex-wrap items-center gap-2;
-  }
-
-  .shared-key-presets__label {
-    @apply mr-1 font-semibold uppercase tracking-wide;
-  }
-
-  .shared-key-form-actions {
-    min-width: 0;
-  }
-
-  .shared-key-form-actions__hint {
-    @apply m-0;
-    max-width: 36rem;
-  }
-
-  .shared-key-actions {
-    @apply flex gap-2 items-center flex-wrap justify-end;
-  }
-
-  /* Card styles */
   .shared-key-card {
-    @apply rounded-xl p-3 md:p-4;
     display: flex;
-    flex-direction: column;
     flex: 1;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
     min-width: 0;
-    background: var(--color-glass-surface-elevated);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border);
-    box-shadow: var(--shadow-glass);
   }
 
+  /* The state of the allowance is the card's identity, so it reaches the
+     card through the plane hue the primitives already read rather than
+     through a second copy of the card's own edge rule. */
   .shared-key-card--active {
-    border-color: rgb(22 163 74 / 0.32);
+    --hd-zone-tint-border: var(--hd-green-tint-border);
   }
 
   .shared-key-card--expired {
-    border-color: rgb(245 158 11 / 0.38);
+    --hd-zone-tint-border: var(--hd-changed);
   }
 
   .shared-key-card--exhausted {
-    border-color: rgb(220 38 38 / 0.4);
+    --hd-zone-tint-border: var(--hd-danger);
   }
 
-  .dark .shared-key-card {
-    background: var(--color-glass-surface-dark-elevated);
-    border-color: var(--color-glass-border-dark);
-    box-shadow: var(--shadow-glass-dark);
-  }
-
-  .dark .shared-key-card--active {
-    border-color: rgb(74 222 128 / 0.32);
-  }
-
-  .dark .shared-key-card--expired {
-    border-color: rgb(251 191 36 / 0.4);
-  }
-
-  .dark .shared-key-card--exhausted {
-    border-color: rgb(248 113 113 / 0.45);
-  }
-
-  .shared-key-card__header {
-    @apply mb-3;
+  /* A key's name is arbitrary text; it gives way before the mark beside
+     it does. */
+  .shared-key-name {
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .shared-key-name-row {
-    @apply flex items-center gap-2 flex-wrap justify-between;
+  .shared-key-status {
+    flex: none;
+    min-height: 20px;
+    padding: 0 var(--hd-space-1);
   }
 
-  .shared-key-status-badge {
-    @apply inline-flex items-center gap-1.5;
+  /* Each state has its own glyph, so the hue is the second signal. Only
+     the two the tokens carry a readable ink for take one; the granted
+     state keeps the page ink on a green plate. */
+  .shared-key-status--active {
+    background: var(--hd-green-tint);
+    border-color: var(--hd-green-tint-border);
+    color: var(--hd-ink);
+  }
+
+  .shared-key-status--expired {
+    border-color: var(--hd-changed);
+    color: var(--hd-changed);
+  }
+
+  .shared-key-status--exhausted {
+    background: var(--hd-danger-tint);
+    color: var(--hd-danger);
   }
 
   .shared-key-status-icon {
-    @apply w-3.5 h-3.5 shrink-0;
+    width: 14px;
+    height: 14px;
+    flex: none;
   }
 
   .shared-key-id {
-    @apply mt-2 flex items-stretch gap-2;
+    display: flex;
+    align-items: stretch;
+    gap: var(--hd-space-2);
     min-width: 0;
   }
 
+  /* The key itself: selectable in one press, and scrolled rather than
+     wrapped, because an identifier broken over two lines reads as two. */
   .shared-key-id-value {
-    @apply block py-1.5 px-2.5 rounded-md font-mono text-xs font-semibold select-all w-full;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+    padding: 0 var(--hd-space-2);
+    border: 1px solid var(--hd-field-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field);
+    color: var(--hd-ink-2);
+    font-size: var(--hd-text-xs);
+    font-variant-ligatures: none;
     white-space: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    text-overflow: clip;
     scrollbar-width: thin;
-    font-variant-ligatures: none;
-    background: rgb(255 255 255 / 0.36);
-    border: 1px solid rgb(99 102 241 / 0.16);
-    color: rgb(79 70 229);
-  }
-
-  .dark .shared-key-id-value {
-    background: rgb(15 23 42 / 0.3);
-    border-color: rgb(129 140 248 / 0.14);
-    color: rgb(199 210 254);
+    user-select: all;
   }
 
   .shared-key-copy-btn {
-    @apply flex items-center justify-center px-2 rounded-md cursor-pointer shrink-0;
-    background: rgb(255 255 255 / 0.36);
-    border: 1px solid rgb(99 102 241 / 0.16);
-    color: rgb(79 70 229);
-    transition: background 0.15s;
+    flex: none;
   }
 
-  .dark .shared-key-copy-btn {
-    background: rgb(15 23 42 / 0.3);
-    border-color: rgb(129 140 248 / 0.14);
-    color: rgb(199 210 254);
-  }
-
-  .shared-key-copy-btn:hover {
-    background: rgb(224 231 255 / 0.65);
-  }
-
-  .dark .shared-key-copy-btn:hover {
-    background: rgb(30 41 59 / 0.55);
-  }
-
-  .shared-key-card__body {
-    @apply grid gap-2 mt-2;
-    grid-template-columns: 1fr;
-    flex: 1;
-  }
-
-  .shared-key-field {
-    @apply flex justify-between gap-2 items-baseline;
+  .shared-key-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
     min-width: 0;
   }
 
+  /* These rows are read rather than pressed, so the pointer the row
+     primitive assumes is taken back. */
+  .shared-key-fields .hd-row {
+    cursor: default;
+  }
+
+  /* What the pixel budget works out to as a square, under the figure it
+     restates. */
   .shared-key-dim-row {
-    @apply text-right px-0.5;
+    margin: 0;
+    text-align: right;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
   }
 
-  .shared-key-card__footer {
-    @apply mt-3 pt-3;
-    border-top: 1px solid var(--color-glass-border-subtle);
+  .shared-key-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--hd-space-2);
   }
 
-  .dark .shared-key-card__footer {
-    border-top-color: var(--color-glass-border-dark-subtle);
+  /* -----------------------------------------------------------------
+     FORM
+     ----------------------------------------------------------------- */
+
+  .shared-key-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
   }
 
-  @media (max-width: 639px) {
-    .shared-key-form {
-      @apply gap-2;
-      margin-left: 0;
-      margin-right: 0;
-    }
-
-    .shared-key-form-panel.form-section-shell {
-      @apply p-1;
-    }
-
-    .shared-key-field-card.form-field-shell {
-      @apply p-1;
-    }
-
-    .shared-key-form-grid {
-      grid-template-columns: 1fr;
-      gap: 0.5rem;
-    }
-
-    .shared-key-form-section-grid.form-section-shell__grid {
-      gap: 0.5rem;
-    }
+  .shared-key-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--hd-space-3);
+    align-items: start;
   }
 
-  @media (max-width: 419px) {
-    .shared-key-form {
-      @apply gap-1;
-    }
+  .shared-key-form-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
+    min-width: 0;
+  }
 
-    .shared-key-form-panel.form-section-shell {
-      @apply p-0;
-    }
+  /* One limit: what it is, what it is set to, and the switch that takes
+     the ceiling off. */
+  .shared-key-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
+  }
 
-    .shared-key-field-card.form-field-shell {
-      @apply p-0.5;
-    }
+  .shared-key-field-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
 
-    .shared-key-form-grid {
-      gap: 0.25rem;
-    }
+  /* A limit that has been taken off says so beside its own name, so the
+     number left in the field is not read as the one in force. */
+  .shared-key-unlimited {
+    background: var(--hd-accent-tint);
+    border-color: var(--hd-accent-tint-border);
+    color: var(--hd-ink);
+  }
 
-    .shared-key-form-section-grid.form-section-shell__grid {
-      gap: 0.25rem;
-    }
+  .shared-key-presets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+    padding-top: var(--hd-space-1);
+  }
+
+  .shared-key-presets-label {
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .shared-key-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+  }
+
+  .shared-key-form-hint {
+    max-width: 36rem;
   }
 }

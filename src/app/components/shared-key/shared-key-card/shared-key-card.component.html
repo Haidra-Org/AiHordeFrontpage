@@ -1,66 +1,63 @@
 <div
-  class="shared-key-card"
+  class="hd-card shared-key-card"
   [class.shared-key-card--active]="status() === 'active'"
   [class.shared-key-card--expired]="status() === 'expired'"
   [class.shared-key-card--exhausted]="status() === 'exhausted'"
 >
-  <div class="shared-key-card__header">
-    <div class="shared-key-name-row">
-      <p class="data-label">
-        {{ sharedKey().name || ("profile.shared_keys.untitled" | transloco) }}
-      </p>
-      @if (status() === "active") {
-        <span
-          class="badge-base badge-success shared-key-status-badge"
-          [appTouchTooltip]="'profile.shared_keys.status.active'"
-        >
-          <app-icon name="check" class="shared-key-status-icon" />
-        </span>
-      } @else if (status() === "expired") {
-        <span
-          class="badge-base badge-warning shared-key-status-badge"
-          [appTouchTooltip]="'profile.shared_keys.status.expired'"
-        >
-          <app-icon name="clock-alt" class="shared-key-status-icon" />
-        </span>
-      } @else if (status() === "exhausted") {
-        <span
-          class="badge-base badge-danger shared-key-status-badge"
-          [appTouchTooltip]="'profile.shared_keys.status.exhausted'"
-        >
-          <app-icon name="x-mark" class="shared-key-status-icon" />
-        </span>
-      }
-    </div>
-    <div class="shared-key-id">
-      <code class="shared-key-id-value" [attr.title]="sharedKey().id">{{
-        sharedKey().id
-      }}</code>
-      <app-json-inspector-trigger
-        label="View shared key raw JSON"
-        (triggered)="openRawJson()"
-      />
-      <button
-        type="button"
-        class="shared-key-copy-btn"
-        (click)="copyKeyId()"
-        [attr.aria-label]="'profile.shared_keys.copy_key' | transloco"
+  <h4 class="hd-card-title">
+    <span class="shared-key-name">{{
+      sharedKey().name || ("profile.shared_keys.untitled" | transloco)
+    }}</span>
+    @if (status() === "active") {
+      <span
+        class="hd-badge shared-key-status shared-key-status--active"
+        [appTouchTooltip]="'profile.shared_keys.status.active'"
       >
-        @if (copied()) {
-          <app-icon name="check" class="w-4 h-4" />
-        } @else {
-          <app-icon name="copy" class="w-4 h-4" />
-        }
-      </button>
-    </div>
+        <app-icon name="check" class="shared-key-status-icon" />
+      </span>
+    } @else if (status() === "expired") {
+      <span
+        class="hd-badge shared-key-status shared-key-status--expired"
+        [appTouchTooltip]="'profile.shared_keys.status.expired'"
+      >
+        <app-icon name="clock-alt" class="shared-key-status-icon" />
+      </span>
+    } @else if (status() === "exhausted") {
+      <span
+        class="hd-badge shared-key-status shared-key-status--exhausted"
+        [appTouchTooltip]="'profile.shared_keys.status.exhausted'"
+      >
+        <app-icon name="x-mark" class="shared-key-status-icon" />
+      </span>
+    }
+  </h4>
+
+  <div class="shared-key-id">
+    <code class="shared-key-id-value" [attr.title]="sharedKey().id">{{
+      sharedKey().id
+    }}</code>
+    <app-json-inspector-trigger
+      label="View shared key raw JSON"
+      (triggered)="openRawJson()"
+    />
+    <button
+      type="button"
+      class="hd-btn hd-btn--icon hd-btn--dense shared-key-copy-btn"
+      (click)="copyKeyId()"
+      [attr.aria-label]="'profile.shared_keys.copy_key' | transloco"
+    >
+      @if (copied()) {
+        <app-icon name="check" class="icon-sm" />
+      } @else {
+        <app-icon name="copy" class="icon-sm" />
+      }
+    </button>
   </div>
 
-  <div class="shared-key-card__body">
-    <div class="shared-key-field">
-      <span class="data-label">{{
-        "profile.shared_keys.kudos" | transloco
-      }}</span>
-      <span class="data-value">
+  <div class="shared-key-fields">
+    <div class="hd-row">
+      <span>{{ "profile.shared_keys.kudos" | transloco }}</span>
+      <span class="hd-row-val">
         @if (sharedKey().kudos === -1) {
           {{ "profile.shared_keys.unlimited" | transloco }}
         } @else {
@@ -69,20 +66,16 @@
       </span>
     </div>
     @if (sharedKey().utilized !== undefined) {
-      <div class="shared-key-field">
-        <span class="data-label">{{
-          "profile.shared_keys.utilized" | transloco
-        }}</span>
-        <span class="data-value">{{
+      <div class="hd-row">
+        <span>{{ "profile.shared_keys.utilized" | transloco }}</span>
+        <span class="hd-row-val">{{
           sharedKey().utilized ?? 0 | formatNumber
         }}</span>
       </div>
     }
-    <div class="shared-key-field">
-      <span class="data-label">{{
-        "profile.shared_keys.max_image_pixels" | transloco
-      }}</span>
-      <span class="data-value">
+    <div class="hd-row">
+      <span>{{ "profile.shared_keys.max_image_pixels" | transloco }}</span>
+      <span class="hd-row-val">
         @if (sharedKey().max_image_pixels === -1) {
           {{ "profile.shared_keys.unlimited" | transloco }}
         } @else {
@@ -94,16 +87,14 @@
       sharedKey().max_image_pixels !== -1 &&
       squareDimensionFromPixels(sharedKey().max_image_pixels ?? null)
     ) {
-      <div class="shared-key-dim-row text-secondary text-xs">
+      <p class="shared-key-dim-row">
         ~
         {{ squareDimensionFromPixels(sharedKey().max_image_pixels ?? null) }} px
-      </div>
+      </p>
     }
-    <div class="shared-key-field">
-      <span class="data-label">{{
-        "profile.shared_keys.max_image_steps" | transloco
-      }}</span>
-      <span class="data-value">
+    <div class="hd-row">
+      <span>{{ "profile.shared_keys.max_image_steps" | transloco }}</span>
+      <span class="hd-row-val">
         @if (sharedKey().max_image_steps === -1) {
           {{ "profile.shared_keys.unlimited" | transloco }}
         } @else {
@@ -111,11 +102,9 @@
         }
       </span>
     </div>
-    <div class="shared-key-field">
-      <span class="data-label">{{
-        "profile.shared_keys.max_text_tokens" | transloco
-      }}</span>
-      <span class="data-value">
+    <div class="hd-row">
+      <span>{{ "profile.shared_keys.max_text_tokens" | transloco }}</span>
+      <span class="hd-row-val">
         @if (sharedKey().max_text_tokens === -1) {
           {{ "profile.shared_keys.unlimited" | transloco }}
         } @else {
@@ -123,11 +112,9 @@
         }
       </span>
     </div>
-    <div class="shared-key-field">
-      <span class="data-label">{{
-        "profile.shared_keys.expires" | transloco
-      }}</span>
-      <span class="data-value">
+    <div class="hd-row">
+      <span>{{ "profile.shared_keys.expires" | transloco }}</span>
+      <span class="hd-row-val">
         @if (sharedKey().expiry) {
           {{ formatExpiry(sharedKey().expiry) }}
         } @else {
@@ -137,36 +124,34 @@
     </div>
   </div>
 
-  <div class="shared-key-card__footer">
-    @if (!readonly()) {
-      <div class="shared-key-actions">
-        <button
-          type="button"
-          class="btn-source-control"
-          (click)="requestEdit()"
-          [disabled]="saving()"
-        >
-          @if (saving()) {
-            {{ "profile.shared_keys.updating" | transloco }}
-          } @else {
-            {{ "profile.shared_keys.edit" | transloco }}
-          }
-        </button>
-        <button
-          type="button"
-          class="btn-danger"
-          (click)="onDelete()"
-          [disabled]="deleting()"
-        >
-          @if (deleting()) {
-            {{ "profile.shared_keys.deleting" | transloco }}
-          } @else {
-            {{ "profile.shared_keys.delete" | transloco }}
-          }
-        </button>
-      </div>
-    }
-  </div>
+  @if (!readonly()) {
+    <div class="shared-key-actions">
+      <button
+        type="button"
+        class="hd-btn hd-btn--dense"
+        (click)="requestEdit()"
+        [disabled]="saving()"
+      >
+        @if (saving()) {
+          {{ "profile.shared_keys.updating" | transloco }}
+        } @else {
+          {{ "profile.shared_keys.edit" | transloco }}
+        }
+      </button>
+      <button
+        type="button"
+        class="hd-btn hd-btn--dense danger-action"
+        (click)="onDelete()"
+        [disabled]="deleting()"
+      >
+        @if (deleting()) {
+          {{ "profile.shared_keys.deleting" | transloco }}
+        } @else {
+          {{ "profile.shared_keys.delete" | transloco }}
+        }
+      </button>
+    </div>
+  }
 
   <app-json-inspector
     [open]="rawJsonOpen()"

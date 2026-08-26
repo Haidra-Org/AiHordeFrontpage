@@ -10,13 +10,13 @@
 <ng-template #dialogTpl>
   @switch (dialogType()) {
     @case ("models") {
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="heading-card">
+      <div class="dialog-head">
+        <h3 class="modal-title">
           {{
             "admin.workers.dialog.models_title"
               | transloco: { name: worker().name }
           }}
-          <span class="text-secondary text-sm font-normal ml-2"
+          <span class="worker-dialog-count"
             >({{ getSortedModels().length }})</span
           >
         </h3>
@@ -36,7 +36,7 @@
             [value]="modelSearch()"
             (input)="onModelSearchChange($event)"
             [placeholder]="'admin.workers.dialog.search_models' | transloco"
-            class="form-input w-full"
+            class="hd-input"
           />
         </div>
         <div class="worker-modal-scroll">
@@ -58,7 +58,7 @@
                   >
                   <button
                     type="button"
-                    class="btn-icon worker-model-list-copy-btn"
+                    class="worker-card-copy-btn"
                     (click)="copyModelName(model)"
                     [attr.aria-label]="
                       'admin.workers.action.copy_model'
@@ -71,27 +71,24 @@
               }
             </ul>
           } @else {
-            <p class="text-secondary text-sm">
+            <p class="hd-sublabel">
               {{ "admin.workers.dialog.no_models_match" | transloco }}
             </p>
           }
         </div>
       } @else {
-        <p class="text-secondary text-sm">
+        <p class="hd-sublabel">
           {{ "admin.common.none" | transloco }}
         </p>
       }
-      <div class="modal-actions">
-        <button
-          (click)="closeDialog()"
-          class="worker-glass-btn worker-glass-btn--blue"
-        >
+      <div class="dialog-actions">
+        <button (click)="closeDialog()" class="hd-btn hd-btn--tonal">
           {{ "admin.workers.dialog.close" | transloco }}
         </button>
       </div>
     }
     @case ("maintenance") {
-      <h3 class="heading-card mb-4">
+      <h3 class="modal-title">
         @if (worker().maintenance_mode) {
           {{
             "admin.workers.dialog.unset_maintenance_title"
@@ -105,8 +102,8 @@
         }
       </h3>
       @if (!worker().maintenance_mode) {
-        <div class="form-field mb-4">
-          <label class="form-label" for="maintenance-reason">
+        <div class="dialog-field">
+          <label class="hd-label" for="maintenance-reason">
             {{ "admin.workers.dialog.maintenance_reason" | transloco }}
           </label>
           <textarea
@@ -114,25 +111,25 @@
             [value]="maintenanceReason()"
             (input)="onMaintenanceReasonChange($event)"
             rows="3"
-            class="form-input w-full"
+            class="hd-textarea"
           ></textarea>
         </div>
       }
-      <div class="modal-actions">
-        <button (click)="closeDialog()" class="worker-glass-btn">
+      <div class="dialog-actions">
+        <button (click)="closeDialog()" class="hd-btn">
           {{ "admin.workers.dialog.cancel" | transloco }}
         </button>
         <button
           (click)="confirmMaintenance()"
           [disabled]="isUpdating()"
-          class="worker-glass-btn worker-glass-btn--amber"
+          class="hd-btn caution-action"
         >
           {{ "admin.workers.dialog.confirm" | transloco }}
         </button>
       </div>
     }
     @case ("pause") {
-      <h3 class="heading-card mb-4">
+      <h3 class="modal-title">
         @if (worker().paused) {
           {{
             "admin.workers.dialog.unset_paused_title"
@@ -145,34 +142,34 @@
           }}
         }
       </h3>
-      <div class="modal-actions">
-        <button (click)="closeDialog()" class="worker-glass-btn">
+      <div class="dialog-actions">
+        <button (click)="closeDialog()" class="hd-btn">
           {{ "admin.workers.dialog.cancel" | transloco }}
         </button>
         <button
           (click)="confirmPause()"
           [disabled]="isUpdating()"
-          class="worker-glass-btn worker-glass-btn--red"
+          class="hd-btn caution-action"
         >
           {{ "admin.workers.dialog.confirm" | transloco }}
         </button>
       </div>
     }
     @case ("delete") {
-      <h3 class="heading-card mb-4">
+      <h3 class="modal-title">
         {{
           "admin.workers.dialog.delete_title"
             | transloco: { name: worker().name }
         }}
       </h3>
-      <div class="mb-4 space-y-3">
-        <div class="alert alert--danger">
-          <span class="alert-content font-medium">
+      <div class="dialog-body">
+        <div class="hd-callout dialog-callout-danger">
+          <span class="hd-callout-body">
             {{ "admin.workers.dialog.delete_warning_permanent" | transloco }}
           </span>
         </div>
-        <div class="form-field">
-          <label for="delete-name-confirm" class="form-label">
+        <div class="dialog-field">
+          <label for="delete-name-confirm" class="hd-label">
             {{
               "admin.workers.dialog.delete_name_label"
                 | transloco: { name: worker().name }
@@ -181,7 +178,7 @@
           <input
             id="delete-name-confirm"
             type="text"
-            class="form-input w-full"
+            class="hd-input"
             [value]="deleteNameConfirm()"
             (input)="deleteNameConfirm.set($any($event.target).value)"
             [placeholder]="worker().name"
@@ -189,41 +186,41 @@
           />
         </div>
         @if (deleteError()) {
-          <div class="alert alert--danger">
-            <span class="alert-content">
+          <div class="hd-callout dialog-callout-danger" role="alert">
+            <span class="hd-callout-body">
               {{ "admin.workers.dialog.delete_error" | transloco }}
             </span>
           </div>
         }
       </div>
-      <div class="modal-actions">
-        <button (click)="closeDialog()" class="worker-glass-btn">
+      <div class="dialog-actions">
+        <button (click)="closeDialog()" class="hd-btn">
           {{ "admin.workers.dialog.cancel" | transloco }}
         </button>
         <button
           (click)="confirmDelete()"
           [disabled]="isUpdating() || !deleteConfirmValid()"
-          class="worker-glass-btn worker-glass-btn--danger"
+          class="hd-btn danger-action"
         >
           {{ "admin.workers.dialog.delete_confirm" | transloco }}
         </button>
       </div>
     }
     @case ("team") {
-      <h3 class="heading-card mb-4">
+      <h3 class="modal-title">
         {{
           "admin.workers.dialog.team_title" | transloco: { name: worker().name }
         }}
       </h3>
-      <div class="form-field mb-4">
-        <label for="team-select" class="form-label">
+      <div class="dialog-field">
+        <label for="team-select" class="hd-label">
           {{ "admin.workers.dialog.team_select" | transloco }}
         </label>
         <select
           id="team-select"
           [value]="selectedTeamId()"
           (change)="onTeamSelectChange($event)"
-          class="form-input w-full"
+          class="field-select"
         >
           <option value="">
             {{ "admin.workers.dialog.no_team" | transloco }}
@@ -232,31 +229,31 @@
             <option [value]="team.id">{{ team.name }}</option>
           }
         </select>
-        <p class="form-hint">
+        <p class="hd-sublabel">
           {{ "admin.workers.dialog.team_hint" | transloco }}
         </p>
       </div>
-      <div class="modal-actions">
-        <button (click)="closeDialog()" class="worker-glass-btn">
+      <div class="dialog-actions">
+        <button (click)="closeDialog()" class="hd-btn">
           {{ "admin.workers.dialog.cancel" | transloco }}
         </button>
         <button
           (click)="confirmTeamChange()"
           [disabled]="isUpdating()"
-          class="worker-glass-btn worker-glass-btn--blue"
+          class="hd-btn hd-btn--tonal"
         >
           {{ "admin.workers.dialog.confirm" | transloco }}
         </button>
       </div>
     }
     @case ("info") {
-      <h3 class="heading-card mb-4">
+      <h3 class="modal-title">
         {{
           "admin.workers.dialog.info_title" | transloco: { name: worker().name }
         }}
       </h3>
-      <div class="form-field mb-4">
-        <label class="form-label" for="info-text">
+      <div class="dialog-field">
+        <label class="hd-label" for="info-text">
           {{ "admin.workers.dialog.info_label" | transloco }}
         </label>
         <textarea
@@ -264,18 +261,18 @@
           [value]="infoText()"
           (input)="onInfoTextChange($event)"
           rows="3"
-          class="form-input w-full"
+          class="hd-textarea"
           [placeholder]="'admin.workers.dialog.info_placeholder' | transloco"
         ></textarea>
       </div>
-      <div class="modal-actions">
-        <button (click)="closeDialog()" class="worker-glass-btn">
+      <div class="dialog-actions">
+        <button (click)="closeDialog()" class="hd-btn">
           {{ "admin.workers.dialog.cancel" | transloco }}
         </button>
         <button
           (click)="confirmInfoChange()"
           [disabled]="isUpdating()"
-          class="worker-glass-btn worker-glass-btn--blue"
+          class="hd-btn hd-btn--tonal"
         >
           {{ "admin.workers.dialog.confirm" | transloco }}
         </button>
@@ -323,13 +320,13 @@
           </div>
           @if (statusDropdownOpen()) {
             <div
-              class="worker-status-dropdown"
+              class="hd-menu worker-status-dropdown"
               role="menu"
               tabindex="-1"
               (keydown.escape)="closeStatusDropdown()"
             >
               <div
-                class="worker-status-dropdown-item"
+                class="hd-menu-item worker-status-dropdown-item"
                 role="menuitem"
                 [title]="'admin.workers.button.maintenance_tooltip' | transloco"
               >
@@ -362,7 +359,7 @@
               @if (canTogglePause()) {
                 <button
                   type="button"
-                  class="worker-status-dropdown-item"
+                  class="hd-menu-item worker-status-dropdown-item"
                   (click)="openPauseDialog(); closeStatusDropdown()"
                 >
                   <app-worker-status-icon type="paused" sizeClass="w-4 h-4" />
@@ -377,7 +374,7 @@
                 <div class="worker-status-dropdown-divider"></div>
                 <button
                   type="button"
-                  class="worker-status-dropdown-item worker-status-dropdown-item--danger"
+                  class="hd-menu-item worker-status-dropdown-item worker-status-dropdown-item--danger"
                   (click)="openDeleteDialog(); closeStatusDropdown()"
                 >
                   <app-icon name="trash" class="w-4 h-4" />
@@ -407,7 +404,7 @@
             </h3>
             <button
               type="button"
-              class="btn-icon worker-card-copy-btn"
+              class="worker-card-copy-btn"
               (click)="copyWorkerName(); $event.stopPropagation()"
               [attr.aria-label]="
                 'admin.workers.action.copy_name'
@@ -421,7 +418,7 @@
             <p class="worker-card-id">{{ worker().id }}</p>
             <button
               type="button"
-              class="btn-icon worker-card-copy-btn"
+              class="worker-card-copy-btn"
               (click)="copyWorkerId(); $event.stopPropagation()"
               [attr.aria-label]="
                 'admin.workers.action.copy_id' | transloco: { id: worker().id }
@@ -598,17 +595,17 @@
         >
         @switch (worker().type) {
           @case ("image") {
-            <span class="worker-type-label worker-type-label--image">{{
+            <span class="hd-badge worker-type-label domain-hue--image">{{
               "admin.workers.type.image" | transloco
             }}</span>
           }
           @case ("text") {
-            <span class="worker-type-label worker-type-label--text">{{
+            <span class="hd-badge worker-type-label domain-hue--text">{{
               "admin.workers.type.text" | transloco
             }}</span>
           }
           @case ("interrogation") {
-            <span class="worker-type-label worker-type-label--interrogation">{{
+            <span class="hd-badge worker-type-label domain-hue--alchemy">{{
               "admin.workers.type.interrogation" | transloco
             }}</span>
           }
@@ -892,7 +889,7 @@
               }
               <a
                 [routerLink]="getModelLink(worker().models![0])"
-                class="btn-icon worker-single-model-action"
+                class="worker-single-model-action"
                 [attr.aria-label]="
                   'admin.workers.action.view_model'
                     | transloco: { name: worker().models![0] }
@@ -902,7 +899,7 @@
               </a>
               <button
                 type="button"
-                class="btn-icon worker-single-model-action"
+                class="worker-single-model-action"
                 (click)="copyModelName(worker().models![0])"
                 [attr.aria-label]="
                   'admin.workers.action.copy_model'
@@ -982,48 +979,48 @@
           <span
             [class]="
               worker().img2img
-                ? 'worker-cap worker-cap--blue'
-                : 'worker-cap worker-cap--muted'
+                ? 'hd-badge worker-cap'
+                : 'hd-badge worker-cap worker-cap--off'
             "
             >img2img</span
           >
           <span
             [class]="
               worker().painting
-                ? 'worker-cap worker-cap--purple'
-                : 'worker-cap worker-cap--muted'
+                ? 'hd-badge worker-cap'
+                : 'hd-badge worker-cap worker-cap--off'
             "
             >inpainting</span
           >
           <span
             [class]="
               worker()['post-processing']
-                ? 'worker-cap worker-cap--teal'
-                : 'worker-cap worker-cap--muted'
+                ? 'hd-badge worker-cap'
+                : 'hd-badge worker-cap worker-cap--off'
             "
             >post-processing</span
           >
           <span
             [class]="
               worker().lora
-                ? 'worker-cap worker-cap--amber'
-                : 'worker-cap worker-cap--muted'
+                ? 'hd-badge worker-cap'
+                : 'hd-badge worker-cap worker-cap--off'
             "
             >LoRA</span
           >
           <span
             [class]="
               worker().controlnet
-                ? 'worker-cap worker-cap--rose'
-                : 'worker-cap worker-cap--muted'
+                ? 'hd-badge worker-cap'
+                : 'hd-badge worker-cap worker-cap--off'
             "
             >ControlNet</span
           >
           <span
             [class]="
               worker().sdxl_controlnet
-                ? 'worker-cap worker-cap--indigo'
-                : 'worker-cap worker-cap--muted'
+                ? 'hd-badge worker-cap'
+                : 'hd-badge worker-cap worker-cap--off'
             "
             >SDXL ControlNet</span
           >

@@ -12,7 +12,7 @@
   (confirmed)="confirmPublicWorkersChange()"
   (cancelled)="closePublicWorkersDialog()"
 >
-  <p class="dialog-body-text">
+  <p class="dialog-text">
     @if (publicWorkersNewValue()) {
       {{ "profile.public_workers_confirm_enable_desc" | transloco }}
     } @else {
@@ -46,7 +46,10 @@
             glossaryId="worker"
           />
         </span>
-        <label class="toggle-switch">
+        <label class="hd-switch">
+          <span class="sr-only">{{
+            "profile.public_workers_label" | transloco
+          }}</span>
           <input
             type="checkbox"
             [checked]="auth.currentUser()!.public_workers ?? false"
@@ -55,8 +58,9 @@
               onPublicWorkersToggle(!auth.currentUser()!.public_workers)
             "
           />
-          <div class="toggle-switch-track"></div>
-          <div class="toggle-switch-thumb"></div>
+          <span class="hd-switch-track">
+            <span class="hd-switch-thumb"></span>
+          </span>
         </label>
       </div>
       <p class="hd-sublabel">
@@ -106,7 +110,7 @@
           id="worker-type"
           [value]="filterWorkerType()"
           (change)="onFilterTypeChange($any($event.target).value)"
-          class="profile-select"
+          class="field-select"
         >
           <option value="all">
             {{ "profile.workers.type.all" | transloco }}
@@ -136,7 +140,7 @@
           id="worker-status"
           [value]="filterMaintenance()"
           (change)="onFilterMaintenanceChange($any($event.target).value)"
-          class="profile-select"
+          class="field-select"
         >
           <option value="all">
             {{ "profile.workers.status.all" | transloco }}
@@ -156,20 +160,20 @@
       <!-- View Mode Toggle -->
       <div class="profile-field">
         <span class="hd-label">{{
-          "admin.workers.view_mode.card" | transloco
+          "profile.workers.view_mode" | transloco
         }}</span>
         <div
           class="hd-seg"
           role="group"
-          [attr.aria-label]="'admin.workers.view_mode.card' | transloco"
+          [attr.aria-label]="'profile.workers.view_mode' | transloco"
         >
           <button
             type="button"
             class="hd-seg-opt"
             [attr.aria-pressed]="workerViewMode() === 'card'"
             (click)="workerViewMode.set('card')"
-            [title]="'admin.workers.view_mode.card' | transloco"
-            [attr.aria-label]="'admin.workers.view_mode.card' | transloco"
+            [title]="'profile.workers.view_mode.card' | transloco"
+            [attr.aria-label]="'profile.workers.view_mode.card' | transloco"
           >
             <app-icon name="squares-2x2" class="icon-sm" aria-hidden="true" />
           </button>
@@ -178,8 +182,8 @@
             class="hd-seg-opt"
             [attr.aria-pressed]="workerViewMode() === 'row'"
             (click)="workerViewMode.set('row')"
-            [title]="'admin.workers.view_mode.row' | transloco"
-            [attr.aria-label]="'admin.workers.view_mode.row' | transloco"
+            [title]="'profile.workers.view_mode.row' | transloco"
+            [attr.aria-label]="'profile.workers.view_mode.row' | transloco"
           >
             <app-icon name="bars-4" class="icon-sm" aria-hidden="true" />
           </button>
@@ -235,91 +239,101 @@
       </div>
     } @else {
       @for (group of groupedWorkers(); track group.type) {
-        <h4
-          class="heading-subsection section-header-collapsible section-header-collapsible--light"
-          (click)="toggleWorkerTypeSection(group.type)"
-          (keydown.enter)="toggleWorkerTypeSection(group.type)"
-          (keydown.space)="toggleWorkerTypeSection(group.type)"
-          tabindex="0"
-          role="button"
-          [attr.aria-expanded]="!isWorkerTypeCollapsed(group.type)"
+        <div
+          class="hd-disclosure profile-group"
+          [class.hd-disclosure--open]="!isWorkerTypeCollapsed(group.type)"
         >
-          <span class="section-header-title-wrapper">
-            {{ "profile.workers.type." + group.type | transloco }}
-            <span class="hd-badge profile-count-badge">{{
-              group.workers.length
-            }}</span>
-          </span>
-          <app-icon
-            name="chevron-down"
-            class="chevron-icon"
-            [class.expanded]="!isWorkerTypeCollapsed(group.type)"
-            aria-hidden="true"
-          />
-        </h4>
-        @if (!isWorkerTypeCollapsed(group.type)) {
-          @if (workerViewMode() === "card") {
-            <div class="worker-grid">
-              @for (workerEntry of group.workers; track workerEntry.id) {
-                @if (workerEntry.loading) {
-                  <div class="skeleton-box" aria-busy="true">
-                    <p class="data-value text-sm break-all">
-                      {{ workerEntry.id }}
-                    </p>
-                    <div class="skeleton-bar skeleton-bar-sm"></div>
-                    <div class="skeleton-bar skeleton-bar-lg"></div>
-                    <p class="text-secondary text-sm">
-                      {{ "profile.loading_workers" | transloco }}
-                    </p>
-                  </div>
-                } @else if (workerEntry.worker) {
-                  @if (!loadingTeams()) {
-                    <app-worker-card
-                      [worker]="workerEntry.worker"
-                      [isModerator]="auth.currentUser()?.moderator ?? false"
-                      [pinHeaderOnMobile]="true"
-                      [availableTeams]="allTeams()"
-                      (workerUpdated)="onWorkerUpdated()"
-                      (workerDeleted)="onWorkerDeleted($event)"
-                    />
-                  } @else {
-                    <div class="skeleton-box" aria-busy="true">
-                      <p class="data-value text-sm break-all">
-                        {{ workerEntry.worker.name }}
-                      </p>
-                      <div class="skeleton-bar skeleton-bar-sm"></div>
-                      <div class="skeleton-bar skeleton-bar-lg"></div>
-                      <p class="text-secondary text-sm">
-                        {{ "profile.loading_workers" | transloco }}
-                      </p>
-                    </div>
+          <h4 class="profile-group-heading">
+            <button
+              type="button"
+              class="hd-disclosure-head profile-group-head"
+              (click)="toggleWorkerTypeSection(group.type)"
+              [attr.aria-expanded]="!isWorkerTypeCollapsed(group.type)"
+            >
+              <span class="hd-disclosure-name">{{
+                "profile.workers.type." + group.type | transloco
+              }}</span>
+              <span class="hd-disclosure-sum">
+                <span class="hd-badge profile-count-badge">{{
+                  group.workers.length
+                }}</span>
+              </span>
+              <app-icon
+                name="chevron-right"
+                class="hd-disclosure-chev"
+                aria-hidden="true"
+              />
+            </button>
+          </h4>
+          @if (!isWorkerTypeCollapsed(group.type)) {
+            <div class="hd-disclosure-body">
+              @if (workerViewMode() === "card") {
+                <div class="worker-grid">
+                  @for (workerEntry of group.workers; track workerEntry.id) {
+                    @if (workerEntry.loading) {
+                      <div class="skeleton-box" aria-busy="true">
+                        <p class="data-value text-sm break-all">
+                          {{ workerEntry.id }}
+                        </p>
+                        <div class="skeleton-bar skeleton-bar-sm"></div>
+                        <div class="skeleton-bar skeleton-bar-lg"></div>
+                        <p class="text-secondary text-sm">
+                          {{ "profile.loading_workers" | transloco }}
+                        </p>
+                      </div>
+                    } @else if (workerEntry.worker) {
+                      @if (!loadingTeams()) {
+                        <app-worker-card
+                          [worker]="workerEntry.worker"
+                          [isModerator]="auth.currentUser()?.moderator ?? false"
+                          [pinHeaderOnMobile]="true"
+                          [availableTeams]="allTeams()"
+                          (workerUpdated)="onWorkerUpdated()"
+                          (workerDeleted)="onWorkerDeleted($event)"
+                        />
+                      } @else {
+                        <div class="skeleton-box" aria-busy="true">
+                          <p class="data-value text-sm break-all">
+                            {{ workerEntry.worker.name }}
+                          </p>
+                          <div class="skeleton-bar skeleton-bar-sm"></div>
+                          <div class="skeleton-bar skeleton-bar-lg"></div>
+                          <p class="text-secondary text-sm">
+                            {{ "profile.loading_workers" | transloco }}
+                          </p>
+                        </div>
+                      }
+                    } @else {
+                      <div
+                        class="skeleton-box skeleton-box-dashed"
+                        role="status"
+                      >
+                        <p class="data-value text-sm break-all">
+                          {{ workerEntry.id }}
+                        </p>
+                        <p class="text-secondary text-sm">
+                          {{ "profile.no_workers_found" | transloco }}
+                        </p>
+                      </div>
+                    }
                   }
-                } @else {
-                  <div class="skeleton-box skeleton-box-dashed" role="status">
-                    <p class="data-value text-sm break-all">
-                      {{ workerEntry.id }}
-                    </p>
-                    <p class="text-secondary text-sm">
-                      {{ "profile.no_workers_found" | transloco }}
-                    </p>
-                  </div>
-                }
-              }
-            </div>
-          } @else {
-            <div class="worker-row-list">
-              @for (workerEntry of group.workers; track workerEntry.id) {
-                @if (workerEntry.worker) {
-                  <app-worker-row
-                    [worker]="workerEntry.worker"
-                    [isModerator]="auth.currentUser()?.moderator ?? false"
-                    (openDetail)="openWorkerDetail($event)"
-                  />
-                }
+                </div>
+              } @else {
+                <div class="worker-row-list">
+                  @for (workerEntry of group.workers; track workerEntry.id) {
+                    @if (workerEntry.worker) {
+                      <app-worker-row
+                        [worker]="workerEntry.worker"
+                        [isModerator]="auth.currentUser()?.moderator ?? false"
+                        (openDetail)="openWorkerDetail($event)"
+                      />
+                    }
+                  }
+                </div>
               }
             </div>
           }
-        }
+        </div>
       }
     }
   }

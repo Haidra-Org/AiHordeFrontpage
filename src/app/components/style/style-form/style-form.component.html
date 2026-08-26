@@ -1,14 +1,12 @@
 <div class="style-form-shell" [class.card--no-blur]="confirmModalOpen()">
   <!-- View Toggle -->
-  <section
-    class="style-form-panel style-form-panel--identity form-section-shell surface-glass surface-glass--accent"
-  >
-    <div class="style-form-toolbar form-section-shell__header">
-      <div>
-        <p class="shared-key-form-eyebrow m-0">
+  <section class="hd-card style-form-panel style-form-panel--identity">
+    <div class="style-form-toolbar">
+      <div class="style-form-title-block">
+        <p class="hd-card-title">
           {{ "profile.styles" | transloco }}
         </p>
-        <h3 class="text-primary">
+        <h3 class="style-form-title">
           @if (mode() === "create") {
             @if (isImageStyle()) {
               {{ "styles.form.create_image_style" | transloco }}
@@ -22,7 +20,7 @@
       </div>
       <button
         type="button"
-        class="btn-source-control"
+        class="hd-btn hd-btn--dense"
         (click)="toggleJsonView()"
         [attr.aria-pressed]="showJsonView()"
       >
@@ -39,27 +37,27 @@
 
   @if (showJsonView()) {
     <!-- JSON Editor View -->
-    <section class="style-form-panel form-section-shell surface-glass">
-      <div class="style-form-panel__header form-section-shell__header">
-        <h4 class="text-primary">
+    <section class="hd-card style-form-panel">
+      <div class="style-form-panel-head">
+        <h4 class="hd-card-title">
           {{ "styles.form.json_content" | transloco }}
         </h4>
       </div>
       <div class="form-json">
-        <label for="json-editor" class="form-label">
+        <label for="json-editor" class="hd-label">
           {{ "styles.form.json_content" | transloco }}
         </label>
         <textarea
           id="json-editor"
-          class="form-input form-code"
-          [class.form-input-error]="jsonError()"
+          class="hd-textarea style-form-code"
+          [class.field-invalid]="jsonError()"
           [value]="jsonContent()"
           (input)="onJsonInput($any($event.target).value)"
           rows="20"
           spellcheck="false"
         ></textarea>
         @if (jsonError()) {
-          <p class="text-error">{{ jsonError() }}</p>
+          <p class="field-error">{{ jsonError() }}</p>
         }
       </div>
     </section>
@@ -67,63 +65,61 @@
     <!-- Form Fields View -->
     <form [formGroup]="form" class="form-stack">
       <!-- Basic Info Section -->
-      <section
-        class="style-form-panel form-section-shell surface-glass surface-glass--accent"
-      >
-        <div class="style-form-panel__header form-section-shell__header">
-          <h4 class="text-primary">
+      <section class="hd-card style-form-panel">
+        <div class="style-form-panel-head">
+          <h4 class="hd-card-title">
             {{ "styles.form.section.basic" | transloco }}
           </h4>
         </div>
 
         <div class="form-field">
-          <label for="style-name" class="form-label">
+          <label for="style-name" class="hd-label">
             {{ "styles.form.name" | transloco }}
-            <span class="text-error">*</span>
+            <span class="field-required">*</span>
           </label>
           <input
             type="text"
             id="style-name"
             formControlName="name"
-            class="form-input"
-            [class.form-input-error]="
+            class="hd-input"
+            [class.field-invalid]="
               form.controls['name'].invalid && form.controls['name'].touched
             "
             [placeholder]="'styles.form.name_placeholder' | transloco"
           />
           @if (form.controls["name"].invalid && form.controls["name"].touched) {
-            <p class="text-error" role="alert">
+            <p class="field-error" role="alert">
               {{ "styles.form.name_required" | transloco }}
             </p>
           }
         </div>
 
         <div class="form-field">
-          <label for="style-info" class="form-label">
+          <label for="style-info" class="hd-label">
             {{ "styles.form.description" | transloco }}
           </label>
           <textarea
             id="style-info"
             formControlName="info"
-            class="form-input"
+            class="hd-textarea"
             rows="3"
             [placeholder]="'styles.form.description_placeholder' | transloco"
           ></textarea>
-          <p class="form-hint">
+          <p class="hd-sublabel">
             {{ "styles.form.description_hint" | transloco }}
           </p>
         </div>
 
         <div class="form-field">
-          <label for="style-prompt" class="form-label">
+          <label for="style-prompt" class="hd-label">
             {{ "styles.form.prompt" | transloco }}
-            <span class="text-error">*</span>
+            <span class="field-required">*</span>
           </label>
           <textarea
             id="style-prompt"
             formControlName="prompt"
-            class="form-input"
-            [class.form-input-error]="
+            class="hd-textarea"
+            [class.field-invalid]="
               form.controls['prompt'].invalid && form.controls['prompt'].touched
             "
             rows="4"
@@ -136,12 +132,12 @@
           @if (
             form.controls["prompt"].invalid && form.controls["prompt"].touched
           ) {
-            <p class="text-error" role="alert">
+            <p class="field-error" role="alert">
               {{ "styles.form.prompt_required" | transloco }}
             </p>
           }
           @if (promptMissingPlaceholder()) {
-            <p class="text-warning" role="status">
+            <p class="field-caution" role="status">
               @if (isImageStyle()) {
                 {{ "styles.form.prompt_missing_placeholder_image" | transloco }}
               } @else {
@@ -149,7 +145,7 @@
               }
             </p>
           }
-          <p class="form-hint">
+          <p class="hd-sublabel">
             @if (isImageStyle()) {
               {{ "styles.form.prompt_hint_image" | transloco }}
             } @else {
@@ -160,22 +156,22 @@
 
         <div class="form-row">
           <div class="form-field form-field-half">
-            <label for="style-tags" class="form-label">
+            <label for="style-tags" class="hd-label">
               {{ "styles.form.tags" | transloco }}
             </label>
             <input
               type="text"
               id="style-tags"
               formControlName="tags"
-              class="form-input"
+              class="hd-input"
               [placeholder]="'styles.form.tags_placeholder' | transloco"
             />
           </div>
 
           <div class="form-field form-field-half">
-            <label for="style-models" class="form-label">
+            <label for="style-models" class="hd-label">
               {{ "styles.form.models" | transloco }}
-              <span class="text-error">*</span>
+              <span class="field-required">*</span>
             </label>
             <app-model-autocomplete
               inputId="style-models"
@@ -195,11 +191,11 @@
               form.controls["models"].errors?.["requiresModel"] &&
               form.controls["models"].touched
             ) {
-              <p class="text-error" role="alert">
+              <p class="field-error" role="alert">
                 {{ "styles.form.models_required" | transloco }}
               </p>
             }
-            <p class="form-hint">
+            <p class="hd-sublabel">
               {{ "styles.form.models_placeholder_note" | transloco }}
             </p>
           </div>
@@ -220,25 +216,25 @@
 
       <!-- Image Style Parameters -->
       @if (isImageStyle()) {
-        <section class="style-form-panel form-section-shell surface-glass">
-          <div class="style-form-panel__header form-section-shell__header">
-            <h4 class="text-primary">
+        <section class="hd-card style-form-panel">
+          <div class="style-form-panel-head">
+            <h4 class="hd-card-title">
               {{ "styles.form.section.image_params" | transloco }}
             </h4>
-            <p class="form-hint m-0">
+            <p class="hd-sublabel">
               {{ "styles.form.optional_hint" | transloco }}
             </p>
           </div>
 
           <div class="form-row">
             <div class="form-field form-field-third">
-              <label for="style-sampler" class="form-label">
+              <label for="style-sampler" class="hd-label">
                 {{ "styles.form.sampler" | transloco }}
               </label>
               <select
                 id="style-sampler"
                 formControlName="sampler_name"
-                class="form-input"
+                class="field-select"
               >
                 <option value="">
                   {{ "styles.form.default" | transloco }}
@@ -255,14 +251,14 @@
                 form.controls['cfg_scale'].value === null
               "
             >
-              <label for="style-cfg" class="form-label">
+              <label for="style-cfg" class="hd-label">
                 {{ "styles.form.cfg_scale" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-cfg"
                 formControlName="cfg_scale"
-                class="form-input"
+                class="hd-input"
                 min="0"
                 max="100"
                 step="0.1"
@@ -273,14 +269,14 @@
               class="form-field form-field-third"
               [class.form-field--unset]="form.controls['steps'].value === null"
             >
-              <label for="style-steps" class="form-label">
+              <label for="style-steps" class="hd-label">
                 {{ "styles.form.steps" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-steps"
                 formControlName="steps"
-                class="form-input"
+                class="hd-input"
                 min="1"
                 max="500"
               />
@@ -292,15 +288,15 @@
               class="form-field form-field-third"
               [class.form-field--unset]="form.controls['width'].value === null"
             >
-              <label for="style-width" class="form-label">
+              <label for="style-width" class="hd-label">
                 {{ "styles.form.width" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-width"
                 formControlName="width"
-                class="form-input"
-                [class.form-input-error]="
+                class="hd-input"
+                [class.field-invalid]="
                   form.controls['width'].errors?.['divisibleBy64']
                 "
                 min="64"
@@ -308,7 +304,7 @@
                 step="64"
               />
               @if (form.controls["width"].errors?.["divisibleBy64"]) {
-                <p class="text-error" role="alert">
+                <p class="field-error" role="alert">
                   {{ "styles.form.divisible_by_64" | transloco }}
                 </p>
               }
@@ -318,15 +314,15 @@
               class="form-field form-field-third"
               [class.form-field--unset]="form.controls['height'].value === null"
             >
-              <label for="style-height" class="form-label">
+              <label for="style-height" class="hd-label">
                 {{ "styles.form.height" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-height"
                 formControlName="height"
-                class="form-input"
-                [class.form-input-error]="
+                class="hd-input"
+                [class.field-invalid]="
                   form.controls['height'].errors?.['divisibleBy64']
                 "
                 min="64"
@@ -334,21 +330,21 @@
                 step="64"
               />
               @if (form.controls["height"].errors?.["divisibleBy64"]) {
-                <p class="text-error" role="alert">
+                <p class="field-error" role="alert">
                   {{ "styles.form.divisible_by_64" | transloco }}
                 </p>
               }
             </div>
 
             <div class="form-field form-field-third">
-              <label for="style-clip-skip" class="form-label">
+              <label for="style-clip-skip" class="hd-label">
                 {{ "styles.form.clip_skip" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-clip-skip"
                 formControlName="clip_skip"
-                class="form-input"
+                class="hd-input"
                 min="1"
                 max="12"
               />
@@ -382,14 +378,14 @@
           </div>
 
           <div class="form-field">
-            <label for="style-post-processing" class="form-label">
+            <label for="style-post-processing" class="hd-label">
               {{ "styles.form.post_processing" | transloco }}
             </label>
             <input
               type="text"
               id="style-post-processing"
               formControlName="post_processing"
-              class="form-input"
+              class="hd-input"
               [placeholder]="
                 'styles.form.post_processing_placeholder' | transloco
               "
@@ -398,7 +394,7 @@
 
           <div class="form-field gs-civit-scope">
             <div class="gs-sec-head">
-              <span class="form-label">
+              <span class="hd-label">
                 {{ "styles.form.loras" | transloco }}
               </span>
               <button
@@ -444,25 +440,25 @@
               <summary>
                 {{ "styles.form.loras_json_toggle" | transloco }}
               </summary>
-              <label for="style-loras" class="form-label">
+              <label for="style-loras" class="hd-label">
                 {{ "styles.form.loras" | transloco }}
               </label>
               <textarea
                 id="style-loras"
                 formControlName="loras_json"
-                class="form-input form-code"
+                class="hd-textarea style-form-code"
                 rows="4"
                 [placeholder]="'styles.form.loras_placeholder' | transloco"
                 spellcheck="false"
                 (blur)="applyJson('loras', textareaValue($event))"
               ></textarea>
-              <label for="style-tis" class="form-label">
+              <label for="style-tis" class="hd-label">
                 {{ "styles.form.textual_inversions" | transloco }}
               </label>
               <textarea
                 id="style-tis"
                 formControlName="tis_json"
-                class="form-input form-code"
+                class="hd-textarea style-form-code"
                 rows="4"
                 [placeholder]="'styles.form.tis_placeholder' | transloco"
                 spellcheck="false"
@@ -492,14 +488,14 @@
           }
 
           <div class="form-field">
-            <label for="style-sharedkey" class="form-label">
+            <label for="style-sharedkey" class="hd-label">
               {{ "styles.form.shared_key" | transloco }}
             </label>
             <input
               type="text"
               id="style-sharedkey"
               formControlName="sharedkey"
-              class="form-input"
+              class="hd-input"
               [placeholder]="'styles.form.shared_key_placeholder' | transloco"
             />
           </div>
@@ -508,12 +504,12 @@
 
       <!-- Text Style Parameters -->
       @if (!isImageStyle()) {
-        <section class="style-form-panel form-section-shell surface-glass">
-          <div class="style-form-panel__header form-section-shell__header">
-            <h4 class="text-primary">
+        <section class="hd-card style-form-panel">
+          <div class="style-form-panel-head">
+            <h4 class="hd-card-title">
               {{ "styles.form.section.text_params" | transloco }}
             </h4>
-            <p class="form-hint m-0">
+            <p class="hd-sublabel">
               {{ "styles.form.optional_hint" | transloco }}
             </p>
           </div>
@@ -525,14 +521,14 @@
                 form.controls['temperature'].value === null
               "
             >
-              <label for="style-temperature" class="form-label">
+              <label for="style-temperature" class="hd-label">
                 {{ "styles.form.temperature" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-temperature"
                 formControlName="temperature"
-                class="form-input"
+                class="hd-input"
                 min="0"
                 max="5"
                 step="0.1"
@@ -543,14 +539,14 @@
               class="form-field form-field-quarter"
               [class.form-field--unset]="form.controls['top_p'].value === null"
             >
-              <label for="style-top-p" class="form-label">
+              <label for="style-top-p" class="hd-label">
                 {{ "styles.form.top_p" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-top-p"
                 formControlName="top_p"
-                class="form-input"
+                class="hd-input"
                 min="0.001"
                 max="1"
                 step="0.01"
@@ -558,14 +554,14 @@
             </div>
 
             <div class="form-field form-field-quarter">
-              <label for="style-top-k" class="form-label">
+              <label for="style-top-k" class="hd-label">
                 {{ "styles.form.top_k" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-top-k"
                 formControlName="top_k"
-                class="form-input"
+                class="hd-input"
                 min="0"
                 max="200"
               />
@@ -577,14 +573,14 @@
                 form.controls['rep_pen'].value === null
               "
             >
-              <label for="style-rep-pen" class="form-label">
+              <label for="style-rep-pen" class="hd-label">
                 {{ "styles.form.rep_pen" | transloco }}
               </label>
               <input
                 type="number"
                 id="style-rep-pen"
                 formControlName="rep_pen"
-                class="form-input"
+                class="hd-input"
                 min="1"
                 max="3"
                 step="0.05"
@@ -607,14 +603,14 @@
           </div>
 
           <div class="form-field">
-            <label for="style-stop-sequence" class="form-label">
+            <label for="style-stop-sequence" class="hd-label">
               {{ "styles.form.stop_sequence" | transloco }}
             </label>
             <input
               type="text"
               id="style-stop-sequence"
               formControlName="stop_sequence"
-              class="form-input"
+              class="hd-input"
               [placeholder]="
                 'styles.form.stop_sequence_placeholder' | transloco
               "
@@ -628,14 +624,14 @@
   <!-- Form Actions -->
   <div class="style-form-actions-bar">
     @if (showSubmitError()) {
-      <p class="form-error-summary" role="alert">
+      <p class="field-error style-form-summary" role="alert">
         {{ "styles.form.validation_summary" | transloco }}
       </p>
     }
     <div class="form-actions__buttons">
       <button
         type="button"
-        class="btn-source-control"
+        class="hd-btn hd-btn--dense"
         (click)="onCancel()"
         [disabled]="saving()"
       >
@@ -643,8 +639,7 @@
       </button>
       <button
         type="button"
-        class="btn-primary"
-        [class.btn-primary--error]="showSubmitError()"
+        class="hd-btn hd-btn--primary"
         (click)="onSubmit()"
         [disabled]="saving() || (showJsonView() && jsonError())"
       >
@@ -666,22 +661,22 @@
   (cancel)="$event.preventDefault(); onConfirmCancel()"
   aria-labelledby="style-confirm-title"
 >
-  <div class="modal-panel modal-panel--lg">
-    <div class="modal-header">
+  <div class="modal-panel modal-panel--lg dialog-panel">
+    <div class="style-form-confirm-head">
       <h3 id="style-confirm-title" class="modal-title">
         {{ "styles.form.confirm_title" | transloco }}
       </h3>
       <button
         type="button"
-        class="modal-close"
+        class="hd-btn hd-btn--ghost hd-btn--icon hd-btn--dense"
         (click)="onConfirmCancel()"
-        aria-label="Close"
+        [attr.aria-label]="'styles.form.confirm_cancel' | transloco"
       >
-        &#10005;
+        <app-icon name="x-mark" class="icon-sm" />
       </button>
     </div>
-    <div class="modal-body">
-      <p>{{ "styles.form.confirm_message" | transloco }}</p>
+    <div class="dialog-body">
+      <p class="dialog-text">{{ "styles.form.confirm_message" | transloco }}</p>
       <div class="confirm-fields">
         @for (entry of confirmPayloadEntries(); track entry.key) {
           <div class="confirm-field-row">
@@ -697,17 +692,13 @@
         <pre><code>{{ confirmPayloadJson() }}</code></pre>
       </details>
     </div>
-    <div class="modal-actions">
-      <button
-        type="button"
-        class="btn-source-control"
-        (click)="onConfirmCancel()"
-      >
+    <div class="dialog-actions">
+      <button type="button" class="hd-btn" (click)="onConfirmCancel()">
         {{ "styles.form.confirm_cancel" | transloco }}
       </button>
       <button
         type="button"
-        class="btn-primary"
+        class="hd-btn hd-btn--primary"
         (click)="onConfirmSubmit()"
         [disabled]="saving()"
       >

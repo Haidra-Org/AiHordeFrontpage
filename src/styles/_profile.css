@@ -256,21 +256,11 @@
       position: sticky;
       top: calc(var(--sticky-offset, 80px) + 1rem);
     }
-
-    /* The activity panel is a shared component still drawn on the glass
-       family; its own grid has to fold while the sidebar is narrow. */
-    .profile-overview-columns__sidebar .data-grid-1-2 {
-      grid-template-columns: 1fr;
-    }
   }
 
   @media (min-width: 1200px) {
     .profile-overview-columns {
       grid-template-columns: minmax(0, 680px) minmax(300px, 1fr);
-    }
-
-    .profile-overview-columns__sidebar .data-grid-1-2 {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
@@ -365,6 +355,24 @@
     opacity: 0.75;
   }
 
+  /* -----------------------------------------------------------------
+     GROUPS
+     A run of records under one heading, folded to a line until it is
+     asked for. The heading element stays a heading; the press inside
+     it is what the disclosure contract wants.
+     ----------------------------------------------------------------- */
+
+  .profile-group-heading {
+    margin: 0;
+  }
+
+  .profile-group-head {
+    width: 100%;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
   .profile-records,
   .profile-shared-keys {
     display: flex;
@@ -429,17 +437,6 @@
     border-color: var(--hd-changed);
   }
 
-  /* Destructive actions keep the plain button and carry the warning on
-     their edge: the family's red as a label is 4.46:1 on a card, and as
-     a fill it would need a different ink in each theme. */
-  .profile-btn-danger {
-    border-color: var(--hd-danger);
-  }
-
-  .profile-btn-danger:hover:not(:disabled) {
-    background: var(--hd-danger-tint);
-  }
-
   .profile-danger {
     border-top-color: var(--hd-danger);
   }
@@ -467,31 +464,6 @@
 
   .profile-field--grow {
     flex: 1 1 14rem;
-  }
-
-  /* The family has no select of its own; this is .hd-input's box with the
-     platform arrow left in place. */
-  .profile-select {
-    height: var(--hd-control-h);
-    padding: 0 var(--hd-space-2);
-    font-family: inherit;
-    font-size: var(--hd-text-md);
-    color: var(--hd-ink);
-    background: var(--hd-field);
-    border: 1px solid var(--hd-field-border);
-    border-radius: var(--hd-radius-sm);
-  }
-
-  .profile-select:focus {
-    outline: 2px solid var(--hd-accent);
-    outline-offset: 2px;
-    border-color: var(--hd-accent);
-  }
-
-  @media (pointer: coarse) {
-    .profile-select {
-      min-height: 44px;
-    }
   }
 
   /* -----------------------------------------------------------------

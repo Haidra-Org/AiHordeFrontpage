@@ -14,6 +14,7 @@ import { OnChange, OnTouched } from '../../types/value-accessor';
   selector: 'app-toggle-checkbox',
   imports: [TranslocoPipe],
   templateUrl: './toggle-checkbox.component.html',
+  host: { class: 'toggle-check-host' },
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     {

@@ -515,3 +515,70 @@
     color: rgb(156 163 175);
   }
 }
+
+/* =================================================================
+   DIALOG INTERNALS (HD family)
+
+   The overlay, the backdrop and the panel are the shared modal chrome
+   and stay as they are. What a dialog puts inside the panel is HD, so
+   a confirmation reads in the same register as the surface that
+   raised it. Every rule here reads an `--hd-*` token, so both themes
+   come out of the token file and no `.dark` rule belongs here.
+   ================================================================= */
+
+@layer components {
+  /* The panel is a column of blocks: a title, what is being confirmed,
+     and the two presses that settle it. */
+  .dialog-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  /* A title with the one control that belongs beside it. */
+  .dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .dialog-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
+  }
+
+  .dialog-text {
+    margin: 0;
+    font-size: var(--hd-text-md);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  .dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  /* A dialog that announces something irreversible draws its banner in
+     the family's red: the edge and the plate carry it, and the words
+     stay on the reading ink. */
+  .dialog-callout-danger {
+    border-inline-start-color: var(--hd-danger);
+    background: var(--hd-danger-tint);
+  }
+
+  /* The act and the way out, at the end of what they act on. */
+  .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--hd-space-2);
+    margin-top: var(--hd-space-4);
+  }
+}

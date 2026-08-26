@@ -34,43 +34,32 @@ import { IconComponent } from '../icon/icon.component';
         ></div>
         <div
           #dialogPanel
-          class="modal-panel modal-panel--lg"
+          class="modal-panel modal-panel--lg dialog-panel"
           role="dialog"
           aria-modal="true"
           [attr.aria-labelledby]="titleId()"
           tabindex="-1"
         >
-          <h3 [id]="titleId()" class="heading-admin-card mb-4">
+          <h3 [id]="titleId()" class="modal-title">
             {{ title() }}
           </h3>
 
-          <div class="dialog-content mb-6">
-            <!-- Warning message -->
-            <div
-              class="mb-4 p-4 rounded-lg"
-              [class]="
-                isAlreadyDeleted()
-                  ? 'bg-red-900/30 border border-red-700'
-                  : 'bg-yellow-900/30 border border-yellow-700'
-              "
-            >
-              @if (isAlreadyDeleted()) {
-                <p class="text-red-300 text-sm">
+          <div class="dialog-body">
+            <div class="hd-callout dialog-callout-danger">
+              <p class="hd-callout-body">
+                @if (isAlreadyDeleted()) {
                   {{ 'profile.delete_account_warning_permanent' | transloco }}
-                </p>
-              } @else {
-                <p class="text-yellow-300 text-sm">
+                } @else {
                   {{ 'profile.delete_account_warning_30_days' | transloco }}
-                </p>
-              }
+                }
+              </p>
             </div>
 
-            <!-- Username confirmation input -->
-            <div class="mb-4">
-              <label for="confirm-username" class="form-label">
+            <div class="dialog-field">
+              <label for="confirm-username" class="hd-label">
                 {{ 'profile.delete_account_enter_username' | transloco }}
               </label>
-              <p class="text-sm text-gray-400 mb-2">
+              <p class="hd-sublabel">
                 {{
                   'profile.delete_account_username_hint'
                     | transloco: { username: expectedUsername() }
@@ -80,7 +69,7 @@ import { IconComponent } from '../icon/icon.component';
                 #usernameInput
                 id="confirm-username"
                 type="text"
-                class="form-input w-full"
+                class="hd-input"
                 [placeholder]="expectedUsername()"
                 [(ngModel)]="inputUsername"
                 (input)="onInputChange()"
@@ -89,10 +78,10 @@ import { IconComponent } from '../icon/icon.component';
             </div>
           </div>
 
-          <div class="flex justify-end gap-3">
+          <div class="dialog-actions">
             <button
               (click)="cancelled.emit()"
-              class="btn-muted"
+              class="hd-btn"
               type="button"
               [disabled]="loading()"
             >
@@ -101,7 +90,7 @@ import { IconComponent } from '../icon/icon.component';
             <button
               (click)="onConfirm()"
               [disabled]="loading() || !canConfirm()"
-              class="btn-primary btn-danger"
+              class="hd-btn danger-action"
               type="button"
             >
               @if (loading()) {

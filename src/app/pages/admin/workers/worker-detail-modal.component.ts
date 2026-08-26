@@ -12,24 +12,26 @@ import {
 } from '@angular/core';
 import { Dialog, DialogModule, DialogRef } from '@angular/cdk/dialog';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { IconComponent } from '../../../components/icon/icon.component';
 import { HordeWorker } from '../../../types/horde-worker';
 import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
 
 @Component({
   selector: 'app-worker-detail-modal',
-  imports: [WorkerCardComponent, DialogModule],
+  imports: [WorkerCardComponent, DialogModule, IconComponent, TranslocoPipe],
   template: `
     <ng-template #dialogTpl>
       @if (worker(); as w) {
         <div class="worker-detail-modal-header">
           <button
             type="button"
-            class="btn-icon"
+            class="hd-btn hd-btn--ghost hd-btn--icon hd-btn--dense"
             (click)="close()"
-            aria-label="Close"
+            [attr.aria-label]="'admin.workers.dialog.close' | transloco"
           >
-            <span class="text-lg" aria-hidden="true">&times;</span>
+            <app-icon name="x-mark" class="icon-sm" />
           </button>
         </div>
         <app-worker-card
@@ -101,6 +103,7 @@ export class WorkerDetailModalComponent implements OnDestroy {
       panelClass: [
         'modal-panel',
         'modal-panel--xl',
+        'dialog-panel',
         'worker-detail-modal-panel',
       ],
       maxWidth: '56rem',

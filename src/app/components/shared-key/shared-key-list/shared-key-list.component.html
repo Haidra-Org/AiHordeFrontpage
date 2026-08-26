@@ -1,21 +1,21 @@
-<div class="shared-keys-container">
+<div class="shared-keys">
   @if (showHeader()) {
     <div class="shared-keys-header">
-      <div>
-        <h3 class="heading-card">
+      <div class="shared-keys-heading">
+        <h3 class="hd-card-title">
           {{ "profile.tabs.shared_keys" | transloco }}
         </h3>
-        <p class="text-secondary text-sm">
+        <p class="shared-key-lead">
           {{ "profile.shared_keys.description" | transloco }}
         </p>
-        <p class="text-secondary text-xs mt-1">
+        <p class="shared-key-note">
           {{ "profile.shared_keys.cache_notice" | transloco }}
         </p>
       </div>
       @if (!isExternalData()) {
-        <horde-button
-          variant="source-control"
-          [loading]="loading()"
+        <button
+          type="button"
+          class="hd-btn hd-btn--dense"
           (click)="loadSharedKeys()"
           [disabled]="loading()"
         >
@@ -24,7 +24,7 @@
           } @else {
             {{ "profile.shared_keys.refresh" | transloco }}
           }
-        </horde-button>
+        </button>
       }
     </div>
   }
@@ -32,31 +32,39 @@
   <div #statusRegion></div>
 
   @if (error()) {
-    <horde-alert variant="danger" class="mt-4">
-      <p class="alert-title">
+    <div class="hd-callout shared-key-callout--danger" role="alert">
+      <p class="hd-callout-title">
         {{ "profile.shared_keys.error_title" | transloco }}
       </p>
-      <p class="alert-body">{{ error() }}</p>
-    </horde-alert>
+      <p class="hd-callout-body">{{ error() }}</p>
+    </div>
   }
 
   @if (success()) {
-    <horde-alert variant="success" role="status" ariaLive="polite" class="mt-4">
-      <p class="alert-title">
+    <div
+      class="hd-callout shared-key-callout--success"
+      role="status"
+      aria-live="polite"
+    >
+      <p class="hd-callout-title">
         {{ "profile.shared_keys.success_title" | transloco }}
       </p>
-      <p class="alert-body">{{ success() }}</p>
-    </horde-alert>
+      <p class="hd-callout-body">{{ success() }}</p>
+    </div>
   }
 
   @if (!readonly()) {
-    <div class="section-divider-top" #createFormRegion>
+    <div #createFormRegion class="shared-keys-compose">
       @if (createFormCollapsed()) {
-        <horde-button variant="primary" (click)="toggleCreateForm()">
+        <button
+          type="button"
+          class="hd-btn hd-btn--primary"
+          (click)="toggleCreateForm()"
+        >
           {{ "profile.shared_keys.create_title" | transloco }}
-        </horde-button>
+        </button>
       } @else {
-        <h4 class="section-title-sm mb-2">
+        <h4 class="hd-card-title">
           {{ "profile.shared_keys.create_title" | transloco }}
         </h4>
         <app-shared-key-form
@@ -66,11 +74,7 @@
           [submitting]="creating()"
           (formSubmit)="onCreateSubmit($event)"
         />
-        <button
-          type="button"
-          class="btn-secondary mt-3"
-          (click)="toggleCreateForm()"
-        >
+        <button type="button" class="hd-btn" (click)="toggleCreateForm()">
           {{ "profile.shared_keys.cancel" | transloco }}
         </button>
       }
@@ -78,8 +82,8 @@
   }
 
   @if (editingKey(); as editKey) {
-    <div class="section-divider-top" #editFormRegion>
-      <h4 class="section-title-sm mb-2">
+    <div #editFormRegion class="shared-keys-compose">
+      <h4 class="hd-card-title">
         {{ "profile.shared_keys.edit" | transloco }}:
         {{ editKey.name || ("profile.shared_keys.untitled" | transloco) }}
       </h4>
@@ -97,12 +101,12 @@
   }
 
   @if (loading()) {
-    <p class="text-secondary text-sm py-4">
+    <p class="shared-key-note">
       {{ "profile.shared_keys.loading" | transloco }}
     </p>
   } @else {
     @if (sharedKeys().length === 0) {
-      <p class="text-secondary text-sm py-4">
+      <p class="shared-key-note">
         {{ "profile.shared_keys.none" | transloco }}
       </p>
     } @else {

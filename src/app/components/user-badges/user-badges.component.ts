@@ -19,80 +19,78 @@ export interface UserBadgeFlags {
   template: `
     @if (loading()) {
       <span
-        class="skeleton-bar skeleton-bar-sm"
-        style="width: 4.5rem; height: 1.375rem; display: inline-block; border-radius: 9999px;"
+        class="hd-skeleton-bar user-badge-skeleton"
         aria-hidden="true"
       ></span>
       <span
-        class="skeleton-bar skeleton-bar-sm"
-        style="width: 3.5rem; height: 1.375rem; display: inline-block; border-radius: 9999px;"
+        class="hd-skeleton-bar user-badge-skeleton user-badge-skeleton--narrow"
         aria-hidden="true"
       ></span>
     } @else {
       @if (trusted()) {
         <span
-          class="badge-base badge-success"
+          class="hd-badge user-badge user-badge--vouched"
           [attr.title]="'admin.users.desc.trusted' | transloco"
           >{{ 'profile.badge.trusted' | transloco }}</span
         >
       }
       @if (moderator()) {
         <span
-          class="badge-base badge-purple"
+          class="hd-badge user-badge user-badge--staff"
           [attr.title]="'admin.users.desc.moderator' | transloco"
           >{{ 'profile.badge.moderator' | transloco }}</span
         >
       }
       @if (education()) {
         <span
-          class="badge-base badge-info"
+          class="hd-badge user-badge user-badge--programme"
           [attr.title]="'admin.users.desc.education' | transloco"
           >{{ 'profile.badge.education' | transloco }}</span
         >
       }
       @if (service()) {
         <span
-          class="badge-base badge-warning"
+          class="hd-badge user-badge"
           [attr.title]="'admin.users.desc.service' | transloco"
           >{{ 'profile.badge.service' | transloco }}</span
         >
       }
       @if (customizer()) {
         <span
-          class="badge-base badge-pink"
+          class="hd-badge user-badge"
           [attr.title]="'admin.users.desc.customizer' | transloco"
           >{{ 'profile.badge.customizer' | transloco }}</span
         >
       }
       @if (special()) {
         <span
-          class="badge-base badge-secondary"
+          class="hd-badge user-badge"
           [attr.title]="'admin.users.desc.special' | transloco"
           >{{ 'profile.badge.special' | transloco }}</span
         >
       }
       @if (pseudonymous()) {
-        <span class="badge-base badge-secondary">{{
+        <span class="hd-badge user-badge">{{
           'profile.badge.anonymous' | transloco
         }}</span>
       }
       @if (filtered()) {
         <span
-          class="badge-base badge-warning"
+          class="hd-badge user-badge user-badge--caution"
           [attr.title]="'admin.users.desc.filtered' | transloco"
           >{{ 'profile.badge.filtered' | transloco }}</span
         >
       }
       @if (flagged()) {
         <span
-          class="badge-base badge-danger"
+          class="hd-badge user-badge user-badge--flagged"
           [attr.title]="'admin.users.desc.flagged' | transloco"
           >{{ 'profile.badge.flagged' | transloco }}</span
         >
       }
     }
   `,
-  host: { class: 'badge-container' },
+  host: { class: 'user-badges' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserBadgesComponent {

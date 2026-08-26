@@ -20,7 +20,7 @@
 
         <button
           type="button"
-          class="btn-icon worker-row-copy-btn"
+          class="worker-row-copy-btn"
           (click)="copyName($event)"
           [attr.aria-label]="
             'admin.workers.action.copy_name'
@@ -32,7 +32,7 @@
 
         <button
           type="button"
-          class="btn-icon worker-row-copy-btn worker-row-copy-btn--id"
+          class="worker-row-copy-btn worker-row-copy-btn--id"
           (click)="copyId($event)"
           [attr.aria-label]="
             'admin.workers.action.copy_id' | transloco: { id: worker().id }
@@ -83,7 +83,7 @@
               [primaryOverride]="perfUnit.primary.unit"
             />
           } @else {
-            <span class="text-secondary">—</span>
+            <span class="worker-row-metric-none">—</span>
           }
         </span>
       </div>

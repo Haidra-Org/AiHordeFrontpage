@@ -8,24 +8,18 @@ import {
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthService } from '../../../../services/auth.service';
-import { TeamService } from '../../../../services/team.service';
 import { ToastService } from '../../../../services/toast.service';
 import { IconComponent } from '../../../../components/icon/icon.component';
 import { FormatNumberPipe } from '../../../../pipes/format-number.pipe';
 import { UserBadgesComponent } from '../../../../components/user-badges/user-badges.component';
 import { UserStatsSummaryComponent } from '../../../../components/user-stats-summary/user-stats-summary.component';
 import { UserKudosCardComponent } from '../../../../components/user-kudos-card/user-kudos-card.component';
-import { DeleteAccountDialogComponent } from '../../../../components/delete-account-dialog/delete-account-dialog.component';
 import { AdminDialogComponent } from '../../../../components/admin/admin-dialog/admin-dialog.component';
 import { DestroyRef } from '@angular/core';
-import {
-  takeUntilDestroyed,
-  toObservable,
-  toSignal,
-} from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
-import { concatMap, EMPTY, map, of, switchMap, tap } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { concatMap, EMPTY, tap } from 'rxjs';
 import { formatAccountAge } from '../../../../helper/account-age';
+import { ProfileShellComponent } from '../../profile-shell.component';
 
 @Component({
   selector: 'app-profile-overview',
@@ -37,7 +31,6 @@ import { formatAccountAge } from '../../../../helper/account-age';
     UserBadgesComponent,
     UserStatsSummaryComponent,
     UserKudosCardComponent,
-    DeleteAccountDialogComponent,
     AdminDialogComponent,
   ],
   templateUrl: './profile-overview.component.html',
@@ -46,10 +39,9 @@ import { formatAccountAge } from '../../../../helper/account-age';
 export class ProfileOverviewComponent {
   public readonly auth = inject(AuthService);
   private readonly transloco = inject(TranslocoService);
-  private readonly teamService = inject(TeamService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly router = inject(Router);
+  private readonly shell = inject(ProfileShellComponent);
 
   // Active generation counts
   public readonly activeImageCount = computed(
@@ -72,16 +64,9 @@ export class ProfileOverviewComponent {
   public readonly workerCount = computed(
     () => this.auth.currentUser()?.worker_ids?.length ?? 0,
   );
-  /** Teams the account created; the list endpoint is the only source. */
-  public readonly teamCount = toSignal(
-    toObservable(this.auth.currentUser).pipe(
-      switchMap((user) =>
-        user ? this.teamService.getTeamsCreatedBy(user.username) : of([]),
-      ),
-      map((teams) => teams.length),
-    ),
-    { initialValue: 0 },
-  );
+  /** The tile and the tab badge print the same total, so the shell's count
+   * is the one both read rather than each asking for the list itself. */
+  public readonly teamCount = this.shell.teamCount;
   /** What the records tab has to show: every request this account has made. */
   public readonly requestsOnRecord = computed(() => {
     const user = this.auth.currentUser();
@@ -102,13 +87,6 @@ export class ProfileOverviewComponent {
     () => this.auth.currentUser()?.sharedkey_ids?.length ?? 0,
   );
 
-  // Computed username with discriminator for delete confirmation
-  public readonly usernameWithDiscriminator = computed(() => {
-    const user = this.auth.currentUser();
-    if (!user) return '';
-    return user.username;
-  });
-
   // Contact nag — reads parent's state via auth signal chain
   public readonly shouldSetContactNag = computed(() => {
     const user = this.auth.currentUser();
@@ -121,10 +99,6 @@ export class ProfileOverviewComponent {
   // Undelete dialog state
   public undeleteDialogOpen = signal<boolean>(false);
   public undeleteLoading = signal<boolean>(false);
-
-  // Delete dialog state
-  public deleteDialogOpen = signal<boolean>(false);
-  public deleteLoading = signal<boolean>(false);
 
   // Username dialog state
   public usernameDialogOpen = signal<boolean>(false);
@@ -177,54 +151,6 @@ export class ProfileOverviewComponent {
           this.toast.error(result.error ?? 'Failed to update username');
         }
       });
-  }
-
-  // Delete account
-  public openDeleteDialog(): void {
-    this.deleteDialogOpen.set(true);
-  }
-
-  public closeDeleteDialog(): void {
-    this.deleteDialogOpen.set(false);
-  }
-
-  public confirmDeleteAccount(): void {
-    const user = this.auth.currentUser();
-    if (!user) return;
-    const wasAlreadyDeleted = user.deleted ?? false;
-    this.deleteLoading.set(true);
-    this.auth
-      .deleteUser()
-      .pipe(
-        tap((result) => {
-          this.deleteLoading.set(false);
-          if (result.success) {
-            this.deleteDialogOpen.set(false);
-            if (wasAlreadyDeleted) {
-              this.toast.success('profile.delete_account_permanent_success', {
-                transloco: true,
-              });
-              setTimeout(() => {
-                this.auth.logout();
-                void this.router.navigate(['/']);
-              }, 2000);
-            } else {
-              this.toast.success('profile.delete_account_success', {
-                transloco: true,
-              });
-            }
-          } else {
-            this.toast.error(result.error.message, { autoDismissMs: 5000 });
-          }
-        }),
-        concatMap((result) =>
-          result.success && !wasAlreadyDeleted
-            ? this.auth.refreshUser()
-            : EMPTY,
-        ),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 
   // Undelete account

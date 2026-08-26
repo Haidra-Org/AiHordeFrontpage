@@ -30,18 +30,92 @@
     box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
   }
 
-  /* Active generation badge row */
+  /* =================================================================
+     ACTIVE GENERATIONS (HD family)
+     What the account has running right now, one mark per domain, each
+     one the way back to the studio that is running it.
+     ================================================================= */
+
   .active-gen-row {
-    @apply flex flex-wrap items-center gap-2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
   }
 
-  .kudos-balance-row {
-    @apply mt-1 flex flex-wrap items-center gap-2;
+  /* The domain hue is the plate and the edge; the count and the word
+     stay on the reading ink. */
+  .active-gen-mark {
+    background: var(--hd-zone-tint, var(--hd-accent-tint));
+    border-color: var(--hd-zone-tint-border, var(--hd-accent-tint-border));
+    color: var(--hd-ink);
+    text-decoration: none;
+  }
+
+  a.active-gen-mark:hover {
+    border-color: var(--hd-zone, var(--hd-accent));
+  }
+
+  /* =================================================================
+     KUDOS CARD (HD family)
+     The account's balance, what it is owed and where the balance came
+     from, printed inside one of the profile's cards.
+     ================================================================= */
+
+  .kudos-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
+    min-width: 0;
+  }
+
+  /* A control parked at the far end of an eyebrow, or standing under a
+     note. The eyebrow's hairline is drawn as its own ::after, which is
+     always the last item, so the control is ordered past it to land at
+     the end of the row. It sits inside surfaces that set the eyebrow
+     register, so it takes its own case and tracking back. */
+  .kudos-card-action {
+    flex: none;
+    order: 1;
+    text-transform: none;
+    letter-spacing: normal;
+    text-decoration: none;
+  }
+
+  /* The breakdown arrives as a list of unknown length, so what stands in
+     for it is a short column of bars rather than a shape. */
+  .kudos-card-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
   }
 
   /* =================================================================
      DOMAIN HIGHLIGHTING - reusable semantic accents (image/text/alchemy)
      ================================================================= */
+
+  /* The same three domains for HD surfaces. A tile or a card takes its
+     hue by declaring the plane identity the primitives already read,
+     rather than by a second copy of the primitive's own rules, so a
+     figure about pictures is edged in the pictures hue wherever it is
+     printed. Graphic colour only: the label beside it stays page ink. */
+  .domain-hue--image {
+    --hd-zone: var(--hd-purple);
+    --hd-zone-tint: var(--hd-purple-tint);
+    --hd-zone-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .domain-hue--text {
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .domain-hue--alchemy {
+    --hd-zone: var(--hd-green);
+    --hd-zone-tint: var(--hd-green-tint);
+    --hd-zone-tint-border: var(--hd-green-tint-border);
+  }
 
   .domain-tint--image {
     border-left: 3px solid rgb(168 85 247 / 0.6);
@@ -612,263 +686,227 @@
   }
 
   /* =================================================================
-      WORKER ROW — Structured metric list display
-      ================================================================= */
+     WORKER ROW (HD family)
+     The same machine as the card, one line high, for reading a fleet
+     down rather than one worker across. It is the shared record row
+     with the columns this list needs declared on it. Every rule reads
+     an `--hd-*` token, so both themes come out of the token file and
+     no `.dark` rule belongs here.
+     ================================================================= */
 
   .worker-row-list {
-    @apply flex flex-col gap-2;
-    @apply pb-4;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    padding-bottom: var(--hd-space-3);
   }
 
+  /* Name and figures take the slack; the marks and the way in sit at
+     the far end. */
   .worker-row {
-    @apply grid items-center gap-3 px-3.5 py-3 rounded-xl cursor-pointer;
-    @apply transition-colors duration-150;
-    grid-template-columns: minmax(0, 1fr) auto;
-    color: var(--color-content-primary);
-    background: var(--color-glass-surface);
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow:
-      var(--shadow-glass),
-      inset 0 1px 0 0 var(--color-glass-highlight);
-  }
-
-  .worker-row:hover,
-  .worker-row:focus-visible {
-    background: var(--color-glass-surface-elevated);
-    border-color: var(--color-glass-border);
-    box-shadow:
-      var(--shadow-glass-hover),
-      inset 0 1px 0 0 var(--color-glass-highlight);
-    outline: none;
+    --hd-list-cols: minmax(0, 1fr) auto;
+    border-inline-start: 3px solid
+      var(--hd-zone-tint-border, var(--hd-card-border));
+    cursor: pointer;
   }
 
   .worker-row:focus-visible {
-    @apply ring-2 ring-purple-400;
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  .dark .worker-row {
-    color: white;
-    background: var(--color-glass-surface-dark-subtle);
-    border-color: var(--color-glass-border-dark-subtle);
-  }
-
-  .dark .worker-row:hover,
-  .dark .worker-row:focus-visible {
-    background: var(--color-glass-surface-dark);
-    border-color: var(--color-glass-border-dark-strong);
-  }
-
-  /* Domain color left-border tints */
-  .worker-row--image {
-    border-left: 3px solid rgb(168 85 247 / 0.6);
-  }
-  .worker-row--text {
-    border-left: 3px solid rgb(59 130 246 / 0.6);
-  }
-  .worker-row--interrogation {
-    border-left: 3px solid rgb(34 197 94 / 0.6);
-  }
-
-  /* Issue state */
+  /* A worker nobody can currently send work to: the plate is the mark,
+     and the glyphs at the end of the row say which condition it is. */
   .worker-row--issue {
-    background: var(--color-glass-danger-surface);
-    border-color: var(--color-danger-border);
-  }
-  .worker-row--issue:hover {
-    background: rgb(254 226 226 / 0.55);
-  }
-  .dark .worker-row--issue {
-    background: var(--color-glass-danger-surface-dark);
-    border-color: rgb(185 28 28 / 0.3);
-  }
-  .dark .worker-row--issue:hover {
-    background: rgb(127 29 29 / 0.35);
+    background: var(--hd-danger-tint);
+    border-color: var(--hd-danger-tint);
   }
 
-  /* Highlighted row (linked from URL) */
   .worker-row--highlighted {
-    @apply ring-2 ring-orange-400;
-    @apply dark:ring-orange-500;
+    outline: 3px solid var(--hd-changed);
+    outline-offset: 2px;
     scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
   .worker-row-main {
-    @apply min-w-0 grid gap-2;
+    display: grid;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
   .worker-row-identity {
-    @apply min-w-0 grid gap-1;
+    display: grid;
+    gap: 2px;
+    min-width: 0;
   }
 
   .worker-row-name-line {
-    @apply flex items-center gap-1.5 min-w-0;
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-width: 0;
   }
 
   .worker-row-name {
-    @apply font-semibold truncate;
-    font-size: 0.92rem;
-    line-height: 1.25;
-    color: inherit;
+    overflow: hidden;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .worker-row-meta-line {
-    @apply flex items-center gap-1 min-w-0 flex-wrap;
-    font-size: 0.72rem;
-    color: var(--color-content-secondary);
-  }
-
-  .dark .worker-row-meta-line {
-    color: var(--color-gray-400);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-width: 0;
+    font-size: var(--hd-text-2xs);
+    color: var(--hd-muted);
   }
 
   .worker-row-id {
-    @apply font-mono;
-    letter-spacing: 0.01em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
   .worker-row-meta-separator {
-    @apply opacity-60;
+    opacity: 0.6;
   }
 
   .worker-row-type-pill,
   .worker-row-meta-chip {
-    @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 min-w-0;
-    border: 1px solid var(--color-glass-border-subtle);
-    background: color-mix(
-      in srgb,
-      var(--color-glass-surface-elevated) 72%,
-      transparent
-    );
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-width: 0;
+    padding: 0 var(--hd-space-1);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
   }
 
-  .dark .worker-row-type-pill,
-  .dark .worker-row-meta-chip {
-    border-color: var(--color-glass-border-dark-subtle);
-    background: color-mix(
-      in srgb,
-      var(--color-glass-surface-dark) 62%,
-      transparent
-    );
-  }
-
+  /* The copy presses arrive with the pointer: a reader scanning the
+     list is not copying anything yet. */
   .worker-row-copy-btn {
-    @apply opacity-0 transition-opacity duration-150;
-    @apply p-0.5;
+    flex: none;
+    padding: 2px;
+    border: 0;
+    background: none;
+    color: var(--hd-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--hd-dur-fast) var(--hd-ease);
   }
 
   .worker-row:hover .worker-row-copy-btn,
   .worker-row:focus-within .worker-row-copy-btn {
-    @apply opacity-60;
+    opacity: 1;
   }
 
-  .worker-row-copy-btn:hover {
-    @apply opacity-100;
+  .worker-row-copy-btn:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Always show on touch devices */
   @media (hover: none) {
     .worker-row-copy-btn {
-      @apply opacity-60;
+      opacity: 0.7;
     }
   }
 
   .worker-row-metrics {
-    @apply grid gap-1.5;
+    display: grid;
+    gap: var(--hd-space-1);
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .worker-row-metric {
-    @apply min-w-0 flex flex-col gap-0.5 rounded-lg px-2 py-1;
-    border: 1px solid var(--color-glass-border-subtle);
-    background: color-mix(
-      in srgb,
-      var(--color-glass-surface-elevated) 75%,
-      transparent
-    );
-  }
-
-  .dark .worker-row-metric {
-    border-color: var(--color-glass-border-dark-subtle);
-    background: color-mix(
-      in srgb,
-      var(--color-glass-surface-dark) 65%,
-      transparent
-    );
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding: 2px var(--hd-space-2);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
   }
 
   .worker-row-metric-label {
-    font-size: 0.65rem;
+    overflow: hidden;
+    font-size: var(--hd-text-2xs);
+    letter-spacing: 0.035em;
     line-height: 1.1;
     text-transform: uppercase;
-    letter-spacing: 0.035em;
-    white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--color-content-secondary);
-  }
-
-  .dark .worker-row-metric-label {
-    color: var(--color-gray-400);
+    white-space: nowrap;
+    color: var(--hd-label);
   }
 
   .worker-row-metric-value {
-    @apply inline-flex items-center gap-1 font-semibold truncate;
-    font-size: 0.84rem;
-    line-height: 1.2;
-    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
     min-width: 0;
+    overflow: hidden;
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A figure the API did not send. */
+  .worker-row-metric-none {
+    color: var(--hd-muted);
   }
 
   .worker-row-metric--failed-active .worker-row-metric-value {
-    @apply text-amber-700 dark:text-amber-300;
+    color: var(--hd-changed);
   }
 
   .worker-row-rail {
-    @apply flex items-center gap-2 shrink-0;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--hd-space-2);
   }
 
   .worker-row-flags {
-    @apply flex items-center gap-0.5;
+    display: flex;
+    align-items: center;
+    gap: 2px;
   }
 
   .worker-row-expand-icon {
-    @apply w-4 h-4;
-    color: var(--color-content-secondary);
-  }
-
-  .dark .worker-row-expand-icon {
-    color: var(--color-gray-400);
+    width: 16px;
+    height: 16px;
+    color: var(--hd-muted);
   }
 
   .worker-row:hover .worker-row-expand-icon,
   .worker-row:focus-visible .worker-row-expand-icon {
-    color: var(--color-content-primary);
-  }
-
-  .dark .worker-row:hover .worker-row-expand-icon,
-  .dark .worker-row:focus-visible .worker-row-expand-icon {
-    color: white;
+    color: var(--hd-ink);
   }
 
   @media (min-width: 768px) {
-    .worker-row {
-      @apply px-4 py-3;
-    }
-
     .worker-row-metrics {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .worker-row-copy-btn--id {
-      @apply inline-flex;
+      display: inline-flex;
     }
   }
 
+  /* With room for both, the identity and the figures sit side by side
+     and the row is one line again. */
   @media (min-width: 1200px) {
     .worker-row-main {
       grid-template-columns: minmax(16rem, 1.6fr) minmax(24rem, 2.4fr);
       align-items: center;
-      gap: 0.85rem;
+      gap: var(--hd-space-3);
     }
 
     .worker-row-metrics {
@@ -890,16 +928,13 @@
   }
 
   @media (max-width: 767px) {
-    .worker-row {
-      @apply px-3 py-2.5;
-    }
-
     .worker-row-rail {
-      @apply self-start pt-0.5;
+      align-self: flex-start;
+      padding-top: 2px;
     }
 
     .worker-row-copy-btn--id {
-      @apply hidden;
+      display: none;
     }
   }
 
@@ -909,7 +944,7 @@
     }
 
     .worker-row-meta-line {
-      @apply hidden;
+      display: none;
     }
   }
 
@@ -968,32 +1003,17 @@
   }
 
   /* =================================================================
-     WORKER DETAIL MODAL — Card displayed inside modal overlay
+     WORKER DETAIL MODAL
+     The same card, raised over the list it was opened from.
      ================================================================= */
 
   .worker-detail-modal-panel {
-    @apply p-2;
     max-width: 56rem;
   }
 
   .worker-detail-modal-header {
-    @apply flex justify-end p-1;
-  }
-
-  .worker-detail-modal-header .btn-icon {
-    color: var(--color-content-secondary);
-  }
-
-  .dark .worker-detail-modal-header .btn-icon {
-    color: var(--color-gray-400);
-  }
-
-  .worker-detail-modal-header .btn-icon:hover {
-    color: var(--color-content-primary);
-  }
-
-  .dark .worker-detail-modal-header .btn-icon:hover {
-    color: white;
+    display: flex;
+    justify-content: flex-end;
   }
 
   /* =================================================================
@@ -1008,223 +1028,160 @@
   }
 
   /* =================================================================
-     WORKER CARDS - Theme-aware worker display cards
+     WORKER CARD (HD family)
+     One machine on the network, printed as a column of label/value
+     rows under its name and the row of marks saying what state it is
+     in. Every rule below reads an `--hd-*` token, so both themes come
+     out of the token file and no `.dark` rule belongs here.
      ================================================================= */
 
-  /* Worker card base */
-  .worker-card-normal {
-    @apply rounded-xl;
-    color: var(--color-content-primary);
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
+  .worker-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
   }
 
-  /* Stronger relief at single-column so tall cards are easy to distinguish */
-  @media (max-width: 899px) {
-    .worker-card-normal {
-      border-top: 3px solid var(--color-brand-purple);
-      box-shadow:
-        0 4px 16px rgb(0 0 0 / 0.07),
-        0 1px 3px rgb(0 0 0 / 0.06);
-    }
+  /* A worker nobody can currently send work to is the one a reader is
+     looking for, so it takes the family's red on its top edge and its
+     plate. The words in the card say the same thing. */
+  .worker-card--issue {
+    border-top-color: var(--hd-danger);
+    background: var(--hd-danger-tint);
   }
 
-  .dark .worker-card-normal {
-    color: var(--color-gray-200);
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.06);
-    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
-  }
-
-  @media (max-width: 899px) {
-    .dark .worker-card-normal {
-      border-top: 3px solid var(--color-purple-400);
-      box-shadow:
-        0 4px 20px rgb(0 0 0 / 0.3),
-        0 1px 4px rgb(0 0 0 / 0.15);
-    }
-  }
-
-  /* Worker card with issue state */
-  .worker-card-issue {
-    @apply rounded-xl;
-    color: var(--color-content-primary);
-    background: rgb(254 226 226 / 0.6);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid rgb(252 165 165 / 0.5);
-  }
-
-  @media (max-width: 899px) {
-    .worker-card-issue {
-      border-top: 3px solid rgb(239 68 68);
-      box-shadow:
-        0 4px 16px rgb(0 0 0 / 0.07),
-        0 1px 3px rgb(0 0 0 / 0.06);
-    }
-  }
-
-  .dark .worker-card-issue {
-    color: var(--color-gray-200);
-    background: rgb(127 29 29 / 0.25);
-    border-color: rgb(185 28 28 / 0.4);
-  }
-
-  @media (max-width: 899px) {
-    .dark .worker-card-issue {
-      border-top: 3px solid rgb(248 113 113);
-      box-shadow:
-        0 4px 20px rgb(0 0 0 / 0.3),
-        0 1px 4px rgb(0 0 0 / 0.15);
-    }
-  }
-
-  /* Worker card highlighted state (linked from URL) */
   .worker-card-highlighted {
-    @apply ring-4 ring-orange-400 ring-offset-2;
-    @apply dark:ring-orange-500 dark:ring-offset-gray-900;
+    outline: 3px solid var(--hd-changed);
+    outline-offset: 2px;
     scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
-  /* Worker card section dividers */
   .worker-card-section {
-    @apply border-t border-edge-primary;
+    border-top: 1px solid var(--hd-border);
   }
 
-  /* Worker card info rows */
+  /* Label on the left, value on the right: the card is read down the
+     values, so the labels stay at the quiet ink. */
   .worker-card-row {
-    @apply flex justify-between gap-2;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
-  /* On single-column, give rows padding and alternating shading so
-     the eye can track across label→value on tall cards */
+  /* In one column the cards are tall, so alternate rows take a plate
+     and the eye can track from a label to its value. */
   @media (max-width: 899px) {
-    .worker-card-row {
-      @apply py-1.5 px-2 -mx-2 rounded;
+    .worker-card-row,
+    .worker-card-col {
+      margin: 0 calc(var(--hd-space-2) * -1);
+      padding: var(--hd-space-1) var(--hd-space-2);
+      border-radius: var(--hd-radius-sm);
     }
 
     .worker-card-row:nth-child(even) {
-      background-color: var(--color-bg-secondary);
-    }
-
-    .dark .worker-card-row:nth-child(even) {
-      background-color: rgb(55 65 81 / 0.25);
+      background: var(--hd-field-soft);
     }
   }
 
   .worker-card-label {
-    @apply shrink-0;
-    color: var(--color-content-secondary);
-    font-size: 0.8125rem;
-  }
-
-  .dark .worker-card-label {
-    color: var(--color-gray-400);
+    flex: none;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-label);
   }
 
   .worker-card-value {
-    @apply text-content-primary font-medium;
-    @apply dark:text-gray-200;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
-  /* Software Contact: always occupies 2 lines to prevent card height mismatch */
+  /* The contact line always takes two lines, so a grid of cards does
+     not go ragged over whether one was filled in. */
   .worker-card-contact {
-    @apply line-clamp-2 break-all;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
     min-height: 2lh;
+    overflow: hidden;
+    overflow-wrap: anywhere;
   }
 
-  /* Muted placeholder for unset/empty fields */
   .worker-card-value-muted {
-    @apply text-content-muted italic;
+    color: var(--hd-muted);
+    font-style: italic;
+    font-weight: 400;
   }
 
-  /* Worker card header: always horizontal — name on left, badges on right */
   .worker-card-header {
-    @apply flex flex-row items-center justify-between gap-2;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
   }
 
-  /* Worker status icon containers */
   .worker-status-icon {
-    @apply flex items-center justify-center w-10 h-10 rounded-full shrink-0;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
   }
 
   .worker-status-icon-success {
-    @apply bg-green-100 text-green-600;
-    @apply dark:bg-green-800 dark:text-green-400;
+    background: var(--hd-green-tint);
+    color: var(--hd-green);
   }
 
   .worker-status-icon-error {
-    @apply bg-red-100 text-red-600;
-    @apply dark:bg-red-900 dark:text-red-400;
+    background: var(--hd-danger-tint);
+    color: var(--hd-danger);
   }
 
-  /* Worker status indicator colors */
-  .worker-indicator-yellow {
-    @apply text-yellow-600;
-    @apply dark:text-yellow-400;
-  }
-
+  /* The glyph hues. These are graphic marks beside their own words, and
+     each one is a different shape as well as a different hue. */
+  .worker-indicator-yellow,
   .worker-indicator-orange {
-    @apply text-orange-600;
-    @apply dark:text-orange-400;
+    color: var(--hd-changed);
   }
 
   .worker-indicator-red {
-    @apply text-red-600;
-    @apply dark:text-red-400;
+    color: var(--hd-danger);
   }
 
   .worker-indicator-green {
-    @apply text-green-600;
-    @apply dark:text-green-400;
+    color: var(--hd-green);
   }
 
   .worker-indicator-gray {
-    @apply text-gray-500;
-    @apply dark:text-gray-400;
+    color: var(--hd-muted);
   }
 
-  /* Muted status icon for inactive states */
+  /* A condition that does not hold keeps its place in the row so the
+     marks can be read as a set, but steps back out of the way. */
   .worker-status-icon-muted {
-    @apply opacity-20;
+    opacity: 0.25;
   }
 
-  /* Speed row highlight when worker has a speed anomaly */
+  /* A speed far from what the network expects: worth seeing, not worth
+     alarming about, so the figure takes an edge rather than a plate. A
+     plate would have to be a third surface tone on a card that already
+     changes tone when the worker is in trouble. */
+  .worker-speed-highlight-low,
+  .worker-speed-highlight-high {
+    margin: 0 calc(var(--hd-space-1) * -1);
+    padding: 0 var(--hd-space-1);
+    border-radius: var(--hd-radius-sm);
+  }
+
   .worker-speed-highlight-low {
-    @apply rounded px-1 -mx-1;
-    background-color: color-mix(
-      in srgb,
-      var(--color-orange-100, #ffedd5) 60%,
-      transparent
-    );
-  }
-
-  .dark .worker-speed-highlight-low {
-    background-color: color-mix(
-      in srgb,
-      var(--color-orange-900, #7c2d12) 30%,
-      transparent
-    );
+    box-shadow: inset 2px 0 0 var(--hd-changed);
   }
 
   .worker-speed-highlight-high {
-    @apply rounded px-1 -mx-1;
-    background-color: color-mix(
-      in srgb,
-      var(--color-yellow-100, #fef9c3) 60%,
-      transparent
-    );
-  }
-
-  .dark .worker-speed-highlight-high {
-    background-color: color-mix(
-      in srgb,
-      var(--color-yellow-900, #713f12) 30%,
-      transparent
-    );
+    box-shadow: inset 2px 0 0 var(--hd-accent);
   }
 
   /* Worker capability badges */
@@ -1241,15 +1198,13 @@
 
   /* Worker card link style */
   .worker-link {
-    @apply no-underline transition-colors duration-200;
-    @apply text-blue-600;
-    @apply dark:text-blue-400;
+    color: var(--hd-pop-accent);
+    text-decoration: none;
   }
 
   .worker-link:hover {
-    @apply underline;
+    text-decoration: underline;
   }
-
   /* Worker item link - clickable worker/team member card in grid lists */
   .worker-item-link {
     @apply block p-3 rounded-lg no-underline;
@@ -1405,742 +1360,448 @@
     @apply bg-red-700 text-red-100;
   }
 
-  /* Worker messages section */
+  /* A note the worker itself has posted. */
   .worker-message {
-    @apply text-xs bg-surface-secondary rounded p-2;
-    @apply dark:bg-gray-700;
+    padding: var(--hd-space-2);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
+    font-size: var(--hd-text-xs);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
   }
 
-  /* Worker card body padding (header + content blocks) */
   .worker-card-body {
-    @apply px-4 pt-4 pb-1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
-  /* On single-column, pin the worker header (status + name + ID) so the
-     user always knows which card they are scrolling through.
-     Uses --sticky-offset (set by StickyRegistryService) to clear the
-     page-level sticky headers above. */
+  /* In one column the cards are tall, so the name stays in view while
+     the card is scrolled past. --sticky-offset is what the page-level
+     sticky headers above have already claimed. */
   @media (max-width: 899px) {
     .worker-card-body--sticky-mobile {
       position: sticky;
       top: var(--sticky-offset, 80px);
       z-index: 20;
-      @apply py-2 px-3;
-      background: var(--color-glass-surface-heavy);
-      backdrop-filter: blur(var(--blur-glass-md));
-      -webkit-backdrop-filter: blur(var(--blur-glass-md));
-      border-bottom: 1px solid var(--color-glass-border-subtle);
-      box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
-      border-radius: 0.75rem 0.75rem 0 0;
-    }
-
-    .dark .worker-card-body--sticky-mobile {
-      background: rgb(31 41 55 / 0.92);
-      border-bottom-color: rgb(255 255 255 / 0.08);
-      box-shadow: 0 2px 12px rgb(0 0 0 / 0.25);
+      margin: calc(var(--hd-space-3) * -1) calc(var(--hd-space-3) * -1) 0;
+      padding: var(--hd-space-2) var(--hd-space-3);
+      border-bottom: 1px solid var(--hd-border);
+      border-radius: var(--hd-radius-md) var(--hd-radius-md) 0 0;
+      background: var(--hd-card);
     }
   }
 
-  /* Worker card content — padded text-sm block below the header */
   .worker-card-content {
-    @apply p-4 text-sm;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font-size: var(--hd-text-sm);
   }
 
-  @media (max-width: 899px) {
-    .worker-card-content {
-      @apply px-5 py-5;
-    }
-  }
-
-  /* Row containing worker name + status icon — takes remaining space */
   .worker-card-name-row {
-    @apply flex items-center gap-2 min-w-0 flex-1;
     position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
-  /* Wrapper for the leading status icon in the header */
   .worker-card-status-icon-wrap {
-    @apply p-1 shrink-0;
+    flex: none;
+    padding: 2px;
   }
 
-  /* Block containing name + ID (needs min-w-0 for truncation) */
   .worker-card-name-block {
-    @apply min-w-0;
+    min-width: 0;
   }
 
-  /* Name line with copy button */
-  .worker-card-name-line {
-    @apply flex items-center gap-1 min-w-0;
-  }
-
-  /* ID line with copy button */
+  .worker-card-name-line,
   .worker-card-id-line {
-    @apply flex items-center gap-1 min-w-0;
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-width: 0;
   }
 
-  /* Copy button in card header — visible on hover */
+  /* The copy presses are for someone who has already decided which
+     worker they are looking at, so they arrive with the pointer rather
+     than standing beside the name the whole time. */
   .worker-card-copy-btn {
-    @apply opacity-0 transition-opacity duration-150 shrink-0;
-    @apply p-0.5;
+    flex: none;
+    padding: 2px;
+    border: 0;
+    background: none;
+    color: var(--hd-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity var(--hd-dur-fast) var(--hd-ease);
   }
 
   .worker-card-name-line:hover .worker-card-copy-btn,
-  .worker-card-id-line:hover .worker-card-copy-btn {
-    @apply opacity-60;
+  .worker-card-id-line:hover .worker-card-copy-btn,
+  .worker-card-copy-btn:focus-visible {
+    opacity: 1;
   }
 
-  .worker-card-copy-btn:hover {
-    @apply opacity-100;
+  .worker-card-copy-btn:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
+  /* A pointer that cannot hover has no way to summon them. */
   @media (hover: none) {
     .worker-card-copy-btn {
-      @apply opacity-60;
+      opacity: 0.7;
     }
   }
 
-  /* Small worker ID line below the name */
   .worker-card-id {
-    @apply text-xs truncate mt-0.5;
-    color: var(--color-content-secondary);
-  }
-
-  .dark .worker-card-id {
-    color: var(--color-gray-400);
-  }
-
-  /* Badge row: type badge, trusted icon, highlighted badge — never wrap */
-  .worker-card-badge-row {
-    @apply flex items-center gap-1.5 shrink-0;
-  }
-
-  /* Row of status indicator icons — sits between sticky header and content */
-  .worker-card-status-bar {
-    @apply flex items-center gap-1 px-4 pt-1 pb-1;
-  }
-
-  /* Padding wrapper for small status-indicator icons */
-  .worker-card-icon-pad {
-    @apply p-1;
-  }
-
-  /* Grouped info rows (basic info, performance, features) */
-  .worker-card-info-group {
-    @apply space-y-1 mb-3;
-  }
-
-  @media (max-width: 899px) {
-    .worker-card-info-group {
-      @apply space-y-0.5 mb-4;
-    }
-  }
-
-  /* Vertical key/value pair (bridge agent, contact) */
-  .worker-card-col {
-    @apply flex flex-col;
-  }
-
-  @media (max-width: 899px) {
-    .worker-card-col {
-      @apply py-1.5 px-2 -mx-2 rounded;
-    }
-  }
-
-  /* Info group that sits below a section divider (Performance, Features) */
-  .worker-card-info-group-bordered {
-    @apply space-y-1 mb-3 pt-3 border-t border-edge-primary;
-  }
-
-  @media (max-width: 899px) {
-    .worker-card-info-group-bordered {
-      @apply space-y-0.5 mb-4 pt-4 mt-1;
-      border-top-width: 2px;
-    }
-  }
-
-  /* Final info group (no bottom margin) */
-  .worker-card-info-group-bordered-last {
-    @apply space-y-1 pt-3 border-t border-edge-primary;
-  }
-
-  @media (max-width: 899px) {
-    .worker-card-info-group-bordered-last {
-      @apply space-y-0.5 pt-4 mt-1;
-      border-top-width: 2px;
-    }
-  }
-
-  /* Section sub-label (e.g. "Capabilities:", "Messages:") */
-  .worker-card-section-label {
-    @apply text-xs block mb-2;
-  }
-
-  /* Flex container for capability badges */
-  .worker-card-badges-wrap {
-    @apply flex flex-wrap gap-1;
-  }
-
-  /* Scrollable messages area */
-  .worker-card-messages-scroll {
-    @apply space-y-2 max-h-24 overflow-y-auto;
-  }
-
-  /* Action button bar at card bottom */
-  .worker-card-actions {
-    @apply px-4 py-3 flex gap-2 flex-wrap;
-  }
-
-  /* Monospace small value (IP addresses, hashes) */
-  .worker-card-value-mono {
-    @apply font-mono text-xs;
-  }
-
-  /* Value row that can contain inline actions alongside text */
-  .worker-card-value-inline {
-    @apply flex items-center gap-1.5;
-  }
-
-  /* Small inline glass-style button that sits beside a label or value */
-  .worker-inline-action {
-    @apply text-xs font-medium rounded-md px-2 py-0.5;
-    @apply cursor-pointer;
-    @apply text-blue-700;
-    @apply mr-2;
-    background: rgb(59 130 246 / 0.08);
-    border: 1px solid rgb(59 130 246 / 0.18);
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+    text-overflow: ellipsis;
     white-space: nowrap;
-    transition:
-      background-color 150ms ease,
-      border-color 150ms ease,
-      box-shadow 150ms ease;
+  }
+
+  .worker-card-badge-row {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  /* The standing marks: one glyph per condition, present whether or not
+     the condition holds, so the row is read as a set of switches. */
+  .worker-card-status-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    padding-bottom: var(--hd-space-1);
+  }
+
+  .worker-card-icon-pad {
+    padding: 2px;
+  }
+
+  .worker-card-info-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    padding-bottom: var(--hd-space-2-5);
+  }
+
+  .worker-card-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .worker-card-info-group-bordered,
+  .worker-card-info-group-bordered-last {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    padding-top: var(--hd-space-2-5);
+    border-top: 1px solid var(--hd-border);
+  }
+
+  .worker-card-info-group-bordered {
+    padding-bottom: var(--hd-space-2-5);
+  }
+
+  .worker-card-section-label {
+    display: block;
+    padding-bottom: var(--hd-space-1);
+  }
+
+  .worker-card-badges-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
+  }
+
+  .worker-card-messages-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    max-height: 6rem;
+    overflow-y: auto;
+  }
+
+  .worker-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+    padding-top: var(--hd-space-2-5);
+  }
+
+  .worker-card-value-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--hd-text-xs);
+  }
+
+  .worker-card-value-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  /* A press small enough to sit inside a label, for the setting that
+     label names. */
+  .worker-inline-action {
+    padding: 0 var(--hd-space-2);
+    border: 1px solid var(--hd-accent-tint-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-accent-tint);
+    color: var(--hd-pop-accent);
+    font-family: inherit;
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--hd-dur-fast) var(--hd-ease);
   }
 
   .worker-inline-action:hover {
-    @apply text-blue-800;
-    background: rgb(59 130 246 / 0.15);
-    border-color: rgb(59 130 246 / 0.3);
-    box-shadow: 0 1px 4px rgb(59 130 246 / 0.1);
-  }
-
-  .dark .worker-inline-action {
-    @apply text-blue-300;
-    background: rgb(59 130 246 / 0.12);
-    border-color: rgb(59 130 246 / 0.22);
-  }
-
-  .dark .worker-inline-action:hover {
-    @apply text-blue-200;
-    background: rgb(59 130 246 / 0.22);
-    border-color: rgb(59 130 246 / 0.38);
-    box-shadow: 0 1px 6px rgb(59 130 246 / 0.15);
+    background: color-mix(in srgb, var(--hd-accent) 12%, var(--hd-accent-tint));
   }
 
   .worker-inline-action:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Clickable status icon wrapper in the header */
-  .worker-card-status-clickable {
-    @apply cursor-pointer rounded-md;
-    position: relative;
-    transition: background-color 150ms ease;
-  }
-
-  .worker-card-status-clickable:hover {
-    background: rgb(0 0 0 / 0.06);
-  }
-
-  .dark .worker-card-status-clickable:hover {
-    background: rgb(255 255 255 / 0.08);
-  }
-
-  .worker-card-status-clickable:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
-  }
-
-  /* Status trigger: wraps status icon + chevron as a visually grouped button */
+  /* The status glyph and the chevron read as one press: what the worker
+     is doing now, and what can be done about it. */
   .worker-status-trigger {
-    @apply flex items-center gap-0.5 cursor-pointer rounded-md shrink-0 p-1;
     position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    padding: var(--hd-space-1);
     border: 1px solid transparent;
+    border-radius: var(--hd-radius-sm);
+    cursor: pointer;
     transition:
-      background-color 150ms ease,
-      border-color 150ms ease;
+      background-color var(--hd-dur-fast) var(--hd-ease),
+      border-color var(--hd-dur-fast) var(--hd-ease);
   }
 
   .worker-status-trigger:hover {
-    background: rgb(0 0 0 / 0.05);
-    border-color: rgb(0 0 0 / 0.1);
-  }
-
-  .dark .worker-status-trigger:hover {
-    background: rgb(255 255 255 / 0.07);
-    border-color: rgb(255 255 255 / 0.12);
+    background: var(--hd-seg-track);
+    border-color: var(--hd-border);
   }
 
   .worker-status-trigger:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Small chevron indicator inside the trigger */
   .worker-status-trigger-chevron {
-    @apply w-3 h-3 opacity-40;
-    transition: opacity 150ms ease;
+    width: 12px;
+    height: 12px;
+    color: var(--hd-muted);
   }
 
-  .worker-status-trigger:hover .worker-status-trigger-chevron {
-    @apply opacity-70;
-  }
-
-  .dark .worker-status-trigger-chevron {
-    @apply text-gray-400 opacity-60;
-  }
-
-  .dark .worker-status-trigger:hover .worker-status-trigger-chevron {
-    @apply text-gray-300 opacity-80;
-  }
-
-  /* Status action dropdown (positioned below the status icon) */
+  /* The menu primitive carries the plane; where it opens is the card's
+     business. */
   .worker-status-dropdown {
-    @apply absolute z-30 mt-1 py-1 rounded-lg;
-    @apply border shadow-lg;
-    min-width: 10rem;
+    position: absolute;
     top: 100%;
     left: 0;
-    background: var(--color-glass-surface-elevated);
-    border-color: var(--color-glass-border);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-  }
-
-  .dark .worker-status-dropdown {
-    background: rgb(31 41 55 / 0.95);
-    border-color: rgb(255 255 255 / 0.12);
-    box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+    z-index: 30;
+    min-width: 10rem;
+    margin-top: var(--hd-space-1);
   }
 
   .worker-status-dropdown-item {
-    @apply flex items-center gap-2 w-full text-left px-3 py-2 text-sm;
-    @apply bg-transparent border-none cursor-pointer;
-    color: var(--color-content-primary);
-    transition: background-color 150ms ease;
+    width: 100%;
+    text-align: left;
   }
 
-  .dark .worker-status-dropdown-item {
-    @apply text-gray-200;
-  }
-
-  .worker-status-dropdown-item:hover {
-    background: rgb(0 0 0 / 0.06);
-  }
-
-  .dark .worker-status-dropdown-item:hover {
-    background: rgb(255 255 255 / 0.08);
-  }
-
-  /* Flex label inside dropdown item, pushes help link to end */
   .worker-status-dropdown-label {
-    @apply flex-1;
+    flex: 1;
   }
 
-  /* Main action button inside a composite dropdown item */
+  /* The main press inside an item that also carries a second, quieter
+     one beside it. */
   .worker-status-dropdown-action {
-    @apply flex items-center gap-2 flex-1 bg-transparent border-none cursor-pointer text-sm p-0;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--hd-space-2);
+    padding: 0;
+    border: 0;
+    background: none;
     color: inherit;
+    font-family: inherit;
+    font-size: var(--hd-text-sm);
+    cursor: pointer;
   }
 
-  /* Small "What's this?" link inside a dropdown item */
   .worker-status-dropdown-help {
-    @apply text-xs bg-transparent border-none cursor-pointer rounded px-1 py-0.5;
-    color: var(--color-content-link);
+    padding: 0 var(--hd-space-1);
+    border: 0;
+    border-radius: var(--hd-radius-sm);
+    background: none;
+    color: var(--hd-pop-accent);
+    font-family: inherit;
+    font-size: var(--hd-text-xs);
     white-space: nowrap;
-    transition: opacity 150ms ease;
+    cursor: pointer;
   }
 
   .worker-status-dropdown-help:hover {
     text-decoration: underline;
-    opacity: 0.85;
   }
 
   .worker-status-dropdown-help:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Divider line between dropdown sections */
   .worker-status-dropdown-divider {
-    @apply my-1;
-    border-top: 1px solid rgb(0 0 0 / 0.1);
+    margin: var(--hd-space-1) 0;
+    border-top: 1px solid var(--hd-border);
   }
 
-  .dark .worker-status-dropdown-divider {
-    border-top-color: rgb(255 255 255 / 0.1);
-  }
-
-  /* Danger variant for destructive actions */
   .worker-status-dropdown-item--danger {
-    @apply text-red-600;
+    color: var(--hd-danger);
   }
 
-  .worker-status-dropdown-item--danger:hover {
-    background: rgb(239 68 68 / 0.08);
-  }
-
-  .dark .worker-status-dropdown-item--danger {
-    @apply text-red-400;
-  }
-
-  .dark .worker-status-dropdown-item--danger:hover {
-    background: rgb(239 68 68 / 0.12);
-  }
-
-  /* Clickable icon button in status bar (e.g. maintenance toggle) */
   .worker-card-icon-btn {
-    @apply border-none bg-transparent cursor-pointer rounded-md;
-    @apply p-1;
-    transition: background-color 150ms ease;
+    border: 0;
+    border-radius: var(--hd-radius-sm);
+    background: none;
+    cursor: pointer;
+    transition: background-color var(--hd-dur-fast) var(--hd-ease);
   }
 
   .worker-card-icon-btn:hover {
-    background: rgb(0 0 0 / 0.06);
-  }
-
-  .dark .worker-card-icon-btn:hover {
-    background: rgb(255 255 255 / 0.08);
+    background: var(--hd-seg-track);
   }
 
   .worker-card-icon-btn:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500;
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Hoverable models count */
+  /* A total that opens the list behind it. */
   .worker-models-count {
-    @apply cursor-default;
-    border-bottom: 1px dashed currentColor;
+    border-bottom: 1px dashed currentcolor;
+    cursor: default;
   }
 
   .worker-models-count:focus-visible {
-    @apply outline-2 outline-offset-1 outline-blue-500 rounded;
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Single model inline name (truncated) */
   .worker-single-model-name {
-    @apply truncate text-sm;
     max-width: 60ch;
+    overflow: hidden;
+    font-size: var(--hd-text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* Expanded single model name (full, wrapping) */
   .worker-single-model-name-expanded {
-    @apply whitespace-normal break-all;
     max-width: none;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
-  /* Compact icon buttons next to the single model name */
   .worker-single-model-action {
-    @apply shrink-0 p-1;
+    flex: none;
+    padding: var(--hd-space-1);
+    border: 0;
+    background: none;
+    color: var(--hd-muted);
+    cursor: pointer;
+  }
+
+  .worker-single-model-action:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
   /* =================================================================
-     WORKER TYPE INDICATOR - Icon + label row below header
+     WORKER TYPE AND CAPABILITY MARKS (HD family)
+     What a worker is for, and what it is able to do. The domain hue is
+     the plate and the edge; the word is the message, so a reader who
+     cannot separate the hues still reads the same list.
      ================================================================= */
 
   .worker-card-type-row {
-    @apply flex items-center gap-1.5 mt-2;
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
   }
 
-  /* Icon color overrides for worker types */
-  .worker-type-image {
-    @apply text-blue-500;
-    @apply dark:text-blue-400;
-  }
-
-  .worker-type-text {
-    @apply text-emerald-500;
-    @apply dark:text-emerald-400;
-  }
-
-  .worker-type-interrogation {
-    @apply text-purple-500;
-    @apply dark:text-purple-400;
-  }
-
-  /* Type label - small glass-tinted pill */
   .worker-type-label {
-    @apply text-xs font-medium px-2 py-0.5 rounded-full;
-    border: 1px solid var(--color-glass-border-subtle);
-    transition: background-color var(--transition-normal, 150ms) ease;
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 0 var(--hd-space-2);
+    border: 1px solid var(--hd-zone-tint-border, var(--hd-card-border));
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-zone-tint, var(--hd-seg-track));
+    color: var(--hd-ink);
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    white-space: nowrap;
   }
 
-  .worker-type-label--image {
-    background: rgb(59 130 246 / 0.12);
-    @apply text-blue-700;
-    border-color: rgb(59 130 246 / 0.25);
-  }
-  .dark .worker-type-label--image {
-    background: rgb(59 130 246 / 0.15);
-    @apply text-blue-300;
-    border-color: rgb(59 130 246 / 0.3);
-  }
-
-  .worker-type-label--text {
-    background: rgb(16 185 129 / 0.12);
-    @apply text-emerald-700;
-    border-color: rgb(16 185 129 / 0.25);
-  }
-  .dark .worker-type-label--text {
-    background: rgb(16 185 129 / 0.15);
-    @apply text-emerald-300;
-    border-color: rgb(16 185 129 / 0.3);
-  }
-
-  .worker-type-label--interrogation {
-    background: rgb(147 51 234 / 0.12);
-    @apply text-purple-700;
-    border-color: rgb(147 51 234 / 0.25);
-  }
-  .dark .worker-type-label--interrogation {
-    background: rgb(147 51 234 / 0.15);
-    @apply text-purple-300;
-    border-color: rgb(147 51 234 / 0.3);
-  }
-
-  /* =================================================================
-     GLASS CAPABILITY PILLS - Translucent tinted badges per capability
-     ================================================================= */
-
+  /* Every capability a worker has reads at one weight: they are a list
+     of what it can do, not a ranking, and six hues would say otherwise.
+     What the eye is looking for is which of them are switched off, so
+     the ones in force take the plate and the ones that are not take a
+     bare outline and the strike that says so without colour. */
   .worker-cap {
-    @apply inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full;
-    border: 1px solid var(--color-glass-border-subtle);
-    transition:
-      background-color var(--transition-normal, 150ms) ease,
-      box-shadow var(--transition-normal, 150ms) ease;
+    background: var(--hd-accent-tint);
+    border-color: var(--hd-accent-tint-border);
+    color: var(--hd-ink);
+    white-space: nowrap;
   }
 
-  /* Blue - img2img */
-  .worker-cap--blue {
-    background: rgb(59 130 246 / 0.15);
-    @apply text-blue-700;
-    border-color: rgb(59 130 246 / 0.3);
-    box-shadow: 0 1px 4px rgb(59 130 246 / 0.1);
-  }
-  .dark .worker-cap--blue {
-    background: rgb(59 130 246 / 0.2);
-    @apply text-blue-300;
-    border-color: rgb(59 130 246 / 0.35);
-    box-shadow: 0 1px 4px rgb(59 130 246 / 0.15);
+  .worker-cap--off {
+    background: none;
+    border-color: var(--hd-border);
+    color: var(--hd-muted);
+    text-decoration: line-through;
   }
 
-  /* Purple - inpainting */
-  .worker-cap--purple {
-    background: rgb(147 51 234 / 0.15);
-    @apply text-purple-700;
-    border-color: rgb(147 51 234 / 0.3);
-    box-shadow: 0 1px 4px rgb(147 51 234 / 0.1);
-  }
-  .dark .worker-cap--purple {
-    background: rgb(147 51 234 / 0.2);
-    @apply text-purple-300;
-    border-color: rgb(147 51 234 / 0.35);
-    box-shadow: 0 1px 4px rgb(147 51 234 / 0.15);
-  }
-
-  /* Teal - post-processing */
-  .worker-cap--teal {
-    background: rgb(20 184 166 / 0.15);
-    @apply text-teal-700;
-    border-color: rgb(20 184 166 / 0.3);
-    box-shadow: 0 1px 4px rgb(20 184 166 / 0.1);
-  }
-  .dark .worker-cap--teal {
-    background: rgb(20 184 166 / 0.2);
-    @apply text-teal-300;
-    border-color: rgb(20 184 166 / 0.35);
-    box-shadow: 0 1px 4px rgb(20 184 166 / 0.15);
-  }
-
-  /* Amber - LoRA */
-  .worker-cap--amber {
-    background: rgb(245 158 11 / 0.15);
-    @apply text-amber-700;
-    border-color: rgb(245 158 11 / 0.3);
-    box-shadow: 0 1px 4px rgb(245 158 11 / 0.1);
-  }
-  .dark .worker-cap--amber {
-    background: rgb(245 158 11 / 0.2);
-    @apply text-amber-300;
-    border-color: rgb(245 158 11 / 0.35);
-    box-shadow: 0 1px 4px rgb(245 158 11 / 0.15);
-  }
-
-  /* Rose - ControlNet */
-  .worker-cap--rose {
-    background: rgb(244 63 94 / 0.12);
-    @apply text-rose-700;
-    border-color: rgb(244 63 94 / 0.25);
-    box-shadow: 0 1px 4px rgb(244 63 94 / 0.1);
-  }
-  .dark .worker-cap--rose {
-    background: rgb(244 63 94 / 0.18);
-    @apply text-rose-300;
-    border-color: rgb(244 63 94 / 0.3);
-    box-shadow: 0 1px 4px rgb(244 63 94 / 0.15);
-  }
-
-  /* Indigo - SDXL ControlNet */
-  .worker-cap--indigo {
-    background: rgb(99 102 241 / 0.15);
-    @apply text-indigo-700;
-    border-color: rgb(99 102 241 / 0.3);
-    box-shadow: 0 1px 4px rgb(99 102 241 / 0.1);
-  }
-  .dark .worker-cap--indigo {
-    background: rgb(99 102 241 / 0.2);
-    @apply text-indigo-300;
-    border-color: rgb(99 102 241 / 0.35);
-    box-shadow: 0 1px 4px rgb(99 102 241 / 0.15);
-  }
-
-  /* Muted - disabled/unsupported capability */
-  .worker-cap--muted {
-    @apply opacity-30;
-    background: var(--color-glass-surface);
-    color: var(--color-content-secondary);
-    border-color: var(--color-glass-border-subtle);
-    box-shadow: none;
-  }
-
-  .dark .worker-cap--muted {
-    background: var(--color-glass-surface-dark-subtle);
-    color: var(--color-gray-500);
-    border-color: var(--color-glass-border-dark-subtle);
+  /* How many of a thing the dialog is showing, beside its title. */
+  .worker-dialog-count {
+    font-size: var(--hd-text-sm);
+    font-weight: 400;
+    color: var(--hd-muted);
   }
 
   /* =================================================================
-     GLASS BUTTONS - Translucent action buttons for worker cards
+     RECORDS PANEL (HD family)
+     Everything the network has counted for one account, in four
+     groups. The groups carry the same weight as each other, so the
+     panel is read down rather than across.
      ================================================================= */
 
-  .worker-glass-btn {
-    @apply px-4 py-2 text-sm font-medium rounded-lg;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    background: var(--color-glass-surface);
-    border: 1px solid var(--color-glass-border-subtle);
-    @apply text-content-primary;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
-    transition:
-      background-color var(--transition-normal, 150ms) ease,
-      border-color var(--transition-normal, 150ms) ease,
-      box-shadow var(--transition-normal, 150ms) ease;
-  }
-  .worker-glass-btn:hover:not(:disabled) {
-    background: var(--color-glass-surface-elevated);
-    border-color: var(--color-glass-border);
-    box-shadow: var(--shadow-glass-hover);
-  }
-  .dark .worker-glass-btn {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.08);
-    @apply text-gray-200;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
-  }
-  .dark .worker-glass-btn:hover:not(:disabled) {
-    background: rgb(31 41 55 / 0.7);
-    border-color: rgb(255 255 255 / 0.15);
-    box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+  .records-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+    min-width: 0;
   }
 
-  /* Blue tint - Models */
-  .worker-glass-btn--blue {
-    background: rgb(59 130 246 / 0.1);
-    @apply text-blue-700;
-    border-color: rgb(59 130 246 / 0.25);
-  }
-  .worker-glass-btn--blue:hover:not(:disabled) {
-    background: rgb(59 130 246 / 0.2);
-    border-color: rgb(59 130 246 / 0.4);
-  }
-  .dark .worker-glass-btn--blue {
-    background: rgb(59 130 246 / 0.15);
-    @apply text-blue-300;
-    border-color: rgb(59 130 246 / 0.3);
-  }
-  .dark .worker-glass-btn--blue:hover:not(:disabled) {
-    background: rgb(59 130 246 / 0.25);
-    border-color: rgb(59 130 246 / 0.45);
-  }
-
-  /* Amber tint - Maintenance */
-  .worker-glass-btn--amber {
-    background: rgb(245 158 11 / 0.1);
-    @apply text-amber-700;
-    border-color: rgb(245 158 11 / 0.25);
-  }
-  .worker-glass-btn--amber:hover:not(:disabled) {
-    background: rgb(245 158 11 / 0.2);
-    border-color: rgb(245 158 11 / 0.4);
-  }
-  .dark .worker-glass-btn--amber {
-    background: rgb(245 158 11 / 0.15);
-    @apply text-amber-300;
-    border-color: rgb(245 158 11 / 0.3);
-  }
-  .dark .worker-glass-btn--amber:hover:not(:disabled) {
-    background: rgb(245 158 11 / 0.25);
-    border-color: rgb(245 158 11 / 0.45);
-  }
-
-  /* Red tint - Pause */
-  .worker-glass-btn--red {
-    background: rgb(239 68 68 / 0.1);
-    @apply text-red-700;
-    border-color: rgb(239 68 68 / 0.25);
-  }
-  .worker-glass-btn--red:hover:not(:disabled) {
-    background: rgb(239 68 68 / 0.2);
-    border-color: rgb(239 68 68 / 0.4);
-  }
-  .dark .worker-glass-btn--red {
-    background: rgb(239 68 68 / 0.15);
-    @apply text-red-300;
-    border-color: rgb(239 68 68 / 0.3);
-  }
-  .dark .worker-glass-btn--red:hover:not(:disabled) {
-    background: rgb(239 68 68 / 0.25);
-    border-color: rgb(239 68 68 / 0.45);
-  }
-
-  /* Danger - Delete (stronger red) */
-  .worker-glass-btn--danger {
-    background: rgb(220 38 38 / 0.12);
-    @apply text-red-700 font-semibold;
-    border-color: rgb(220 38 38 / 0.35);
-  }
-  .worker-glass-btn--danger:hover:not(:disabled) {
-    background: rgb(220 38 38 / 0.22);
-    border-color: rgb(220 38 38 / 0.5);
-    box-shadow: 0 2px 8px rgb(220 38 38 / 0.15);
-  }
-  .dark .worker-glass-btn--danger {
-    background: rgb(220 38 38 / 0.18);
-    @apply text-red-300;
-    border-color: rgb(220 38 38 / 0.4);
-  }
-  .dark .worker-glass-btn--danger:hover:not(:disabled) {
-    background: rgb(220 38 38 / 0.3);
-    border-color: rgb(220 38 38 / 0.55);
-    box-shadow: 0 2px 8px rgb(220 38 38 / 0.25);
-  }
-
-  /* =================================================================
-     RECORDS SECTION - Data record containers
-     ================================================================= */
-
-  /* Records section wrapper - consistent spacing for record groups */
-  .records-section-wrapper {
-    @apply mt-4;
-  }
-
-  /* Record group container - spacing between different record types */
-  .record-group {
-    @apply mb-8 last:mb-0;
+  .records-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
   /* =================================================================
@@ -2437,18 +2098,6 @@
 
   .dark .text-danger {
     color: var(--color-red-400);
-  }
-
-  /* =================================================================
-     DIALOG TEXT - Text styling inside modal dialogs
-     ================================================================= */
-
-  .dialog-body-text {
-    @apply text-gray-300;
-  }
-
-  .dialog-body-text--spaced {
-    @apply mb-4;
   }
 
   /* =================================================================

@@ -4,18 +4,18 @@
     <button
       type="button"
       class="modal-backdrop"
-      aria-label="Close team dialog"
+      [attr.aria-label]="'teams.close_dialog' | transloco"
       (click)="closeTeamDialog()"
     ></button>
-    <div class="modal-panel modal-panel--lg">
+    <div class="modal-panel modal-panel--lg dialog-panel">
       @switch (teamDialogType()) {
         @case ("create") {
-          <h3 class="heading-card mb-4">
+          <h3 class="modal-title">
             {{ "teams.create_team" | transloco }}
           </h3>
-          <div class="space-y-4">
-            <div>
-              <label for="team-name" class="form-label">{{
+          <div class="dialog-body">
+            <div class="dialog-field">
+              <label for="team-name" class="hd-label">{{
                 "teams.name" | transloco
               }}</label>
               <input
@@ -24,15 +24,15 @@
                 [value]="teamFormName()"
                 (input)="onTeamNameChange($event)"
                 [placeholder]="'teams.name_placeholder' | transloco"
-                class="form-input"
+                class="hd-input"
                 maxlength="100"
               />
-              <p class="text-xs text-secondary mt-1">
+              <p class="hd-sublabel">
                 {{ "teams.name_hint" | transloco }}
               </p>
             </div>
-            <div>
-              <label for="team-info" class="form-label">{{
+            <div class="dialog-field">
+              <label for="team-info" class="hd-label">{{
                 "teams.info" | transloco
               }}</label>
               <textarea
@@ -40,26 +40,26 @@
                 [value]="teamFormInfo()"
                 (input)="onTeamInfoChange($event)"
                 [placeholder]="'teams.info_placeholder' | transloco"
-                class="form-input"
+                class="hd-textarea"
                 rows="3"
                 maxlength="1000"
               ></textarea>
             </div>
             @if (teamError()) {
-              <div class="dialog-error">
-                <p class="dialog-error-text">{{ teamError() }}</p>
+              <div class="hd-callout dialog-callout-danger" role="alert">
+                <p class="hd-callout-body">{{ teamError() }}</p>
               </div>
             }
           </div>
-          <div class="modal-actions-right">
-            <button (click)="closeTeamDialog()" class="worker-btn">
+          <div class="dialog-actions">
+            <button type="button" (click)="closeTeamDialog()" class="hd-btn">
               {{ "teams.cancel" | transloco }}
             </button>
             <button
+              type="button"
               (click)="confirmTeamSave()"
               [disabled]="teamSaving() || !isTeamFormValid()"
-              class="btn-primary"
-              [class.btn-disabled]="teamSaving() || !isTeamFormValid()"
+              class="hd-btn hd-btn--primary"
             >
               @if (teamSaving()) {
                 {{ "teams.creating" | transloco }}
@@ -70,12 +70,12 @@
           </div>
         }
         @case ("edit") {
-          <h3 class="heading-card mb-4">
+          <h3 class="modal-title">
             {{ "teams.edit_team" | transloco: { name: editingTeam()?.name } }}
           </h3>
-          <div class="space-y-4">
-            <div>
-              <label for="team-name" class="form-label">{{
+          <div class="dialog-body">
+            <div class="dialog-field">
+              <label for="team-name" class="hd-label">{{
                 "teams.name" | transloco
               }}</label>
               <input
@@ -84,15 +84,15 @@
                 [value]="teamFormName()"
                 (input)="onTeamNameChange($event)"
                 [placeholder]="'teams.name_placeholder' | transloco"
-                class="form-input"
+                class="hd-input"
                 maxlength="100"
               />
-              <p class="text-xs text-secondary mt-1">
+              <p class="hd-sublabel">
                 {{ "teams.name_hint" | transloco }}
               </p>
             </div>
-            <div>
-              <label for="team-info" class="form-label">{{
+            <div class="dialog-field">
+              <label for="team-info" class="hd-label">{{
                 "teams.info" | transloco
               }}</label>
               <textarea
@@ -100,26 +100,26 @@
                 [value]="teamFormInfo()"
                 (input)="onTeamInfoChange($event)"
                 [placeholder]="'teams.info_placeholder' | transloco"
-                class="form-input"
+                class="hd-textarea"
                 rows="3"
                 maxlength="1000"
               ></textarea>
             </div>
             @if (teamError()) {
-              <div class="dialog-error">
-                <p class="dialog-error-text">{{ teamError() }}</p>
+              <div class="hd-callout dialog-callout-danger" role="alert">
+                <p class="hd-callout-body">{{ teamError() }}</p>
               </div>
             }
           </div>
-          <div class="modal-actions-right">
-            <button (click)="closeTeamDialog()" class="worker-btn">
+          <div class="dialog-actions">
+            <button type="button" (click)="closeTeamDialog()" class="hd-btn">
               {{ "teams.cancel" | transloco }}
             </button>
             <button
+              type="button"
               (click)="confirmTeamSave()"
               [disabled]="teamSaving() || !isTeamFormValid()"
-              class="btn-primary"
-              [class.btn-disabled]="teamSaving() || !isTeamFormValid()"
+              class="hd-btn hd-btn--primary"
             >
               @if (teamSaving()) {
                 {{ "teams.saving" | transloco }}
@@ -130,29 +130,30 @@
           </div>
         }
         @case ("delete") {
-          <h3 class="heading-card mb-4">
+          <h3 class="modal-title">
             {{ "teams.delete_team" | transloco: { name: editingTeam()?.name } }}
           </h3>
-          <div class="mb-4 space-y-3">
-            <div class="dialog-error">
-              <p class="dialog-error-text dialog-error-text--bold">
+          <div class="dialog-body">
+            <div class="hd-callout dialog-callout-danger">
+              <p class="hd-callout-body">
                 {{ "teams.delete_warning" | transloco }}
               </p>
             </div>
             @if (teamError()) {
-              <div class="dialog-error">
-                <p class="dialog-error-text">{{ teamError() }}</p>
+              <div class="hd-callout dialog-callout-danger" role="alert">
+                <p class="hd-callout-body">{{ teamError() }}</p>
               </div>
             }
           </div>
-          <div class="modal-actions-right">
-            <button (click)="closeTeamDialog()" class="worker-btn">
+          <div class="dialog-actions">
+            <button type="button" (click)="closeTeamDialog()" class="hd-btn">
               {{ "teams.cancel" | transloco }}
             </button>
             <button
+              type="button"
               (click)="confirmTeamDelete()"
               [disabled]="teamSaving()"
-              class="btn-danger"
+              class="hd-btn danger-action"
             >
               @if (teamSaving()) {
                 {{ "teams.deleting" | transloco }}
@@ -241,7 +242,7 @@
                 <button
                   type="button"
                   (click)="openDeleteTeamDialog(team)"
-                  class="hd-btn hd-btn--dense profile-btn-danger"
+                  class="hd-btn hd-btn--dense danger-action"
                 >
                   {{ "teams.delete" | transloco }}
                 </button>

@@ -290,33 +290,4 @@
     @apply text-blue-600 hover:underline;
     @apply dark:text-blue-400;
   }
-
-  /* =================================================================
-     DIALOG ERROR - Inline error display inside modal dialogs
-     ================================================================= */
-
-  .dialog-error {
-    @apply p-3 rounded-lg;
-    background: var(--color-glass-danger-surface);
-    border: 1px solid rgb(252 165 165 / 0.6);
-    box-shadow: var(--shadow-glass);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-  }
-
-  .dark .dialog-error {
-    background-color: var(--color-glass-danger-surface-dark);
-    border-color: rgb(185 28 28 / 0.45);
-    box-shadow: var(--shadow-glass-dark);
-  }
-
-  .dialog-error-text {
-    @apply text-sm;
-    @apply text-red-800;
-    @apply dark:text-red-200;
-  }
-
-  .dialog-error-text--bold {
-    @apply font-medium;
-  }
 }

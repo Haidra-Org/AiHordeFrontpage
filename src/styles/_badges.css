@@ -1,9 +1,87 @@
 /* =================================================================
-   BADGE STYLES — Fully provided by shared design system
-   
-   All badge classes (base, semantic variants, sizes, containers,
-   interactive, outline, online, color variants, tags) are now
-   provided by src/shared/design-system/primitives/badges.css.
-   
-   Add AiHordeFrontpage-specific badge extensions below if needed.
+   BADGE STYLES. The glass family is fully provided by the shared
+   design system (base, semantic variants, sizes, containers,
+   interactive, outline, online, colour variants, tags).
+
+   What is left here is the frontpage's own badge work, drawn on the
+   HD family: the row of standing marks against an account name.
+   Every rule reads an `--hd-*` token, so both themes come out of the
+   token file and no `.dark` rule belongs here.
    ================================================================= */
+
+@layer components {
+  /* -----------------------------------------------------------------
+     ACCOUNT MARKS
+     What is permanently true of an account, printed beside its name.
+     A reader meets several of these at once, so most of them stay in
+     the neutral tone and only the four that change how the account is
+     treated take a hue. Every mark carries its word, so the hue is
+     never the only thing saying which one it is. The green and the purple
+     are fill hues with no readable ink of their own in dark, so they
+     tint the plate and the edge while the word stays on the page ink.
+     ----------------------------------------------------------------- */
+
+  .user-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  /* The neutral mark needs its own edge: the track tone and the card
+     tone are a step apart in dark and almost the same in light, so a
+     plate alone would leave it shapeless on a light page. */
+  .user-badge {
+    background: var(--hd-seg-track);
+    border-color: var(--hd-border);
+    color: var(--hd-ink-2);
+    white-space: nowrap;
+  }
+
+  /* Standing the network has granted. */
+  .user-badge--vouched {
+    background: var(--hd-green-tint);
+    border-color: var(--hd-green-tint-border);
+    color: var(--hd-ink);
+  }
+
+  /* Authority over other accounts. */
+  .user-badge--staff {
+    background: var(--hd-purple-tint);
+    border-color: var(--hd-purple-tint-border);
+    color: var(--hd-ink);
+  }
+
+  .user-badge--programme {
+    background: var(--hd-accent-tint);
+    border-color: var(--hd-accent-tint-border);
+    color: var(--hd-ink);
+  }
+
+  /* A restriction in force. Amber has no tint in the family, so the
+     mark is drawn as an outline; the amber is one of the two hues the
+     tokens carry a readable ink for, so it can also be the word. */
+  .user-badge--caution {
+    background: none;
+    border-color: var(--hd-changed);
+    color: var(--hd-changed);
+  }
+
+  .user-badge--flagged {
+    background: var(--hd-danger-tint);
+    color: var(--hd-danger);
+  }
+
+  /* The marks are pills of unknown text, so what stands in for them is
+     a bar the size a short one comes out at. */
+  .user-badge-skeleton {
+    width: 4.5rem;
+    height: 24px;
+    border-radius: var(--hd-radius-sm);
+  }
+
+  .user-badge-skeleton--narrow {
+    width: 3.5rem;
+  }
+}

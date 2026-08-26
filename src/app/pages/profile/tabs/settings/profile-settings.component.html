@@ -8,7 +8,7 @@
   (confirmed)="confirmContactChange()"
   (cancelled)="closeContactDialog()"
 >
-  <p class="dialog-body-text dialog-body-text--spaced">
+  <p class="dialog-text">
     {{ "profile.edit_contact_desc" | transloco }}
   </p>
   <label class="form-label" for="contact-input">{{
@@ -44,7 +44,7 @@
   (confirmed)="confirmPublicWorkersChange()"
   (cancelled)="closePublicWorkersDialog()"
 >
-  <p class="dialog-body-text">
+  <p class="dialog-text">
     @if (publicWorkersNewValue()) {
       {{ "profile.public_workers_confirm_enable_desc" | transloco }}
     } @else {
@@ -76,7 +76,7 @@
   (confirmed)="confirmUndeleteAccount()"
   (cancelled)="closeUndeleteDialog()"
 >
-  <p class="dialog-body-text">
+  <p class="dialog-text">
     {{ "profile.undelete_account_message" | transloco }}
   </p>
 </app-admin-dialog>
@@ -97,7 +97,10 @@
             glossaryId="worker"
           />
         </span>
-        <label class="toggle-switch">
+        <label class="hd-switch">
+          <span class="sr-only">{{
+            "profile.public_workers_label" | transloco
+          }}</span>
           <input
             type="checkbox"
             [checked]="auth.currentUser()!.public_workers ?? false"
@@ -106,8 +109,9 @@
               onPublicWorkersToggle(!auth.currentUser()!.public_workers)
             "
           />
-          <div class="toggle-switch-track"></div>
-          <div class="toggle-switch-thumb"></div>
+          <span class="hd-switch-track">
+            <span class="hd-switch-thumb"></span>
+          </span>
         </label>
       </div>
       <p class="hd-sublabel">
@@ -205,7 +209,7 @@
         <button
           type="button"
           (click)="openDeleteDialog()"
-          class="hd-btn profile-btn-danger"
+          class="hd-btn danger-action"
         >
           {{ "profile.delete_account" | transloco }}
         </button>
@@ -214,7 +218,7 @@
         <button
           type="button"
           (click)="openDeleteDialog()"
-          class="hd-btn profile-btn-danger"
+          class="hd-btn danger-action"
         >
           {{ "profile.permanently_delete_account" | transloco }}
         </button>
