@@ -1,5 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -1493,6 +1496,51 @@ describe('GenerateComponent', () => {
 
       expect(component.form.controls.styleName.value).toBe('curated:Test');
       expect(toastError).not.toHaveBeenCalled();
+    });
+
+    it('fetches a published style the address names by its id', () => {
+      openLink({ styleId: 'abc-123' });
+
+      const http = TestBed.inject(HttpTestingController);
+      const request = http.expectOne((candidate) =>
+        candidate.url.endsWith('/styles/image/abc-123'),
+      );
+      request.flush({
+        id: 'abc-123',
+        name: 'Ink Wash',
+        prompt: 'ink wash of {p}',
+        params: { steps: 12 },
+        public: true,
+        nsfw: false,
+        use_count: 4,
+        creator: 'someone#1',
+      });
+
+      expect(component.form.controls.styleName.value).toBe('native:abc-123');
+      expect(component.styleRecords().get('native:abc-123')?.name).toBe(
+        'Ink Wash',
+      );
+      expect(component.forcedParams()?.steps).toBe(12);
+      expect(toastError).not.toHaveBeenCalled();
+    });
+
+    it('drops a published style the horde no longer serves, and says so', () => {
+      openLink({ styleId: 'gone-1' });
+
+      const http = TestBed.inject(HttpTestingController);
+      http
+        .expectOne((candidate) =>
+          candidate.url.endsWith('/styles/image/gone-1'),
+        )
+        .flush(
+          { message: 'not found' },
+          { status: 404, statusText: 'Not Found' },
+        );
+
+      expect(component.form.controls.styleName.value).toBe('');
+      expect(toastError).toHaveBeenCalledWith('generate.link.style_gone', {
+        transloco: true,
+      });
     });
 
     it('keeps the mode a sourced request came with, and asks for the picture', () => {
