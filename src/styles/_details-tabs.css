@@ -1217,3 +1217,161 @@
     font-size: 0.75rem;
   }
 }
+
+/* =================================================================
+   DETAILS SHELL (HD family)
+
+   The chrome every area of /details is drawn inside: the heading, the
+   row of links, the panel under it, and the stat tile the areas print
+   their totals on. Every rule reads an `--hd-*` token, so both themes
+   come out of the token file and no `.dark` rule belongs here.
+
+   The glass rules above still draw /contribute, /profile and the admin
+   pages, so this section takes its own class names rather than
+   retuning theirs.
+   ================================================================= */
+
+@layer components {
+  .details-title {
+    margin: 0;
+    font-size: clamp(var(--hd-text-xl), 3.4vw, calc(var(--hd-text-xl) * 1.7));
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--hd-ink);
+  }
+
+  .details-lead {
+    margin: var(--hd-space-2) 0 0;
+    font-size: var(--hd-text-lg);
+    line-height: 1.5;
+    color: var(--hd-muted);
+  }
+
+  /* The identity hue for the whole page, so the row of links, the chips
+     in a filter bar and the top edge of every card inside read as one
+     area. */
+  .details-shell {
+    --hd-sec: var(--hd-accent);
+    --hd-sec-tint: var(--hd-accent-tint);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .details-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2) var(--hd-space-4);
+    margin-bottom: var(--hd-space-3);
+    padding: var(--hd-space-2-5) var(--hd-space-3);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  .details-cta-text {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    min-width: 0;
+    margin: 0;
+    font-size: var(--hd-text-md);
+    line-height: 1.4;
+    color: var(--hd-ink-2);
+  }
+
+  .details-cta-icon {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: var(--hd-accent);
+  }
+
+  .details-cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .details-cta-action {
+    text-decoration: none;
+  }
+
+  /* The row of links pins under the site header, so it carries the
+     panel's top edge and an opaque surface of its own. */
+  .details-nav {
+    position: sticky;
+    z-index: 30;
+    border: 1px solid var(--hd-card-border);
+    border-bottom: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-md) var(--hd-radius-md) 0 0;
+  }
+
+  .details-panel {
+    padding: var(--hd-space-4);
+    border: 1px solid var(--hd-card-border);
+    border-top: 0;
+    border-radius: 0 0 var(--hd-radius-md) var(--hd-radius-md);
+    background: var(--hd-canvas);
+
+    /* Routed children inherit display:flex from the app shell; a block
+       box is what the areas below are laid out against. */
+    > router-outlet + * {
+      display: block !important;
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .details-panel {
+      padding: var(--hd-space-2-5);
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     STAT TILES
+     One total, printed the same way wherever an area prints one: the
+     unit belongs in the label, so the value stays a number.
+     ----------------------------------------------------------------- */
+
+  .stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--hd-space-2);
+  }
+
+  .stat-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-card-border);
+    border-top: 2px solid var(--hd-zone-tint-border, var(--hd-card-border));
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  .stat-tile-label {
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .stat-tile-value {
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink);
+  }
+
+  .stat-tile-note {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+}

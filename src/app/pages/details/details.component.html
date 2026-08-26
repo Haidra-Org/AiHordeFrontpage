@@ -1,10 +1,10 @@
 <section class="section-primary">
   <div class="container-page-header">
     <div class="place-center">
-      <h1 class="heading-hero">
+      <h1 class="details-title">
         {{ headingKey() | transloco }}
       </h1>
-      <p class="text-intro">
+      <p class="details-lead">
         {{ "details.subtitle" | transloco }}
       </p>
     </div>
@@ -13,85 +13,33 @@
 
 <section class="section-secondary">
   <div class="container-page-content">
-    <!-- Volunteer CTA Banner -->
-    <div class="mb-3 sm:mb-6">
+    <div class="details-shell">
       <app-volunteer-cta-banner />
-    </div>
 
-    <!-- Tab Navigation -->
-    <app-scroll-fade
-      class="details-tabs details-tabs--glass details-tabs--connected"
-      role="tablist"
-      [appStickyHeader]="10"
-    >
-      <a
-        routerLink="workers"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
+      <nav
+        class="details-nav hd-subtabs"
+        [appStickyHeader]="10"
+        [attr.aria-label]="'details.title' | transloco"
       >
-        <app-icon class="icon-sm" name="server" />
-        {{ "details.tabs.workers" | transloco }}
-      </a>
-      <a
-        routerLink="models"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon class="icon-sm" name="cube-transparent" />
-        {{ "details.tabs.models" | transloco }}
-      </a>
-      <a
-        routerLink="usage"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon class="icon-sm" name="chart-bar" />
-        {{ "details.tabs.usage_stats" | transloco }}
-      </a>
-      <a
-        routerLink="styles"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon class="icon-sm" name="paintbrush" />
-        {{ "details.tabs.styles" | transloco }}
-      </a>
-      <a
-        routerLink="users"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon class="icon-sm" name="user-group" />
-        {{ "details.tabs.users" | transloco }}
-      </a>
-      <a
-        routerLink="teams"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon class="icon-sm" name="users" />
-        {{ "details.tabs.teams" | transloco }}
-      </a>
-      <a
-        routerLink="leaderboard"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon class="icon-sm" name="trophy" />
-        {{ "details.tabs.leaderboard" | transloco }}
-      </a>
-    </app-scroll-fade>
+        <div class="hd-subtabs-scroll">
+          @for (tab of tabs; track tab.path) {
+            <a
+              class="hd-subtab"
+              [routerLink]="tab.path"
+              routerLinkActive="hd-subtab--active"
+              #tabLink="routerLinkActive"
+              [attr.aria-current]="tabLink.isActive ? 'page' : null"
+            >
+              <app-icon class="icon-sm" [name]="tab.icon" />
+              {{ tab.labelKey | transloco }}
+            </a>
+          }
+        </div>
+      </nav>
 
-    <!-- Tab Content -->
-    <div class="tab-content-panel">
-      <router-outlet />
+      <div class="details-panel">
+        <router-outlet />
+      </div>
     </div>
   </div>
 </section>

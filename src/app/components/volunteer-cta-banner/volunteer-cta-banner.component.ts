@@ -1,31 +1,33 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 
+/**
+ * The standing offer to join in, carried above the areas of the details page.
+ * Both destinations are buttons of the same weight: one asks for a computer and
+ * the other for money, and neither is the recommended answer.
+ */
 @Component({
   selector: 'app-volunteer-cta-banner',
   imports: [RouterLink, TranslocoModule, IconComponent],
   template: `
-    <div
-      class="volunteer-cta-banner"
-      [class.volunteer-cta-banner-compact]="compact()"
-    >
-      <div class="volunteer-cta-banner-content">
-        <app-icon class="volunteer-cta-banner-icon" name="heart-simple" />
-        <p class="volunteer-cta-banner-text">
-          {{ 'volunteer_cta.message' | transloco }}
-        </p>
-      </div>
-      <div class="volunteer-cta-banner-actions">
+    <div class="details-cta">
+      <p class="details-cta-text">
+        <app-icon class="details-cta-icon" name="heart-simple" />
+        {{ 'volunteer_cta.message' | transloco }}
+      </p>
+      <div class="details-cta-actions">
         <a
           routerLink="/contribute/workers"
-          class="volunteer-cta-banner-link volunteer-cta-banner-link-primary"
+          class="hd-btn hd-btn--tonal hd-btn--dense details-cta-action"
         >
           {{ 'volunteer_cta.become_worker' | transloco }}
         </a>
-        <span class="volunteer-cta-banner-separator" aria-hidden="true">|</span>
-        <a routerLink="/contribute/donate" class="volunteer-cta-banner-link">
+        <a
+          routerLink="/contribute/donate"
+          class="hd-btn hd-btn--tonal hd-btn--dense details-cta-action"
+        >
           {{ 'volunteer_cta.donate' | transloco }}
         </a>
       </div>
@@ -33,10 +35,4 @@ import { IconComponent } from '../icon/icon.component';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VolunteerCtaBannerComponent {
-  /**
-   * Whether to use a more compact layout (for tighter spaces)
-   * @default false
-   */
-  compact = input<boolean>(false);
-}
+export class VolunteerCtaBannerComponent {}
