@@ -8,17 +8,23 @@ import {
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthService } from '../../../../services/auth.service';
+import { TeamService } from '../../../../services/team.service';
 import { ToastService } from '../../../../services/toast.service';
 import { IconComponent } from '../../../../components/icon/icon.component';
+import { FormatNumberPipe } from '../../../../pipes/format-number.pipe';
 import { UserBadgesComponent } from '../../../../components/user-badges/user-badges.component';
 import { UserStatsSummaryComponent } from '../../../../components/user-stats-summary/user-stats-summary.component';
 import { UserKudosCardComponent } from '../../../../components/user-kudos-card/user-kudos-card.component';
 import { DeleteAccountDialogComponent } from '../../../../components/delete-account-dialog/delete-account-dialog.component';
 import { AdminDialogComponent } from '../../../../components/admin/admin-dialog/admin-dialog.component';
 import { DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  takeUntilDestroyed,
+  toObservable,
+  toSignal,
+} from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { concatMap, EMPTY, tap } from 'rxjs';
+import { concatMap, EMPTY, map, of, switchMap, tap } from 'rxjs';
 import { formatAccountAge } from '../../../../helper/account-age';
 
 @Component({
@@ -26,6 +32,7 @@ import { formatAccountAge } from '../../../../helper/account-age';
   imports: [
     RouterLink,
     TranslocoPipe,
+    FormatNumberPipe,
     IconComponent,
     UserBadgesComponent,
     UserStatsSummaryComponent,
@@ -39,6 +46,7 @@ import { formatAccountAge } from '../../../../helper/account-age';
 export class ProfileOverviewComponent {
   public readonly auth = inject(AuthService);
   private readonly transloco = inject(TranslocoService);
+  private readonly teamService = inject(TeamService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -64,6 +72,29 @@ export class ProfileOverviewComponent {
   public readonly workerCount = computed(
     () => this.auth.currentUser()?.worker_ids?.length ?? 0,
   );
+  /** Teams the account created; the list endpoint is the only source. */
+  public readonly teamCount = toSignal(
+    toObservable(this.auth.currentUser).pipe(
+      switchMap((user) =>
+        user ? this.teamService.getTeamsCreatedBy(user.username) : of([]),
+      ),
+      map((teams) => teams.length),
+    ),
+    { initialValue: 0 },
+  );
+  /** What the records tab has to show: every request this account has made. */
+  public readonly requestsOnRecord = computed(() => {
+    const user = this.auth.currentUser();
+    const request = user?.records?.request;
+    if (request) {
+      return (
+        (request.image ?? 0) +
+        (request.text ?? 0) +
+        (request.interrogation ?? 0)
+      );
+    }
+    return user?.usage?.requests ?? 0;
+  });
   public readonly styleCount = computed(
     () => this.auth.currentUser()?.styles?.length ?? 0,
   );

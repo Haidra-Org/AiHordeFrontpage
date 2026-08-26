@@ -26,8 +26,8 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { filter, map, startWith } from 'rxjs';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { filter, map, of, startWith, switchMap } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
@@ -35,6 +35,7 @@ import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { setPageTitle } from '../../helper/page-title';
 import { AuthService } from '../../services/auth.service';
+import { TeamService } from '../../services/team.service';
 import { PageGuideService } from '../../services/page-guide.service';
 import { GlossaryService } from '../../services/glossary.service';
 import { ToggleCheckboxComponent } from '../../components/toggle-checkbox/toggle-checkbox.component';
@@ -92,6 +93,7 @@ export class ProfileShellComponent implements OnInit {
   public readonly auth = inject(AuthService);
   public readonly guideService = inject(PageGuideService);
   private readonly glossary = inject(GlossaryService);
+  private readonly teamService = inject(TeamService);
 
   // Active tab from route (mirrors details.component.ts pattern)
   public readonly activeTabKey = toSignal(
@@ -118,6 +120,17 @@ export class ProfileShellComponent implements OnInit {
   );
   public readonly sharedKeyCount = computed(
     () => this.auth.currentUser()?.sharedkey_ids?.length ?? 0,
+  );
+  // The account record carries no teams, so the badge counts the ones the
+  // account created, off the same cached list the teams tab reads.
+  public readonly teamCount = toSignal(
+    toObservable(this.auth.currentUser).pipe(
+      switchMap((user) =>
+        user ? this.teamService.getTeamsCreatedBy(user.username) : of([]),
+      ),
+      map((teams) => teams.length),
+    ),
+    { initialValue: 0 },
   );
 
   // Contact nag
@@ -179,7 +192,12 @@ export class ProfileShellComponent implements OnInit {
       iconName: 'server',
       badgeCount: this.workerCount,
     },
-    { slug: 'teams', labelKey: 'profile.tabs.your_teams', iconName: 'users' },
+    {
+      slug: 'teams',
+      labelKey: 'profile.tabs.your_teams',
+      iconName: 'users',
+      badgeCount: this.teamCount,
+    },
     {
       slug: 'styles',
       labelKey: 'profile.tabs.styles',

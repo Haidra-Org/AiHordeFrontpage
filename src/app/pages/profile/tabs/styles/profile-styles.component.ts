@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+} from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../../../services/auth.service';
 import { ProfileStylesListComponent } from '../../../../components/profile-styles-list/profile-styles-list.component';
@@ -12,12 +17,8 @@ import { ProfileStylesListComponent } from '../../../../components/profile-style
     >
       <h3 class="heading-card">
         {{ 'profile.tabs.styles' | transloco }}
-        @if (
-          auth.currentUser()!.styles && auth.currentUser()!.styles!.length > 0
-        ) {
-          <span class="text-secondary text-sm"
-            >({{ auth.currentUser()!.styles!.length }})</span
-          >
+        @if (styleCount() > 0) {
+          <span class="text-secondary text-sm">({{ styleCount() }})</span>
         }
       </h3>
       <app-profile-styles-list />
@@ -27,4 +28,8 @@ import { ProfileStylesListComponent } from '../../../../components/profile-style
 })
 export class ProfileStylesComponent {
   public readonly auth = inject(AuthService);
+
+  public readonly styleCount = computed(
+    () => this.auth.currentUser()?.styles?.length ?? 0,
+  );
 }

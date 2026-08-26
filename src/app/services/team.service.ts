@@ -4,7 +4,7 @@ import {
   HttpContext,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { Observable, catchError, of, tap, throwError } from 'rxjs';
+import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import { extractApiErrorField } from '../helper/extract-api-error';
 import {
   Team,
@@ -63,6 +63,16 @@ export class TeamService {
         Team[]
       >(this.baseUrl, { context: this.teamContext }, { ttl: CacheTTL.LONG, category: 'teams' })
       .pipe(catchError(() => of([])));
+  }
+
+  /**
+   * Teams this account created. The list endpoint carries no creator filter, so
+   * the whole (cached) list is the only source there is.
+   */
+  public getTeamsCreatedBy(username: string): Observable<Team[]> {
+    return this.getTeams().pipe(
+      map((teams) => teams.filter((team) => team.creator === username)),
+    );
   }
 
   /**

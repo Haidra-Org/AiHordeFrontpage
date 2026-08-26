@@ -137,11 +137,14 @@
     <h4 class="section-title-sm">
       {{ "profile.active_generations_label" | transloco }}
     </h4>
+    <!-- The API names the pending jobs by id but nothing renders one by id, so
+         a count leads to the studio that is running it. Text has no studio of
+         its own, so its count stays a plain mark. -->
     <div class="active-gen-row">
       @if (activeImageCount() > 0) {
-        <span class="badge-base badge-info">{{
+        <a routerLink="/generate/image" class="badge-base badge-info">{{
           "profile.active_image_jobs" | transloco: { count: activeImageCount() }
-        }}</span>
+        }}</a>
       }
       @if (activeTextCount() > 0) {
         <span class="badge-base badge-success">{{
@@ -149,10 +152,10 @@
         }}</span>
       }
       @if (activeAlchemyCount() > 0) {
-        <span class="badge-base badge-purple">{{
+        <a routerLink="/generate/alchemy" class="badge-base badge-purple">{{
           "profile.active_alchemy_jobs"
             | transloco: { count: activeAlchemyCount() }
-        }}</span>
+        }}</a>
       }
     </div>
   </div>
@@ -201,6 +204,18 @@
     <span class="data-value text-2xl font-bold">{{ sharedKeyCount() }}</span>
     <span class="data-label">{{
       "profile.quick_nav_shared_keys" | transloco
+    }}</span>
+  </a>
+  <a routerLink="/profile/teams" class="data-item-box">
+    <span class="data-value text-2xl font-bold">{{ teamCount() }}</span>
+    <span class="data-label">{{ "profile.quick_nav_teams" | transloco }}</span>
+  </a>
+  <a routerLink="/profile/records" class="data-item-box">
+    <span class="data-value text-2xl font-bold">{{
+      requestsOnRecord() | formatNumber
+    }}</span>
+    <span class="data-label">{{
+      "profile.quick_nav_records" | transloco
     }}</span>
   </a>
 </div>
