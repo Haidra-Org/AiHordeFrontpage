@@ -1,14 +1,17 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
   effect,
   inject,
   OnDestroy,
+  ElementRef,
   OnInit,
   Renderer2,
   signal,
   untracked,
+  viewChild,
   viewChildren,
 } from '@angular/core';
 import { DOCUMENT, NgOptimizedImage } from '@angular/common';
@@ -29,7 +32,13 @@ import { IconComponent } from '../icon/icon.component';
 import { NavDropdownComponent } from '../nav-dropdown/nav-dropdown.component';
 import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
 import { NavItem } from './nav-item';
-import { NAV_ITEMS, isStudioRoute } from './nav-items';
+import {
+  NAV_ITEMS,
+  NAV_OVERFLOW_DROPDOWN_ID,
+  NavEntryMeasurement,
+  isStudioRoute,
+  planNavOverflow,
+} from './nav-items';
 
 @Component({
   selector: 'app-nav-bar',
@@ -50,7 +59,7 @@ import { NAV_ITEMS, isStudioRoute } from './nav-items';
     '(document:keydown.escape)': 'onEscapeKey()',
   },
 })
-export class NavBarComponent implements OnInit, OnDestroy {
+export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly document = inject(DOCUMENT);
   private readonly renderer = inject(Renderer2);
   public readonly themeService = inject(ThemeService);
@@ -58,6 +67,20 @@ export class NavBarComponent implements OnInit, OnDestroy {
   public readonly navNotifications = inject(NavNotificationService);
 
   public readonly navItems = NAV_ITEMS;
+  public readonly overflowDropdownId = NAV_OVERFLOW_DROPDOWN_ID;
+
+  // ── Desktop overflow ("More") ──
+  private readonly navMenu = viewChild<ElementRef<HTMLElement>>('navMenu');
+  private readonly overflowedKeys = signal<ReadonlySet<string>>(new Set());
+  private resizeObserver?: ResizeObserver;
+  private remeasureHandle = 0;
+
+  /** The entries the bar could not pay for, in the order they sit on the bar. */
+  public readonly overflowItems = computed(() => {
+    const hidden = this.overflowedKeys();
+    return this.navItems.filter((item) => hidden.has(item.labelKey));
+  });
+  public readonly hasOverflow = computed(() => this.overflowItems().length > 0);
 
   // ── Mobile menu state ──
   public readonly showMobileMenu = signal(false);
@@ -84,6 +107,11 @@ export class NavBarComponent implements OnInit, OnDestroy {
    */
   public readonly compact = computed(() => isStudioRoute(this.currentUrl()));
 
+  /** Whether an entry has been moved off the bar and into the overflow menu. */
+  public isOverflowed(item: NavItem): boolean {
+    return this.overflowedKeys().has(item.labelKey);
+  }
+
   // ── Notification helpers ──
   public readonly contributeNotifications =
     this.navNotifications.notificationsForNavItem('contribute');
@@ -100,6 +128,17 @@ export class NavBarComponent implements OnInit, OnDestroy {
     this.navNotifications.hasPendingMobileIndicator(),
   );
 
+  /**
+   * A label that changes with sign-in state, or an attention dot appearing on a
+   * trigger, changes what the bar costs without changing what it is given, so
+   * the width observer never hears about it.
+   */
+  private readonly _remeasureOnLabelChange = effect(() => {
+    this.auth.isLoggedIn();
+    this.hasContributeNotification();
+    untracked(() => this.scheduleMeasure());
+  });
+
   // Close all desktop dropdowns whenever the route changes
   private readonly _closeDropdownsOnNav = effect(() => {
     this.currentUrl();
@@ -113,6 +152,9 @@ export class NavBarComponent implements OnInit, OnDestroy {
   /** Check whether any child route of a dropdown matches the current URL */
   public isDropdownRouteActive(item: NavItem): boolean {
     const url = this.currentUrl();
+    if (item.activeRouteMatch) {
+      return item.activeRouteMatch(url);
+    }
     if (item.activeRoutePrefix && url.startsWith(item.activeRoutePrefix)) {
       return true;
     }
@@ -122,6 +164,32 @@ export class NavBarComponent implements OnInit, OnDestroy {
     return (item.children ?? []).some(
       (child) => child.routerLink && url.startsWith(child.routerLink),
     );
+  }
+
+  /**
+   * The overflow trigger stands in for whatever it holds, so it carries the
+   * active mark and the attention dot of any entry now behind it. Otherwise an
+   * entry that moves off the bar takes its signal with it.
+   */
+  public isOverflowRouteActive(): boolean {
+    return this.overflowItems().some((item) =>
+      item.children
+        ? this.isDropdownRouteActive(item)
+        : this.isItemActive(item),
+    );
+  }
+
+  public overflowNeedsAttention(): boolean {
+    return this.overflowItems().some((item) => this.hasNotification(item));
+  }
+
+  /** Route-active test for a plain link, matching `routerLinkActive`. */
+  private isItemActive(item: NavItem): boolean {
+    if (!item.routerLink) return false;
+    const url = this.currentUrl();
+    return item.exact
+      ? url === item.routerLink
+      : url.startsWith(item.routerLink);
   }
 
   /** Get the notification signal for a dropdown (by notificationNavItem key) */
@@ -201,10 +269,82 @@ export class NavBarComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    this.observeBarWidth();
+  }
+
   ngOnDestroy(): void {
     if (this.showMobileMenu()) {
       this.enableBodyScroll();
     }
+    this.resizeObserver?.disconnect();
+    if (this.remeasureHandle) {
+      cancelAnimationFrame(this.remeasureHandle);
+    }
+  }
+
+  /**
+   * Watches the width the bar is actually given rather than the width of the
+   * viewport, so a longer word or a new entry is caught by the same guard as a
+   * narrower window. The menu grows to fill the space between the logo and the
+   * controls, which keeps the measured width independent of how many entries
+   * are currently on show and stops the observer chasing its own changes.
+   */
+  private observeBarWidth(): void {
+    if (typeof ResizeObserver === 'undefined') return;
+    this.resizeObserver = new ResizeObserver(() => this.scheduleMeasure());
+    const menu = this.navMenu()?.nativeElement;
+    if (menu) this.resizeObserver.observe(menu);
+  }
+
+  private scheduleMeasure(): void {
+    if (typeof requestAnimationFrame === 'undefined') return;
+    if (this.remeasureHandle) return;
+    this.remeasureHandle = requestAnimationFrame(() => {
+      this.remeasureHandle = 0;
+      this.measureOverflow();
+    });
+  }
+
+  /**
+   * An overflowed entry is taken out of flow rather than removed, so every
+   * entry stays measurable at its natural width whichever side of the fold it
+   * is on and the widths are read fresh at each breakpoint, where the padding
+   * and the gaps differ.
+   */
+  private measureOverflow(): void {
+    const menu = this.navMenu()?.nativeElement;
+    if (!menu || menu.clientWidth === 0) return;
+
+    const gap = parseFloat(getComputedStyle(menu).columnGap) || 0;
+    const entries: NavEntryMeasurement[] = [];
+    for (const item of this.navItems) {
+      const element = menu.querySelector<HTMLElement>(
+        `[data-nav-entry="${item.labelKey}"]`,
+      );
+      if (!element) continue;
+      entries.push({
+        key: item.labelKey,
+        width: element.getBoundingClientRect().width,
+        overflowPriority: item.overflowPriority,
+      });
+    }
+    const trigger = menu.querySelector<HTMLElement>('[data-nav-overflow]');
+    const next = planNavOverflow(
+      entries,
+      menu.clientWidth,
+      gap,
+      trigger ? trigger.getBoundingClientRect().width : 0,
+    );
+
+    const current = this.overflowedKeys();
+    if (
+      next.size === current.size &&
+      [...next].every((key) => current.has(key))
+    ) {
+      return;
+    }
+    this.overflowedKeys.set(next);
   }
 
   public onWindowResize(): void {

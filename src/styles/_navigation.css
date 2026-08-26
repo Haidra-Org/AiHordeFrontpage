@@ -278,11 +278,25 @@
 
 @layer components {
   /* Desktop navigation menu bar.
-     Spacing stays tight from the `nav` breakpoint up so the full item list
-     fits on one line on ~1280px-wide viewports (e.g. 1080p at 150% scaling);
-     it only relaxes to the roomy gaps once there is genuine width to spare. */
+     Spacing stays tight from the `nav` breakpoint up and relaxes only where
+     there is width to spare. The bar grows to fill whatever sits between the
+     logo and the controls whether or not its entries need the room, so the
+     width the overflow calculation measures does not move when an entry is
+     taken off the bar; without that the measurement would answer its own
+     change and oscillate. */
   .nav-menu-desktop {
-    @apply hidden nav:flex nav:flex-nowrap nav:items-center nav:gap-2 xl:gap-3 2xl:gap-6 nav:min-w-0;
+    @apply hidden nav:flex nav:flex-nowrap nav:items-center nav:gap-2 xl:gap-3 2xl:gap-4 nav:min-w-0;
+    @apply nav:relative nav:flex-1 nav:justify-end;
+  }
+
+  /* An entry the bar could not pay for. Taken out of flow rather than removed
+     so it can still be measured at its natural width, and hidden rather than
+     merely moved so it leaves the reading order and the tab order for the copy
+     of it inside the overflow menu. */
+  .nav-entry-overflowed {
+    @apply absolute invisible pointer-events-none;
+    top: 0;
+    left: 0;
   }
 
   /* Desktop Navigation Links */
@@ -385,6 +399,15 @@
   .nav-dropdown-item-active {
     @apply text-brand-purple bg-purple-100;
     @apply dark:text-purple-300 dark:bg-purple-900/30;
+  }
+
+  /* Names the group an overflowed dropdown's entries came from. Read as a
+     heading over its entries rather than as a quieter one of them, which is
+     also what keeps it clear of the contrast floor in the light theme. */
+  .nav-dropdown-group-label {
+    @apply px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide;
+    @apply text-content-primary;
+    @apply dark:text-gray-300;
   }
 
   /* =================================================================

@@ -20,6 +20,19 @@ export interface NavItem {
   dropdownId?: string;
   /** Route prefix used to highlight the dropdown trigger */
   activeRoutePrefix?: string;
+  /**
+   * Decides the trigger's active state where a prefix cannot. A group whose
+   * entries share a path with unrelated routes (`/generate` against
+   * `/generated-something`) names a predicate instead, so adding an entry to
+   * the group never means revisiting the highlighting rule.
+   */
+  activeRouteMatch?: (url: string) => boolean;
+  /**
+   * Order in which the entry gives up its place when the bar runs out of room:
+   * the highest number goes into the overflow menu first. An entry without one
+   * is pinned and always stays on the bar.
+   */
+  overflowPriority?: number;
   /** Controls visibility based on authentication state */
   authState?: 'logged-in' | 'logged-out' | 'any';
   /**

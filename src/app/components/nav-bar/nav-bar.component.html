@@ -60,7 +60,7 @@
       </div>
 
       <!-- Desktop Navigation Menu -->
-      <div class="nav-menu-desktop" role="menubar">
+      <div class="nav-menu-desktop" role="menubar" #navMenu>
         @for (item of navItems; track item.labelKey) {
           @if (item.children && item.dropdownId) {
             <app-nav-dropdown
@@ -73,6 +73,8 @@
                     | transloco: { types: contributeTooltip() })
                   : null
               "
+              [attr.data-nav-entry]="item.labelKey"
+              [class.nav-entry-overflowed]="isOverflowed(item)"
               (opened)="onDropdownOpened($event)"
             >
               <span trigger>
@@ -131,15 +133,103 @@
               role="menuitem"
               routerLinkActive="nav-link-active"
               [routerLinkActiveOptions]="{ exact: !!item.exact }"
+              [attr.data-nav-entry]="item.labelKey"
+              [class.nav-entry-overflowed]="isOverflowed(item)"
             >
               {{ item.labelKey | transloco }}
             </a>
           } @else if (item.href) {
-            <a [href]="item.href" class="nav-link" role="menuitem">
+            <a
+              [href]="item.href"
+              class="nav-link"
+              role="menuitem"
+              [attr.data-nav-entry]="item.labelKey"
+              [class.nav-entry-overflowed]="isOverflowed(item)"
+            >
               {{ item.labelKey | transloco }}
             </a>
           }
         }
+
+        <!-- Whatever the bar could not fit. Always rendered so its width is
+             known before the first entry has to move, and taken out of the
+             reading order along with the entries whenever it holds nothing. -->
+        <app-nav-dropdown
+          [dropdownId]="overflowDropdownId"
+          [isRouteActive]="isOverflowRouteActive()"
+          [needsAttention]="overflowNeedsAttention()"
+          data-nav-overflow
+          [class.nav-entry-overflowed]="!hasOverflow()"
+          (opened)="onDropdownOpened($event)"
+        >
+          <span trigger>
+            {{ "nav.more" | transloco }}
+            @if (overflowNeedsAttention()) {
+              <span class="nav-notification-dot" aria-hidden="true"></span>
+            }
+          </span>
+          <ng-container panel>
+            @for (item of overflowItems(); track item.labelKey) {
+              @if (item.children) {
+                <!-- A group keeps its name here rather than spilling entries
+                     called Image and Alchemy into a flat list; role="group"
+                     gives a screen reader the same name the bar showed. -->
+                <div role="group" [attr.aria-label]="item.labelKey | transloco">
+                  <p class="nav-dropdown-group-label" aria-hidden="true">
+                    {{ item.labelKey | transloco }}
+                  </p>
+                  @for (child of item.children; track child.labelKey) {
+                    @if (isChildVisible(child)) {
+                      @if (child.routerLink) {
+                        <a
+                          [routerLink]="child.routerLink"
+                          class="nav-dropdown-item"
+                          [class.nav-dropdown-item-needs-attention]="
+                            hasNotificationForChild(item, child)
+                          "
+                          role="menuitem"
+                          routerLinkActive="nav-dropdown-item-active"
+                        >
+                          {{ resolveChildLabel(child) | transloco }}
+                        </a>
+                      } @else if (child.href) {
+                        <a
+                          [href]="child.href"
+                          class="nav-dropdown-item external-link"
+                          role="menuitem"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {{ resolveChildLabel(child) | transloco }}
+                        </a>
+                      }
+                    }
+                  }
+                </div>
+              } @else if (item.routerLink) {
+                <a
+                  [routerLink]="item.routerLink"
+                  class="nav-dropdown-item"
+                  role="menuitem"
+                  routerLinkActive="nav-dropdown-item-active"
+                  [routerLinkActiveOptions]="{ exact: !!item.exact }"
+                >
+                  {{ item.labelKey | transloco }}
+                </a>
+              } @else if (item.href) {
+                <a
+                  [href]="item.href"
+                  class="nav-dropdown-item external-link"
+                  role="menuitem"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {{ item.labelKey | transloco }}
+                </a>
+              }
+            }
+          </ng-container>
+        </app-nav-dropdown>
       </div>
 
       <!-- Right Side Actions -->
