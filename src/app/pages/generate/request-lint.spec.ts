@@ -42,6 +42,7 @@ describe('feature compatibility rules', () => {
     const ids = FEATURE_COMPAT_RULES.map((rule) => rule.id);
     expect(ids).toEqual([
       'controlnet_baseline',
+      'controlnet_denoise',
       'inpainting_model',
       'remix_baseline',
       'mask_baseline',
@@ -153,7 +154,11 @@ describe('feature compatibility rules', () => {
   describe('controlnet_baseline', () => {
     const controlnet = (baseline: string | null): RequestLintInput =>
       lintInput({
-        value: { ...DEFAULT_GENERATE_FORM_VALUE, sourceMode: 'controlnet' },
+        value: {
+          ...DEFAULT_GENERATE_FORM_VALUE,
+          sourceMode: 'controlnet',
+          denoising_strength: 1,
+        },
         baseline,
         hasSourceImage: true,
       });
@@ -172,6 +177,24 @@ describe('feature compatibility rules', () => {
     it('stays silent on an unknown baseline, and when controlnet is unused', () => {
       expect(violated(controlnet(null))).toEqual([]);
       expect(violated(lintInput({ baseline: 'flux_1' }))).toEqual([]);
+    });
+  });
+
+  describe('controlnet_denoise', () => {
+    it('recommends 1 for ControlNet and permits an intentional override', () => {
+      const controlnet = (denoising_strength: number): RequestLintInput =>
+        lintInput({
+          value: {
+            ...DEFAULT_GENERATE_FORM_VALUE,
+            sourceMode: 'controlnet',
+            denoising_strength,
+          },
+          hasSourceImage: true,
+        });
+
+      expect(violated(controlnet(1))).not.toContain('controlnet_denoise');
+      expect(violated(controlnet(0.75))).toContain('controlnet_denoise');
+      expect(violated(lintInput())).not.toContain('controlnet_denoise');
     });
   });
 
@@ -427,6 +450,7 @@ describe('evaluateRequestLint', () => {
       'steps',
       'clip_skip',
       'control_type',
+      'denoise',
       'source',
     ]);
   });
@@ -480,11 +504,13 @@ describe('evaluateRequestLint', () => {
     );
     expect(warnings.map((warning) => warning.id)).toEqual([
       'controlnet_baseline',
+      'controlnet_denoise',
       'qr_code_baseline',
       'source_required',
     ]);
     expect(warningsInSection(warnings, 'source').map((w) => w.id)).toEqual([
       'controlnet_baseline',
+      'controlnet_denoise',
       'source_required',
     ]);
     expect(warningsInSection(warnings, 'workflows').map((w) => w.key)).toEqual([

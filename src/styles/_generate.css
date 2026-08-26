@@ -1096,6 +1096,11 @@ body.gs-immersive .gen-studio .gs-shell-outlet {
   row-gap: var(--gs-space-2-5);
   padding: 0 var(--gs-space-3) var(--gs-space-3);
 }
+/* The source mode chips lead its body. A small inset keeps the header's hover
+   tint from visually joining the first row of selectable buttons. */
+.gen-studio .gs-group.gs-sec--source.gs-group--open .gs-group-body {
+  padding-top: var(--gs-space-1);
+}
 @media (max-width: 639.98px) {
   .gen-studio .gs-group-body {
     padding: 0 var(--gs-space-2-5) var(--gs-space-2-5);
@@ -2054,6 +2059,16 @@ body.gs-immersive .gen-studio .gs-shell-outlet {
   border: 1px solid var(--gs-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-tools .gs-ledger-pop {
+    top: calc(100% + 6px);
+    bottom: auto;
+  }
+  .gen-studio .gs-tools .gs-ledger-btn {
+    box-shadow: none;
+    backdrop-filter: none;
+  }
 }
 .gen-studio .gs-ledger-title {
   font-size: 12px;
@@ -3839,6 +3854,9 @@ body.gs-immersive .gen-studio .gs-shell-outlet {
   border: 1px solid var(--gs-border);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+.gen-studio .gs-presets-menu > * {
+  flex-shrink: 0;
 }
 /* On phones the panel is full-bleed and the trigger is mid-header, so neither
    edge has room for the menu. Detach it from the trigger and pin it to the
@@ -6459,6 +6477,9 @@ body.gs-immersive .gen-studio .gs-shell-outlet {
   margin-bottom: 3px;
   cursor: pointer;
 }
+.gen-studio .gs-meta-group-head:not(.gs-meta-group-head--info) {
+  padding-inline: 8px;
+}
 .gen-studio .gs-meta-group-head--info {
   cursor: default;
 }
@@ -6473,7 +6494,7 @@ body.gs-immersive .gen-studio .gs-shell-outlet {
   display: flex;
   align-items: baseline;
   gap: 9px;
-  padding: 6px 0;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--gs-border-soft);
   font-size: 12px;
   cursor: pointer;
@@ -6605,6 +6626,20 @@ body.gs-immersive .gen-studio .gs-shell-outlet {
   font-size: 10.5px;
   line-height: 1.45;
   color: var(--gs-muted);
+}
+.gen-studio .gs-meta-mode-name {
+  color: var(--gs-label);
+  font-weight: 400;
+}
+.gen-studio .gs-meta-mode-name--active {
+  color: var(--gs-ink);
+  font-weight: 800;
+}
+
+/* Raw JSON can be opened from another modal (including preset loading), so it
+   occupies the next modal layer instead of sitting beneath its caller. */
+.gen-studio .gs-modal-overlay--json {
+  z-index: 61;
 }
 
 @media (prefers-reduced-motion: reduce) {

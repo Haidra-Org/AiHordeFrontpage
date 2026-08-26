@@ -63,6 +63,7 @@ export type FieldAnchorId =
   | 'loras'
   | 'source'
   | 'source_mode'
+  | 'denoise'
   | 'control_type'
   | 'control_strength'
   | 'qr'
@@ -103,6 +104,7 @@ export interface FeatureCompatRule {
 
 export type FeatureCompatRuleId =
   | 'controlnet_baseline'
+  | 'controlnet_denoise'
   | 'inpainting_model'
   | 'qr_code_baseline'
   | 'transparent_baseline'
@@ -202,6 +204,15 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
     messageKey: 'generate.lint.controlnet_baseline',
     applies: (input) => input.value.sourceMode === 'controlnet',
     satisfied: (input) => baselineSupportsControlNet(input.baseline),
+  },
+  {
+    id: 'controlnet_denoise',
+    anchor: 'denoise',
+    section: 'source',
+    baselines: [],
+    messageKey: 'generate.lint.controlnet_denoise',
+    applies: (input) => input.value.sourceMode === 'controlnet',
+    satisfied: (input) => input.value.denoising_strength === 1,
   },
   {
     id: 'inpainting_model',

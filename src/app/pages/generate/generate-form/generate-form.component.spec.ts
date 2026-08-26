@@ -3009,7 +3009,7 @@ describe('GenerateFormComponent docked chips', () => {
         chip.getAttribute('aria-label') === en['generate.groups.fold_all'],
     ) ?? null;
 
-  it('holds the ledger and the fold-up rather than the header row', async () => {
+  it('puts the ledger in the header and keeps the fold-up in the dock', async () => {
     const { host, fixture } = await render();
     // The panel remembers folds, so the starting point is stated rather than
     // assumed: every group folded, then one opened.
@@ -3017,8 +3017,8 @@ describe('GenerateFormComponent docked chips', () => {
     fixture.componentInstance.toggleGroup('sampling');
     fixture.detectChanges();
 
-    expect(host.querySelector('.gs-tools .gs-ledger-btn')).toBeNull();
-    expect(host.querySelector('.gs-dock .gs-ledger-btn')).not.toBeNull();
+    expect(host.querySelector('.gs-tools .gs-ledger-btn')).not.toBeNull();
+    expect(host.querySelector('.gs-dock .gs-ledger-btn')).toBeNull();
     expect(foldChip(host)).not.toBeNull();
     const headerFold = Array.from(
       host.querySelectorAll<HTMLElement>('.gs-tools .gs-mini-btn'),
@@ -3029,10 +3029,19 @@ describe('GenerateFormComponent docked chips', () => {
     expect(headerFold).toEqual([]);
   });
 
+  it('puts the ledger in the floating dock in stacked view', async () => {
+    const { host, fixture } = await render();
+    fixture.componentRef.setInput('narrow', true);
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-tools .gs-ledger-btn')).toBeNull();
+    expect(host.querySelector('.gs-dock .gs-ledger-btn')).not.toBeNull();
+  });
+
   it('counts what has moved on the ledger chip, and says nothing at zero', async () => {
     const { host, fixture } = await render();
     const chip = (): HTMLElement | null =>
-      host.querySelector<HTMLElement>('.gs-dock .gs-ledger-btn');
+      host.querySelector<HTMLElement>('.gs-ledger-btn');
 
     expect(chip()?.getAttribute('aria-label')).toBe(
       en['generate.form.ledger_label'].replace('{{ count }}', '1'),
@@ -3066,15 +3075,13 @@ describe('GenerateFormComponent docked chips', () => {
 
   it('opens the ledger from its chip, with the reset inside it', async () => {
     const { host, fixture } = await render();
-    const chip = host.querySelector<HTMLButtonElement>(
-      '.gs-dock .gs-ledger-btn',
-    )!;
+    const chip = host.querySelector<HTMLButtonElement>('.gs-ledger-btn')!;
 
     expect(chip.getAttribute('aria-expanded')).toBe('false');
 
     chip.click();
     fixture.detectChanges();
-    const pop = host.querySelector<HTMLElement>('.gs-dock .gs-ledger-pop');
+    const pop = host.querySelector<HTMLElement>('.gs-ledger-pop');
 
     expect(pop).not.toBeNull();
     expect(pop!.getAttribute('role')).toBe('dialog');
@@ -3084,9 +3091,7 @@ describe('GenerateFormComponent docked chips', () => {
     fixture.detectChanges();
 
     expect(host.querySelector('.gs-ledger-pop')).toBeNull();
-    expect(document.activeElement).toBe(
-      host.querySelector('.gs-dock .gs-ledger-btn'),
-    );
+    expect(document.activeElement).toBe(host.querySelector('.gs-ledger-btn'));
   });
 });
 
@@ -3519,14 +3524,15 @@ describe('GenerateFormComponent folding the source card', () => {
     expect(host.panel().anyGroupOpen()).toBe(false);
   });
 
-  it('leaves the card open while it is the only way to reach the picker', async () => {
+  it('folds the source card before a picture is attached', async () => {
     const { host, fixture } = await render();
-    expect(host.card().canFold()).toBe(false);
+    expect(host.card().canFold()).toBe(true);
+    expect(host.panel().anyGroupOpen()).toBe(true);
 
     host.panel().foldAllGroups();
     fixture.detectChanges();
 
-    expect(host.card().open()).toBe(true);
+    expect(host.card().open()).toBe(false);
     expect(host.panel().anyGroupOpen()).toBe(false);
   });
 });

@@ -190,7 +190,7 @@ export type PromptEditorField = 'prompt' | 'negative';
 /**
  * The settings groups the panel folds away behind a line of their own values.
  * The cards a request cannot be described without (prompt, model, the source
- * strip) are not groups: they are always open. Dimensions is a group even
+ * strip) are not groups. Dimensions is a group even
  * though it sits among them, because its folded line carries the size in full
  * and every request already has one.
  */
@@ -1057,13 +1057,6 @@ export class GenerateFormComponent implements OnInit {
     control.markAsDirty();
   }
 
-  /** Take the weight off and let the worker render at its own default. */
-  public clearControlStrength(): void {
-    const control = this.form().controls.control_strength;
-    control.setValue(null);
-    control.markAsDirty();
-  }
-
   /** The worker ID typed into the add field, before it joins the list. */
   public readonly workerDraft = signal('');
 
@@ -1492,9 +1485,8 @@ export class GenerateFormComponent implements OnInit {
 
   /**
    * The source card, projected into the panel rather than held by it. It keeps
-   * its own fold, because it is open before there is anything to fold away, so
-   * folding everything has to reach it by hand rather than through the store
-   * the groups share.
+   * its own fold, so folding everything reaches it by hand rather than through
+   * the store the groups share.
    */
   private readonly sourceCard = contentChild(GenerateSourceImageComponent);
 
@@ -1513,7 +1505,7 @@ export class GenerateFormComponent implements OnInit {
       return true;
     }
     const source = this.sourceCard();
-    return source !== undefined && source.canFold() && source.open();
+    return source !== undefined && source.open();
   }
 
   /**

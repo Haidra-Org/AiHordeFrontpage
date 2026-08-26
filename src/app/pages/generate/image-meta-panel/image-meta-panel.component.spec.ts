@@ -402,6 +402,22 @@ describe('ImageMetaPanelComponent', () => {
     expect(component.mode()).toBe('overlay');
   });
 
+  it('emphasizes the active apply mode in its explanation', () => {
+    const activeLabel = (): string | undefined =>
+      Array.from(
+        (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+          '.gs-meta-mode-name--active',
+        ),
+      )[0]?.textContent?.trim();
+
+    expect(activeLabel()).toBe('en.generate.results.mode_replace:');
+
+    component.setMode('overlay');
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('en.generate.results.mode_overlay:');
+  });
+
   it('resets the selection when the panel moves to another image', () => {
     const steps = component.groups()[1].rows.find((row) => row.id === 'steps')!;
     component.toggleRow(steps);

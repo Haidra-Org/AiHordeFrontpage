@@ -195,8 +195,6 @@ describe('GenerateSourceImageComponent', () => {
     expect(form.controls.control_strength.value).toBe(3);
     component.setControlStrength(0);
     expect(form.controls.control_strength.value).toBe(0.01);
-    component.clearControlStrength();
-    expect(form.controls.control_strength.value).toBeNull();
   });
 
   it('offers remix while support is unknown and blocks it when unsupported', async () => {
@@ -485,24 +483,28 @@ describe('the masked choices inside a mode', () => {
 });
 
 /**
- * The card folds away once it has a picture, and its resting face is the one
- * line saying what is being done to that picture.
+ * The card folds with the other settings groups, and its resting face says
+ * which source mode it holds.
  */
 describe('GenerateSourceImageComponent folding', () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
-  it('stays open until a picture is attached', async () => {
+  it('can fold before a picture is attached', async () => {
     const { component } = await createComponent();
-    // Nothing to summarise and nowhere else to reach the picker from, so the
-    // card cannot be folded and reports itself open whatever is remembered.
-    expect(component.canFold()).toBe(false);
+    expect(component.canFold()).toBe(true);
     expect(component.open()).toBe(true);
-    expect(component.foldSummary()).toBe('');
+    expect(component.foldSummary()).toBe('generate.source.mode_none');
+
+    component.toggleFold();
+    expect(component.open()).toBe(false);
 
     component.setMode('img2img');
-    expect(component.canFold()).toBe(false);
+    expect(summaryParts(component.foldSummary())).toEqual([
+      'generate.groups.source_img2img',
+      'generate.groups.source_denoise',
+    ]);
 
     component.sourceImage.set(fakeImage());
     expect(component.canFold()).toBe(true);
@@ -532,16 +534,9 @@ describe('GenerateSourceImageComponent folding', () => {
     expect(third.open()).toBe(true);
   });
 
-  it('folds with the panel, and only when it has something to fold', async () => {
+  it('folds with the panel before an image is attached', async () => {
     const { component } = await createComponent();
 
-    // Nothing attached yet: the panel's fold leaves the picker where the
-    // reader can still reach it.
-    component.fold();
-    expect(component.open()).toBe(true);
-
-    component.sourceImage.set(fakeImage());
-    component.setMode('img2img');
     component.fold();
     expect(component.open()).toBe(false);
   });
@@ -604,13 +599,11 @@ describe('GenerateSourceImageComponent folding', () => {
   });
 
   it('words each part of that line from the ledger', () => {
-    expect(en['generate.groups.source_img2img']).toBe('Image to image');
-    expect(en['generate.groups.source_inpainting']).toBe('Inpainting');
+    expect(en['generate.groups.source_img2img']).toBe('img2img');
+    expect(en['generate.groups.source_inpainting']).toBe('inpaint');
     expect(en['generate.groups.source_outpainting']).toBe('Outpainting');
-    expect(en['generate.groups.source_controlnet']).toBe(
-      'ControlNet: {{ name }}',
-    );
-    expect(en['generate.groups.source_denoise']).toBe('denoise {{ value }}');
+    expect(en['generate.groups.source_controlnet']).toBe('Control: {{ name }}');
+    expect(en['generate.groups.source_denoise']).toBe('dn: {{ value }}');
     expect(en['generate.groups.source_strength']).toBe(
       'control strength {{ value }}',
     );

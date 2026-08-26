@@ -173,7 +173,18 @@
       {{ "generate.results.apply_n" | transloco: { count: selectedCount() } }}
     </button>
     <p class="gs-meta-note">
-      {{ "generate.results.mode_explain" | transloco }}
+      <span
+        class="gs-meta-mode-name"
+        [class.gs-meta-mode-name--active]="mode() === 'replace'"
+        >{{ "generate.results.mode_replace" | transloco }}:</span
+      >
+      {{ "generate.results.mode_replace_explain" | transloco }}
+      <span
+        class="gs-meta-mode-name"
+        [class.gs-meta-mode-name--active]="mode() === 'overlay'"
+        >{{ "generate.results.mode_overlay" | transloco }}:</span
+      >
+      {{ "generate.results.mode_overlay_explain" | transloco }}
       @if (hasDifferences()) {
         <span class="gs-meta-note-delta">
           {{ "generate.results.meta_delta_legend" | transloco }}

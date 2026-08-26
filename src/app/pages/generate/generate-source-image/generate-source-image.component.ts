@@ -369,18 +369,11 @@ export class GenerateSourceImageComponent implements OnInit {
 
   // --- Folding --------------------------------------------------------------
 
-  /** The reader's own choice, whether or not the card can currently act on it. */
+  /** The reader's own choice of whether the card is expanded. */
   private readonly foldOpen = signal(true);
 
-  /**
-   * Whether the card may be folded away. The picker is the only way to give the
-   * card a picture, so a card with none stays open: folding it would put the
-   * one control it is asking for out of reach. A mode that takes no picture has
-   * nothing to fold either.
-   */
-  public readonly canFold = computed(
-    () => this.mode() !== 'none' && this.sourceImage() !== null,
-  );
+  /** Source Image participates in the same folding control as every group. */
+  public readonly canFold = signal(true);
 
   /**
    * Whether a problem is on show inside the card. A fold is the reader's own
@@ -394,9 +387,7 @@ export class GenerateSourceImageComponent implements OnInit {
   );
 
   /** Whether the card is currently showing its controls. */
-  public readonly open = computed(
-    () => !this.canFold() || this.hasProblem() || this.foldOpen(),
-  );
+  public readonly open = computed(() => this.hasProblem() || this.foldOpen());
 
   /** Hold the reader's choice, and remember it for the next visit. */
   private setFoldOpen(open: boolean): void {
@@ -409,15 +400,8 @@ export class GenerateSourceImageComponent implements OnInit {
     this.setFoldOpen(!this.open());
   }
 
-  /**
-   * Fold the card away with the rest of the panel. A card that cannot fold on
-   * its own is left alone, so folding everything never puts the picker out of
-   * reach; a problem on show still keeps the card open until it is answered.
-   */
+  /** Fold the card away with the rest of the panel. */
   public fold(): void {
-    if (!this.canFold()) {
-      return;
-    }
     this.setFoldOpen(false);
   }
 
@@ -451,8 +435,8 @@ export class GenerateSourceImageComponent implements OnInit {
    */
   public readonly foldSummary = computed(() => {
     const mode = this.mode();
-    if (mode === 'none' || !this.sourceImage()) {
-      return '';
+    if (mode === 'none') {
+      return this.transloco.translate('generate.source.mode_none');
     }
     const parts: (string | null)[] = [this.modePhrase(mode)];
     if (mode === 'img2img' || mode === 'controlnet') {
@@ -996,12 +980,6 @@ export class GenerateSourceImageComponent implements OnInit {
     if (controls.return_control_map.value) {
       controls.return_control_map.setValue(false);
     }
-  }
-
-  /** Take the weight off the control map's hold and send nothing for it. */
-  public clearControlStrength(): void {
-    this.form().controls.control_strength.setValue(null);
-    this.form().markAsDirty();
   }
 
   /** Set the weight from the slider, which only moves in the horde's range. */
