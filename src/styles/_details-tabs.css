@@ -1225,9 +1225,6 @@
      in a filter bar and the top edge of every card inside read as one
      area. */
   .details-shell {
-    /* The ink that goes on top of an accent fill. It is the same white in
-       both themes, because the fill is the same blue in both. */
-    --details-on-accent: #ffffff;
     --hd-sec: var(--hd-accent);
     --hd-sec-tint: var(--hd-accent-tint);
     --hd-sec-tint-border: var(--hd-accent-tint-border);
@@ -1236,25 +1233,6 @@
     --hd-zone-tint-border: var(--hd-accent-tint-border);
     display: flex;
     flex-direction: column;
-  }
-
-  /* The chip primitive takes the selected label's colour from --hd-card,
-     which is a light surface in the light theme and a dark one in the dark
-     theme; on the chip's own accent fill the dark reading falls to about
-     1.6:1. The area names the ink rather than the surface it sits on. */
-  .details-shell .hd-chip--active {
-    color: var(--details-on-accent);
-  }
-
-  /* A control that cannot be pressed still has to be readable, and fading
-     the whole button takes its label down with its fill. It flattens to a
-     neutral surface and the muted ink, which is audited on both. */
-  .details-shell .hd-btn:disabled {
-    opacity: 1;
-    border-color: var(--hd-border);
-    background: var(--hd-seg-track);
-    color: var(--hd-muted);
-    box-shadow: none;
   }
 
   .details-cta {
