@@ -13,6 +13,10 @@
 @layer components {
   /* Footer shell - subtle glass surface */
   .footer-shell {
+    /* The foot of the page is what the floating controls rest over where they
+       have no side margin to stand in, so it carries the band they occupy and
+       nothing the page ends with ends up underneath one. */
+    padding-bottom: var(--floating-controls-reserve, 0px);
     background: var(--color-glass-surface-heavy);
     backdrop-filter: blur(var(--blur-glass-sm));
     -webkit-backdrop-filter: blur(var(--blur-glass-sm));

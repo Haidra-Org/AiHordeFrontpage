@@ -6,9 +6,30 @@
    ================================================================= */
 
 @layer components {
+  /* The controls rest in one of two places: in the margin the page container
+     leaves at wide widths, or over the foot of the page where there is no
+     margin to stand in. In the second place they cover whatever the page ends
+     with, so the height they occupy is published here and the foot of the page
+     gives that band back. It is zero once they have a margin of their own. */
+  :root {
+    --floating-controls-inset: 2rem;
+    /* The tallest control is 3rem; the rest is clearance under it. */
+    --floating-controls-band: calc(var(--floating-controls-inset) + 3.75rem);
+    --floating-controls-reserve: var(--floating-controls-band);
+  }
+
+  @media (min-width: 640px) {
+    :root {
+      --floating-controls-inset: 2.5rem;
+    }
+  }
+
   .floating-controls {
-    @apply fixed z-50 flex flex-col-reverse items-end gap-3;
-    bottom: 2rem;
+    /* One shallow row rather than a column: over a dense list the column climbs
+       several rows of the last column, the row covers one. It wraps backwards so
+       a wide projected control (the admin save) takes its own line above. */
+    @apply fixed z-50 flex flex-row-reverse flex-wrap-reverse items-end justify-end gap-3;
+    bottom: var(--floating-controls-inset);
     right: 1.5rem;
     pointer-events: none;
   }
@@ -19,8 +40,22 @@
 
   @media (min-width: 640px) {
     .floating-controls {
-      bottom: 2.5rem;
       right: 2rem;
+    }
+  }
+
+  /* Wide enough that the container leaves a margin on either side: stand in it,
+     where nothing can be covered. Anchored to the container's own edge rather
+     than to a fraction of the viewport, so the two stay in step. */
+  @media (min-width: 90rem) {
+    :root {
+      --floating-controls-reserve: 0px;
+    }
+
+    .floating-controls {
+      @apply flex-col-reverse flex-nowrap items-start;
+      right: auto;
+      left: calc(50% + var(--max-width-container) / 2 + 0.75rem);
     }
   }
 
@@ -28,6 +63,13 @@
      the foot of the screen. Shifted rather than given a new `bottom`, so the
      two resting places above stay the one place they are written. */
   @media (max-width: 1023.98px) {
+    html:has(.gs-docs .gs-subtabs) {
+      --floating-controls-reserve: calc(
+        var(--floating-controls-band) + var(--gs-tabbar-height) +
+          env(safe-area-inset-bottom)
+      );
+    }
+
     html:has(.gs-docs .gs-subtabs) .floating-controls {
       transform: translateY(
         calc(-1 * (var(--gs-tabbar-height) + env(safe-area-inset-bottom)))

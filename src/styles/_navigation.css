@@ -378,13 +378,20 @@
     @apply absolute top-full left-0 z-50;
     @apply min-w-48 mt-1 py-2;
     @apply rounded-lg;
-    background: rgb(255 255 255 / 0.94);
+    background: var(--color-glass-surface-heavy);
     border-color: var(--color-glass-border-strong);
-    overflow: hidden;
+    /* The overflow panel can carry every group the bar could not fit, which is
+       taller than a short window. It scrolls within what is left below the bar
+       rather than running off the bottom of the screen; the corners still clip
+       because the box keeps its radius. */
+    max-height: calc(100dvh - var(--nav-height-desktop) - 1.5rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .dark .nav-dropdown-menu {
-    background: rgb(17 24 39 / 0.94);
+    background: var(--color-glass-surface-dark-floating);
     border-color: var(--color-glass-border-dark-strong);
   }
 
