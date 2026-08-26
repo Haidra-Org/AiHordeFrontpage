@@ -455,6 +455,11 @@ export class ModelDetailComponent {
     return `${value.toFixed(this.kind() === 'image' ? 2 : 1)}${prefixShort}`;
   });
 
+  /** The all-time count, grouped the way every other number here is. */
+  public readonly usageTotalText = computed(() =>
+    this.usageTotal().toLocaleString(),
+  );
+
   /** Everything this model's family accepts, listed in full. */
   public readonly capabilities = computed<ModelCapability[]>(() =>
     capabilitiesFor(this.record()?.baseline ?? ''),

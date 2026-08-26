@@ -36,7 +36,7 @@
       <p>{{ error() }}</p>
       <button
         type="button"
-        class="btn-source-control"
+        class="hd-btn hd-btn--tonal hd-btn--dense"
         (click)="loadLeaderboard()"
       >
         {{ "details.leaderboard.retry" | transloco }}
@@ -119,8 +119,7 @@
           <div class="flex justify-center">
             <button
               type="button"
-              class="btn-primary"
-              [class.btn-disabled]="!isLoggedIn()"
+              class="hd-btn hd-btn--primary"
               [disabled]="!isLoggedIn() || searchingRank()"
               (click)="findMyRank()"
               [title]="

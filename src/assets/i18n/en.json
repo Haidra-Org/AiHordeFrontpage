@@ -2748,6 +2748,7 @@
   "profile.workers.status.offline": "Offline",
   "profile.detailed_records": "Detailed Records",
   "profile.coming_soon": "Coming soon...",
+  "profile.tabs.label": "Which records to show",
   "profile.tabs.profile": "Profile",
   "profile.tabs.detailed_records": "Detailed Records",
   "profile.tabs.your_workers": "Your Workers",
@@ -3025,6 +3026,7 @@
   "details.model_detail.file_open": "Download",
   "details.usage.title": "Usage Statistics",
   "details.usage.coming_soon": "Usage statistics coming soon...",
+  "details.usage.view": "Which figures to show",
   "details.usage.tabs.overview": "Overview",
   "details.usage.tabs.image": "Image Models",
   "details.usage.tabs.text": "Text Models",
@@ -3540,6 +3542,7 @@
   "details.leaderboard.read_less": "Read less",
 
   "styles.title": "Styles",
+  "styles.tabs.label": "Which styles to show",
   "styles.tabs.image": "Image Styles",
   "styles.tabs.text": "Text Styles",
   "styles.tabs.collections": "Collections",

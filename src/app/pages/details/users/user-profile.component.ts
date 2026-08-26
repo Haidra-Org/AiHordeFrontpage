@@ -12,8 +12,6 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { switchMap, of } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
-import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import {
   BreadcrumbComponent,
   BreadcrumbItem,
@@ -39,8 +37,6 @@ import { IconComponent } from '../../../components/icon/icon.component';
     UserKudosCardComponent,
     UserStatsSummaryComponent,
     UserRecordsPanelComponent,
-    ScrollFadeComponent,
-    StickyHeaderDirective,
     IconComponent,
   ],
   templateUrl: './user-profile.component.html',

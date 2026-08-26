@@ -61,32 +61,6 @@
     font-size: 0.75rem;
   }
 
-  .details-tabs--sub .styles-create-btn {
-    margin-left: 1rem;
-    flex: 0 0 auto;
-    @apply rounded-md;
-    border: 1px solid rgb(255 255 255 / 0.2);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.15);
-  }
-
-  @media (max-width: 639px) {
-    .details-tabs--sub .styles-create-btn {
-      @apply px-2.5 py-1.5 text-xs;
-      min-height: 2rem;
-    }
-  }
-
-  @media (max-width: 360px) {
-    .details-tabs--sub .styles-create-btn {
-      @apply px-2;
-      min-width: 2rem;
-    }
-
-    .details-tabs--sub .styles-create-btn-label {
-      display: none;
-    }
-  }
-
   .details-tab {
     @apply inline-flex items-center font-medium no-underline cursor-pointer;
     @apply transition-all duration-200;
@@ -1251,6 +1225,9 @@
      in a filter bar and the top edge of every card inside read as one
      area. */
   .details-shell {
+    /* The ink that goes on top of an accent fill. It is the same white in
+       both themes, because the fill is the same blue in both. */
+    --details-on-accent: #ffffff;
     --hd-sec: var(--hd-accent);
     --hd-sec-tint: var(--hd-accent-tint);
     --hd-sec-tint-border: var(--hd-accent-tint-border);
@@ -1259,6 +1236,25 @@
     --hd-zone-tint-border: var(--hd-accent-tint-border);
     display: flex;
     flex-direction: column;
+  }
+
+  /* The chip primitive takes the selected label's colour from --hd-card,
+     which is a light surface in the light theme and a dark one in the dark
+     theme; on the chip's own accent fill the dark reading falls to about
+     1.6:1. The area names the ink rather than the surface it sits on. */
+  .details-shell .hd-chip--active {
+    color: var(--details-on-accent);
+  }
+
+  /* A control that cannot be pressed still has to be readable, and fading
+     the whole button takes its label down with its fill. It flattens to a
+     neutral surface and the muted ink, which is audited on both. */
+  .details-shell .hd-btn:disabled {
+    opacity: 1;
+    border-color: var(--hd-border);
+    background: var(--hd-seg-track);
+    color: var(--hd-muted);
+    box-shadow: none;
   }
 
   .details-cta {
@@ -1330,6 +1326,35 @@
     .details-panel {
       padding: var(--hd-space-2-5);
     }
+  }
+
+  /* The column an area lays its own content out in, inside the panel the
+     shell already draws. */
+  .details-area {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  /* Everything an area offers beside its own view switch. */
+  .details-area-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .details-area-action {
+    text-decoration: none;
+  }
+
+  /* The switch between an area's own views, and whatever action belongs
+     beside it. */
+  .details-area-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
   }
 
   /* -----------------------------------------------------------------

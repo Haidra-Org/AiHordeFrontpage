@@ -14,20 +14,6 @@
      PAGE
      ----------------------------------------------------------------- */
 
-  .models-page {
-    display: flex;
-    flex-direction: column;
-    gap: var(--hd-space-3);
-  }
-
-  .models-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--hd-space-2);
-  }
-
   .models-search {
     position: relative;
     width: 100%;
@@ -308,12 +294,12 @@
     color: var(--hd-accent);
   }
 
-  /* Whether a model makes adult pictures is a fact about it, not a
-     fault, so the mark is drawn in the same quiet ink as the others. */
-  .models-mark--adult {
-    background: none;
-    border-color: var(--hd-border);
-    color: var(--hd-muted);
+  /* What a model is built from, which a phone drops: the name is what the
+     reader is scanning for, and the family has its own column above 640. */
+  @media (max-width: 639.98px) {
+    .models-list-row .models-mark--spec {
+      display: none;
+    }
   }
 
   .models-mark--custom {
@@ -326,6 +312,11 @@
     background: none;
     border-color: var(--hd-border);
     color: var(--hd-muted);
+  }
+
+  .models-list-family {
+    min-width: 0;
+    overflow: hidden;
   }
 
   .models-list-value {
@@ -356,7 +347,12 @@
     text-decoration: none;
   }
 
-  .models-list-value--wide,
+  /* Each column appears at the width that has room for it, and the
+     header cell and the body cell carry the same class so the two grids
+     can never disagree about which columns are showing. */
+  .models-col-family,
+  .models-col-mid,
+  .models-col-wide,
   .models-list-try {
     display: none;
   }
@@ -369,7 +365,7 @@
     .models-list-head,
     .models-list-row {
       grid-template-columns:
-        minmax(0, 1fr) 4rem 5.5rem 7rem 7rem 3.5rem
+        minmax(0, 1fr) 6rem 3.5rem 5rem 3.5rem
         2.25rem;
       align-items: center;
       gap: var(--hd-space-2);
@@ -377,10 +373,16 @@
 
     .models-list--text .models-list-head,
     .models-list--text .models-list-row {
-      grid-template-columns: minmax(0, 1fr) 4rem 5.5rem 7rem 7rem 3.5rem;
+      grid-template-columns: minmax(0, 1fr) 6rem 3.5rem 5rem 3.5rem;
     }
 
-    .models-list-value--wide {
+    .models-list-th.models-col-family,
+    .models-list-th.models-col-mid {
+      display: inline-flex;
+    }
+
+    .models-list-family.models-col-family,
+    .models-list-value.models-col-mid {
       display: block;
     }
 
@@ -393,14 +395,24 @@
     .models-list-head,
     .models-list-row {
       grid-template-columns:
-        minmax(0, 1fr) 5rem 7rem 9rem 9rem 4.5rem
+        minmax(0, 1fr) 7rem 4.5rem 6.5rem 8.5rem 8.5rem 4rem
         2.5rem;
       gap: var(--hd-space-3);
     }
 
     .models-list--text .models-list-head,
     .models-list--text .models-list-row {
-      grid-template-columns: minmax(0, 1fr) 5rem 7rem 9rem 9rem 4.5rem;
+      grid-template-columns:
+        minmax(0, 1fr) 7rem 4.5rem 6.5rem 8.5rem 8.5rem
+        4rem;
+    }
+
+    .models-list-th.models-col-wide {
+      display: inline-flex;
+    }
+
+    .models-list-value.models-col-wide {
+      display: block;
     }
   }
 

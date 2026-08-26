@@ -20,36 +20,35 @@
     </a>
   </div>
 } @else if (user()) {
-  <div class="tab-sub-panel">
-    <!-- Tab Navigation -->
-    <app-scroll-fade
-      class="details-tabs details-tabs--glass details-tabs--sub"
-      role="tablist"
-      [appStickyHeader]="20"
-    >
-      <button
-        (click)="setActiveTab('profile')"
-        class="details-tab"
-        [class.details-tab-active]="activeTab() === 'profile'"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'profile'"
+  <div class="details-area">
+    <div class="details-area-bar">
+      <div
+        class="hd-seg"
+        role="group"
+        [attr.aria-label]="'profile.tabs.label' | transloco"
       >
-        <app-icon class="icon-sm" name="user-circle" />
-        {{ "profile.tabs.profile" | transloco }}
-      </button>
-      @if (user()!.records || user()!.contributions) {
         <button
-          (click)="setActiveTab('records')"
-          class="details-tab"
-          [class.details-tab-active]="activeTab() === 'records'"
-          role="tab"
-          [attr.aria-selected]="activeTab() === 'records'"
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="activeTab() === 'profile'"
+          (click)="setActiveTab('profile')"
         >
-          <app-icon class="icon-sm" name="clipboard" />
-          {{ "profile.tabs.detailed_records" | transloco }}
+          <app-icon class="icon-sm" name="user-circle" />
+          {{ "profile.tabs.profile" | transloco }}
         </button>
-      }
-    </app-scroll-fade>
+        @if (user()!.records || user()!.contributions) {
+          <button
+            type="button"
+            class="hd-seg-opt"
+            [attr.aria-pressed]="activeTab() === 'records'"
+            (click)="setActiveTab('records')"
+          >
+            <app-icon class="icon-sm" name="clipboard" />
+            {{ "profile.tabs.detailed_records" | transloco }}
+          </button>
+        }
+      </div>
+    </div>
 
     <!-- Profile Tab -->
     @if (activeTab() === "profile") {

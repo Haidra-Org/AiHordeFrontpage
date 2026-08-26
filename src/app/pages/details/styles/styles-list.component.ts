@@ -14,8 +14,6 @@ import { Title } from '@angular/platform-browser';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { concatMap, EMPTY, finalize, from, tap, Observable } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
-import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
 import { AuthService } from '../../../services/auth.service';
@@ -49,8 +47,6 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     EntityLookupComponent,
     PageIntroComponent,
     RouterLink,
-    ScrollFadeComponent,
-    StickyHeaderDirective,
     IconComponent,
   ],
   templateUrl: './styles-list.component.html',

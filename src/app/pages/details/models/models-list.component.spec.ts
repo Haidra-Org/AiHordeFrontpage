@@ -163,6 +163,25 @@ describe('ModelsListComponent', () => {
     ).toBe(0);
   });
 
+  it('gives the family its own column and reads the adult mark out only', () => {
+    fixture.detectChanges();
+
+    const families = [
+      ...fixture.nativeElement.querySelectorAll('.models-list-family'),
+    ].map((cell) => (cell as HTMLElement).textContent?.trim() ?? '');
+    expect(families).toContain('SD 1.5');
+    expect(families).toContain('SDXL');
+
+    // Still said, still filtered on, no longer printed on most of the rows.
+    const adult = fixture.nativeElement.querySelector(
+      '.models-list-row .sr-only',
+    ) as HTMLElement | null;
+    expect(adult?.textContent?.trim()).toBe('Adult');
+    expect(
+      fixture.nativeElement.querySelectorAll('.models-mark--adult').length,
+    ).toBe(0);
+  });
+
   it('explains the columns once rather than once per column', () => {
     fixture.detectChanges();
 

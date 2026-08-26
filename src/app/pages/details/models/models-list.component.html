@@ -1,8 +1,8 @@
 <div class="stack-lg">
   <app-page-intro pageKey="models" />
 
-  <div class="models-page">
-    <div class="models-toolbar">
+  <div class="details-area">
+    <div class="details-area-bar">
       <div
         class="hd-seg"
         role="group"
@@ -347,6 +347,19 @@
             </button>
             <button
               type="button"
+              class="models-list-th models-col-family"
+              [class.models-list-th--active]="sortField() === 'baseline'"
+              (click)="setSortField('baseline')"
+            >
+              {{ "details.models.filters.baseline" | transloco }}
+              @if (sortField() === "baseline") {
+                <span class="models-list-sort" aria-hidden="true">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
               class="models-list-th models-list-th--right"
               [class.models-list-th--active]="sortField() === 'count'"
               (click)="setSortField('count')"
@@ -373,7 +386,7 @@
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right"
+              class="models-list-th models-list-th--right models-col-wide"
               [class.models-list-th--active]="sortField() === 'usage'"
               (click)="setSortField('usage')"
             >
@@ -386,7 +399,7 @@
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right"
+              class="models-list-th models-list-th--right models-col-wide"
               [class.models-list-th--active]="sortField() === 'performance'"
               (click)="setSortField('performance')"
             >
@@ -399,7 +412,7 @@
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right"
+              class="models-list-th models-list-th--right models-col-mid"
               [class.models-list-th--active]="sortField() === 'eta'"
               (click)="setSortField('eta')"
             >
@@ -424,26 +437,21 @@
                   [title]="row.model.name"
                   >{{ row.model.name }}</a
                 >
-                @if (row.baseline !== "") {
-                  <span class="hd-badge models-mark models-mark--family">{{
-                    baselineLabel(row.baseline)
-                  }}</span>
-                }
-                @if (row.family !== "") {
-                  <span class="hd-badge models-mark models-mark--family">{{
-                    row.family
-                  }}</span>
-                }
                 @if (row.parameters !== "") {
-                  <span class="hd-badge models-mark">{{ row.parameters }}</span>
+                  <span class="hd-badge models-mark models-mark--spec">{{
+                    row.parameters
+                  }}</span>
                 }
                 @if (row.inpainting) {
-                  <span class="hd-badge models-mark">{{
+                  <span class="hd-badge models-mark models-mark--spec">{{
                     "details.models.badge.inpainting" | transloco
                   }}</span>
                 }
+                <!-- Whether a model makes adult pictures is still said, and
+                     still filtered on; it is read out rather than printed,
+                     because it was on most rows and told the eye nothing. -->
                 @if (row.nsfw) {
-                  <span class="hd-badge models-mark models-mark--adult">{{
+                  <span class="sr-only">{{
                     "details.models.badge.adult" | transloco
                   }}</span>
                 }
@@ -459,6 +467,14 @@
                 }
               </div>
 
+              <span class="models-list-family models-col-family">
+                @if (familyLabel(row) !== "") {
+                  <span class="hd-badge models-mark models-mark--family">{{
+                    familyLabel(row)
+                  }}</span>
+                }
+              </span>
+
               <span
                 class="models-list-value"
                 [class.models-list-value--muted]="row.model.count === 0"
@@ -472,19 +488,19 @@
               >
 
               <span
-                class="models-list-value models-list-value--wide"
+                class="models-list-value models-col-wide"
                 [class.models-list-value--muted]="row.usage === 0"
                 >{{ row.usage > 0 ? (row.usage | number) : "-" }}</span
               >
 
               <span
-                class="models-list-value models-list-value--wide"
+                class="models-list-value models-col-wide"
                 [class.models-list-value--muted]="!row.model.performance"
                 >{{ performanceCell(row.model) }}</span
               >
 
               <span
-                class="models-list-value models-list-value--wide"
+                class="models-list-value models-col-mid"
                 [class.models-list-value--muted]="
                   !row.model.eta || row.model.eta <= 0
                 "

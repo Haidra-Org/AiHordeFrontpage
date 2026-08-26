@@ -39,6 +39,7 @@ export type ModelsTab = 'image' | 'text';
 /** The columns a reader can order the list by. */
 export type ModelsSortField =
   | 'name'
+  | 'baseline'
   | 'count'
   | 'queued'
   | 'usage'
@@ -265,6 +266,8 @@ export class ModelsListComponent implements OnInit {
       let comparison = 0;
       if (field === 'name') {
         comparison = a.model.name.localeCompare(b.model.name);
+      } else if (field === 'baseline') {
+        comparison = this.familyLabel(a).localeCompare(this.familyLabel(b));
       } else if (field === 'count') {
         comparison = a.model.count - b.model.count;
       } else if (field === 'queued') {
@@ -374,6 +377,18 @@ export class ModelsListComponent implements OnInit {
 
   /** The printed name of a baseline token. */
   public readonly baselineLabel = baselineLabel;
+
+  /**
+   * What the family column prints: the baseline an image model was built on,
+   * or the family a text model was trained from. A model the reference has
+   * never heard of prints nothing rather than guessing.
+   */
+  public familyLabel(row: ModelRow): string {
+    if (row.baseline !== '') {
+      return baselineLabel(row.baseline);
+    }
+    return row.family;
+  }
 
   /** Where a row's name links to. */
   public detailLink(row: ModelRow): unknown[] {

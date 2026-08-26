@@ -9,65 +9,66 @@
     (searchSubmitted)="onStyleSearch($event)"
   />
 
-  <div class="tab-sub-panel">
-    <!-- Sub-Tab Navigation -->
-    <app-scroll-fade
-      class="details-tabs details-tabs--glass details-tabs--sub"
-      role="tablist"
-      [appStickyHeader]="20"
-    >
-      <button
-        type="button"
-        class="details-tab"
-        [class.details-tab-active]="activeTab() === 'image'"
-        (click)="setActiveTab('image')"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'image'"
+  <div class="details-area">
+    <div class="details-area-bar">
+      <div
+        class="hd-seg"
+        role="group"
+        [attr.aria-label]="'styles.tabs.label' | transloco"
       >
-        <app-icon class="icon-sm" name="photo" />
-        {{ "styles.tabs.image" | transloco }}
-      </button>
-      <button
-        type="button"
-        class="details-tab"
-        [class.details-tab-active]="activeTab() === 'text'"
-        (click)="setActiveTab('text')"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'text'"
-      >
-        <app-icon class="icon-sm" name="chat-bubble" />
-        {{ "styles.tabs.text" | transloco }}
-      </button>
-      <button
-        type="button"
-        class="details-tab"
-        [class.details-tab-active]="activeTab() === 'collections'"
-        (click)="setActiveTab('collections')"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'collections'"
-      >
-        <app-icon class="icon-sm" name="folder" />
-        {{ "styles.tabs.collections" | transloco }}
-      </button>
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="activeTab() === 'image'"
+          (click)="setActiveTab('image')"
+        >
+          <app-icon class="icon-sm" name="photo" />
+          {{ "styles.tabs.image" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="activeTab() === 'text'"
+          (click)="setActiveTab('text')"
+        >
+          <app-icon class="icon-sm" name="chat-bubble" />
+          {{ "styles.tabs.text" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="activeTab() === 'collections'"
+          (click)="setActiveTab('collections')"
+        >
+          <app-icon class="icon-sm" name="folder" />
+          {{ "styles.tabs.collections" | transloco }}
+        </button>
+      </div>
 
       @if (isLoggedIn() && activeTab() !== "collections") {
-        <a
-          routerLink="/profile/styles"
-          [queryParams]="{
-            from: 'details',
-            type: activeTab() === 'text' ? 'text' : 'image',
-          }"
-          class="btn-source-control styles-create-btn"
-        >
-          {{ "styles.manage_on_profile" | transloco }}
-        </a>
+        <div class="details-area-actions">
+          <a
+            routerLink="/profile/styles"
+            [queryParams]="{
+              from: 'details',
+              type: activeTab() === 'text' ? 'text' : 'image',
+            }"
+            class="hd-btn hd-btn--dense details-area-action"
+          >
+            {{ "styles.manage_on_profile" | transloco }}
+          </a>
 
-        <button type="button" class="btn-primary" (click)="goToCreateStyle()">
-          <app-icon class="icon-sm" name="plus" />
-          {{ "styles.create" | transloco }}
-        </button>
+          <button
+            type="button"
+            class="hd-btn hd-btn--primary hd-btn--dense"
+            (click)="goToCreateStyle()"
+          >
+            <app-icon class="icon-sm" name="plus" />
+            {{ "styles.create" | transloco }}
+          </button>
+        </div>
       }
-    </app-scroll-fade>
+    </div>
 
     <!-- Filters -->
     <app-style-filters
@@ -85,7 +86,11 @@
       <div class="state-container state-container-sm state-error">
         <app-icon class="state-icon" name="exclamation-circle" />
         <p>{{ error() }}</p>
-        <button type="button" class="btn-source-control" (click)="loadStyles()">
+        <button
+          type="button"
+          class="hd-btn hd-btn--tonal hd-btn--dense"
+          (click)="loadStyles()"
+        >
           {{ "styles.retry" | transloco }}
         </button>
       </div>

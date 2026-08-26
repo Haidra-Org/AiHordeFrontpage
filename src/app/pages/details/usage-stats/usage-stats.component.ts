@@ -14,8 +14,6 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
-import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -47,8 +45,6 @@ interface ModelUsageEntry {
     UnitTooltipComponent,
     PageIntroComponent,
     InfoTooltipComponent,
-    ScrollFadeComponent,
-    StickyHeaderDirective,
     IconComponent,
   ],
   templateUrl: './usage-stats.component.html',
