@@ -979,7 +979,7 @@
           <span
             [class]="
               worker().img2img
-                ? 'hd-badge worker-cap'
+                ? 'hd-badge worker-cap worker-cap--img2img'
                 : 'hd-badge worker-cap worker-cap--off'
             "
             >img2img</span
@@ -987,7 +987,7 @@
           <span
             [class]="
               worker().painting
-                ? 'hd-badge worker-cap'
+                ? 'hd-badge worker-cap worker-cap--inpainting'
                 : 'hd-badge worker-cap worker-cap--off'
             "
             >inpainting</span
@@ -995,7 +995,7 @@
           <span
             [class]="
               worker()['post-processing']
-                ? 'hd-badge worker-cap'
+                ? 'hd-badge worker-cap worker-cap--post-processing'
                 : 'hd-badge worker-cap worker-cap--off'
             "
             >post-processing</span
@@ -1003,7 +1003,7 @@
           <span
             [class]="
               worker().lora
-                ? 'hd-badge worker-cap'
+                ? 'hd-badge worker-cap worker-cap--lora'
                 : 'hd-badge worker-cap worker-cap--off'
             "
             >LoRA</span
@@ -1011,7 +1011,7 @@
           <span
             [class]="
               worker().controlnet
-                ? 'hd-badge worker-cap'
+                ? 'hd-badge worker-cap worker-cap--controlnet'
                 : 'hd-badge worker-cap worker-cap--off'
             "
             >ControlNet</span
@@ -1019,7 +1019,7 @@
           <span
             [class]="
               worker().sdxl_controlnet
-                ? 'hd-badge worker-cap'
+                ? 'hd-badge worker-cap worker-cap--sdxl-controlnet'
                 : 'hd-badge worker-cap worker-cap--off'
             "
             >SDXL ControlNet</span

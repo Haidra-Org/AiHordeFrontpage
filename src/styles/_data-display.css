@@ -1754,18 +1754,52 @@
     white-space: nowrap;
   }
 
-  /* Every capability a worker has reads at one weight: they are a list
-     of what it can do, not a ranking, and six hues would say otherwise.
-     What the eye is looking for is which of them are switched off, so
-     the ones in force take the plate and the ones that are not take a
-     bare outline and the strike that says so without colour. */
+  /* What the eye is looking for first is which capabilities are switched
+     off, so the ones in force take a plate and the ones that are not take
+     a bare outline and the strike that says so without colour. Each one
+     in force then keeps its own hue, so a reader who knows the list finds
+     the row they want by colour before they read a word. The hue is the
+     plate and the edge; the label stays on page ink, because the fills
+     have no dark-readable text variant. */
   .worker-cap {
-    background: var(--hd-accent-tint);
-    border-color: var(--hd-accent-tint-border);
+    background: var(--hd-zone-tint, var(--hd-accent-tint));
+    border-color: var(--hd-zone-tint-border, var(--hd-accent-tint-border));
     color: var(--hd-ink);
     white-space: nowrap;
   }
 
+  .worker-cap--img2img {
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .worker-cap--inpainting {
+    --hd-zone-tint: var(--hd-purple-tint);
+    --hd-zone-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .worker-cap--post-processing {
+    --hd-zone-tint: var(--hd-teal-tint);
+    --hd-zone-tint-border: var(--hd-teal-tint-border);
+  }
+
+  .worker-cap--lora {
+    --hd-zone-tint: var(--hd-changed-tint);
+    --hd-zone-tint-border: var(--hd-changed-tint-border);
+  }
+
+  .worker-cap--controlnet {
+    --hd-zone-tint: var(--hd-danger-tint);
+    --hd-zone-tint-border: var(--hd-danger-tint-border);
+  }
+
+  .worker-cap--sdxl-controlnet {
+    --hd-zone-tint: var(--hd-indigo-tint);
+    --hd-zone-tint-border: var(--hd-indigo-tint-border);
+  }
+
+  /* A capability not in force carries no hue at all: colour here would
+     read as a second kind of in force. */
   .worker-cap--off {
     background: none;
     border-color: var(--hd-border);

@@ -19,17 +19,17 @@
   }
 
   .usage-group--image {
-    --hd-zone: var(--hd-accent);
-    --hd-zone-tint: var(--hd-accent-tint);
-    --hd-zone-tint-border: var(--hd-accent-tint-border);
-    --hd-sec-tint-border: var(--hd-accent-tint-border);
-  }
-
-  .usage-group--text {
     --hd-zone: var(--hd-purple);
     --hd-zone-tint: var(--hd-purple-tint);
     --hd-zone-tint-border: var(--hd-purple-tint-border);
     --hd-sec-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .usage-group--text {
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
   }
 
   .usage-group--alchemy {
