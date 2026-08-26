@@ -4,6 +4,15 @@
   [prose]="true"
 />
 
+<!-- Worker Lookup: the list only carries active workers, so an inactive one is
+     only reachable by ID or name. -->
+<app-entity-lookup
+  label="details.workers.lookup.label"
+  placeholder="details.workers.lookup.placeholder"
+  hintText="details.workers.lookup.hint"
+  (searchSubmitted)="onWorkerSearch($event)"
+/>
+
 <app-worker-list
   viewMode="public"
   titleKey="details.workers.title"

@@ -51,7 +51,8 @@ export const detailsRoutes: Routes = [
         (c) => c.PublicWorkersComponent,
       ),
   },
-  // Alias: "alchemy" redirects to "interrogation"
+  // Alias: "alchemy" names the interrogation workers. It has to stay ahead of
+  // `workers/:workerType`, which would otherwise swallow it.
   {
     path: 'workers/alchemy',
     redirectTo: '/details/workers/interrogation',

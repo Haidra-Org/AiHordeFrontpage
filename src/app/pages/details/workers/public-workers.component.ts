@@ -12,12 +12,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatorService } from '../../../services/translator.service';
 import { WorkerListComponent } from '../../admin/workers/worker-list.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
+import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
 import { WorkerType } from '../../../types/horde-worker';
 import { setPageTitle } from '../../../helper/page-title';
 
 @Component({
   selector: 'app-public-workers',
-  imports: [WorkerListComponent, PageIntroComponent],
+  imports: [WorkerListComponent, PageIntroComponent, EntityLookupComponent],
   templateUrl: './public-workers.component.html',
   styleUrl: './public-workers.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
