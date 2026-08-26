@@ -106,26 +106,19 @@
   --gs-sec-alchemy: #7e22ce;
 }
 
-/* The lightbox the evidence capsules are drawn on. A rendered frame is judged
-   against a dark ground in every room where pictures are judged, and the plate
-   has to be unmistakably not the page it sits in, so these do not flip with the
-   theme: the stage is the same dark in both. Only the rim moves, because the
-   edge that separates the plate from a white page is not the edge that
-   separates it from a dark one. */
+/* The lightbox the evidence capsules are drawn on, under the studio's own
+   names: the plate does not flip with the theme, only its rim does, and both
+   halves are the design system's. */
 :root {
-  --gs-stage: #14161c;
-  --gs-stage-rim: #2f3542;
-  --gs-stage-ink: #e7eaf0;
-  /* 4.6:1 on --gs-stage: the quiet ink on the plate still carries meta text. */
-  --gs-stage-label: #9aa1ad;
-  /* The pane the controls that sit on a frame are drawn on. Dark enough that
-     the stage ink clears 4.5:1 over the brightest picture behind it. */
-  --gs-stage-scrim: rgb(14 16 22 / 88%);
+  --gs-stage: var(--hd-stage);
+  --gs-stage-rim: var(--hd-stage-rim);
+  --gs-stage-ink: var(--hd-stage-ink);
+  --gs-stage-label: var(--hd-stage-label);
+  --gs-stage-scrim: var(--hd-stage-scrim);
 }
 
 /* The dark half, lightened to clear 3:1 on the dark panel and card. */
 .dark {
-  --gs-stage-rim: #3b4252;
   --gs-sec-prompt: #a5b4fc;
   --gs-sec-model: #e879f9;
   --gs-sec-size: #5eead4;
@@ -138,28 +131,23 @@
 }
 
 .gen-studio {
-  /* Elevation ladder: canvas (page floor) -> panel (workspace) -> card
-     (grouped controls). Deepening the canvas is what lets the white panels
-     read as raised planes instead of dissolving into the page. */
-  --gs-canvas: #eceef3;
-  --gs-panel: #ffffff;
-  --gs-card: #f4f6f9;
-  --gs-card-border: #dde1e8;
-  --gs-border: #e5e7eb;
-  /* Depth and motion, shared by every surface that raises or moves. Elevation
-     is a soft, low shadow rather than a bevel: enough for a card, a sheet or a
-     popover to read as a plane above the one under it, and no more. Motion is
-     short and eased so a state change is followed rather than watched; every
-     transition that uses these is disabled under prefers-reduced-motion. */
-  --gs-elev-1:
-    0 1px 2px rgba(17, 24, 39, 0.06), 0 1px 1px rgba(17, 24, 39, 0.04);
-  --gs-elev-2:
-    0 4px 12px rgba(17, 24, 39, 0.1), 0 1px 2px rgba(17, 24, 39, 0.06);
-  --gs-elev-3:
-    0 12px 32px rgba(17, 24, 39, 0.16), 0 2px 6px rgba(17, 24, 39, 0.08);
-  --gs-dur-fast: 150ms;
-  --gs-dur: 220ms;
-  --gs-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* The studio's names, aliased to the shared --hd-* family: the values and
+     the theme flip both live in the design system, and every gs-* rule keeps
+     reading the name it was written against. Only what the family has no
+     counterpart for is declared outright below. */
+  --gs-canvas: var(--hd-canvas);
+  --gs-panel: var(--hd-panel);
+  --gs-card: var(--hd-card);
+  --gs-card-border: var(--hd-card-border);
+  --gs-border: var(--hd-border);
+  --gs-border-soft: var(--hd-border-soft);
+  --gs-border-results: var(--hd-border-subtle);
+  --gs-elev-1: var(--hd-elev-1);
+  --gs-elev-2: var(--hd-elev-2);
+  --gs-elev-3: var(--hd-elev-3);
+  --gs-dur-fast: var(--hd-dur-fast);
+  --gs-dur: var(--hd-dur);
+  --gs-ease: var(--hd-ease);
   /* The four scales every gs-* rule draws from; see docs/design-language.md. */
   --gs-text-2xs: var(--hd-text-2xs);
   --gs-text-xs: var(--hd-text-xs);
@@ -169,9 +157,6 @@
   --gs-text-xl: var(--hd-text-xl);
   --gs-space-1: var(--hd-space-1);
   --gs-space-2: var(--hd-space-2);
-  /* A half step between 8 and 12, for the studio's dense surfaces: card
-     padding on a phone and the rows inside a card, where 12 is loose and 8
-     leaves the content touching its edge. */
   --gs-space-2-5: var(--hd-space-2-5);
   --gs-space-3: var(--hd-space-3);
   --gs-space-4: var(--hd-space-4);
@@ -183,6 +168,37 @@
   --gs-radius-pill: var(--hd-radius-pill);
   --gs-control-h: var(--hd-control-h);
   --gs-control-h-dense: var(--hd-control-h-dense);
+  --gs-help-trigger: var(--hd-help-trigger);
+  --gs-ink: var(--hd-ink);
+  --gs-ink-2: var(--hd-ink-2);
+  --gs-label: var(--hd-label);
+  --gs-muted: var(--hd-muted);
+  --gs-field: var(--hd-field);
+  --gs-field-soft: var(--hd-field-soft);
+  --gs-field-border: var(--hd-field-border);
+  --gs-pop-surface: var(--hd-pop-surface);
+  --gs-pop-border: var(--hd-pop-border);
+  --gs-pop-hover: var(--hd-pop-hover);
+  --gs-pop-stripe: var(--hd-pop-stripe);
+  --gs-pop-accent: var(--hd-pop-accent);
+  --gs-pop-shadow: var(--hd-pop-shadow);
+  --gs-blue: var(--hd-accent);
+  --gs-blue-hover: var(--hd-accent-hover);
+  --gs-blue-tint: var(--hd-accent-tint);
+  --gs-blue-tint-border: var(--hd-accent-tint-border);
+  --gs-purple: var(--hd-purple);
+  --gs-purple-tint: var(--hd-purple-tint);
+  --gs-purple-tint-border: var(--hd-purple-tint-border);
+  --gs-green: var(--hd-green);
+  --gs-green-tint: var(--hd-green-tint);
+  --gs-green-tint-border: var(--hd-green-tint-border);
+  --gs-danger: var(--hd-danger);
+  --gs-danger-tint: var(--hd-danger-tint);
+  --gs-changed: var(--hd-changed);
+  --gs-seg-track: var(--hd-seg-track);
+  --gs-seg-active: var(--hd-seg-active);
+  --gs-seg-active-ink: var(--hd-seg-active-ink);
+  --gs-switch-off: var(--hd-switch-off);
   /* The tutorials' own hue: a warm amber that belongs to learning alone, so a
      door that starts a tutorial, the dock that runs one and the frame that says
      one is running all read as one family, apart from the accent and from any
@@ -192,9 +208,6 @@
   --gs-tut-tint: #fef3c7;
   --gs-tut-tint-border: #fcd34d;
   --gs-tut-glow: rgba(245, 158, 11, 0.35);
-  /* The `?` glyph's box. A row without a trigger reserves this width so the
-     controls in a group still end on one edge. */
-  --gs-help-trigger: var(--hd-help-trigger);
   /* How far a switch may travel from the words it belongs to. A card widened to
      a third of the screen would otherwise leave the two at opposite ends of the
      row, with nothing between them to carry the eye across; every option row
@@ -205,54 +218,6 @@
      the grid above it is laid out on. */
   --gs-zone-first: 1.15;
   --gs-zone-span: 3.15;
-  /* The one red in the studio: a field that will not submit as typed carries
-     it on its edge, always beside a hint line, never as the only signal. */
-  --gs-danger: #dc2626;
-  /* The mark a folded group wears while it holds a value that is not the one
-     the form starts at. Amber rather than red: it reports a choice, not a
-     fault. It carries a label, because a dot alone says nothing aloud. */
-  --gs-changed: #b45309;
-  --gs-green-tint-border: #bbf7d0;
-  --gs-border-soft: #f0f1f3;
-  --gs-border-results: #eceef1;
-  --gs-ink: #111827;
-  --gs-ink-2: #374151;
-  /* Both greys are measured against the deepest ground they sit on, the canvas,
-     rather than the white panel: labels and hints are drawn on the panel, on
-     the card and on the page floor, and the card is where most of them land.
-     Label 4.98:1 and muted 4.63:1 on the canvas, 5.34:1 and 4.97:1 on the card,
-     so small type clears AA wherever the pair is used. */
-  --gs-label: #5f6672;
-  --gs-muted: #636b78;
-  --gs-field: #ffffff;
-  --gs-field-soft: #fafafa;
-  --gs-field-border: #d1d5db;
-  /* Popover plane: a menu opening over a panel of the same colour only reads as
-     a separate surface through its edge and its shadow, so both are stronger
-     than the panel's own. */
-  --gs-pop-surface: #ffffff;
-  --gs-pop-border: #c9cfd9;
-  --gs-pop-hover: #eef1f6;
-  /* The alternating step for banded popover lists. Deliberately shallower than
-     --gs-pop-hover: the band has body text on it, and the hover step is dark
-     enough to push --gs-label under AA. */
-  --gs-pop-stripe: #f6f8fb;
-  --gs-pop-accent: #1d4ed8;
-  --gs-pop-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
-  --gs-blue: #1d4ed8;
-  --gs-blue-hover: #1e40af;
-  --gs-blue-tint: #eff6ff;
-  --gs-blue-tint-border: #dbeafe;
-  --gs-purple: #9333ea;
-  --gs-purple-tint: #faf5ff;
-  --gs-purple-tint-border: #e9d5ff;
-  --gs-green: #16a34a;
-  --gs-green-tint: #dcfce7;
-  --gs-danger-tint: #fee2e2;
-  --gs-seg-track: #f3f4f6;
-  --gs-seg-active: #111827;
-  --gs-seg-active-ink: #ffffff;
-  --gs-switch-off: #e5e7eb;
   /* Section identity hues. Audited as graphic/border colour only: every one
      clears 3:1 against --gs-panel and --gs-card, but --gs-sec-size falls under
      4.5:1, so these may tint glyphs and edges and must never colour text. */
@@ -330,63 +295,12 @@
   -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .gen-studio {
-    --gs-dur-fast: 0ms;
-    --gs-dur: 0ms;
-  }
-}
 .dark .gen-studio {
-  --gs-canvas: #0f1115;
-  /* One visible step above the canvas; cards take a second step so grouped
-     controls read as objects on the workspace rather than outlines in it. */
-  --gs-panel: #1c202a;
-  --gs-card: #242a36;
-  --gs-card-border: #3a4150;
   --gs-tut: #fbbf24;
   --gs-tut-ink: #fcd34d;
   --gs-tut-tint: rgba(251, 191, 36, 0.14);
   --gs-tut-tint-border: rgba(251, 191, 36, 0.45);
   --gs-tut-glow: rgba(251, 191, 36, 0.3);
-  --gs-elev-1: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
-  --gs-elev-2: 0 4px 14px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --gs-elev-3: 0 14px 36px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
-  --gs-green-tint-border: rgba(34, 197, 94, 0.35);
-  /* #dc2626 drops to 3.4:1 on the dark field; the lighter red holds AA. */
-  --gs-danger: #f87171;
-  /* #b45309 is unreadable on the dark panel; the lighter amber holds AA. */
-  --gs-changed: #fbbf24;
-  --gs-border: #2a2e37;
-  --gs-border-soft: #23262d;
-  --gs-border-results: #23262d;
-  --gs-ink: #e5e7eb;
-  --gs-ink-2: #cbd5e1;
-  --gs-label: #9ca3af;
-  /* 5.4:1 on the dark panel: the old #7c828d sat below AA for small text. */
-  --gs-muted: #98a0ac;
-  --gs-field: #14171d;
-  --gs-field-soft: #14171d;
-  --gs-field-border: #313640;
-  /* Dark popovers rise by getting lighter: they take the card step above the
-     panel, and lean on a deeper, wider shadow to sit clear of it. */
-  --gs-pop-surface: #242a36;
-  --gs-pop-border: #3f4756;
-  --gs-pop-hover: #2c3444;
-  --gs-pop-stripe: #2a3140;
-  /* --gs-blue is the same #1d4ed8 in both themes and sinks into a dark popover
-     at 2.2:1, so the accent takes a lighter blue here. */
-  --gs-pop-accent: #60a5fa;
-  --gs-pop-shadow: 0 22px 56px rgba(0, 0, 0, 0.66);
-  --gs-blue-tint: rgba(29, 78, 216, 0.16);
-  --gs-blue-tint-border: rgba(59, 130, 246, 0.35);
-  --gs-purple-tint: rgba(147, 51, 234, 0.16);
-  --gs-purple-tint-border: rgba(147, 51, 234, 0.4);
-  --gs-green-tint: rgba(22, 163, 74, 0.18);
-  --gs-danger-tint: rgba(220, 38, 38, 0.22);
-  --gs-seg-track: #272c35;
-  --gs-seg-active: #f3f4f6;
-  --gs-seg-active-ink: #111827;
-  --gs-switch-off: #3a3f47;
   /* The dark half of the identity hues, lightened to clear 3:1 on the dark
      panel and card. Same constraint as the light set: glyphs and edges only. */
   --gs-sec-prompt-tint: color-mix(
@@ -476,20 +390,33 @@
    transformation form. One hue per zone, applied through repeated small
    devices rather than washes, so the coding aids scanning without turning
    the studio technicolor. */
+/* Each rule also restates its hue under the design system's --hd-zone* names,
+   which is the contract the shared primitives read: a promoted primitive drawn
+   inside one of these planes picks the plane's hue up without knowing the
+   studio's names. */
 .gen-studio .gs-panel {
   --gs-zone: var(--gs-blue);
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
+  --hd-zone: var(--gs-zone);
+  --hd-zone-tint: var(--gs-zone-tint);
+  --hd-zone-tint-border: var(--gs-zone-tint-border);
 }
 .gen-studio .gs-results {
   --gs-zone: var(--gs-green);
   --gs-zone-tint: var(--gs-green-tint);
   --gs-zone-tint-border: var(--gs-green-tint-border);
+  --hd-zone: var(--gs-zone);
+  --hd-zone-tint: var(--gs-zone-tint);
+  --hd-zone-tint-border: var(--gs-zone-tint-border);
 }
 .gen-studio.gs-alchemy .gs-panel {
   --gs-zone: var(--gs-purple);
   --gs-zone-tint: var(--gs-purple-tint);
   --gs-zone-tint-border: var(--gs-purple-tint-border);
+  --hd-zone: var(--gs-zone);
+  --hd-zone-tint: var(--gs-zone-tint);
+  --hd-zone-tint-border: var(--gs-zone-tint-border);
 }
 
 /* ------- section identities ----------------------------------------- */
@@ -498,50 +425,79 @@
    inside it asks for --gs-sec. The mark is a small chip beside the section's
    title and the hairline that title already draws, so the coding is carried by
    devices the layout has anyway. */
+/* As with the zones, each rule restates its hue under --hd-sec* so a shared
+   primitive inside the section takes the section's identity. */
 .gen-studio .gs-sec--prompt {
   --gs-sec: var(--gs-sec-prompt);
   --gs-sec-tint: var(--gs-sec-prompt-tint);
   --gs-sec-tint-border: var(--gs-sec-prompt-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--model {
   --gs-sec: var(--gs-sec-model);
   --gs-sec-tint: var(--gs-sec-model-tint);
   --gs-sec-tint-border: var(--gs-sec-model-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--size {
   --gs-sec: var(--gs-sec-size);
   --gs-sec-tint: var(--gs-sec-size-tint);
   --gs-sec-tint-border: var(--gs-sec-size-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--source {
   --gs-sec: var(--gs-sec-source);
   --gs-sec-tint: var(--gs-sec-source-tint);
   --gs-sec-tint-border: var(--gs-sec-source-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--sampling {
   --gs-sec: var(--gs-sec-sampling);
   --gs-sec-tint: var(--gs-sec-sampling-tint);
   --gs-sec-tint-border: var(--gs-sec-sampling-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--finishing {
   --gs-sec: var(--gs-sec-finishing);
   --gs-sec-tint: var(--gs-sec-finishing-tint);
   --gs-sec-tint-border: var(--gs-sec-finishing-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--horde {
   --gs-sec: var(--gs-sec-horde);
   --gs-sec-tint: var(--gs-sec-horde-tint);
   --gs-sec-tint-border: var(--gs-sec-horde-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--alchemy {
   --gs-sec: var(--gs-sec-alchemy);
   --gs-sec-tint: var(--gs-sec-alchemy-tint);
   --gs-sec-tint-border: var(--gs-sec-alchemy-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 .gen-studio .gs-sec--workflows {
   --gs-sec: var(--gs-sec-workflows);
   --gs-sec-tint: var(--gs-sec-workflows-tint);
   --gs-sec-tint-border: var(--gs-sec-workflows-tint-border);
+  --hd-sec: var(--gs-sec);
+  --hd-sec-tint: var(--gs-sec-tint);
+  --hd-sec-tint-border: var(--gs-sec-tint-border);
 }
 
 .gen-studio .gs-sec-chip {
@@ -5938,14 +5894,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
-}
-.gen-studio ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 8px;
-  border: 2px solid var(--gs-canvas);
-}
-.dark .gen-studio ::-webkit-scrollbar-thumb {
-  background: #3a3f47;
 }
 
 /* ---- Alchemy results / jobs pane: responsive-first (mobile & tablet) ----
