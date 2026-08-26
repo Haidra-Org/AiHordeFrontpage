@@ -101,7 +101,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'generate.panel.expand_label',
   'generate.panel.expand_more',
   'generate.panel.expand_less',
-  'generate.guide.open_empty',
   'generate.learn.sheet_steps_label',
   'generate.learn.sheet_step',
   'generate.sweeps.badge_timeline_plain',

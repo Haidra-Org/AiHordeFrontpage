@@ -85,7 +85,6 @@ describe('DocsShellComponent', () => {
           { path: 'docs/image/settings', component: StubPageComponent },
           { path: 'docs/image/settings/:param', component: StubPageComponent },
           { path: 'docs/image/control-types', component: StubPageComponent },
-          { path: 'docs/image/guide', component: StubPageComponent },
           { path: 'docs/alchemy', component: StubPageComponent },
           { path: 'docs/alchemy/:useCase', component: StubPageComponent },
           // Stands for a page that needs the foot of the screen for itself.
@@ -135,7 +134,7 @@ describe('DocsShellComponent', () => {
   });
 
   it('keeps direct return links into both studios in the docs chrome', async () => {
-    await go('/docs/image/guide');
+    await go('/docs/image/control-types');
 
     expect(studioLinks().map((link) => link.getAttribute('href'))).toEqual([
       STUDIO_IMAGE,
@@ -164,7 +163,6 @@ describe('DocsShellComponent', () => {
       null,
       null,
       'page',
-      null,
       null,
     ]);
     expect(links().some((link) => link.className.includes('--on'))).toBe(false);
@@ -221,13 +219,12 @@ describe('DocsShellComponent', () => {
     expect(links()[0].getAttribute('aria-current')).toBeNull();
   });
 
-  it('offers the settings reference between the examples and the guide', () => {
+  it('offers the settings reference between the examples and the control types', () => {
     expect(IMAGE.entries.map((entry) => entry.labelKey)).toEqual([
       'generate.learn.nav_overview',
       'generate.learn.nav_tutorials',
       'generate.learn.nav_settings',
       'docs.nav_control_types',
-      'generate.learn.nav_guide',
     ]);
   });
 
@@ -243,12 +240,6 @@ describe('DocsShellComponent', () => {
     expect(current()).toBe(translations['generate.learn.nav_settings']);
   });
 
-  it('marks the guide entry on the guide page', async () => {
-    await go('/docs/image/guide');
-
-    expect(current()).toBe(translations['generate.learn.nav_guide']);
-  });
-
   it('switches to the alchemy area, chrome and all, on its own URLs', async () => {
     await go('/docs/alchemy/enlarge');
 
@@ -260,7 +251,7 @@ describe('DocsShellComponent', () => {
   });
 
   it('keeps the phone tool bar the reader arrived on, with the documentation as the page on screen', async () => {
-    await go('/docs/image/guide');
+    await go('/docs/image/control-types');
 
     const tabs = tools();
     expect(tabs.map((tab) => tab.getAttribute('href'))).toEqual([
@@ -318,7 +309,7 @@ describe('DocsShellComponent', () => {
     const shellOnAPage = async (): Promise<
       ComponentFixture<DocsShellComponent>
     > => {
-      await router.navigateByUrl('/docs/image/guide');
+      await router.navigateByUrl('/docs/image/control-types');
       const shell = TestBed.createComponent(DocsShellComponent);
       shell.detectChanges();
       return shell;
@@ -376,7 +367,7 @@ describe('DocsShellComponent', () => {
   });
 
   it('renders the page the route names beneath the subnav', async () => {
-    await go('/docs/image/guide');
+    await go('/docs/image/control-types');
 
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.gs-learn-outlet')

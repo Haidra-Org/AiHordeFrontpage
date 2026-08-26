@@ -11,11 +11,8 @@
 /** The documentation area's front door. */
 export const DOCS_ROOT = '/docs';
 
-/** The image studio's documentation: examples, the guide, the reference. */
+/** The image studio's documentation: examples, the reference, the control types. */
 export const DOCS_IMAGE = `${DOCS_ROOT}/image`;
-
-/** The written walkthrough of making a first image. */
-export const DOCS_IMAGE_GUIDE = `${DOCS_IMAGE}/guide`;
 
 /** The settings reference index. */
 export const DOCS_IMAGE_SETTINGS = `${DOCS_IMAGE}/settings`;

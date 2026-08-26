@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { APP_ICONS } from '../icons';
 import { FLOWS } from './flows';
-import { GUIDE_SECTIONS } from './guide';
 import {
-  SECTION_BY_GUIDE_ID,
   SECTION_BY_STEP_ID,
   SECTION_IDENTITIES,
   SectionId,
@@ -32,12 +30,6 @@ describe('section identities', () => {
     }
   });
 
-  it('gives every guide section an identity', () => {
-    for (const section of GUIDE_SECTIONS) {
-      expect(sectionFor('guide', section.id)).toBeTruthy();
-    }
-  });
-
   it('resolves every claimed step id against the one step authoring', () => {
     const authored = new Set(
       FLOWS.flatMap((flow) => flow.steps.map((step) => step.id)),
@@ -50,15 +42,14 @@ describe('section identities', () => {
 
   it('leaves the steps that belong to no card unmarked', () => {
     // Pressing Generate and reading what came back are steps about the page.
-    for (const id of ['generate', 'generate_before', 'regenerate']) {
-      expect(sectionFor('step', id)).toBeUndefined();
+    for (const id of ['generate', 'generate_before', 'regenerate', 'results']) {
+      expect(sectionFor(id)).toBeUndefined();
     }
   });
 
   it('points every mapping at an identity that exists', () => {
     const known = new Set(Object.keys(SECTION_IDENTITIES));
     const mapped = [
-      ...Object.values(SECTION_BY_GUIDE_ID),
       ...Object.values(SECTION_BY_STEP_ID),
       ...SETTINGS.map((entry) => entry.section),
     ];
@@ -69,8 +60,7 @@ describe('section identities', () => {
   });
 
   it('returns nothing for an id no surface authors', () => {
-    expect(sectionFor('guide', 'nonexistent')).toBeUndefined();
-    expect(sectionFor('step', 'nonexistent')).toBeUndefined();
+    expect(sectionFor('nonexistent')).toBeUndefined();
   });
 
   it('answers with no identity where there is no section', () => {

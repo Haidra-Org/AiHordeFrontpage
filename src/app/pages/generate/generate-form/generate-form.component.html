@@ -12,17 +12,17 @@
          bottom bar. It ends the title line rather than the tool row, which on
          the narrowest phones is already full. It stands down from 1024px up,
          where the switcher row carries the same button. -->
-    <!-- The walkthrough for the panel it walks through, on the title line at
+    <!-- The written reference for the panel it documents, on the title line at
          every width and carrying its word wherever it is read. The tool row
          cannot hold it on a phone, and a reader looking for the way in should
          not have to open a list to find it. -->
     <a
       class="gs-title-link"
-      [routerLink]="guideLink"
-      [attr.aria-label]="'generate.form.open_guide' | transloco"
+      [routerLink]="referenceLink"
+      [attr.aria-label]="'generate.form.open_reference' | transloco"
     >
       <app-icon name="document-text" class="gs-ico-sm" aria-hidden="true" />
-      <span>{{ "generate.form.open_guide_short" | transloco }}</span>
+      <span>{{ "generate.form.open_reference_short" | transloco }}</span>
     </a>
     <button
       type="button"

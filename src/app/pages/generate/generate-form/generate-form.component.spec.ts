@@ -32,7 +32,7 @@ import type { ActiveModel } from '../../../types/active-model';
 import type { HordeWorker } from '../../../types/horde-worker';
 import { ToastService } from '../../../services/toast.service';
 import { FullscreenService } from '../../../services/fullscreen.service';
-import { DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
+import { DOCS_IMAGE_SETTINGS } from '../../../content/docs-links';
 import { GenerateSourceImageComponent } from '../generate-source-image/generate-source-image.component';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { provideRouter } from '@angular/router';
@@ -2968,33 +2968,35 @@ describe('GenerateFormComponent Options list', () => {
     ).not.toBeNull();
   });
 
-  it('keeps the walkthrough on the title line at every width', async () => {
+  it('keeps the settings reference on the title line at every width', async () => {
     const { host, fixture } = await render();
     const titleLink = (): HTMLAnchorElement | null =>
       host.querySelector<HTMLAnchorElement>(
         '.gs-panel-header > a.gs-title-link',
       );
 
-    expect(titleLink()?.getAttribute('href')).toBe(DOCS_IMAGE_GUIDE);
+    expect(titleLink()?.getAttribute('href')).toBe(DOCS_IMAGE_SETTINGS);
     expect(titleLink()?.textContent).toContain(
-      en['generate.form.open_guide_short'],
+      en['generate.form.open_reference_short'],
     );
 
     fixture.componentRef.setInput('narrow', true);
     fixture.detectChanges();
 
-    expect(titleLink()?.getAttribute('href')).toBe(DOCS_IMAGE_GUIDE);
+    expect(titleLink()?.getAttribute('href')).toBe(DOCS_IMAGE_SETTINGS);
     expect(titleLink()?.textContent).toContain(
-      en['generate.form.open_guide_short'],
+      en['generate.form.open_reference_short'],
     );
   });
 
-  it('leaves the walkthrough out of the tool row and the list', async () => {
+  it('leaves the settings reference out of the tool row and the list', async () => {
     const { host, fixture } = await render();
     openOptions(host, fixture);
 
     expect(host.querySelector('.gs-tools a')).toBeNull();
-    expect(optionRow(host, en['generate.form.open_guide_short'])).toBeNull();
+    expect(
+      optionRow(host, en['generate.form.open_reference_short']),
+    ).toBeNull();
   });
 
   it('carries a word on every header tool', async () => {

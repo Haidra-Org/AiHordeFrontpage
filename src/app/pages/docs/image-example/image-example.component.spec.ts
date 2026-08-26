@@ -1066,11 +1066,4 @@ describe('DocsImageExampleComponent', () => {
       expect(harness.query('.gs-tut-img').length).toBeGreaterThan(0);
     });
   });
-
-  it('links the guide entry point at the studio shell', () => {
-    const translations = en as Record<string, string>;
-
-    expect(translations['generate.guide.tutorials_link']).toBeTruthy();
-    expect(translations['generate.shell.tab_docs']).toBeTruthy();
-  });
 });

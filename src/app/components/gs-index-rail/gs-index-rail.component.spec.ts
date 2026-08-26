@@ -83,7 +83,7 @@ const ENTRIES: readonly GsIndexRailEntry[] = [
 })
 class HostComponent {
   public readonly entries = signal<readonly GsIndexRailEntry[]>(ENTRIES);
-  public readonly labelKey = signal('generate.guide.toc_label');
+  public readonly labelKey = signal('generate.learn.settings_rail_label');
   public readonly barForm = signal(false);
 }
 
@@ -142,7 +142,7 @@ describe('GsIndexRailComponent', () => {
 
   it('is a landmark the caller names', () => {
     expect(el().querySelector('nav')?.getAttribute('aria-label')).toBe(
-      translations['generate.guide.toc_label'],
+      translations['generate.learn.settings_rail_label'],
     );
   });
 

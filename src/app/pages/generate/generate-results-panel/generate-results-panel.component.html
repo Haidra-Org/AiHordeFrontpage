@@ -235,11 +235,11 @@
           {{ "generate.results.sort_aesthetic" | transloco }}
         </button>
       }
-      <!-- Kept in the bar rather than in the empty state alone, so the guide is
-           still one press away once results exist. -->
-      <a class="gs-view-toggle" [routerLink]="guideLink">
+      <!-- Kept in the bar rather than in the empty state alone, so the written
+           reference is still one press away once results exist. -->
+      <a class="gs-view-toggle" [routerLink]="referenceLink">
         <app-icon name="question-mark-circle" class="gs-ico-sm" />
-        {{ "generate.guide.open" | transloco }}
+        {{ "generate.results.open_reference" | transloco }}
       </a>
 
       @if (hasErrors()) {

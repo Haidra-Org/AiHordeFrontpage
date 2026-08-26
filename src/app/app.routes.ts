@@ -128,13 +128,9 @@ export const routes: Routes = [
             (c) => c.DocsControlTypesComponent,
           ),
       },
-      {
-        path: 'image/guide',
-        loadComponent: () =>
-          import('./pages/docs/image-guide/image-guide.component').then(
-            (c) => c.DocsImageGuideComponent,
-          ),
-      },
+      // The walkthrough said again what the reference already says setting by
+      // setting, so the reference is where its readers are sent.
+      { path: 'image/guide', redirectTo: 'image/settings', pathMatch: 'full' },
       // The settings reference: an index of every setting the panel explains,
       // and a page per setting. A `:param` naming no setting is sent back to the
       // index by the page itself, which is the only place that knows what the

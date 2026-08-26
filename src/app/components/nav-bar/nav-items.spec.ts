@@ -20,7 +20,7 @@ describe('isStudioRoute', () => {
     for (const url of [
       '/',
       '/docs/image',
-      '/docs/image/guide',
+      '/docs/image/settings',
       '/generated-images',
       '/alchemystic',
       '/status',

@@ -197,7 +197,7 @@ export class GenerateLearnSheetComponent {
 
   /** The panel area a step is about, so card and field share one hue. */
   public identityFor(step: FlowStep): SectionIdentity | null {
-    return sectionIdentity(sectionFor('step', step.id));
+    return sectionIdentity(sectionFor(step.id));
   }
 
   /**

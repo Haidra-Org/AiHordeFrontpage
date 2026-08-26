@@ -62,50 +62,28 @@
       />
     </h2>
     <!-- A hairlined list in the rail's grammar rather than a row of cards: the
-         three ways in are one list of the same kind of thing, and the leading
-         bar is the device the rest of the area already reads as "a line you can
-         go down". -->
+         ways in are one list of the same kind of thing, and the leading bar is
+         the device the rest of the area already reads as "a line you can go
+         down". -->
     <div class="gs-learn-doors">
+      <!-- A track has no page to route to: it runs in the studio's pane, so its
+           door arms the flow and goes there, as the hero does. -->
       @for (door of understandDoors; track door.titleKey) {
-        <!-- A track has no page to route to: it runs in the studio's pane, so
-             its door arms the flow and goes there, as the hero does. -->
-        @if (door.flow) {
-          <button
-            type="button"
-            class="gs-learn-door"
-            (click)="startTrack(door)"
-          >
-            <app-icon [name]="door.icon" class="gs-learn-door-mark" />
-            <span class="gs-learn-door-text">
-              <span class="gs-learn-door-title">
-                {{ door.titleKey | transloco }}
-              </span>
-              <span class="gs-learn-door-hint">
-                {{ door.hintKey | transloco }}
-              </span>
+        <button type="button" class="gs-learn-door" (click)="startTrack(door)">
+          <app-icon [name]="door.icon" class="gs-learn-door-mark" />
+          <span class="gs-learn-door-text">
+            <span class="gs-learn-door-title">
+              {{ door.titleKey | transloco }}
             </span>
-            <span class="gs-learn-door-go">
-              {{ goKey(door) | transloco }}
-              <app-icon name="chevron-right" class="gs-learn-door-chev" />
+            <span class="gs-learn-door-hint">
+              {{ door.hintKey | transloco }}
             </span>
-          </button>
-        } @else {
-          <a class="gs-learn-door" [routerLink]="door.link">
-            <app-icon [name]="door.icon" class="gs-learn-door-mark" />
-            <span class="gs-learn-door-text">
-              <span class="gs-learn-door-title">
-                {{ door.titleKey | transloco }}
-              </span>
-              <span class="gs-learn-door-hint">
-                {{ door.hintKey | transloco }}
-              </span>
-            </span>
-            <span class="gs-learn-door-go">
-              {{ goKey(door) | transloco }}
-              <app-icon name="chevron-right" class="gs-learn-door-chev" />
-            </span>
-          </a>
-        }
+          </span>
+          <span class="gs-learn-door-go">
+            {{ "generate.learn.understand_start" | transloco }}
+            <app-icon name="chevron-right" class="gs-learn-door-chev" />
+          </span>
+        </button>
       }
     </div>
   </section>

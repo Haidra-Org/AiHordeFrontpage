@@ -863,7 +863,7 @@ export class TutorialEngineService {
     element.classList.add(HIGHLIGHT_CLASS);
     // The field takes the hue of the area the step is about, so the glow it
     // shares with the step card is one colour rather than two.
-    const identity = sectionIdentity(sectionFor('step', step.id));
+    const identity = sectionIdentity(sectionFor(step.id));
     if (identity) {
       this.highlightSection = identity.className;
       element.classList.add(this.highlightSection);

@@ -1101,10 +1101,10 @@ describe('GenerateResultsPanelComponent', () => {
   it('sends an empty pane to the reading rather than to one page of it', () => {
     // A reader who has generated nothing yet does not know which of their
     // questions a page about this screen would answer, so the way in from the
-    // empty pane is the whole shelf. The bar keeps its link to the walkthrough.
+    // empty pane is the whole shelf. The bar keeps its link to the reference.
     expect(component.docsLink).toBe('/docs/image');
-    expect(component.guideLink).toBe('/docs/image/guide');
-    expect(TRANSLATIONS['generate.guide.open']).toBeTruthy();
+    expect(component.referenceLink).toBe('/docs/image/settings');
+    expect(TRANSLATIONS['generate.results.open_reference']).toBeTruthy();
     expect(TRANSLATIONS['generate.results.empty_learn']).toBeTruthy();
     expect('guideOpen' in component).toBe(false);
   });

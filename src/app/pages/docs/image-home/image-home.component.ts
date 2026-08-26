@@ -23,11 +23,7 @@ import {
   exampleManifestUrl,
   exampleResultUrl,
 } from '../../../content/examples';
-import {
-  DOCS_IMAGE_GUIDE,
-  STUDIO_IMAGE,
-  docsExampleLink,
-} from '../../../content/docs-links';
+import { STUDIO_IMAGE, docsExampleLink } from '../../../content/docs-links';
 import { FLOWS } from '../../../content/flows';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
@@ -80,8 +76,7 @@ export interface ShelfCard {
 interface LearnDoor {
   titleKey: string;
   hintKey: string;
-  link?: string;
-  flow?: string;
+  flow: string;
   icon: string;
 }
 
@@ -139,9 +134,9 @@ export class DocsImageHomeComponent {
   ];
 
   /**
-   * The doors of the "understand it" band: the two concept tracks first, since
-   * a reader who does not know what a model is has no use for a list of what
-   * each control does, and the written reference last.
+   * The doors of the "understand it" band: what an image model is, then who
+   * runs it. A reader who does not know what a model is has no use for a list
+   * of what each control does, which is why neither door is the reference.
    */
   public readonly understandDoors: readonly LearnDoor[] = [
     {
@@ -155,12 +150,6 @@ export class DocsImageHomeComponent {
       hintKey: 'generate.learn.understand_horde_hint',
       flow: 'concepts_horde',
       icon: 'user-group',
-    },
-    {
-      titleKey: 'generate.learn.understand_guide_title',
-      hintKey: 'generate.learn.understand_guide_hint',
-      link: DOCS_IMAGE_GUIDE,
-      icon: 'question-mark-circle',
     },
   ];
 
@@ -242,17 +231,6 @@ export class DocsImageHomeComponent {
       });
   }
 
-  /**
-   * The word a door's affordance is read by. A track is started rather than
-   * opened, and the written guide is a page rather than something that runs, so
-   * the two say different things about what pressing them costs.
-   */
-  public goKey(door: LearnDoor): string {
-    return door.flow
-      ? 'generate.learn.understand_start'
-      : 'generate.learn.understand_read';
-  }
-
   public flowLink(card: ShelfCard): string {
     return docsExampleLink(card.id);
   }
@@ -305,9 +283,7 @@ export class DocsImageHomeComponent {
    * too, so reloading the studio lands on an ordinary studio.
    */
   public startTrack(door: LearnDoor): void {
-    if (door.flow) {
-      this.start(door.flow);
-    }
+    this.start(door.flow);
   }
 
   private start(flowId: string): void {

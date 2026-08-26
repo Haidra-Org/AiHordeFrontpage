@@ -78,10 +78,7 @@ const OWN_KEYS = [
   'understand_images_hint',
   'understand_horde_title',
   'understand_horde_hint',
-  'understand_guide_title',
-  'understand_guide_hint',
   'understand_start',
-  'understand_read',
   'further_head',
   'further_kind',
   'world_label',
@@ -212,22 +209,15 @@ describe('DocsImageHomeComponent', () => {
     expect(engine.consumeArmed()).toBe('concepts_migrating');
   });
 
-  it('offers the written guide as a door of its own', () => {
+  it('makes every door of the band a track that is started', () => {
     flush();
 
-    const routed = query<HTMLAnchorElement>('a.gs-learn-door');
-
+    // The band is the two concept tracks and nothing else: what the panel's
+    // controls do is the settings reference's subject, and the subnav is where
+    // that is offered.
+    expect(query('a.gs-learn-door')).toHaveLength(0);
     expect(query('.gs-learn-door')).toHaveLength(
       component.understandDoors.length,
-    );
-    expect(routed).toHaveLength(1);
-    expect(routed[0].getAttribute('href')).toBe('/docs/image/guide');
-    expect(routed[0].textContent).toContain(
-      TRANSLATIONS['generate.learn.understand_guide_title'],
-    );
-    // A page is read; only the two tracks are started.
-    expect(routed[0].querySelector('.gs-learn-door-go')?.textContent).toContain(
-      TRANSLATIONS['generate.learn.understand_read'],
     );
   });
 
@@ -246,7 +236,6 @@ describe('DocsImageHomeComponent', () => {
     ).toEqual([
       TRANSLATIONS['generate.learn.understand_start'],
       TRANSLATIONS['generate.learn.understand_start'],
-      TRANSLATIONS['generate.learn.understand_read'],
     ]);
   });
 
@@ -258,7 +247,6 @@ describe('DocsImageHomeComponent', () => {
     expect(component.understandDoors.map((door) => door.flow)).toEqual([
       'concepts_images',
       'concepts_horde',
-      undefined,
     ]);
     expect(tracks).toHaveLength(2);
     expect(tracks[0].textContent).toContain(

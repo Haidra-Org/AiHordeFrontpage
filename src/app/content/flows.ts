@@ -21,7 +21,7 @@ export interface FlowReveal {
  * its id and its prose matter, and inside the follow-along pane, where the rest
  * of it says what the step points at and what pressing Apply writes. Both read
  * this one list, so a technique cannot come to be explained in an order the
- * walkthrough does not follow.
+ * follow-along pane does not perform.
  */
 export interface FlowStep {
   /** Suffix of the step's i18n keys, and of nothing else. */
@@ -443,6 +443,10 @@ export const FLOWS: readonly FlowDef[] = [
       { id: 'kudos' },
       { id: 'trust_safety' },
       { id: 'waiting' },
+      // Where a finished picture ends up is a fact about the horde rather than
+      // about the panel: nothing is kept on it, so the browser holding the
+      // results is the only copy there is.
+      { id: 'results' },
       { id: 'where_next', startsFlow: 'txt2img' },
     ],
   },

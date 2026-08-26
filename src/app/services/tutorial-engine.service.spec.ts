@@ -805,7 +805,7 @@ describe('TutorialEngineService', () => {
           expect(step.applyFields).toBeUndefined();
           expect(step.helpTopic).toBeUndefined();
           // A concept step belongs to no card, so no surface gives it a hue.
-          expect(sectionFor('step', step.id)).toBeUndefined();
+          expect(sectionFor(step.id)).toBeUndefined();
         }
         expect(engine.canApply()).toBe(false);
       }

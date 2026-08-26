@@ -139,7 +139,7 @@ export class GenerateLearnPanelComponent {
    * than a card (pressing Generate) belong to no area and take no mark.
    */
   public identityFor(step: FlowStep): SectionIdentity | null {
-    return sectionIdentity(sectionFor('step', step.id));
+    return sectionIdentity(sectionFor(step.id));
   }
 
   /**

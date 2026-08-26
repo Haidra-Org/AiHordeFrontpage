@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
+import { DOCS_IMAGE_SETTINGS } from '../../../content/docs-links';
 import {
   AbstractControl,
   FormControl,
@@ -536,8 +536,8 @@ const SUMMARY_SEPARATOR = ' · ';
   },
 })
 export class GenerateFormComponent implements OnInit {
-  /** The walkthrough this panel is the subject of. */
-  public readonly guideLink = DOCS_IMAGE_GUIDE;
+  /** The reference this panel is the subject of, card by card and row by row. */
+  public readonly referenceLink = DOCS_IMAGE_SETTINGS;
 
   private readonly destroyRef = inject(DestroyRef);
   public readonly presetsSvc = inject(GeneratePresetsService);

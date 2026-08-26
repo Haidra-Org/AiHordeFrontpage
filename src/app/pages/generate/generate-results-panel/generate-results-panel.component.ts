@@ -1,4 +1,4 @@
-import { DOCS_IMAGE, DOCS_IMAGE_GUIDE } from '../../../content/docs-links';
+import { DOCS_IMAGE, DOCS_IMAGE_SETTINGS } from '../../../content/docs-links';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -326,8 +326,8 @@ export class GenerateResultsPanelComponent {
     'pixel',
   ];
 
-  /** Where both of the panel's ways into the written guide point. */
-  public readonly guideLink = DOCS_IMAGE_GUIDE;
+  /** Where the panel's way into the settings reference points. */
+  public readonly referenceLink = DOCS_IMAGE_SETTINGS;
   /** The way into the documentation from the first-visit card. */
   public readonly docsLink = DOCS_IMAGE;
 
