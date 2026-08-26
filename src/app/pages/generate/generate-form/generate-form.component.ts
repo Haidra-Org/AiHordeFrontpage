@@ -48,7 +48,7 @@ import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
 import { UnitConversionService } from '../../../services/unit-conversion.service';
 import { ActiveModel } from '../../../types/active-model';
-import { ImagePostProcessor } from '../../../types/style';
+import { ImagePostProcessor, ImageSamplerName } from '../../../types/style';
 import {
   StyleForcedParams,
   StyleRecord,
@@ -2014,14 +2014,41 @@ export class GenerateFormComponent implements OnInit {
   // are not signals, so these are methods the template re-reads on each change
   // detection rather than computeds.
 
+  /**
+   * The value a line of advice is about. A control a style has frozen goes on
+   * holding whatever the reader had before the style, while the request carries
+   * the style's value: advice read off the control would be advice about a
+   * setting nothing is going to use.
+   */
+  private advisedValue<T>(
+    field: LockedField,
+    own: T,
+    forced: T | undefined,
+  ): T {
+    return forced !== undefined && this.isFieldLocked(field) ? forced : own;
+  }
+
+  /** The sampler the request will run, which the sampler-shaped advice reads. */
+  private advisedSampler(): ImageSamplerName {
+    return this.advisedValue(
+      'sampler_name',
+      this.form().controls.sampler_name.value,
+      this.forcedParams()?.sampler_name,
+    );
+  }
+
   /** The one line under the step count. */
   public stepsAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
     return stepsAdvisory(
       this.modelRequirements(),
       this.samplerContract(),
-      controls.sampler_name.value,
-      controls.steps.value,
+      this.advisedSampler(),
+      this.advisedValue(
+        'steps',
+        controls.steps.value,
+        this.forcedParams()?.steps,
+      ),
     );
   }
 
@@ -2031,8 +2058,12 @@ export class GenerateFormComponent implements OnInit {
     return cfgAdvisory(
       this.modelRequirements(),
       this.samplerContract(),
-      controls.sampler_name.value,
-      controls.cfg_scale.value,
+      this.advisedSampler(),
+      this.advisedValue(
+        'cfg_scale',
+        controls.cfg_scale.value,
+        this.forcedParams()?.cfg_scale,
+      ),
     );
   }
 
@@ -2040,23 +2071,32 @@ export class GenerateFormComponent implements OnInit {
   public clipSkipAdvisory(): RequirementHint | null {
     return clipSkipAdvisory(
       this.modelRequirements(),
-      this.form().controls.clip_skip.value,
+      this.advisedValue(
+        'clip_skip',
+        this.form().controls.clip_skip.value,
+        this.forcedParams()?.clip_skip,
+      ),
     );
   }
 
   public samplerHint(): RequirementHint | null {
     return samplerRequirementHint(
       this.modelRequirements(),
-      this.form().controls.sampler_name.value,
+      this.advisedSampler(),
     );
   }
 
   /** The one line under the schedule select. */
   public scheduleAdvisory(): RequirementHint | null {
+    const karras = this.forcedParams()?.karras;
     return scheduleAdvisory(
       this.modelRequirements(),
       this.samplerContract(),
-      this.form().controls.scheduler.value,
+      this.advisedValue(
+        'scheduler',
+        this.form().controls.scheduler.value,
+        karras === undefined ? undefined : karras ? 'karras' : 'normal',
+      ),
     );
   }
 
@@ -2068,11 +2108,16 @@ export class GenerateFormComponent implements OnInit {
   /** The one line under the size controls. */
   public sizeAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
+    const forced = this.forcedParams();
     return sizeAdvisory(
       this.modelBaseline(),
-      controls.width.value,
-      controls.height.value,
-      controls.hires_fix.value,
+      this.advisedValue('width', controls.width.value, forced?.width),
+      this.advisedValue('height', controls.height.value, forced?.height),
+      this.advisedValue(
+        'hires_fix',
+        controls.hires_fix.value,
+        forced?.hires_fix,
+      ),
     );
   }
 

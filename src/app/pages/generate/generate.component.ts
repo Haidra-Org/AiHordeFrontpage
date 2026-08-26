@@ -90,6 +90,7 @@ import {
   WaitEstimate,
   buildImageRequest,
   buildStyledImageRequest,
+  styledFormValue,
   coerceFormValue,
   createGenerateForm,
   detachedStyleSections,
@@ -451,12 +452,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * that live in different cards. The count beside Generate, the popover and
    * each card's inline line are three views of this one list.
    *
-   * The value linted is the one that would actually be submitted, which is the
-   * form's own value: every setting the panel holds is submitted, whether the
-   * group holding it is open or folded.
+   * The value linted is the one that would actually be submitted: every setting
+   * the panel holds is submitted, whether the group holding it is open or
+   * folded, and a selected style's pins stand over the controls they freeze.
    */
   public readonly lintWarnings = computed<readonly RequestWarning[]>(() => {
-    const value = this.formValue();
+    const value = this.styledValue();
     const state = this.sourceState();
     return evaluateRequestLint({
       value,
@@ -472,10 +473,23 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     });
   });
 
-  /** What the estimate is made of, in the reader's own settings. */
+  /**
+   * What the estimate is made of. The estimate is priced from the styled
+   * request, so the breakdown explaining it is read off the same values.
+   */
   public readonly kudosLines = computed<readonly KudosBreakdownLine[]>(() =>
-    kudosBreakdown(this.formValue(), this.samplerContract()),
+    kudosBreakdown(this.styledValue(), this.samplerContract()),
   );
+
+  /**
+   * The form's value with the selected style's pins over it: what the request
+   * would be built from. Everything that describes the pending request to the
+   * reader reads this rather than the raw form value.
+   */
+  private readonly styledValue = computed<GenerateFormValue>(() => {
+    const value = this.formValue();
+    return styledFormValue(value, this.resolveApplied(value));
+  });
 
   /**
    * What the request would ask of a worker, refreshed on the same debounce as

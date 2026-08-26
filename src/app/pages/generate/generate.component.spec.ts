@@ -1878,6 +1878,47 @@ describe('GenerateComponent request warnings', () => {
     fixture.destroy();
   });
 
+  it('reads a pinned setting off the style rather than the frozen control', async () => {
+    // A style freezes the controls it pins without emptying them, so the panel
+    // goes on holding the reader's own numbers. Advice given against those is
+    // advice about settings the request will not carry.
+    Element.prototype.scrollIntoView = vi.fn();
+    await createWholeStudio({ 'flux model': 'flux_1' });
+
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const component = fixture.componentInstance;
+
+    component.form.patchValue({
+      model: 'flux model',
+      sourceMode: 'img2img',
+      maskEnabled: true,
+      hires_fix: true,
+    });
+    fixture.detectChanges();
+    expect(component.lintWarnings().map((warning) => warning.id)).toContain(
+      'hires_with_mask',
+    );
+
+    component.registerStyle({
+      source: 'native',
+      key: 'native:style-1',
+      id: 'style-1',
+      name: 'no hires',
+      prompt: '{p} ### {np}',
+      params: { hires_fix: false },
+      models: [],
+    });
+    component.form.patchValue({ styleName: 'native:style-1' });
+    fixture.detectChanges();
+
+    expect(component.lintWarnings().map((warning) => warning.id)).not.toContain(
+      'hires_with_mask',
+    );
+
+    fixture.destroy();
+  });
+
   it('warns about a canvas with no room to grow from the simple panel', async () => {
     Element.prototype.scrollIntoView = vi.fn();
     await createWholeStudio({ 'sdxl model': 'stable_diffusion_xl' });

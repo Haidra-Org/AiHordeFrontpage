@@ -20,6 +20,7 @@ import {
   STEPS_SLIDER_MAX,
   STEPS_SLIDER_MIN,
   buildStyledImageRequest,
+  styledFormValue,
   cfgRequirementHint,
   clipSkipRequirementHint,
   coerceFormValue,
@@ -738,6 +739,97 @@ describe('buildStyledImageRequest', () => {
 
     expect(request.params?.post_processing).toEqual(['RealESRGAN_x4plus']);
     expect(request.params?.tiling).toBeUndefined();
+  });
+});
+
+describe('styledFormValue', () => {
+  it('returns the form value untouched with no style applied', () => {
+    const form = value({ prompt: 'a fox', steps: 25 });
+    expect(styledFormValue(form, null)).toEqual(form);
+  });
+
+  it('writes the pins over the values the panel still holds', () => {
+    const form = value({
+      prompt: 'a fox',
+      model: 'user-model',
+      steps: 25,
+      cfg_scale: 7.5,
+      sampler_name: 'k_euler_a',
+      scheduler: 'karras',
+      width: 512,
+      height: 512,
+    });
+
+    const styled = styledFormValue(form, {
+      prompt: 'stylised a fox',
+      forcedParams: {
+        model: 'Flux.1-Schnell fp8 (Compact)',
+        models: ['Flux.1-Schnell fp8 (Compact)'],
+        steps: 4,
+        cfg_scale: 1,
+        sampler_name: 'k_euler',
+        karras: false,
+        width: 1024,
+        height: 1024,
+      },
+    });
+
+    expect(styled.model).toBe('Flux.1-Schnell fp8 (Compact)');
+    expect(styled.extraModels).toEqual([]);
+    expect(styled.steps).toBe(4);
+    expect(styled.cfg_scale).toBe(1);
+    expect(styled.sampler_name).toBe('k_euler');
+    expect(styled.scheduler).toBe('normal');
+    expect(styled.width).toBe(1024);
+    expect(styled.height).toBe(1024);
+  });
+
+  it("leaves a detached section on the form's own values", () => {
+    const form = value({
+      prompt: 'a fox',
+      steps: 25,
+      styleName: 'curated:Anime',
+      styleDetach: { style: 'curated:Anime', sections: ['sampling'] },
+    });
+
+    const styled = styledFormValue(form, {
+      prompt: 'a fox',
+      forcedParams: { steps: 4, cfg_scale: 1 },
+    });
+
+    expect(styled.steps).toBe(25);
+    expect(styled.cfg_scale).toBe(form.cfg_scale);
+  });
+
+  it('carries the same sampling values the built request does', () => {
+    const form = value({ prompt: 'a fox', steps: 25, cfg_scale: 7.5 });
+    const applied: AppliedStyle = {
+      prompt: 'a fox',
+      forcedParams: { steps: 4, cfg_scale: 1, sampler_name: 'k_euler' },
+    };
+
+    const request = buildStyledImageRequest(form, applied);
+    const styled = styledFormValue(form, applied);
+
+    expect(styled.steps).toBe(request.params?.steps);
+    expect(styled.cfg_scale).toBe(request.params?.cfg_scale);
+    expect(styled.sampler_name).toBe(request.params?.sampler_name);
+  });
+
+  it('only takes a pinned denoise where a source picture carries one', () => {
+    const applied: AppliedStyle = {
+      prompt: 'a fox',
+      forcedParams: { denoising_strength: 0.2 },
+    };
+    const plain = value({ prompt: 'a fox', denoising_strength: 0.6 });
+    expect(styledFormValue(plain, applied).denoising_strength).toBe(0.6);
+
+    const withSource = value({
+      prompt: 'a fox',
+      sourceMode: 'img2img',
+      denoising_strength: 0.6,
+    });
+    expect(styledFormValue(withSource, applied).denoising_strength).toBe(0.2);
   });
 });
 

@@ -31,6 +31,12 @@ export interface JsonModalHighlight {
 })
 export class StudioJsonModalComponent {
   public readonly title = input('');
+  /**
+   * The line under the body. It is the caller's to write: the same chrome shows
+   * a request that has not been sent and the metadata a finished image came
+   * back with, and one sentence cannot honestly describe both.
+   */
+  public readonly note = input('');
   public readonly data = input<unknown>(null);
   public readonly highlights = input<JsonModalHighlight[]>([]);
   /** When set, a "Download JSON" action writes the body to this filename. */

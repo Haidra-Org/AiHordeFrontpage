@@ -129,6 +129,7 @@ async function createDetail(
   routeStyleId: string,
   styleService: Record<string, unknown>,
   user: { id: number; username: string } | null = null,
+  type: 'image' | 'text' = 'image',
 ) {
   TestBed.resetTestingModule();
   await TestBed.configureTestingModule({
@@ -144,8 +145,8 @@ async function createDetail(
       {
         provide: ActivatedRoute,
         useValue: {
-          params: of({ type: 'image', styleId: routeStyleId }),
-          snapshot: { params: { type: 'image', styleId: routeStyleId } },
+          params: of({ type, styleId: routeStyleId }),
+          snapshot: { params: { type, styleId: routeStyleId } },
         },
       },
       { provide: StyleService, useValue: styleService },
@@ -218,5 +219,79 @@ describe('StyleDetailComponent link into the studio', () => {
     expect(link?.getAttribute('href')).toBe(
       `/profile/styles?editId=${STYLE_ID}&type=image`,
     );
+  });
+});
+
+describe('StyleDetailComponent parameters', () => {
+  const withParams = (params: Record<string, unknown>) => ({
+    ...IMAGE_STYLE,
+    params,
+  });
+
+  it('leaves the flags out when the style turns none of them on', async () => {
+    const detail = await createDetail(STYLE_ID, {
+      getImageStyle: vi
+        .fn()
+        .mockReturnValue(of(withParams({ steps: 4, karras: false }))),
+      getImageStyleByName: vi.fn(),
+      getTextStyle: vi.fn(),
+      getTextStyleByName: vi.fn(),
+    });
+
+    expect(
+      detail.nativeElement.querySelector('.style-detail-param-flags'),
+    ).toBeNull();
+  });
+
+  it('names the flags a style turns on', async () => {
+    const detail = await createDetail(STYLE_ID, {
+      getImageStyle: vi
+        .fn()
+        .mockReturnValue(of(withParams({ steps: 4, karras: true }))),
+      getImageStyleByName: vi.fn(),
+      getTextStyle: vi.fn(),
+      getTextStyleByName: vi.fn(),
+    });
+
+    const flags = detail.nativeElement.querySelector(
+      '.style-detail-param-flags',
+    ) as HTMLElement | null;
+    expect(flags?.textContent).toContain('Karras');
+  });
+
+  it('tells a reader a text style has no way into the studio', async () => {
+    const textStyle = {
+      id: STYLE_ID,
+      name: 'Storyteller',
+      prompt: '{p} ### {np}',
+      public: true,
+      nsfw: false,
+      use_count: 3,
+      creator: 'somebody#1',
+      params: { temperature: 0.8, singleline: false },
+    };
+
+    const detail = await createDetail(
+      STYLE_ID,
+      {
+        getImageStyle: vi.fn(),
+        getImageStyleByName: vi.fn(),
+        getTextStyle: vi.fn().mockReturnValue(of(textStyle)),
+        getTextStyleByName: vi.fn(),
+      },
+      null,
+      'text',
+    );
+
+    expect(
+      detail.nativeElement.querySelector('a[href^="/generate/image"]'),
+    ).toBeNull();
+    const note = detail.nativeElement.querySelector(
+      '.style-detail-no-studio',
+    ) as HTMLElement | null;
+    expect(note?.textContent).toContain('cannot be opened in the studio');
+    expect(
+      detail.nativeElement.querySelector('.style-detail-param-flags'),
+    ).toBeNull();
   });
 });

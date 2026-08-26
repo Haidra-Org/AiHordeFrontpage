@@ -169,6 +169,7 @@
   @if (previewRequest(); as request) {
     <app-studio-json-modal
       [title]="'generate.form.preview_title' | transloco"
+      [note]="'generate.form.preview_note' | transloco"
       [data]="request"
       (closed)="closePreview()"
     />

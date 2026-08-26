@@ -1762,6 +1762,7 @@
   @if (metaJsonOpen()) {
     <app-studio-json-modal
       [title]="'generate.results.metadata_title' | transloco"
+      [note]="'generate.results.metadata_note' | transloco"
       [data]="tile.metaExport"
       [highlights]="metaHighlights()"
       [downloadName]="metaDownloadName(tile)"

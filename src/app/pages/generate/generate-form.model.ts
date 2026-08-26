@@ -2372,6 +2372,74 @@ export function buildStyledImageRequest(
 }
 
 /**
+ * The form's values with a selected style's pins written over them, section by
+ * section under the same rules {@link buildStyledImageRequest} applies.
+ *
+ * Anything that reads the form to describe what will be sent (the request
+ * advice, the price breakdown) has to read this rather than the raw form value:
+ * a pinned control keeps holding whatever the reader had before the style, so
+ * the raw value names settings the request will never carry, and advice given
+ * against them is advice about nothing.
+ */
+export function styledFormValue(
+  value: GenerateFormValue,
+  applied: AppliedStyle | null,
+): GenerateFormValue {
+  if (!applied) {
+    return value;
+  }
+  const forced = applied.forcedParams;
+  const detached = detachedStyleSections(value);
+  const pinned = (section: StyleLockSection): boolean =>
+    !detached.includes(section);
+  const styled: GenerateFormValue = { ...value };
+
+  if (pinned('model') && forced.model !== undefined) {
+    styled.model = forced.model;
+    // A style names the models its settings were written for, so the request
+    // is not widened past them; see buildStyledImageRequest.
+    styled.extraModels = (forced.models ?? [forced.model]).slice(1);
+  }
+  if (pinned('dimensions')) {
+    if (forced.width !== undefined) styled.width = forced.width;
+    if (forced.height !== undefined) styled.height = forced.height;
+  }
+  if (pinned('sampling')) {
+    if (forced.steps !== undefined) styled.steps = forced.steps;
+    if (forced.cfg_scale !== undefined) styled.cfg_scale = forced.cfg_scale;
+    if (forced.sampler_name !== undefined) {
+      styled.sampler_name = forced.sampler_name;
+    }
+    if (forced.clip_skip !== undefined) styled.clip_skip = forced.clip_skip;
+    if (forced.karras !== undefined) {
+      styled.scheduler = forced.karras ? 'karras' : 'normal';
+    }
+    if (forced.hires_fix !== undefined) styled.hires_fix = forced.hires_fix;
+  }
+  if (pinned('finishing')) {
+    if (forced.post_processing !== undefined) {
+      styled.post_processing = [...forced.post_processing];
+    }
+    if (forced.facefixer_strength !== undefined) {
+      styled.facefixer_strength = forced.facefixer_strength;
+    }
+    if (forced.tiling !== undefined) styled.tiling = forced.tiling;
+    if (forced.transparent !== undefined) {
+      styled.transparent = forced.transparent;
+    }
+    // Denoise only rides a request that carries a source picture, which is the
+    // condition the built request applies it under too.
+    if (
+      forced.denoising_strength !== undefined &&
+      value.sourceMode !== 'none'
+    ) {
+      styled.denoising_strength = forced.denoising_strength;
+    }
+  }
+  return styled;
+}
+
+/**
  * Split a combined horde prompt back into its positive/negative halves.
  *
  * The separator is matched on the marker alone rather than on ` ### `, because

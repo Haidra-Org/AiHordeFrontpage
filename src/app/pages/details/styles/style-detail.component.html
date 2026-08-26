@@ -410,12 +410,14 @@
                   }
                 </dl>
 
-                <!-- Boolean Flags -->
+                <!-- Only the flags a style actually turns on are named; a
+                     style that carries them all as false has nothing to show
+                     and would otherwise print a bare heading. -->
                 @if (
-                  imageStyleParams()?.karras !== undefined ||
-                  imageStyleParams()?.hires_fix !== undefined ||
-                  imageStyleParams()?.tiling !== undefined ||
-                  imageStyleParams()?.transparent !== undefined
+                  imageStyleParams()?.karras ||
+                  imageStyleParams()?.hires_fix ||
+                  imageStyleParams()?.tiling ||
+                  imageStyleParams()?.transparent
                 ) {
                   <div class="style-detail-param style-detail-param-flags">
                     <dt>{{ "styles.flags" | transloco }}</dt>
@@ -606,14 +608,14 @@
                   }
                 </dl>
 
-                <!-- Boolean Flags for Text -->
+                <!-- As above: only flags that are on are worth a badge. -->
                 @if (
-                  textStyleParams()?.singleline !== undefined ||
-                  textStyleParams()?.frmtadsnsp !== undefined ||
-                  textStyleParams()?.frmtrmblln !== undefined ||
-                  textStyleParams()?.frmtrmspch !== undefined ||
-                  textStyleParams()?.frmttriminc !== undefined ||
-                  textStyleParams()?.use_default_badwordsids !== undefined
+                  textStyleParams()?.singleline ||
+                  textStyleParams()?.frmtadsnsp ||
+                  textStyleParams()?.frmtrmblln ||
+                  textStyleParams()?.frmtrmspch ||
+                  textStyleParams()?.frmttriminc ||
+                  textStyleParams()?.use_default_badwordsids
                 ) {
                   <div class="style-detail-param style-detail-param-flags">
                     <dt>{{ "styles.flags" | transloco }}</dt>
