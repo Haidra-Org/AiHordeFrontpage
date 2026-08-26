@@ -1771,9 +1771,12 @@ describe('GenerateComponent request warnings', () => {
     expect(indicator()).toBeNull();
 
     // ControlNet on an SDXL model, with no image attached: two rules fire.
+    // Denoise is pinned to 1 so the separate controlnet_denoise rule stays out
+    // of the count this test measures.
     fixture.componentInstance.form.patchValue({
       model: 'sdxl model',
       sourceMode: 'controlnet',
+      denoising_strength: 1,
     });
     fixture.detectChanges();
 
