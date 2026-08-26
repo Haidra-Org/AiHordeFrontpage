@@ -1,0 +1,429 @@
+<div class="stack-lg model-detail">
+  <div>
+    <a class="hd-btn hd-btn--ghost hd-btn--dense" [routerLink]="listLink()">
+      <app-icon name="arrow-left" />
+      {{ "details.model_detail.back" | transloco }}
+    </a>
+  </div>
+
+  @if (missing()) {
+    <div class="hd-empty">
+      <app-icon class="state-icon-lg" name="beaker" />
+      <p class="hd-empty-title">
+        {{
+          "details.model_detail.not_found" | transloco: { name: modelName() }
+        }}
+      </p>
+      <p class="hd-empty-sub">
+        {{ "details.model_detail.not_found_hint" | transloco }}
+      </p>
+      <a class="hd-btn hd-btn--tonal hd-btn--dense" [routerLink]="listLink()">
+        {{ "details.model_detail.back" | transloco }}
+      </a>
+    </div>
+  } @else if (loading() && !known()) {
+    <div class="state-container state-container-sm text-secondary">
+      <div class="spinner spinner-md"></div>
+      <p>{{ "details.model_detail.loading" | transloco }}</p>
+    </div>
+  } @else {
+    <div class="model-detail-columns">
+      <!-- Identity -->
+      <div class="model-detail-rail">
+        @if (currentShowcase() !== "") {
+          <button
+            type="button"
+            class="model-detail-stage"
+            (click)="openViewer()"
+            [attr.aria-label]="
+              'details.model_detail.showcase_open'
+                | transloco: { name: title() }
+            "
+          >
+            <img
+              [src]="currentShowcase()"
+              [alt]="
+                'details.model_detail.showcase_alt'
+                  | transloco: { name: title() }
+              "
+              loading="lazy"
+            />
+          </button>
+
+          @if (showcases().length > 1) {
+            <div class="model-detail-strip">
+              @for (
+                showcase of showcases();
+                track showcase;
+                let index = $index
+              ) {
+                <button
+                  type="button"
+                  class="model-detail-thumb"
+                  [attr.aria-pressed]="showcaseIndex() === index"
+                  [attr.aria-label]="
+                    'details.model_detail.showcase_pick'
+                      | transloco: { number: index + 1 }
+                  "
+                  (click)="showShowcase(index)"
+                >
+                  <img [src]="showcase" alt="" loading="lazy" />
+                </button>
+              }
+            </div>
+          }
+        } @else {
+          <div class="model-detail-stage model-detail-stage--empty">
+            {{
+              family() !== ""
+                ? family()
+                : ("details.model_detail.no_showcase" | transloco)
+            }}
+          </div>
+        }
+
+        <div>
+          <h1 class="model-detail-title">{{ title() }}</h1>
+          @if (title() !== modelName()) {
+            <p class="model-detail-subtitle">{{ modelName() }}</p>
+          }
+        </div>
+
+        <div class="models-list-marks">
+          @if (family() !== "") {
+            <span class="hd-badge models-mark models-mark--family">{{
+              family()
+            }}</span>
+          }
+          @if (parameters() !== "") {
+            <span class="hd-badge models-mark">{{ parameters() }}</span>
+          }
+          @if (record()?.inpainting) {
+            <span class="hd-badge models-mark">{{
+              "details.models.badge.inpainting" | transloco
+            }}</span>
+          }
+          @if (nsfw()) {
+            <span class="hd-badge models-mark models-mark--adult">{{
+              "details.models.badge.adult" | transloco
+            }}</span>
+          }
+          @if (!known()) {
+            <span class="hd-badge models-mark models-mark--custom">{{
+              "details.models.badge.custom" | transloco
+            }}</span>
+          }
+        </div>
+
+        @if (!known()) {
+          <p class="model-detail-note">
+            {{ "details.model_detail.custom_note" | transloco }}
+          </p>
+        }
+
+        @if (description() !== "") {
+          <p class="model-detail-description">{{ description() }}</p>
+        }
+
+        @if (tags().length > 0) {
+          <div class="model-detail-chips">
+            @for (tag of tags(); track tag) {
+              <span class="hd-badge models-mark">{{ tag }}</span>
+            }
+          </div>
+        }
+
+        <div class="hd-card">
+          <p class="hd-card-title">
+            {{ "details.model_detail.about" | transloco }}
+          </p>
+          <dl class="model-detail-facts">
+            @if (version() !== "") {
+              <div class="model-detail-fact">
+                <dt>{{ "details.model_detail.version" | transloco }}</dt>
+                <dd>{{ version() }}</dd>
+              </div>
+            }
+            @if (sizeOnDisk() !== "") {
+              <div class="model-detail-fact">
+                <dt>{{ "details.model_detail.size" | transloco }}</dt>
+                <dd>{{ sizeOnDisk() }}</dd>
+              </div>
+            }
+            @if (record()?.min_bridge_version) {
+              <div class="model-detail-fact">
+                <dt>{{ "details.model_detail.min_bridge" | transloco }}</dt>
+                <dd>{{ record()?.min_bridge_version }}</dd>
+              </div>
+            }
+            @if (record()?.optimization) {
+              <div class="model-detail-fact">
+                <dt>{{ "details.model_detail.optimization" | transloco }}</dt>
+                <dd>{{ record()?.optimization }}</dd>
+              </div>
+            }
+            @if (textDetails()?.instruct_format) {
+              <div class="model-detail-fact">
+                <dt>{{ "details.model_detail.instruct" | transloco }}</dt>
+                <dd>{{ textDetails()?.instruct_format }}</dd>
+              </div>
+            }
+            @if (homepage() !== "") {
+              <div class="model-detail-fact">
+                <dt>{{ "details.model_detail.homepage" | transloco }}</dt>
+                <dd>
+                  <a
+                    class="link"
+                    [href]="homepage()"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    >{{ "details.model_detail.homepage_open" | transloco }}</a
+                  >
+                </dd>
+              </div>
+            }
+          </dl>
+        </div>
+      </div>
+
+      <!-- What the horde is doing with it -->
+      <div class="model-detail-main">
+        <div class="model-detail-tiles">
+          <div class="model-detail-tile">
+            <span class="model-detail-tile-label">{{
+              "details.models.workers" | transloco
+            }}</span>
+            <span class="model-detail-tile-value">{{
+              status()?.count ?? 0 | number
+            }}</span>
+            <span class="model-detail-tile-note">{{
+              (status()?.count
+                ? "details.model_detail.serving_now"
+                : "details.model_detail.serving_none"
+              ) | transloco
+            }}</span>
+          </div>
+
+          <div class="model-detail-tile">
+            <span class="model-detail-tile-label">{{
+              "details.models.queued" | transloco
+            }}</span>
+            <span class="model-detail-tile-value">
+              {{ queuedUnit().primary.value | number: "1.1-1" }}
+              <app-unit-tooltip
+                [unit]="queuedUnit()"
+                [primaryOverride]="
+                  queuedUnit().primary.prefix + queuedUnit().primary.unit
+                "
+              />
+            </span>
+          </div>
+
+          <div class="model-detail-tile">
+            <span class="model-detail-tile-label">{{
+              "details.models.usage" | transloco
+            }}</span>
+            <span class="model-detail-tile-value">{{
+              usageMonth() | number
+            }}</span>
+            <span class="model-detail-tile-note">{{
+              "details.model_detail.usage_total"
+                | transloco: { total: usageTotal() }
+            }}</span>
+          </div>
+
+          <div class="model-detail-tile">
+            <span class="model-detail-tile-label">{{
+              "details.models.performance" | transloco
+            }}</span>
+            <span class="model-detail-tile-value">
+              @if (performanceUnit(); as perfUnit) {
+                {{ perfUnit.primary.value | number: "1.2-2" }}
+                <app-unit-tooltip
+                  [unit]="perfUnit"
+                  [primaryOverride]="
+                    perfUnit.primary.prefix + perfUnit.primary.unit
+                  "
+                />
+              } @else {
+                -
+              }
+            </span>
+          </div>
+
+          <div class="model-detail-tile">
+            <span class="model-detail-tile-label">{{
+              "details.models.eta" | transloco
+            }}</span>
+            <span class="model-detail-tile-value">{{
+              status()?.count ? formatEta(status()?.eta) : "-"
+            }}</span>
+          </div>
+        </div>
+
+        <!-- Doors -->
+        @if (kind() === "image") {
+          <div class="hd-card">
+            <p class="hd-card-title">
+              {{ "details.model_detail.try_title" | transloco }}
+            </p>
+            <div class="model-detail-doors">
+              @if (studioAddress(); as address) {
+                <a class="hd-btn hd-btn--primary" [href]="address">
+                  {{ "details.model_detail.try_recommended" | transloco }}
+                </a>
+                <a
+                  class="hd-btn hd-btn--dense"
+                  [routerLink]="'/generate/image'"
+                  [queryParams]="{ model: modelName() }"
+                >
+                  {{ "details.model_detail.try_plain" | transloco }}
+                </a>
+              } @else {
+                <a
+                  class="hd-btn hd-btn--primary"
+                  [routerLink]="'/generate/image'"
+                  [queryParams]="{ model: modelName() }"
+                >
+                  {{ "details.model_detail.try_plain" | transloco }}
+                </a>
+              }
+            </div>
+            @if (studioAddress()) {
+              <p class="model-detail-note">
+                {{ "details.model_detail.try_note" | transloco }}
+              </p>
+            }
+          </div>
+        } @else {
+          <p class="model-detail-note">
+            {{ "details.model_detail.text_no_studio" | transloco }}
+          </p>
+        }
+
+        <!-- Recommended settings -->
+        @if (settingRows().length > 0) {
+          <div class="hd-card">
+            <p class="hd-card-title">
+              {{ "details.model_detail.settings_title" | transloco }}
+            </p>
+            <p class="model-detail-note">
+              {{ "details.model_detail.settings_note" | transloco }}
+            </p>
+            <dl class="model-detail-facts">
+              @for (row of settingRows(); track row.labelKey) {
+                <div class="model-detail-fact">
+                  <dt>{{ row.labelKey | transloco }}</dt>
+                  <dd>{{ row.value }}</dd>
+                </div>
+              }
+            </dl>
+          </div>
+        }
+
+        <!-- Trigger words -->
+        @if (triggers().length > 0) {
+          <div class="hd-card">
+            <p class="hd-card-title">
+              {{ "details.model_detail.triggers_title" | transloco }}
+            </p>
+            <p class="model-detail-note">
+              {{ "details.model_detail.triggers_note" | transloco }}
+            </p>
+            <div class="model-detail-chips">
+              @for (trigger of triggers(); track trigger) {
+                <button
+                  type="button"
+                  class="model-detail-trigger"
+                  (click)="copyTrigger(trigger)"
+                >
+                  <app-icon name="copy" />
+                  {{ trigger }}
+                  @if (copiedTrigger() === trigger) {
+                    <span>{{
+                      "details.model_detail.trigger_copied" | transloco
+                    }}</span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Served by -->
+        <div class="hd-card">
+          <p class="hd-card-title">
+            {{ "details.model_detail.served_by" | transloco }}
+          </p>
+          @if (namedWorkers().length === 0) {
+            <p class="model-detail-note">
+              {{ "details.model_detail.served_by_none" | transloco }}
+            </p>
+          } @else {
+            <div class="model-detail-workers">
+              @for (worker of namedWorkers(); track worker.id) {
+                <a [routerLink]="['/details/workers/id', worker.id]">{{
+                  worker.name
+                }}</a>
+              }
+            </div>
+            @if (extraWorkers() > 0) {
+              <p class="model-detail-note">
+                {{
+                  "details.model_detail.served_by_more"
+                    | transloco: { count: extraWorkers() }
+                }}
+              </p>
+            }
+          }
+        </div>
+
+        <!-- Download files -->
+        @if (record()?.downloads?.length) {
+          <div class="hd-card">
+            <p class="hd-card-title">
+              {{ "details.model_detail.files_title" | transloco }}
+            </p>
+            <p class="model-detail-note">
+              {{ "details.model_detail.files_note" | transloco }}
+            </p>
+            <dl class="model-detail-facts">
+              @for (file of record()?.downloads ?? []; track $index) {
+                <div class="model-detail-fact">
+                  <dt>{{ file.file_name }}</dt>
+                  <dd>
+                    @if (file.file_url) {
+                      <a
+                        class="link"
+                        [href]="file.file_url"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ "details.model_detail.file_open" | transloco }}</a
+                      >
+                    }
+                  </dd>
+                </div>
+              }
+            </dl>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (viewerOpen()) {
+    <button
+      type="button"
+      class="model-detail-viewer"
+      (click)="closeViewer()"
+      [attr.aria-label]="'details.model_detail.showcase_close' | transloco"
+    >
+      <img
+        [src]="currentShowcase()"
+        [alt]="
+          'details.model_detail.showcase_alt' | transloco: { name: title() }
+        "
+      />
+    </button>
+  }
+</div>

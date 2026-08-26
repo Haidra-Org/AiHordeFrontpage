@@ -89,22 +89,23 @@ export const detailsRoutes: Routes = [
         (c) => c.ModelsListComponent,
       ),
   },
-  // Model by name only (type determined dynamically)
+  // Model by name only; the page reads which kind it is off the reference and
+  // rewrites the address to the one that names it.
   {
     path: 'models/name/:modelName',
     data: { headingKey: 'details.heading.models' },
     loadComponent: () =>
-      import('./models/models-list.component').then(
-        (c) => c.ModelsListComponent,
+      import('./models/model-detail.component').then(
+        (c) => c.ModelDetailComponent,
       ),
   },
-  // Specific model by name (must come before :modelType)
+  // One model's own page (must come before :modelType)
   {
     path: 'models/:modelType/:modelName',
     data: { headingKey: 'details.heading.models' },
     loadComponent: () =>
-      import('./models/models-list.component').then(
-        (c) => c.ModelsListComponent,
+      import('./models/model-detail.component').then(
+        (c) => c.ModelDetailComponent,
       ),
   },
   // Models filtered by type (image, text)
