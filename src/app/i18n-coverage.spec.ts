@@ -181,7 +181,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'homepage.intro.haidra_site',
   'homepage_guis.description',
   'profile.api_key_placeholder',
-  'profile.kudos',
   'profile.api_field',
   'profile.stats',
   'profile.images_generated',

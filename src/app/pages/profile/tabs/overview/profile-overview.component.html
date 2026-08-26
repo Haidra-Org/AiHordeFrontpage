@@ -52,183 +52,232 @@
   />
 </app-admin-dialog>
 
-<!-- Account Marked for Deletion Warning -->
-@if (auth.currentUser()!.deleted) {
-  <div class="deletion-warning">
-    <div class="deletion-warning-layout">
+<div class="profile-overview">
+  <!-- Account Marked for Deletion Warning -->
+  @if (auth.currentUser()!.deleted) {
+    <div class="profile-alert profile-alert--danger" role="alert">
       <app-icon
         name="warning-triangle-filled"
-        class="deletion-warning-icon"
+        class="profile-alert-icon"
         viewBox="0 0 20 20"
         aria-hidden="true"
       />
-      <div class="deletion-warning-content">
-        <h3 class="deletion-warning-title">
+      <div class="profile-alert-body">
+        <p class="profile-alert-title">
           {{ "profile.account_marked_for_deletion_title" | transloco }}
-        </h3>
-        <p class="deletion-warning-message">
+        </p>
+        <p class="profile-alert-text">
           {{ "profile.account_marked_for_deletion_message" | transloco }}
         </p>
-        <button (click)="openUndeleteDialog()" class="btn-warning">
+        <button
+          type="button"
+          (click)="openUndeleteDialog()"
+          class="hd-btn hd-btn--dense"
+        >
           {{ "profile.undelete_account" | transloco }}
         </button>
       </div>
     </div>
-  </div>
-}
+  }
 
-<!-- Identity Hero Card -->
-<div class="profile-glass-section">
-  <div class="profile-header">
-    <div class="avatar-circle avatar-lg avatar-gradient">
-      <span class="avatar-text">{{
-        auth.currentUser()!.username.charAt(0).toUpperCase()
-      }}</span>
+  <!-- Identity -->
+  <div class="hd-card profile-identity">
+    <h2 class="hd-card-title">
+      {{ "profile.overview.account_title" | transloco }}
+    </h2>
+    <div class="profile-identity-row">
+      <div class="avatar-circle avatar-lg avatar-gradient">
+        <span class="avatar-text">{{
+          auth.currentUser()!.username.charAt(0).toUpperCase()
+        }}</span>
+      </div>
+      <div class="profile-identity-body">
+        <p class="profile-identity-name">{{ auth.currentUser()!.username }}</p>
+        <button
+          type="button"
+          (click)="openUsernameDialog()"
+          class="hd-btn hd-btn--ghost hd-btn--dense profile-identity-action"
+        >
+          {{ "profile.change_username" | transloco }}
+        </button>
+      </div>
     </div>
-    <div class="profile-header-content">
-      <h2 class="heading-subsection profile-identity-username">
-        {{ auth.currentUser()!.username }}
-      </h2>
-      <button
-        (click)="openUsernameDialog()"
-        class="link-btn-sm profile-identity-username-action"
+
+    <app-user-badges
+      [loading]="auth.isLoading()"
+      [trusted]="auth.currentUser()!.trusted ?? false"
+      [moderator]="auth.currentUser()!.moderator ?? false"
+      [education]="auth.currentUser()!.education ?? false"
+      [service]="auth.currentUser()!.service ?? false"
+      [customizer]="auth.currentUser()!.customizer ?? false"
+      [special]="auth.currentUser()!.special ?? false"
+      [pseudonymous]="auth.currentUser()!.pseudonymous ?? false"
+      [filtered]="auth.currentUser()!.filtered ?? false"
+      [flagged]="auth.currentUser()!.flagged ?? false"
+    />
+
+    @if (shouldSetContactNag()) {
+      <a
+        routerLink="/profile/settings"
+        class="hd-btn hd-btn--tonal hd-btn--dense profile-identity-action"
       >
-        {{ "profile.change_username" | transloco }}
-      </button>
-
-      <p class="text-secondary text-sm">ID: {{ auth.currentUser()!.id }}</p>
-      @if (auth.currentUser()!.account_age) {
-        <p class="text-secondary text-sm">
-          {{
-            "profile.account_age"
-              | transloco
-                : {
-                    age: formatAccountAge(auth.currentUser()!.account_age!),
-                  }
-          }}
-        </p>
-      }
-      @if (shouldSetContactNag()) {
-        <a routerLink="/profile/settings" class="btn-secondary mt-2 max-h-7">
-          {{ "profile.set_contact_nag" | transloco }}
-        </a>
-      }
-    </div>
+        {{ "profile.set_contact_nag" | transloco }}
+      </a>
+    }
   </div>
 
-  <!-- Badges -->
-  <app-user-badges
-    [loading]="auth.isLoading()"
-    [trusted]="auth.currentUser()!.trusted ?? false"
-    [moderator]="auth.currentUser()!.moderator ?? false"
-    [education]="auth.currentUser()!.education ?? false"
-    [service]="auth.currentUser()!.service ?? false"
-    [customizer]="auth.currentUser()!.customizer ?? false"
-    [special]="auth.currentUser()!.special ?? false"
-    [pseudonymous]="auth.currentUser()!.pseudonymous ?? false"
-    [filtered]="auth.currentUser()!.filtered ?? false"
-    [flagged]="auth.currentUser()!.flagged ?? false"
-  />
-</div>
-
-<!-- Active Generations Indicator -->
-@if (hasActiveGenerations()) {
-  <div class="profile-glass-section mt-4">
-    <h4 class="section-title-sm">
-      {{ "profile.active_generations_label" | transloco }}
-    </h4>
-    <!-- The API names the pending jobs by id but nothing renders one by id, so
-         a count leads to the studio that is running it. Text has no studio of
-         its own, so its count stays a plain mark. -->
-    <div class="active-gen-row">
-      @if (activeImageCount() > 0) {
-        <a routerLink="/generate/image" class="badge-base badge-info">{{
-          "profile.active_image_jobs" | transloco: { count: activeImageCount() }
-        }}</a>
-      }
-      @if (activeTextCount() > 0) {
-        <span class="badge-base badge-success">{{
-          "profile.active_text_jobs" | transloco: { count: activeTextCount() }
+  <!-- The account in four numbers -->
+  <div class="stat-tiles">
+    <div class="stat-tile">
+      <span class="stat-tile-label">{{ "profile.kudos" | transloco }}</span>
+      <span class="stat-tile-value">{{
+        auth.currentUser()!.kudos | formatNumber
+      }}</span>
+      @if (auth.currentUser()!.monthly_kudos?.amount) {
+        <span class="stat-tile-note">{{
+          "profile.monthly_kudos"
+            | transloco
+              : {
+                  amount:
+                    auth.currentUser()!.monthly_kudos!.amount! | formatNumber,
+                }
         }}</span>
       }
-      @if (activeAlchemyCount() > 0) {
-        <a routerLink="/generate/alchemy" class="badge-base badge-purple">{{
-          "profile.active_alchemy_jobs"
-            | transloco: { count: activeAlchemyCount() }
-        }}</a>
-      }
+    </div>
+    @if (auth.currentUser()!.account_age) {
+      <div class="stat-tile">
+        <span class="stat-tile-label">{{
+          "profile.stat.account_age" | transloco
+        }}</span>
+        <span class="stat-tile-value">{{
+          formatAccountAge(auth.currentUser()!.account_age!)
+        }}</span>
+      </div>
+    }
+    <div class="stat-tile">
+      <span class="stat-tile-label">{{
+        "profile.stat.account_id" | transloco
+      }}</span>
+      <span class="stat-tile-value">{{ auth.currentUser()!.id }}</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-tile-label">{{
+        "profile.quick_nav_records" | transloco
+      }}</span>
+      <span class="stat-tile-value">{{
+        requestsOnRecord() | formatNumber
+      }}</span>
     </div>
   </div>
-}
 
-<!-- Kudos + Activity side-by-side on wide viewports -->
-<div class="profile-overview-columns mt-4">
-  <!-- Kudos Card -->
-  <div class="profile-glass-section">
-    <app-user-kudos-card
-      [loading]="auth.isLoading()"
-      [kudos]="auth.currentUser()!.kudos"
-      [kudosDetails]="auth.currentUser()!.kudos_details"
-      [monthlyKudos]="auth.currentUser()!.monthly_kudos"
-      [evaluatingKudos]="auth.currentUser()!.evaluating_kudos"
-      [trusted]="auth.currentUser()!.trusted ?? false"
-      [isOwnProfile]="true"
-    />
+  <!-- Active Generations Indicator -->
+  @if (hasActiveGenerations()) {
+    <div class="hd-card">
+      <h3 class="hd-card-title">
+        {{ "profile.active_generations_label" | transloco }}
+      </h3>
+      <!-- The API names the pending jobs by id but nothing renders one by id, so
+           a count leads to the studio that is running it. Text has no studio of
+           its own, so its count stays a plain mark. -->
+      <div class="active-gen-row">
+        @if (activeImageCount() > 0) {
+          <a routerLink="/generate/image" class="badge-base badge-info">{{
+            "profile.active_image_jobs"
+              | transloco: { count: activeImageCount() }
+          }}</a>
+        }
+        @if (activeTextCount() > 0) {
+          <span class="badge-base badge-success">{{
+            "profile.active_text_jobs" | transloco: { count: activeTextCount() }
+          }}</span>
+        }
+        @if (activeAlchemyCount() > 0) {
+          <a routerLink="/generate/alchemy" class="badge-base badge-purple">{{
+            "profile.active_alchemy_jobs"
+              | transloco: { count: activeAlchemyCount() }
+          }}</a>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Kudos + Activity side-by-side on wide viewports -->
+  <div class="profile-overview-columns">
+    <div class="hd-card">
+      <app-user-kudos-card
+        [loading]="auth.isLoading()"
+        [kudos]="auth.currentUser()!.kudos"
+        [kudosDetails]="auth.currentUser()!.kudos_details"
+        [monthlyKudos]="auth.currentUser()!.monthly_kudos"
+        [evaluatingKudos]="auth.currentUser()!.evaluating_kudos"
+        [trusted]="auth.currentUser()!.trusted ?? false"
+        [isOwnProfile]="true"
+      />
+    </div>
+
+    <div class="hd-card profile-overview-columns__sidebar">
+      <h3 class="hd-card-title">
+        {{ "profile.activity_heading" | transloco }}
+      </h3>
+      <app-user-stats-summary
+        [loading]="auth.isLoading()"
+        [user]="auth.currentUser()!"
+      />
+    </div>
   </div>
 
-  <!-- Activity Snapshot -->
-  <div class="profile-glass-section profile-overview-columns__sidebar">
-    <h3 class="heading-card">
-      {{ "profile.activity_heading" | transloco }}
-    </h3>
-    <app-user-stats-summary
-      [loading]="auth.isLoading()"
-      [user]="auth.currentUser()!"
-    />
+  <!-- Quick-nav tiles -->
+  <div class="profile-quicknav">
+    <a routerLink="/profile/workers" class="hd-card profile-quicknav-tile">
+      <span class="hd-row">
+        <span class="profile-quicknav-label">{{
+          "profile.quick_nav_workers" | transloco
+        }}</span>
+        <span class="hd-row-val">{{ workerCount() }}</span>
+      </span>
+    </a>
+    <a routerLink="/profile/teams" class="hd-card profile-quicknav-tile">
+      <span class="hd-row">
+        <span class="profile-quicknav-label">{{
+          "profile.quick_nav_teams" | transloco
+        }}</span>
+        <span class="hd-row-val">{{ teamCount() }}</span>
+      </span>
+    </a>
+    <a routerLink="/profile/styles" class="hd-card profile-quicknav-tile">
+      <span class="hd-row">
+        <span class="profile-quicknav-label">{{
+          "profile.quick_nav_styles" | transloco
+        }}</span>
+        <span class="hd-row-val">{{ styleCount() }}</span>
+      </span>
+    </a>
+    <a routerLink="/profile/shared-keys" class="hd-card profile-quicknav-tile">
+      <span class="hd-row">
+        <span class="profile-quicknav-label">{{
+          "profile.quick_nav_shared_keys" | transloco
+        }}</span>
+        <span class="hd-row-val">{{ sharedKeyCount() }}</span>
+      </span>
+    </a>
+    <a routerLink="/profile/records" class="hd-card profile-quicknav-tile">
+      <span class="hd-row">
+        <span class="profile-quicknav-label">{{
+          "profile.quick_nav_records" | transloco
+        }}</span>
+        <span class="hd-row-val">{{ requestsOnRecord() | formatNumber }}</span>
+      </span>
+    </a>
   </div>
-</div>
 
-<!-- Quick-Nav Asset Boxes -->
-<div class="quick-nav-grid mt-4">
-  <a routerLink="/profile/workers" class="data-item-box">
-    <span class="data-value text-2xl font-bold">{{ workerCount() }}</span>
-    <span class="data-label">{{
-      "profile.quick_nav_workers" | transloco
-    }}</span>
-  </a>
-  <a routerLink="/profile/styles" class="data-item-box">
-    <span class="data-value text-2xl font-bold">{{ styleCount() }}</span>
-    <span class="data-label">{{ "profile.quick_nav_styles" | transloco }}</span>
-  </a>
-  <a routerLink="/profile/shared-keys" class="data-item-box">
-    <span class="data-value text-2xl font-bold">{{ sharedKeyCount() }}</span>
-    <span class="data-label">{{
-      "profile.quick_nav_shared_keys" | transloco
-    }}</span>
-  </a>
-  <a routerLink="/profile/teams" class="data-item-box">
-    <span class="data-value text-2xl font-bold">{{ teamCount() }}</span>
-    <span class="data-label">{{ "profile.quick_nav_teams" | transloco }}</span>
-  </a>
-  <a routerLink="/profile/records" class="data-item-box">
-    <span class="data-value text-2xl font-bold">{{
-      requestsOnRecord() | formatNumber
-    }}</span>
-    <span class="data-label">{{
-      "profile.quick_nav_records" | transloco
-    }}</span>
-  </a>
-</div>
-
-<!-- Actions -->
-<div class="profile-glass-section mt-4">
-  <div class="action-row">
+  <!-- Actions -->
+  <div class="profile-actions">
     @if (auth.currentUser()!.moderator) {
-      <a routerLink="/admin/" class="btn-primary">{{
+      <a routerLink="/admin/" class="hd-btn hd-btn--tonal">{{
         "profile.admin_panel" | transloco
       }}</a>
     }
-    <button (click)="logout()" class="btn-source-control">
+    <button type="button" (click)="logout()" class="hd-btn">
       {{ "profile.logout" | transloco }}
     </button>
   </div>

@@ -666,42 +666,6 @@
   }
 
   /* =================================================================
-     DELETION WARNING - Red-toned alert card for destructive states
-     ================================================================= */
-
-  .deletion-warning {
-    @apply mb-6 p-6 rounded-xl;
-    background: rgb(127 29 29 / 0.25);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 2px solid rgb(239 68 68 / 0.5);
-    box-shadow: 0 4px 16px rgb(220 38 38 / 0.1);
-  }
-
-  .deletion-warning-layout {
-    @apply flex items-start gap-4;
-  }
-
-  .deletion-warning-icon {
-    @apply w-8 h-8 shrink-0 mt-0.5;
-    color: var(--color-red-400);
-  }
-
-  .deletion-warning-content {
-    @apply flex-1;
-  }
-
-  .deletion-warning-title {
-    @apply text-lg font-semibold mb-2;
-    color: var(--color-red-300);
-  }
-
-  .deletion-warning-message {
-    @apply text-sm mb-4;
-    color: var(--color-red-200);
-  }
-
-  /* =================================================================
      TEAM CARD - Team listing item in profile teams tab
      ================================================================= */
 

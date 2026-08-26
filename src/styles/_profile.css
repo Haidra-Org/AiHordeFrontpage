@@ -140,10 +140,17 @@
     min-width: 0;
   }
 
+  /* The red is on the plate and the words carry the message: --hd-danger
+     as small text lands at 4.46:1 on the card, just under AA, so the ink
+     stays the family's own. */
   .profile-login-error {
     margin: 0;
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border-left: 3px solid var(--hd-danger);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-danger-tint);
     font-size: var(--hd-text-sm);
-    color: var(--hd-danger);
+    color: var(--hd-ink);
   }
 
   .profile-login-submit {
@@ -156,5 +163,209 @@
     border-top: 1px solid var(--hd-border);
     font-size: var(--hd-text-sm);
     color: var(--hd-muted);
+  }
+}
+
+/* =================================================================
+   OVERVIEW
+   ================================================================= */
+
+@layer components {
+  .profile-overview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+  }
+
+  /* -----------------------------------------------------------------
+     ALERT
+     An account-level condition the reader has to act on. The tint is
+     the plate and the words are the message: the family's red as small
+     text lands at 4.46:1 on a card, under AA, so it stays on the edge
+     and the glyph, where 3:1 is the bar.
+     ----------------------------------------------------------------- */
+
+  .profile-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--hd-space-3);
+    padding: var(--hd-space-3);
+    border-radius: var(--hd-radius-md);
+  }
+
+  .profile-alert--danger {
+    border-left: 3px solid var(--hd-danger);
+    background: var(--hd-danger-tint);
+  }
+
+  .profile-alert-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    color: var(--hd-danger);
+  }
+
+  .profile-alert-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .profile-alert-title {
+    margin: 0;
+    font-size: var(--hd-text-md);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .profile-alert-text {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  /* -----------------------------------------------------------------
+     IDENTITY
+     ----------------------------------------------------------------- */
+
+  .profile-identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .profile-identity-row {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-4);
+    min-width: 0;
+  }
+
+  .profile-identity-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  /* A username is arbitrary text with no spaces to break at. */
+  .profile-identity-name {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    color: var(--hd-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .profile-identity-action {
+    align-self: flex-start;
+    text-decoration: none;
+  }
+
+  /* -----------------------------------------------------------------
+     KUDOS AND ACTIVITY
+     The breakdown is the long column and the activity sidebar rides
+     beside it, pinned once there is room for two columns.
+     ----------------------------------------------------------------- */
+
+  .profile-overview-columns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+  }
+
+  @media (min-width: 950px) {
+    .profile-overview-columns {
+      display: grid;
+      grid-template-columns: minmax(0, 680px) minmax(250px, 1fr);
+      gap: var(--hd-space-4);
+      align-items: start;
+    }
+
+    .profile-overview-columns__sidebar {
+      position: sticky;
+      top: calc(var(--sticky-offset, 80px) + 1rem);
+    }
+
+    /* The activity panel is a shared component still drawn on the glass
+       family; its own grid has to fold while the sidebar is narrow. */
+    .profile-overview-columns__sidebar .data-grid-1-2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .profile-overview-columns {
+      grid-template-columns: minmax(0, 680px) minmax(300px, 1fr);
+    }
+
+    .profile-overview-columns__sidebar .data-grid-1-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     QUICK NAV
+     One tile per area of the profile, each printing what it holds.
+     ----------------------------------------------------------------- */
+
+  .profile-quicknav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--hd-space-2);
+  }
+
+  .profile-quicknav-tile {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    text-decoration: none;
+    transition:
+      border-color var(--hd-dur-fast) var(--hd-ease),
+      background-color var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .profile-quicknav-tile:hover {
+    border-color: var(--hd-accent-tint-border);
+    background: var(--hd-accent-tint);
+    text-decoration: none;
+  }
+
+  .profile-quicknav-tile:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  .profile-quicknav-label {
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink-2);
+  }
+
+  /* The row's own value ink is --hd-accent, which is 2.15:1 on a dark
+     card; the popover accent is the same blue in light and a lighter one
+     in dark, so the number clears AA in both. */
+  .profile-quicknav-tile .hd-row-val {
+    color: var(--hd-pop-accent);
+    font-size: var(--hd-text-md);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* -----------------------------------------------------------------
+     ACTIONS
+     ----------------------------------------------------------------- */
+
+  .profile-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .profile-actions .hd-btn {
+    text-decoration: none;
   }
 }

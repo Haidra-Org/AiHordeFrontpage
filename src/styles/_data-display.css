@@ -541,15 +541,6 @@
     @apply flex flex-col min-w-0;
   }
 
-  .profile-identity-username {
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-
-  .profile-identity-username-action {
-    @apply mt-1 self-start;
-  }
-
   /* =================================================================
      SECTION TITLE - Small caps section headers
      ================================================================= */
