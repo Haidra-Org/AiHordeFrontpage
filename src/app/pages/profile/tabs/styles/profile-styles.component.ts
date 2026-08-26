@@ -1,35 +1,17 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-} from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthService } from '../../../../services/auth.service';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ProfileStylesListComponent } from '../../../../components/profile-styles-list/profile-styles-list.component';
 
 @Component({
   selector: 'app-profile-styles',
-  imports: [ProfileStylesListComponent, TranslocoPipe],
+  imports: [ProfileStylesListComponent],
+  // The list prints its own image/text switch with a count on each side, and
+  // the tab that opened this area already carries the total, so the tab needs
+  // no heading of its own.
   template: `
-    <div
-      class="card card-bg-primary card-full card-spaced profile-styles-shell"
-    >
-      <h3 class="heading-card">
-        {{ 'profile.tabs.styles' | transloco }}
-        @if (styleCount() > 0) {
-          <span class="text-secondary text-sm">({{ styleCount() }})</span>
-        }
-      </h3>
+    <div class="details-area">
       <app-profile-styles-list />
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProfileStylesComponent {
-  public readonly auth = inject(AuthService);
-
-  public readonly styleCount = computed(
-    () => this.auth.currentUser()?.styles?.length ?? 0,
-  );
-}
+export class ProfileStylesComponent {}

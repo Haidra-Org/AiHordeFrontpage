@@ -27,7 +27,6 @@ import {
 } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { extractApiError } from '../../helper/extract-api-error';
-import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StyleService } from '../../services/style.service';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -67,7 +66,6 @@ export interface LoadedStyle {
     StyleFormComponent,
     AdminDialogComponent,
     RouterLink,
-    ScrollFadeComponent,
     IconComponent,
   ],
   templateUrl: './profile-styles-list.component.html',

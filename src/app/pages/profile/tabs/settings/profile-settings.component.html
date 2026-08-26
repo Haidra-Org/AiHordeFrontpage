@@ -81,21 +81,22 @@
   </p>
 </app-admin-dialog>
 
-<!-- Account Settings -->
-<div class="profile-glass-section">
-  <h3 class="heading-card">
-    {{ "profile.account_settings_heading" | transloco }}
-  </h3>
-  <div class="data-grid-1-2">
-    <div class="data-item-box">
-      <span class="data-label"
-        >{{ "profile.public_workers_label" | transloco }}
-        <app-info-tooltip
-          termKey="profile.public_workers_desc"
-          glossaryId="worker"
-        />
-      </span>
-      <span class="data-value">
+<div class="profile-settings">
+  <!-- Account Settings -->
+  <div class="hd-card">
+    <h3 class="hd-card-title">
+      {{ "profile.account_settings_heading" | transloco }}
+    </h3>
+
+    <div class="profile-setting">
+      <div class="profile-setting-head">
+        <span class="hd-label"
+          >{{ "profile.public_workers_label" | transloco }}
+          <app-info-tooltip
+            termKey="profile.public_workers_desc"
+            glossaryId="worker"
+          />
+        </span>
         <label class="toggle-switch">
           <input
             type="checkbox"
@@ -108,91 +109,116 @@
           <div class="toggle-switch-track"></div>
           <div class="toggle-switch-thumb"></div>
         </label>
-      </span>
-      <span class="text-secondary text-xs">{{
-        "profile.public_workers_desc" | transloco
-      }}</span>
+      </div>
+      <p class="hd-sublabel">
+        {{ "profile.public_workers_desc" | transloco }}
+      </p>
     </div>
+
     <div
-      class="data-item-box"
-      [class.profile-contact-needs-attention]="showContactNagNotifications()"
+      class="profile-setting"
+      [class.profile-setting--attention]="showContactNagNotifications()"
     >
-      <span class="data-label"
-        >{{ "profile.contact_label" | transloco }}
-        <button (click)="openContactDialog()" class="link-btn-sm mt-1 pl-2">
+      <div class="profile-setting-head">
+        <span class="hd-label">{{ "profile.contact_label" | transloco }}</span>
+        <span class="profile-setting-value">
+          @if (auth.currentUser()!.contact) {
+            {{ auth.currentUser()!.contact }}
+          } @else {
+            {{ "profile.contact_not_set" | transloco }}
+          }
+        </span>
+      </div>
+      <p class="hd-sublabel">
+        {{ "profile.contact_help_malfunction" | transloco }}
+      </p>
+      <div class="profile-setting-actions">
+        <button
+          type="button"
+          (click)="openContactDialog()"
+          class="hd-btn hd-btn--tonal hd-btn--dense"
+        >
           {{ "profile.edit_contact" | transloco }}
         </button>
         @if (showContactNagNotifications()) {
           <button
             type="button"
             (click)="dismissContactNagNotifications()"
-            class="link-btn-sm mt-1 pl-2"
+            class="hd-btn hd-btn--ghost hd-btn--dense"
           >
             {{ "profile.dismiss_contact_nag" | transloco }}
           </button>
         }
-      </span>
-      <span class="data-value wrap-break-word">
-        @if (auth.currentUser()!.contact) {
-          {{ auth.currentUser()!.contact }}
-        } @else {
-          <span class="text-secondary italic">{{
-            "profile.contact_not_set" | transloco
-          }}</span>
-        }
-      </span>
-      <span class="text-secondary text-xs">{{
-        "profile.contact_help_malfunction" | transloco
-      }}</span>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Page Guides -->
-<div class="profile-glass-section mt-4">
-  <h3 class="heading-card">
-    {{ "profile.page_guides" | transloco }}
-  </h3>
-  <p class="text-secondary text-sm">
-    {{ "profile.guides_explanation" | transloco }}
-  </p>
-  <div class="action-row">
-    @if (!guideService.allDismissed()) {
-      <button (click)="guideService.dismissAll()" class="btn-secondary">
-        {{ "profile.hide_all_guides" | transloco }}
-      </button>
-    }
-    @if (guideService.anyDismissed()) {
-      <button (click)="guideService.restoreAll()" class="btn-secondary">
-        {{ "profile.restore_all_guides" | transloco }}
-      </button>
-    }
+  <!-- Page Guides -->
+  <div class="hd-card">
+    <h3 class="hd-card-title">
+      {{ "profile.page_guides" | transloco }}
+    </h3>
+    <p class="profile-section-text">
+      {{ "profile.guides_explanation" | transloco }}
+    </p>
+    <div class="profile-actions">
+      @if (!guideService.allDismissed()) {
+        <button
+          type="button"
+          (click)="guideService.dismissAll()"
+          class="hd-btn hd-btn--dense"
+        >
+          {{ "profile.hide_all_guides" | transloco }}
+        </button>
+      }
+      @if (guideService.anyDismissed()) {
+        <button
+          type="button"
+          (click)="guideService.restoreAll()"
+          class="hd-btn hd-btn--dense"
+        >
+          {{ "profile.restore_all_guides" | transloco }}
+        </button>
+      }
+    </div>
   </div>
-</div>
 
-<!-- Danger Zone -->
-<div class="danger-zone-card mt-4">
-  <h3 class="heading-card">
-    {{ "profile.danger_zone_title" | transloco }}
-  </h3>
-  <p class="text-secondary text-sm">
-    {{ "profile.danger_zone_desc" | transloco }}
-  </p>
-  <div class="action-row">
-    @if (auth.currentUser()!.deleted) {
-      <button (click)="openUndeleteDialog()" class="btn-warning">
-        {{ "profile.undelete_account" | transloco }}
-      </button>
-    }
-    @if (!auth.currentUser()!.deleted) {
-      <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
-        {{ "profile.delete_account" | transloco }}
-      </button>
-    }
-    @if (auth.currentUser()!.deleted) {
-      <button (click)="openDeleteDialog()" class="btn-primary btn-danger">
-        {{ "profile.permanently_delete_account" | transloco }}
-      </button>
-    }
+  <!-- Danger Zone -->
+  <div class="hd-card profile-danger">
+    <h3 class="hd-card-title">
+      {{ "profile.danger_zone_title" | transloco }}
+    </h3>
+    <p class="profile-section-text">
+      {{ "profile.danger_zone_desc" | transloco }}
+    </p>
+    <div class="profile-actions">
+      @if (auth.currentUser()!.deleted) {
+        <button
+          type="button"
+          (click)="openUndeleteDialog()"
+          class="hd-btn hd-btn--tonal"
+        >
+          {{ "profile.undelete_account" | transloco }}
+        </button>
+      }
+      @if (!auth.currentUser()!.deleted) {
+        <button
+          type="button"
+          (click)="openDeleteDialog()"
+          class="hd-btn profile-btn-danger"
+        >
+          {{ "profile.delete_account" | transloco }}
+        </button>
+      }
+      @if (auth.currentUser()!.deleted) {
+        <button
+          type="button"
+          (click)="openDeleteDialog()"
+          class="hd-btn profile-btn-danger"
+        >
+          {{ "profile.permanently_delete_account" | transloco }}
+        </button>
+      }
+    </div>
   </div>
 </div>

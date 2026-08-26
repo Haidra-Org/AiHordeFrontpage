@@ -5,9 +5,7 @@ import { SharedKeyListComponent } from '../../../../components/shared-key/shared
   selector: 'app-profile-shared-keys',
   imports: [SharedKeyListComponent],
   template: `
-    <div
-      class="card card-bg-primary card-full card-spaced profile-shared-keys-shell"
-    >
+    <div class="hd-card profile-shared-keys">
       <app-shared-key-list />
     </div>
   `,

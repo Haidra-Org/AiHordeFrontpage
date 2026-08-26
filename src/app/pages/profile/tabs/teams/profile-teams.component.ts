@@ -23,6 +23,7 @@ import { HordeWorker } from '../../../../types/horde-worker';
 import { FormatNumberPipe } from '../../../../pipes/format-number.pipe';
 import { catchError, from, map, mergeMap, of } from 'rxjs';
 import { extractApiError } from '../../../../helper/extract-api-error';
+import { IconComponent } from '../../../../components/icon/icon.component';
 
 interface WorkerListItem {
   id: string;
@@ -33,7 +34,7 @@ interface WorkerListItem {
 
 @Component({
   selector: 'app-profile-teams',
-  imports: [RouterLink, TranslocoPipe, FormatNumberPipe],
+  imports: [RouterLink, TranslocoPipe, FormatNumberPipe, IconComponent],
   templateUrl: './profile-teams.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

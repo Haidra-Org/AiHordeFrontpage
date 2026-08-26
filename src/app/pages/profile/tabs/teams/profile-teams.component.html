@@ -167,25 +167,25 @@
   </div>
 }
 
-<div class="card card-bg-primary card-full card-spaced">
-  <div class="card-header-with-actions">
-    <h3 class="heading-card">
+<div class="details-area">
+  <div class="details-area-bar">
+    <h3 class="profile-area-title">
       {{ "profile.tabs.your_teams" | transloco }}
     </h3>
-    <div class="card-header-with-actions__buttons">
+    <div class="details-area-actions">
       <button
+        type="button"
         (click)="refreshTeams()"
-        class="worker-btn text-sm"
+        class="hd-btn hd-btn--dense"
         [disabled]="loadingTeams()"
       >
         {{ "teams.refresh" | transloco }}
       </button>
       <button
+        type="button"
         (click)="openCreateTeamDialog()"
         [disabled]="!canCreateTeam()"
-        [class.btn-disabled]="!canCreateTeam()"
-        [class.btn-primary]="canCreateTeam()"
-        class="text-sm"
+        class="hd-btn hd-btn--primary hd-btn--dense"
         [title]="
           canCreateTeam() ? '' : ('teams.create_requires_trusted' | transloco)
         "
@@ -196,55 +196,55 @@
   </div>
 
   @if (loadingTeams()) {
-    <p class="text-secondary text-sm mb-2">
+    <p class="hd-sublabel">
       {{ "teams.loading" | transloco }}
     </p>
   } @else {
     <!-- Teams You Created -->
     @if (userCreatedTeams().length > 0) {
-      <div class="team-list-section">
-        <h4 class="section-title-sm mb-3">
+      <div class="hd-card">
+        <h4 class="hd-card-title">
           {{ "teams.created_by_you" | transloco }}
         </h4>
-        <div class="team-list">
+        <div class="profile-team-list">
           @for (team of userCreatedTeams(); track team.id) {
-            <div class="team-card">
-              <div class="team-card-layout">
-                <div class="team-card-body">
-                  <a
-                    [routerLink]="['/details/teams', team.id]"
-                    class="team-card-link"
-                  >
-                    {{ team.name }}
-                  </a>
-                  @if (team.info) {
-                    <p class="team-card-description">{{ team.info }}</p>
-                  }
-                  <div class="team-card-meta">
-                    <span>{{
-                      "teams.workers_count"
-                        | transloco: { count: team.worker_count ?? 0 }
-                    }}</span>
-                    <span>{{
-                      "teams.kudos_earned"
-                        | transloco: { amount: team.kudos ?? 0 | formatNumber }
-                    }}</span>
-                  </div>
+            <div class="profile-team">
+              <div class="profile-team-body">
+                <a
+                  [routerLink]="['/details/teams', team.id]"
+                  class="profile-team-link"
+                >
+                  {{ team.name }}
+                </a>
+                @if (team.info) {
+                  <p class="profile-team-info">{{ team.info }}</p>
+                }
+                <div class="profile-team-meta">
+                  <span>{{
+                    "teams.workers_count"
+                      | transloco: { count: team.worker_count ?? 0 }
+                  }}</span>
+                  <span>{{
+                    "teams.kudos_earned"
+                      | transloco: { amount: team.kudos ?? 0 | formatNumber }
+                  }}</span>
                 </div>
-                <div class="team-card-actions">
-                  <button
-                    (click)="openEditTeamDialog(team)"
-                    class="worker-btn text-sm"
-                  >
-                    {{ "teams.edit" | transloco }}
-                  </button>
-                  <button
-                    (click)="openDeleteTeamDialog(team)"
-                    class="btn-danger text-sm"
-                  >
-                    {{ "teams.delete" | transloco }}
-                  </button>
-                </div>
+              </div>
+              <div class="profile-team-actions">
+                <button
+                  type="button"
+                  (click)="openEditTeamDialog(team)"
+                  class="hd-btn hd-btn--dense"
+                >
+                  {{ "teams.edit" | transloco }}
+                </button>
+                <button
+                  type="button"
+                  (click)="openDeleteTeamDialog(team)"
+                  class="hd-btn hd-btn--dense profile-btn-danger"
+                >
+                  {{ "teams.delete" | transloco }}
+                </button>
               </div>
             </div>
           }
@@ -254,24 +254,24 @@
 
     <!-- Teams Your Workers Belong To -->
     @if (userWorkerTeams().length > 0) {
-      <div class="team-list-section">
-        <h4 class="section-title-sm mb-3">
+      <div class="hd-card">
+        <h4 class="hd-card-title">
           {{ "teams.worker_teams" | transloco }}
         </h4>
-        <div class="team-list">
+        <div class="profile-team-list">
           @for (team of userWorkerTeams(); track team.id) {
-            <div class="team-card">
-              <div class="team-card-body">
+            <div class="profile-team">
+              <div class="profile-team-body">
                 <a
                   [routerLink]="['/details/teams', team.id]"
-                  class="team-card-link"
+                  class="profile-team-link"
                 >
                   {{ team.name }}
                 </a>
                 @if (team.info) {
-                  <p class="team-card-description">{{ team.info }}</p>
+                  <p class="profile-team-info">{{ team.info }}</p>
                 }
-                <div class="team-card-meta">
+                <div class="profile-team-meta">
                   <span>{{
                     "teams.workers_count"
                       | transloco: { count: team.worker_count ?? 0 }
@@ -289,15 +289,18 @@
     }
 
     @if (userCreatedTeams().length === 0 && userWorkerTeams().length === 0) {
-      <p class="text-secondary text-center py-4">
-        {{ "teams.no_teams" | transloco }}
-      </p>
+      <div class="hd-empty">
+        <app-icon name="users" class="state-icon-lg" />
+        <p class="hd-empty-title">{{ "teams.no_teams" | transloco }}</p>
+      </div>
     }
 
     <!-- Link to browse all teams -->
-    <div class="card-footer-divider">
-      <a routerLink="/details/teams" class="link"
-        >{{ "teams.browse_all" | transloco }} →</a
+    <div class="details-area-actions">
+      <a
+        routerLink="/details/teams"
+        class="hd-btn hd-btn--dense details-area-action"
+        >{{ "teams.browse_all" | transloco }}</a
       >
     </div>
   }

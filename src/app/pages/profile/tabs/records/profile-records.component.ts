@@ -19,7 +19,7 @@ import { UserRecordsPanelComponent } from '../../../../components/user-records-p
     UserRecordsPanelComponent,
   ],
   template: `
-    <div class="card card-bg-primary card-full card-spaced">
+    <div class="hd-card profile-records">
       @if (auth.isLoading()) {
         <app-user-records-panel [loading]="true" />
       } @else if (hasRecords()) {

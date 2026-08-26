@@ -1,4 +1,4 @@
-<div class="stack-lg">
+<div class="details-area">
   <app-admin-dialog
     [open]="unsavedCloseDialogOpen()"
     [title]="'styles.unsaved_changes_title' | transloco"
@@ -13,61 +13,57 @@
     </p>
   </app-admin-dialog>
 
-  <div class="tab-sub-panel">
-    <!-- Sub-Tab Navigation -->
-    <app-scroll-fade
-      class="details-tabs details-tabs--glass details-tabs--sub"
-      role="tablist"
+  <!-- The same switch and the same actions the styles list on /details
+       offers, so the two lists read as one control. -->
+  <div class="details-area-bar">
+    <div
+      class="hd-seg"
+      role="group"
+      [attr.aria-label]="'styles.tabs.label' | transloco"
     >
       <button
         type="button"
-        class="details-tab"
-        [class.details-tab-active]="activeTab() === 'image'"
+        class="hd-seg-opt"
+        [attr.aria-pressed]="activeTab() === 'image'"
         (click)="setActiveTab('image')"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'image'"
       >
         <app-icon name="photo" class="icon-sm" />
         {{ "styles.tabs.image" | transloco }}
         @if (imageCount() > 0) {
-          <span class="text-secondary text-sm">({{ imageCount() }})</span>
+          <span class="profile-seg-count">{{ imageCount() }}</span>
         }
       </button>
       <button
         type="button"
-        class="details-tab"
-        [class.details-tab-active]="activeTab() === 'text'"
+        class="hd-seg-opt"
+        [attr.aria-pressed]="activeTab() === 'text'"
         (click)="setActiveTab('text')"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'text'"
       >
         <app-icon name="chat-bubble" class="icon-sm" />
         {{ "styles.tabs.text" | transloco }}
         @if (textCount() > 0) {
-          <span class="text-secondary text-sm">({{ textCount() }})</span>
+          <span class="profile-seg-count">{{ textCount() }}</span>
         }
       </button>
+    </div>
 
+    <div class="details-area-actions">
       @if (!readonly() && !showCreateForm()) {
         <button
           type="button"
-          class="btn-primary styles-create-btn"
+          class="hd-btn hd-btn--primary hd-btn--dense"
           (click)="openCreateForm()"
-          [attr.aria-label]="'styles.create' | transloco"
         >
           <app-icon name="plus" class="icon-sm" />
-          <span class="styles-create-btn-label">{{
-            "styles.create" | transloco
-          }}</span>
+          {{ "styles.create" | transloco }}
         </button>
       }
 
       @if (!readonly() && showCreateForm()) {
         <button
           type="button"
-          class="btn-source-control styles-create-btn"
+          class="hd-btn hd-btn--dense"
           (click)="requestCloseForm()"
-          [attr.aria-label]="'styles.close_editor' | transloco"
         >
           {{ "styles.close_editor" | transloco }}
         </button>
@@ -75,83 +71,88 @@
 
       <a
         routerLink="/details/styles"
-        class="btn-source-control styles-create-btn"
+        class="hd-btn hd-btn--dense details-area-action"
       >
         {{ "styles.back_to_details" | transloco }}
       </a>
-    </app-scroll-fade>
-
-    <!-- Create Form -->
-    @if (showCreateForm() && !readonly()) {
-      <div class="style-form-create-host">
-        <app-style-form
-          [mode]="isEditing() ? 'edit' : 'create'"
-          [styleType]="currentStyleType()"
-          [initialValues]="editingStyle()"
-          [saving]="creating()"
-          (formSubmit)="onCreateStyle($event)"
-          (formCancel)="requestCloseForm()"
-        />
-      </div>
-    }
-
-    <!-- Error State -->
-    @if (error()) {
-      <div class="state-container state-container-sm state-error">
-        <app-icon name="exclamation-circle" class="state-icon" />
-        <p>{{ error() }}</p>
-        <button
-          type="button"
-          class="btn-source-control"
-          (click)="loadUserStyles()"
-        >
-          {{ "styles.retry" | transloco }}
-        </button>
-      </div>
-    }
-
-    <!-- Loading State -->
-    @if (loading() && !error()) {
-      <div class="state-container state-container-sm text-secondary">
-        <div class="spinner spinner-md"></div>
-        <p>{{ "profile.styles.loading" | transloco }}</p>
-      </div>
-    }
-
-    <!-- Styles Grid -->
-    @if (!loading() && !error() && !showCreateForm()) {
-      @if (filteredStyles().length === 0) {
-        <div class="state-container state-container-sm state-muted">
-          <app-icon name="paintbrush" class="state-icon-lg" />
-          <p>{{ "profile.styles.no_styles" | transloco }}</p>
-          <p class="text-secondary text-sm">
-            {{ "profile.styles.create_hint" | transloco }}
-          </p>
-        </div>
-      } @else {
-        <div class="grid-cards styles-entry-grid">
-          @for (style of filteredStyles(); track style.id) {
-            <app-style-card
-              [style]="style"
-              [styleType]="activeTab()"
-              [showActions]="!readonly()"
-              (navigate)="navigateToStyle(style)"
-              (edit)="onEditStyle(style)"
-              (delete)="onDeleteStyle(style)"
-            />
-          }
-        </div>
-      }
-    }
-
-    <!-- Browse All Styles Link -->
-    @if (!showCreateForm() && !compact()) {
-      <div class="action-row action-row-responsive">
-        <a routerLink="/details/styles/" class="btn-source-control">
-          <app-icon name="arrow-top-right-on-square" class="icon-sm" />
-          {{ "profile.styles.browse_all" | transloco }}
-        </a>
-      </div>
-    }
+    </div>
   </div>
+
+  <!-- Create Form -->
+  @if (showCreateForm() && !readonly()) {
+    <div class="style-form-create-host">
+      <app-style-form
+        [mode]="isEditing() ? 'edit' : 'create'"
+        [styleType]="currentStyleType()"
+        [initialValues]="editingStyle()"
+        [saving]="creating()"
+        (formSubmit)="onCreateStyle($event)"
+        (formCancel)="requestCloseForm()"
+      />
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="state-container state-container-sm state-error">
+      <app-icon name="exclamation-circle" class="state-icon" />
+      <p>{{ error() }}</p>
+      <button
+        type="button"
+        class="hd-btn hd-btn--tonal hd-btn--dense"
+        (click)="loadUserStyles()"
+      >
+        {{ "styles.retry" | transloco }}
+      </button>
+    </div>
+  }
+
+  <!-- Loading State -->
+  @if (loading() && !error()) {
+    <div class="state-container state-container-sm text-secondary">
+      <div class="spinner spinner-md"></div>
+      <p>{{ "profile.styles.loading" | transloco }}</p>
+    </div>
+  }
+
+  <!-- Styles Grid -->
+  @if (!loading() && !error() && !showCreateForm()) {
+    @if (filteredStyles().length === 0) {
+      <div class="hd-empty">
+        <app-icon name="paintbrush" class="state-icon-lg" />
+        <p class="hd-empty-title">
+          {{ "profile.styles.no_styles" | transloco }}
+        </p>
+        <p class="hd-empty-sub">
+          {{ "profile.styles.create_hint" | transloco }}
+        </p>
+      </div>
+    } @else {
+      <div class="grid-cards styles-entry-grid">
+        @for (style of filteredStyles(); track style.id) {
+          <app-style-card
+            [style]="style"
+            [styleType]="activeTab()"
+            [showActions]="!readonly()"
+            (navigate)="navigateToStyle(style)"
+            (edit)="onEditStyle(style)"
+            (delete)="onDeleteStyle(style)"
+          />
+        }
+      </div>
+    }
+  }
+
+  <!-- Browse All Styles Link -->
+  @if (!showCreateForm() && !compact()) {
+    <div class="details-area-actions">
+      <a
+        routerLink="/details/styles/"
+        class="hd-btn hd-btn--dense details-area-action"
+      >
+        <app-icon name="arrow-top-right-on-square" class="icon-sm" />
+        {{ "profile.styles.browse_all" | transloco }}
+      </a>
+    </div>
+  }
 </div>

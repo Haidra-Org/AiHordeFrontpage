@@ -21,29 +21,31 @@
   </p>
 </app-admin-dialog>
 
-<div class="card card-bg-primary card-full card-spaced card--no-blur">
-  <h3 class="heading-card">
-    {{ "profile.your_workers" | transloco }}
-    @if (
-      auth.currentUser()!.worker_ids &&
-      auth.currentUser()!.worker_ids!.length > 0
-    ) {
-      <span class="text-secondary text-sm"
-        >({{ auth.currentUser()!.worker_ids!.length }})</span
-      >
-    }
-  </h3>
+<div class="details-area">
+  <div class="details-area-bar">
+    <h3 class="profile-area-title">
+      {{ "profile.your_workers" | transloco }}
+      @if (
+        auth.currentUser()!.worker_ids &&
+        auth.currentUser()!.worker_ids!.length > 0
+      ) {
+        <span class="hd-badge profile-count-badge">{{
+          auth.currentUser()!.worker_ids!.length
+        }}</span>
+      }
+    </h3>
+  </div>
 
-  <div class="data-grid-1-2">
-    <div class="data-item-box">
-      <span class="data-label"
-        >{{ "profile.public_workers_label" | transloco }}
-        <app-info-tooltip
-          termKey="profile.public_workers_desc"
-          glossaryId="worker"
-        />
-      </span>
-      <span class="data-value">
+  <div class="hd-card">
+    <div class="profile-setting">
+      <div class="profile-setting-head">
+        <span class="hd-label"
+          >{{ "profile.public_workers_label" | transloco }}
+          <app-info-tooltip
+            termKey="profile.public_workers_desc"
+            glossaryId="worker"
+          />
+        </span>
         <label class="toggle-switch">
           <input
             type="checkbox"
@@ -56,10 +58,10 @@
           <div class="toggle-switch-track"></div>
           <div class="toggle-switch-thumb"></div>
         </label>
-      </span>
-      <span class="text-secondary text-xs">{{
-        "profile.public_workers_desc" | transloco
-      }}</span>
+      </div>
+      <p class="hd-sublabel">
+        {{ "profile.public_workers_desc" | transloco }}
+      </p>
     </div>
   </div>
 
@@ -67,15 +69,18 @@
     !auth.currentUser()!.worker_ids ||
     auth.currentUser()!.worker_ids!.length === 0
   ) {
-    <p class="text-secondary text-center py-4">
-      {{ "profile.no_workers_registered" | transloco }}
-    </p>
+    <div class="hd-empty">
+      <app-icon name="server" class="state-icon-lg" />
+      <p class="hd-empty-title">
+        {{ "profile.no_workers_registered" | transloco }}
+      </p>
+    </div>
   } @else {
     <!-- Filter Controls -->
-    <div class="filter-bar">
+    <div class="hd-card profile-filters">
       <!-- Search Filter -->
-      <div class="filter-field filter-field--grow">
-        <label for="worker-search" class="form-label">{{
+      <div class="profile-field profile-field--grow">
+        <label for="worker-search" class="hd-label">{{
           "profile.workers.search" | transloco
         }}</label>
         <input
@@ -84,13 +89,13 @@
           [value]="filterText()"
           (input)="onFilterTextChange($event)"
           [placeholder]="'profile.workers.search_placeholder' | transloco"
-          class="form-input"
+          class="hd-input"
         />
       </div>
 
       <!-- Worker Type Filter -->
-      <div class="filter-field">
-        <label for="worker-type" class="form-label"
+      <div class="profile-field">
+        <label for="worker-type" class="hd-label"
           >{{ "profile.workers.type" | transloco }}
           <app-info-tooltip
             termKey="help.glossary.terms.worker.body"
@@ -101,7 +106,7 @@
           id="worker-type"
           [value]="filterWorkerType()"
           (change)="onFilterTypeChange($any($event.target).value)"
-          class="form-input"
+          class="profile-select"
         >
           <option value="all">
             {{ "profile.workers.type.all" | transloco }}
@@ -119,8 +124,8 @@
       </div>
 
       <!-- Maintenance Status Filter -->
-      <div class="filter-field">
-        <label for="worker-status" class="form-label"
+      <div class="profile-field">
+        <label for="worker-status" class="hd-label"
           >{{ "profile.workers.status" | transloco }}
           <app-info-tooltip
             termKey="help.workers.tooltip.maintenance"
@@ -131,7 +136,7 @@
           id="worker-status"
           [value]="filterMaintenance()"
           (change)="onFilterMaintenanceChange($any($event.target).value)"
-          class="form-input"
+          class="profile-select"
         >
           <option value="all">
             {{ "profile.workers.status.all" | transloco }}
@@ -149,53 +154,47 @@
       </div>
 
       <!-- View Mode Toggle -->
-      <div class="filter-field">
-        <span class="form-label">{{
+      <div class="profile-field">
+        <span class="hd-label">{{
           "admin.workers.view_mode.card" | transloco
         }}</span>
         <div
-          class="worker-view-toggle"
-          role="radiogroup"
+          class="hd-seg"
+          role="group"
           [attr.aria-label]="'admin.workers.view_mode.card' | transloco"
         >
           <button
             type="button"
-            class="worker-view-btn"
-            [class.active]="workerViewMode() === 'card'"
+            class="hd-seg-opt"
+            [attr.aria-pressed]="workerViewMode() === 'card'"
             (click)="workerViewMode.set('card')"
-            role="radio"
-            [attr.aria-checked]="workerViewMode() === 'card'"
             [title]="'admin.workers.view_mode.card' | transloco"
+            [attr.aria-label]="'admin.workers.view_mode.card' | transloco"
           >
-            <span class="worker-view-btn-content">
-              <app-icon name="squares-2x2" class="icon-sm" aria-hidden="true" />
-            </span>
+            <app-icon name="squares-2x2" class="icon-sm" aria-hidden="true" />
           </button>
           <button
             type="button"
-            class="worker-view-btn"
-            [class.active]="workerViewMode() === 'row'"
+            class="hd-seg-opt"
+            [attr.aria-pressed]="workerViewMode() === 'row'"
             (click)="workerViewMode.set('row')"
-            role="radio"
-            [attr.aria-checked]="workerViewMode() === 'row'"
             [title]="'admin.workers.view_mode.row' | transloco"
+            [attr.aria-label]="'admin.workers.view_mode.row' | transloco"
           >
-            <span class="worker-view-btn-content">
-              <app-icon name="bars-4" class="icon-sm" aria-hidden="true" />
-            </span>
+            <app-icon name="bars-4" class="icon-sm" aria-hidden="true" />
           </button>
         </div>
       </div>
     </div>
 
     @if (loadingWorkers()) {
-      <p class="text-secondary text-sm mb-2">
+      <p class="hd-sublabel">
         {{ "profile.loading_workers" | transloco }}
       </p>
     }
 
     @if (unresolvedWorkers().length > 0) {
-      <div class="worker-grid mb-4">
+      <div class="worker-grid">
         @for (workerEntry of unresolvedWorkers(); track workerEntry.id) {
           @if (workerEntry.loading) {
             <div class="skeleton-box" aria-busy="true">
@@ -228,9 +227,12 @@
       unresolvedWorkers().length === 0 &&
       userWorkers().length > 0
     ) {
-      <p class="text-secondary text-center py-4">
-        {{ "profile.no_workers_match_filters" | transloco }}
-      </p>
+      <div class="hd-empty">
+        <app-icon name="server" class="state-icon-lg" />
+        <p class="hd-empty-title">
+          {{ "profile.no_workers_match_filters" | transloco }}
+        </p>
+      </div>
     } @else {
       @for (group of groupedWorkers(); track group.type) {
         <h4
@@ -244,9 +246,9 @@
         >
           <span class="section-header-title-wrapper">
             {{ "profile.workers.type." + group.type | transloco }}
-            <span class="text-secondary text-sm"
-              >({{ group.workers.length }})</span
-            >
+            <span class="hd-badge profile-count-badge">{{
+              group.workers.length
+            }}</span>
           </span>
           <app-icon
             name="chevron-down"

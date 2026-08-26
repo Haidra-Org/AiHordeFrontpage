@@ -369,3 +369,227 @@
     text-decoration: none;
   }
 }
+
+/* =================================================================
+   TABS
+   The chrome the records, workers, teams, styles, shared-key and
+   settings areas are drawn in. What each area holds is unchanged; the
+   shared panels inside several of them are still on the glass family
+   and keep their own internals.
+   ================================================================= */
+
+@layer components {
+  /* An area's own heading, one step below the page title and in the same
+     register as the section eyebrows under it. */
+  .profile-area-title {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  /* A total beside a name: quiet enough that the name is what is read. */
+  .profile-count-badge {
+    background: var(--hd-seg-track);
+    color: var(--hd-label);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .profile-seg-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+
+  .profile-records,
+  .profile-shared-keys {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  /* -----------------------------------------------------------------
+     SETTINGS
+     ----------------------------------------------------------------- */
+
+  .profile-settings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+  }
+
+  .profile-section-text {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  /* One account setting: what it is and what it is set to on one line,
+     with the sentence that explains it under both. */
+  .profile-setting {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
+  }
+
+  .profile-setting-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .profile-setting-value {
+    font-size: var(--hd-text-md);
+    color: var(--hd-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .profile-setting-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  /* A setting the account is being asked to fill in. The amber edge is
+     the mark and the button beside it says what to do, so the colour is
+     never carrying the message on its own. */
+  .profile-setting--attention {
+    border-color: var(--hd-changed);
+  }
+
+  /* Destructive actions keep the plain button and carry the warning on
+     their edge: the family's red as a label is 4.46:1 on a card, and as
+     a fill it would need a different ink in each theme. */
+  .profile-btn-danger {
+    border-color: var(--hd-danger);
+  }
+
+  .profile-btn-danger:hover:not(:disabled) {
+    background: var(--hd-danger-tint);
+  }
+
+  .profile-danger {
+    border-top-color: var(--hd-danger);
+  }
+
+  /* -----------------------------------------------------------------
+     FILTERS
+     ----------------------------------------------------------------- */
+
+  .profile-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--hd-space-3);
+  }
+
+  .profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  .profile-field--grow {
+    flex: 1 1 14rem;
+  }
+
+  /* The family has no select of its own; this is .hd-input's box with the
+     platform arrow left in place. */
+  .profile-select {
+    height: var(--hd-control-h);
+    padding: 0 var(--hd-space-2);
+    font-family: inherit;
+    font-size: var(--hd-text-md);
+    color: var(--hd-ink);
+    background: var(--hd-field);
+    border: 1px solid var(--hd-field-border);
+    border-radius: var(--hd-radius-sm);
+  }
+
+  .profile-select:focus {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+    border-color: var(--hd-accent);
+  }
+
+  @media (pointer: coarse) {
+    .profile-select {
+      min-height: 44px;
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     TEAMS
+     ----------------------------------------------------------------- */
+
+  .profile-team-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+  }
+
+  .profile-team {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--hd-space-2) var(--hd-space-4);
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
+  }
+
+  .profile-team-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  .profile-team-link {
+    font-size: var(--hd-text-md);
+    font-weight: 700;
+    /* The accent as text is 2.15:1 on a dark card; the popover accent is
+       the same blue in light and a lighter one in dark. */
+    color: var(--hd-pop-accent);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .profile-team-link:hover {
+    text-decoration: underline;
+  }
+
+  .profile-team-info {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
+  }
+
+  .profile-team-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1) var(--hd-space-4);
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .profile-team-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+}
