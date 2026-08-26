@@ -3,7 +3,7 @@
 
    The signed-in account area and the sign-in panel in front of it. The
    shell reuses the /details chrome (`.details-shell`, `.details-nav`,
-   `.details-panel`, `.stat-tile`) so the two read as one site; this
+   `.details-panel`, `.hd-stat`) so the two read as one site; this
    sheet carries only what is particular to the profile.
 
    Every rule reads an `--hd-*` token, so both themes come out of the
@@ -38,46 +38,6 @@
 
   .hd-subtab--active .profile-subtab-badge {
     color: var(--hd-ink);
-  }
-
-  /* -----------------------------------------------------------------
-     LOADING
-     The account arrives in one response, so there is nothing to lay a
-     structured placeholder out against: four bars say the page is
-     coming and nothing more.
-     ----------------------------------------------------------------- */
-
-  .profile-skeleton {
-    display: flex;
-    flex-direction: column;
-    gap: var(--hd-space-3);
-    padding: var(--hd-space-4);
-    border: 1px solid var(--hd-card-border);
-    border-radius: var(--hd-radius-md);
-    background: var(--hd-card);
-  }
-
-  .profile-skeleton-bar {
-    height: 10px;
-    width: 40%;
-    border-radius: var(--hd-radius-sm);
-    background: var(--hd-border);
-    animation: skeleton-pulse 1.4s ease-in-out infinite;
-  }
-
-  .profile-skeleton-bar--title {
-    height: 18px;
-    width: 55%;
-  }
-
-  .profile-skeleton-bar--wide {
-    width: 70%;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .profile-skeleton-bar {
-      animation: none;
-    }
   }
 
   /* -----------------------------------------------------------------

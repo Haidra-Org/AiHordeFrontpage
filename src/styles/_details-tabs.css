@@ -1334,47 +1334,4 @@
     justify-content: space-between;
     gap: var(--hd-space-2);
   }
-
-  /* -----------------------------------------------------------------
-     STAT TILES
-     One total, printed the same way wherever an area prints one: the
-     unit belongs in the label, so the value stays a number.
-     ----------------------------------------------------------------- */
-
-  .stat-tiles {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-    gap: var(--hd-space-2);
-  }
-
-  .stat-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--hd-space-2-5);
-    border: 1px solid var(--hd-card-border);
-    border-top: 2px solid var(--hd-zone-tint-border, var(--hd-card-border));
-    border-radius: var(--hd-radius-md);
-    background: var(--hd-card);
-  }
-
-  .stat-tile-label {
-    font-size: var(--hd-text-2xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--hd-label);
-  }
-
-  .stat-tile-value {
-    font-size: var(--hd-text-lg);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--hd-ink);
-  }
-
-  .stat-tile-note {
-    font-size: var(--hd-text-xs);
-    color: var(--hd-muted);
-  }
 }

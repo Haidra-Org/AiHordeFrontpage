@@ -188,15 +188,15 @@
 
       <!-- What the horde is doing with it -->
       <div class="model-detail-main">
-        <div class="stat-tiles">
-          <div class="stat-tile">
-            <span class="stat-tile-label">{{
+        <div class="hd-stats">
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
               "details.models.column.workers" | transloco
             }}</span>
-            <span class="stat-tile-value">{{
+            <span class="hd-stat-value">{{
               status()?.count ?? 0 | number
             }}</span>
-            <span class="stat-tile-note">{{
+            <span class="hd-stat-note">{{
               (status()?.count
                 ? "details.model_detail.serving_now"
                 : "details.model_detail.serving_none"
@@ -204,44 +204,44 @@
             }}</span>
           </div>
 
-          <div class="stat-tile">
-            <span class="stat-tile-label">{{
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
               queuedColumnKey() | transloco
             }}</span>
-            <span class="stat-tile-value">{{ queuedValue() }}</span>
-            <span class="stat-tile-note">{{
+            <span class="hd-stat-value">{{ queuedValue() }}</span>
+            <span class="hd-stat-note">{{
               queuedUnit().technical.formatted
             }}</span>
           </div>
 
-          <div class="stat-tile">
-            <span class="stat-tile-label">{{
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
               "details.models.column.usage" | transloco
             }}</span>
-            <span class="stat-tile-value">{{ usageMonth() | number }}</span>
-            <span class="stat-tile-note">{{
+            <span class="hd-stat-value">{{ usageMonth() | number }}</span>
+            <span class="hd-stat-note">{{
               "details.model_detail.usage_total"
                 | transloco: { total: usageTotalText() }
             }}</span>
           </div>
 
-          <div class="stat-tile">
-            <span class="stat-tile-label">{{
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
               performanceColumnKey() | transloco
             }}</span>
-            <span class="stat-tile-value">{{ performanceValue() }}</span>
+            <span class="hd-stat-value">{{ performanceValue() }}</span>
             @if (performanceUnit(); as perfUnit) {
-              <span class="stat-tile-note">{{
+              <span class="hd-stat-note">{{
                 perfUnit.technical.formatted
               }}</span>
             }
           </div>
 
-          <div class="stat-tile">
-            <span class="stat-tile-label">{{
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
               "details.models.column.eta" | transloco
             }}</span>
-            <span class="stat-tile-value">{{
+            <span class="hd-stat-value">{{
               status()?.count ? formatEta(status()?.eta) : "-"
             }}</span>
           </div>

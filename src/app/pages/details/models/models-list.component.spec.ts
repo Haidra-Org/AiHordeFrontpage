@@ -174,7 +174,7 @@ describe('ModelsListComponent', () => {
 
     // Still said, still filtered on, no longer printed on most of the rows.
     const adult = fixture.nativeElement.querySelector(
-      '.models-list-row .sr-only',
+      '.hd-list-row .sr-only',
     ) as HTMLElement | null;
     expect(adult?.textContent?.trim()).toBe('Adult');
     expect(

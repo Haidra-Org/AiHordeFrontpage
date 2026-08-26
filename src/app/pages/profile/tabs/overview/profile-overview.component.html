@@ -127,14 +127,14 @@
   </div>
 
   <!-- The account in four numbers -->
-  <div class="stat-tiles">
-    <div class="stat-tile">
-      <span class="stat-tile-label">{{ "profile.kudos" | transloco }}</span>
-      <span class="stat-tile-value">{{
+  <div class="hd-stats">
+    <div class="hd-stat">
+      <span class="hd-stat-label">{{ "profile.kudos" | transloco }}</span>
+      <span class="hd-stat-value">{{
         auth.currentUser()!.kudos | formatNumber
       }}</span>
       @if (auth.currentUser()!.monthly_kudos?.amount) {
-        <span class="stat-tile-note">{{
+        <span class="hd-stat-note">{{
           "profile.monthly_kudos"
             | transloco
               : {
@@ -145,28 +145,26 @@
       }
     </div>
     @if (auth.currentUser()!.account_age) {
-      <div class="stat-tile">
-        <span class="stat-tile-label">{{
+      <div class="hd-stat">
+        <span class="hd-stat-label">{{
           "profile.stat.account_age" | transloco
         }}</span>
-        <span class="stat-tile-value">{{
+        <span class="hd-stat-value">{{
           formatAccountAge(auth.currentUser()!.account_age!)
         }}</span>
       </div>
     }
-    <div class="stat-tile">
-      <span class="stat-tile-label">{{
+    <div class="hd-stat">
+      <span class="hd-stat-label">{{
         "profile.stat.account_id" | transloco
       }}</span>
-      <span class="stat-tile-value">{{ auth.currentUser()!.id }}</span>
+      <span class="hd-stat-value">{{ auth.currentUser()!.id }}</span>
     </div>
-    <div class="stat-tile">
-      <span class="stat-tile-label">{{
+    <div class="hd-stat">
+      <span class="hd-stat-label">{{
         "profile.quick_nav_records" | transloco
       }}</span>
-      <span class="stat-tile-value">{{
-        requestsOnRecord() | formatNumber
-      }}</span>
+      <span class="hd-stat-value">{{ requestsOnRecord() | formatNumber }}</span>
     </div>
   </div>
 

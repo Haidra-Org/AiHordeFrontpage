@@ -151,93 +151,19 @@
     color: var(--hd-label);
   }
 
-  .models-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--hd-space-1);
-  }
-
   /* A phone has room for the name and the two numbers that answer "can I
-     use this now"; the rest of the columns are on the model's own page. */
-  .models-list-head,
-  .models-list-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 3.25rem 4.5rem;
-    align-items: center;
-    gap: var(--hd-space-2);
+     use this now"; the rest of the columns are on the model's own page,
+     and the header goes with them: three labels over three values are
+     read off the values themselves. */
+  .models-grid {
+    --hd-list-cols: minmax(0, 1fr) 3.25rem 4.5rem;
   }
 
-  .models-list-head {
+  .models-grid .hd-list-head {
     display: none;
-    padding: 0 var(--hd-space-3) var(--hd-space-1);
   }
 
-  .models-list-th {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--hd-space-1);
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    background: none;
-    font-family: inherit;
-    font-size: var(--hd-text-2xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    line-height: 1.25;
-    text-transform: uppercase;
-    color: var(--hd-label);
-    cursor: pointer;
-    transition: color var(--hd-dur-fast) var(--hd-ease);
-  }
-
-  .models-list-th:hover,
-  .models-list-th--active {
-    color: var(--hd-ink);
-  }
-
-  .models-list-th--right {
-    justify-content: flex-end;
-    text-align: right;
-  }
-
-  .models-list-th:focus-visible {
-    outline: 2px solid var(--hd-accent);
-    outline-offset: 2px;
-  }
-
-  .models-list-sort {
-    font-size: var(--hd-text-xs);
-  }
-
-  /* One line per model. The height is set by the row rather than by what
-     happens to be in it, so a list of a hundred and sixty is read down
-     the numbers rather than across the marks. */
-  .models-list-row {
-    position: relative;
-    min-height: 46px;
-    padding: var(--hd-space-1) var(--hd-space-3);
-    border: 1px solid var(--hd-card-border);
-    border-radius: var(--hd-radius-sm);
-    background: var(--hd-panel);
-    transition:
-      background-color var(--hd-dur-fast) var(--hd-ease),
-      border-color var(--hd-dur-fast) var(--hd-ease),
-      box-shadow var(--hd-dur-fast) var(--hd-ease);
-  }
-
-  .models-list-row:hover {
-    border-color: var(--hd-accent-tint-border);
-    box-shadow: var(--hd-elev-1);
-  }
-
-  /* A model nobody is running is still a real model, so it is quieted
-     rather than hidden, and the row says why in words beside the mark. */
-  .models-list-row--idle {
-    background: var(--hd-card);
-  }
-
-  .models-list-row--idle .models-list-name {
+  .hd-list-row--idle .models-list-name {
     color: var(--hd-label);
   }
 
@@ -297,7 +223,7 @@
   /* What a model is built from, which a phone drops: the name is what the
      reader is scanning for, and the family has its own column above 640. */
   @media (max-width: 639.98px) {
-    .models-list-row .models-mark--spec {
+    .hd-list-row .models-mark--spec {
       display: none;
     }
   }
@@ -358,26 +284,20 @@
   }
 
   @media (min-width: 640px) {
-    .models-list-head {
+    .models-grid {
+      --hd-list-cols: minmax(0, 1fr) 6rem 3.5rem 5rem 3.5rem 2.25rem;
+    }
+
+    .models-grid--text {
+      --hd-list-cols: minmax(0, 1fr) 6rem 3.5rem 5rem 3.5rem;
+    }
+
+    .models-grid .hd-list-head {
       display: grid;
     }
 
-    .models-list-head,
-    .models-list-row {
-      grid-template-columns:
-        minmax(0, 1fr) 6rem 3.5rem 5rem 3.5rem
-        2.25rem;
-      align-items: center;
-      gap: var(--hd-space-2);
-    }
-
-    .models-list--text .models-list-head,
-    .models-list--text .models-list-row {
-      grid-template-columns: minmax(0, 1fr) 6rem 3.5rem 5rem 3.5rem;
-    }
-
-    .models-list-th.models-col-family,
-    .models-list-th.models-col-mid {
+    .hd-list-th.models-col-family,
+    .hd-list-th.models-col-mid {
       display: inline-flex;
     }
 
@@ -392,22 +312,23 @@
   }
 
   @media (min-width: 1024px) {
-    .models-list-head,
-    .models-list-row {
-      grid-template-columns:
-        minmax(0, 1fr) 7rem 4.5rem 6.5rem 8.5rem 8.5rem 4rem
+    .models-grid {
+      --hd-list-cols: minmax(0, 1fr) 7rem 4.5rem 6.5rem 8.5rem 8.5rem 4rem
         2.5rem;
+    }
+
+    .models-grid--text {
+      --hd-list-cols: minmax(0, 1fr) 7rem 4.5rem 6.5rem 8.5rem 8.5rem 4rem;
+    }
+
+    /* The widest layout is the only one with room to loosen the columns;
+       below it the gap is what keeps eight of them on the line. */
+    .models-grid .hd-list-head,
+    .models-grid .hd-list-row {
       gap: var(--hd-space-3);
     }
 
-    .models-list--text .models-list-head,
-    .models-list--text .models-list-row {
-      grid-template-columns:
-        minmax(0, 1fr) 7rem 4.5rem 6.5rem 8.5rem 8.5rem
-        4rem;
-    }
-
-    .models-list-th.models-col-wide {
+    .hd-list-th.models-col-wide {
       display: inline-flex;
     }
 
@@ -425,8 +346,8 @@
       transition: opacity var(--hd-dur-fast) var(--hd-ease);
     }
 
-    .models-list-row:hover .models-list-try,
-    .models-list-row:focus-within .models-list-try {
+    .hd-list-row:hover .models-list-try,
+    .hd-list-row:focus-within .models-list-try {
       opacity: 1;
     }
   }

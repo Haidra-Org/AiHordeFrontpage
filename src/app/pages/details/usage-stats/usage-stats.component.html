@@ -93,25 +93,25 @@
             @for (group of liveGroups(); track group.key) {
               <div class="hd-card usage-group usage-group--{{ group.key }}">
                 <p class="hd-card-title">{{ group.titleKey | transloco }}</p>
-                <div class="stat-tiles">
+                <div class="hd-stats">
                   @for (tile of group.tiles; track tile.key) {
-                    <div class="stat-tile">
-                      <span class="stat-tile-label">
+                    <div class="hd-stat">
+                      <span class="hd-stat-label">
                         {{ tile.labelKey | transloco }}
                         @if (tile.termKey) {
                           <app-info-tooltip [termKey]="tile.termKey" />
                         }
                       </span>
-                      <span class="stat-tile-value">{{ tile.value }}</span>
+                      <span class="hd-stat-value">{{ tile.value }}</span>
                       @if (tile.unit) {
-                        <span class="stat-tile-note">
+                        <span class="hd-stat-note">
                           <app-unit-tooltip
                             [unit]="tile.unit"
                             [primaryOverride]="tile.note ?? ''"
                           />
                         </span>
                       } @else if (tile.note) {
-                        <span class="stat-tile-note">{{ tile.note }}</span>
+                        <span class="hd-stat-note">{{ tile.note }}</span>
                       }
                     </div>
                   }
@@ -134,15 +134,15 @@
               <p class="hd-card-title">
                 {{ "details.usage.image_totals" | transloco }}
               </p>
-              <div class="stat-tiles">
+              <div class="hd-stats">
                 @for (tile of imagePeriodTiles(); track tile.key) {
-                  <div class="stat-tile">
-                    <span class="stat-tile-label">{{
+                  <div class="hd-stat">
+                    <span class="hd-stat-label">{{
                       tile.labelKey | transloco
                     }}</span>
-                    <span class="stat-tile-value">{{ tile.value }}</span>
+                    <span class="hd-stat-value">{{ tile.value }}</span>
                     @if (tile.unit) {
-                      <span class="stat-tile-note">
+                      <span class="hd-stat-note">
                         <app-unit-tooltip
                           [unit]="tile.unit"
                           [primaryOverride]="tile.note ?? ''"
@@ -158,15 +158,15 @@
               <p class="hd-card-title">
                 {{ "details.usage.text_totals" | transloco }}
               </p>
-              <div class="stat-tiles">
+              <div class="hd-stats">
                 @for (tile of textPeriodTiles(); track tile.key) {
-                  <div class="stat-tile">
-                    <span class="stat-tile-label">{{
+                  <div class="hd-stat">
+                    <span class="hd-stat-label">{{
                       tile.labelKey | transloco
                     }}</span>
-                    <span class="stat-tile-value">{{ tile.value }}</span>
+                    <span class="hd-stat-value">{{ tile.value }}</span>
                     @if (tile.unit) {
-                      <span class="stat-tile-note">
+                      <span class="hd-stat-note">
                         <app-unit-tooltip
                           [unit]="tile.unit"
                           [primaryOverride]="tile.note ?? ''"
@@ -335,26 +335,26 @@
             </div>
           </div>
 
-          <div class="stat-tiles">
-            <div class="stat-tile">
-              <span class="stat-tile-label">{{
+          <div class="hd-stats">
+            <div class="hd-stat">
+              <span class="hd-stat-label">{{
                 "details.usage.total_models" | transloco
               }}</span>
-              <span class="stat-tile-value">{{
+              <span class="hd-stat-value">{{
                 imageModelsUsed() | number
               }}</span>
-              <span class="stat-tile-note">{{
+              <span class="hd-stat-note">{{
                 timePeriodLabel() | transloco
               }}</span>
             </div>
-            <div class="stat-tile">
-              <span class="stat-tile-label">{{
+            <div class="hd-stat">
+              <span class="hd-stat-label">{{
                 "details.usage.total_generations" | transloco
               }}</span>
-              <span class="stat-tile-value">{{
+              <span class="hd-stat-value">{{
                 totalImageModelRequests() | number
               }}</span>
-              <span class="stat-tile-note">{{
+              <span class="hd-stat-note">{{
                 timePeriodLabel() | transloco
               }}</span>
             </div>
@@ -477,26 +477,24 @@
             </div>
           </div>
 
-          <div class="stat-tiles">
-            <div class="stat-tile">
-              <span class="stat-tile-label">{{
+          <div class="hd-stats">
+            <div class="hd-stat">
+              <span class="hd-stat-label">{{
                 "details.usage.total_models" | transloco
               }}</span>
-              <span class="stat-tile-value">{{
-                textModelsUsed() | number
-              }}</span>
-              <span class="stat-tile-note">{{
+              <span class="hd-stat-value">{{ textModelsUsed() | number }}</span>
+              <span class="hd-stat-note">{{
                 timePeriodLabel() | transloco
               }}</span>
             </div>
-            <div class="stat-tile">
-              <span class="stat-tile-label">{{
+            <div class="hd-stat">
+              <span class="hd-stat-label">{{
                 "details.usage.total_generations" | transloco
               }}</span>
-              <span class="stat-tile-value">{{
+              <span class="hd-stat-value">{{
                 totalTextModelRequests() | number
               }}</span>
-              <span class="stat-tile-note">{{
+              <span class="hd-stat-note">{{
                 timePeriodLabel() | transloco
               }}</span>
             </div>

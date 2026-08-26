@@ -42,11 +42,11 @@
 <section class="section-secondary">
   <div class="container-page-content">
     @if (auth.isLoading() && !auth.isInitialized()) {
-      <div class="profile-skeleton" aria-busy="true">
-        <span class="profile-skeleton-bar profile-skeleton-bar--title"></span>
-        <span class="profile-skeleton-bar profile-skeleton-bar--wide"></span>
-        <span class="profile-skeleton-bar"></span>
-        <span class="profile-skeleton-bar profile-skeleton-bar--wide"></span>
+      <div class="hd-skeleton" aria-busy="true">
+        <span class="hd-skeleton-bar hd-skeleton-bar--title"></span>
+        <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+        <span class="hd-skeleton-bar"></span>
+        <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
       </div>
     } @else if (!auth.isLoggedIn()) {
       <div class="profile-login">

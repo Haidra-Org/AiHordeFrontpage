@@ -44,19 +44,19 @@
     </div>
 
     @if (!error() && totalModels() > 0) {
-      <div class="stat-tiles">
-        <div class="stat-tile">
-          <span class="stat-tile-label">{{
+      <div class="hd-stats">
+        <div class="hd-stat">
+          <span class="hd-stat-label">{{
             "details.models.total_models" | transloco
           }}</span>
-          <span class="stat-tile-value">{{ formatNumber(totalModels()) }}</span>
+          <span class="hd-stat-value">{{ formatNumber(totalModels()) }}</span>
         </div>
-        <div class="stat-tile">
-          <span class="stat-tile-label">{{
+        <div class="hd-stat">
+          <span class="hd-stat-label">{{
             totalQueuedLabelKey() | transloco
           }}</span>
-          <span class="stat-tile-value">{{ totalQueuedValue() }}</span>
-          <span class="stat-tile-note">{{
+          <span class="hd-stat-value">{{ totalQueuedValue() }}</span>
+          <span class="hd-stat-note">{{
             totalQueuedUnit().technical.formatted
           }}</span>
         </div>
@@ -328,97 +328,97 @@
         </div>
 
         <div
-          class="models-list"
-          [class.models-list--text]="activeTab() !== 'image'"
+          class="hd-list models-grid"
+          [class.models-grid--text]="activeTab() !== 'image'"
         >
-          <div class="models-list-head">
+          <div class="hd-list-head">
             <button
               type="button"
-              class="models-list-th"
-              [class.models-list-th--active]="sortField() === 'name'"
+              class="hd-list-th"
+              [class.hd-list-th--active]="sortField() === 'name'"
               (click)="setSortField('name')"
             >
               {{ "details.models.column.name" | transloco }}
               @if (sortField() === "name") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-list-th models-col-family"
-              [class.models-list-th--active]="sortField() === 'baseline'"
+              class="hd-list-th models-col-family"
+              [class.hd-list-th--active]="sortField() === 'baseline'"
               (click)="setSortField('baseline')"
             >
               {{ "details.models.filters.baseline" | transloco }}
               @if (sortField() === "baseline") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right"
-              [class.models-list-th--active]="sortField() === 'count'"
+              class="hd-list-th hd-list-th--right"
+              [class.hd-list-th--active]="sortField() === 'count'"
               (click)="setSortField('count')"
             >
               {{ "details.models.column.workers" | transloco }}
               @if (sortField() === "count") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right"
-              [class.models-list-th--active]="sortField() === 'queued'"
+              class="hd-list-th hd-list-th--right"
+              [class.hd-list-th--active]="sortField() === 'queued'"
               (click)="setSortField('queued')"
             >
               {{ queuedColumnKey() | transloco }}
               @if (sortField() === "queued") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right models-col-wide"
-              [class.models-list-th--active]="sortField() === 'usage'"
+              class="hd-list-th hd-list-th--right models-col-wide"
+              [class.hd-list-th--active]="sortField() === 'usage'"
               (click)="setSortField('usage')"
             >
               {{ "details.models.column.usage" | transloco }}
               @if (sortField() === "usage") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right models-col-wide"
-              [class.models-list-th--active]="sortField() === 'performance'"
+              class="hd-list-th hd-list-th--right models-col-wide"
+              [class.hd-list-th--active]="sortField() === 'performance'"
               (click)="setSortField('performance')"
             >
               {{ performanceColumnKey() | transloco }}
               @if (sortField() === "performance") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-list-th models-list-th--right models-col-mid"
-              [class.models-list-th--active]="sortField() === 'eta'"
+              class="hd-list-th hd-list-th--right models-col-mid"
+              [class.hd-list-th--active]="sortField() === 'eta'"
               (click)="setSortField('eta')"
             >
               {{ "details.models.column.eta" | transloco }}
               @if (sortField() === "eta") {
-                <span class="models-list-sort" aria-hidden="true">{{
+                <span class="hd-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
@@ -427,8 +427,8 @@
 
           @for (row of filteredRows(); track row.model.name) {
             <div
-              class="models-list-row"
-              [class.models-list-row--idle]="row.model.count === 0"
+              class="hd-list-row"
+              [class.hd-list-row--idle]="row.model.count === 0"
             >
               <div class="models-list-identity">
                 <a
