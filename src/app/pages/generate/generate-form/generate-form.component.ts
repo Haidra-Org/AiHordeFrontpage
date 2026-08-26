@@ -545,7 +545,7 @@ export class GenerateFormComponent implements OnInit {
      tools, so this header is the studio's top line and the place the glossary
      is reached from. The shell's copy takes over from 1024px up. */
   public readonly glossary = inject(GlossaryService);
-  /** Backs the Options list's full-screen row; the header carries no toggle. */
+  /** Backs the full-screen control: in Options wide, beside it on a phone. */
   public readonly fullscreen = inject(FullscreenService);
   private readonly toast = inject(ToastService);
   private readonly anchors = inject(TutorialAnchorService);
@@ -691,6 +691,9 @@ export class GenerateFormComponent implements OnInit {
   /** The Options trigger, which dismissals hand focus back to. */
   private readonly optionsBtn =
     viewChild<ElementRef<HTMLButtonElement>>('optionsBtn');
+  /** The phone's standing full-screen button, used when fullscreen returns. */
+  private readonly fullscreenBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('fullscreenBtn');
   /** Whether the reset control is asking before it clears anything. */
   public readonly resetConfirmOpen = signal(false);
   /** The confirm's anchor, used to detect click-away dismissals. */
@@ -1020,7 +1023,6 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public readonly negativePromptOpen = signal(false);
-  public readonly customSizeOpen = signal(false);
   /** Whether the CivitAI browse-and-add modal is open. */
   public readonly civitOpen = signal(false);
   /** Whether the style preview browser is open. */
@@ -1764,6 +1766,24 @@ export class GenerateFormComponent implements OnInit {
       : '';
   });
 
+  /** Width of the live aspect preview, scaled with its height inside the stage. */
+  public sizePreviewWidth(): number {
+    const controls = this.form().controls;
+    const width = Math.max(1, controls.width.value);
+    const height = Math.max(1, controls.height.value);
+    const scale = Math.min(42 / width, 26 / height);
+    return width * scale;
+  }
+
+  /** Height of the live aspect preview, scaled with its width inside the stage. */
+  public sizePreviewHeight(): number {
+    const controls = this.form().controls;
+    const width = Math.max(1, controls.width.value);
+    const height = Math.max(1, controls.height.value);
+    const scale = Math.min(42 / width, 26 / height);
+    return height * scale;
+  }
+
   public readonly samplingSummary = computed(() => {
     const value = this.value();
     return value
@@ -1927,8 +1947,15 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public applyPreset(width: number, height: number): void {
-    this.form().patchValue({ width, height });
-    this.form().controls.width.markAsDirty();
+    const controls = this.form().controls;
+    const portrait = controls.height.value > controls.width.value;
+    this.form().patchValue(
+      portrait && width !== height
+        ? { width: height, height: width }
+        : { width, height },
+    );
+    controls.width.markAsDirty();
+    controls.height.markAsDirty();
   }
 
   /**
@@ -2056,10 +2083,6 @@ export class GenerateFormComponent implements OnInit {
 
   public toggleNegativePrompt(): void {
     this.negativePromptOpen.update((open) => !open);
-  }
-
-  public toggleCustomSize(): void {
-    this.customSizeOpen.update((open) => !open);
   }
 
   // --- Post-processing single-choice controls -----------------------------
@@ -2593,17 +2616,20 @@ export class GenerateFormComponent implements OnInit {
   }
 
   /**
-   * The full-screen row lives in the Options list, which closes behind it, and
-   * Escape or the floating button can end full screen with no row on the page
-   * at all. Either way focus goes back to the trigger the list opens from.
+   * Escape or the floating button can end full screen away from the control
+   * that opened it. Return to the phone's standing button where it exists, or
+   * to the Options trigger that owns the wide presentation.
    */
   private readonly fullscreenFocus = restoreFocusOnFullscreenExit(
-    () => this.optionsBtn()?.nativeElement,
+    () =>
+      this.fullscreenBtn()?.nativeElement ?? this.optionsBtn()?.nativeElement,
   );
 
-  public toggleFullscreen(): void {
+  public toggleFullscreen(fromOptions = true): void {
     void this.fullscreen.toggle();
-    this.closeOptionsAndFocus();
+    if (fromOptions) {
+      this.closeOptionsAndFocus();
+    }
   }
 
   public fullscreenLabelKey(): string {

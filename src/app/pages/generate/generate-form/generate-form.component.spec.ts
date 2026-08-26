@@ -1497,10 +1497,10 @@ describe('GenerateFormComponent settings groups', () => {
       groupNamed(
         fixture.nativeElement as HTMLElement,
         'Dimensions',
-      ).querySelectorAll<HTMLElement>('.gs-chip'),
+      ).querySelectorAll<HTMLElement>('.gs-size-aspect'),
     );
     const threeTwo = chips.find((chip) => chip.textContent?.trim() === '3:2')!;
-    expect(threeTwo.classList).toContain('gs-chip--active');
+    expect(threeTwo.classList).toContain('gs-size-aspect--active');
 
     host.querySelector<HTMLElement>('.gs-chip--swap')!.click();
     fixture.detectChanges();
@@ -1509,8 +1509,22 @@ describe('GenerateFormComponent settings groups', () => {
     expect(form.controls.width.value).toBe(832);
     expect(form.controls.height.value).toBe(1216);
     // The shape is the same one; only which way up it is has changed.
-    expect(threeTwo.classList).toContain('gs-chip--active');
+    expect(threeTwo.classList).toContain('gs-size-aspect--active');
     expect(component.isPresetActive(1216, 832)).toBe(true);
+  });
+
+  it('applies a shape in the orientation of the current picture', async () => {
+    const { component } = await render({ width: 512, height: 768 });
+
+    component.applyPreset(1216, 832);
+
+    expect(component.form().controls.width.value).toBe(832);
+    expect(component.form().controls.height.value).toBe(1216);
+
+    component.applyPreset(1024, 1024);
+
+    expect(component.form().controls.width.value).toBe(1024);
+    expect(component.form().controls.height.value).toBe(1024);
   });
 
   it('lifts the shapes and the chosen size when the hires pass goes on', async () => {
@@ -1566,6 +1580,23 @@ describe('GenerateFormComponent settings groups', () => {
 
     expect(component.form().controls.width.value).toBe(576);
     expect(component.form().controls.height.value).toBe(960);
+  });
+
+  it('normalizes the live size preview for landscape and portrait values', async () => {
+    const { component } = await render({ width: 1024, height: 512 });
+
+    expect(component.sizePreviewWidth()).toBe(42);
+    expect(component.sizePreviewHeight()).toBe(21);
+
+    component.swapDimensions();
+
+    expect(component.sizePreviewWidth()).toBe(13);
+    expect(component.sizePreviewHeight()).toBe(26);
+
+    component.form().patchValue({ width: 768, height: 768 });
+
+    expect(component.sizePreviewWidth()).toBe(26);
+    expect(component.sizePreviewHeight()).toBe(26);
   });
 
   it('offers every upscaler and face fixer the horde knows, named for reading', async () => {

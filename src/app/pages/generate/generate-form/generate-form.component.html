@@ -186,6 +186,31 @@
           </div>
         }
       </div>
+      <!-- On a phone fullscreen is a primary view control, so keep it beside
+           Options instead of making the reader open the sheet to reach it. -->
+      @if (narrow() && (fullscreen.available || fullscreen.phone())) {
+        <button
+          #fullscreenBtn
+          type="button"
+          class="gs-mini-btn"
+          [class.gs-mini-btn--on]="fullscreen.filling()"
+          [attr.aria-pressed]="fullscreen.filling()"
+          (click)="toggleFullscreen(false)"
+        >
+          <app-icon
+            [name]="
+              fullscreen.filling()
+                ? 'arrows-pointing-in'
+                : 'arrows-pointing-out'
+            "
+            class="gs-ico-sm"
+            aria-hidden="true"
+          />
+          <span class="gs-mini-btn-label">{{
+            fullscreenLabelKey() | transloco
+          }}</span>
+        </button>
+      }
       @if (ledgerCount() && !narrow()) {
         <ng-container *ngTemplateOutlet="ledgerControl" />
       }
@@ -632,143 +657,171 @@
             }
           </div>
           <div
-            class="flex items-center gap-2"
+            class="gs-size-tool"
             [class.gs-locked]="isSectionLocked('dimensions')"
           >
-            <div class="gs-seg gs-seg--xs" role="group">
-              <button
-                type="button"
-                class="gs-seg-opt"
-                [attr.aria-pressed]="sizeFamily() === 512"
-                [disabled]="isSectionLocked('dimensions')"
-                (click)="setSizeBase(512)"
-              >
-                {{ "generate.form.base_sd15" | transloco }}
-              </button>
-              <!-- <button
-                type="button"
-                class="gs-seg-opt"
-                [attr.aria-pressed]="sizeFamily() === 768"
-                [disabled]="isSectionLocked('dimensions')"
-                (click)="setSizeBase(768)"
-              >
-                {{ "generate.form.base_sd2" | transloco }}
-              </button> -->
-              <button
-                type="button"
-                class="gs-seg-opt"
-                [attr.aria-pressed]="sizeFamily() === 1024"
-                [disabled]="isSectionLocked('dimensions')"
-                (click)="setSizeBase(1024)"
-              >
-                {{ "generate.form.base_sdxl" | transloco }}
-              </button>
+            <div class="gs-size-scale">
+              <div>
+                <p class="gs-size-kicker">
+                  {{ "generate.form.model_scale_label" | transloco }}
+                </p>
+                <p class="gs-sublabel">
+                  {{ "generate.form.model_scale_hint" | transloco }}
+                </p>
+              </div>
+              <div class="gs-size-scale-options" role="group">
+                <button
+                  type="button"
+                  class="gs-size-scale-opt"
+                  [attr.aria-pressed]="sizeFamily() === 512"
+                  [disabled]="isSectionLocked('dimensions')"
+                  (click)="setSizeBase(512)"
+                >
+                  <strong>512</strong>
+                  <span>{{ "generate.form.base_sd15" | transloco }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="gs-size-scale-opt"
+                  [attr.aria-pressed]="sizeFamily() === 1024"
+                  [disabled]="isSectionLocked('dimensions')"
+                  (click)="setSizeBase(1024)"
+                >
+                  <strong>1024</strong>
+                  <span>{{ "generate.form.base_sdxl" | transloco }}</span>
+                </button>
+              </div>
             </div>
-            <span class="gs-sublabel gs-mono ml-auto">
-              {{
-                "generate.footer.dimensions"
-                  | transloco
-                    : {
-                        width: form().controls.width.value,
-                        height: form().controls.height.value,
-                      }
-              }}
-            </span>
-          </div>
-          <div
-            class="flex flex-wrap gap-1.5"
-            [class.gs-locked]="isSectionLocked('dimensions')"
-          >
-            @for (preset of presets(); track preset.labelKey) {
-              <button
-                type="button"
-                class="gs-chip"
-                [class.gs-chip--active]="
-                  isPresetActive(preset.width, preset.height)
-                "
-                [disabled]="isSectionLocked('dimensions')"
-                (click)="applyPreset(preset.width, preset.height)"
-              >
-                {{ preset.labelKey | transloco }}
-              </button>
-            }
-            <!-- The chips are square or wide; this is how a tall picture is
-                 asked for, and it turns a custom size over too. -->
-            <button
-              type="button"
-              class="gs-chip gs-chip--swap ml-auto"
-              [disabled]="isSectionLocked('dimensions')"
-              (click)="swapDimensions()"
-            >
-              <app-icon name="arrows-up-down" />
-              {{ "generate.aspect.swap" | transloco }}
-            </button>
-          </div>
-          <div [class.gs-locked]="isSectionLocked('dimensions')">
-            <button
-              type="button"
-              class="gs-textlink flex items-center gap-1"
-              (click)="toggleCustomSize()"
-              [attr.aria-expanded]="customSizeOpen()"
-            >
-              <app-icon
-                class="gs-chev"
-                [name]="customSizeOpen() ? 'chevron-down' : 'chevron-right'"
-              />
-              {{ "generate.form.custom_size_toggle" | transloco }}
-            </button>
-            @if (customSizeOpen()) {
-              <div class="mt-2 flex flex-col gap-3">
-                <div>
-                  <label class="gs-slabel" for="generate-width">
-                    {{
-                      "generate.form.width_label"
-                        | transloco: { value: form().controls.width.value }
-                    }}
-                  </label>
+
+            <div class="gs-size-dimensions">
+              <div class="gs-size-axis">
+                <label for="generate-width">{{
+                  "generate.form.width_short" | transloco
+                }}</label>
+                <div class="gs-size-number-wrap">
                   <input
                     id="generate-width"
-                    class="gs-range mt-1.5"
-                    type="range"
-                    formControlName="width"
+                    class="gs-size-number"
+                    type="number"
+                    inputmode="numeric"
+                    autocomplete="off"
                     [min]="minDimension"
                     [max]="maxDimension"
                     [step]="dimensionStep"
-                    [style.--gs-range-fill.%]="
-                      rangeFill(
-                        form().controls.width.value,
-                        minDimension,
-                        maxDimension
-                      )
-                    "
+                    [value]="form().controls.width.value"
+                    [disabled]="isSectionLocked('dimensions')"
+                    (input)="setNumberEntry(form().controls.width, $event)"
                   />
+                  <span>px</span>
                 </div>
-                <div>
-                  <label class="gs-slabel" for="generate-height">
-                    {{
-                      "generate.form.height_label"
-                        | transloco: { value: form().controls.height.value }
-                    }}
-                  </label>
+                <input
+                  class="gs-range"
+                  type="range"
+                  formControlName="width"
+                  [min]="minDimension"
+                  [max]="maxDimension"
+                  [step]="dimensionStep"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.width.value,
+                      minDimension,
+                      maxDimension
+                    )
+                  "
+                />
+              </div>
+
+              <button
+                type="button"
+                class="gs-size-swap gs-chip--swap"
+                [disabled]="isSectionLocked('dimensions')"
+                (click)="swapDimensions()"
+                [attr.aria-label]="'generate.aspect.swap' | transloco"
+                [title]="'generate.aspect.swap' | transloco"
+              >
+                <app-icon name="arrows-up-down" />
+              </button>
+
+              <div class="gs-size-axis">
+                <label for="generate-height">{{
+                  "generate.form.height_short" | transloco
+                }}</label>
+                <div class="gs-size-number-wrap">
                   <input
                     id="generate-height"
-                    class="gs-range mt-1.5"
-                    type="range"
-                    formControlName="height"
+                    class="gs-size-number"
+                    type="number"
+                    inputmode="numeric"
+                    autocomplete="off"
                     [min]="minDimension"
                     [max]="maxDimension"
                     [step]="dimensionStep"
-                    [style.--gs-range-fill.%]="
-                      rangeFill(
-                        form().controls.height.value,
-                        minDimension,
-                        maxDimension
-                      )
-                    "
+                    [value]="form().controls.height.value"
+                    [disabled]="isSectionLocked('dimensions')"
+                    (input)="setNumberEntry(form().controls.height, $event)"
                   />
+                  <span>px</span>
+                </div>
+                <input
+                  class="gs-range"
+                  type="range"
+                  formControlName="height"
+                  [min]="minDimension"
+                  [max]="maxDimension"
+                  [step]="dimensionStep"
+                  [style.--gs-range-fill.%]="
+                    rangeFill(
+                      form().controls.height.value,
+                      minDimension,
+                      maxDimension
+                    )
+                  "
+                />
+              </div>
+            </div>
+
+            <div class="gs-size-aspects">
+              <div class="gs-size-aspects-head">
+                <p class="gs-size-kicker">
+                  {{ "generate.form.aspect_ratio_label" | transloco }}
+                </p>
+                <div
+                  class="gs-size-preview"
+                  [title]="
+                    'generate.footer.dimensions'
+                      | transloco
+                        : {
+                            width: form().controls.width.value,
+                            height: form().controls.height.value,
+                          }
+                  "
+                  aria-hidden="true"
+                >
+                  <span
+                    [style.width.px]="sizePreviewWidth()"
+                    [style.height.px]="sizePreviewHeight()"
+                  ></span>
                 </div>
               </div>
-            }
+              <div class="gs-size-aspect-options" role="group">
+                @for (preset of presets(); track preset.labelKey) {
+                  <button
+                    type="button"
+                    class="gs-size-aspect"
+                    [class.gs-size-aspect--active]="
+                      isPresetActive(preset.width, preset.height)
+                    "
+                    [attr.aria-pressed]="
+                      isPresetActive(preset.width, preset.height)
+                    "
+                    [disabled]="isSectionLocked('dimensions')"
+                    (click)="applyPreset(preset.width, preset.height)"
+                  >
+                    <span>{{ preset.labelKey | transloco }}</span>
+                  </button>
+                }
+              </div>
+            </div>
           </div>
           <ng-container
             *ngTemplateOutlet="reqHint; context: { hint: sizeAdvisory() }"
@@ -2756,7 +2809,7 @@
   <!-- A phone gets this whether or not the browser has a fullscreen of its own:
        where it has none, the page stands its own bars down instead. Wide with
        no support at all, nothing is drawn. -->
-  @if (fullscreen.available || fullscreen.phone()) {
+  @if (!narrow() && (fullscreen.available || fullscreen.phone())) {
     <button
       type="button"
       class="gs-opt-row"
