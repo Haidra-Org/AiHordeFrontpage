@@ -108,8 +108,12 @@ import {
   RequirementHint,
   SAMPLERS,
   STRIP_BACKGROUND,
+  STYLE_PINNED_FIELDS,
+  STYLE_PINNED_FIELD_SECTION,
   StyleLockSection,
   StylePickerGroup,
+  StylePinnedField,
+  StyleValueSnapshot,
   UPSCALERS,
   WaitEstimate,
   buildAspectPresets,
@@ -135,6 +139,7 @@ import {
   liftSizeBase,
   rescalePresetToBase,
   stepsAdvisory,
+  styledFormValue,
   suggestedSamplers,
   suggestedSettings,
   suggestedSettingsCount,
@@ -265,49 +270,21 @@ const GROUP_BY_SECTION: Readonly<Partial<Record<SectionId, GroupId>>> = {
   workflows: 'transparent',
 };
 
-/** A form field a style can freeze, named as the form's control names it. */
-export type LockedField =
-  | 'model'
-  | 'width'
-  | 'height'
-  | 'steps'
-  | 'cfg_scale'
-  | 'sampler_name'
-  | 'clip_skip'
-  | 'scheduler'
-  | 'hires_fix'
-  | 'post_processing'
-  | 'facefixer_strength'
-  | 'tiling'
-  | 'transparent'
-  | 'denoising_strength';
+/**
+ * A form field a style can freeze. The extra models follow the primary rather
+ * than wearing a lock of their own, so they are not among the fields the panel
+ * paints as frozen.
+ */
+export type LockedField = Exclude<StylePinnedField, 'extraModels'>;
 
-/** The section each freezable field is handed back with. */
-const LOCKED_FIELD_SECTION: Readonly<Record<LockedField, StyleLockSection>> = {
-  model: 'model',
-  width: 'dimensions',
-  height: 'dimensions',
-  steps: 'sampling',
-  cfg_scale: 'sampling',
-  sampler_name: 'sampling',
-  clip_skip: 'sampling',
-  scheduler: 'sampling',
-  hires_fix: 'sampling',
-  post_processing: 'finishing',
-  facefixer_strength: 'finishing',
-  tiling: 'finishing',
-  transparent: 'finishing',
-  denoising_strength: 'finishing',
-};
-
-const LOCKED_FIELDS = Object.keys(
-  LOCKED_FIELD_SECTION,
-) as readonly LockedField[];
+const LOCKED_FIELDS = STYLE_PINNED_FIELDS.filter(
+  (field): field is LockedField => field !== 'extraModels',
+);
 
 /** Whether `forced` names a value for `field`. */
 function stylePinsField(
   forced: StyleForcedParams,
-  field: LockedField,
+  field: StylePinnedField,
 ): boolean {
   // A style names a schedule only through its karras flag, and the request
   // keeps the reader's schedule otherwise, so the control locks only when the
@@ -315,9 +292,29 @@ function stylePinsField(
   if (field === 'scheduler') {
     return forced.karras !== undefined;
   }
+  // The extra models are narrowed to the models a style names, so they are held
+  // exactly when it names one.
+  if (field === 'extraModels') {
+    return forced.model !== undefined;
+  }
   // An empty post-processing list is still a decision: it is the style asking
   // for none, so the control freezes on it as it would on a named processor.
   return forced[field] !== undefined;
+}
+
+/**
+ * Whether two form values stand for the same setting. Compared rather than
+ * matched by identity because the styled value is rebuilt on every pass, so a
+ * list written back on identity alone would write forever.
+ */
+function sameFieldValue(left: unknown, right: unknown): boolean {
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return (
+      left.length === right.length &&
+      left.every((entry, index) => entry === right[index])
+    );
+  }
+  return left === right;
 }
 
 /** The fields each group owns, for the mark that says it holds a changed value. */
@@ -396,7 +393,7 @@ const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
 /** A setting the changed-settings ledger can list. */
 type LedgerField = Exclude<
   keyof GenerateFormValue,
-  'styleDetach' | 'modelBeforeStyle'
+  'styleDetach' | 'valuesBeforeStyle'
 >;
 
 /** Where a ledger row is listed: a collapsible group, or the compose cards. */
@@ -2016,9 +2013,8 @@ export class GenerateFormComponent implements OnInit {
 
   /**
    * The value a line of advice is about. A control a style has frozen goes on
-   * holding whatever the reader had before the style, while the request carries
-   * the style's value: advice read off the control would be advice about a
-   * setting nothing is going to use.
+   * holding the style's value, so advice about a neighbouring setting still
+   * reads the value the request will carry rather than the reader's own.
    */
   private advisedValue<T>(
     field: LockedField,
@@ -2026,6 +2022,16 @@ export class GenerateFormComponent implements OnInit {
     forced: T | undefined,
   ): T {
     return forced !== undefined && this.isFieldLocked(field) ? forced : own;
+  }
+
+  /**
+   * Drop a line of advice about a field the style holds. The reader cannot move
+   * that control, so a line telling them to is asking for something they cannot
+   * do; what the style's own values imply for the request is still said by the
+   * request lint and the price breakdown, which read the styled value.
+   */
+  private unlessPinned<T>(field: LockedField, hint: T | null): T | null {
+    return this.isFieldLocked(field) ? null : hint;
   }
 
   /** The sampler the request will run, which the sampler-shaped advice reads. */
@@ -2040,14 +2046,13 @@ export class GenerateFormComponent implements OnInit {
   /** The one line under the step count. */
   public stepsAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
-    return stepsAdvisory(
-      this.modelRequirements(),
-      this.samplerContract(),
-      this.advisedSampler(),
-      this.advisedValue(
-        'steps',
+    return this.unlessPinned(
+      'steps',
+      stepsAdvisory(
+        this.modelRequirements(),
+        this.samplerContract(),
+        this.advisedSampler(),
         controls.steps.value,
-        this.forcedParams()?.steps,
       ),
     );
   }
@@ -2055,47 +2060,43 @@ export class GenerateFormComponent implements OnInit {
   /** The one line under the guidance scale. */
   public cfgAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
-    return cfgAdvisory(
-      this.modelRequirements(),
-      this.samplerContract(),
-      this.advisedSampler(),
-      this.advisedValue(
-        'cfg_scale',
+    return this.unlessPinned(
+      'cfg_scale',
+      cfgAdvisory(
+        this.modelRequirements(),
+        this.samplerContract(),
+        this.advisedSampler(),
         controls.cfg_scale.value,
-        this.forcedParams()?.cfg_scale,
       ),
     );
   }
 
   /** The one line under the CLIP skip slider. */
   public clipSkipAdvisory(): RequirementHint | null {
-    return clipSkipAdvisory(
-      this.modelRequirements(),
-      this.advisedValue(
-        'clip_skip',
+    return this.unlessPinned(
+      'clip_skip',
+      clipSkipAdvisory(
+        this.modelRequirements(),
         this.form().controls.clip_skip.value,
-        this.forcedParams()?.clip_skip,
       ),
     );
   }
 
   public samplerHint(): RequirementHint | null {
-    return samplerRequirementHint(
-      this.modelRequirements(),
-      this.advisedSampler(),
+    return this.unlessPinned(
+      'sampler_name',
+      samplerRequirementHint(this.modelRequirements(), this.advisedSampler()),
     );
   }
 
   /** The one line under the schedule select. */
   public scheduleAdvisory(): RequirementHint | null {
-    const karras = this.forcedParams()?.karras;
-    return scheduleAdvisory(
-      this.modelRequirements(),
-      this.samplerContract(),
-      this.advisedValue(
-        'scheduler',
+    return this.unlessPinned(
+      'scheduler',
+      scheduleAdvisory(
+        this.modelRequirements(),
+        this.samplerContract(),
         this.form().controls.scheduler.value,
-        karras === undefined ? undefined : karras ? 'karras' : 'normal',
       ),
     );
   }
@@ -2108,15 +2109,19 @@ export class GenerateFormComponent implements OnInit {
   /** The one line under the size controls. */
   public sizeAdvisory(): RequirementHint | null {
     const controls = this.form().controls;
-    const forced = this.forcedParams();
+    // The size is one line under two controls, and a style pinning either takes
+    // the shape out of the reader's hands.
+    if (this.isFieldLocked('width') || this.isFieldLocked('height')) {
+      return null;
+    }
     return sizeAdvisory(
       this.modelBaseline(),
-      this.advisedValue('width', controls.width.value, forced?.width),
-      this.advisedValue('height', controls.height.value, forced?.height),
+      controls.width.value,
+      controls.height.value,
       this.advisedValue(
         'hires_fix',
         controls.hires_fix.value,
-        forced?.hires_fix,
+        this.forcedParams()?.hires_fix,
       ),
     );
   }
@@ -2141,11 +2146,14 @@ export class GenerateFormComponent implements OnInit {
   /** The "hires fix is on and doing nothing at this size" note. */
   public hiresUnneededHint(): RequirementHint | null {
     const controls = this.form().controls;
-    return hiresUnneededHint(
-      this.modelBaseline(),
-      controls.width.value,
-      controls.height.value,
-      controls.hires_fix.value,
+    return this.unlessPinned(
+      'hires_fix',
+      hiresUnneededHint(
+        this.modelBaseline(),
+        controls.width.value,
+        controls.height.value,
+        controls.hires_fix.value,
+      ),
     );
   }
 
@@ -2398,7 +2406,7 @@ export class GenerateFormComponent implements OnInit {
     for (const field of LOCKED_FIELDS) {
       this.setDisabled(controls[field], this.isFieldLocked(field));
     }
-    this.syncPinnedModel();
+    this.syncPinnedFields();
   });
 
   /**
@@ -2412,36 +2420,99 @@ export class GenerateFormComponent implements OnInit {
     return (
       forced !== null &&
       stylePinsField(forced, field) &&
-      !this.detachedSections().includes(LOCKED_FIELD_SECTION[field])
+      !this.detachedSections().includes(STYLE_PINNED_FIELD_SECTION[field])
+    );
+  }
+
+  /** The fields the selected style is pinning over right now. */
+  private pinnedFields(): readonly StylePinnedField[] {
+    const forced = this.forcedParams();
+    if (forced === null) {
+      return [];
+    }
+    const detached = this.detachedSections();
+    return STYLE_PINNED_FIELDS.filter(
+      (field) =>
+        stylePinsField(forced, field) &&
+        !detached.includes(STYLE_PINNED_FIELD_SECTION[field]),
     );
   }
 
   /**
-   * Show the model a style pins in the model field itself. The request already
-   * runs on that model, so a field left showing the reader's own pick names a
-   * model nothing will use.
+   * Show every value a style pins in the control that holds it, and hand the
+   * reader's own values back the moment it stops pinning them. A pinned control
+   * left showing what the reader had names a setting the request will never
+   * carry, and the model field showing one model while another is generated is
+   * the same fault as the schedule reading `karras` under a style that forces
+   * `normal`.
+   *
+   * The values the style stands on are kept in `valuesBeforeStyle` rather than
+   * in a field here, so they come back with the rest of the form after a reload
+   * and survive a switch straight from one style to another: a field already
+   * held is not snapshotted again, so what comes back is always what the reader
+   * had before any style touched it.
    */
-  private syncPinnedModel(): void {
-    const control = this.form().controls.model;
-    // The pick a style stands on lives in the form value rather than in a field
-    // here, so it comes back with the rest of the form after a reload and the
-    // style can still be cleared off it.
-    const before = this.form().controls.modelBeforeStyle;
-    const pinned = this.isFieldLocked('model')
-      ? (this.forcedParams()?.model ?? null)
-      : null;
-    if (pinned !== null) {
-      if (before.value === null) {
-        before.setValue(control.value);
+  private syncPinnedFields(): void {
+    const form = this.form();
+    const controls = form.controls;
+    const value = form.getRawValue();
+    const before: StyleValueSnapshot = { ...(value.valuesBeforeStyle ?? {}) };
+    const pinned = this.pinnedFields();
+    let snapshotChanged = false;
+    let restoredSize = false;
+
+    for (const field of STYLE_PINNED_FIELDS) {
+      if (pinned.includes(field)) {
+        if (!(field in before)) {
+          Object.assign(before, { [field]: value[field] });
+          snapshotChanged = true;
+        }
+      } else if (field in before) {
+        this.writeField(field, before[field]);
+        delete before[field];
+        snapshotChanged = true;
+        restoredSize ||= field === 'width' || field === 'height';
       }
-      if (control.value !== pinned) {
-        control.setValue(pinned);
+    }
+
+    if (restoredSize) {
+      // A restored size is the reader's own, so the hires pass coming back with
+      // it must not move the size onto the shape family that pass implies: the
+      // panel did not choose this size and has no licence to rescale it.
+      this.lastHires = controls.hires_fix.value;
+    }
+
+    const forced = this.forcedParams();
+    if (pinned.length > 0 && forced !== null) {
+      // The style's own values come from the same function the request and the
+      // panel's advice read, so a control can never disagree with what is sent.
+      const styled = styledFormValue(value, {
+        prompt: '',
+        forcedParams: forced,
+      });
+      for (const field of pinned) {
+        this.writeField(field, styled[field]);
       }
+    }
+
+    if (snapshotChanged) {
+      controls.valuesBeforeStyle.setValue(
+        Object.keys(before).length > 0 ? before : null,
+      );
+    }
+  }
+
+  /**
+   * Put `value` in the control named by `field`, leaving an equal value alone so
+   * the sync settles instead of re-writing what is already there.
+   */
+  private writeField(field: StylePinnedField, value: unknown): void {
+    if (value === undefined) {
       return;
     }
-    if (before.value !== null) {
-      control.setValue(before.value);
-      before.setValue(null);
+    const control: AbstractControl = this.form().controls[field];
+    if (!sameFieldValue(control.value, value)) {
+      control.setValue(value);
     }
   }
 
@@ -2526,18 +2597,17 @@ export class GenerateFormComponent implements OnInit {
   }
 
   /**
-   * Take `section` back from the style for this request. The style's own values
-   * are written into the controls first so the user edits from what the style
-   * chose rather than from whatever the form held before the style was picked.
+   * Take `section` back from the style for this request. The controls come back
+   * holding what the reader had before the style pinned them, which is what
+   * asking for their own values means; the sync writes them as the section
+   * leaves the style's hands.
    */
   public detachSection(section: StyleLockSection): void {
-    this.applyStyleValues(section);
     this.setDetachedSections([...this.detachedSections(), section]);
   }
 
   /** Hand `section` back to the style, restoring the values it pins. */
   public reattachSection(section: StyleLockSection): void {
-    this.applyStyleValues(section);
     this.setDetachedSections(
       this.detachedSections().filter((entry) => entry !== section),
     );
@@ -2551,52 +2621,9 @@ export class GenerateFormComponent implements OnInit {
     });
     control.markAsDirty();
     this.syncDetachedSections();
-  }
-
-  private applyStyleValues(section: StyleLockSection): void {
-    const forced = this.forcedParams();
-    if (!forced) {
-      return;
-    }
-    const controls = this.form().controls;
-    const set = <T>(control: FormControl<T>, value: T | undefined): void => {
-      if (value !== undefined) {
-        control.setValue(value);
-        control.markAsDirty();
-      }
-    };
-    if (section === 'model') {
-      // The reader carries on from the style's model, so the pick they had
-      // before it is no longer waiting to come back.
-      controls.modelBeforeStyle.setValue(null);
-      set(controls.model, forced.model);
-    }
-    if (section === 'dimensions') {
-      set(controls.width, forced.width);
-      set(controls.height, forced.height);
-    }
-    if (section === 'finishing') {
-      set(controls.post_processing, forced.post_processing);
-      set(controls.facefixer_strength, forced.facefixer_strength);
-      set(controls.tiling, forced.tiling);
-      set(controls.transparent, forced.transparent);
-      set(controls.denoising_strength, forced.denoising_strength);
-    }
-    if (section === 'sampling') {
-      set(controls.steps, forced.steps);
-      set(controls.cfg_scale, forced.cfg_scale);
-      set(controls.sampler_name, forced.sampler_name);
-      set(controls.clip_skip, forced.clip_skip);
-      set(
-        controls.scheduler,
-        forced.karras === undefined
-          ? undefined
-          : forced.karras
-            ? 'karras'
-            : 'normal',
-      );
-      set(controls.hires_fix, forced.hires_fix);
-    }
+    // The lock sync runs off the detached sections as an effect, but the values
+    // have to be in the controls by the time the click that moved them returns.
+    this.syncPinnedFields();
   }
 
   private syncDetachedSections(): void {

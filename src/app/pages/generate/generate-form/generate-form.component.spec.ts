@@ -161,7 +161,7 @@ describe('GenerateFormComponent style locks', () => {
     expect(request.params?.steps).toBe(FORCED.steps);
   });
 
-  it('detaching a section re-enables it, prefilled with the style values', async () => {
+  it('detaching a section re-enables it, holding the values it replaced', async () => {
     const { fixture, component, form } = await createComponent(FORCED);
     component.detachSection('dimensions');
     fixture.detectChanges();
@@ -170,8 +170,8 @@ describe('GenerateFormComponent style locks', () => {
     expect(component.isSectionLocked('dimensions')).toBe(false);
     expect(form.controls.width.disabled).toBe(false);
     expect(form.controls.height.disabled).toBe(false);
-    expect(form.controls.width.value).toBe(FORCED.width);
-    expect(form.controls.height.value).toBe(FORCED.height);
+    expect(form.controls.width.value).toBe(512);
+    expect(form.controls.height.value).toBe(512);
     // Other sections keep their locks.
     expect(component.isSectionLocked('model')).toBe(true);
     expect(form.controls.steps.disabled).toBe(true);
@@ -604,6 +604,25 @@ describe('GenerateFormComponent model recommendations', () => {
     expect(component.cfgAdvisory()?.violated).toBe(false);
     expect(component.samplerHint()?.violated).toBe(false);
     expect(component.scheduleAdvisory()?.violated).toBe(true);
+  });
+
+  it('says nothing about a control the style holds', async () => {
+    const { fixture, component, form } = await createWithModel({}, 'flux_1', {
+      samplers: ['k_euler'],
+      schedulers: ['karras'],
+    });
+    form.controls.scheduler.setValue('normal');
+    expect(component.scheduleAdvisory()?.violated).toBe(true);
+
+    form.controls.styleName.setValue('Cinematic');
+    fixture.componentRef.setInput('forcedParams', { karras: false });
+    fixture.detectChanges();
+
+    // The schedule is the style's, so advice to move it asks for something the
+    // reader cannot do from here.
+    expect(component.scheduleAdvisory()).toBeNull();
+    // A knob the style leaves alone still gets its line.
+    expect(component.samplerHint()?.violated).toBe(true);
   });
 
   it('shows no hints for a model that recommends nothing', async () => {
@@ -3212,7 +3231,7 @@ describe('GenerateFormComponent pinned model', () => {
     const persisted = coerceFormValue(
       JSON.parse(JSON.stringify(form.getRawValue())),
     );
-    expect(persisted.modelBeforeStyle).toBe('my model');
+    expect(persisted.valuesBeforeStyle?.model).toBe('my model');
 
     const reloaded = TestBed.createComponent(GenerateFormComponent);
     const reloadedForm = createGenerateForm(persisted);
@@ -3226,17 +3245,152 @@ describe('GenerateFormComponent pinned model', () => {
     reloaded.detectChanges();
 
     expect(reloadedForm.controls.model.value).toBe('my model');
-    expect(reloadedForm.controls.modelBeforeStyle.value).toBeNull();
+    expect(reloadedForm.controls.valuesBeforeStyle.value).toBeNull();
   });
 
-  it('carries on from the style model once the reader takes the model back', async () => {
+  it('hands the reader their pick back once they take the model back', async () => {
     const { fixture, component, form } = await createComponent(FORCED);
 
     component.detachSection('model');
     fixture.detectChanges();
 
     expect(form.controls.model.disabled).toBe(false);
+    expect(form.controls.model.value).toBe('my model');
+  });
+});
+
+/** A second style, pinning a sampling section the first one shares. */
+const OTHER_FORCED: StyleForcedParams = {
+  steps: 40,
+  cfg_scale: 12,
+  karras: true,
+};
+
+describe('GenerateFormComponent pinned values', () => {
+  /** Select `name` and hand the panel the parameters it forces. */
+  function applyStyle(
+    fixture: ComponentFixture<GenerateFormComponent>,
+    form: GenerateFormGroup,
+    forced: StyleForcedParams | null,
+    name = 'Cinematic',
+  ): void {
+    form.controls.styleName.setValue(forced ? name : '');
+    fixture.componentRef.setInput('forcedParams', forced);
+    fixture.detectChanges();
+  }
+
+  /**
+   * Put the panel in the state a reader would be in before picking a style. The
+   * size is set off the square the panel snaps a pristine one to, so the
+   * baseline sync leaves it alone and the values under test are only the ones a
+   * style moves.
+   */
+  function readerValues(
+    fixture: ComponentFixture<GenerateFormComponent>,
+    form: GenerateFormGroup,
+  ): void {
+    form.controls.width.setValue(768);
+    form.controls.height.setValue(512);
+    fixture.detectChanges();
+  }
+
+  it('shows every value the style pins in the control that holds it', async () => {
+    const { fixture, form } = await createComponent(null);
+    readerValues(fixture, form);
+    expect(form.controls.scheduler.value).toBe('karras');
+
+    applyStyle(fixture, form, FORCED);
+
     expect(form.controls.model.value).toBe(FORCED.model);
+    expect(form.controls.width.value).toBe(FORCED.width);
+    expect(form.controls.height.value).toBe(FORCED.height);
+    expect(form.controls.steps.value).toBe(FORCED.steps);
+    expect(form.controls.cfg_scale.value).toBe(FORCED.cfg_scale);
+    expect(form.controls.sampler_name.value).toBe(FORCED.sampler_name);
+    expect(form.controls.clip_skip.value).toBe(FORCED.clip_skip);
+    expect(form.controls.hires_fix.value).toBe(true);
+    // The style names its schedule as the legacy flag, and a control still
+    // reading 'karras' under a style forcing none names a schedule the request
+    // will not carry.
+    expect(form.controls.scheduler.value).toBe('normal');
+  });
+
+  it('hands the reader every value back when the style is cleared', async () => {
+    const { fixture, form } = await createComponent(null);
+    readerValues(fixture, form);
+    applyStyle(fixture, form, FORCED);
+
+    applyStyle(fixture, form, null);
+
+    expect(form.controls.model.value).toBe('my model');
+    expect(form.controls.width.value).toBe(768);
+    expect(form.controls.height.value).toBe(512);
+    expect(form.controls.steps.value).toBe(30);
+    expect(form.controls.cfg_scale.value).toBe(
+      DEFAULT_GENERATE_FORM_VALUE.cfg_scale,
+    );
+    expect(form.controls.sampler_name.value).toBe(
+      DEFAULT_GENERATE_FORM_VALUE.sampler_name,
+    );
+    expect(form.controls.scheduler.value).toBe('karras');
+    expect(form.controls.hires_fix.value).toBe(false);
+    expect(form.controls.valuesBeforeStyle.value).toBeNull();
+  });
+
+  it('restores the reader values through a switch from one style to another', async () => {
+    const { fixture, form } = await createComponent(null);
+    readerValues(fixture, form);
+    applyStyle(fixture, form, FORCED);
+
+    applyStyle(fixture, form, OTHER_FORCED, 'Other style');
+
+    // The second style pins its own sampling values, and the fields it leaves
+    // alone come back to the reader rather than keeping the first style's.
+    expect(form.controls.steps.value).toBe(OTHER_FORCED.steps);
+    expect(form.controls.cfg_scale.value).toBe(OTHER_FORCED.cfg_scale);
+    expect(form.controls.scheduler.value).toBe('karras');
+    expect(form.controls.model.value).toBe('my model');
+    expect(form.controls.width.value).toBe(768);
+
+    applyStyle(fixture, form, null);
+
+    expect(form.controls.steps.value).toBe(30);
+    expect(form.controls.cfg_scale.value).toBe(
+      DEFAULT_GENERATE_FORM_VALUE.cfg_scale,
+    );
+    expect(form.controls.valuesBeforeStyle.value).toBeNull();
+  });
+
+  it('hands back only the section the reader takes their values on', async () => {
+    const { fixture, form, component } = await createComponent(null);
+    readerValues(fixture, form);
+    applyStyle(fixture, form, FORCED);
+
+    component.detachSection('sampling');
+    fixture.detectChanges();
+
+    expect(form.controls.steps.value).toBe(30);
+    expect(form.controls.cfg_scale.value).toBe(
+      DEFAULT_GENERATE_FORM_VALUE.cfg_scale,
+    );
+    expect(form.controls.scheduler.value).toBe('karras');
+    // Every other section is still the style's.
+    expect(form.controls.model.value).toBe(FORCED.model);
+    expect(form.controls.width.value).toBe(FORCED.width);
+    expect(submitted(form, FORCED).params?.steps).toBe(30);
+  });
+
+  it('builds the request it built before the style once it is cleared', async () => {
+    const { fixture, form } = await createComponent(null);
+    readerValues(fixture, form);
+    const before = submitted(form, null);
+
+    applyStyle(fixture, form, FORCED);
+    expect(submitted(form, FORCED).params?.steps).toBe(FORCED.steps);
+
+    applyStyle(fixture, form, null);
+
+    expect(submitted(form, null)).toEqual(before);
   });
 });
 

@@ -1204,6 +1204,47 @@ export interface StyleDetachState {
 }
 
 /**
+ * The section each field a style can pin is frozen and handed back with. The
+ * form's own control names are used, so a snapshot of these fields can be
+ * written straight back onto the controls.
+ */
+export const STYLE_PINNED_FIELD_SECTION = {
+  model: 'model',
+  // The extra models ride the model pin: a style names the models its settings
+  // were written for, so pinning one narrows the list to it.
+  extraModels: 'model',
+  width: 'dimensions',
+  height: 'dimensions',
+  steps: 'sampling',
+  cfg_scale: 'sampling',
+  sampler_name: 'sampling',
+  clip_skip: 'sampling',
+  scheduler: 'sampling',
+  hires_fix: 'sampling',
+  post_processing: 'finishing',
+  facefixer_strength: 'finishing',
+  tiling: 'finishing',
+  transparent: 'finishing',
+  denoising_strength: 'finishing',
+} as const satisfies Record<string, StyleLockSection>;
+
+/** A form field a style can pin, named as the form's control names it. */
+export type StylePinnedField = keyof typeof STYLE_PINNED_FIELD_SECTION;
+
+export const STYLE_PINNED_FIELDS = Object.keys(
+  STYLE_PINNED_FIELD_SECTION,
+) as readonly StylePinnedField[];
+
+/**
+ * The reader's own value for each field a style is currently pinning over. A
+ * field is present only while a style holds it, so the entries say both what to
+ * hand back and which fields were taken.
+ */
+export type StyleValueSnapshot = {
+  [K in StylePinnedField]?: GenerateFormValue[K];
+};
+
+/**
  * Flat, serialisable snapshot of the form. This is what is persisted to local
  * storage and what {@link buildImageRequest} maps into a horde request.
  */
@@ -1222,13 +1263,13 @@ export interface GenerateFormValue {
   /** A single model name, or an empty string for "any model". */
   model: string;
   /**
-   * The model the reader picked before a style pinned one over
-   * {@link GenerateFormValue.model}, so clearing the style hands their own pick
-   * back. It rides the persisted form value because a style survives a reload
-   * and the pick it replaced has to survive with it. Empty when no style is
-   * pinning a model, and never sent with a request.
+   * The values the reader had in the controls a style has pinned over, so
+   * clearing the style (or taking a section back from it) hands their own
+   * settings back exactly. It rides the persisted form value because a style
+   * survives a reload and the values it replaced have to survive with it. Null
+   * when no style is pinning anything, and never sent with a request.
    */
-  modelBeforeStyle: string | null;
+  valuesBeforeStyle: StyleValueSnapshot | null;
   /**
    * Further model names the request would also accept, beside
    * {@link GenerateFormValue.model}. The horde reads `models` as "any of these
@@ -1350,7 +1391,7 @@ export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   negativePrompt: '',
   n: 1,
   model: '',
-  modelBeforeStyle: null,
+  valuesBeforeStyle: null,
   extraModels: [],
   sampler_name: 'k_euler_a',
   steps: 25,
@@ -1495,6 +1536,31 @@ function clampNumber(
 const coerceLoraEntry = coerceLoraSelection;
 const coerceTiEntry = coerceTiSelection;
 
+/**
+ * Validate a persisted snapshot of the values a style is pinning over, dropping
+ * any field the form does not know. The named fields are validated by the form
+ * coercion itself, so a snapshot can never hand back a value the form would
+ * have rejected coming from anywhere else.
+ */
+function coerceStyleSnapshot(raw: unknown): StyleValueSnapshot | null {
+  if (typeof raw !== 'object' || raw === null) {
+    return null;
+  }
+  const source = raw as Record<string, unknown>;
+  const present = STYLE_PINNED_FIELDS.filter((field) => field in source);
+  if (present.length === 0) {
+    return null;
+  }
+  const coerced = coerceFormValue(
+    Object.fromEntries(present.map((field) => [field, source[field]])),
+  );
+  const snapshot: Record<string, unknown> = {};
+  for (const field of present) {
+    snapshot[field] = coerced[field];
+  }
+  return snapshot as StyleValueSnapshot;
+}
+
 /** Validate a persisted style-detach snapshot, falling back to "nothing detached". */
 function coerceStyleDetach(raw: unknown): StyleDetachState {
   if (typeof raw !== 'object' || raw === null) {
@@ -1602,9 +1668,10 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       }
       continue;
     }
-    if (key === 'modelBeforeStyle') {
-      if (value === null || typeof value === 'string') {
-        merged.modelBeforeStyle = value;
+    if (key === 'valuesBeforeStyle') {
+      const snapshot = coerceStyleSnapshot(value);
+      if (snapshot !== null) {
+        merged.valuesBeforeStyle = snapshot;
       }
       continue;
     }
@@ -1700,6 +1767,13 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       (merged as Record<keyof GenerateFormValue, unknown>)[key] = value;
     }
   }
+  // A stored snapshot that named only the model stands for the same thing as one
+  // covering every pinned field, so it is read as a snapshot holding that field
+  // alone rather than dropped with the reader's pick inside it.
+  const storedModel = source['modelBeforeStyle'];
+  if (merged.valuesBeforeStyle === null && typeof storedModel === 'string') {
+    merged.valuesBeforeStyle = { model: storedModel };
+  }
   return merged;
 }
 
@@ -1723,7 +1797,7 @@ export function createGenerateForm(
     negativePrompt: control(value.negativePrompt),
     n: bounded(value.n, MIN_BATCH, MAX_API_BATCH),
     model: control(value.model),
-    modelBeforeStyle: control(value.modelBeforeStyle),
+    valuesBeforeStyle: control(value.valuesBeforeStyle),
     extraModels: control(value.extraModels),
     sampler_name: control(value.sampler_name),
     steps: bounded(value.steps, MIN_STEPS, MAX_STEPS),
@@ -2772,13 +2846,13 @@ export function kudosBreakdown(
 
 /**
  * Fields the changed-settings ledger never lists. `styleDetach` records which
- * sections of a style the reader opted out of, and `modelBeforeStyle` holds the
- * model pick a style is standing on: both are bookkeeping about another setting
- * rather than settings of their own.
+ * sections of a style the reader opted out of, and `valuesBeforeStyle` holds
+ * the settings a style is standing on: both are bookkeeping about other
+ * settings rather than settings of their own.
  */
 const LEDGER_EXCLUDED: readonly (keyof GenerateFormValue)[] = [
   'styleDetach',
-  'modelBeforeStyle',
+  'valuesBeforeStyle',
 ];
 
 /**
