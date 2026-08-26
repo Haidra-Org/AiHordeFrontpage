@@ -61,8 +61,8 @@
         </a>
       }
       <!-- The contribute doors carry the weight of the page's own action:
-           volunteering is never the quieter offer, and a tinted button on
-           the banner's own tint would be the quieter offer. -->
+           volunteering is never the quieter offer, so the worker door is
+           filled and the donation door sits beside it at tonal weight. -->
       <a
         routerLink="/contribute/joining"
         class="hd-btn hd-btn--primary beginner-banner-link"
@@ -72,7 +72,7 @@
       @if (disableLinks()) {
         <a
           routerLink="/contribute/donate"
-          class="hd-btn hd-btn--primary beginner-banner-link"
+          class="hd-btn hd-btn--tonal beginner-banner-link"
         >
           {{ "guis_and_tools_page.worker_cta_donate" | transloco }}
         </a>

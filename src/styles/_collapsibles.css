@@ -10,66 +10,6 @@
    ================================================================= */
 
 @layer components {
-  /* =================================================================
-     COLLAPSIBLE CARD PATTERNS
-     Wrapper and content patterns for collapsible intro sections
-     ================================================================= */
-
-  /* Collapsible card wrapper - main container for collapsible sections */
-  .collapsible-card {
-    @apply mb-6 rounded-lg overflow-hidden;
-    background: var(--color-glass-surface-heavy);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border);
-    box-shadow: var(--shadow-glass);
-
-    @media (min-width: 1024px) {
-      @apply mb-8;
-    }
-  }
-
-  .dark .collapsible-card {
-    background: rgb(17 24 39 / 0.6);
-    border-color: rgb(255 255 255 / 0.08);
-    box-shadow: 0 4px 24px rgb(0 0 0 / 0.2);
-  }
-
-  /* Collapsible header content wrapper - flex row for icon + text */
-  .collapsible-header-content {
-    @apply flex items-center gap-3;
-  }
-
-  /* Collapsible header text wrapper - text alignment */
-  .collapsible-header-text {
-    @apply text-left;
-  }
-
-  /* Collapsible header title - h2 within collapsible header */
-  .collapsible-header-title {
-    @apply text-lg font-semibold text-gray-900 m-0;
-    @apply dark:text-white;
-  }
-
-  /* Collapsible icon - sized icon for header */
-  .collapsible-header-icon {
-    @apply shrink-0 w-10 h-10;
-  }
-
-  /* Non-sticky collapsible header button (for intro sections) */
-  .collapsible-header-button {
-    @apply w-full flex items-center justify-between cursor-pointer;
-    @apply px-4 py-3;
-    @apply bg-transparent border-none text-left;
-    @apply transition-all duration-200;
-    @apply hover:text-purple-600;
-    @apply dark:hover:text-purple-500;
-
-    @media (min-width: 640px) {
-      @apply px-6;
-    }
-  }
-
   /* Sticky collapsible section header (for table sections) */
   .section-header-collapsible {
     @apply flex items-center justify-between cursor-pointer;

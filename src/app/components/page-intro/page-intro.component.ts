@@ -72,19 +72,16 @@ import { GsProseComponent } from '../gs-prose/gs-prose.component';
               @if (glossaryLink() && !readMoreLink()) {
                 <button
                   type="button"
-                  class="hd-btn hd-btn--primary hd-btn--dense"
+                  class="hd-btn hd-btn--tonal hd-btn--dense"
                   (click)="openGlossary()"
                 >
                   {{ 'help.open_glossary' | transloco }}
                 </button>
               }
               @if (readMoreLink(); as link) {
-                <!-- The way onward is filled rather than tinted: the tonal
-                     weight puts the accent on its own tint, which in dark
-                     leaves the label barely separated from its button. -->
                 <a
                   [routerLink]="link"
-                  class="hd-btn hd-btn--primary hd-btn--dense page-intro-link"
+                  class="hd-btn hd-btn--tonal hd-btn--dense page-intro-link"
                 >
                   {{ 'help.learn_more' | transloco }}
                 </a>

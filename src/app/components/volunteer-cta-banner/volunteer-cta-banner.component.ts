@@ -5,10 +5,10 @@ import { IconComponent } from '../icon/icon.component';
 
 /**
  * The standing offer to join in, carried above the areas of the details page.
- * Both destinations are buttons of the same weight: one asks for a computer and
- * the other for money, and neither is the recommended answer. They are filled
- * rather than tinted, because an accent tint on the card tone leaves accent text
- * reading against a ground almost the same colour.
+ * Both destinations are buttons, never links in the prose: one asks for a
+ * computer and the other for money, and neither is ever the quieter offer. The
+ * worker door is filled and the donation door is tonal, the pairing the site
+ * uses wherever two doors stand together.
  */
 @Component({
   selector: 'app-volunteer-cta-banner',
@@ -28,7 +28,7 @@ import { IconComponent } from '../icon/icon.component';
         </a>
         <a
           routerLink="/contribute/donate"
-          class="hd-btn hd-btn--primary hd-btn--dense details-cta-action"
+          class="hd-btn hd-btn--tonal hd-btn--dense details-cta-action"
         >
           {{ 'volunteer_cta.donate' | transloco }}
         </a>

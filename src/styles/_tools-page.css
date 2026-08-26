@@ -825,18 +825,6 @@
      UTILITIES SHARED WITH OTHER PAGES
      ----------------------------------------------------------------- */
 
-  /* Read by other pages that have not been rebuilt; it stays on the glass
-     tokens until they are, and this page does not use it. */
-  .link-btn-sm {
-    @apply text-sm font-medium cursor-pointer bg-transparent border-none p-0;
-    color: var(--color-brand-purple);
-  }
-
-  .link-btn-sm:hover {
-    @apply underline;
-    color: var(--color-brand-purple-hover);
-  }
-
   /* -----------------------------------------------------------------
      TOUCH
      ----------------------------------------------------------------- */
