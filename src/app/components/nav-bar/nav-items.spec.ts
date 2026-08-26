@@ -67,7 +67,7 @@ describe('the bar entries', () => {
     const pinned = NAV_ITEMS.filter(
       (item) => item.overflowPriority === undefined,
     ).map((item) => item.labelKey);
-    expect(pinned).toEqual(['home', 'nav.generate', 'nav.account']);
+    expect(pinned).toEqual(['home', 'nav.generate', 'joining', 'nav.account']);
   });
 });
 

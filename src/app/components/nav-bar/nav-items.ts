@@ -58,7 +58,8 @@ export const NAV_ITEMS: NavItem[] = [
     dropdownId: 'contribute',
     activeRoutePrefix: '/contribute',
     notificationNavItem: 'contribute',
-    overflowPriority: 30,
+    // Pinned: the project runs on volunteers and donations, so the door to
+    // contributing is never folded into the overflow menu.
     children: [
       {
         id: 'become-worker',

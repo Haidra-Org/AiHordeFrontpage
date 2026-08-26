@@ -29,6 +29,9 @@ require; when a rule here and the code disagree, fix one of them rather than wor
 - Accessibility is a design input: visible focus states, WCAG AA contrast in both themes, touch targets of about 44px
   on coarse pointers, reduced motion respected, colour never the only signal.
 - No new dependencies without discussion. No refactors outside the change being made; note the opportunity instead.
+- The project is a non-profit run on volunteers and donations. Anything that leads to contributing (becoming a
+  worker, development, donating, the Contribute entry in the nav) is never demoted, collapsed into an overflow or
+  "more" menu, or hidden by default; when a surface offers the chance, promote it.
 
 ## Comments and messages
 
