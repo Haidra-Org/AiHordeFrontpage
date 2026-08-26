@@ -184,6 +184,7 @@
   --gs-pop-accent: var(--hd-pop-accent);
   --gs-pop-shadow: var(--hd-pop-shadow);
   --gs-blue: var(--hd-accent);
+  --gs-on-accent: var(--hd-on-accent);
   --gs-blue-hover: var(--hd-accent-hover);
   --gs-blue-tint: var(--hd-accent-tint);
   --gs-blue-tint-border: var(--hd-accent-tint-border);
@@ -2518,7 +2519,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    read past on the way to the picture, and a saturated block holds the eye
    longer than the choice it reports is worth. */
 .gen-studio .gs-chip--active {
-  color: var(--gs-card);
+  color: var(--gs-on-accent);
   border-color: color-mix(
     in srgb,
     var(--gs-sec, var(--gs-blue)) 60%,
