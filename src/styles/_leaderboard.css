@@ -82,44 +82,34 @@
   }
 
   /* =================================================================
-     COMPACT LEADERBOARD ROWS (Mobile)
-     Single-row layout for mobile to minimize height
+     LEADERBOARD TABLE
+     The three columns the list is laid on, declared once so the header
+     and the rows can never disagree about them.
      ================================================================= */
 
-  /* Override the default mobile grid to be a single row */
-  .models-table-row.leaderboard-table-row {
-    @apply flex items-center gap-3 py-2.5 px-3;
-    grid-template-columns: unset;
-    grid-template-rows: unset;
+  .leaderboard-table {
+    --hd-list-cols: 2.5rem minmax(0, 1fr) auto;
   }
 
   @media (min-width: 768px) {
-    .models-table-row.leaderboard-table-row {
-      @apply grid p-3.5;
-      grid-template-columns: 3rem 1fr 8rem;
+    .leaderboard-table {
+      --hd-list-cols: 3rem minmax(0, 1fr) 8rem;
     }
   }
 
-  /* Rank cell - fixed width */
-  .models-table-row.leaderboard-table-row .models-table-cell:first-child {
-    @apply shrink-0;
-    flex-basis: 2.5rem;
+  .leaderboard-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--hd-text-md);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* Name cell - take remaining space, don't span full width on mobile */
-  .models-table-row.leaderboard-table-row .models-table-cell-name {
-    @apply flex-1 min-w-0;
-    grid-column: unset;
-  }
-
-  /* Kudos cell - align right, hide mobile label */
-  .models-table-row.leaderboard-table-row .models-table-cell:last-child {
-    @apply shrink-0 text-right;
-  }
-
-  .models-table-row.leaderboard-table-row
-    .models-table-cell:last-child
-    .models-table-label {
-    @apply hidden;
+  .leaderboard-kudos {
+    color: var(--hd-ink);
+    font-size: var(--hd-text-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
   }
 }

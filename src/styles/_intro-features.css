@@ -330,115 +330,114 @@
      Compact orientation callout replacing the old collapsible intro
      ================================================================= */
 
+  /* The banner keeps the purple it has always been read by, supplied as
+     the section identity so the callout's start edge, its tint and the
+     glyph beside the title all take it from one declaration. */
   .beginner-banner {
-    @apply relative rounded-lg overflow-hidden;
-    @apply p-4 sm:p-5;
-    background: var(--color-glass-surface-panel);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
-    border-left: 3px solid rgb(147 51 234);
-  }
-
-  .dark .beginner-banner {
-    background: var(--color-glass-surface-dark);
-    border-color: var(--color-glass-border-dark-subtle);
-    border-left-color: rgb(168 85 247);
-    box-shadow: var(--shadow-glass-dark);
+    --hd-sec: var(--hd-purple);
+    --hd-sec-tint: var(--hd-purple-tint);
+    --hd-sec-tint-border: var(--hd-purple-tint-border);
   }
 
   .beginner-banner-main {
-    @apply flex items-start gap-3;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--hd-space-2-5);
   }
 
   .beginner-banner-icon {
-    @apply shrink-0 w-9 h-9 sm:w-10 sm:h-10;
+    flex: none;
+    color: var(--hd-sec);
   }
 
   .beginner-banner-text {
-    @apply flex-1 min-w-0;
-  }
-
-  .beginner-banner-title {
-    @apply text-base sm:text-lg font-semibold m-0 mb-1;
-    @apply text-gray-900;
-    @apply dark:text-white;
-  }
-
-  .beginner-banner-description {
-    @apply text-sm m-0 leading-relaxed;
-    @apply text-gray-600;
-    @apply dark:text-gray-400;
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
   }
 
   .beginner-banner-recommendation {
-    @apply text-sm m-0 mt-3 leading-relaxed;
-    @apply text-gray-600;
-    @apply dark:text-gray-400;
+    margin: 0;
   }
 
   .beginner-banner-recommendation strong {
-    @apply font-semibold text-gray-900;
-    @apply dark:text-white;
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
   .beginner-banner-actions {
-    @apply flex flex-wrap items-center gap-3 mt-4;
+    margin-top: var(--hd-space-1);
   }
 
   .beginner-banner-link {
-    @apply text-sm;
+    text-decoration: none;
   }
 
-  /* Compact category definition list for GUIs page orientation */
+  /* Compact category definition list for GUIs page orientation. The three
+     facts sit on cards so they read as a row of separate answers rather
+     than as a paragraph broken into pieces; a phone stacks them. */
   .beginner-banner-categories {
-    @apply grid grid-cols-1 gap-2 mt-3 m-0 p-0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--hd-space-2);
+    margin: 0;
+    padding: 0;
 
     @media (min-width: 768px) {
-      @apply grid-cols-3 gap-4;
+      grid-template-columns: repeat(3, 1fr);
     }
   }
 
   .beginner-banner-category {
-    @apply flex flex-col gap-0.5;
-    @apply p-2.5 rounded-lg;
-    @apply bg-white border border-gray-200;
-    @apply dark:bg-gray-800 dark:border-gray-700;
+    display: flex;
+    flex-direction: column;
+    row-gap: 2px;
   }
 
   .beginner-banner-dt {
-    @apply flex items-center gap-1.5 text-sm font-semibold;
-    @apply text-gray-900;
-    @apply dark:text-white;
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
   .beginner-banner-dd {
-    @apply text-xs m-0 pl-5;
-    @apply text-gray-500;
-    @apply dark:text-gray-400;
+    margin: 0;
+    padding-inline-start: 18px;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
   }
 
   .beginner-banner-dot {
-    @apply inline-block w-2.5 h-2.5 rounded-full shrink-0;
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    flex: none;
+    border-radius: 9999px;
   }
 
   .beginner-banner-dot-purple {
-    @apply bg-purple-500;
+    background: var(--hd-purple);
   }
 
   .beginner-banner-dot-blue {
-    @apply bg-blue-500;
+    background: var(--hd-accent);
   }
 
   .beginner-banner-dot-green {
-    @apply bg-green-500;
+    background: var(--hd-green);
   }
 
   .beginner-banner-kudos-hint {
-    @apply inline-flex items-center gap-1 text-sm;
-    @apply text-gray-500;
-    @apply dark:text-gray-400;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    font-size: var(--hd-text-sm);
+    color: var(--hd-muted);
   }
 
   /* =================================================================

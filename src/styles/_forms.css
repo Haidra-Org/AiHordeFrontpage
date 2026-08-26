@@ -33,53 +33,160 @@
     @apply flex flex-col gap-6;
   }
 
+  /* =================================================================
+     STYLE EDITOR (HD family)
+     A style is a saved set of generation settings, so the editor is
+     read as a column of decisions: one card per group, one plate per
+     field. Every rule below reads an `--hd-*` token, so both themes
+     come out of the token file and no `.dark` rule belongs here.
+     ================================================================= */
+
   .style-form-shell {
-    @apply rounded-2xl p-4 md:p-5;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
   }
 
   .style-form-toolbar {
-    @apply flex items-start justify-between gap-4 flex-wrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
+  }
+
+  .style-form-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  /* What is being edited, at reading size: this names the document, not
+     a group of controls. */
+  .style-form-title {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    color: var(--hd-ink);
   }
 
   .style-form-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
     min-width: 0;
-    @apply mb-5;
   }
 
-  .style-form-panel__header {
-    @apply flex flex-col gap-1.5 mb-4;
+  .style-form-panel-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
   }
 
   .style-form-panel .form-row {
-    @apply items-stretch;
+    align-items: stretch;
   }
 
+  /* Each field sits on its own plate, so a row of three reads as three
+     decisions rather than as one block of inputs. */
   .style-form-panel .form-field {
-    @apply rounded-xl p-4;
-    background: var(--color-glass-surface-nested);
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass-inset);
-  }
-
-  .dark .style-form-panel .form-field {
-    background: var(--color-glass-surface-dark-nested);
-    border-color: var(--color-glass-border-dark-subtle);
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
   }
 
   .style-form-toggle-row {
-    @apply rounded-xl p-4 flex flex-wrap gap-4;
-    background: var(--color-glass-surface-nested);
-    border: 1px solid var(--color-glass-border-subtle);
-  }
-
-  .dark .style-form-toggle-row {
-    background: var(--color-glass-surface-dark-nested);
-    border-color: var(--color-glass-border-dark-subtle);
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
   }
 
   .style-form-actions-bar {
-    @apply rounded-2xl p-4;
-    border: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    padding-top: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border);
+  }
+
+  .style-form-summary {
+    text-align: right;
+  }
+
+  .style-form-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    height: auto;
+  }
+
+  .style-form-confirm-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+  }
+
+  /* =================================================================
+     FIELD MARKS (HD family)
+     What a field says about itself: that it is required, that what is
+     in it will not be accepted, and that what is in it will work but
+     is probably not what was meant.
+     ================================================================= */
+
+  /* The family has no select of its own; this is .hd-input's box with
+     the platform arrow left in place. */
+  .field-select {
+    height: var(--hd-control-h);
+    padding: 0 var(--hd-space-2);
+    font-family: inherit;
+    font-size: var(--hd-text-md);
+    color: var(--hd-ink);
+    background: var(--hd-field);
+    border: 1px solid var(--hd-field-border);
+    border-radius: var(--hd-radius-sm);
+  }
+
+  .field-select:focus {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+    border-color: var(--hd-accent);
+  }
+
+  @media (pointer: coarse) {
+    .field-select {
+      min-height: 44px;
+    }
+  }
+
+  /* The edge is the mark and the sentence under the field is the
+     message, so the colour is never carrying it alone. */
+  .field-invalid {
+    border-color: var(--hd-danger);
+  }
+
+  .field-required {
+    color: var(--hd-danger);
+  }
+
+  .field-error {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    line-height: 1.5;
+    color: var(--hd-danger);
+  }
+
+  .field-caution {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    line-height: 1.5;
+    color: var(--hd-changed);
   }
 
   /* Shared section shell for complex, explanatory forms */
@@ -275,32 +382,40 @@
 
   /* Entity lookup container */
   .entity-lookup {
-    @apply mb-6;
+    margin-bottom: var(--hd-space-4);
   }
 
   /* Entity lookup form */
   .entity-lookup-form {
-    @apply flex flex-col gap-2;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
   }
 
-  /* Input wrapper for inline input + button */
+  /* Input wrapper for inline input + button. It wraps, because a phone
+     cannot hold a field and two buttons on one line and the field is
+     what has to stay usable. */
   .entity-lookup-input-wrapper {
-    @apply flex gap-2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
   }
 
   /* Entity lookup input field */
   .entity-lookup-input {
-    @apply flex-1 mb-0;
+    flex: 1 1 12rem;
+    min-width: 0;
   }
 
   /* Entity lookup submit button */
-  .entity-lookup-button {
-    @apply shrink-0;
+  .entity-lookup-button,
+  .entity-lookup-clear-button {
+    flex: none;
   }
 
   /* Entity lookup hint text */
   .entity-lookup-hint {
-    @apply mt-1;
+    margin: 0;
   }
 
   /* =================================================================
@@ -706,14 +821,8 @@
       margin-right: 0;
     }
 
-    .style-form-panel,
     .form-section-shell {
       @apply rounded-xl p-1;
-    }
-
-    .style-form-panel .form-field,
-    .style-form-toggle-row {
-      @apply rounded-lg p-1;
     }
 
     .style-form-panel .form-row {
@@ -767,14 +876,64 @@
       border-radius: 0;
     }
 
-    .style-form-panel,
     .form-section-shell {
       @apply p-0;
     }
+  }
+}
 
-    .style-form-panel .form-field,
-    .style-form-toggle-row {
-      @apply p-0.5;
-    }
+/* =================================================================
+   BINARY AND THREE-STATE SETTING (HD family)
+
+   The shared switch primitive carries on and off. What is added here
+   is the third state a style setting can be in: not set at all, which
+   means the model's own default is used. Every rule reads an `--hd-*`
+   token, so both themes come out of the token file and no `.dark`
+   rule belongs here.
+   ================================================================= */
+
+@layer components {
+  .toggle-check-host {
+    display: block;
+    min-width: 0;
+  }
+
+  /* The name takes the slack so the mark and the switch pack against
+     the far end and line up down a column of settings. */
+  .toggle-check-name {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* A setting left alone is still readable, but it steps back from the
+     ones that have been decided. */
+  .toggle-check--unset {
+    opacity: 0.55;
+  }
+
+  .toggle-check-unset {
+    flex: none;
+    background: var(--hd-seg-track);
+    color: var(--hd-label);
+    font-weight: 600;
+  }
+
+  /* The mark keeps its space when the setting is decided, so deciding
+     one does not shift the rows under it. */
+  .toggle-check-unset--hidden {
+    visibility: hidden;
+  }
+
+  /* Nothing chosen: the track is an outline rather than a plane and the
+     thumb sits between the two ends, so the control reads as waiting
+     rather than as off. */
+  .toggle-check-track--unset {
+    background: none;
+    border: 1px dashed var(--hd-muted);
+  }
+
+  .toggle-check-thumb--unset {
+    transform: translateX(6px);
+    opacity: 0.4;
   }
 }

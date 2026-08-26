@@ -22,84 +22,80 @@ import { GsProseComponent } from '../gs-prose/gs-prose.component';
   imports: [TranslocoPipe, RouterLink, IconComponent, GsProseComponent],
   template: `
     @if (!isDismissed()) {
-      <div #container class="collapsible-card card-bg-secondary page-intro">
+      <div
+        #container
+        class="hd-disclosure page-intro"
+        [class.hd-disclosure--open]="isExpanded()"
+      >
         <button
           type="button"
-          class="collapsible-header-button"
+          class="hd-disclosure-head page-intro-head"
           (click)="toggleExpanded()"
           [attr.aria-expanded]="isExpanded()"
           [attr.aria-controls]="contentId()"
         >
-          <div class="collapsible-header-content">
-            <div
-              class="feature-card-icon feature-card-icon-blue collapsible-header-icon"
-            >
-              <app-icon name="info-circle" />
-            </div>
-            <div class="collapsible-header-text">
-              <h2 class="collapsible-header-title">
-                {{ titleKey() | transloco }}
-              </h2>
-              <p class="feature-card-subtitle feature-card-subtitle-desktop">
-                {{ subtitleKey() | transloco }}
-              </p>
-            </div>
-          </div>
-          <app-icon
-            name="chevron-down"
-            class="chevron-icon"
-            [class.expanded]="isExpanded()"
-          />
+          <span class="hd-sec-chip hd-sec-chip--lg page-intro-glyph">
+            <app-icon name="info-circle" aria-hidden="true" />
+          </span>
+          <span class="page-intro-heading">
+            <h2 class="page-intro-title">{{ titleKey() | transloco }}</h2>
+            <span class="page-intro-lead">{{ subtitleKey() | transloco }}</span>
+          </span>
+          <app-icon name="chevron-right" class="hd-disclosure-chev" />
         </button>
 
         @if (isExpanded()) {
-          <div [id]="contentId()" class="card-expandable-content">
-            <div class="card-expandable-stack">
-              <!-- A body written in the site's prose grammar is rendered
-                   rather than injected; the ones still written as markup keep
-                   the old path until they are converted. -->
-              @if (prose()) {
-                <div class="page-intro-body">
-                  <app-gs-prose [key]="bodyKey()" [paragraphs]="true" />
-                </div>
-              } @else {
-                <div
-                  class="page-intro-body"
-                  [innerHTML]="bodyKey() | transloco"
-                ></div>
-              }
-
-              <div class="page-intro-actions">
-                <button
-                  type="button"
-                  class="btn-secondary"
-                  (click)="toggleExpanded()"
-                >
-                  <app-icon name="chevron-up" class="intro-collapse-icon" />
-                  {{ 'help.collapse' | transloco }}
-                </button>
-                @if (glossaryLink() && !readMoreLink()) {
-                  <button
-                    type="button"
-                    class="btn-secondary"
-                    (click)="openGlossary()"
-                  >
-                    {{ 'help.open_glossary' | transloco }}
-                  </button>
-                }
-                @if (readMoreLink(); as link) {
-                  <a [routerLink]="link" class="btn-secondary">
-                    {{ 'help.learn_more' | transloco }}
-                  </a>
-                }
-                <button
-                  type="button"
-                  class="page-intro-dismiss"
-                  (click)="dismiss()"
-                >
-                  {{ 'help.dismiss' | transloco }}
-                </button>
+          <div [id]="contentId()" class="hd-disclosure-body">
+            <!-- A body written in the site's prose grammar is rendered
+                 rather than injected; the ones still written as markup keep
+                 the old path until they are converted. -->
+            @if (prose()) {
+              <div class="page-intro-body">
+                <app-gs-prose [key]="bodyKey()" [paragraphs]="true" />
               </div>
+            } @else {
+              <div
+                class="page-intro-body"
+                [innerHTML]="bodyKey() | transloco"
+              ></div>
+            }
+
+            <div class="page-intro-actions">
+              <button
+                type="button"
+                class="hd-btn hd-btn--dense"
+                (click)="toggleExpanded()"
+              >
+                <app-icon name="chevron-up" />
+                {{ 'help.collapse' | transloco }}
+              </button>
+              @if (glossaryLink() && !readMoreLink()) {
+                <button
+                  type="button"
+                  class="hd-btn hd-btn--primary hd-btn--dense"
+                  (click)="openGlossary()"
+                >
+                  {{ 'help.open_glossary' | transloco }}
+                </button>
+              }
+              @if (readMoreLink(); as link) {
+                <!-- The way onward is filled rather than tinted: the tonal
+                     weight puts the accent on its own tint, which in dark
+                     leaves the label barely separated from its button. -->
+                <a
+                  [routerLink]="link"
+                  class="hd-btn hd-btn--primary hd-btn--dense page-intro-link"
+                >
+                  {{ 'help.learn_more' | transloco }}
+                </a>
+              }
+              <button
+                type="button"
+                class="hd-btn hd-btn--ghost hd-btn--dense"
+                (click)="dismiss()"
+              >
+                {{ 'help.dismiss' | transloco }}
+              </button>
             </div>
           </div>
         }
@@ -108,10 +104,10 @@ import { GsProseComponent } from '../gs-prose/gs-prose.component';
       <div #container class="page-intro-restore">
         <button
           type="button"
-          class="page-intro-restore-btn"
+          class="hd-btn hd-btn--ghost hd-btn--dense page-intro-restore-btn"
           (click)="restore()"
         >
-          <app-icon name="info-circle" class="intro-restore-icon" />
+          <app-icon name="info-circle" />
           {{ 'help.show_intro' | transloco }}
         </button>
       </div>
@@ -148,7 +144,10 @@ export class PageIntroComponent {
   public readonly bodyKey = computed(() => `help.${this.pageKey()}.body`);
   public readonly contentId = computed(() => `page-intro-${this.pageKey()}`);
 
-  private readonly _isExpanded = signal(true);
+  /* The intro is orientation for a page whose data is the point, so it
+     opens folded: the lead in the head says what the page is, and the
+     body is there for the reader who wants it. */
+  private readonly _isExpanded = signal(false);
 
   public readonly isExpanded = this._isExpanded.asReadonly();
   public readonly isDismissed = computed(() =>

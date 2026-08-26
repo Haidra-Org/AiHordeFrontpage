@@ -83,33 +83,43 @@
 
     <!-- Error State -->
     @if (error()) {
-      <div class="state-container state-container-sm state-error">
-        <app-icon class="state-icon" name="exclamation-circle" />
-        <p>{{ error() }}</p>
-        <button
-          type="button"
-          class="hd-btn hd-btn--tonal hd-btn--dense"
-          (click)="loadStyles()"
-        >
-          {{ "styles.retry" | transloco }}
-        </button>
+      <div class="hd-callout details-state-error" role="alert">
+        <p class="hd-callout-body details-state-error-text">
+          <app-icon
+            class="details-state-error-icon"
+            name="exclamation-circle"
+          />
+          {{ error() }}
+        </p>
+        <div class="hd-callout-actions">
+          <button
+            type="button"
+            class="hd-btn hd-btn--tonal hd-btn--dense"
+            (click)="loadStyles()"
+          >
+            {{ "styles.retry" | transloco }}
+          </button>
+        </div>
       </div>
     }
 
     <!-- Loading State -->
     @if (loading() && !error()) {
-      <div class="state-container state-container-sm text-secondary">
-        <div class="spinner spinner-md"></div>
-        <p>{{ "styles.loading" | transloco }}</p>
+      <div class="hd-skeleton" role="status" aria-live="polite">
+        <span class="sr-only">{{ "styles.loading" | transloco }}</span>
+        <div class="hd-skeleton-bar hd-skeleton-bar--title"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+        <div class="hd-skeleton-bar"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
       </div>
     }
 
     <!-- Styles Grid (Image/Text) -->
     @if (!loading() && !error() && activeTab() !== "collections") {
       @if (filteredStyles().length === 0) {
-        <div class="state-container state-container-sm state-muted">
+        <div class="hd-empty">
           <app-icon class="state-icon-lg" name="paintbrush" />
-          <p>{{ "styles.no_styles" | transloco }}</p>
+          <p class="hd-empty-title">{{ "styles.no_styles" | transloco }}</p>
         </div>
       } @else {
         <div class="grid-cards styles-entry-grid">
@@ -135,9 +145,11 @@
     <!-- Collections Grid -->
     @if (!loading() && !error() && activeTab() === "collections") {
       @if (filteredCollections().length === 0) {
-        <div class="state-container state-container-sm state-muted">
+        <div class="hd-empty">
           <app-icon class="state-icon-lg" name="folder" />
-          <p>{{ "styles.no_collections" | transloco }}</p>
+          <p class="hd-empty-title">
+            {{ "styles.no_collections" | transloco }}
+          </p>
         </div>
       } @else {
         <div class="grid-cards">

@@ -54,24 +54,34 @@
 
     <!-- Error State -->
     @if (error()) {
-      <div class="state-container state-container-sm state-error">
-        <app-icon class="state-icon" name="exclamation-circle" />
-        <p>{{ error() }}</p>
-        <button
-          type="button"
-          class="hd-btn hd-btn--tonal hd-btn--dense"
-          (click)="loadStats()"
-        >
-          {{ "details.usage.retry" | transloco }}
-        </button>
+      <div class="hd-callout details-state-error" role="alert">
+        <p class="hd-callout-body details-state-error-text">
+          <app-icon
+            class="details-state-error-icon"
+            name="exclamation-circle"
+          />
+          {{ error() }}
+        </p>
+        <div class="hd-callout-actions">
+          <button
+            type="button"
+            class="hd-btn hd-btn--tonal hd-btn--dense"
+            (click)="loadStats()"
+          >
+            {{ "details.usage.retry" | transloco }}
+          </button>
+        </div>
       </div>
     }
 
     <!-- Loading State -->
     @if (loading() && !error()) {
-      <div class="state-container state-container-sm text-secondary">
-        <div class="spinner spinner-md"></div>
-        <p>{{ "details.usage.loading" | transloco }}</p>
+      <div class="hd-skeleton" role="status" aria-live="polite">
+        <span class="sr-only">{{ "details.usage.loading" | transloco }}</span>
+        <div class="hd-skeleton-bar hd-skeleton-bar--title"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+        <div class="hd-skeleton-bar"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
       </div>
     }
 

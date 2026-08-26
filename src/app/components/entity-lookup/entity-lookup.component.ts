@@ -22,7 +22,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <input
             [id]="inputId"
             type="text"
-            class="form-input entity-lookup-input"
+            class="hd-input entity-lookup-input"
             [placeholder]="placeholder() | transloco"
             [(ngModel)]="searchValue"
             name="searchValue"
@@ -30,7 +30,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           />
           <button
             type="submit"
-            class="btn btn-primary entity-lookup-button"
+            class="hd-btn hd-btn--primary entity-lookup-button"
             [disabled]="!searchValue().trim()"
           >
             {{ 'lookup.submit' | transloco }}
@@ -38,7 +38,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           @if (searchValue().trim() && showClearButton()) {
             <button
               type="button"
-              class="btn btn-secondary entity-lookup-clear-button"
+              class="hd-btn entity-lookup-clear-button"
               (click)="onClear()"
             >
               {{ 'lookup.clear' | transloco }}
@@ -46,7 +46,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           }
         </div>
         @if (hintText()) {
-          <p [id]="hintId" class="form-hint entity-lookup-hint">
+          <p [id]="hintId" class="hd-sublabel entity-lookup-hint">
             {{ hintText()! | transloco }}
           </p>
         }

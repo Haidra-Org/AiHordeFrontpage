@@ -1,16 +1,14 @@
 @if (!dismissable() || !isDismissed()) {
-  <aside class="beginner-banner">
+  <aside class="hd-callout hd-callout--accent beginner-banner">
     <div class="beginner-banner-main">
-      <div
-        class="feature-card-icon feature-card-icon-purple beginner-banner-icon"
-      >
+      <span class="hd-sec-chip hd-sec-chip--lg beginner-banner-icon">
         <app-icon name="info-circle" aria-hidden="true" />
-      </div>
+      </span>
       <div class="beginner-banner-text">
-        <h2 class="beginner-banner-title">
+        <h2 class="hd-callout-title">
           {{ "guis_and_tools_page.intro_title" | transloco }}
         </h2>
-        <p class="beginner-banner-description">
+        <p class="hd-callout-body">
           {{ "guis_and_tools_page.intro_paragraph_1" | transloco }}
         </p>
       </div>
@@ -18,7 +16,7 @@
 
     @if (disableLinks()) {
       <dl class="beginner-banner-categories">
-        <div class="beginner-banner-category">
+        <div class="hd-card beginner-banner-category">
           <dt class="beginner-banner-dt">
             <span class="beginner-banner-dot beginner-banner-dot-purple"></span>
             {{ "guis_and_tools_page.intro_guis_title" | transloco }}
@@ -27,7 +25,7 @@
             {{ "guis_and_tools_page.category_guis" | transloco }}
           </dd>
         </div>
-        <div class="beginner-banner-category">
+        <div class="hd-card beginner-banner-category">
           <dt class="beginner-banner-dt">
             <span class="beginner-banner-dot beginner-banner-dot-blue"></span>
             {{ "guis_and_tools_page.intro_workers_title" | transloco }}
@@ -36,7 +34,7 @@
             {{ "guis_and_tools_page.category_workers" | transloco }}
           </dd>
         </div>
-        <div class="beginner-banner-category">
+        <div class="hd-card beginner-banner-category">
           <dt class="beginner-banner-dt">
             <span class="beginner-banner-dot beginner-banner-dot-green"></span>
             {{ "guis_and_tools_page.intro_tools_title" | transloco }}
@@ -48,22 +46,34 @@
       </dl>
 
       <p
-        class="beginner-banner-recommendation"
+        class="hd-callout-body beginner-banner-recommendation"
         [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
       ></p>
     }
 
-    <div class="beginner-banner-actions">
+    <div class="hd-callout-actions beginner-banner-actions">
       @if (showButton()) {
-        <a routerLink="/guis/" class="btn-purple">
+        <a
+          routerLink="/guis/"
+          class="hd-btn hd-btn--primary beginner-banner-link"
+        >
           {{ "homepage_guis.view_all_guis" | transloco }}
         </a>
       }
-      <a routerLink="/contribute/joining" class="btn-secondary">
+      <!-- The contribute doors carry the weight of the page's own action:
+           volunteering is never the quieter offer, and a tinted button on
+           the banner's own tint would be the quieter offer. -->
+      <a
+        routerLink="/contribute/joining"
+        class="hd-btn hd-btn--primary beginner-banner-link"
+      >
         {{ "guis_and_tools_page.worker_cta_button" | transloco }}
       </a>
       @if (disableLinks()) {
-        <a routerLink="/contribute/donate" class="btn-secondary">
+        <a
+          routerLink="/contribute/donate"
+          class="hd-btn hd-btn--primary beginner-banner-link"
+        >
           {{ "guis_and_tools_page.worker_cta_donate" | transloco }}
         </a>
       }
@@ -72,7 +82,11 @@
         — {{ "guis_and_tools_page.kudos_hint" | transloco }}
       </span>
       @if (dismissable()) {
-        <button type="button" class="page-intro-dismiss" (click)="dismiss()">
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense"
+          (click)="dismiss()"
+        >
           {{ "help.dismiss" | transloco }}
         </button>
       }
@@ -80,7 +94,11 @@
   </aside>
 } @else {
   <div class="page-intro-restore">
-    <button type="button" class="page-intro-restore-btn" (click)="restore()">
+    <button
+      type="button"
+      class="hd-btn hd-btn--ghost hd-btn--dense"
+      (click)="restore()"
+    >
       <app-icon name="info-circle" aria-hidden="true" />
       {{ "help.show_intro" | transloco }}
     </button>

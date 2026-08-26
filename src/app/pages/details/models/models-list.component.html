@@ -254,23 +254,33 @@
     }
 
     @if (error() !== null) {
-      <div class="state-container state-container-sm state-error">
-        <app-icon class="state-icon" name="exclamation-circle" />
-        <p>{{ error() || ("details.models.load_failed" | transloco) }}</p>
-        <button
-          type="button"
-          class="hd-btn hd-btn--tonal hd-btn--dense"
-          (click)="loadModels()"
-        >
-          {{ "details.models.retry" | transloco }}
-        </button>
+      <div class="hd-callout details-state-error" role="alert">
+        <p class="hd-callout-body details-state-error-text">
+          <app-icon
+            class="details-state-error-icon"
+            name="exclamation-circle"
+          />
+          {{ error() || ("details.models.load_failed" | transloco) }}
+        </p>
+        <div class="hd-callout-actions">
+          <button
+            type="button"
+            class="hd-btn hd-btn--tonal hd-btn--dense"
+            (click)="loadModels()"
+          >
+            {{ "details.models.retry" | transloco }}
+          </button>
+        </div>
       </div>
     }
 
     @if (loading() && error() === null && totalModels() === 0) {
-      <div class="state-container state-container-sm text-secondary">
-        <div class="spinner spinner-md"></div>
-        <p>{{ "details.models.loading" | transloco }}</p>
+      <div class="hd-skeleton" role="status" aria-live="polite">
+        <span class="sr-only">{{ "details.models.loading" | transloco }}</span>
+        <div class="hd-skeleton-bar hd-skeleton-bar--title"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+        <div class="hd-skeleton-bar"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
       </div>
     }
 

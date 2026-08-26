@@ -303,4 +303,43 @@
     @apply border-t border-dashed border-edge-primary;
     @apply text-content-muted dark:border-gray-600 dark:text-gray-400;
   }
+
+  /* =================================================================
+     WORKER SUB-TABS
+     The worker-type switch, shared by the public list and the admin one.
+     The bar itself is the primitive; what belongs to this page is the
+     space under it and the refresh control parked at the far edge.
+     ================================================================= */
+
+  /* The bar pins under whatever sticky headers are above it; the directive
+     publishes the offset as `top` and the position has to come from here,
+     because the primitive carries no stacking of its own. It sits a step
+     below the area's own tab row so it passes under it rather than over. */
+  .worker-subtabs {
+    position: sticky;
+    z-index: 20;
+    margin-bottom: var(--hd-space-4);
+    border-radius: var(--hd-radius-md) var(--hd-radius-md) 0 0;
+  }
+
+  .worker-subtabs-refresh {
+    flex: none;
+    align-self: center;
+  }
+
+  /* The notice that a filtered owner has no workers: one sentence and the
+     way back out of the filter. */
+  .worker-owner-missing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: var(--hd-space-4);
+    text-align: center;
+  }
+
+  .worker-owner-missing-text {
+    margin: 0;
+    color: var(--hd-ink-2);
+    font-size: var(--hd-text-sm);
+  }
 }

@@ -18,37 +18,35 @@
 
   <!-- Error State -->
   @if (error()) {
-    <div class="state-container state-container-sm state-error">
-      <svg
-        class="state-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
-        />
-      </svg>
-      <p>{{ error() }}</p>
-      <button
-        type="button"
-        class="hd-btn hd-btn--tonal hd-btn--dense"
-        (click)="loadLeaderboard()"
-      >
-        {{ "details.leaderboard.retry" | transloco }}
-      </button>
+    <div class="hd-callout details-state-error" role="alert">
+      <p class="hd-callout-body details-state-error-text">
+        <app-icon class="details-state-error-icon" name="exclamation-circle" />
+        {{ error() }}
+      </p>
+      <div class="hd-callout-actions">
+        <button
+          type="button"
+          class="hd-btn hd-btn--tonal hd-btn--dense"
+          (click)="loadLeaderboard()"
+        >
+          {{ "details.leaderboard.retry" | transloco }}
+        </button>
+      </div>
     </div>
   }
 
   <!-- Loading State -->
   @if (loading() && !error()) {
-    <div class="state-container state-container-sm text-secondary">
-      <div class="spinner spinner-md"></div>
-      <p>{{ "details.leaderboard.loading" | transloco }}</p>
+    <div class="hd-skeleton" role="status" aria-live="polite">
+      <span class="sr-only">{{
+        "details.leaderboard.loading" | transloco
+      }}</span>
+      <div class="hd-skeleton-bar hd-skeleton-bar--title"></div>
+      <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+      <div class="hd-skeleton-bar"></div>
+      <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+      <div class="hd-skeleton-bar"></div>
+      <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
     </div>
   }
 
@@ -147,55 +145,44 @@
       <!-- Main Content: Leaderboard Table -->
       <div class="leaderboard-main">
         <!-- Leaderboard Table -->
-        <div class="models-table">
-          <div class="models-table-header leaderboard-table-header">
-            <span class="models-table-th">{{
+        <div class="hd-list leaderboard-table">
+          <div class="hd-list-head">
+            <span class="hd-list-th">{{
               "details.leaderboard.rank" | transloco
             }}</span>
-            <span class="models-table-th">{{
+            <span class="hd-list-th">{{
               "details.leaderboard.username" | transloco
             }}</span>
-            <span class="models-table-th models-table-th-right"
-              ><app-kudos-term
-            /></span>
+            <span class="hd-list-th hd-list-th--right"><app-kudos-term /></span>
           </div>
           @for (user of users(); track user.id; let i = $index) {
-            <div class="models-table-row leaderboard-table-row">
-              <div class="models-table-cell">
-                <span
-                  class="model-rank-badge"
-                  [class.rank-1]="i === 0"
-                  [class.rank-2]="i === 1"
-                  [class.rank-3]="i === 2"
-                >
-                  @if (i === 0) {
-                    🥇
-                  } @else if (i === 1) {
-                    🥈
-                  } @else if (i === 2) {
-                    🥉
-                  } @else {
-                    {{ i + 1 }}
-                  }
-                </span>
-              </div>
-              <div class="models-table-cell-name">
-                <a
-                  [routerLink]="['/details/users', user.id]"
-                  class="models-table-name link"
-                  [title]="user.username"
-                >
-                  {{ user.username }}
-                </a>
-              </div>
-              <div class="models-table-cell">
-                <span class="models-table-label">{{
-                  "details.leaderboard.kudos" | transloco
-                }}</span>
-                <span class="models-table-value">
-                  {{ user.kudos | number }}
-                </span>
-              </div>
+            <div class="hd-list-row">
+              <span
+                class="model-rank-badge"
+                [class.rank-1]="i === 0"
+                [class.rank-2]="i === 1"
+                [class.rank-3]="i === 2"
+              >
+                @if (i === 0) {
+                  🥇
+                } @else if (i === 1) {
+                  🥈
+                } @else if (i === 2) {
+                  🥉
+                } @else {
+                  {{ i + 1 }}
+                }
+              </span>
+              <a
+                [routerLink]="['/details/users', user.id]"
+                class="leaderboard-name link"
+                [title]="user.username"
+              >
+                {{ user.username }}
+              </a>
+              <span class="leaderboard-kudos">
+                {{ user.kudos | number }}
+              </span>
             </div>
           }
         </div>
@@ -246,8 +233,10 @@
 
   <!-- Empty State -->
   @if (!loading() && !error() && users().length === 0) {
-    <div class="state-container state-container-sm state-muted">
-      <p>{{ "details.leaderboard.no_users" | transloco }}</p>
+    <div class="hd-empty">
+      <p class="hd-empty-title">
+        {{ "details.leaderboard.no_users" | transloco }}
+      </p>
     </div>
   }
 </div>

@@ -22,9 +22,14 @@
       </a>
     </div>
   } @else if (loading() && !known()) {
-    <div class="state-container state-container-sm text-secondary">
-      <div class="spinner spinner-md"></div>
-      <p>{{ "details.model_detail.loading" | transloco }}</p>
+    <div class="hd-skeleton" role="status" aria-live="polite">
+      <span class="sr-only">{{
+        "details.model_detail.loading" | transloco
+      }}</span>
+      <div class="hd-skeleton-bar hd-skeleton-bar--title"></div>
+      <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+      <div class="hd-skeleton-bar"></div>
+      <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
     </div>
   } @else {
     <div class="model-detail-columns">

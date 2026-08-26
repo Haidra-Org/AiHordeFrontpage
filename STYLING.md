@@ -249,7 +249,7 @@ The HD column is what new work uses. The glass column is legacy, kept for the pa
 | Field             | `.hd-input`, `.hd-textarea`, `.hd-label`, `.hd-sublabel`           | `.form-input`, `.form-textarea`, `.form-label`, `.form-hint`  |
 | Help glyph        | `.hd-help`, `.hd-help-btn`, `.hd-help-note`                        | `.info-tooltip-trigger`, `.tooltip-wrapper` + `.tooltip-text` |
 | Segmented control | `.hd-seg`, `.hd-seg-opt`, `.hd-seg--xs`                            | none; use tabs or chips                                       |
-| Sub-tabs          | `.hd-subtabs`, `.hd-subtab`, `.hd-subtab--active`                  | `.details-tabs--sub`, `.details-tab`                          |
+| Sub-tabs          | `.hd-subtabs`, `.hd-subtab`, `.hd-subtab--active`                  | `.details-tabs`, `.details-tab`                               |
 | Row               | `.hd-row`, `.hd-row-val`                                           | `.item-list-row`, `.data-item`                                |
 | Empty state       | `.hd-empty`, `.hd-empty-title`, `.hd-empty-sub`                    | `.state-empty`, `.state-container`                            |
 | Menu              | `.hd-menu`, `.hd-menu-item`                                        | `.surface-floating`                                           |

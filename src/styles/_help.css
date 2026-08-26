@@ -86,71 +86,103 @@
 
   /* =================================================================
      PAGE INTRO
-     Collapsible intro sections for data-heavy pages.
-     Builds on .collapsible-card from _collapsibles.css.
+     The orientation note above a data page, drawn on .hd-disclosure so
+     it is a single line until a reader asks for it. Everything here is
+     the caller's half of that contract: the head's own layout and the
+     register its two lines are read in.
      ================================================================= */
 
   .page-intro {
-    @apply mb-6;
+    margin-bottom: var(--hd-space-4);
+  }
+
+  .page-intro-head {
+    width: 100%;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .page-intro-glyph {
+    flex: none;
+    color: var(--hd-accent);
+  }
+
+  /* The title and the lead share the row the press occupies, and the
+     lead is what gives way: it is trimmed to the width left over rather
+     than allowed to wrap the head onto a second line. */
+  .page-intro-heading {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: baseline;
+    column-gap: var(--hd-space-2);
+    row-gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  /* Sentence case at reading size: this is prose addressed to a visitor,
+     not the eyebrow over a group of controls. */
+  .page-intro-title {
+    margin: 0;
+    font-size: var(--hd-text-md);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .page-intro-lead {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--hd-muted);
+    font-size: var(--hd-text-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* A phone has no room for both, and the title is the half that says
+     which page this is. */
+  @media (max-width: 639.98px) {
+    .page-intro-lead {
+      display: none;
+    }
   }
 
   .page-intro-body {
-    @apply text-sm leading-relaxed text-gray-600;
-    @apply dark:text-gray-300;
+    color: var(--hd-ink-2);
+    font-size: var(--hd-text-sm);
+    line-height: 1.6;
   }
 
   .page-intro-body p {
-    @apply mb-3;
+    margin-bottom: var(--hd-space-2-5);
   }
 
   .page-intro-body p:last-child {
-    @apply mb-0;
+    margin-bottom: 0;
   }
 
   .page-intro-body strong {
-    @apply font-semibold text-gray-900;
-    @apply dark:text-white;
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
   .page-intro-actions {
-    @apply flex flex-wrap items-center gap-3 pt-4;
-    @apply border-t border-edge-primary;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+    padding-top: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border);
   }
 
-  .dark .page-intro-actions {
-    @apply border-gray-700;
-  }
-
-  .page-intro-actions .btn-secondary .icon {
-    @apply w-4 h-4 mr-1;
-  }
-
-  .page-intro-dismiss {
-    @apply text-sm px-3 py-1.5 rounded-md transition-colors duration-200;
-    @apply text-gray-500 hover:text-gray-700 hover:bg-gray-100;
-    @apply dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700;
-    /* subtle border without a background to avoid layout shift when the button is hovered */
-    border: 1px solid;
-    background: none;
-    cursor: pointer;
+  .page-intro-link {
+    text-decoration: none;
   }
 
   /* Restore button — shown when the intro is dismissed */
   .page-intro-restore {
-    @apply mb-4;
-  }
-
-  .page-intro-restore-btn {
-    @apply inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md transition-colors duration-200;
-    @apply text-gray-500 hover:text-purple-600 hover:bg-purple-50;
-    @apply dark:text-gray-400 dark:hover:text-purple-400 dark:hover:bg-purple-900/20;
-    border: none;
-    background: none;
-    cursor: pointer;
-  }
-
-  .page-intro-restore-btn .icon {
-    @apply w-3.5 h-3.5;
+    margin-bottom: var(--hd-space-3);
   }
 
   /* =================================================================

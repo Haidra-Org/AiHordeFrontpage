@@ -42,25 +42,6 @@
     background: rgb(17 24 39 / 0.82);
   }
 
-  /* ---- Sub-tab modifier ------------------------------------------------
-     Applied to second-level tab rows ([appStickyHeader]="20") so they
-     read as subordinate to the primary navigation row above them.
-     ---------------------------------------------------------------------- */
-  .details-tabs--sub {
-    border-bottom-width: 1px;
-  }
-
-  .details-tabs--sub .details-tab {
-    font-size: clamp(0.6875rem, 1.2vw, 0.875rem);
-    padding: clamp(0.25rem, 0.6vw, 0.5rem) clamp(0.375rem, 1vw, 1rem);
-    border-bottom-width: 2px;
-  }
-
-  .details-tabs--sub .btn-source-control {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-  }
-
   .details-tab {
     @apply inline-flex items-center font-medium no-underline cursor-pointer;
     @apply transition-all duration-200;
@@ -560,219 +541,6 @@
 
   .sort-indicator {
     @apply text-xs font-semibold;
-  }
-
-  /* =================================================================
-     MODELS TABLE
-     ================================================================= */
-
-  .models-table {
-    @apply flex flex-col gap-2;
-  }
-
-  /* Table header - visible on desktop only */
-  .models-table-header {
-    @apply hidden p-3 rounded-lg;
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-primary);
-  }
-
-  @media (min-width: 768px) {
-    .models-table-header {
-      @apply grid items-center gap-3;
-      grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 8.5rem;
-    }
-  }
-
-  /* Usage stats table - 4-column layout (rank, name, count, percentage) */
-  @media (min-width: 768px) {
-    .models-table-header.usage-table-header {
-      grid-template-columns: 3rem 1fr 7rem 9rem;
-    }
-  }
-
-  /* Leaderboard table - 3-column layout (rank, name, value) */
-  @media (min-width: 768px) {
-    .models-table-header.leaderboard-table-header {
-      grid-template-columns: 3rem 1fr 8rem;
-    }
-  }
-
-  .dark .models-table-header {
-    @apply bg-gray-900 border-gray-700;
-  }
-
-  .models-table-th {
-    @apply text-[0.6875rem] font-bold uppercase tracking-wide;
-    color: var(--color-text-muted);
-  }
-
-  .dark .models-table-th {
-    @apply text-gray-500;
-  }
-
-  .models-table-th-right {
-    @apply text-right justify-end;
-  }
-
-  /* Sortable table headers - reusable for any sortable table column */
-  .models-table-th-sortable {
-    @apply cursor-pointer transition-colors duration-200;
-    @apply inline-flex items-center gap-1;
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    font-size: inherit;
-    font-weight: inherit;
-    text-transform: inherit;
-    letter-spacing: inherit;
-    font-family: inherit;
-  }
-
-  .models-table-th-sortable:hover {
-    color: var(--color-brand-purple);
-  }
-
-  .dark .models-table-th-sortable:hover {
-    @apply text-purple-300;
-  }
-
-  .models-table-th-sortable .sort-indicator {
-    @apply text-xs ml-0.5;
-  }
-
-  /* Table row */
-  .models-table-row {
-    @apply grid gap-2 p-3.5 rounded-lg transition-all duration-200;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
-    background-color: var(--color-bg-primary);
-    border: 1px solid var(--color-border-primary);
-  }
-
-  .models-table-row:hover {
-    background-color: var(--color-bg-secondary);
-    border-color: var(--color-border-secondary);
-  }
-
-  @media (min-width: 768px) {
-    .models-table-row {
-      @apply items-center gap-3;
-      grid-template-columns: 1fr 5.5rem 5.5rem 5.5rem 4.5rem 8.5rem;
-      grid-template-rows: auto;
-    }
-  }
-
-  /* Usage stats table rows - 4-column layout */
-  @media (min-width: 768px) {
-    .models-table-row.usage-table-row {
-      grid-template-columns: 3rem 1fr 7rem 9rem;
-    }
-  }
-
-  /* Leaderboard table rows - 3-column layout */
-  @media (min-width: 768px) {
-    .models-table-row.leaderboard-table-row {
-      grid-template-columns: 3rem 1fr 8rem;
-    }
-  }
-
-  .dark .models-table-row {
-    @apply bg-gray-800 border-gray-700;
-  }
-
-  .dark .models-table-row:hover {
-    background-color: rgb(55 65 81 / 0.5);
-    @apply border-gray-600;
-  }
-
-  /* Highlighted model row (linked from URL) */
-  .models-table-row-highlighted {
-    @apply ring-4 ring-orange-400 ring-offset-2;
-    @apply dark:ring-orange-500 dark:ring-offset-gray-900;
-    scroll-margin-top: calc(var(--sticky-offset, 80px) + 1rem);
-  }
-
-  /* Name cell - spans full width on mobile */
-  .models-table-cell-name {
-    @apply flex flex-col gap-1.5 min-w-0;
-    grid-column: 1 / -1;
-  }
-
-  @media (min-width: 768px) {
-    .models-table-cell-name {
-      @apply flex-row items-center gap-3;
-      grid-column: auto;
-    }
-  }
-
-  .models-table-name {
-    @apply text-[0.9375rem] font-semibold truncate;
-    color: var(--color-text-primary);
-  }
-
-  .dark .models-table-name {
-    @apply text-gray-100;
-  }
-
-  .models-table-badges {
-    @apply flex items-center gap-1.5 shrink-0;
-  }
-
-  /* Data cells */
-  .models-table-cell {
-    @apply flex flex-col gap-0.5;
-  }
-
-  @media (min-width: 768px) {
-    .models-table-cell {
-      @apply justify-center text-right;
-    }
-  }
-
-  /* Mobile-only label */
-  .models-table-label {
-    @apply text-[0.625rem] font-semibold uppercase tracking-tight;
-    color: var(--color-text-muted);
-  }
-
-  @media (min-width: 768px) {
-    .models-table-label {
-      @apply hidden;
-    }
-  }
-
-  .dark .models-table-label {
-    @apply text-gray-500;
-  }
-
-  .models-table-value {
-    @apply text-[0.8125rem] font-medium tabular-nums;
-    color: var(--color-text-primary);
-  }
-
-  .dark .models-table-value {
-    @apply text-gray-200;
-  }
-
-  /* Highlight high values */
-  .models-table-value-highlight {
-    @apply font-semibold;
-    color: var(--color-brand-purple);
-  }
-
-  .dark .models-table-value-highlight {
-    @apply text-purple-300;
-  }
-
-  /* Muted values (zero or unavailable) */
-  .models-table-value-muted {
-    color: var(--color-text-muted);
-  }
-
-  .dark .models-table-value-muted {
-    @apply text-gray-500;
   }
 
   /* =================================================================
@@ -1333,5 +1101,31 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--hd-space-2);
+  }
+
+  /* A request that did not arrive. It is a callout rather than a centred
+     nothing-here state, because there is something to do about it and the
+     retry has to sit with the sentence explaining why it is there. The
+     danger hue is supplied as the section identity, so the start edge
+     takes it without any rule reaching into the primitive. */
+  .details-state-error {
+    --hd-sec-tint-border: var(--hd-danger);
+  }
+
+  .details-state-error-text {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .details-state-error-icon {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: var(--hd-danger);
+  }
+
+  .details-state-error-link {
+    text-decoration: none;
   }
 }

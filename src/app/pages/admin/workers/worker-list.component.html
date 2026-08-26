@@ -40,73 +40,72 @@
 
   <!-- Owner Not Found Message -->
   @if (ownerNotFound()) {
-    <div class="card card-bg-primary card-full card-spaced mb-4">
-      <div class="text-center py-6">
-        <p class="text-secondary mb-4">
-          {{
-            "admin.workers.owner_not_found"
-              | transloco: { ownerId: filterOwnerId() }
-          }}
-        </p>
-        <button
-          type="button"
-          class="btn btn-primary"
-          (click)="ownerFilterCleared.emit()"
-        >
-          {{ "admin.workers.view_all_workers" | transloco }}
-        </button>
-      </div>
+    <div class="hd-card worker-owner-missing">
+      <p class="worker-owner-missing-text">
+        {{
+          "admin.workers.owner_not_found"
+            | transloco: { ownerId: filterOwnerId() }
+        }}
+      </p>
+      <button
+        type="button"
+        class="hd-btn hd-btn--primary"
+        (click)="ownerFilterCleared.emit()"
+      >
+        {{ "admin.workers.view_all_workers" | transloco }}
+      </button>
     </div>
   }
 
   <div [class.tab-sub-panel]="viewMode() === 'public'">
     <!-- Sub-Tab Navigation -->
-    <app-scroll-fade
-      class="details-tabs details-tabs--glass details-tabs--sub mb-6"
-      role="tablist"
+    <div
+      class="hd-subtabs worker-subtabs"
       [appStickyHeader]="viewMode() === 'public' ? 20 : null"
     >
-      <button
-        type="button"
-        class="details-tab"
-        [class.details-tab-active]="workerType() === 'image'"
-        (click)="setWorkerType('image')"
-        role="tab"
-        [attr.aria-selected]="workerType() === 'image'"
-      >
-        <app-icon name="photo" class="icon-sm" aria-hidden="true" />
-        {{ "admin.workers.tabs.image" | transloco }}
-      </button>
-      <button
-        type="button"
-        class="details-tab"
-        [class.details-tab-active]="workerType() === 'text'"
-        (click)="setWorkerType('text')"
-        role="tab"
-        [attr.aria-selected]="workerType() === 'text'"
-      >
-        <app-icon name="chat-bubble" class="icon-sm" aria-hidden="true" />
-        {{ "admin.workers.tabs.text" | transloco }}
-      </button>
-      <button
-        type="button"
-        class="details-tab"
-        [class.details-tab-active]="workerType() === 'interrogation'"
-        (click)="setWorkerType('interrogation')"
-        role="tab"
-        [attr.aria-selected]="workerType() === 'interrogation'"
-      >
-        <app-icon
-          name="question-mark-circle"
-          class="icon-sm"
-          aria-hidden="true"
-        />
-        {{ "admin.workers.tabs.interrogation" | transloco }}
-      </button>
+      <app-scroll-fade class="hd-subtabs-scroll" role="tablist">
+        <button
+          type="button"
+          class="hd-subtab"
+          [class.hd-subtab--active]="workerType() === 'image'"
+          (click)="setWorkerType('image')"
+          role="tab"
+          [attr.aria-selected]="workerType() === 'image'"
+        >
+          <app-icon name="photo" class="icon-sm" aria-hidden="true" />
+          {{ "admin.workers.tabs.image" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="hd-subtab"
+          [class.hd-subtab--active]="workerType() === 'text'"
+          (click)="setWorkerType('text')"
+          role="tab"
+          [attr.aria-selected]="workerType() === 'text'"
+        >
+          <app-icon name="chat-bubble" class="icon-sm" aria-hidden="true" />
+          {{ "admin.workers.tabs.text" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="hd-subtab"
+          [class.hd-subtab--active]="workerType() === 'interrogation'"
+          (click)="setWorkerType('interrogation')"
+          role="tab"
+          [attr.aria-selected]="workerType() === 'interrogation'"
+        >
+          <app-icon
+            name="question-mark-circle"
+            class="icon-sm"
+            aria-hidden="true"
+          />
+          {{ "admin.workers.tabs.interrogation" | transloco }}
+        </button>
+      </app-scroll-fade>
 
       <button
         type="button"
-        class="btn-source-control"
+        class="hd-btn hd-btn--ghost hd-btn--dense worker-subtabs-refresh"
         (click)="refreshWorkers()"
         [disabled]="loading()"
       >
@@ -117,7 +116,7 @@
         }
         {{ "admin.workers.refresh" | transloco }}
       </button>
-    </app-scroll-fade>
+    </div>
 
     <!-- Glossary hint -->
     <div class="info-note info-note--blue mb-6">
@@ -491,14 +490,19 @@
 
     <!-- Loading State -->
     @if (loading()) {
-      <div class="state-container state-container-sm text-secondary">
-        <div class="spinner spinner-md"></div>
-        <p>{{ "admin.workers.loading" | transloco }}</p>
+      <div class="hd-skeleton" role="status" aria-live="polite">
+        <span class="sr-only">{{ "admin.workers.loading" | transloco }}</span>
+        <div class="hd-skeleton-bar hd-skeleton-bar--title"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
+        <div class="hd-skeleton-bar"></div>
+        <div class="hd-skeleton-bar hd-skeleton-bar--wide"></div>
       </div>
     } @else if (filteredWorkers().length === 0) {
-      <div class="state-container state-container-sm state-muted">
+      <div class="hd-empty">
         <app-icon name="cpu-chip" class="state-icon" aria-hidden="true" />
-        <p>{{ "admin.workers.no_workers" | transloco }}</p>
+        <p class="hd-empty-title">
+          {{ "admin.workers.no_workers" | transloco }}
+        </p>
       </div>
     } @else {
       @if (workerViewMode() === "card") {
