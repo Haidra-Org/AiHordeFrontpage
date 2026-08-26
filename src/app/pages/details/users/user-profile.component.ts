@@ -9,9 +9,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { switchMap, of } from 'rxjs';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
   BreadcrumbComponent,
   BreadcrumbItem,
@@ -22,9 +22,10 @@ import { UserStatsSummaryComponent } from '../../../components/user-stats-summar
 import { UserRecordsPanelComponent } from '../../../components/user-records-panel/user-records-panel.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
-import { HordeUser } from '../../../types/horde-user';
+import { HordeUser, UserStyleReference } from '../../../types/horde-user';
 import { setPageTitle } from '../../../helper/page-title';
 import { extractUserAlias } from '../../../helper/user-parser';
+import { formatAccountAge } from '../../../helper/account-age';
 import { IconComponent } from '../../../components/icon/icon.component';
 
 @Component({
@@ -47,6 +48,8 @@ export class UserProfileComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly transloco = inject(TranslocoService);
   private readonly aiHordeService = inject(AiHordeService);
 
   private readonly params = toSignal(this.route.params, {
@@ -57,8 +60,17 @@ export class UserProfileComponent implements OnInit {
   public readonly loading = signal(true);
   public readonly error = signal<string | null>(null);
 
-  // Tab state for switching between profile sections
-  public activeTab = signal<'profile' | 'records'>('profile');
+  /**
+   * Which section is showing. It rides on the address rather than on component
+   * state so a visitor can link to the records and the back button returns to
+   * the profile.
+   */
+  private readonly query = toSignal(this.route.queryParams, {
+    initialValue: {} as Record<string, string>,
+  });
+  public readonly activeTab = computed<'profile' | 'records'>(() =>
+    this.query()['tab'] === 'records' ? 'records' : 'profile',
+  );
 
   public readonly userId = computed(() => {
     const idStr = this.params()['userId'] as string | undefined;
@@ -75,6 +87,27 @@ export class UserProfileComponent implements OnInit {
     const alias = this.userAlias();
     return alias ? alias.charAt(0).toUpperCase() : '?';
   });
+
+  /** The user's published styles, each one its own page to open. */
+  public readonly styles = computed<UserStyleReference[]>(
+    () => this.user()?.styles ?? [],
+  );
+
+  public readonly activeImageCount = computed(
+    () => this.user()?.active_generations?.image?.length ?? 0,
+  );
+  public readonly activeTextCount = computed(
+    () => this.user()?.active_generations?.text?.length ?? 0,
+  );
+  public readonly activeAlchemyCount = computed(
+    () => this.user()?.active_generations?.alchemy?.length ?? 0,
+  );
+  public readonly hasActiveGenerations = computed(
+    () =>
+      this.activeImageCount() > 0 ||
+      this.activeTextCount() > 0 ||
+      this.activeAlchemyCount() > 0,
+  );
 
   public readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {
     const items: BreadcrumbItem[] = [
@@ -122,17 +155,14 @@ export class UserProfileComponent implements OnInit {
   }
 
   public setActiveTab(tab: 'profile' | 'records'): void {
-    this.activeTab.set(tab);
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tab === 'records' ? 'records' : null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   public formatAccountAge(seconds: number | undefined): string {
-    if (!seconds) return '';
-    const days = Math.floor(seconds / 86400);
-    if (days > 365) {
-      const years = Math.floor(days / 365);
-      const remainingDays = days % 365;
-      return `${years} year${years !== 1 ? 's' : ''}, ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
-    }
-    return `${days} day${days !== 1 ? 's' : ''}`;
+    return formatAccountAge(this.transloco, seconds);
   }
 }

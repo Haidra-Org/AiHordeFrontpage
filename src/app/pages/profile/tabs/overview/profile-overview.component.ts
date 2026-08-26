@@ -6,7 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthService } from '../../../../services/auth.service';
 import { ToastService } from '../../../../services/toast.service';
 import { IconComponent } from '../../../../components/icon/icon.component';
@@ -19,6 +19,7 @@ import { DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { concatMap, EMPTY, tap } from 'rxjs';
+import { formatAccountAge } from '../../../../helper/account-age';
 
 @Component({
   selector: 'app-profile-overview',
@@ -37,6 +38,7 @@ import { concatMap, EMPTY, tap } from 'rxjs';
 })
 export class ProfileOverviewComponent {
   public readonly auth = inject(AuthService);
+  private readonly transloco = inject(TranslocoService);
   private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -99,13 +101,7 @@ export class ProfileOverviewComponent {
   public usernameSaving = signal<boolean>(false);
 
   public formatAccountAge(seconds: number): string {
-    const days = Math.floor(seconds / 86400);
-    if (days > 365) {
-      const years = Math.floor(days / 365);
-      const remainingDays = days % 365;
-      return `${years} year${years !== 1 ? 's' : ''}, ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
-    }
-    return `${days} day${days !== 1 ? 's' : ''}`;
+    return formatAccountAge(this.transloco, seconds);
   }
 
   public logout(): void {

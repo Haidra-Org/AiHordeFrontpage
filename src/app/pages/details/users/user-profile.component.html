@@ -103,6 +103,68 @@
           <app-user-stats-summary [user]="user()!" />
         </div>
 
+        <!-- Capacity -->
+        @if (user()!.concurrency) {
+          <div class="section-divider-top">
+            <div class="data-grid-1-2">
+              <div class="data-item-box">
+                <span class="data-label">{{
+                  "profile.concurrency" | transloco
+                }}</span>
+                <span class="data-value">{{ user()!.concurrency }}</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Active Generations -->
+        @if (hasActiveGenerations()) {
+          <div class="section-divider-top">
+            <h4 class="section-title-sm">
+              {{ "profile.active_generations_label" | transloco }}
+            </h4>
+            <div class="active-gen-row">
+              @if (activeImageCount() > 0) {
+                <span class="badge-base badge-info">{{
+                  "profile.active_image_jobs"
+                    | transloco: { count: activeImageCount() }
+                }}</span>
+              }
+              @if (activeTextCount() > 0) {
+                <span class="badge-base badge-success">{{
+                  "profile.active_text_jobs"
+                    | transloco: { count: activeTextCount() }
+                }}</span>
+              }
+              @if (activeAlchemyCount() > 0) {
+                <span class="badge-base badge-purple">{{
+                  "profile.active_alchemy_jobs"
+                    | transloco: { count: activeAlchemyCount() }
+                }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Styles -->
+        @if (styles().length > 0) {
+          <div class="section-divider-top">
+            <h4 class="section-title-sm">
+              {{ "details.users.styles_heading" | transloco }}
+            </h4>
+            <div class="action-row">
+              @for (style of styles(); track style.id) {
+                <a
+                  [routerLink]="['/details/styles', style.type, style.id]"
+                  class="btn-secondary"
+                >
+                  {{ style.name }}
+                </a>
+              }
+            </div>
+          </div>
+        }
+
         <!-- Related Links -->
         <div class="section-divider-top">
           <h4 class="section-title-sm">

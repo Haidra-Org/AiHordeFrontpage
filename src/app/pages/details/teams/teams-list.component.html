@@ -184,8 +184,29 @@
                 }}
               </span>
               <span class="entity-card-stat">
-                {{ team.kudos ?? 0 | formatNumber }} generated kudos
+                {{
+                  "details.teams.kudos_generated"
+                    | transloco: { kudos: team.kudos ?? 0 | formatNumber }
+                }}
               </span>
+              <span class="entity-card-stat">
+                {{
+                  ((team.requests_fulfilled ?? 0) === 1
+                    ? "details.teams.requests_count_one"
+                    : "details.teams.requests_count_other"
+                  )
+                    | transloco
+                      : { count: team.requests_fulfilled ?? 0 | formatNumber }
+                }}
+              </span>
+              @if (team.uptime) {
+                <span class="entity-card-stat">
+                  {{
+                    "details.teams.uptime_stat"
+                      | transloco: { uptime: formatUptime(team.uptime) }
+                  }}
+                </span>
+              }
             </div>
             @if (team.creator) {
               <p class="text-xs text-secondary mt-2">
