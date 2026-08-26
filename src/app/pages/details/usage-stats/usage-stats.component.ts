@@ -13,7 +13,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
@@ -84,6 +84,7 @@ interface ModelUsageEntry {
 export class UsageStatsComponent implements OnInit {
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
+  private readonly transloco = inject(TranslocoService);
   private readonly aiHorde = inject(AiHordeService);
   private readonly networkStatus = inject(NetworkStatusService);
   private readonly destroyRef = inject(DestroyRef);
@@ -468,7 +469,7 @@ export class UsageStatsComponent implements OnInit {
           this.textModelStats.set(data.textModelStats);
         },
         error: () => {
-          this.error.set('Failed to load usage statistics');
+          this.error.set(this.transloco.translate('details.usage.error'));
         },
       });
   }

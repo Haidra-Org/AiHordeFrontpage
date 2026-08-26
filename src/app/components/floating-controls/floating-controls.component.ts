@@ -45,7 +45,7 @@ import { IconComponent } from '../icon/icon.component';
           type="button"
           (click)="scrollToTop()"
           class="scroll-to-top-btn"
-          aria-label="Scroll to top"
+          [attr.aria-label]="'help.scroll_to_top' | transloco"
         >
           <app-icon name="arrow-up" class="scroll-icon" />
         </button>

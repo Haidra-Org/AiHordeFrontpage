@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { EMPTY, map, switchMap, tap } from 'rxjs';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { TeamService } from '../../../services/team.service';
 import { Team } from '../../../types/team';
@@ -26,6 +26,7 @@ import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 export class TeamDetailComponent implements OnInit {
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
+  private readonly transloco = inject(TranslocoService);
   private readonly teamService = inject(TeamService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -86,14 +87,23 @@ export class TeamDetailComponent implements OnInit {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
+    const daysUnit = this.transloco.translate(
+      'details.teams.uptime_days_short',
+    );
+    const hoursUnit = this.transloco.translate(
+      'details.teams.uptime_hours_short',
+    );
+    const minutesUnit = this.transloco.translate(
+      'details.teams.uptime_minutes_short',
+    );
 
     if (days > 0) {
-      return `${days}d ${hours}h`;
+      return `${days}${daysUnit} ${hours}${hoursUnit}`;
     }
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return `${hours}${hoursUnit} ${minutes}${minutesUnit}`;
     }
-    return `${minutes}m`;
+    return `${minutes}${minutesUnit}`;
   }
 
   /**

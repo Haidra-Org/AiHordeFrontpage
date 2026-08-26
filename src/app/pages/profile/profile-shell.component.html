@@ -1,6 +1,6 @@
 <app-json-inspector
   [open]="rawJsonOpen()"
-  title="Profile Raw JSON"
+  [title]="'profile.raw_json_title' | transloco"
   [sections]="rawJsonSections()"
   [downloadFilePrefix]="'profile-' + (auth.currentUser()?.id ?? 'user')"
   (closed)="closeRawJson()"
@@ -23,7 +23,7 @@
         @if (auth.isLoggedIn()) {
           <app-json-inspector-trigger
             variant="hd"
-            label="View profile raw JSON"
+            [label]="'profile.raw_json_label' | transloco"
             (triggered)="openRawJson()"
           />
         }

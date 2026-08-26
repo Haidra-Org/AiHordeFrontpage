@@ -514,7 +514,7 @@
   <dialog
     #filterDialog
     class="admin-dialog-wrapper"
-    aria-label="Raw JSON"
+    [attr.aria-label]="'admin.filters.raw_json' | transloco"
     (close)="closeDialog()"
     (mousedown)="onDialogBackdropClick($event)"
   >

@@ -14,7 +14,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { TeamService } from '../../../services/team.service';
 import { StickyRegistryService } from '../../../services/sticky-registry.service';
@@ -43,6 +43,7 @@ import { IconComponent } from '../../../components/icon/icon.component';
 export class TeamsListComponent implements OnInit {
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
+  private readonly transloco = inject(TranslocoService);
   private readonly teamService = inject(TeamService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -216,11 +217,17 @@ export class TeamsListComponent implements OnInit {
   public formatUptime(seconds: number): string {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
+    const daysUnit = this.transloco.translate(
+      'details.teams.uptime_days_short',
+    );
+    const hoursUnit = this.transloco.translate(
+      'details.teams.uptime_hours_short',
+    );
 
     if (days > 0) {
-      return `${days}d ${hours}h`;
+      return `${days}${daysUnit} ${hours}${hoursUnit}`;
     }
-    return `${hours}h`;
+    return `${hours}${hoursUnit}`;
   }
 
   /**

@@ -580,7 +580,7 @@
       />
     </div>
     <app-json-inspector-trigger
-      label="View worker raw JSON"
+      [label]="'admin.workers.raw_json_label' | transloco"
       (triggered)="openRawJson()"
     />
   </div>
@@ -1053,7 +1053,7 @@
 
 <app-json-inspector
   [open]="rawJsonOpen()"
-  title="Worker Raw JSON"
+  [title]="'admin.workers.raw_json_title' | transloco"
   [sections]="rawJsonSections()"
   [downloadFilePrefix]="'worker-' + worker().id"
   (closed)="closeRawJson()"

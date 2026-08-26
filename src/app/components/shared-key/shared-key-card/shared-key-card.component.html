@@ -37,7 +37,7 @@
       sharedKey().id
     }}</code>
     <app-json-inspector-trigger
-      label="View shared key raw JSON"
+      [label]="'profile.shared_keys.raw_json_label' | transloco"
       (triggered)="openRawJson()"
     />
     <button
@@ -155,7 +155,7 @@
 
   <app-json-inspector
     [open]="rawJsonOpen()"
-    title="Shared Key Raw JSON"
+    [title]="'profile.shared_keys.raw_json_title' | transloco"
     [sections]="rawJsonSections()"
     [downloadFilePrefix]="'shared-key-' + sharedKey().id"
     (closed)="closeRawJson()"

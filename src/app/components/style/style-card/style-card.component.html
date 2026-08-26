@@ -50,7 +50,7 @@
         </button>
       }
       <app-json-inspector-trigger
-        label="View style raw JSON"
+        [label]="'styles.raw_json_label' | transloco"
         (triggered)="onOpenRawJson()"
       />
     </div>
@@ -137,7 +137,7 @@
 
 <app-json-inspector
   [open]="rawJsonOpen()"
-  title="Style Raw JSON"
+  [title]="'styles.raw_json_title' | transloco"
   [sections]="rawJsonSections()"
   [downloadFilePrefix]="'style-' + style().id"
   (closed)="onCloseRawJson()"

@@ -21,7 +21,7 @@ import {
 } from '@angular/forms';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { map, of, switchMap } from 'rxjs';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
@@ -71,6 +71,7 @@ export class ProfileShellComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
+  private readonly transloco = inject(TranslocoService);
   private readonly footerColor = inject(FooterColorService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly auth = inject(AuthService);
@@ -119,16 +120,28 @@ export class ProfileShellComponent implements OnInit {
     const user = this.auth.currentUser();
     if (!user) return [];
     return [
-      { id: 'user', label: 'User', value: user },
+      {
+        id: 'user',
+        label: this.transloco.translate('profile.raw_json_section.user'),
+        value: user,
+      },
       {
         id: 'kudos-details',
-        label: 'Kudos Details',
+        label: this.transloco.translate(
+          'profile.raw_json_section.kudos_details',
+        ),
         value: user.kudos_details ?? {},
       },
-      { id: 'records', label: 'Records', value: user.records ?? {} },
+      {
+        id: 'records',
+        label: this.transloco.translate('profile.raw_json_section.records'),
+        value: user.records ?? {},
+      },
       {
         id: 'active-generations',
-        label: 'Active Generations',
+        label: this.transloco.translate(
+          'profile.raw_json_section.active_generations',
+        ),
         value: user.active_generations ?? {},
       },
     ];

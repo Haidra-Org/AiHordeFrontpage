@@ -28,7 +28,7 @@
 
 <app-json-inspector
   [open]="rawJsonModalOpen()"
-  title="Raw JSON"
+  [title]="'admin.users.raw_json_title' | transloco"
   [sections]="rawJsonSections()"
   [downloadFilePrefix]="'admin-user-' + (selectedUser()?.id ?? 'unknown')"
   (closed)="closeRawJsonModal()"
@@ -205,7 +205,7 @@
             }
           </h2>
           <app-json-inspector-trigger
-            label="View raw JSON"
+            [label]="'admin.users.raw_json_label' | transloco"
             (triggered)="openRawJsonModal()"
           />
         </div>
