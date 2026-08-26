@@ -112,64 +112,111 @@ describe('StyleDetailComponent', () => {
   });
 });
 
+const STYLE_ID = '11111111-2222-3333-4444-555555555555';
+
+const IMAGE_STYLE: ImageStyle = {
+  id: STYLE_ID,
+  name: 'Watercolour',
+  prompt: '{p}, watercolour ### {np}',
+  public: true,
+  nsfw: false,
+  use_count: 3,
+  creator: 'somebody#1',
+  examples: [],
+};
+
+async function createDetail(
+  routeStyleId: string,
+  styleService: Record<string, unknown>,
+  user: { id: number; username: string } | null = null,
+) {
+  TestBed.resetTestingModule();
+  await TestBed.configureTestingModule({
+    imports: [
+      StyleDetailComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
+    providers: [
+      provideRouter([]),
+      {
+        provide: ActivatedRoute,
+        useValue: {
+          params: of({ type: 'image', styleId: routeStyleId }),
+          snapshot: { params: { type: 'image', styleId: routeStyleId } },
+        },
+      },
+      { provide: StyleService, useValue: styleService },
+      {
+        provide: AuthService,
+        useValue: {
+          currentUser: signal(user),
+          isLoggedIn: signal(user !== null),
+          isInitialized: signal(true),
+        },
+      },
+    ],
+  }).compileComponents();
+
+  const detail = TestBed.createComponent(StyleDetailComponent);
+  detail.detectChanges();
+  return detail;
+}
+
 describe('StyleDetailComponent link into the studio', () => {
-  it('offers an image style a way into the studio', async () => {
-    const style: ImageStyle = {
-      id: 'style-1',
-      name: 'Watercolour',
-      prompt: '{p}, watercolour ### {np}',
-      public: true,
-      nsfw: false,
-      use_count: 3,
-      creator: 'somebody#1',
-      examples: [],
-    };
-
-    await TestBed.configureTestingModule({
-      imports: [
-        StyleDetailComponent,
-        TranslocoTestingModule.forRoot({
-          langs: { en },
-          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
-        }),
-      ],
-      providers: [
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            params: of({ type: 'image', styleId: 'style-1' }),
-            snapshot: { params: { type: 'image', styleId: 'style-1' } },
-          },
-        },
-        {
-          provide: StyleService,
-          useValue: {
-            getImageStyle: vi.fn().mockReturnValue(of(style)),
-            getTextStyle: vi.fn().mockReturnValue(of(null)),
-          },
-        },
-        {
-          provide: AuthService,
-          useValue: {
-            currentUser: signal(null),
-            isLoggedIn: signal(false),
-            isInitialized: signal(true),
-          },
-        },
-      ],
-    }).compileComponents();
-
-    const detail = TestBed.createComponent(StyleDetailComponent);
-    detail.detectChanges();
+  it('offers an image style a way into the studio, by its id', async () => {
+    const detail = await createDetail(STYLE_ID, {
+      getImageStyle: vi.fn().mockReturnValue(of(IMAGE_STYLE)),
+      getImageStyleByName: vi.fn(),
+      getTextStyle: vi.fn().mockReturnValue(of(null)),
+      getTextStyleByName: vi.fn(),
+    });
 
     const link = detail.nativeElement.querySelector(
       'a[href^="/generate/image"]',
     ) as HTMLAnchorElement | null;
     expect(link).not.toBeNull();
     expect(link?.getAttribute('href')).toBe(
-      '/generate/image?style=Watercolour',
+      `/generate/image?styleId=${STYLE_ID}`,
     );
     expect(link?.textContent?.trim()).toBe('Use this style');
+  });
+
+  it('asks the horde by name when the address carries one', async () => {
+    const getImageStyle = vi.fn();
+    const getImageStyleByName = vi.fn().mockReturnValue(of(IMAGE_STYLE));
+
+    const detail = await createDetail('Watercolour', {
+      getImageStyle,
+      getImageStyleByName,
+      getTextStyle: vi.fn(),
+      getTextStyleByName: vi.fn(),
+    });
+
+    expect(getImageStyleByName).toHaveBeenCalledWith('Watercolour');
+    expect(getImageStyle).not.toHaveBeenCalled();
+    expect(detail.componentInstance.style()?.name).toBe('Watercolour');
+  });
+
+  it('offers the owner the editor beside the delete action', async () => {
+    const detail = await createDetail(
+      STYLE_ID,
+      {
+        getImageStyle: vi.fn().mockReturnValue(of(IMAGE_STYLE)),
+        getImageStyleByName: vi.fn(),
+        getTextStyle: vi.fn(),
+        getTextStyleByName: vi.fn(),
+      },
+      { id: 1, username: 'somebody' },
+    );
+
+    const link = detail.nativeElement.querySelector(
+      'a[href^="/profile/styles"]',
+    ) as HTMLAnchorElement | null;
+    expect(link?.getAttribute('href')).toBe(
+      `/profile/styles?editId=${STYLE_ID}&type=image`,
+    );
   });
 });

@@ -25,6 +25,10 @@ import { IconComponent } from '../../../components/icon/icon.component';
 
 type StyleType = 'image' | 'text';
 
+/** The shape of a style id, which is what tells an id from a name. */
+const STYLE_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 @Component({
   selector: 'app-style-detail',
   templateUrl: './style-detail.component.html',
@@ -145,13 +149,21 @@ export class StyleDetailComponent implements OnInit {
       });
   }
 
+  /**
+   * Load the style the address names. A page can be reached by a style's id or
+   * by the name it is published under, so whichever was given decides which of
+   * the horde's two lookups is asked.
+   */
   private loadStyle(styleId: string, type: StyleType): void {
     this.loading.set(true);
     this.error.set(null);
+    const byId = STYLE_ID_PATTERN.test(styleId);
 
     if (type === 'image') {
-      this.styleService
-        .getImageStyle(styleId)
+      (byId
+        ? this.styleService.getImageStyle(styleId)
+        : this.styleService.getImageStyleByName(styleId)
+      )
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (style: ImageStyle) => {
@@ -167,8 +179,10 @@ export class StyleDetailComponent implements OnInit {
           },
         });
     } else {
-      this.styleService
-        .getTextStyle(styleId)
+      (byId
+        ? this.styleService.getTextStyle(styleId)
+        : this.styleService.getTextStyleByName(styleId)
+      )
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (style: TextStyle) => {
@@ -224,6 +238,20 @@ export class StyleDetailComponent implements OnInit {
         this.showDeleteConfirm.set(false);
       },
     });
+  }
+
+  /**
+   * Where the owner edits this style. The editor lives beside the reader's own
+   * styles rather than here, so there is one form to keep correct.
+   */
+  public editLink(): { path: string[]; query: Record<string, string> } {
+    const style = this.style();
+    return {
+      path: ['/profile', 'styles'],
+      query: style
+        ? { editId: style.id, type: this.styleType() }
+        : { type: this.styleType() },
+    };
   }
 
   public goBack(): void {

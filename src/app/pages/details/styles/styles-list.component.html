@@ -110,6 +110,7 @@
         <div class="grid-cards styles-entry-grid">
           @for (style of filteredStyles(); track style.id) {
             <app-style-card
+              [attr.id]="styleCardId(style.id)"
               [style]="style"
               [styleType]="activeTab() === 'image' ? 'image' : 'text'"
               [highlighted]="isStyleHighlighted(style.id)"
@@ -120,7 +121,6 @@
                 )
               "
               (clearHighlight)="clearHighlight()"
-              #highlightedStyle
             />
           }
         </div>

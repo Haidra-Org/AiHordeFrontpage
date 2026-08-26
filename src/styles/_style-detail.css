@@ -132,6 +132,17 @@
     @apply flex flex-wrap gap-2 shrink-0;
   }
 
+  /* Says why a text style has no way into the studio, in the row where the
+     button for it would be. */
+  .style-detail-no-studio {
+    flex-basis: 100%;
+    margin: 0;
+    max-width: 46ch;
+    font-size: var(--hd-text-xs);
+    line-height: 1.45;
+    color: var(--hd-muted);
+  }
+
   /* =================================================================
      CONTENT GRID - Two Column Layout
      ================================================================= */

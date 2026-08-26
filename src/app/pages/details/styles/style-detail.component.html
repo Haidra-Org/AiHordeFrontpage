@@ -145,10 +145,15 @@
               <a
                 class="btn-source-control btn-sm"
                 [routerLink]="'/generate/image'"
-                [queryParams]="{ style: picked.name }"
+                [queryParams]="{ styleId: picked.id }"
               >
                 {{ "styles.use_style" | transloco }}
               </a>
+            }
+            @if (isTextStyle()) {
+              <p class="style-detail-no-studio">
+                {{ "styles.use_style_text_unavailable" | transloco }}
+              </p>
             }
 
             <button
@@ -165,6 +170,14 @@
             </button>
 
             @if (isOwner()) {
+              <a
+                class="btn-source-control btn-sm"
+                [routerLink]="editLink().path"
+                [queryParams]="editLink().query"
+              >
+                <app-icon name="pencil-square" />
+                {{ "styles.edit" | transloco }}
+              </a>
               <button
                 type="button"
                 class="btn-source-control btn-sm"

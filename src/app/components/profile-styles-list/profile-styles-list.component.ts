@@ -14,7 +14,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
-  forkJoin,
+  from,
+  mergeMap,
   Observable,
   of,
   finalize,
@@ -22,6 +23,7 @@ import {
   map,
   concatMap,
   tap,
+  toArray,
 } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { extractApiError } from '../../helper/extract-api-error';
@@ -45,6 +47,9 @@ import { AdminDialogComponent } from '../admin/admin-dialog/admin-dialog.compone
 import { IconComponent } from '../icon/icon.component';
 
 type StylesTab = 'image' | 'text';
+
+/** How many of a reader's styles are asked for at once. */
+const STYLE_FETCH_CONCURRENCY = 4;
 
 export interface LoadedStyle {
   id: string;
@@ -335,45 +340,57 @@ export class ProfileStylesListComponent implements OnInit {
       })),
     );
 
-    // Use the known type from the user profile to call the correct endpoint
-    const requests = styleRefs.map((ref) => {
-      const fetch$: Observable<ImageStyle | TextStyle> =
-        ref.type === 'image'
-          ? this.styleService.getImageStyle(ref.id)
-          : this.styleService.getTextStyle(ref.id);
-
-      return fetch$.pipe(
-        map((style) => ({ style, type: ref.type as StyleType })),
-        catchError(() => of(null)),
-      );
-    });
-
-    forkJoin(requests)
+    // The horde serves no list of one creator's styles, so each is asked for by
+    // id. A few requests run at a time rather than all of them at once, so a
+    // reader with many styles does not open a connection for every one.
+    from(styleRefs)
       .pipe(
+        mergeMap((ref) => {
+          const fetch$: Observable<ImageStyle | TextStyle> =
+            ref.type === 'image'
+              ? this.styleService.getImageStyle(ref.id)
+              : this.styleService.getTextStyle(ref.id);
+          return fetch$.pipe(
+            map((style) => ({
+              id: ref.id,
+              style,
+              type: ref.type as StyleType,
+            })),
+            catchError(() => of(null)),
+          );
+        }, STYLE_FETCH_CONCURRENCY),
+        toArray(),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.internalLoading.set(false)),
       )
       .subscribe({
         next: (results) => {
+          // The requests finish in whatever order the horde answers them, so
+          // each carries the id it was asked for and the list is rebuilt in the
+          // order the profile lists them in.
+          const byId = new Map(
+            results
+              .filter((result) => result !== null)
+              .map((result) => [result.id, result] as const),
+          );
           this.internalUserStyles.set(
-            styleRefs.map((ref, index) => {
-              const result = results[index];
-              if (result) {
-                return {
-                  id: ref.id,
-                  style: result.style,
-                  type: result.type,
-                  loading: false,
-                  error: false,
-                };
-              }
-              return {
-                id: ref.id,
-                style: null,
-                type: ref.type as StyleType,
-                loading: false,
-                error: true,
-              };
+            styleRefs.map((ref) => {
+              const result = byId.get(ref.id);
+              return result
+                ? {
+                    id: ref.id,
+                    style: result.style,
+                    type: result.type,
+                    loading: false,
+                    error: false,
+                  }
+                : {
+                    id: ref.id,
+                    style: null,
+                    type: ref.type as StyleType,
+                    loading: false,
+                    error: true,
+                  };
             }),
           );
         },

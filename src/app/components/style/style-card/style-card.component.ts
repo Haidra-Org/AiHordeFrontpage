@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   output,
   signal,
@@ -10,6 +11,9 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { Style, isImageStyle, StyleType } from '../../../types/style';
+import { StylePreviewsService } from '../../../services/style-previews.service';
+import { StyleUsageService } from '../../../services/style-usage.service';
+import { fromNativeImageStyle } from '../../../services/style-record';
 import {
   JsonInspectorComponent,
   JsonInspectorSection,
@@ -31,6 +35,9 @@ import { IconComponent } from '../../icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StyleCardComponent {
+  private readonly previews = inject(StylePreviewsService);
+  private readonly usage = inject(StyleUsageService);
+
   /** The style to display. */
   public readonly style = input.required<Style>();
 
@@ -78,14 +85,27 @@ export class StyleCardComponent {
   /** Check if this is an image style. */
   public readonly isImage = computed(() => this.styleType() === 'image');
 
-  /** Get the primary example image URL if available. */
-  public readonly primaryExampleUrl = computed(() => {
-    const s = this.style();
-    if (isImageStyle(s) && s.examples && s.examples.length > 0) {
-      const primary = s.examples.find((e) => e.primary);
-      return primary?.url ?? s.examples[0].url;
-    }
-    return null;
+  /**
+   * The style in the shape every surface reads it in, so the picture and the
+   * usage count are looked up the one way. Only image styles have either.
+   */
+  private readonly record = computed(() => {
+    const style = this.style();
+    return this.isImage() && isImageStyle(style)
+      ? fromNativeImageStyle(style)
+      : null;
+  });
+
+  /** The picture to show, or null when the style has none. */
+  public readonly previewUrl = computed(() => {
+    const record = this.record();
+    return record ? this.previews.recordPreviewUrl(record) : null;
+  });
+
+  /** How many times the reader has generated with this style on this device. */
+  public readonly yourUses = computed(() => {
+    const record = this.record();
+    return record ? this.usage.count(record.key) : 0;
   });
 
   /** Get display-friendly creator name (without the #id suffix). */

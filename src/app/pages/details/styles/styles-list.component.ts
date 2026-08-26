@@ -5,11 +5,9 @@ import {
   computed,
   DestroyRef,
   effect,
-  ElementRef,
   inject,
   OnInit,
   signal,
-  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -91,8 +89,14 @@ export class StylesListComponent implements OnInit {
   });
 
   /** Reference to highlighted style element for scrolling. */
-  private readonly highlightedStyle =
-    viewChild<ElementRef<HTMLElement>>('highlightedStyle');
+  /**
+   * The element id one style's card carries, so the card a link points at can
+   * be found among all of them. A template reference cannot do this: every card
+   * would answer to the same name and the first one would always win.
+   */
+  public styleCardId(styleId: string): string {
+    return `style-card-${styleId}`;
+  }
 
   /** Current active tab. */
   public readonly activeTab = signal<StylesTab>('image');
@@ -231,15 +235,14 @@ export class StylesListComponent implements OnInit {
     effect(() => {
       const highlightId = this.highlightStyleId();
       const styles = this.filteredStyles();
-      const styleEl = this.highlightedStyle();
 
-      if (highlightId && styles.length > 0 && styleEl) {
+      if (highlightId && styles.length > 0 && typeof document !== 'undefined') {
         // Use setTimeout to ensure DOM has updated
         setTimeout(() => {
-          scrollToElementCentered(
-            styleEl.nativeElement,
-            this.stickyRegistry.totalOffset(),
-          );
+          const card = document.getElementById(this.styleCardId(highlightId));
+          if (card) {
+            scrollToElementCentered(card, this.stickyRegistry.totalOffset());
+          }
         }, 100);
       }
     });
@@ -457,25 +460,15 @@ export class StylesListComponent implements OnInit {
   }
 
   /**
-   * Handle style lookup search.
-   * Supports both ID (UUID format) and name lookup.
+   * Open one style from the lookup field. An id and a name lead to the same
+   * page: the detail page asks the horde by whichever of the two it was given.
    */
   public onStyleSearch(value: string): void {
     const trimmed = value.trim();
     if (!trimmed) return;
 
     const type = this.activeTab() === 'text' ? 'text' : 'image';
-
-    // Check if it looks like a UUID
-    const uuidPattern =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidPattern.test(trimmed)) {
-      void this.router.navigate(['/details/styles', type, trimmed]);
-    } else {
-      // Treat as style name - navigate to detail page
-      // The style detail component will handle name lookup
-      void this.router.navigate(['/details/styles', type, trimmed]);
-    }
+    void this.router.navigate(['/details/styles', type, trimmed]);
   }
 
   /**
