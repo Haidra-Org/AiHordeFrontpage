@@ -1,7 +1,7 @@
 <div class="stack-lg">
   <app-page-intro pageKey="stats" />
 
-  <div class="details-area">
+  <div class="details-area usage-area">
     <div class="details-area-bar">
       <div
         class="hd-seg"
@@ -80,472 +80,348 @@
       <!-- Overview Tab -->
       @if (activeTab() === "overview") {
         <div class="usage-overview">
-          <!-- Real-time Performance Section -->
-          <div class="card card-bg-primary card-full card-spaced">
-            <h3 class="heading-card">
+          <div class="usage-heading">
+            <h3 class="usage-heading-title">
               {{ "details.usage.realtime_performance" | transloco }}
-              <app-info-tooltip
-                termKey="help.stats.tooltip.realtime_performance"
-              />
             </h3>
-            <div class="data-grid-1-2">
-              <!-- Image Domain -->
-              <div class="data-item-box domain-tint--image">
-                @if (imagePerformanceRate(); as rate) {
-                  <span class="data-value-xl">{{
-                    rate.primary.value | number: "1.0-1"
-                  }}</span>
-                  <span class="data-label-spaced">
-                    <app-unit-tooltip
-                      [unit]="rate"
-                      [primaryOverride]="'standard_images' | transloco"
-                    />
-                    {{ "details.usage.per_second" | transloco }}
-                  </span>
-                }
-                <div class="section-divider-top inline-gap">
-                  <span class="data-value-lg">{{
-                    performance()!.worker_count | number
-                  }}</span>
-                  <span class="data-label-spaced">{{
-                    "details.usage.image_workers" | transloco
-                  }}</span>
+            <app-info-tooltip
+              termKey="help.stats.tooltip.realtime_performance"
+            />
+          </div>
+
+          <div class="usage-groups">
+            @for (group of liveGroups(); track group.key) {
+              <div class="hd-card usage-group usage-group--{{ group.key }}">
+                <p class="hd-card-title">{{ group.titleKey | transloco }}</p>
+                <div class="stat-tiles">
+                  @for (tile of group.tiles; track tile.key) {
+                    <div class="stat-tile">
+                      <span class="stat-tile-label">
+                        {{ tile.labelKey | transloco }}
+                        @if (tile.termKey) {
+                          <app-info-tooltip [termKey]="tile.termKey" />
+                        }
+                      </span>
+                      <span class="stat-tile-value">{{ tile.value }}</span>
+                      @if (tile.unit) {
+                        <span class="stat-tile-note">
+                          <app-unit-tooltip
+                            [unit]="tile.unit"
+                            [primaryOverride]="tile.note ?? ''"
+                          />
+                        </span>
+                      } @else if (tile.note) {
+                        <span class="stat-tile-note">{{ tile.note }}</span>
+                      }
+                    </div>
+                  }
                 </div>
               </div>
-              <!-- Text Domain -->
-              <div class="data-item-box domain-tint--text">
-                @if (textPerformanceRate(); as rate) {
-                  <span class="data-value-xl">{{
-                    rate.technical.value | number: "1.0-1"
-                  }}</span>
-                  <span class="data-label-spaced">
-                    <app-unit-tooltip
-                      [unit]="rate"
-                      [primaryOverride]="rate.technical.unit"
-                    />
-                    {{ "details.usage.per_second" | transloco }}
-                  </span>
+            }
+          </div>
+
+          <div class="usage-heading">
+            <h3 class="usage-heading-title">
+              {{ "details.usage.totals_title" | transloco }}
+            </h3>
+            <span class="usage-heading-note">{{
+              "details.usage.totals_note" | transloco
+            }}</span>
+          </div>
+
+          <div class="usage-periods">
+            <div class="hd-card usage-group usage-group--image">
+              <p class="hd-card-title">
+                {{ "details.usage.image_totals" | transloco }}
+              </p>
+              <div class="stat-tiles">
+                @for (tile of imagePeriodTiles(); track tile.key) {
+                  <div class="stat-tile">
+                    <span class="stat-tile-label">{{
+                      tile.labelKey | transloco
+                    }}</span>
+                    <span class="stat-tile-value">{{ tile.value }}</span>
+                    @if (tile.unit) {
+                      <span class="stat-tile-note">
+                        <app-unit-tooltip
+                          [unit]="tile.unit"
+                          [primaryOverride]="tile.note ?? ''"
+                        />
+                      </span>
+                    }
+                  </div>
                 }
-                <div class="section-divider-top inline-gap">
-                  <span class="data-value-lg">{{
-                    performance()!.text_worker_count | number
-                  }}</span>
-                  <span class="data-label-spaced">{{
-                    "details.usage.text_workers" | transloco
-                  }}</span>
-                </div>
+              </div>
+            </div>
+
+            <div class="hd-card usage-group usage-group--text">
+              <p class="hd-card-title">
+                {{ "details.usage.text_totals" | transloco }}
+              </p>
+              <div class="stat-tiles">
+                @for (tile of textPeriodTiles(); track tile.key) {
+                  <div class="stat-tile">
+                    <span class="stat-tile-label">{{
+                      tile.labelKey | transloco
+                    }}</span>
+                    <span class="stat-tile-value">{{ tile.value }}</span>
+                    @if (tile.unit) {
+                      <span class="stat-tile-note">
+                        <app-unit-tooltip
+                          [unit]="tile.unit"
+                          [primaryOverride]="tile.note ?? ''"
+                        />
+                      </span>
+                    }
+                  </div>
+                }
               </div>
             </div>
           </div>
-
-          <!-- Queue Status Section -->
-          <div class="card card-bg-primary card-full card-spaced">
-            <h3 class="heading-card">
-              {{ "details.usage.queue_status" | transloco }}
-              <app-info-tooltip termKey="help.stats.tooltip.queued_requests" />
-            </h3>
-            <div class="data-grid-1-2-3">
-              <div class="data-item-box domain-tint--image data-item-centered">
-                <span class="data-value-lg">{{
-                  performance()!.queued_requests | number
-                }}</span>
-                <span class="data-label-spaced">
-                  {{ "details.usage.queued_image_requests" | transloco }}
-                </span>
-                @if (queuedImageWork(); as work) {
-                  <span class="data-label-spaced text-secondary">
-                    <app-unit-tooltip [unit]="work" />
-                  </span>
-                }
-              </div>
-              <div class="data-item-box domain-tint--text data-item-centered">
-                <span class="data-value-lg">{{
-                  performance()!.queued_text_requests | number
-                }}</span>
-                <span class="data-label-spaced">
-                  {{ "details.usage.queued_text_requests" | transloco }}
-                </span>
-                @if (queuedTextWork(); as work) {
-                  <span class="data-label-spaced text-secondary">
-                    <app-unit-tooltip [unit]="work" />
-                  </span>
-                }
-              </div>
-              <div
-                class="data-item-box domain-tint--alchemy data-item-centered"
-              >
-                <span class="data-value-lg">{{
-                  performance()!.queued_forms | number
-                }}</span>
-                <span class="data-label-spaced">{{
-                  "details.usage.queued_alchemy_forms" | transloco
-                }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Total Stats Section -->
-          @if (imageStats() && textStats()) {
-            <div class="usage-totals-grid">
-              <!-- Image Totals -->
-              <div class="card card-bg-primary card-full card-spaced">
-                <h3 class="heading-card">
-                  <span class="domain-label--image">
-                    {{ "details.usage.image_totals" | transloco }}
-                  </span>
-                </h3>
-                <div class="stack-sm">
-                  <div class="data-item">
-                    <span class="data-label">{{
-                      "details.usage.total_images_generated" | transloco
-                    }}</span>
-                    <span class="data-value-lg">
-                      {{
-                        units.formatLargeNumber(
-                          imageStats()!.total.images,
-                          "images"
-                        )
-                      }}
-                    </span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">{{
-                      "details.usage.total_pixelsteps" | transloco
-                    }}</span>
-                    <span class="data-value">
-                      @if (totalPixelsteps(); as ps) {
-                        {{ ps.primary.formatted }}
-                        <span class="text-secondary">
-                          (<app-unit-tooltip
-                            [unit]="ps"
-                            [swapDisplay]="true"
-                          />)
-                        </span>
-                      }
-                    </span>
-                  </div>
-                  <div class="section-divider-top">
-                    <span class="data-label">{{
-                      "details.usage.last_24h" | transloco
-                    }}</span>
-                    <span class="data-value">
-                      {{
-                        units.formatLargeNumber(
-                          imageStats()!.day.images,
-                          "images"
-                        )
-                      }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Text Totals -->
-              <div class="card card-bg-primary card-full card-spaced">
-                <h3 class="heading-card">
-                  <span class="domain-label--text">
-                    {{ "details.usage.text_totals" | transloco }}
-                  </span>
-                </h3>
-                <div class="stack-sm">
-                  <div class="data-item">
-                    <span class="data-label">{{
-                      "details.usage.total_requests" | transloco
-                    }}</span>
-                    <span class="data-value-lg">
-                      {{
-                        units.formatLargeNumber(
-                          textStats()!.total.requests,
-                          "requests"
-                        )
-                      }}
-                    </span>
-                  </div>
-                  <div class="data-item">
-                    <span class="data-label">{{
-                      "details.usage.total_tokens" | transloco
-                    }}</span>
-                    <span class="data-value">
-                      @if (totalTokens(); as tokens) {
-                        {{ tokens.primary.formatted }}
-                        <span class="text-secondary">
-                          (<app-unit-tooltip
-                            [unit]="tokens"
-                            [swapDisplay]="true"
-                          />)
-                        </span>
-                      }
-                    </span>
-                  </div>
-                  <div class="section-divider-top">
-                    <span class="data-label">{{
-                      "details.usage.last_24h" | transloco
-                    }}</span>
-                    <span class="data-value">
-                      {{
-                        units.formatLargeNumber(
-                          textStats()!.day.requests,
-                          "requests"
-                        )
-                      }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
 
           <!-- Top Models Preview -->
           @if (imageModelStats() && textModelStats()) {
-            <div class="usage-totals-grid">
-              <!-- Top Image Models -->
-              <div class="card card-bg-primary card-full card-spaced">
-                <div class="card-header-flex">
-                  <h3 class="heading-card">
-                    {{ "details.usage.top_image_models" | transloco }}
-                  </h3>
-                  <button
-                    type="button"
-                    class="btn-link-sm"
-                    (click)="setActiveTab('image')"
-                  >
-                    {{ "details.usage.view_all" | transloco }}
-                  </button>
-                </div>
-                <div class="model-list">
+            <div class="usage-periods">
+              <div class="hd-card usage-group usage-group--image">
+                <p class="hd-card-title">
+                  {{ "details.usage.top_image_models" | transloco }}
+                  <span class="hd-badge">{{
+                    timePeriodLabel() | transloco
+                  }}</span>
+                </p>
+                <div class="usage-list usage-list--preview">
                   @for (
                     model of topImageModels().slice(0, 5);
-                    track model.name;
-                    let i = $index
+                    track model.name
                   ) {
-                    <div class="model-list-item">
-                      <span class="model-rank">{{ i + 1 }}</span>
-                      <span class="model-name" [title]="model.name">{{
-                        model.name
-                      }}</span>
-                      <span class="model-count">{{
-                        formatNumber(model.count)
+                    <div class="usage-list-row">
+                      <div class="usage-list-identity">
+                        <span class="usage-list-name" [title]="model.name">{{
+                          model.name
+                        }}</span>
+                        @if (model.custom) {
+                          <span class="hd-badge usage-mark">{{
+                            "details.usage.badge.custom" | transloco
+                          }}</span>
+                        }
+                      </div>
+                      <span class="usage-list-value">{{
+                        model.count | number
                       }}</span>
                     </div>
                   }
                   @if (topImageModels().length === 0) {
-                    <p class="text-secondary text-sm">
+                    <p class="hd-empty-sub">
                       {{ "details.usage.no_data" | transloco }}
                     </p>
                   }
                 </div>
+                <button
+                  type="button"
+                  class="hd-btn hd-btn--tonal hd-btn--dense usage-group-action"
+                  (click)="setActiveTab('image')"
+                >
+                  {{ "details.usage.view_all_image" | transloco }}
+                </button>
               </div>
 
-              <!-- Top Text Models -->
-              <div class="card card-bg-primary card-full card-spaced">
-                <div class="card-header-flex">
-                  <h3 class="heading-card">
-                    {{ "details.usage.top_text_models" | transloco }}
-                  </h3>
-                  <button
-                    type="button"
-                    class="btn-link-sm"
-                    (click)="setActiveTab('text')"
-                  >
-                    {{ "details.usage.view_all" | transloco }}
-                  </button>
-                </div>
-                <div class="model-list">
+              <div class="hd-card usage-group usage-group--text">
+                <p class="hd-card-title">
+                  {{ "details.usage.top_text_models" | transloco }}
+                  <span class="hd-badge">{{
+                    timePeriodLabel() | transloco
+                  }}</span>
+                </p>
+                <div class="usage-list usage-list--preview">
                   @for (
                     model of topTextModels().slice(0, 5);
-                    track model.name;
-                    let i = $index
+                    track model.name
                   ) {
-                    <div class="model-list-item">
-                      <span class="model-rank">{{ i + 1 }}</span>
-                      <span class="model-name" [title]="model.name">{{
-                        model.name
-                      }}</span>
-                      <span class="model-count">{{
-                        formatNumber(model.count)
+                    <div class="usage-list-row">
+                      <div class="usage-list-identity">
+                        <span class="usage-list-name" [title]="model.name">{{
+                          model.name
+                        }}</span>
+                      </div>
+                      <span class="usage-list-value">{{
+                        model.count | number
                       }}</span>
                     </div>
                   }
                   @if (topTextModels().length === 0) {
-                    <p class="text-secondary text-sm">
+                    <p class="hd-empty-sub">
                       {{ "details.usage.no_data" | transloco }}
                     </p>
                   }
                 </div>
+                <button
+                  type="button"
+                  class="hd-btn hd-btn--tonal hd-btn--dense usage-group-action"
+                  (click)="setActiveTab('text')"
+                >
+                  {{ "details.usage.view_all_text" | transloco }}
+                </button>
               </div>
             </div>
           }
 
-          <!-- Grafana Link -->
-          <div
-            class="info-note info-note--blue info-note--padded flex items-center gap-3"
-          >
-            <app-icon
-              class="icon-sm text-blue-600 dark:text-blue-400 shrink-0"
-              name="arrow-top-right-on-square"
-            />
-            <span class="flex-1">
-              <strong>{{ "details.usage.grafana_title" | transloco }}</strong>
+          <div class="hd-card usage-grafana">
+            <p class="hd-card-title">
+              {{ "details.usage.grafana_title" | transloco }}
+            </p>
+            <p class="usage-grafana-text">
               {{ "details.usage.grafana_description" | transloco }}
-              <a
-                href="https://grafana.aihorde.net/"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="btn-primary btn-sm external-link shrink-0"
-              >
-                {{ "details.usage.open_grafana" | transloco }}
-              </a>
-            </span>
+            </p>
+            <a
+              class="hd-btn hd-btn--tonal hd-btn--dense usage-grafana-link"
+              href="https://grafana.aihorde.net/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ "details.usage.open_grafana" | transloco }}
+              <app-icon class="icon-sm" name="arrow-top-right-on-square" />
+            </a>
           </div>
         </div>
       }
 
       <!-- Image Models Tab -->
       @if (activeTab() === "image") {
-        <div class="card card-bg-primary card-full card-spaced usage-models">
-          <!-- Period Selector & Search -->
-          <div class="details-filters">
-            <div class="filter-period">
-              <span class="filter-label">{{
-                "details.usage.time_period" | transloco
-              }}</span>
+        <div class="usage-models usage-group--image">
+          <div class="usage-controls">
+            <div
+              class="hd-seg hd-seg--xs"
+              role="group"
+              [attr.aria-label]="'details.usage.time_period' | transloco"
+            >
               <button
                 type="button"
-                class="sort-button"
-                [class.sort-active]="timePeriod() === 'day'"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="timePeriod() === 'day'"
                 (click)="setTimePeriod('day')"
               >
                 {{ "details.usage.period.day" | transloco }}
               </button>
               <button
                 type="button"
-                class="sort-button"
-                [class.sort-active]="timePeriod() === 'month'"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="timePeriod() === 'month'"
                 (click)="setTimePeriod('month')"
               >
                 {{ "details.usage.period.month" | transloco }}
               </button>
               <button
                 type="button"
-                class="sort-button"
-                [class.sort-active]="timePeriod() === 'total'"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="timePeriod() === 'total'"
                 (click)="setTimePeriod('total')"
               >
                 {{ "details.usage.period.total" | transloco }}
               </button>
             </div>
-            <div class="filter-search">
+            <div class="usage-search">
               <app-icon
-                class="icon-sm filter-search-icon"
+                class="icon-sm usage-search-icon"
                 name="magnifying-glass"
               />
               <input
-                type="text"
-                class="filter-input"
+                type="search"
+                class="hd-input usage-search-input"
                 [placeholder]="'details.usage.search_models' | transloco"
+                [attr.aria-label]="'details.usage.search_models' | transloco"
                 [value]="searchQuery()"
                 (input)="onSearchChange($event)"
               />
             </div>
           </div>
 
-          <!-- Summary Stats -->
           <div class="stat-tiles">
             <div class="stat-tile">
               <span class="stat-tile-label">{{
                 "details.usage.total_models" | transloco
               }}</span>
               <span class="stat-tile-value">{{
-                sortedImageModels().length
+                imageModelsUsed() | number
+              }}</span>
+              <span class="stat-tile-note">{{
+                timePeriodLabel() | transloco
               }}</span>
             </div>
             <div class="stat-tile">
               <span class="stat-tile-label">{{
                 "details.usage.total_generations" | transloco
               }}</span>
-              <span class="stat-tile-value">
-                {{ formatNumber(totalImageModelRequests()) }}
-                <span class="hd-badge">{{
-                  timePeriodLabel() | transloco
-                }}</span>
-              </span>
+              <span class="stat-tile-value">{{
+                totalImageModelRequests() | number
+              }}</span>
+              <span class="stat-tile-note">{{
+                timePeriodLabel() | transloco
+              }}</span>
             </div>
           </div>
 
-          <!-- Models Table -->
           @if (sortedImageModels().length > 0) {
-            <div class="models-table">
-              <div class="models-table-header usage-table-header">
-                <span class="models-table-th">#</span>
-                <span class="models-table-th">{{
-                  "details.usage.model_name" | transloco
-                }}</span>
+            <div class="usage-list">
+              <div class="usage-list-head">
                 <button
                   type="button"
-                  class="models-table-th models-table-th-right models-table-th-sortable"
-                  (click)="toggleSortDirection()"
+                  class="usage-list-th"
+                  [class.usage-list-th--active]="sortField() === 'name'"
+                  (click)="setSortField('name')"
+                >
+                  {{ "details.usage.model_name" | transloco }}
+                  @if (sortField() === "name") {
+                    <span class="usage-list-sort" aria-hidden="true">{{
+                      sortDirection() === "asc" ? "↑" : "↓"
+                    }}</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="usage-list-th usage-list-th--right"
+                  [class.usage-list-th--active]="sortField() === 'count'"
+                  (click)="setSortField('count')"
                 >
                   {{ "details.usage.generations" | transloco }}
-                  <span class="sort-indicator">{{
-                    sortDirection() === "desc" ? "↓" : "↑"
-                  }}</span>
+                  @if (sortField() === "count") {
+                    <span class="usage-list-sort" aria-hidden="true">{{
+                      sortDirection() === "asc" ? "↑" : "↓"
+                    }}</span>
+                  }
                 </button>
-                <span class="models-table-th models-table-th-right">{{
-                  "details.usage.percentage" | transloco
-                }}</span>
+                <span
+                  class="usage-list-th usage-list-th--right usage-col-share"
+                >
+                  {{ "details.usage.percentage" | transloco }}
+                </span>
               </div>
-              @for (
-                model of sortedImageModels();
-                track model.name;
-                let i = $index
-              ) {
-                <div class="models-table-row usage-table-row">
-                  <div class="models-table-cell">
-                    <span
-                      class="model-rank-badge"
-                      [class.rank-1]="i === 0"
-                      [class.rank-2]="i === 1"
-                      [class.rank-3]="i === 2"
-                      >{{ i + 1 }}</span
-                    >
-                  </div>
-                  <div class="models-table-cell-name">
-                    <span class="models-table-name" [title]="model.name">{{
+
+              @for (model of sortedImageModels(); track model.name) {
+                <div class="usage-list-row">
+                  <div class="usage-list-identity">
+                    <span class="usage-list-name" [title]="model.name">{{
                       model.name
                     }}</span>
+                    @if (model.custom) {
+                      <span class="hd-badge usage-mark">{{
+                        "details.usage.badge.custom" | transloco
+                      }}</span>
+                    }
                   </div>
-                  <div class="models-table-cell">
-                    <span class="models-table-label">{{
-                      "details.usage.generations" | transloco
-                    }}</span>
-                    <span class="models-table-value">{{
-                      formatNumber(model.count)
-                    }}</span>
-                  </div>
-                  <div class="models-table-cell">
-                    <span class="models-table-label">{{
-                      "details.usage.percentage" | transloco
-                    }}</span>
-                    <div class="percentage-bar-container">
-                      <div
-                        class="percentage-bar"
-                        [style.width.%]="
-                          getPercentage(model.count, totalImageModelRequests())
-                        "
-                      ></div>
-                      <span class="percentage-text"
-                        >{{
-                          getPercentage(model.count, totalImageModelRequests())
-                        }}%</span
-                      >
-                    </div>
-                  </div>
+                  <span class="usage-list-value">{{
+                    model.count | number
+                  }}</span>
+                  <span class="usage-list-value usage-col-share">{{
+                    model.share
+                  }}</span>
                 </div>
               }
             </div>
           } @else {
-            <div class="state-container state-container-sm state-muted">
-              <p>{{ "details.usage.no_models_found" | transloco }}</p>
+            <div class="hd-empty">
+              <p class="hd-empty-title">
+                {{ "details.usage.no_models_found" | transloco }}
+              </p>
             </div>
           }
         </div>
@@ -553,150 +429,136 @@
 
       <!-- Text Models Tab -->
       @if (activeTab() === "text") {
-        <div class="card card-bg-primary card-full card-spaced usage-models">
-          <!-- Period Selector & Search -->
-          <div class="details-filters">
-            <div class="filter-period">
-              <span class="filter-label">{{
-                "details.usage.time_period" | transloco
-              }}</span>
+        <div class="usage-models usage-group--text">
+          <div class="usage-controls">
+            <div
+              class="hd-seg hd-seg--xs"
+              role="group"
+              [attr.aria-label]="'details.usage.time_period' | transloco"
+            >
               <button
                 type="button"
-                class="sort-button"
-                [class.sort-active]="timePeriod() === 'day'"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="timePeriod() === 'day'"
                 (click)="setTimePeriod('day')"
               >
                 {{ "details.usage.period.day" | transloco }}
               </button>
               <button
                 type="button"
-                class="sort-button"
-                [class.sort-active]="timePeriod() === 'month'"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="timePeriod() === 'month'"
                 (click)="setTimePeriod('month')"
               >
                 {{ "details.usage.period.month" | transloco }}
               </button>
               <button
                 type="button"
-                class="sort-button"
-                [class.sort-active]="timePeriod() === 'total'"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="timePeriod() === 'total'"
                 (click)="setTimePeriod('total')"
               >
                 {{ "details.usage.period.total" | transloco }}
               </button>
             </div>
-            <div class="filter-search">
+            <div class="usage-search">
               <app-icon
-                class="icon-sm filter-search-icon"
+                class="icon-sm usage-search-icon"
                 name="magnifying-glass"
               />
               <input
-                type="text"
-                class="filter-input"
+                type="search"
+                class="hd-input usage-search-input"
                 [placeholder]="'details.usage.search_models' | transloco"
+                [attr.aria-label]="'details.usage.search_models' | transloco"
                 [value]="searchQuery()"
                 (input)="onSearchChange($event)"
               />
             </div>
           </div>
 
-          <!-- Summary Stats -->
           <div class="stat-tiles">
             <div class="stat-tile">
               <span class="stat-tile-label">{{
                 "details.usage.total_models" | transloco
               }}</span>
               <span class="stat-tile-value">{{
-                sortedTextModels().length
+                textModelsUsed() | number
+              }}</span>
+              <span class="stat-tile-note">{{
+                timePeriodLabel() | transloco
               }}</span>
             </div>
             <div class="stat-tile">
               <span class="stat-tile-label">{{
                 "details.usage.total_generations" | transloco
               }}</span>
-              <span class="stat-tile-value">
-                {{ formatNumber(totalTextModelRequests()) }}
-                <span class="hd-badge">{{
-                  timePeriodLabel() | transloco
-                }}</span>
-              </span>
+              <span class="stat-tile-value">{{
+                totalTextModelRequests() | number
+              }}</span>
+              <span class="stat-tile-note">{{
+                timePeriodLabel() | transloco
+              }}</span>
             </div>
           </div>
 
-          <!-- Models Table -->
           @if (sortedTextModels().length > 0) {
-            <div class="models-table">
-              <div class="models-table-header usage-table-header">
-                <span class="models-table-th">#</span>
-                <span class="models-table-th">{{
-                  "details.usage.model_name" | transloco
-                }}</span>
+            <div class="usage-list">
+              <div class="usage-list-head">
                 <button
                   type="button"
-                  class="models-table-th models-table-th-right models-table-th-sortable"
-                  (click)="toggleSortDirection()"
+                  class="usage-list-th"
+                  [class.usage-list-th--active]="sortField() === 'name'"
+                  (click)="setSortField('name')"
+                >
+                  {{ "details.usage.model_name" | transloco }}
+                  @if (sortField() === "name") {
+                    <span class="usage-list-sort" aria-hidden="true">{{
+                      sortDirection() === "asc" ? "↑" : "↓"
+                    }}</span>
+                  }
+                </button>
+                <button
+                  type="button"
+                  class="usage-list-th usage-list-th--right"
+                  [class.usage-list-th--active]="sortField() === 'count'"
+                  (click)="setSortField('count')"
                 >
                   {{ "details.usage.generations" | transloco }}
-                  <span class="sort-indicator">{{
-                    sortDirection() === "desc" ? "↓" : "↑"
-                  }}</span>
+                  @if (sortField() === "count") {
+                    <span class="usage-list-sort" aria-hidden="true">{{
+                      sortDirection() === "asc" ? "↑" : "↓"
+                    }}</span>
+                  }
                 </button>
-                <span class="models-table-th models-table-th-right">{{
-                  "details.usage.percentage" | transloco
-                }}</span>
+                <span
+                  class="usage-list-th usage-list-th--right usage-col-share"
+                >
+                  {{ "details.usage.percentage" | transloco }}
+                </span>
               </div>
-              @for (
-                model of sortedTextModels();
-                track model.name;
-                let i = $index
-              ) {
-                <div class="models-table-row usage-table-row">
-                  <div class="models-table-cell">
-                    <span
-                      class="model-rank-badge"
-                      [class.rank-1]="i === 0"
-                      [class.rank-2]="i === 1"
-                      [class.rank-3]="i === 2"
-                      >{{ i + 1 }}</span
-                    >
-                  </div>
-                  <div class="models-table-cell-name">
-                    <span class="models-table-name" [title]="model.name">{{
+
+              @for (model of sortedTextModels(); track model.name) {
+                <div class="usage-list-row">
+                  <div class="usage-list-identity">
+                    <span class="usage-list-name" [title]="model.name">{{
                       model.name
                     }}</span>
                   </div>
-                  <div class="models-table-cell">
-                    <span class="models-table-label">{{
-                      "details.usage.generations" | transloco
-                    }}</span>
-                    <span class="models-table-value">{{
-                      formatNumber(model.count)
-                    }}</span>
-                  </div>
-                  <div class="models-table-cell">
-                    <span class="models-table-label">{{
-                      "details.usage.percentage" | transloco
-                    }}</span>
-                    <div class="percentage-bar-container">
-                      <div
-                        class="percentage-bar"
-                        [style.width.%]="
-                          getPercentage(model.count, totalTextModelRequests())
-                        "
-                      ></div>
-                      <span class="percentage-text"
-                        >{{
-                          getPercentage(model.count, totalTextModelRequests())
-                        }}%</span
-                      >
-                    </div>
-                  </div>
+                  <span class="usage-list-value">{{
+                    model.count | number
+                  }}</span>
+                  <span class="usage-list-value usage-col-share">{{
+                    model.share
+                  }}</span>
                 </div>
               }
             </div>
           } @else {
-            <div class="state-container state-container-sm state-muted">
-              <p>{{ "details.usage.no_models_found" | transloco }}</p>
+            <div class="hd-empty">
+              <p class="hd-empty-title">
+                {{ "details.usage.no_models_found" | transloco }}
+              </p>
             </div>
           }
         </div>
