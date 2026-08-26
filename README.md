@@ -108,6 +108,8 @@ src/
 ├── app/
 │   ├── components/       # Standalone Angular components
 │   ├── pages/            # Route-level page components
+│   │   └── docs/         # The /docs area: shells, homes, examples, settings entries
+│   ├── content/          # Documentation content as data: flows, sections, settings, examples
 │   ├── services/         # Injectable services (API, auth, theme, etc.)
 │   ├── guards/           # Route guards
 │   ├── pipes/            # Custom pipes
@@ -120,9 +122,14 @@ src/
 │   ├── i18n/             # Transloco translation files
 │   ├── img/              # Static images
 │   └── data/             # Static data files
+├── shared/
+│   └── design-system/    # Submodule: shared Horde tokens and primitives (glass and HD families)
+├── styles.css            # The single import order for every stylesheet
 ├── styles/               # All CSS (centralized, not in components)
-│   ├── _theme.css        # Design tokens via @theme
+│   ├── _theme.css        # Project design tokens via @theme
 │   ├── _base.css         # Element defaults and keyframes
+│   ├── _models.css       # Models pages, the worked example of a page on the HD family
+│   ├── _generate.css     # The /generate studio, scoped under .gen-studio
 │   └── _*.css            # Component and page-specific styles
 └── environments/         # Environment configs
 ```
@@ -131,11 +138,15 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical overview including
 
 ## Styling
 
-All styles are centralized in `src/styles/`. This project does not use component-level css files.
+All styles are centralized in `src/styles/` and in the design-system submodule. This project does not use
+component-level css files. New and rebuilt surfaces use the HD family (`.hd-*`, `--hd-*`); the glass family (`.btn`,
+`.card`, `.surface-glass*`) is legacy and still draws most of the site.
 
-- [STYLING.md](STYLING.md) — Conventions, file organization, quick reference
-- [docs/design-system.md](docs/design-system.md) — Design tokens, surface primitives, glass system, color system
-- [docs/component-patterns.md](docs/component-patterns.md) — Full CSS class catalog
+- [STYLING.md](STYLING.md) — the two families and which to use, file tree, import order, idioms, anti-patterns
+- [AGENTS.md](AGENTS.md) — the rules any change to this codebase has to follow, and the checks it has to pass
+- [docs/design-system.md](docs/design-system.md) — frontpage-specific tokens, surfaces and form shells
+- [docs/component-patterns.md](docs/component-patterns.md) — frontpage-specific CSS class catalog
+- [docs/design-language.md](docs/design-language.md) — the studio's zones, identity hues and remaining idioms
 
 ## API
 

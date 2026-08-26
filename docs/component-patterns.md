@@ -1,98 +1,52 @@
 # CSS Component Patterns — AiHordeFrontpage
 
-> **Shared primitives**: The base CSS class catalog (buttons, badges, alerts, forms, modals, cards, typography, tables, tabs, tooltips, data display) is documented in the [shared design system](../src/shared/design-system/docs/component-patterns.md). This document covers the **full class inventory** as consumed by AiHordeFrontpage, including project-specific extensions and overrides.
+> **The shared catalog is the reference.** Every base class of both families, glass (`.btn`, `.card`, `.badge`,
+> `.surface-glass*`) and HD (`.hd-*`), is documented in the
+> [shared design system](../src/shared/design-system/docs/component-patterns.md). This file lists only what AiHordeFrontpage adds on
+> top: project-specific extensions, page systems and conventions. A class not named here is in the shared catalog.
 
-Class catalog for the AI Horde frontend. For design philosophy, tokens, and surface primitives, see [design-system.md](design-system.md). For high-level rules and file organization, see [STYLING.md](../STYLING.md).
+New surfaces are built on the HD family; see [STYLING.md](../STYLING.md) for the decision rule, and
+`src/styles/_models.css` for a page built that way. Everything below is glass-family or page-level. For frontpage
+tokens, surfaces and form shells, see [design-system.md](design-system.md).
 
-- [CSS Component Patterns](#css-component-patterns)
-  - [Cards (`_cards.css`)](#cards-_cardscss)
-  - [Alerts (`_alerts.css`)](#alerts-_alertscss)
-  - [Buttons (`_buttons.css`)](#buttons-_buttonscss)
-  - [Headings (`_typography-headings.css`)](#headings-_typography-headingscss)
-  - [Typography (`_typography-text.css`)](#typography-_typography-textcss)
-  - [Forms (`_forms.css`)](#forms-_formscss)
-  - [Modals (`_modals.css`)](#modals-_modalscss)
-  - [Badges (`_badges.css`)](#badges-_badgescss)
-    - [Base](#base)
-    - [Color Variants](#color-variants)
-    - [Special Badges](#special-badges)
-  - [Tab System (`_details-tabs.css`)](#tab-system-_details-tabscss)
-    - [Primary Tab Bar](#primary-tab-bar)
-    - [Sub-Tabs](#sub-tabs)
-    - [Scroll Arrows](#scroll-arrows)
-  - [Table \& List Rows (`_tables.css`)](#table--list-rows-_tablescss)
-  - [Tooltip System (`_tooltips.css`)](#tooltip-system-_tooltipscss)
-    - [Classes](#classes)
-    - [Position Variants](#position-variants)
-    - [Fixed-Position Mode](#fixed-position-mode)
-    - [Text Utilities](#text-utilities)
-    - [Touch Tooltip](#touch-tooltip)
-    - [Usage](#usage)
-  - [Collapsible \& Accordion System (`_collapsibles.css`)](#collapsible--accordion-system-_collapsiblescss)
-    - [Card-Style Collapsible](#card-style-collapsible)
-    - [Sticky Section Header](#sticky-section-header)
-    - [Expanded Detail Panel](#expanded-detail-panel)
-  - [Data Display (`_data-display.css`)](#data-display-_data-displaycss)
-    - [Stat Columns](#stat-columns)
-    - [Data Item Boxes](#data-item-boxes)
-    - [Responsive Data Grids](#responsive-data-grids)
-    - [Domain Tinting](#domain-tinting)
-    - [Skeleton Loading](#skeleton-loading)
-  - [Loading \& Empty States (`_utilities.css`)](#loading--empty-states-_utilitiescss)
-  - [Animation \& Motion](#animation--motion)
-    - [Scroll Reveal (`_base.css`)](#scroll-reveal-_basecss)
-    - [Keyframe Inventory](#keyframe-inventory)
-    - [Easing Convention](#easing-convention)
-    - [Reduced Motion](#reduced-motion)
-  - [Icon System](#icon-system)
-    - [Sizing](#sizing)
-    - [SVG Color](#svg-color)
-    - [Tooltip Trigger (`_help.css`)](#tooltip-trigger-_helpcss)
-    - [Glossary Links](#glossary-links)
-  - [Responsive Design](#responsive-design)
-    - [Breakpoints](#breakpoints)
-    - [Fluid Typography](#fluid-typography)
-    - [Sticky Header Management](#sticky-header-management)
-  - [Accessibility Patterns](#accessibility-patterns)
-    - [Focus Rings](#focus-rings)
-    - [Screen Reader](#screen-reader)
-    - [Keyboard Navigation](#keyboard-navigation)
-    - [Modal Accessibility](#modal-accessibility)
-    - [Color Contrast](#color-contrast)
+- [Cards (`_cards.css`)](#cards-_cardscss)
+- [Alerts and info notes (`_alerts.css`)](#alerts-and-info-notes-_alertscss)
+- [Buttons (`_buttons.css`)](#buttons-_buttonscss)
+- [Headings (`_typography-headings.css`)](#headings-_typography-headingscss)
+- [Typography (`_typography-text.css`)](#typography-_typography-textcss)
+- [Forms (`_forms.css`)](#forms-_formscss)
+- [Badges (`_badges.css`)](#badges-_badgescss)
+- [Tab system (`_details-tabs.css`)](#tab-system-_details-tabscss)
+- [Table and list rows (`_tables.css`)](#table-and-list-rows-_tablescss)
+- [Tooltip extensions (`_tooltips.css`)](#tooltip-extensions-_tooltipscss)
+- [Collapsible and accordion system (`_collapsibles.css`)](#collapsible-and-accordion-system-_collapsiblescss)
+- [Data display (`_data-display.css`)](#data-display-_data-displaycss)
+- [Loading and empty states (`_utilities.css`)](#loading-and-empty-states-_utilitiescss)
+- [Animation and motion](#animation-and-motion)
+- [Icon system](#icon-system)
+- [Responsive design](#responsive-design)
+- [Accessibility patterns](#accessibility-patterns)
 
 ---
 
 ## Cards (`_cards.css`)
 
-```css
-.card                   /* Base card container */
-.card--interactive      /* Hoverable/clickable card */
-.card-title             /* Card heading */
-.card-content           /* Card body content */
-.card-footer            /* Card footer area */
-```
+The card structure (`.card`, `.card-header`, `.card-body`, `.card-footer`) is shared. The frontpage overrides its
+rounding, layout and border token for the homepage cards, and adds:
 
-`card-bg-primary`, `panel`, and similar wrappers exist for compatibility. Prefer feature-semantic classes inheriting from surface primitives for new UI.
+- `.card--interactive` for a hoverable or clickable card, `.card-title` and `.card-content`.
+- `.danger-zone-card`, the red-tinted surface for a group of destructive actions. Used by the profile settings page and
+  by `/generate/storage`; a third destructive surface reuses it rather than tinting a card of its own.
 
-`.danger-zone-card` is the red-tinted surface for a group of destructive
-actions. Used by the profile settings page and by `/generate/storage`; a third
-destructive surface should reuse it rather than tint a card of its own.
+`card-bg-primary`, `panel` and similar wrappers exist for compatibility. Prefer a feature-semantic class over a surface
+primitive for new glass UI.
 
 ---
 
-## Alerts (`_alerts.css`)
+## Alerts and info notes (`_alerts.css`)
 
-```css
-.alert                  /* Base alert container */
-.alert--danger          /* Red error/danger alert */
-.alert--warning         /* Yellow/amber warning alert */
-.alert--info            /* Blue informational alert */
-.alert--success         /* Green success alert */
-.alert-icon             /* Icon container */
-.alert-content          /* Text content area */
-```
-
-Info notes:
+`.alert` and its four semantic variants, plus `.alert-icon` and `.alert-content`, are shared. The frontpage adds the
+quieter contextual box:
 
 ```css
 .info-note              /* Contextual info box */
@@ -105,15 +59,14 @@ Info notes:
 
 ## Buttons (`_buttons.css`)
 
+`.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger`, `.btn-success`, `.btn-sm` and `.btn-lg` are shared. The
+frontpage adds:
+
 ```css
-.btn-primary            /* Blue branded button */
 .btn-purple             /* Purple branded button */
-.btn-secondary          /* Gray secondary button */
-.btn-danger             /* Red destructive button */
 .btn-warning            /* Yellow cautionary button */
 .btn-muted              /* Gray tertiary button */
 .btn-icon               /* Icon-only button */
-.btn-sm                 /* Small size modifier */
 .btn-xs                 /* Extra-small size modifier */
 .btn-group              /* Responsive button row */
 .btn-group--center      /* Centered button group */
@@ -147,53 +100,25 @@ Info notes:
 
 ## Forms (`_forms.css`)
 
+`.form-label`, `.form-input`, `.form-textarea`, `.form-select`, `.form-hint`, `.form-error` and the checkbox classes
+are shared. The frontpage adds the layout around them:
+
 ```css
-.form-label             /* Input label */
-.form-input             /* Text input field */
-.form-hint              /* Help text below input */
 .form-field             /* Field container with gap */
 .form-row               /* Horizontal row of fields */
 .form-actions           /* Button row at form bottom */
 ```
 
-For structured configuration forms, see the form shell system in [design-system.md](design-system.md#shared-form-shell-primitives).
-
----
-
-## Modals (`_modals.css`)
-
-```css
-.modal-overlay          /* Full-screen backdrop */
-.modal-panel            /* Dialog container */
-.modal-actions          /* Button row in modal */
-```
+For structured configuration forms, see the form shell system in
+[design-system.md](design-system.md#form-shell-primitives). Modals are shared in full; see the shared catalog.
 
 ---
 
 ## Badges (`_badges.css`)
 
-### Base
-
-```css
-.badge-base             /* inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium */
-.badge-sm               /* Compact: px-2 py-0.5 */
-.badge-container        /* Flex wrap gap-2 for badge groups */
-```
-
-### Color Variants
-
-| Class              | Color  | Usage                  |
-| ------------------ | ------ | ---------------------- |
-| `.badge-primary`   | Blue   | Brand / default        |
-| `.badge-secondary` | Gray   | Neutral / deemphasized |
-| `.badge-info`      | Blue   | Informational          |
-| `.badge-warning`   | Amber  | Caution                |
-| `.badge-success`   | Green  | Positive / healthy     |
-| `.badge-danger`    | Red    | Error / destructive    |
-| `.badge-purple`    | Purple | Brand accent / kudos   |
-| `.badge-pink`      | Pink   | Alternative accent     |
-| `.badge-indigo`    | Indigo | Secondary brand        |
-| `.badge-teal`      | Teal   | Categorical            |
+The base (`.badge`, `.badge-base`, `.badge-sm`, `.badge-container`) and the status variants (`.badge-primary`,
+`.badge-secondary`, `.badge-info`, `.badge-warning`, `.badge-success`, `.badge-danger`) are shared. The frontpage adds
+the non-status accents `.badge-purple`, `.badge-pink`, `.badge-indigo` and `.badge-teal`, and the special badges below.
 
 ### Special Badges
 
@@ -207,7 +132,7 @@ For structured configuration forms, see the form shell system in [design-system.
 
 ---
 
-## Tab System (`_details-tabs.css`)
+## Tab system (`_details-tabs.css`)
 
 ### Primary Tab Bar
 
@@ -232,7 +157,7 @@ For structured configuration forms, see the form shell system in [design-system.
 
 ---
 
-## Table & List Rows (`_tables.css`)
+## Table and list rows (`_tables.css`)
 
 Two-zone grid layout: content (left) and actions (right).
 
@@ -247,23 +172,10 @@ Two-zone grid layout: content (left) and actions (right).
 
 ---
 
-## Tooltip System (`_tooltips.css`)
+## Tooltip extensions (`_tooltips.css`)
 
-### Classes
-
-```css
-.tooltip-wrapper        /* Trigger container (position: relative) */
-.dotted-underline       /* Dotted border-bottom hover hint */
-.tooltip-text           /* Tooltip bubble (hidden by default) */
-```
-
-### Position Variants
-
-```css
-.tooltip-pos-left       /* Left-aligned */
-.tooltip-pos-right      /* Right-aligned */
-.tooltip-pos-bottom     /* Below trigger */
-```
+`.tooltip-wrapper`, `.dotted-underline`, `.tooltip-text` and the single-axis position variants are shared. The
+frontpage adds combined positions, a fixed-position mode, text utilities inside a tooltip, and the touch variant.
 
 ### Fixed-Position Mode
 
@@ -299,7 +211,7 @@ Two-zone grid layout: content (left) and actions (right).
 
 ---
 
-## Collapsible & Accordion System (`_collapsibles.css`)
+## Collapsible and accordion system (`_collapsibles.css`)
 
 ### Card-Style Collapsible
 
@@ -325,37 +237,10 @@ Two-zone grid layout: content (left) and actions (right).
 
 ---
 
-## Data Display (`_data-display.css`)
+## Data display (`_data-display.css`)
 
-### Stat Columns
-
-```css
-.stat-column            /* Padded glass card for stats */
-.stat-item              /* Icon + text row */
-.stat-text              /* Body text in stat items */
-.stat-text-label        /* Label within stat text */
-```
-
-### Data Item Boxes
-
-```css
-.data-item-box          /* Glass surface for key-value pairs */
-.data-label             /* Label text */
-.data-value             /* Value text */
-.data-value-lg          /* Prominent stat (text-2xl) */
-.data-value-xl          /* Hero stat (text-4xl) */
-.data-value-split       /* Stacked metric pairs */
-```
-
-### Responsive Data Grids
-
-| Class              | Columns                                     |
-| ------------------ | ------------------------------------------- |
-| `.data-grid-2`     | `grid-cols-2`                               |
-| `.data-grid-2-3`   | `grid-cols-2 lg:grid-cols-3`                |
-| `.data-grid-1-2`   | `grid-cols-1 sm:grid-cols-2`                |
-| `.data-grid-1-2-3` | `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` |
-| `.data-grid-2-4`   | `grid-cols-2 md:grid-cols-4`                |
+`.stat-column`, `.stat-item`, `.data-item-box`, `.data-label`, `.data-value` and the responsive `.data-grid-*` classes
+are shared. The frontpage adds domain tinting and the skeleton set.
 
 ### Domain Tinting
 
@@ -380,7 +265,7 @@ Two-zone grid layout: content (left) and actions (right).
 
 ---
 
-## Loading & Empty States (`_utilities.css`)
+## Loading and empty states (`_utilities.css`)
 
 ```css
 .spinner                /* Border-based rotating spinner */
@@ -395,7 +280,7 @@ Two-zone grid layout: content (left) and actions (right).
 
 ---
 
-## Animation & Motion
+## Animation and motion
 
 ### Scroll Reveal (`_base.css`)
 
@@ -430,7 +315,7 @@ All animations respect `@media (prefers-reduced-motion: reduce)`. Content is sho
 
 ---
 
-## Icon System
+## Icon system
 
 ### Sizing
 
@@ -458,7 +343,7 @@ a.glossary-link         /* Dotted underline, purple text; hover: solid, blue */
 
 ---
 
-## Responsive Design
+## Responsive design
 
 ### Breakpoints
 
@@ -486,27 +371,11 @@ font-size: clamp(0.6875rem, 1.2vw, 0.875rem); /* Sub-tabs */
 
 ---
 
-## Accessibility Patterns
+## Accessibility patterns
 
-### Focus Rings
-
-Interactive elements use `box-shadow` focus rings:
-
-- Links / informational: `--shadow-focus-blue`
-- Buttons / brand: `--shadow-focus-purple`
-
-### Screen Reader
-
-```css
-.sr-only  /* Visually hidden but accessible */
-```
-
-### Keyboard Navigation
-
-- Tooltips: visible on `:focus-within`
-- Collapsibles: keyboard-focusable triggers
-- Dropdowns: arrow key navigation
-- Tab bars: standard tab/arrow key patterns
+Focus rings, colour contrast, reduced motion and keyboard navigation are stated once in the
+[shared catalog](../src/shared/design-system/docs/component-patterns.md) and hold here unchanged, as does `.sr-only`.
+What is specific to this site:
 
 ### Modal Accessibility
 
@@ -514,7 +383,3 @@ Interactive elements use `box-shadow` focus rings:
 - `aria-labelledby` pointing to the title
 - Focus trap while open
 - Focus restoration on close
-
-### Color Contrast
-
-All badge, alert, and status variants meet WCAG AA 4.5:1 contrast ratio. Test dark mode after changing translucent surfaces.

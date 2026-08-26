@@ -69,9 +69,15 @@ Use `IconComponent` (`<app-icon name="icon-name" />`) instead of inline `<svg>` 
 
 ### Styling
 
-All styles are centralized in `src/styles/`. Component `.css` files must be empty. Use semantic CSS classes rather than inline Tailwind utilities.
+All styles are centralized in `src/styles/` and in the design-system submodule at `src/shared/design-system/`.
+Component `.css` files must be empty. Use semantic CSS classes rather than inline Tailwind utilities.
 
-See [STYLING.md](STYLING.md) for the full conventions and [docs/design-system.md](docs/design-system.md) for the token reference.
+The submodule ships two families. The glass family (`.btn`, `.card`, `.badge`, `.surface-glass*`) is legacy and still
+draws most of the site. The HD family (`.hd-*` classes on `--hd-*` tokens) is what new and rebuilt surfaces use;
+`src/styles/_models.css` is the worked example. The studio's `.gs-*` classes never leave `.gen-studio`.
+
+See [STYLING.md](STYLING.md) for the full conventions and [AGENTS.md](AGENTS.md) for the rules any change has to
+follow.
 
 ### Accessibility
 
@@ -108,8 +114,12 @@ Pull requests run these checks (all must pass):
 ## Project Documentation
 
 - [README.md](README.md) — Project overview and quick start
+- [AGENTS.md](AGENTS.md) — The rules any change to this codebase follows, and the checks it has to pass
 - [ARCHITECTURE.md](ARCHITECTURE.md) — Technical overview: routes, services, data flow
-- [STYLING.md](STYLING.md) — Style conventions and file organization
-- [docs/design-system.md](docs/design-system.md) — Design tokens, surface primitives, color system
-- [docs/component-patterns.md](docs/component-patterns.md) — CSS class catalog
+- [STYLING.md](STYLING.md) — The two style families, file organization, idioms, anti-patterns
+- [src/shared/design-system/docs/](src/shared/design-system/docs/) — The shared token reference and class catalog for
+  both families
+- [docs/design-system.md](docs/design-system.md) — Frontpage tokens, surfaces and form shells
+- [docs/component-patterns.md](docs/component-patterns.md) — Frontpage CSS class catalog
+- [docs/design-language.md](docs/design-language.md) — The studio's zones, identity hues and remaining idioms
 - [docs/plans/](docs/plans/) — Outstanding improvement plans
