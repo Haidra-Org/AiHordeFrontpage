@@ -3399,7 +3399,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-family: inherit;
 }
 .gen-studio .gs-row-val {
-  color: var(--gs-blue);
+  color: var(--gs-pop-accent);
   font-weight: 700;
 }
 

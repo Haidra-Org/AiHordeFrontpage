@@ -352,11 +352,7 @@
     color: var(--hd-ink-2);
   }
 
-  /* The row's own value ink is --hd-accent, which is 2.15:1 on a dark
-     card; the popover accent is the same blue in light and a lighter one
-     in dark, so the number clears AA in both. */
   .profile-quicknav-tile .hd-row-val {
-    color: var(--hd-pop-accent);
     font-size: var(--hd-text-md);
     font-variant-numeric: tabular-nums;
   }
