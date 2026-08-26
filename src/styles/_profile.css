@@ -25,14 +25,6 @@
      SUB-TABS
      ----------------------------------------------------------------- */
 
-  /* A finger gets the full row height to aim at; the tab is only as tall
-     as the bar, so the target comes from the bar rather than padding. */
-  @media (pointer: coarse) {
-    .profile-subtab {
-      min-height: 44px;
-    }
-  }
-
   /* The count is read past, not read: it sits at the label's weight and
      takes the quiet ink so the tab name stays the thing being scanned. */
   .profile-subtab-badge {
@@ -177,6 +169,17 @@
     gap: var(--hd-space-4);
   }
 
+  /* The card primitive declares a row gap for a consumer that lays its
+     rows out on a grid. Everything the profile puts in a card is a
+     column of blocks, so the card has to be one. */
+  .profile-overview > .hd-card,
+  .profile-settings > .hd-card,
+  .profile-area > .hd-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
+  }
+
   /* -----------------------------------------------------------------
      ALERT
      An account-level condition the reader has to act on. The tint is
@@ -261,8 +264,11 @@
     overflow-wrap: anywhere;
   }
 
+  /* The button's own padding would step its label in from the name above
+     it; pulling it back by that padding lines the two up. */
   .profile-identity-action {
     align-self: flex-start;
+    margin-inline-start: calc(var(--hd-space-3) * -1);
     text-decoration: none;
   }
 
@@ -486,8 +492,11 @@
      FILTERS
      ----------------------------------------------------------------- */
 
-  .profile-filters {
+  /* Written against the card it is drawn on, so it outweighs the column
+     layout the profile's cards otherwise take. */
+  .hd-card.profile-filters {
     display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: var(--hd-space-3);
