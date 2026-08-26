@@ -791,13 +791,13 @@ describe('GenerateResultsPanelComponent', () => {
 
     it('lists the styles on screen with their tile counts', () => {
       expect(component.styleOptions()).toEqual([
-        { name: 'Anime', count: 2 },
-        { name: 'Photo', count: 1 },
+        { key: 'curated:Anime', name: 'Anime', count: 2 },
+        { key: 'curated:Photo', name: 'Photo', count: 1 },
       ]);
     });
 
     it('filters the grid to one style', () => {
-      component.styleFilter.set('Anime');
+      component.styleFilter.set('curated:Anime');
 
       expect(component.visibleTiles().map((t) => t.jobLocalId)).toEqual([
         'a',
@@ -807,7 +807,7 @@ describe('GenerateResultsPanelComponent', () => {
     });
 
     it('reports an empty filter result like the other filters do', () => {
-      component.styleFilter.set('Nothing');
+      component.styleFilter.set('curated:Nothing');
 
       expect(component.visibleTiles()).toHaveLength(0);
       expect(component.filteredOut()).toBe(true);
@@ -861,7 +861,7 @@ describe('GenerateResultsPanelComponent', () => {
       const payload = studioLinkFromText(written[0]);
       expect(payload?.request.params?.seed).toBe('a-img');
       expect(payload?.request.prompt).toBe('a fox');
-      expect(payload?.styleName).toBe('Anime');
+      expect(payload?.styleKey).toBe('curated:Anime');
       expect(toastSuccess).toHaveBeenCalledWith('generate.link.copied', {
         transloco: true,
       });

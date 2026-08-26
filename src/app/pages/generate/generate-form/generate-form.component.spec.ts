@@ -25,7 +25,7 @@ import {
 import {
   AppliedStyle,
   StyleForcedParams,
-} from '../../../services/horde-styles.service';
+} from '../../../services/style-record';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import { evaluateRequestLint, type RequestWarning } from '../request-lint';
 import type { ActiveModel } from '../../../types/active-model';

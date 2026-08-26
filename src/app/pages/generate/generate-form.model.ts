@@ -13,7 +13,7 @@ import {
   StyleLoraConfig,
   StyleTextualInversionConfig,
 } from '../../types/style';
-import type { AppliedStyle } from '../../services/horde-styles.service';
+import { storedStyleKey, type AppliedStyle } from '../../services/style-record';
 import type { ModelRequirements } from '../../services/model-reference.service';
 import type { WorkerRequirement } from '../../services/worker-pool.service';
 import type { LocalGenerationJob } from '../../types/generation-job';
@@ -1175,16 +1175,28 @@ export interface StylePickerGroup {
   names: string[];
 }
 
-/** The groups of form controls a style can pin, each lockable as a unit. */
-export const STYLE_LOCK_SECTIONS = ['model', 'dimensions', 'sampling'] as const;
+/**
+ * The groups of form controls a style can pin, each lockable as a unit.
+ *
+ * `finishing` covers everything a style pins beyond the model, the size and the
+ * sampling knobs: post-processing, face fixing, tiling, transparency, the
+ * denoise strength and the workflow. Those controls live in more than one card,
+ * so they are handed back together rather than one card at a time.
+ */
+export const STYLE_LOCK_SECTIONS = [
+  'model',
+  'dimensions',
+  'sampling',
+  'finishing',
+] as const;
 
 export type StyleLockSection = (typeof STYLE_LOCK_SECTIONS)[number];
 
 /**
- * Which sections the user has taken back from the selected style. `style` names
- * the style the detachments were made against, so switching style (or clearing
- * it) makes them inert without any coordinated reset: a detachment only counts
- * while `style` still matches the form's `styleName`.
+ * Which sections the user has taken back from the selected style. `style` is the
+ * key of the style the detachments were made against, so switching style (or
+ * clearing it) makes them inert without any coordinated reset: a detachment only
+ * counts while `style` still matches the form's `styleName`.
  */
 export interface StyleDetachState {
   style: string;
@@ -1196,7 +1208,11 @@ export interface StyleDetachState {
  * storage and what {@link buildImageRequest} maps into a horde request.
  */
 export interface GenerateFormValue {
-  /** Selected style-preset name; '' means no style. */
+  /**
+   * The selected style's source-qualified key (see `styleRecordKey`), or '' for
+   * no style. The field is named for the bare preset name it used to hold; a
+   * stored bare name still reads as a preset, through {@link storedStyleKey}.
+   */
   styleName: string;
   /** Sections the user opted out of the style for; see {@link StyleDetachState}. */
   styleDetach: StyleDetachState;
@@ -1492,7 +1508,7 @@ function coerceStyleDetach(raw: unknown): StyleDetachState {
     return { style: '', sections: [] };
   }
   return {
-    style: source['style'],
+    style: storedStyleKey(source['style']),
     sections: source['sections'].filter((item): item is StyleLockSection =>
       (STYLE_LOCK_SECTIONS as readonly string[]).includes(item as string),
     ),
@@ -1659,6 +1675,12 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
         (QR_MODULE_DRAWERS as readonly string[]).includes(value as string)
       ) {
         merged.qrModuleDrawer = value as QrModuleDrawer | '';
+      }
+      continue;
+    }
+    if (key === 'styleName') {
+      if (typeof value === 'string') {
+        merged.styleName = storedStyleKey(value);
       }
       continue;
     }
@@ -2229,9 +2251,10 @@ export function workerRequirementForRequest(
 /**
  * Build a request with a resolved style applied on top of the form's own values.
  * When `applied` is null this is exactly {@link buildImageRequest}. Otherwise the
- * style's final prompt and any parameters it forces (model, dimensions, steps,
- * cfg, sampler, clip_skip, karras, hires_fix, loras, tis) override the form's,
- * matching the horde behaviour where a style pins those fields.
+ * style's final prompt and any parameters it forces (models, dimensions, steps,
+ * cfg, sampler, clip_skip, karras, hires_fix, loras, tis, and the finishing
+ * values) override the form's, matching the horde behaviour where a style pins
+ * those fields.
  *
  * Sections the user detached from the style (see {@link detachedStyleSections})
  * keep the form's own values, which is what the per-section "use my values"
@@ -2284,15 +2307,59 @@ export function buildStyledImageRequest(
       }
     }
   }
+  if (pinned('finishing')) {
+    if (forced.post_processing !== undefined) {
+      if (forced.post_processing.length > 0) {
+        params.post_processing = [...forced.post_processing];
+      } else {
+        delete params.post_processing;
+      }
+    }
+    if (forced.facefixer_strength !== undefined) {
+      params.facefixer_strength = forced.facefixer_strength;
+    }
+    if (forced.tiling !== undefined) {
+      if (forced.tiling) {
+        params.tiling = true;
+      } else {
+        delete params.tiling;
+      }
+    }
+    if (forced.transparent !== undefined) {
+      if (forced.transparent) {
+        params.transparent = true;
+      } else {
+        delete params.transparent;
+      }
+    }
+    // The horde accepts one workflow name, so a style naming any other is
+    // asking for something no worker can run and is left off the request.
+    if (forced.workflow === 'qr_code') {
+      params.workflow = 'qr_code';
+    }
+    // A denoise strength only means anything where the request carries a source
+    // picture, and the pipelines that erase the masked pixels set their own.
+    if (
+      forced.denoising_strength !== undefined &&
+      params.denoising_strength !== undefined
+    ) {
+      params.denoising_strength = forced.denoising_strength;
+    }
+  }
   if (forced.loras) params.loras = forced.loras;
   if (forced.tis) params.tis = forced.tis;
 
   request.params = params;
-  if (pinned('model') && forced.model !== undefined) {
-    // A style that pins a model replaces the whole list: it is naming the model
-    // its settings were written for, so widening the routing past it would send
-    // the style's numbers to a model they were never meant for.
-    request.models = [forced.model];
+  // `models` is the whole list a style declares; `model` alone is the one it
+  // names for the panel's single-model field, and stands for a list of one.
+  const forcedModels =
+    forced.models ?? (forced.model === undefined ? [] : [forced.model]);
+  if (pinned('model') && forcedModels.length > 0) {
+    // A style that pins models replaces the whole list: it is naming the models
+    // its settings were written for, so widening the routing past them would
+    // send the style's numbers to a model they were never meant for. A style
+    // that names several accepts any of them, so all are carried.
+    request.models = requestModelNames(forcedModels[0], forcedModels.slice(1));
   }
   // A style names its schedule as the legacy boolean, so the modern pass runs
   // against that schedule rather than the form's: leaving the form's in would

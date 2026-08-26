@@ -1,6 +1,10 @@
 import { deflateSync, inflateSync, strFromU8, strToU8 } from 'fflate';
 import type { ParamMap, Params, Router } from '@angular/router';
 import type { ImageGenerationRequest } from '../../types/generation';
+import {
+  parseStyleRecordKey,
+  styleRecordKey,
+} from '../../services/style-record';
 
 /**
  * The shape of the packed parameter. Only version 1 is understood; a link
@@ -25,13 +29,14 @@ const MAX_UNPACKED_BYTES = 32768;
 /**
  * What a studio link carries once it is read.
  *
- * `simple` is the readable form: a model name, a style name, or both, and
- * nothing else. `full` came from the packed parameter and describes a whole
- * request, so the page offers it for review rather than writing it straight in.
+ * `simple` is the readable form: a model name, a style, or both, and nothing
+ * else. `full` came from the packed parameter and describes a whole request, so
+ * the page offers it for review rather than writing it straight in.
  */
 export interface StudioLinkPayload {
   request: ImageGenerationRequest;
-  styleName: string | null;
+  /** The style's source-qualified key, or null when the link names none. */
+  styleKey: string | null;
   kind: 'simple' | 'full';
 }
 
@@ -81,16 +86,35 @@ function fromBase64Url(text: string): Uint8Array | null {
  */
 export function studioLinkParams(
   request: ImageGenerationRequest,
-  styleName: string | null,
+  styleKey: string | null,
 ): StudioLinkParams {
   const body: Record<string, unknown> = {
     v: STUDIO_LINK_VERSION,
     request,
   };
-  if (styleName !== null && styleName !== '') {
-    body['style'] = styleName;
+  const named = styleQueryParams(styleKey);
+  if (named !== null) {
+    Object.assign(body, named);
   }
   return { r: toBase64Url(deflateSync(strToU8(JSON.stringify(body)))) };
+}
+
+/**
+ * The query parameters that name a style, or null when there is none to name.
+ * A preset is named by the name it is published under and a published style by
+ * its id, so the two never share one parameter and can never be confused.
+ */
+function styleQueryParams(styleKey: string | null): Params | null {
+  if (styleKey === null || styleKey === '') {
+    return null;
+  }
+  const parsed = parseStyleRecordKey(styleKey);
+  if (parsed === null) {
+    return null;
+  }
+  return parsed.source === 'native'
+    ? { styleId: parsed.value }
+    : { style: parsed.value };
 }
 
 /**
@@ -101,16 +125,13 @@ export function studioLinkParams(
 export function studioLinkAddress(
   router: Router,
   request: ImageGenerationRequest,
-  styleName: string | null,
+  styleKey: string | null,
 ): string | null {
   const packed = studioLinkParams(request, null);
   if (packed.r.length > STUDIO_LINK_MAX_PARAM_CHARS) {
     return null;
   }
-  const queryParams: Params = { r: packed.r };
-  if (styleName !== null && styleName !== '') {
-    queryParams['style'] = styleName;
-  }
+  const queryParams: Params = { r: packed.r, ...styleQueryParams(styleKey) };
   const tree = router.createUrlTree([STUDIO_LINK_PATH], { queryParams });
   return new URL(
     router.serializeUrl(tree),
@@ -157,7 +178,7 @@ function sanitizeRequest(raw: ImageGenerationRequest): ImageGenerationRequest {
 /** Read the packed parameter, or null when it is absent, stale or malformed. */
 function unpackRequest(
   packed: string,
-): { request: ImageGenerationRequest; styleName: string | null } | null {
+): { request: ImageGenerationRequest; styleKey: string | null } | null {
   if (packed.length === 0 || packed.length > STUDIO_LINK_MAX_PARAM_CHARS) {
     return null;
   }
@@ -193,9 +214,15 @@ function unpackRequest(
     return null;
   }
   const style = record['style'];
+  const styleId = record['styleId'];
   return {
     request: sanitizeRequest(request),
-    styleName: typeof style === 'string' && style !== '' ? style : null,
+    styleKey:
+      typeof styleId === 'string' && styleId !== ''
+        ? styleRecordKey('native', styleId)
+        : typeof style === 'string' && style !== ''
+          ? styleRecordKey('curated', style)
+          : null,
   };
 }
 
@@ -213,6 +240,15 @@ function readLink(
   const unpacked = packed === null ? null : unpackRequest(packed);
   const model = get('model')?.trim() ?? '';
   const style = get('style')?.trim() ?? '';
+  const styleId = get('styleId')?.trim() ?? '';
+  // An id and a name in the same address name two different styles, and the id
+  // is the more exact of the two, so it is the one that is answered.
+  const named =
+    styleId !== ''
+      ? styleRecordKey('native', styleId)
+      : style !== ''
+        ? styleRecordKey('curated', style)
+        : null;
 
   if (unpacked !== null) {
     const request = { ...unpacked.request };
@@ -221,12 +257,12 @@ function readLink(
     }
     return {
       request,
-      styleName: style !== '' ? style : unpacked.styleName,
+      styleKey: named ?? unpacked.styleKey,
       kind: 'full',
     };
   }
 
-  if (model === '' && style === '') {
+  if (model === '' && named === null) {
     return null;
   }
   const request: ImageGenerationRequest = { prompt: '' };
@@ -235,7 +271,7 @@ function readLink(
   }
   return {
     request,
-    styleName: style !== '' ? style : null,
+    styleKey: named,
     kind: 'simple',
   };
 }
@@ -266,7 +302,7 @@ export function studioLinkFromText(text: string): StudioLinkPayload | null {
     }
     return {
       request: sanitizeRequest(body),
-      styleName: null,
+      styleKey: null,
       kind: 'full',
     };
   }

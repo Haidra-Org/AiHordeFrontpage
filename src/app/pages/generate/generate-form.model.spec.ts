@@ -23,6 +23,7 @@ import {
   cfgRequirementHint,
   clipSkipRequirementHint,
   coerceFormValue,
+  detachedStyleSections,
   combinePrompt,
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
@@ -61,7 +62,7 @@ import {
   suggestedSamplers,
 } from './generate-form.model';
 import { ANNOTATION_CONTROL_TYPES } from '../../types/generation';
-import { AppliedStyle } from '../../services/horde-styles.service';
+import { AppliedStyle } from '../../services/style-record';
 import { LocalGenerationJob } from '../../types/generation-job';
 import {
   SamplerConstraintsDocument,
@@ -675,6 +676,69 @@ describe('buildStyledImageRequest', () => {
       { name: '247778', is_version: true },
     ]);
   });
+
+  it('pins the finishing values a style declares', () => {
+    const form = value({
+      prompt: 'a fox',
+      post_processing: ['RealESRGAN_x4plus'],
+      tiling: false,
+      transparent: false,
+      facefixer_strength: 0.5,
+    });
+    const request = buildStyledImageRequest(form, {
+      prompt: 'a fox',
+      forcedParams: {
+        post_processing: ['GFPGAN'],
+        facefixer_strength: 0.25,
+        tiling: true,
+        transparent: true,
+        workflow: 'qr_code',
+      },
+    });
+
+    expect(request.params?.post_processing).toEqual(['GFPGAN']);
+    expect(request.params?.facefixer_strength).toBe(0.25);
+    expect(request.params?.tiling).toBe(true);
+    expect(request.params?.transparent).toBe(true);
+    expect(request.params?.workflow).toBe('qr_code');
+  });
+
+  it('clears the finishing values a style declares off', () => {
+    const form = value({
+      prompt: 'a fox',
+      post_processing: ['GFPGAN'],
+      tiling: true,
+      transparent: true,
+    });
+    const request = buildStyledImageRequest(form, {
+      prompt: 'a fox',
+      forcedParams: {
+        post_processing: [],
+        tiling: false,
+        transparent: false,
+      },
+    });
+
+    expect(request.params?.post_processing).toBeUndefined();
+    expect(request.params?.tiling).toBeUndefined();
+    expect(request.params?.transparent).toBeUndefined();
+  });
+
+  it('keeps the form finishing values when that section is detached', () => {
+    const form = value({
+      prompt: 'a fox',
+      post_processing: ['RealESRGAN_x4plus'],
+      styleName: 'curated:Anime',
+      styleDetach: { style: 'curated:Anime', sections: ['finishing'] },
+    });
+    const request = buildStyledImageRequest(form, {
+      prompt: 'a fox',
+      forcedParams: { post_processing: ['GFPGAN'], tiling: true },
+    });
+
+    expect(request.params?.post_processing).toEqual(['RealESRGAN_x4plus']);
+    expect(request.params?.tiling).toBeUndefined();
+  });
 });
 
 describe('combinePrompt', () => {
@@ -688,6 +752,25 @@ describe('coerceFormValue', () => {
   it('falls back to defaults for non-objects', () => {
     expect(coerceFormValue(null)).toEqual(DEFAULT_GENERATE_FORM_VALUE);
     expect(coerceFormValue('nonsense')).toEqual(DEFAULT_GENERATE_FORM_VALUE);
+  });
+
+  it('reads a stored bare style name as a preset', () => {
+    const merged = coerceFormValue({
+      styleName: 'Anime',
+      styleDetach: { style: 'Anime', sections: ['sampling'] },
+    });
+    expect(merged.styleName).toBe('curated:Anime');
+    expect(merged.styleDetach.style).toBe('curated:Anime');
+    expect(detachedStyleSections(merged)).toEqual(['sampling']);
+  });
+
+  it('leaves a stored style key alone', () => {
+    const merged = coerceFormValue({
+      styleName: 'native:abc-123',
+      styleDetach: { style: 'native:abc-123', sections: ['finishing'] },
+    });
+    expect(merged.styleName).toBe('native:abc-123');
+    expect(detachedStyleSections(merged)).toEqual(['finishing']);
   });
 
   it('merges known fields and drops wrongly-typed or unknown ones', () => {
@@ -2309,5 +2392,33 @@ describe('a request naming several models', () => {
       { prompt: 'a fox', forcedParams: { model: 'styled' } },
     );
     expect(request.models).toEqual(['styled']);
+  });
+
+  it('routes on every model a style names, capped at the request limit', () => {
+    const request = buildStyledImageRequest(
+      value({ prompt: 'a fox', model: 'a', extraModels: ['b'] }),
+      {
+        prompt: 'a fox',
+        forcedParams: {
+          model: 'one',
+          models: ['one', 'two', 'three', 'four', 'five', 'six'],
+        },
+      },
+    );
+    expect(request.models).toEqual(['one', 'two', 'three', 'four', 'five']);
+  });
+
+  it('hands the model list back when the reader detaches the model section', () => {
+    const request = buildStyledImageRequest(
+      value({
+        prompt: 'a fox',
+        model: 'a',
+        extraModels: ['b'],
+        styleName: 'curated:Anime',
+        styleDetach: { style: 'curated:Anime', sections: ['model'] },
+      }),
+      { prompt: 'a fox', forcedParams: { model: 'one', models: ['one'] } },
+    );
+    expect(request.models).toEqual(['a', 'b']);
   });
 });

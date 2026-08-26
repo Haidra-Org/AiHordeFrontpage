@@ -58,12 +58,20 @@ describe('studioLinkParams', () => {
     );
   });
 
-  it('carries the style name beside the request', () => {
+  it('carries a preset name beside the request', () => {
     const request = buildImageRequest(value({ prompt: 'a fox' }));
     const parsed = parseStudioLink(
-      mapOf({ ...studioLinkParams(request, 'Watercolour') }),
+      mapOf({ ...studioLinkParams(request, 'curated:Watercolour') }),
     );
-    expect(parsed?.styleName).toBe('Watercolour');
+    expect(parsed?.styleKey).toBe('curated:Watercolour');
+  });
+
+  it('carries a published style by its id beside the request', () => {
+    const request = buildImageRequest(value({ prompt: 'a fox' }));
+    const parsed = parseStudioLink(
+      mapOf({ ...studioLinkParams(request, 'native:abc-123') }),
+    );
+    expect(parsed?.styleKey).toBe('native:abc-123');
   });
 
   it('stays short enough for an address bar', () => {
@@ -91,29 +99,42 @@ describe('parseStudioLink', () => {
     const parsed = parseStudioLink(mapOf({ model: 'Deliberate' }));
     expect(parsed).toEqual({
       request: { prompt: '', models: ['Deliberate'] },
-      styleName: null,
+      styleKey: null,
       kind: 'simple',
     });
   });
 
-  it('reads a style named openly', () => {
+  it('reads a preset named openly', () => {
     const parsed = parseStudioLink(mapOf({ style: 'Watercolour' }));
     expect(parsed?.kind).toBe('simple');
-    expect(parsed?.styleName).toBe('Watercolour');
+    expect(parsed?.styleKey).toBe('curated:Watercolour');
     expect(parsed?.request.models).toBeUndefined();
+  });
+
+  it('reads a published style named openly by its id', () => {
+    const parsed = parseStudioLink(mapOf({ styleId: 'abc-123' }));
+    expect(parsed?.kind).toBe('simple');
+    expect(parsed?.styleKey).toBe('native:abc-123');
+  });
+
+  it('answers the id when an address names both an id and a preset', () => {
+    const parsed = parseStudioLink(
+      mapOf({ style: 'Watercolour', styleId: 'abc-123' }),
+    );
+    expect(parsed?.styleKey).toBe('native:abc-123');
   });
 
   it('lets an open name win over the packed request', () => {
     const packed = studioLinkParams(
       buildImageRequest(value({ prompt: 'a fox', model: 'Deliberate' })),
-      'Packed',
+      'curated:Packed',
     );
     const parsed = parseStudioLink(
       mapOf({ ...packed, model: 'Anything', style: 'Open' }),
     );
     expect(parsed?.kind).toBe('full');
     expect(parsed?.request.models).toEqual(['Anything']);
-    expect(parsed?.styleName).toBe('Open');
+    expect(parsed?.styleKey).toBe('curated:Open');
     expect(parsed?.request.prompt).toBe('a fox');
   });
 
@@ -173,20 +194,20 @@ describe('studioLinkFromText', () => {
     );
     expect(parsed?.kind).toBe('full');
     expect(requestToFormValue(parsed!.request).steps).toBe(25);
-    expect(parsed?.styleName).toBeNull();
+    expect(parsed?.styleKey).toBeNull();
   });
 
   it('reads a studio address copied out of the address bar', () => {
     const packed = studioLinkParams(
       buildImageRequest(value({ prompt: 'a fox', model: 'Deliberate' })),
-      'Watercolour',
+      'curated:Watercolour',
     );
     const parsed = studioLinkFromText(
       `https://aihorde.net/generate/image?r=${packed.r}`,
     );
     expect(parsed?.kind).toBe('full');
     expect(parsed?.request.prompt).toBe('a fox');
-    expect(parsed?.styleName).toBe('Watercolour');
+    expect(parsed?.styleKey).toBe('curated:Watercolour');
   });
 
   it('reads an address that only names a model', () => {

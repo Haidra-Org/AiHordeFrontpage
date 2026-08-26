@@ -441,10 +441,15 @@
                 <option value="">
                   {{ "generate.form.style_none" | transloco }}
                 </option>
+                @if (selectedStyleOffCatalogue()) {
+                  <option [value]="selectedStyleKey()">
+                    {{ selectedStyleName() }}
+                  </option>
+                }
                 @for (group of styleGroups(); track group.category) {
                   <optgroup [label]="group.category">
                     @for (name of group.names; track name) {
-                      <option [value]="name">{{ name }}</option>
+                      <option [value]="curatedKey(name)">{{ name }}</option>
                     }
                   </optgroup>
                 }
@@ -1530,6 +1535,19 @@
             [lintLabel]="groupLintLabel('post')"
             (lintPressed)="goToGroupLint('post')"
           >
+            <div class="gs-group-actions" groupActions>
+              @if (stylePins("finishing")) {
+                <ng-container
+                  *ngTemplateOutlet="
+                    styleLock;
+                    context: {
+                      section: 'finishing',
+                      value: styleFinishingText(),
+                    }
+                  "
+                />
+              }
+            </div>
             <div>
               <div class="gs-field-head">
                 <label class="gs-slabel" for="generate-upscaler">
@@ -2846,6 +2864,8 @@
   <app-style-browser
     [form]="form()"
     [styleGroups]="styleGroups()"
+    [styleRecords]="styleRecords()"
+    (styleFound)="styleFound.emit($event)"
     (closed)="closeStyleBrowser()"
   />
 }

@@ -39,6 +39,8 @@
       [waitLine]="waitLine()"
       [forcedParams]="forcedParams()"
       [styleGroups]="styleGroups()"
+      [styleRecords]="styleRecords()"
+      (styleFound)="registerStyle($event)"
       [panelSize]="panelSize()"
       [expandable]="panelCanExpand()"
       [narrow]="isNarrow()"

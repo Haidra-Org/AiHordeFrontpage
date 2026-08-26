@@ -195,10 +195,10 @@
             <option value="" [selected]="styleFilter() === ''">
               {{ "generate.results.style_all" | transloco }}
             </option>
-            @for (option of styleOptions(); track option.name) {
+            @for (option of styleOptions(); track option.key) {
               <option
-                [value]="option.name"
-                [selected]="styleFilter() === option.name"
+                [value]="option.key"
+                [selected]="styleFilter() === option.key"
               >
                 {{ option.name }} ({{ option.count }})
               </option>

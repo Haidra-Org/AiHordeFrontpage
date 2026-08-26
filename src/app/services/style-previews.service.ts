@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { DatabaseService } from './database.service';
+import type { StyleRecord } from './style-record';
 
 /**
  * Community preview renders for the curated style catalogue, from amiantos'
@@ -161,6 +162,34 @@ export class StylePreviewsService {
     return STYLE_PREVIEW_VARIANTS.map((variant) => preview[variant]).filter(
       (url): url is string => url !== null,
     );
+  }
+
+  /**
+   * The picture to show for a style, whichever catalogue it came from. A preset
+   * is rendered by the previews repository, once per subject; a published style
+   * carries its own examples, and the one its author marked primary is the one
+   * it is shown by. Null when the style has no picture at all.
+   */
+  public recordPreviewUrl(
+    record: StyleRecord,
+    variant: StylePreviewVariant = 'person',
+  ): string | null {
+    if (record.source === 'curated') {
+      return this.previewUrl(record.name, variant);
+    }
+    return this.recordPreviewUrls(record)[0] ?? null;
+  }
+
+  /** Every picture a style has, in the order it should be shown in. */
+  public recordPreviewUrls(record: StyleRecord): string[] {
+    if (record.source === 'curated') {
+      return this.previewUrls(record.name);
+    }
+    const examples = record.examples ?? [];
+    return [
+      ...examples.filter((example) => example.primary),
+      ...examples.filter((example) => !example.primary),
+    ].map((example) => example.url);
   }
 
   private revalidate(): void {

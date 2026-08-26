@@ -14,6 +14,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet, isPlatformBrowser } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -30,10 +31,21 @@ import {
 } from '../../../services/style-previews.service';
 import { StyleUsageService } from '../../../services/style-usage.service';
 import { DatabaseService } from '../../../services/database.service';
+import { StyleService } from '../../../services/style.service';
+import { AuthService } from '../../../services/auth.service';
+import {
+  StyleRecord,
+  fromNativeImageStyle,
+  parseStyleRecordKey,
+  styleRecordKey,
+} from '../../../services/style-record';
 import { GenerateFormGroup, StylePickerGroup } from '../generate-form.model';
 
-/** How the body is arranged: curated categories, or a flat most-used list. */
+/** How the body is arranged: preset categories, or a flat most-used list. */
 export type StyleBrowserSort = 'category' | 'used';
+
+/** Which catalogue the body is showing. */
+export type StyleBrowserArea = 'presets' | 'community';
 
 /**
  * Which preview subject the cards show. `all` shows every subject a style has
@@ -44,6 +56,8 @@ export type StyleBrowserVariantOption = 'all' | StylePreviewVariant;
 
 /** One card in the browser: a style, its previews, and the user's usage count. */
 export interface StyleBrowserCard {
+  /** The style's source-qualified key; see `styleRecordKey`. */
+  key: string;
   name: string;
   /** One URL in a single-subject mode, up to three in `all`, empty when none. */
   previewUrls: string[];
@@ -64,8 +78,9 @@ export interface StyleBrowserShot {
 
 /** The style shown in the enlarged preview layer, with its place in the list. */
 export interface StyleBrowserExpanded {
+  key: string;
   name: string;
-  /** Position in {@link StyleBrowserComponent.visibleNames}, for the counter. */
+  /** Position in {@link StyleBrowserComponent.visibleKeys}, for the counter. */
   index: number;
   total: number;
   /**
@@ -85,6 +100,15 @@ const DOCK_SWIPE_PX = 24;
 
 /** How many favourites the pinned strip shows at most. */
 const MOST_USED_LIMIT = 10;
+
+/** How many published styles one page of the horde's list carries. */
+const COMMUNITY_PAGE_SIZE = 25;
+
+/** How many of a reader's own styles are fetched, one request each. */
+const YOUR_STYLES_LIMIT = 50;
+
+/** Where the chosen catalogue is remembered between visits. */
+const AREA_PREF_KEY = 'aihorde.generate.style_browser_area';
 
 /** Where the "show mature styles" choice is remembered between visits. */
 const MATURE_PREF_KEY = 'aihorde.generate.style_browser_mature';
@@ -170,11 +194,19 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
   private readonly previewsSvc = inject(StylePreviewsService);
   private readonly db = inject(DatabaseService);
   public readonly usageSvc = inject(StyleUsageService);
+  private readonly styleApi = inject(StyleService);
+  private readonly auth = inject(AuthService);
 
   public readonly form = input.required<GenerateFormGroup>();
-  /** Curated style presets grouped by category, as the form receives them. */
+  /** Style presets grouped by category, as the form receives them. */
   public readonly styleGroups = input<StylePickerGroup[]>([]);
+  /** Every style the studio already holds, by key. */
+  public readonly styleRecords = input<ReadonlyMap<string, StyleRecord>>(
+    new Map<string, StyleRecord>(),
+  );
 
+  /** A style reached here that the studio does not hold yet. */
+  public readonly styleFound = output<StyleRecord>();
   public readonly closed = output<void>();
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
@@ -320,8 +352,8 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     this.showMature.update((v) => !v);
     this.db.store(MATURE_PREF_KEY, this.showMature());
     // A style that just disappeared must not stay open in the enlarged layer.
-    const expanded = this.expandedName();
-    if (expanded !== null && !this.visibleNames().includes(expanded)) {
+    const expanded = this.expandedKey();
+    if (expanded !== null && !this.visibleKeys().includes(expanded)) {
       this.closeExpanded();
     }
   }
@@ -375,19 +407,30 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     return index;
   });
 
-  /** The user's favourites, restricted to styles the catalogue still lists. */
+  /** The user's favourites, restricted to styles still on offer. */
   public readonly mostUsed = computed<StyleBrowserCard[]>(() => {
     const known = this.knownNames();
     return this.usageSvc
       .topStyles(Number.MAX_SAFE_INTEGER)
-      .filter(
-        (entry) => known.has(entry.name) && this.matchesAnywhere(entry.name),
-      )
-      .slice(0, MOST_USED_LIMIT)
-      .map((entry) => this.card(entry.name));
+      .flatMap((entry): StyleBrowserCard[] => {
+        const parsed = parseStyleRecordKey(entry.key);
+        if (parsed === null) {
+          return [];
+        }
+        if (parsed.source === 'native') {
+          const record = this.recordFor(entry.key);
+          return record && this.matchesRecord(record)
+            ? [this.recordCard(record)]
+            : [];
+        }
+        return known.has(parsed.value) && this.matchesAnywhere(parsed.value)
+          ? [this.card(parsed.value)]
+          : [];
+      })
+      .slice(0, MOST_USED_LIMIT);
   });
 
-  /** Curated sections, dropping any left empty by the search filter. */
+  /** Preset sections, dropping any left empty by the search filter. */
   public readonly sections = computed<StyleBrowserSection[]>(() =>
     this.styleGroups()
       .map((group) => ({
@@ -421,32 +464,150 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
   );
 
+  // --- Community styles ----------------------------------------------------
+
+  /** Every published style fetched so far, in the order the pages came back. */
+  private readonly communityRecords = signal<StyleRecord[]>([]);
+  /** The last page asked for; the next press asks for the one after it. */
+  private readonly communityPage = signal(0);
+  public readonly communityLoading = signal(false);
+  public readonly communityFailed = signal(false);
+  /** Whether a page came back short, so there is nothing further to ask for. */
+  public readonly communityComplete = signal(false);
+  /** The signed-in reader's own published styles. */
+  private readonly yourRecords = signal<StyleRecord[]>([]);
+
+  public readonly communityCards = computed<StyleBrowserCard[]>(() =>
+    this.communityRecords()
+      .filter((record) => this.matchesRecord(record))
+      .map((record) => this.recordCard(record)),
+  );
+
+  public readonly yourCards = computed<StyleBrowserCard[]>(() =>
+    this.yourRecords()
+      .filter((record) => this.matchesRecord(record))
+      .map((record) => this.recordCard(record)),
+  );
+
+  /**
+   * Ask for the next page of published styles. The list comes back ordered by
+   * how often each style has been used, so the first page is the one worth
+   * showing first.
+   */
+  public loadMoreCommunity(): void {
+    if (this.communityLoading() || this.communityComplete()) {
+      return;
+    }
+    const page = this.communityPage() + 1;
+    this.communityLoading.set(true);
+    this.styleApi
+      .getImageStyles({ sort: 'popular', page })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (styles) => {
+          this.communityLoading.set(false);
+          this.communityFailed.set(false);
+          this.communityPage.set(page);
+          if (styles.length < COMMUNITY_PAGE_SIZE) {
+            this.communityComplete.set(true);
+          }
+          this.communityRecords.update((current) => {
+            const seen = new Set(current.map((record) => record.key));
+            return [
+              ...current,
+              ...styles
+                .map(fromNativeImageStyle)
+                .filter((record) => !seen.has(record.key)),
+            ];
+          });
+        },
+        error: () => {
+          this.communityLoading.set(false);
+          this.communityFailed.set(this.communityRecords().length === 0);
+        },
+      });
+  }
+
+  /**
+   * Look a style up by the exact name it is published under. The list the horde
+   * serves takes no search term, so the styles already fetched are filtered
+   * here and a name matching none of them is asked for on its own.
+   */
+  public searchCommunityByName(): void {
+    const name = this.query().trim();
+    if (name === '' || this.communityLoading()) {
+      return;
+    }
+    this.communityLoading.set(true);
+    this.styleApi
+      .getImageStyleByName(name)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (style) => {
+          this.communityLoading.set(false);
+          const record = fromNativeImageStyle(style);
+          this.communityRecords.update((current) =>
+            current.some((entry) => entry.key === record.key)
+              ? current
+              : [record, ...current],
+          );
+        },
+        error: () => this.communityLoading.set(false),
+      });
+  }
+
+  /** Fetch the styles the signed-in reader published, one request per style. */
+  private fetchYourStyles(): void {
+    const mine = (this.auth.currentUser()?.styles ?? []).filter(
+      (entry) => entry.type === 'image',
+    );
+    for (const entry of mine.slice(0, YOUR_STYLES_LIMIT)) {
+      this.styleApi
+        .getImageStyle(entry.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (style) => {
+            const record = fromNativeImageStyle(style);
+            this.yourRecords.update((current) =>
+              current.some((entry) => entry.key === record.key)
+                ? current
+                : [...current, record],
+            );
+          },
+          error: () => undefined,
+        });
+    }
+  }
+
   /**
    * Every card the body currently renders, in visual order and de-duplicated,
    * which is the order the enlarged layer steps through. A style pinned in the
    * "most used" strip and again in its category appears once, at its first
    * (pinned) position.
    */
-  public readonly visibleNames = computed<string[]>(() => {
-    if (this.sort() === 'used') {
-      return this.usedOrder().map((card) => card.name);
-    }
-    const names: string[] = [];
+  public readonly visibleKeys = computed<string[]>(() => {
+    const cards =
+      this.area() === 'community'
+        ? [...this.yourCards(), ...this.communityCards()]
+        : this.sort() === 'used'
+          ? this.usedOrder()
+          : [
+              ...this.mostUsed(),
+              ...this.sections().flatMap((section) => section.cards),
+            ];
+    const keys: string[] = [];
     const seen = new Set<string>();
-    for (const card of [
-      ...this.mostUsed(),
-      ...this.sections().flatMap((section) => section.cards),
-    ]) {
-      if (!seen.has(card.name)) {
-        seen.add(card.name);
-        names.push(card.name);
+    for (const card of cards) {
+      if (!seen.has(card.key)) {
+        seen.add(card.key);
+        keys.push(card.key);
       }
     }
-    return names;
+    return keys;
   });
 
   /** The style open in the enlarged preview layer, or null when it is closed. */
-  private readonly expandedName = signal<string | null>(null);
+  private readonly expandedKey = signal<string | null>(null);
   /**
    * The enlarged layer's own subject, kept while stepping between styles. Always
    * `all` on open rather than remembered: the contact sheet is the useful first
@@ -461,29 +622,42 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
   );
 
   public readonly expanded = computed<StyleBrowserExpanded | null>(() => {
-    const name = this.expandedName();
-    if (name === null) {
+    const key = this.expandedKey();
+    if (key === null) {
       return null;
     }
-    const names = this.visibleNames();
+    const keys = this.visibleKeys();
     return {
-      name,
-      index: names.indexOf(name),
-      total: names.length,
-      shots: this.shots(name, this.expandedVariantSignal()),
+      key,
+      name: this.styleName(key),
+      index: keys.indexOf(key),
+      total: keys.length,
+      shots: this.shots(key, this.expandedVariantSignal()),
     };
   });
 
   /**
-   * The renders to show for `name`. `all` lists every subject the repo actually
-   * has, without substitution, so the sheet never shows one render twice; a
-   * single subject falls back to whatever the style does have, so choosing one
-   * never empties the layer.
+   * The renders to show for `key`. A preset in `all` lists every subject the
+   * previews repository actually has, without substitution, so the sheet never
+   * shows one render twice; a single subject falls back to whatever the style
+   * does have, so choosing one never empties the layer. A published style shows
+   * the examples its author attached, which are not sorted by subject.
    */
   private shots(
-    name: string,
+    key: string,
     variant: StyleBrowserVariantOption,
   ): StyleBrowserShot[] {
+    const parsed = parseStyleRecordKey(key);
+    if (parsed?.source === 'native') {
+      const record = this.recordFor(key);
+      if (!record) {
+        return [];
+      }
+      return this.previewsSvc
+        .recordPreviewUrls(record)
+        .map((url) => ({ variant: 'person' as StylePreviewVariant, url }));
+    }
+    const name = parsed?.value ?? key;
     if (variant !== 'all') {
       const url = this.previewsSvc.previewUrl(name, variant);
       return url === null ? [] : [{ variant, url }];
@@ -498,15 +672,41 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Whether the search filter left nothing to show in the current sort. */
-  public readonly isEmpty = computed(() =>
-    this.sort() === 'used'
+  /** Whether the search filter left nothing to show in the current area. */
+  public readonly isEmpty = computed(() => {
+    if (this.area() === 'community') {
+      return (
+        this.communityCards().length === 0 && this.yourCards().length === 0
+      );
+    }
+    return this.sort() === 'used'
       ? this.usedOrder().length === 0
-      : this.sections().length === 0 && this.mostUsed().length === 0,
+      : this.sections().length === 0 && this.mostUsed().length === 0;
+  });
+
+  /** Which catalogue the body shows. */
+  public readonly area = signal<StyleBrowserArea>(
+    this.db.get<string>(AREA_PREF_KEY, 'presets') === 'community'
+      ? 'community'
+      : 'presets',
   );
 
+  public setArea(area: StyleBrowserArea): void {
+    if (this.area() === area) {
+      return;
+    }
+    this.area.set(area);
+    this.db.store(AREA_PREF_KEY, area);
+    this.closeExpanded();
+    if (area === 'community' && this.communityRecords().length === 0) {
+      this.loadMoreCommunity();
+    }
+  }
+
+  private readonly destroyRef = inject(DestroyRef);
+
   constructor() {
-    const destroyRef = inject(DestroyRef);
+    const destroyRef = this.destroyRef;
     afterNextRender(() => {
       const bar = this.bar()?.nativeElement;
       if (!bar) {
@@ -525,6 +725,10 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     this.previewsSvc.load();
     if (!isPlatformBrowser(this.platformId)) {
       return;
+    }
+    this.fetchYourStyles();
+    if (this.area() === 'community') {
+      this.loadMoreCommunity();
     }
     this.scrollLock.enable();
     const active = document.activeElement;
@@ -560,22 +764,63 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     return `gs-sb-sec-${category.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`;
   }
 
-  /** The style the form currently selects, so its card can show as active. */
+  /** The key the form currently selects, so its card can show as active. */
   public selectedStyle(): string {
     return this.form().controls.styleName.value;
   }
 
+  /** That style's name, for the badge that says which one is on. */
+  public selectedStyleName(): string {
+    return this.styleName(this.selectedStyle());
+  }
+
   /**
-   * Pick a style: write it through the form control (the same path the plain
-   * select uses, so every dependant recomputes) and dismiss the browser.
+   * Pick a style: hand it to the studio if it does not hold it yet, then write
+   * its key through the form control (the same path the plain select uses, so
+   * every dependant recomputes) and dismiss the browser.
    */
-  public select(name: string): void {
+  public select(key: string): void {
+    if (key !== '' && !this.styleRecords().has(key)) {
+      const record = this.recordFor(key);
+      if (record) {
+        this.styleFound.emit(record);
+      }
+    }
     const control = this.form().controls.styleName;
-    if (control.value !== name) {
-      control.setValue(name);
+    if (control.value !== key) {
+      control.setValue(key);
       control.markAsDirty();
     }
     this.onClose();
+  }
+
+  /** The name a key stands for, falling back to the key's own value. */
+  public styleName(key: string): string {
+    if (key === '') {
+      return '';
+    }
+    const parsed = parseStyleRecordKey(key);
+    if (parsed?.source === 'curated') {
+      return parsed.value;
+    }
+    return this.recordFor(key)?.name ?? parsed?.value ?? key;
+  }
+
+  /**
+   * The style a key stands for: whatever the studio holds, else whatever this
+   * browser has fetched. A preset the studio holds is the same object either
+   * way, so the two lookups never disagree.
+   */
+  private recordFor(key: string): StyleRecord | null {
+    const held = this.styleRecords().get(key);
+    if (held) {
+      return held;
+    }
+    return (
+      this.communityRecords().find((record) => record.key === key) ??
+      this.yourRecords().find((record) => record.key === key) ??
+      null
+    );
   }
 
   public onClose(): void {
@@ -594,24 +839,24 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
    * regardless of what the grid behind is set to. Stepping between styles keeps
    * whatever subject the user then chose; reopening starts from `all` again.
    */
-  public openExpanded(name: string, event?: Event): void {
+  public openExpanded(key: string, event?: Event): void {
     const target = event?.currentTarget;
     this.expandedFrom = target instanceof HTMLElement ? target : null;
     this.expandedVariantSignal.set('all');
-    this.expandedName.set(name);
-    this.preloadNeighbours(name);
+    this.expandedKey.set(key);
+    this.preloadNeighbours(key);
     // The layer renders in this same change detection pass, so focus moves on
     // the next tick, as it does for the browser panel itself.
     setTimeout(() => this.expandedPanel()?.nativeElement.focus(), 0);
   }
 
   public closeExpanded(): void {
-    if (this.expandedName() === null) {
+    if (this.expandedKey() === null) {
       // Escape reaches both the layer's own binding and the document handler,
       // so closing has to survive being asked for twice.
       return;
     }
-    this.expandedName.set(null);
+    this.expandedKey.set(null);
     this.expandedFrom?.focus();
     this.expandedFrom = null;
   }
@@ -637,17 +882,17 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
 
   /** Move `delta` styles along the visible order, wrapping at both ends. */
   private stepExpanded(delta: number): void {
-    const names = this.visibleNames();
-    const current = this.expandedName();
-    if (current === null || names.length < 2) {
+    const keys = this.visibleKeys();
+    const current = this.expandedKey();
+    if (current === null || keys.length < 2) {
       return;
     }
-    const index = names.indexOf(current);
+    const index = keys.indexOf(current);
     if (index === -1) {
       return;
     }
-    const next = names[(index + delta + names.length) % names.length];
-    this.expandedName.set(next);
+    const next = keys[(index + delta + keys.length) % keys.length];
+    this.expandedKey.set(next);
     this.preloadNeighbours(next);
   }
 
@@ -655,18 +900,18 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
    * Warm the images either side of `name` so stepping does not wait on a fetch.
    * Purely opportunistic: nothing depends on the result.
    */
-  private preloadNeighbours(name: string): void {
+  private preloadNeighbours(key: string): void {
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }
-    const names = this.visibleNames();
-    const index = names.indexOf(name);
+    const keys = this.visibleKeys();
+    const index = keys.indexOf(key);
     if (index === -1) {
       return;
     }
     const variant = this.expandedVariantSignal();
     for (const delta of [-1, 1]) {
-      const neighbour = names[(index + delta + names.length) % names.length];
+      const neighbour = keys[(index + delta + keys.length) % keys.length];
       for (const shot of this.shots(neighbour, variant)) {
         new Image().src = shot.url;
       }
@@ -681,7 +926,7 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
    * its Escape is handled here and unwinds one layer.
    */
   public onKeydown(event: KeyboardEvent): void {
-    if (this.expandedName() !== null) {
+    if (this.expandedKey() !== null) {
       this.onExpandedKeydown(event);
     }
   }
@@ -744,6 +989,26 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     return this.matches(name, this.categoriesByName().get(name) ?? []);
   }
 
+  /**
+   * Whether a published style survives the current filters. Its own adult flag
+   * is the discriminator here, which the preset catalogue does not carry; the
+   * search runs over its name, its creator and its tags.
+   */
+  private matchesRecord(record: StyleRecord): boolean {
+    if (!this.showMature() && record.nsfw === true) {
+      return false;
+    }
+    const query = this.query().trim().toLowerCase();
+    if (query === '') {
+      return true;
+    }
+    return (
+      record.name.toLowerCase().includes(query) ||
+      (record.creator ?? '').toLowerCase().includes(query) ||
+      (record.tags ?? []).some((tag) => tag.toLowerCase().includes(query))
+    );
+  }
+
   private card(name: string): StyleBrowserCard {
     const variant = this.variant();
     const previewUrls =
@@ -754,6 +1019,17 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
           [this.previewsSvc.previewUrl(name, variant)].filter(
             (url): url is string => url !== null,
           );
-    return { name, previewUrls, count: this.usageSvc.count(name) };
+    const key = styleRecordKey('curated', name);
+    return { key, name, previewUrls, count: this.usageSvc.count(key) };
+  }
+
+  /** A card for a published style, shown by the examples its author attached. */
+  private recordCard(record: StyleRecord): StyleBrowserCard {
+    return {
+      key: record.key,
+      name: record.name,
+      previewUrls: this.previewsSvc.recordPreviewUrls(record).slice(0, 3),
+      count: this.usageSvc.count(record.key),
+    };
   }
 }

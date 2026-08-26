@@ -139,6 +139,8 @@ export interface LocalGenerationJob {
    * absent on jobs stored before this field existed.
    */
   styleName?: string;
+  /** That style's source-qualified key, which is what groups and counts. */
+  styleKey?: string;
   resultImageIds: string[];
   /**
    * Epoch ms of the last poll, used by the engine to throttle check calls.

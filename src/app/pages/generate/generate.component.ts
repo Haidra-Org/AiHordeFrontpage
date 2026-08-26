@@ -24,13 +24,17 @@ import { GenerationQueueService } from '../../services/generation-queue.service'
 import { ToastService } from '../../services/toast.service';
 import { DatabaseService } from '../../services/database.service';
 import { TranslatorService } from '../../services/translator.service';
+import { HordeStylesService } from '../../services/horde-styles.service';
 import {
   AppliedStyle,
-  HordeStylePreset,
-  HordeStylesService,
   StyleForcedParams,
+  StyleRecord,
   applyStyle,
-} from '../../services/horde-styles.service';
+  fromNativeImageStyle,
+  fromPreset,
+  parseStyleRecordKey,
+} from '../../services/style-record';
+import { StyleService } from '../../services/style.service';
 import { setPageTitle } from '../../helper/page-title';
 import { ActiveModel, mergeModelList } from '../../types/active-model';
 import { EnqueueSourceImage } from '../../types/generation-job';
@@ -172,6 +176,9 @@ const KUDOS_DEBOUNCE_MS = 1000;
 interface SubmitPlan {
   request: ImageGenerationRequest;
   sourceImages: EnqueueSourceImage[];
+  /** The selected style's key, or '' when none is selected. */
+  styleKey: string;
+  /** That style's name as the reader saw it, for the results grid to label by. */
   styleName: string;
 }
 
@@ -223,6 +230,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly db = inject(DatabaseService);
   private readonly translator = inject(TranslatorService);
   private readonly styles = inject(HordeStylesService);
+  private readonly styleApi = inject(StyleService);
   private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
   private readonly presets = inject(GeneratePresetsService);
@@ -269,10 +277,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** Curated style presets grouped by category, for the styles picker. */
   public readonly styleGroups = signal<StylePickerGroup[]>([]);
-  /** `styleName` -> preset, so a picked style can be resolved and applied. */
-  private readonly stylePresets = signal<Map<string, HordeStylePreset>>(
-    new Map(),
-  );
+  /**
+   * Key -> style, so a picked style can be resolved and applied. Presets land
+   * here when the catalogue loads; a published style joins them as soon as one
+   * is reached, whether by a link or by a pick in the style browser.
+   */
+  public readonly styleRecords = signal<Map<string, StyleRecord>>(new Map());
   /** Params the currently-selected style forces, for "set by style" hints. */
   public readonly forcedParams = signal<StyleForcedParams | null>(null);
 
@@ -615,12 +625,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private pendingLinkSourceMode: GenerateSourceMode | null = null;
 
   /**
-   * A style name that arrived in a link, held until the styles have loaded so
-   * a name nobody publishes any more can be answered rather than sit selected.
+   * A style key that arrived in a link, held until the presets have loaded so a
+   * style nobody publishes any more can be answered rather than sit selected.
    */
-  private pinnedStyleName: string | null = null;
+  private pinnedStyleKey: string | null = null;
 
-  /** Whether the published styles have landed, so a pinned name can be judged. */
+  /** Whether the preset catalogue has landed, so a pinned key can be judged. */
   private stylesLoaded = false;
 
   constructor() {
@@ -862,11 +872,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (!value.styleName) {
       return null;
     }
-    const preset = this.stylePresets().get(value.styleName);
-    if (!preset) {
+    const record = this.styleRecords().get(value.styleName);
+    if (!record) {
       return null;
     }
-    return applyStyle(preset, value.prompt, value.negativePrompt);
+    return applyStyle(record, value.prompt, value.negativePrompt);
   }
 
   /**
@@ -948,7 +958,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       this.applyLinkedFields(payload);
       return;
     }
-    this.pinnedStyleName = payload.styleName;
+    this.pinnedStyleKey = payload.styleKey;
     this.offerLinkedRequest(payload);
     this.answerPinnedStyle();
   }
@@ -1281,23 +1291,26 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         this.buildOptions(hasSourceImage),
       ),
       sourceImages: usesSource ? this.buildEnqueueSources(state) : [],
-      styleName: effective.styleName,
+      styleKey: effective.styleName,
+      styleName: this.styleRecords().get(effective.styleName)?.name ?? '',
     };
   }
 
   private async submit(plan: SubmitPlan): Promise<void> {
-    const { request, sourceImages, styleName } = plan;
+    const { request, sourceImages, styleKey, styleName } = plan;
     try {
       await this.queue.enqueue(
         request,
         sourceImages.length > 0 ? sourceImages : undefined,
         // The request itself keeps no trace of the style that shaped it, so the
         // selection is recorded on the job for the results grid to group by.
-        styleName ? { styleName } : undefined,
+        // The key groups; the name is what the grid shows, and it is recorded
+        // beside the key because a style can be withdrawn or renamed later.
+        styleKey ? { styleKey, styleName } : undefined,
       );
       // One submit is one use of the style, however many images it asks for.
-      if (styleName) {
-        this.styleUsage.increment(styleName);
+      if (styleKey) {
+        this.styleUsage.increment(styleKey);
       }
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());
@@ -1428,9 +1441,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     zip(this.styles.getStyles(), this.styles.getCategoryGroups())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(([summaries, groups]) => {
-        this.stylePresets.set(
-          new Map(summaries.map((summary) => [summary.name, summary.preset])),
-        );
+        this.styleRecords.update((records) => {
+          const next = new Map(records);
+          for (const summary of summaries) {
+            const record = fromPreset(summary.name, summary.preset);
+            next.set(record.key, record);
+          }
+          return next;
+        });
         this.styleGroups.set(
           groups.map((group) => ({
             category: group.category,
@@ -1457,7 +1475,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (payload === null) {
       return;
     }
-    this.pinnedStyleName = payload.styleName;
+    this.pinnedStyleKey = payload.styleKey;
     if (payload.kind === 'simple') {
       this.applyLinkedFields(payload);
     } else {
@@ -1476,8 +1494,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (model !== undefined && model !== '') {
       fields.model = model;
     }
-    if (payload.styleName !== null) {
-      fields.styleName = payload.styleName;
+    if (payload.styleKey !== null) {
+      fields.styleName = payload.styleKey;
     }
     if (Object.keys(fields).length > 0) {
       this.applyFields(fields);
@@ -1487,8 +1505,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** Hold a link's whole request in the review panel under its own heading. */
   private offerLinkedRequest(payload: StudioLinkPayload): void {
     const settings = requestToFormValue(payload.request);
-    if (payload.styleName !== null) {
-      settings.styleName = payload.styleName;
+    if (payload.styleKey !== null) {
+      settings.styleName = payload.styleKey;
     }
     // The picture itself cannot travel in an address, so a request that works
     // on one arrives wanting one. The mode is kept and the section asks.
@@ -1509,7 +1527,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     }
     const map = this.route.snapshot.queryParamMap;
     const queryParams: Params = {};
-    for (const key of ['model', 'style']) {
+    for (const key of ['model', 'style', 'styleId']) {
       const value = map.get(key);
       if (value !== null) {
         queryParams[key] = value;
@@ -1523,27 +1541,56 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
-   * Answer a style name that arrived in a link once the published styles are
-   * known. A name that is no longer among them is dropped rather than left
-   * selected, because a style that resolves to nothing quietly changes nothing.
+   * Answer a style that arrived in a link once the presets are known. A preset
+   * is looked up among them; a published style is fetched by its id. Either
+   * way a style that no longer exists is dropped rather than left selected,
+   * because a style that resolves to nothing quietly changes nothing.
    */
   private answerPinnedStyle(): void {
-    const pinned = this.pinnedStyleName;
+    const pinned = this.pinnedStyleKey;
     if (pinned === null || !this.stylesLoaded) {
       return;
     }
-    this.pinnedStyleName = null;
-    if (this.stylePresets().has(pinned)) {
+    this.pinnedStyleKey = null;
+    if (this.styleRecords().has(pinned)) {
       return;
     }
-    if (this.form.controls.styleName.value === pinned) {
+    const parsed = parseStyleRecordKey(pinned);
+    if (parsed?.source === 'native') {
+      this.styleApi
+        .getImageStyle(parsed.value)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (style) => {
+            this.registerStyle(fromNativeImageStyle(style));
+            this.refreshForcedParams();
+          },
+          error: () => this.dropPinnedStyle(pinned),
+        });
+      return;
+    }
+    this.dropPinnedStyle(pinned);
+  }
+
+  /** Take a style nothing resolves off the form and say so. */
+  private dropPinnedStyle(key: string): void {
+    if (this.form.controls.styleName.value === key) {
       this.form.controls.styleName.setValue('');
     }
     const waiting = this.pendingLoad();
-    if (waiting !== null && waiting.styleName === pinned) {
+    if (waiting !== null && waiting.styleName === key) {
       this.pendingLoad.set({ ...waiting, styleName: '' });
     }
     this.toast.error('generate.link.style_gone', { transloco: true });
+  }
+
+  /** Hold a style the form may now select, keyed as everything else keys it. */
+  public registerStyle(record: StyleRecord): void {
+    this.styleRecords.update((records) => {
+      const next = new Map(records);
+      next.set(record.key, record);
+      return next;
+    });
   }
 
   private persist(): void {

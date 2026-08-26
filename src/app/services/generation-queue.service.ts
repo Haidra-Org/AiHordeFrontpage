@@ -144,7 +144,7 @@ export class GenerationQueueService {
   public async enqueue(
     request: ImageGenerationRequest,
     sourceImages?: EnqueueSourceImage[],
-    opts?: { retryCount?: number; styleName?: string },
+    opts?: { retryCount?: number; styleName?: string; styleKey?: string },
   ): Promise<string> {
     const localId = randomUuid();
     const now = this.now();
@@ -162,6 +162,7 @@ export class GenerationQueueService {
       resultImageIds: [],
       ...(opts?.retryCount ? { retryCount: opts.retryCount } : {}),
       ...(opts?.styleName ? { styleName: opts.styleName } : {}),
+      ...(opts?.styleKey ? { styleKey: opts.styleKey } : {}),
     };
 
     await this.db.putJob(job);
@@ -253,6 +254,7 @@ export class GenerationQueueService {
       retryCount: (job.retryCount ?? 0) + 1,
       // A retry is the same generation again, style provenance included.
       ...(job.styleName ? { styleName: job.styleName } : {}),
+      ...(job.styleKey ? { styleKey: job.styleKey } : {}),
     });
   }
 

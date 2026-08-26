@@ -96,16 +96,18 @@ async function createBrowser(
   }).compileComponents();
 
   const usage = TestBed.inject(StyleUsageService);
+  // The options name presets, which is what these tests are about; the browser
+  // keys everything by source, so the names are qualified on the way in.
   for (const [name, count] of Object.entries(options.usage ?? {})) {
     for (let index = 0; index < count; index++) {
-      usage.increment(name);
+      usage.increment(`curated:${name}`);
     }
   }
 
   const fixture = TestBed.createComponent(StyleBrowserComponent);
   const form = createGenerateForm({
     ...DEFAULT_GENERATE_FORM_VALUE,
-    styleName: options.styleName ?? '',
+    styleName: options.styleName ? `curated:${options.styleName}` : '',
   });
   fixture.componentRef.setInput('form', form);
   fixture.componentRef.setInput('styleGroups', options.groups ?? GROUPS);
@@ -266,7 +268,7 @@ describe('StyleBrowserComponent', () => {
     anime.click();
     fixture.detectChanges();
 
-    expect(form.controls.styleName.value).toBe('Anime');
+    expect(form.controls.styleName.value).toBe('curated:Anime');
     expect(form.controls.styleName.dirty).toBe(true);
     expect(closeCount()).toBe(1);
   });
@@ -442,7 +444,9 @@ describe('StyleBrowserComponent', () => {
         ],
       });
       expect(cardNames(el)).not.toContain('nova furry pony_raw');
-      expect(component.visibleNames()).not.toContain('nova furry pony_raw');
+      expect(component.visibleKeys()).not.toContain(
+        'curated:nova furry pony_raw',
+      );
     });
 
     it('hides mature styles by default and restores them when toggled on', async () => {
@@ -474,7 +478,7 @@ describe('StyleBrowserComponent', () => {
       component.setSort('used');
       fixture.detectChanges();
       expect(cardNames(el)).not.toContain('dreadhorror');
-      expect(component.visibleNames()).not.toContain('dreadhorror');
+      expect(component.visibleKeys()).not.toContain('curated:dreadhorror');
     });
   });
 
@@ -525,7 +529,7 @@ describe('StyleBrowserComponent', () => {
   });
 
   describe('control bar layout', () => {
-    it('orders the controls search, mature, subject, sort', async () => {
+    it('orders the controls area, search, mature, subject, sort', async () => {
       const { el } = await createBrowser();
       const bar = el.querySelector('.gs-sb-bar')!;
       // Source order is the mobile stacking order too, so one check covers both
@@ -533,6 +537,7 @@ describe('StyleBrowserComponent', () => {
       const classes = [...bar.children].map((node) => node.className);
       expect(classes).toEqual([
         expect.stringContaining('gs-sb-fold'),
+        expect.stringContaining('gs-sb-area'),
         expect.stringContaining('gs-modal-search'),
         expect.stringContaining('gs-sb-mature'),
         expect.stringContaining('gs-sb-variant'),
@@ -814,7 +819,7 @@ describe('StyleBrowserComponent', () => {
       harness.el.querySelector<HTMLButtonElement>('.gs-sb-viewer-use')!.click();
       harness.fixture.detectChanges();
 
-      expect(harness.form.controls.styleName.value).toBe('Cinematic');
+      expect(harness.form.controls.styleName.value).toBe('curated:Cinematic');
       expect(harness.closeCount()).toBe(1);
     });
   });

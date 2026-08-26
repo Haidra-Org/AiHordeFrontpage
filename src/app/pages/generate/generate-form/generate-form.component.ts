@@ -49,7 +49,12 @@ import { DatabaseService } from '../../../services/database.service';
 import { UnitConversionService } from '../../../services/unit-conversion.service';
 import { ActiveModel } from '../../../types/active-model';
 import { ImagePostProcessor } from '../../../types/style';
-import { StyleForcedParams } from '../../../services/horde-styles.service';
+import {
+  StyleForcedParams,
+  StyleRecord,
+  parseStyleRecordKey,
+  styleRecordKey,
+} from '../../../services/style-record';
 import { CivitaiPickerComponent } from '../../../components/civitai-picker/civitai-picker.component';
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
 import { GsGroupComponent } from './gs-group/gs-group.component';
@@ -270,7 +275,12 @@ export type LockedField =
   | 'sampler_name'
   | 'clip_skip'
   | 'scheduler'
-  | 'hires_fix';
+  | 'hires_fix'
+  | 'post_processing'
+  | 'facefixer_strength'
+  | 'tiling'
+  | 'transparent'
+  | 'denoising_strength';
 
 /** The section each freezable field is handed back with. */
 const LOCKED_FIELD_SECTION: Readonly<Record<LockedField, StyleLockSection>> = {
@@ -283,6 +293,11 @@ const LOCKED_FIELD_SECTION: Readonly<Record<LockedField, StyleLockSection>> = {
   clip_skip: 'sampling',
   scheduler: 'sampling',
   hires_fix: 'sampling',
+  post_processing: 'finishing',
+  facefixer_strength: 'finishing',
+  tiling: 'finishing',
+  transparent: 'finishing',
+  denoising_strength: 'finishing',
 };
 
 const LOCKED_FIELDS = Object.keys(
@@ -300,6 +315,8 @@ function stylePinsField(
   if (field === 'scheduler') {
     return forced.karras !== undefined;
   }
+  // An empty post-processing list is still a decision: it is the style asking
+  // for none, so the control freezes on it as it would on a named processor.
   return forced[field] !== undefined;
 }
 
@@ -591,6 +608,10 @@ export class GenerateFormComponent implements OnInit {
   public readonly forcedParams = input<StyleForcedParams | null>(null);
   /** Curated style presets grouped by category for the styles picker. */
   public readonly styleGroups = input<StylePickerGroup[]>([]);
+  /** Every loaded style by key, so a selected key can be shown by its name. */
+  public readonly styleRecords = input<ReadonlyMap<string, StyleRecord>>(
+    new Map<string, StyleRecord>(),
+  );
   /** Current control-panel width; drives the reflow and the expand control. */
   public readonly panelSize = input<PanelSize>('normal');
   /** Whether the expand/collapse control is offered (off on a narrow screen). */
@@ -662,6 +683,8 @@ export class GenerateFormComponent implements OnInit {
   public readonly pinGenerate = input(false);
 
   public readonly create = output<void>();
+  /** A style the browser reached that the studio does not hold yet. */
+  public readonly styleFound = output<StyleRecord>();
   public readonly panelSizeChange = output<PanelSize>();
   public readonly reviewBeforeSendChange = output<boolean>();
   public readonly pinGenerateChange = output<boolean>();
@@ -2390,9 +2413,44 @@ export class GenerateFormComponent implements OnInit {
     }
   }
 
-  /** The style the form currently selects, or '' when none is selected. */
-  public selectedStyleName(): string {
+  /** The key of the style the form selects, or '' when none is selected. */
+  public selectedStyleKey(): string {
     return this.form().controls.styleName.value;
+  }
+
+  /**
+   * The selected style's name as the reader knows it. A key whose style is not
+   * among the loaded records falls back to the key's own value, which is the
+   * name itself for a preset and an id for a published style: the panel would
+   * rather show what it has than an empty label.
+   */
+  public selectedStyleName(): string {
+    const key = this.selectedStyleKey();
+    if (key === '') {
+      return '';
+    }
+    const record = this.styleRecords().get(key);
+    return record?.name ?? parseStyleRecordKey(key)?.value ?? key;
+  }
+
+  /** The key a preset is listed under, so the select can offer it. */
+  public curatedKey(name: string): string {
+    return styleRecordKey('curated', name);
+  }
+
+  /**
+   * Whether the selection is a style the preset list does not carry, which is
+   * every published style and any preset withdrawn since it was chosen. The
+   * select needs an option of its own for one, or it would show as unselected.
+   */
+  public selectedStyleOffCatalogue(): boolean {
+    const key = this.selectedStyleKey();
+    if (key === '') {
+      return false;
+    }
+    return !this.styleGroups().some((group) =>
+      group.names.some((name) => this.curatedKey(name) === key),
+    );
   }
 
   /** Whether the selected style pins any of `section`'s values. */
@@ -2408,6 +2466,8 @@ export class GenerateFormComponent implements OnInit {
         return forced.width !== undefined || forced.height !== undefined;
       case 'sampling':
         return this.styleSamplingText() !== null;
+      case 'finishing':
+        return this.styleFinishingText() !== null;
     }
   }
 
@@ -2441,7 +2501,7 @@ export class GenerateFormComponent implements OnInit {
   private setDetachedSections(sections: readonly StyleLockSection[]): void {
     const control = this.form().controls.styleDetach;
     control.setValue({
-      style: this.selectedStyleName(),
+      style: this.selectedStyleKey(),
       sections: [...new Set(sections)],
     });
     control.markAsDirty();
@@ -2469,6 +2529,13 @@ export class GenerateFormComponent implements OnInit {
     if (section === 'dimensions') {
       set(controls.width, forced.width);
       set(controls.height, forced.height);
+    }
+    if (section === 'finishing') {
+      set(controls.post_processing, forced.post_processing);
+      set(controls.facefixer_strength, forced.facefixer_strength);
+      set(controls.tiling, forced.tiling);
+      set(controls.transparent, forced.transparent);
+      set(controls.denoising_strength, forced.denoising_strength);
     }
     if (section === 'sampling') {
       set(controls.steps, forced.steps);
@@ -2507,7 +2574,7 @@ export class GenerateFormComponent implements OnInit {
     const control = this.form().controls.styleDetach;
     if (
       control.value.sections.length > 0 &&
-      control.value.style !== this.selectedStyleName()
+      control.value.style !== this.selectedStyleKey()
     ) {
       control.setValue({ style: '', sections: [] }, { emitEvent: false });
     }
@@ -2554,6 +2621,41 @@ export class GenerateFormComponent implements OnInit {
     }
     if (forced.hires_fix !== undefined) {
       parts.push(forced.hires_fix ? 'hires fix' : 'no hires fix');
+    }
+    return parts.length > 0 ? parts.join(' · ') : null;
+  }
+
+  /**
+   * A compact summary of everything a style pins past the model, the size and
+   * the sampling knobs, or null when it pins none of it.
+   */
+  public styleFinishingText(): string | null {
+    const forced = this.forcedParams();
+    if (!forced) {
+      return null;
+    }
+    const parts: string[] = [];
+    if (forced.post_processing !== undefined) {
+      parts.push(
+        forced.post_processing.length > 0
+          ? forced.post_processing.join(' + ')
+          : 'no post-processing',
+      );
+    }
+    if (forced.facefixer_strength !== undefined) {
+      parts.push(`face fixer ${forced.facefixer_strength}`);
+    }
+    if (forced.tiling !== undefined) {
+      parts.push(forced.tiling ? 'tiling' : 'no tiling');
+    }
+    if (forced.transparent !== undefined) {
+      parts.push(forced.transparent ? 'transparent' : 'not transparent');
+    }
+    if (forced.denoising_strength !== undefined) {
+      parts.push(`denoise ${forced.denoising_strength}`);
+    }
+    if (forced.workflow !== undefined) {
+      parts.push(forced.workflow);
     }
     return parts.length > 0 ? parts.join(' · ') : null;
   }

@@ -19,7 +19,7 @@
       <div class="gs-modal-title">
         {{ "generate.form.browser_title" | transloco }}
         @if (selectedStyle()) {
-          <span class="gs-modal-badge">{{ selectedStyle() }}</span>
+          <span class="gs-modal-badge">{{ selectedStyleName() }}</span>
           <button
             type="button"
             class="gs-clear-style"
@@ -76,6 +76,28 @@
           class="gs-ico-sm"
         />
       </button>
+      <div
+        class="gs-seg gs-seg--xs gs-sb-area"
+        role="group"
+        [attr.aria-label]="'generate.form.style_area_label' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="area() === 'presets'"
+          (click)="setArea('presets')"
+        >
+          {{ "generate.form.style_area_presets" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="area() === 'community'"
+          (click)="setArea('community')"
+        >
+          {{ "generate.form.style_area_community" | transloco }}
+        </button>
+      </div>
       <div class="gs-modal-search">
         <app-icon name="search" class="gs-ico-sm gs-muted" />
         <input
@@ -83,6 +105,7 @@
           type="text"
           [value]="query()"
           (input)="setQuery($any($event.target).value)"
+          (keydown.enter)="searchCommunityByName()"
           [placeholder]="'generate.form.style_search' | transloco"
           [attr.aria-label]="'generate.form.style_search' | transloco"
         />
@@ -96,47 +119,51 @@
       >
         {{ "generate.form.show_mature" | transloco }}
       </button>
-      <div
-        class="gs-seg gs-seg--xs gs-sb-variant"
-        role="group"
-        [attr.aria-label]="'generate.form.variant_label' | transloco"
-      >
-        @for (option of variantOptions; track option) {
+      @if (area() === "presets") {
+        <div
+          class="gs-seg gs-seg--xs gs-sb-variant"
+          role="group"
+          [attr.aria-label]="'generate.form.variant_label' | transloco"
+        >
+          @for (option of variantOptions; track option) {
+            <button
+              type="button"
+              class="gs-seg-opt"
+              [attr.aria-pressed]="variant() === option"
+              (click)="setVariant(option)"
+            >
+              {{ "generate.form.variant_" + option | transloco }}
+            </button>
+          }
+        </div>
+        <div
+          class="gs-seg gs-seg--xs gs-sb-sort"
+          role="group"
+          [attr.aria-label]="'generate.form.sort_label' | transloco"
+        >
           <button
             type="button"
             class="gs-seg-opt"
-            [attr.aria-pressed]="variant() === option"
-            (click)="setVariant(option)"
+            [attr.aria-pressed]="sort() === 'category'"
+            (click)="setSort('category')"
           >
-            {{ "generate.form.variant_" + option | transloco }}
+            {{ "generate.form.sort_by_category" | transloco }}
           </button>
-        }
-      </div>
-      <div
-        class="gs-seg gs-seg--xs gs-sb-sort"
-        role="group"
-        [attr.aria-label]="'generate.form.sort_label' | transloco"
-      >
-        <button
-          type="button"
-          class="gs-seg-opt"
-          [attr.aria-pressed]="sort() === 'category'"
-          (click)="setSort('category')"
-        >
-          {{ "generate.form.sort_by_category" | transloco }}
-        </button>
-        <button
-          type="button"
-          class="gs-seg-opt"
-          [attr.aria-pressed]="sort() === 'used'"
-          (click)="setSort('used')"
-        >
-          {{ "generate.form.sort_by_used" | transloco }}
-        </button>
-      </div>
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="sort() === 'used'"
+            (click)="setSort('used')"
+          >
+            {{ "generate.form.sort_by_used" | transloco }}
+          </button>
+        </div>
+      }
     </div>
 
-    @if (sort() === "category" && sections().length > 1) {
+    @if (
+      area() === "presets" && sort() === "category" && sections().length > 1
+    ) {
       <app-gs-index-rail
         class="gs-sb-toc"
         [entries]="tocEntries()"
@@ -151,13 +178,64 @@
           {{ "generate.form.previews_unavailable" | transloco }}
         </p>
       }
-      @if (isEmpty()) {
+      @if (area() === "community") {
+        @if (yourCards().length > 0) {
+          <section class="gs-sb-section">
+            <h3 class="gs-sb-section-title">
+              <app-icon name="star" class="gs-ico-sm" />
+              {{ "generate.form.your_styles" | transloco }}
+            </h3>
+            <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
+              @for (card of yourCards(); track card.key) {
+                <ng-container
+                  *ngTemplateOutlet="styleCard; context: { card: card }"
+                />
+              }
+            </div>
+          </section>
+        }
+        <section class="gs-sb-section">
+          <h3 class="gs-sb-section-title">
+            {{ "generate.form.style_area_community" | transloco }}
+          </h3>
+          @if (communityFailed()) {
+            <p class="gs-sb-note">
+              {{ "generate.form.community_unavailable" | transloco }}
+            </p>
+          } @else if (communityCards().length === 0 && !communityLoading()) {
+            <div class="gs-modal-state">
+              {{ "generate.form.community_empty" | transloco }}
+            </div>
+          } @else {
+            <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
+              @for (card of communityCards(); track card.key) {
+                <ng-container
+                  *ngTemplateOutlet="styleCard; context: { card: card }"
+                />
+              }
+            </div>
+          }
+          @if (communityLoading()) {
+            <p class="gs-sb-note">
+              {{ "generate.form.community_loading" | transloco }}
+            </p>
+          } @else if (!communityComplete()) {
+            <button
+              type="button"
+              class="gs-btn gs-sb-more"
+              (click)="loadMoreCommunity()"
+            >
+              {{ "generate.form.community_more" | transloco }}
+            </button>
+          }
+        </section>
+      } @else if (isEmpty()) {
         <div class="gs-modal-state">
           {{ "generate.form.styles_empty" | transloco }}
         </div>
       } @else if (sort() === "used") {
         <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
-          @for (card of usedOrder(); track card.name) {
+          @for (card of usedOrder(); track card.key) {
             <ng-container
               *ngTemplateOutlet="styleCard; context: { card: card }"
             />
@@ -171,7 +249,7 @@
               {{ "generate.form.most_used" | transloco }}
             </h3>
             <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
-              @for (card of mostUsed(); track card.name) {
+              @for (card of mostUsed(); track card.key) {
                 <ng-container
                   *ngTemplateOutlet="styleCard; context: { card: card }"
                 />
@@ -183,7 +261,7 @@
           <section class="gs-sb-section" [id]="sectionId(section.category)">
             <h3 class="gs-sb-section-title">{{ section.category }}</h3>
             <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
-              @for (card of section.cards; track card.name) {
+              @for (card of section.cards; track card.key) {
                 <ng-container
                   *ngTemplateOutlet="styleCard; context: { card: card }"
                 />
@@ -204,8 +282,8 @@
     <button
       type="button"
       class="gs-sb-card"
-      [class.gs-sb-card--active]="selectedStyle() === card.name"
-      (click)="openExpanded(card.name, $event)"
+      [class.gs-sb-card--active]="selectedStyle() === card.key"
+      (click)="openExpanded(card.key, $event)"
       [attr.aria-label]="
         'generate.form.style_expand' | transloco: { style: card.name }
       "
@@ -246,8 +324,8 @@
     <button
       type="button"
       class="gs-sb-use"
-      [attr.aria-pressed]="selectedStyle() === card.name"
-      (click)="select(card.name)"
+      [attr.aria-pressed]="selectedStyle() === card.key"
+      (click)="select(card.key)"
       [attr.aria-label]="
         'generate.form.style_use_named' | transloco: { style: card.name }
       "
@@ -381,7 +459,7 @@
         <button
           type="button"
           class="gs-sb-viewer-use"
-          (click)="select(view.name)"
+          (click)="select(view.key)"
         >
           {{ "generate.form.expand_use" | transloco }}
         </button>

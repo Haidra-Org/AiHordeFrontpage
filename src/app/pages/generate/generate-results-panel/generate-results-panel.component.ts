@@ -63,6 +63,10 @@ import {
   evaluateWorkerFeasibility,
   type WorkerFeasibility,
 } from '../../../services/worker-pool.service';
+import {
+  parseStyleRecordKey,
+  storedStyleKey,
+} from '../../../services/style-record';
 import { GenerateLearnPanelComponent } from '../generate-learn-panel/generate-learn-panel.component';
 import { GsTutorialParkedComponent } from '../../../components/gs-tutorial-parked/gs-tutorial-parked.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
@@ -197,8 +201,29 @@ interface ResultTile {
   applyRequest?: ImageGenerationRequest;
   /** Which Retry attempt produced this job (0/undefined = original). */
   retryCount?: number;
-  /** The style preset this generation was submitted with, when recorded. */
+  /** The style this generation was submitted with, as it was named then. */
   styleName?: string;
+  /** That style's source-qualified key, which is what the filter groups by. */
+  styleKey?: string;
+}
+
+/**
+ * A job's style key. Jobs recorded before styles carried a source hold only the
+ * preset name they were submitted with, which is what a bare key still means.
+ */
+function styleKeyOf(job: {
+  styleKey?: string;
+  styleName?: string;
+}): string | undefined {
+  if (job.styleKey) {
+    return job.styleKey;
+  }
+  return job.styleName ? storedStyleKey(job.styleName) : undefined;
+}
+
+/** A key's own value, for a job whose style name was never recorded. */
+function styleNameOfKey(key: string): string {
+  return parseStyleRecordKey(key)?.value ?? key;
 }
 
 /**
@@ -632,6 +657,7 @@ export class GenerateResultsPanelComponent {
           request: job.request,
           retryCount: job.retryCount,
           styleName: job.styleName,
+          styleKey: styleKeyOf(job),
         });
       }
     }
@@ -679,6 +705,7 @@ export class GenerateResultsPanelComponent {
             applyRequest: requestForApply(job.request, thumb.metadata?.seed),
             retryCount: job.retryCount,
             styleName: job.styleName,
+            styleKey: styleKeyOf(job),
           });
         });
       } else if (job.status === 'error') {
@@ -696,6 +723,7 @@ export class GenerateResultsPanelComponent {
           applyRequest: job.request,
           retryCount: job.retryCount,
           styleName: job.styleName,
+          styleKey: styleKeyOf(job),
         });
       } else {
         tiles.push({
@@ -710,6 +738,7 @@ export class GenerateResultsPanelComponent {
           applyRequest: job.request,
           retryCount: job.retryCount,
           styleName: job.styleName,
+          styleKey: styleKeyOf(job),
         });
       }
     }
@@ -732,19 +761,28 @@ export class GenerateResultsPanelComponent {
    * accounts for. Only styles actually on screen are offered, so the filter can
    * never select an empty result.
    */
-  public readonly styleOptions = computed<{ name: string; count: number }[]>(
-    () => {
-      const counts = new Map<string, number>();
-      for (const tile of this.tiles()) {
-        if (tile.styleName) {
-          counts.set(tile.styleName, (counts.get(tile.styleName) ?? 0) + 1);
-        }
+  public readonly styleOptions = computed<
+    { key: string; name: string; count: number }[]
+  >(() => {
+    const counts = new Map<string, { name: string; count: number }>();
+    for (const tile of this.tiles()) {
+      if (!tile.styleKey) {
+        continue;
       }
-      return [...counts.entries()]
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-    },
-  );
+      const existing = counts.get(tile.styleKey);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        counts.set(tile.styleKey, {
+          name: tile.styleName ?? styleNameOfKey(tile.styleKey),
+          count: 1,
+        });
+      }
+    }
+    return [...counts.entries()]
+      .map(([key, entry]) => ({ key, ...entry }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
   /** The selected style filter; '' means every style (and styleless jobs). */
   public readonly styleFilter = signal('');
 
@@ -757,7 +795,7 @@ export class GenerateResultsPanelComponent {
     let list = this.tiles();
     const style = this.styleFilter();
     if (style) {
-      list = list.filter((tile) => tile.styleName === style);
+      list = list.filter((tile) => tile.styleKey === style);
     }
     if (this.errorsOnly()) {
       list = list.filter(
@@ -1566,7 +1604,7 @@ export class GenerateResultsPanelComponent {
     const address = studioLinkAddress(
       this.router,
       request,
-      tile.styleName ?? null,
+      tile.styleKey ?? null,
     );
     if (address === null) {
       this.toast.error('generate.link.too_large', { transloco: true });

@@ -566,7 +566,7 @@ describe('GenerateComponent', () => {
       expect(component.remixSupported()).toBe(true);
 
       // The Test style pins 'flux', which is the model the request would run on.
-      component.form.controls.styleName.setValue('Test');
+      component.form.controls.styleName.setValue('curated:Test');
 
       expect(component.effectiveModel()).toBe('flux');
       expect(component.remixSupported()).toBe(false);
@@ -579,12 +579,12 @@ describe('GenerateComponent', () => {
       });
       component.form.patchValue({
         model: 'Stable Cascade 1.0',
-        styleName: 'Test',
+        styleName: 'curated:Test',
       });
       expect(component.remixSupported()).toBe(false);
 
       component.form.controls.styleDetach.setValue({
-        style: 'Test',
+        style: 'curated:Test',
         sections: ['model'],
       });
 
@@ -679,7 +679,7 @@ describe('GenerateComponent', () => {
   it('applies a selected style to the built request', async () => {
     component.form.patchValue({
       prompt: 'a cat',
-      styleName: 'Test',
+      styleName: 'curated:Test',
     });
 
     await component.onCreate();
@@ -690,7 +690,7 @@ describe('GenerateComponent', () => {
   });
 
   it('exposes the style-forced params for hints once a style is selected', () => {
-    component.form.controls.styleName.setValue('Test');
+    component.form.controls.styleName.setValue('curated:Test');
 
     expect(component.forcedParams()?.model).toBe('flux');
   });
@@ -860,7 +860,7 @@ describe('GenerateComponent', () => {
     });
 
     it('drops any selected style', async () => {
-      component.form.patchValue({ styleName: 'Test' });
+      component.form.patchValue({ styleName: 'curated:Test' });
 
       await component.onApplyMeta({
         request,
@@ -915,15 +915,19 @@ describe('GenerateComponent', () => {
     it('records the selected style on the job and counts the use', async () => {
       component.form.patchValue({
         prompt: 'a cat',
-        styleName: 'Test',
+        styleName: 'curated:Test',
       });
 
       await component.onCreate();
 
-      const opts = enqueue.mock.calls[0][2] as { styleName?: string };
+      const opts = enqueue.mock.calls[0][2] as {
+        styleName?: string;
+        styleKey?: string;
+      };
       expect(opts.styleName).toBe('Test');
+      expect(opts.styleKey).toBe('curated:Test');
       expect(styleIncrement).toHaveBeenCalledTimes(1);
-      expect(styleIncrement).toHaveBeenCalledWith('Test');
+      expect(styleIncrement).toHaveBeenCalledWith('curated:Test');
     });
 
     it('records nothing when no style is selected', async () => {
@@ -1313,7 +1317,7 @@ describe('GenerateComponent', () => {
       component.form.patchValue({
         prompt: 'a fox',
         n: 2,
-        styleName: 'Test',
+        styleName: 'curated:Test',
       });
       component.onApplyPreset(preset());
 
@@ -1330,7 +1334,7 @@ describe('GenerateComponent', () => {
     });
 
     it('takes the style from the preset in replace mode, not from the form', () => {
-      component.form.patchValue({ styleName: 'Test' });
+      component.form.patchValue({ styleName: 'curated:Test' });
       component.onApplyPreset(preset());
 
       component.onApplyPresetSelection(
@@ -1341,14 +1345,14 @@ describe('GenerateComponent', () => {
       expect(component.form.getRawValue().styleName).toBe('');
 
       component.form.patchValue({ styleName: '' });
-      component.onApplyPreset({ ...preset(), styleName: 'Test' });
+      component.onApplyPreset({ ...preset(), styleName: 'curated:Test' });
 
       component.onApplyPresetSelection(
         { localId: '', keys: ['prompt'], mode: 'replace' },
         ['prompt', 'steps'],
       );
 
-      expect(component.form.getRawValue().styleName).toBe('Test');
+      expect(component.form.getRawValue().styleName).toBe('curated:Test');
     });
 
     it('leaves the form alone when the review is dismissed', () => {
@@ -1487,7 +1491,7 @@ describe('GenerateComponent', () => {
     it('keeps a style that is still published', () => {
       openLink({ style: 'Test' });
 
-      expect(component.form.controls.styleName.value).toBe('Test');
+      expect(component.form.controls.styleName.value).toBe('curated:Test');
       expect(toastError).not.toHaveBeenCalled();
     });
 
@@ -1550,14 +1554,14 @@ describe('GenerateComponent', () => {
         },
       } as unknown as Navigator);
       component.form.controls.prompt.setValue('a fox in the snow');
-      component.form.controls.styleName.setValue('Test');
+      component.form.controls.styleName.setValue('curated:Test');
 
       await component.copyStudioLink();
 
       expect(written).toHaveLength(1);
       expect(written[0]).toContain('style=Test');
       const payload = studioLinkFromText(written[0]);
-      expect(payload?.styleName).toBe('Test');
+      expect(payload?.styleKey).toBe('curated:Test');
       expect(payload?.request.prompt).toBe('a fox in the snow');
       expect(toastSuccess).toHaveBeenCalledWith('generate.link.copied', {
         transloco: true,
@@ -1583,7 +1587,7 @@ describe('GenerateComponent', () => {
     it('sends pasted settings through the review panel, not into the form', () => {
       component.onPasted({
         request: { prompt: 'a fox', params: { steps: 44 } },
-        styleName: null,
+        styleKey: null,
         kind: 'full',
       });
 
@@ -1595,7 +1599,7 @@ describe('GenerateComponent', () => {
     it('writes a pasted address that only names a model', () => {
       component.onPasted({
         request: { prompt: '', models: ['Deliberate'] },
-        styleName: null,
+        styleKey: null,
         kind: 'simple',
       });
 
