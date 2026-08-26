@@ -28,10 +28,30 @@
     /* One shallow row rather than a column: over a dense list the column climbs
        several rows of the last column, the row covers one. It wraps backwards so
        a wide projected control (the admin save) takes its own line above. */
-    @apply fixed z-50 flex flex-row-reverse flex-wrap-reverse items-end justify-end gap-3;
+    @apply fixed flex flex-row-reverse flex-wrap-reverse items-end justify-end gap-3;
+    /* Under the navigation bar and its open menus, and under the screen the
+       phone menu draws over the page, so an open menu is never covered by a
+       control that belongs to the page beneath it. Still above the page and
+       its sticky tab bars. Modals sit in the top layer and are unaffected. */
+    z-index: 35;
     bottom: var(--floating-controls-inset);
     right: 1.5rem;
     pointer-events: none;
+    /* Two independent displacements share the one transform: the standing
+       offset a fixed tool bar asks for, and the retreat while reading. */
+    --floating-controls-shift: 0px;
+    --floating-controls-retreat: 0px;
+    transform: translateY(
+      calc(var(--floating-controls-shift) + var(--floating-controls-retreat))
+    );
+    transition: transform var(--hd-dur) var(--hd-ease);
+  }
+
+  /* Where the controls stand over the page, they step off the bottom edge while
+     the reader is moving down the page and come back on the way up or once the
+     page settles. Far enough to clear the row and the gap beneath it. */
+  .floating-controls--retreated {
+    --floating-controls-retreat: calc(var(--floating-controls-band) + 1rem);
   }
 
   .floating-controls > * {
@@ -57,6 +77,11 @@
       right: auto;
       left: calc(50% + var(--max-width-container) / 2 + 0.75rem);
     }
+
+    /* Nothing is covered here, so there is nothing to retreat from. */
+    .floating-controls--retreated {
+      --floating-controls-retreat: 0px;
+    }
   }
 
   /* The documentation carries the phone's bottom tool bar, which is fixed over
@@ -71,8 +96,8 @@
     }
 
     html:has(.gs-docs .gs-subtabs) .floating-controls {
-      transform: translateY(
-        calc(-1 * (var(--gs-tabbar-height) + env(safe-area-inset-bottom)))
+      --floating-controls-shift: calc(
+        -1 * (var(--gs-tabbar-height) + env(safe-area-inset-bottom))
       );
     }
   }
