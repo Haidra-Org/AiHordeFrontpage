@@ -10,6 +10,7 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["web"],
+    "onThisSite": true,
     "recommended": true,
     "easyToUse": true
   },
@@ -24,6 +25,7 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["web"],
+    "onThisSite": true,
     "recommended": true,
     "easyToUse": true
   },
