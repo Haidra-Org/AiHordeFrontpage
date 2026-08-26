@@ -88,6 +88,9 @@
 /* Details page tabs */
 @import "./styles/_details-tabs.css";
 
+/* Model list and single model pages */
+@import "./styles/_models.css";
+
 /* Tools/GUIs page */
 @import "./styles/_tools-page.css";
 

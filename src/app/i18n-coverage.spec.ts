@@ -212,8 +212,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'details.models.sort.queued',
   'details.models.sort.jobs',
   'details.models.sort.eta',
-  'details.models.type.image',
-  'details.models.type.text',
   'details.models.online',
   'details.usage.coming_soon',
   'details.usage.images_per_second',

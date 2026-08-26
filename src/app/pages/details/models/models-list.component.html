@@ -47,15 +47,13 @@
     </app-scroll-fade>
 
     <!-- Summary Stats -->
-    @if (!loading() && !error() && currentModels().length > 0) {
+    @if (!error() && totalModels() > 0) {
       <div class="details-summary details-summary--glass">
         <div class="summary-stat">
           <span class="summary-label">{{
             "details.models.total_models" | transloco
           }}</span>
-          <span class="summary-value">{{
-            formatNumber(currentModels().length)
-          }}</span>
+          <span class="summary-value">{{ formatNumber(totalModels()) }}</span>
         </div>
         <div class="summary-stat">
           <span class="summary-label">{{
@@ -75,7 +73,7 @@
     }
 
     <!-- Search -->
-    @if (!loading() && !error() && currentModels().length > 0) {
+    @if (!error() && totalModels() > 0) {
       <div class="details-filters">
         <div class="filter-search-autocomplete">
           <app-icon
@@ -127,12 +125,19 @@
                   }}</span>
                   <span class="filter-autocomplete-meta">
                     <span class="filter-autocomplete-badge">
-                      {{ suggestion.type === "image" ? "Image" : "Text" }}
+                      {{
+                        (suggestion.type === "image"
+                          ? "details.models.type.image"
+                          : "details.models.type.text"
+                        ) | transloco
+                      }}
                     </span>
-                    <span
-                      >{{ suggestion.count }}
-                      {{ suggestion.count === 1 ? "worker" : "workers" }}</span
-                    >
+                    <span>{{
+                      (suggestion.count === 1
+                        ? "details.models.worker_count_one"
+                        : "details.models.worker_count_other"
+                      ) | transloco: { count: suggestion.count }
+                    }}</span>
                   </span>
                 </button>
               }
@@ -150,11 +155,94 @@
       </p>
     }
 
+    <!-- Filters -->
+    @if (!error() && totalModels() > 0) {
+      <div class="models-filters">
+        @if (baselineOptions().length > 0) {
+          <div class="models-filter-group">
+            <span class="models-filter-label" id="models-filter-baseline">
+              {{ "details.models.filters.baseline" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.baseline"
+                glossaryId="baseline"
+              />
+            </span>
+            <div
+              class="models-filter-chips"
+              role="group"
+              aria-labelledby="models-filter-baseline"
+            >
+              <button
+                type="button"
+                class="hd-chip"
+                [class.hd-chip--active]="baselineFilter() === null"
+                [attr.aria-pressed]="baselineFilter() === null"
+                (click)="setBaselineFilter(null)"
+              >
+                {{ "details.models.filters.baseline_any" | transloco }}
+              </button>
+              @for (baseline of baselineOptions(); track baseline) {
+                <button
+                  type="button"
+                  class="hd-chip"
+                  [class.hd-chip--active]="baselineFilter() === baseline"
+                  [attr.aria-pressed]="baselineFilter() === baseline"
+                  (click)="setBaselineFilter(baseline)"
+                >
+                  {{ baselineLabel(baseline) }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="models-filter-group">
+          <span class="models-filter-label" id="models-filter-show">{{
+            "details.models.filters.show" | transloco
+          }}</span>
+          <div
+            class="models-filter-chips"
+            role="group"
+            aria-labelledby="models-filter-show"
+          >
+            <button
+              type="button"
+              class="hd-chip"
+              [class.hd-chip--active]="workersOnly()"
+              [attr.aria-pressed]="workersOnly()"
+              (click)="workersOnly.set(!workersOnly())"
+            >
+              {{ "details.models.filters.workers_only" | transloco }}
+            </button>
+            <button
+              type="button"
+              class="hd-chip"
+              [class.hd-chip--active]="hideAdult()"
+              [attr.aria-pressed]="hideAdult()"
+              (click)="hideAdult.set(!hideAdult())"
+            >
+              {{ "details.models.filters.hide_adult" | transloco }}
+            </button>
+          </div>
+        </div>
+
+        @if (filtersActive()) {
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost hd-btn--dense"
+            (click)="clearFilters()"
+          >
+            {{ "details.models.filters.clear" | transloco }}
+          </button>
+        }
+      </div>
+    }
+
     <!-- Error State -->
-    @if (error()) {
+    @if (error() !== null) {
       <div class="state-container state-container-sm state-error">
         <app-icon class="state-icon" name="exclamation-circle" />
-        <p>{{ error() }}</p>
+        <p>{{ error() || ("details.models.load_failed" | transloco) }}</p>
         <button type="button" class="btn-source-control" (click)="loadModels()">
           {{ "details.models.retry" | transloco }}
         </button>
@@ -162,46 +250,68 @@
     }
 
     <!-- Loading State -->
-    @if (loading() && !error()) {
+    @if (loading() && error() === null && totalModels() === 0) {
       <div class="state-container state-container-sm text-secondary">
         <div class="spinner spinner-md"></div>
         <p>{{ "details.models.loading" | transloco }}</p>
       </div>
     }
 
-    <!-- Models Grid -->
-    @if (!loading() && !error()) {
-      @if (filteredModels().length === 0) {
-        <div class="state-container state-container-sm state-muted">
+    @if (!loading() && error() === null && totalModels() === 0) {
+      <div class="hd-empty">
+        <app-icon class="state-icon-lg" name="beaker" />
+        <p class="hd-empty-title">
+          {{ "details.models.no_models" | transloco }}
+        </p>
+      </div>
+    }
+
+    @if (error() === null && totalModels() > 0) {
+      @if (filteredRows().length === 0) {
+        <div class="hd-empty">
           <app-icon class="state-icon-lg" name="beaker" />
-          @if (searchQuery()) {
-            <p>{{ "details.models.no_results" | transloco }}</p>
-          } @else {
-            <p>{{ "details.models.no_models" | transloco }}</p>
-          }
+          <p class="hd-empty-title">
+            {{ "details.models.no_results" | transloco }}
+          </p>
+          <p class="hd-empty-sub">
+            {{ "details.models.no_results_hint" | transloco }}
+          </p>
+          <button
+            type="button"
+            class="hd-btn hd-btn--tonal hd-btn--dense"
+            (click)="clearFilters()"
+          >
+            {{ "details.models.filters.clear" | transloco }}
+          </button>
         </div>
       } @else {
-        <!-- Models Table -->
-        <div class="models-table">
-          <!-- Table Header -->
-          <div class="models-table-header">
+        <p class="models-count">
+          {{
+            "details.models.showing"
+              | transloco
+                : { shown: filteredRows().length, total: totalModels() }
+          }}
+        </p>
+
+        <div class="models-list">
+          <div class="models-list-head">
             <button
               type="button"
-              class="models-table-th models-table-th-sortable"
-              [class.models-table-th-active]="sortField() === 'name'"
+              class="models-list-th"
+              [class.models-list-th--active]="sortField() === 'name'"
               (click)="setSortField('name')"
             >
               {{ "details.models.sort.name" | transloco }}
               @if (sortField() === "name") {
-                <span class="sort-indicator">{{
+                <span class="models-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-table-th models-table-th-right models-table-th-sortable"
-              [class.models-table-th-active]="sortField() === 'count'"
+              class="models-list-th models-list-th--right"
+              [class.models-list-th--active]="sortField() === 'count'"
               (click)="setSortField('count')"
             >
               {{ "details.models.workers" | transloco }}
@@ -210,15 +320,15 @@
                 glossaryId="worker"
               />
               @if (sortField() === "count") {
-                <span class="sort-indicator">{{
+                <span class="models-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-table-th models-table-th-right models-table-th-sortable"
-              [class.models-table-th-active]="sortField() === 'queued'"
+              class="models-list-th models-list-th--right"
+              [class.models-list-th--active]="sortField() === 'queued'"
               (click)="setSortField('queued')"
             >
               {{ "details.models.queued" | transloco }}
@@ -227,49 +337,29 @@
                 glossaryId="megapixelsteps"
               />
               @if (sortField() === "queued") {
-                <span class="sort-indicator">{{
+                <span class="models-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-table-th models-table-th-right models-table-th-sortable"
-              [class.models-table-th-active]="sortField() === 'jobs'"
-              (click)="setSortField('jobs')"
+              class="models-list-th models-list-th--right"
+              [class.models-list-th--active]="sortField() === 'usage'"
+              (click)="setSortField('usage')"
             >
-              {{ "details.models.jobs" | transloco }}
-              <app-info-tooltip
-                termKey="help.models.tooltip.jobs"
-                glossaryId="job"
-              />
-              @if (sortField() === "jobs") {
-                <span class="sort-indicator">{{
+              {{ "details.models.usage" | transloco }}
+              <app-info-tooltip termKey="help.models.tooltip.usage" />
+              @if (sortField() === "usage") {
+                <span class="models-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
             <button
               type="button"
-              class="models-table-th models-table-th-right models-table-th-sortable"
-              [class.models-table-th-active]="sortField() === 'eta'"
-              (click)="setSortField('eta')"
-            >
-              {{ "details.models.eta" | transloco }}
-              <app-info-tooltip
-                termKey="help.models.tooltip.eta"
-                glossaryId="eta"
-              />
-              @if (sortField() === "eta") {
-                <span class="sort-indicator">{{
-                  sortDirection() === "asc" ? "↑" : "↓"
-                }}</span>
-              }
-            </button>
-            <button
-              type="button"
-              class="models-table-th models-table-th-right models-table-th-sortable"
-              [class.models-table-th-active]="sortField() === 'performance'"
+              class="models-list-th models-list-th--right"
+              [class.models-list-th--active]="sortField() === 'performance'"
               (click)="setSortField('performance')"
             >
               {{ "details.models.performance" | transloco }}
@@ -278,77 +368,126 @@
                 glossaryId="megapixelsteps"
               />
               @if (sortField() === "performance") {
-                <span class="sort-indicator">{{
+                <span class="models-list-sort" aria-hidden="true">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+              }
+            </button>
+            <button
+              type="button"
+              class="models-list-th models-list-th--right"
+              [class.models-list-th--active]="sortField() === 'eta'"
+              (click)="setSortField('eta')"
+            >
+              {{ "details.models.eta" | transloco }}
+              <app-info-tooltip
+                termKey="help.models.tooltip.eta"
+                glossaryId="eta"
+              />
+              @if (sortField() === "eta") {
+                <span class="models-list-sort" aria-hidden="true">{{
                   sortDirection() === "asc" ? "↑" : "↓"
                 }}</span>
               }
             </button>
           </div>
 
-          <!-- Table Rows -->
-          @for (model of filteredModels(); track model.name) {
+          @for (row of filteredRows(); track row.model.name) {
             <div
-              class="models-table-row"
-              [class.models-table-row-highlighted]="
-                isModelHighlighted(model.name)
-              "
-              [attr.#highlightedRow]="
-                isModelHighlighted(model.name) ? '' : null
-              "
-              #highlightedRow
+              class="models-list-row"
+              [class.models-list-row--idle]="row.model.count === 0"
             >
-              <!-- Name + Badges -->
-              <div class="models-table-cell-name">
-                <span class="models-table-name" [title]="model.name">{{
-                  model.name
-                }}</span>
-                @if (isModelHighlighted(model.name)) {
-                  <button
-                    type="button"
-                    class="badge-base badge-warning badge-dismissible"
-                    (click)="clearHighlight(); $event.stopPropagation()"
-                    [attr.aria-label]="
-                      'details.common.clear_highlight' | transloco
-                    "
+              <div class="models-list-identity">
+                <div class="models-list-heading">
+                  <a
+                    class="models-list-name"
+                    [routerLink]="detailLink(row)"
+                    [title]="row.model.name"
+                    >{{ row.model.name }}</a
                   >
-                    {{ "details.common.highlighted" | transloco }}
-                    <span aria-hidden="true">×</span>
-                  </button>
+                  @if (activeTab() === "image") {
+                    <a
+                      class="hd-btn hd-btn--dense models-list-try"
+                      [routerLink]="'/generate/image'"
+                      [queryParams]="{ model: row.model.name }"
+                    >
+                      {{ "details.models.try_model" | transloco }}
+                    </a>
+                  }
+                </div>
+
+                <div class="models-list-marks">
+                  @if (row.baseline !== "") {
+                    <span class="hd-badge models-mark models-mark--family">{{
+                      baselineLabel(row.baseline)
+                    }}</span>
+                  }
+                  @if (row.family !== "") {
+                    <span class="hd-badge models-mark models-mark--family">{{
+                      row.family
+                    }}</span>
+                  }
+                  @if (row.parameters !== "") {
+                    <span class="hd-badge models-mark">{{
+                      row.parameters
+                    }}</span>
+                  }
+                  @if (row.inpainting) {
+                    <span class="hd-badge models-mark">{{
+                      "details.models.badge.inpainting" | transloco
+                    }}</span>
+                  }
+                  @if (row.nsfw) {
+                    <span class="hd-badge models-mark models-mark--adult">{{
+                      "details.models.badge.adult" | transloco
+                    }}</span>
+                  }
+                  @if (row.model.custom) {
+                    <span class="hd-badge models-mark models-mark--custom">{{
+                      "details.models.badge.custom" | transloco
+                    }}</span>
+                  }
+                  @if (row.model.count === 0) {
+                    <span class="hd-badge models-mark models-mark--idle">{{
+                      "details.models.badge.no_workers" | transloco
+                    }}</span>
+                  }
+                </div>
+
+                @if (row.capabilities.length > 0) {
+                  <ul class="models-list-caps">
+                    @for (capability of row.capabilities; track capability.id) {
+                      <li class="models-cap">
+                        <app-icon [name]="capability.icon" />
+                        {{ capability.labelKey | transloco }}
+                      </li>
+                    }
+                  </ul>
                 }
-                <a
-                  class="btn-source-control btn-sm shrink-0"
-                  [routerLink]="'/generate/image'"
-                  [queryParams]="{ model: model.name }"
-                >
-                  {{ "details.models.try_model" | transloco }}
-                </a>
               </div>
 
-              <!-- Workers -->
-              <div class="models-table-cell">
-                <span class="models-table-label">{{
+              <div class="models-list-cell">
+                <span class="models-list-cell-label">{{
                   "details.models.workers" | transloco
                 }}</span>
                 <span
-                  class="models-table-value"
-                  [class.models-table-value-highlight]="model.count > 10"
-                  [class.models-table-value-muted]="model.count === 0"
+                  class="models-list-value"
+                  [class.models-list-value--muted]="row.model.count === 0"
                 >
-                  {{ formatNumber(model.count) }}
+                  {{ formatNumber(row.model.count) }}
                 </span>
               </div>
 
-              <!-- Queued -->
-              <div class="models-table-cell">
-                <span class="models-table-label">{{
+              <div class="models-list-cell">
+                <span class="models-list-cell-label">{{
                   "details.models.queued" | transloco
                 }}</span>
                 <span
-                  class="models-table-value"
-                  [class.models-table-value-muted]="model.queued === 0"
+                  class="models-list-value"
+                  [class.models-list-value--muted]="!row.model.queued"
                 >
-                  @if (model.queued && model.queued > 0) {
-                    @let queuedUnit = getModelQueuedUnit(model);
+                  @if (row.model.queued && row.model.queued > 0) {
+                    @let queuedUnit = getModelQueuedUnit(row.model);
                     {{ queuedUnit.primary.value | number: "1.1-1" }}
                     <app-unit-tooltip
                       [unit]="queuedUnit"
@@ -362,46 +501,27 @@
                 </span>
               </div>
 
-              <!-- Jobs -->
-              <div class="models-table-cell">
-                <span class="models-table-label">{{
-                  "details.models.jobs" | transloco
+              <div class="models-list-cell">
+                <span class="models-list-cell-label">{{
+                  "details.models.usage" | transloco
                 }}</span>
                 <span
-                  class="models-table-value"
-                  [class.models-table-value-muted]="model.jobs === 0"
+                  class="models-list-value"
+                  [class.models-list-value--muted]="row.usage === 0"
                 >
-                  {{ formatNumber(model.jobs) }}
+                  {{ row.usage > 0 ? (row.usage | number) : "-" }}
                 </span>
               </div>
 
-              <!-- ETA -->
-              <div class="models-table-cell">
-                <span class="models-table-label">{{
-                  "details.models.eta" | transloco
-                }}</span>
-                <span
-                  class="models-table-value"
-                  [class.models-table-value-muted]="
-                    !model.eta || model.eta <= 0
-                  "
-                >
-                  {{ formatEta(model.eta) }}
-                </span>
-              </div>
-
-              <!-- Performance -->
-              <div class="models-table-cell">
-                <span class="models-table-label">{{
+              <div class="models-list-cell">
+                <span class="models-list-cell-label">{{
                   "details.models.performance" | transloco
                 }}</span>
                 <span
-                  class="models-table-value"
-                  [class.models-table-value-muted]="
-                    !model.performance || model.performance <= 0
-                  "
+                  class="models-list-value"
+                  [class.models-list-value--muted]="!row.model.performance"
                 >
-                  @if (getModelPerformanceUnit(model); as perfUnit) {
+                  @if (getModelPerformanceUnit(row.model); as perfUnit) {
                     {{ perfUnit.primary.value | number: "1.2-2" }}
                     <app-unit-tooltip
                       [unit]="perfUnit"
@@ -412,6 +532,20 @@
                   } @else {
                     -
                   }
+                </span>
+              </div>
+
+              <div class="models-list-cell">
+                <span class="models-list-cell-label">{{
+                  "details.models.eta" | transloco
+                }}</span>
+                <span
+                  class="models-list-value"
+                  [class.models-list-value--muted]="
+                    !row.model.eta || row.model.eta <= 0
+                  "
+                >
+                  {{ formatEta(row.model.eta) }}
                 </span>
               </div>
             </div>

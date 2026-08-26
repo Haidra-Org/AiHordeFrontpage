@@ -1,0 +1,608 @@
+/* =================================================================
+   MODELS PAGES
+
+   The model list and a single model's page, drawn on the `--hd-*`
+   family. Every rule here reads an `--hd-*` token, so both themes come
+   out of the token file and no `.dark` rule belongs in this file.
+
+   The identity hue is set once on each page's root, and the primitives
+   inside pick it up through the `--hd-sec*` contract.
+   ================================================================= */
+
+@layer components {
+  /* -----------------------------------------------------------------
+     FILTER BAR
+     ----------------------------------------------------------------- */
+
+  .models-filters {
+    --hd-sec: var(--hd-accent);
+    --hd-sec-tint: var(--hd-accent-tint);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--hd-space-3) var(--hd-space-6);
+    padding: var(--hd-space-3);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  .models-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .models-filter-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .models-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .models-count {
+    font-size: var(--hd-text-sm);
+    color: var(--hd-muted);
+  }
+
+  /* -----------------------------------------------------------------
+     LIST
+     ----------------------------------------------------------------- */
+
+  .models-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+  }
+
+  /* The header is a set of column titles for a pointer; a phone stacks
+     the row's cells and labels each one in place instead. */
+  .models-list-head {
+    display: none;
+    align-items: center;
+    gap: var(--hd-space-3);
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-panel);
+  }
+
+  .models-list-th {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+    cursor: pointer;
+    transition: color var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .models-list-th:hover,
+  .models-list-th--active {
+    color: var(--hd-ink);
+  }
+
+  .models-list-th--right {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .models-list-th:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  .models-list-sort {
+    font-size: var(--hd-text-xs);
+  }
+
+  .models-list-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--hd-space-2) var(--hd-space-3);
+    padding: var(--hd-space-3);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-panel);
+    transition:
+      background-color var(--hd-dur-fast) var(--hd-ease),
+      border-color var(--hd-dur-fast) var(--hd-ease),
+      box-shadow var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .models-list-row:hover {
+    border-color: var(--hd-accent-tint-border);
+    box-shadow: var(--hd-elev-1);
+  }
+
+  /* A model nobody is running is still a real model, so it is quieted
+     rather than hidden, and the row says why in words beside the mark. */
+  .models-list-row--idle {
+    background: var(--hd-card);
+  }
+
+  .models-list-row--idle .models-list-name {
+    color: var(--hd-label);
+  }
+
+  .models-list-identity {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
+    grid-column: 1 / -1;
+  }
+
+  .models-list-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-3);
+    min-width: 0;
+  }
+
+  .models-list-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--hd-text-lg);
+    font-weight: 600;
+    color: var(--hd-ink);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .models-list-name:hover {
+    color: var(--hd-accent);
+    text-decoration: underline;
+  }
+
+  /* The name's target covers the whole row, so a press anywhere that is
+     not another control opens the model. Everything it covers is text
+     or a mark; the row's own actions are lifted back above it. */
+  .models-list-name::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--hd-radius-md);
+  }
+
+  .models-list-name:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  .models-list-try {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    margin-left: auto;
+    text-decoration: none;
+  }
+
+  .models-list-try:hover {
+    text-decoration: none;
+  }
+
+  .models-list-marks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-1);
+  }
+
+  .models-mark {
+    background: var(--hd-seg-track);
+    color: var(--hd-ink-2);
+  }
+
+  .models-mark--family {
+    background: var(--hd-accent-tint);
+    border-color: var(--hd-accent-tint-border);
+    color: var(--hd-accent);
+  }
+
+  .models-mark--adult {
+    background: var(--hd-danger-tint);
+    color: var(--hd-danger);
+  }
+
+  .models-mark--custom {
+    background: var(--hd-purple-tint);
+    border-color: var(--hd-purple-tint-border);
+    color: var(--hd-purple);
+  }
+
+  .models-mark--idle {
+    background: none;
+    border-color: var(--hd-border);
+    color: var(--hd-muted);
+  }
+
+  .models-list-caps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1) var(--hd-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .models-cap {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .models-cap .icon {
+    flex: none;
+    width: 13px;
+    height: 13px;
+  }
+
+  .models-list-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .models-list-cell-label {
+    font-size: var(--hd-text-2xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .models-list-value {
+    font-size: var(--hd-text-md);
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink);
+  }
+
+  .models-list-value--muted {
+    color: var(--hd-muted);
+  }
+
+  @media (min-width: 768px) {
+    .models-list-head,
+    .models-list-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 5.5rem 6rem 6rem 7rem 4.5rem;
+      align-items: center;
+      gap: var(--hd-space-3);
+    }
+
+    .models-list-identity {
+      grid-column: auto;
+    }
+
+    .models-list-cell {
+      align-items: flex-end;
+    }
+
+    .models-list-cell-label {
+      display: none;
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     ONE MODEL
+     ----------------------------------------------------------------- */
+
+  .model-detail {
+    --hd-sec: var(--hd-accent);
+    --hd-sec-tint: var(--hd-accent-tint);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+  }
+
+  .model-detail-columns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+  }
+
+  .model-detail-rail,
+  .model-detail-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+    min-width: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .model-detail-columns {
+      display: grid;
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .model-detail-title {
+    margin: 0;
+    font-size: var(--hd-text-xl);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--hd-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .model-detail-subtitle {
+    font-size: var(--hd-text-sm);
+    color: var(--hd-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .model-detail-description {
+    font-size: var(--hd-text-md);
+    line-height: 1.6;
+    color: var(--hd-ink-2);
+  }
+
+  /* The published sample, on the dark ground a picture is judged against
+     in every room of this site that shows one. */
+  .model-detail-stage {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 1px solid var(--hd-stage-rim);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-stage);
+    overflow: hidden;
+    cursor: zoom-in;
+  }
+
+  .model-detail-stage img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+  }
+
+  .model-detail-stage:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  /* No sample was published, so the tile says the family instead of
+     leaving a hole where a picture would be. */
+  .model-detail-stage--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    color: var(--hd-stage-label);
+    font-size: var(--hd-text-sm);
+    cursor: default;
+  }
+
+  .model-detail-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .model-detail-thumb {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 1px solid var(--hd-stage-rim);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-stage);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .model-detail-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .model-detail-thumb[aria-pressed="true"] {
+    border-color: var(--hd-accent);
+    box-shadow: 0 0 0 1px var(--hd-accent);
+  }
+
+  .model-detail-thumb:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  /* The enlarged sample. It sits over the page rather than in it, on the
+     same dark ground as the tile it came from. */
+  .model-detail-viewer {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--hd-space-4);
+    border: 0;
+    background: var(--hd-stage-scrim);
+    cursor: zoom-out;
+  }
+
+  .model-detail-viewer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .model-detail-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--hd-space-2);
+  }
+
+  @media (min-width: 640px) {
+    .model-detail-tiles {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  .model-detail-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-card-border);
+    border-top: 2px solid var(--hd-zone-tint-border, var(--hd-card-border));
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  .model-detail-tile-label {
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .model-detail-tile-value {
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink);
+  }
+
+  .model-detail-tile-note {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .model-detail-facts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+  }
+
+  .model-detail-fact {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
+    font-size: var(--hd-text-sm);
+  }
+
+  .model-detail-fact + .model-detail-fact {
+    padding-top: var(--hd-space-2);
+    border-top: 1px solid var(--hd-border-subtle);
+  }
+
+  .model-detail-fact dt {
+    color: var(--hd-label);
+  }
+
+  .model-detail-fact dd {
+    margin: 0;
+    text-align: right;
+    color: var(--hd-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .model-detail-doors {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .model-detail-doors .hd-btn {
+    text-decoration: none;
+  }
+
+  .model-detail-note {
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-muted);
+  }
+
+  .model-detail-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
+  }
+
+  /* A trigger word is copied more often than it is read, so the chip is
+     a button and says what pressing it did. */
+  .model-detail-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-height: 32px;
+    padding: 0 var(--hd-space-3);
+    border: 1px solid var(--hd-field-border);
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-field);
+    font-family: inherit;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink-2);
+    cursor: pointer;
+  }
+
+  .model-detail-trigger:hover {
+    border-color: var(--hd-accent);
+    color: var(--hd-ink);
+  }
+
+  .model-detail-trigger:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  .model-detail-workers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1) var(--hd-space-2);
+    font-size: var(--hd-text-sm);
+  }
+
+  .model-detail-workers a {
+    color: var(--hd-accent);
+    text-decoration: none;
+  }
+
+  .model-detail-workers a:hover {
+    text-decoration: underline;
+  }
+
+  @media (pointer: coarse) {
+    .model-detail-trigger {
+      min-height: 36px;
+    }
+  }
+}
