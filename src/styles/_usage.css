@@ -1,0 +1,281 @@
+/* =================================================================
+   USAGE PAGE
+
+   /details/usage: what the horde is carrying right now, what it has
+   carried over each window the stats endpoints answer with, and which
+   models the work went to. Drawn on the `--hd-*` family, so both themes
+   come out of the token file and no `.dark` rule belongs here.
+
+   Each part of the horde keeps one hue, declared through the
+   `--hd-zone*` contract so the cards and the tiles inside them take it
+   without any primitive being restyled.
+   ================================================================= */
+
+@layer components {
+  .usage-area {
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .usage-group--image {
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .usage-group--text {
+    --hd-zone: var(--hd-purple);
+    --hd-zone-tint: var(--hd-purple-tint);
+    --hd-zone-tint-border: var(--hd-purple-tint-border);
+    --hd-sec-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .usage-group--alchemy {
+    --hd-zone: var(--hd-green);
+    --hd-zone-tint: var(--hd-green-tint);
+    --hd-zone-tint-border: var(--hd-green-tint-border);
+    --hd-sec-tint-border: var(--hd-green-tint-border);
+  }
+
+  /* -----------------------------------------------------------------
+     OVERVIEW
+     ----------------------------------------------------------------- */
+
+  .usage-overview,
+  .usage-models {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .usage-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--hd-space-2);
+  }
+
+  .usage-heading-title {
+    font-size: var(--hd-text-sm);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .usage-heading-note {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  /* Three parts of the horde read side by side wherever there is room,
+     because the question the section answers is which of them is busy. */
+  .usage-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: var(--hd-space-3);
+  }
+
+  .usage-periods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    gap: var(--hd-space-3);
+  }
+
+  .usage-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
+  }
+
+  /* The way into the full list is a button, not a bar: a card in a
+     column stretches whatever it holds. */
+  .usage-group-action {
+    align-self: flex-start;
+  }
+
+  .usage-grafana {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-2);
+  }
+
+  .usage-grafana-text {
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink-2);
+  }
+
+  .usage-grafana-link {
+    text-decoration: none;
+  }
+
+  /* -----------------------------------------------------------------
+     CONTROLS
+     ----------------------------------------------------------------- */
+
+  /* Two summary tiles on a wide page would each take half of it, which
+     prints a four-digit number the width of a paragraph. The tracks keep
+     their own size and the row fills from the start instead. */
+  .usage-models > .stat-tiles {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+
+  .usage-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .usage-search {
+    position: relative;
+    flex: 1 1 14rem;
+    min-width: 0;
+  }
+
+  .usage-search-icon {
+    position: absolute;
+    top: 50%;
+    left: var(--hd-space-2);
+    transform: translateY(-50%);
+    color: var(--hd-label);
+    pointer-events: none;
+  }
+
+  .usage-search-input {
+    width: 100%;
+    padding-left: var(--hd-space-8);
+  }
+
+  /* -----------------------------------------------------------------
+     MODEL LIST
+
+     The same dense line the model list uses: the name carries the row
+     and the numbers are bare, with the unit named once in the heading.
+     ----------------------------------------------------------------- */
+
+  .usage-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+  }
+
+  /* A phone has room for the name and the number the list is ordered by;
+     the share of the total needs a wider screen to be worth its column. */
+  .usage-list-head,
+  .usage-list-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 5.5rem;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .usage-list-head {
+    padding: 0 var(--hd-space-3) var(--hd-space-1);
+  }
+
+  .usage-list-th {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.25;
+    text-transform: uppercase;
+    color: var(--hd-label);
+    cursor: pointer;
+    transition: color var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .usage-list-th:hover,
+  .usage-list-th--active {
+    color: var(--hd-ink);
+  }
+
+  .usage-list-th--right {
+    justify-content: flex-end;
+    text-align: right;
+  }
+
+  .usage-list-th:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  .usage-list-sort {
+    font-size: var(--hd-text-xs);
+  }
+
+  .usage-list-row {
+    min-height: 42px;
+    padding: var(--hd-space-1) var(--hd-space-3);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-panel);
+  }
+
+  /* The preview on the overview is the same row without the head, so it
+     drops the column the head would have named. */
+  .usage-list--preview .usage-list-row {
+    min-height: 36px;
+  }
+
+  .usage-list-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .usage-list-name {
+    overflow: hidden;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--hd-ink);
+  }
+
+  .usage-list-value {
+    font-size: var(--hd-text-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--hd-ink-2);
+  }
+
+  /* The mark reads as words rather than as a hue: the page already
+     spends its hues on which part of the horde a card belongs to. */
+  .usage-mark {
+    flex: 0 0 auto;
+    font-size: var(--hd-text-2xs);
+  }
+
+  .usage-col-share {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .usage-list-head,
+    .usage-list-row {
+      grid-template-columns: minmax(0, 1fr) 6.5rem 5rem;
+    }
+
+    .usage-list-th.usage-col-share,
+    .usage-list-value.usage-col-share {
+      display: inline-flex;
+      justify-content: flex-end;
+    }
+
+    .usage-list--preview .usage-list-row {
+      grid-template-columns: minmax(0, 1fr) 6.5rem;
+    }
+  }
+}

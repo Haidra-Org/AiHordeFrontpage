@@ -91,6 +91,9 @@
 /* Model list and single model pages */
 @import "./styles/_models.css";
 
+/* Usage statistics page */
+@import "./styles/_usage.css";
+
 /* Tools/GUIs page */
 @import "./styles/_tools-page.css";
 
