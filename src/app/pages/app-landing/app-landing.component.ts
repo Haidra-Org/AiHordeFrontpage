@@ -39,10 +39,10 @@ interface AppLandingDoor {
   templateUrl: './app-landing.component.html',
   styleUrl: './app-landing.component.css',
   host: {
-    /* `gen-studio` is the scope the studio's design tokens are declared on; the
-       landing borrows its surfaces so the doors look the same here as where
-       they lead. */
-    class: 'gen-studio gs-app-landing',
+    /* `gen-studio` is the scope the studio's design tokens are declared on and
+       `hd-deep` selects the neutral dark surfaces; the landing borrows both so
+       the doors look the same here as where they lead. */
+    class: 'gen-studio hd-deep gs-app-landing',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

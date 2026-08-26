@@ -172,10 +172,11 @@ export const DOCS_AREAS: readonly DocsArea[] = [
   ],
   templateUrl: './docs-shell.component.html',
   host: {
-    /* `gen-studio` is the scope the studio's design tokens are declared on, and
-       the documentation is written in the same visual language as the panel it
-       describes. It is not a studio; it opts into the studio's vocabulary. */
-    class: 'gen-studio gs-learn-shell gs-docs',
+    /* `gen-studio` is the scope the studio's design tokens are declared on and
+       `hd-deep` selects the neutral dark surfaces, and the documentation is
+       written in the same visual language as the panel it describes. It is not a
+       studio; it opts into the studio's vocabulary. */
+    class: 'gen-studio hd-deep gs-learn-shell gs-docs',
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

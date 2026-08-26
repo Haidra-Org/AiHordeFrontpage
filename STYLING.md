@@ -59,6 +59,14 @@ Every primitive that reads one falls back to the accent, so a page that supplies
 studio supplies all six from its own zone and section hues in `_generate.css`. `_models.css` supplies `--hd-sec*` from
 the accent on its filter bar. Identity hues are audited as graphic colour: glyphs and edges only, never text.
 
+### The two dark ramps
+
+Dark HD has two surface ramps. The default is a slate matched to the site's own dark body, so an HD plane on an ordinary
+page sits level with the page around it rather than reading as a colder pit cut into it. A root that adds `hd-deep`
+takes the neutral, deeper charcoal instead, because a hue in the surround biases the eye judging a picture: `/generate`
+(the shell, the workspace and the storage page), `/alchemy`, the app landing and the `/docs` shell all carry it beside
+`gen-studio`. The modifier only speaks under `.dark`; the light values are shared.
+
 ### The worked example
 
 `src/styles/_models.css` is the first page on HD: the `/details/models` list and the model detail page. It is the shape
