@@ -1,715 +1,832 @@
 /* =================================================================
-   TOOLS PAGE STYLES
-   
-   Includes:
-   - Filter bar and search
-   - Table of contents sidebar
-   - Grid/card view
-   - Section pills for mobile
-   - View mode toggle
+   TOOLS PAGE
+
+   The GUIs-and-tools list, drawn on the `--hd-*` family. Every value
+   here reads an `--hd-*` token, so both themes come out of the token
+   file and no `.dark` rule belongs in this file.
+
+   The page is one HD plane. The filter bar, the section row and each
+   section head pin as the reader scrolls, so they need an opaque ground
+   of their own to cover the rows passing under them, and the plane is
+   where the `--hd-sec*` / `--hd-zone*` identity is declared once for
+   every primitive inside it.
    ================================================================= */
 
 @layer components {
-  /* =================================================================
-     FILTER BAR
-     ================================================================= */
-
-  .tools-filter-bar {
-    @apply sticky z-40 -mx-4 px-4 py-3 mb-6;
-    background: var(--color-glass-surface-heavy);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border-bottom: 1px solid var(--color-edge-primary);
-    /* top is set dynamically by StickyRegistryService */
-
-    @media (min-width: 768px) {
-      @apply rounded-lg mx-0 px-4;
-      border: 1px solid var(--color-glass-border-subtle);
-      box-shadow: var(--shadow-glass);
-    }
+  .tools-page {
+    --hd-sec: var(--hd-accent);
+    --hd-sec-tint: var(--hd-accent-tint);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
+    --hd-zone: var(--hd-accent);
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+    padding: var(--hd-space-3);
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-lg);
+    background: var(--hd-canvas);
+    color: var(--hd-ink);
   }
 
-  .dark .tools-filter-bar {
-    background: rgb(31 41 55 / 0.85);
-    border-color: rgb(255 255 255 / 0.06);
+  /* -----------------------------------------------------------------
+     FILTER BAR
+     ----------------------------------------------------------------- */
+
+  .tools-filter-bar {
+    position: sticky;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-panel);
+    box-shadow: var(--hd-elev-1);
+    /* top is set inline by StickyRegistryService */
   }
 
   .tools-filter-bar-content {
-    @apply flex items-center gap-3 flex-wrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
   }
 
-  /* Search Input */
-  .tools-search-wrapper {
-    @apply relative flex-1 min-w-48;
+  .tools-search {
+    position: relative;
+    flex: 1 1 12rem;
+    min-width: 0;
     max-width: 28rem;
   }
 
   .tools-search-icon {
-    @apply absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none;
-    color: var(--color-text-muted);
+    position: absolute;
+    top: 50%;
+    left: var(--hd-space-2-5);
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--hd-muted);
+    pointer-events: none;
   }
 
   .tools-search-input {
-    @apply w-full py-2 pl-10 pr-9 text-sm rounded-lg transition-all duration-200;
-    background-color: var(--color-surface-secondary);
-    border: 1px solid var(--color-edge-primary);
-    color: var(--color-content-primary);
-  }
-
-  .tools-search-input:focus {
-    @apply outline-none;
-    border-color: var(--color-brand-purple);
-    box-shadow: 0 0 0 3px
-      color-mix(in srgb, var(--color-brand-purple) 15%, transparent);
-  }
-
-  .tools-search-input::placeholder {
-    color: var(--color-text-muted);
-  }
-
-  .dark .tools-search-input {
-    background: rgb(31 41 55 / 0.6);
-    border-color: rgb(255 255 255 / 0.1);
-    color: rgb(229 231 235);
+    padding-left: var(--hd-space-8);
+    padding-right: var(--hd-space-8);
   }
 
   .tools-search-clear {
-    @apply absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded;
-    @apply transition-colors duration-150;
-    color: var(--color-content-muted);
+    position: absolute;
+    top: 50%;
+    right: var(--hd-space-1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--hd-radius-sm);
+    background: none;
+    color: var(--hd-muted);
+    transform: translateY(-50%);
+    cursor: pointer;
+    transition: color var(--hd-dur-fast) var(--hd-ease);
   }
 
   .tools-search-clear:hover {
-    color: var(--color-content-secondary);
-    background: var(--color-glass-surface-elevated);
+    color: var(--hd-ink);
   }
 
-  .dark .tools-search-clear:hover {
-    color: rgb(229 231 235);
-    background: rgb(55 65 81 / 0.5);
+  .tools-search-clear:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  /* Filter Toggle Button */
-  .tools-filter-toggle {
-    @apply inline-flex items-center gap-2 py-2 px-3 text-sm font-medium rounded-lg;
-    @apply cursor-pointer transition-colors duration-150;
-    background: var(--color-glass-surface);
-    border: 1px solid var(--color-edge-primary);
-    color: var(--color-content-secondary);
+  .tools-search-clear .icon {
+    width: 16px;
+    height: 16px;
   }
 
-  .tools-filter-toggle:hover {
-    background: var(--color-glass-surface-elevated);
-    border-color: var(--color-edge-strong);
+  .tools-filter-toggle .icon {
+    width: 16px;
+    height: 16px;
   }
 
-  .dark .tools-filter-toggle {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.1);
-  }
-
-  .dark .tools-filter-toggle:hover {
-    background: rgb(55 65 81 / 0.5);
-  }
-
-  .tools-filter-toggle.active {
-    @apply border-purple-500 text-purple-600;
-    @apply dark:border-purple-400 dark:text-purple-400;
-    background-color: color-mix(
-      in srgb,
-      var(--color-brand-purple) 10%,
-      transparent
-    );
-  }
-
+  /* The count rides inside the toggle, so it takes the accent as a fill
+     rather than a tint: it has to read against the button's own hue when
+     the button is carrying filters. */
   .tools-filter-count {
-    @apply inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-bold rounded-full;
-    @apply bg-purple-600 text-white;
-    @apply dark:bg-purple-500;
+    background: var(--hd-accent);
+    color: var(--hd-on-accent);
+    font-variant-numeric: tabular-nums;
   }
 
-  /* View Mode Toggle */
   .tools-view-toggle {
-    @apply hidden items-center rounded-lg overflow-hidden;
-    border: 1px solid var(--color-edge-primary);
+    display: none;
+  }
 
-    @media (min-width: 768px) {
-      @apply inline-flex;
+  .tools-view-toggle .icon {
+    width: 15px;
+    height: 15px;
+  }
+
+  @media (min-width: 768px) {
+    .tools-view-toggle {
+      display: inline-flex;
     }
   }
 
-  .dark .tools-view-toggle {
-    border-color: rgb(255 255 255 / 0.1);
-  }
-
-  .tools-view-btn {
-    @apply p-2 border-0 cursor-pointer;
-    @apply transition-colors duration-150;
-    background: var(--color-glass-surface);
-    color: var(--color-content-secondary);
-  }
-
-  .tools-view-btn:hover {
-    background: var(--color-glass-surface-elevated);
-  }
-
-  .dark .tools-view-btn {
-    background: rgb(31 41 55 / 0.5);
-  }
-
-  .dark .tools-view-btn:hover {
-    background: rgb(55 65 81 / 0.5);
-  }
-
-  .tools-view-btn.active {
-    @apply bg-purple-100 text-purple-600;
-    @apply dark:bg-purple-900/50 dark:text-purple-400;
-  }
-
-  .tools-view-btn + .tools-view-btn {
-    border-left: 1px solid var(--color-edge-primary);
-  }
-
-  .dark .tools-view-btn + .tools-view-btn {
-    border-color: rgb(255 255 255 / 0.1);
-  }
-
-  /* Results Count */
   .tools-results-count {
-    @apply text-sm font-medium ml-auto;
-    color: var(--color-content-secondary);
+    margin-left: auto;
+    font-size: var(--hd-text-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-muted);
   }
 
-  /* =================================================================
+  /* -----------------------------------------------------------------
      FILTERS PANEL
-     ================================================================= */
+     ----------------------------------------------------------------- */
 
+  /* The bar is pinned, so anything it grows by is height taken off the
+     rows for as long as the panel is open. The chip lists scroll inside
+     the panel instead of pushing the bar down over them. */
   .tools-filters-panel {
-    @apply mt-4 pt-4;
-    border-top: 1px solid var(--color-edge-primary);
-  }
-
-  .dark .tools-filters-panel {
-    border-color: rgb(255 255 255 / 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+    max-height: 40vh;
+    padding-top: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border-subtle);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .tools-filters-grid {
-    @apply grid grid-cols-1 gap-6;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hd-space-4);
+  }
 
-    @media (min-width: 768px) {
-      @apply grid-cols-2;
+  @media (min-width: 768px) {
+    .tools-filters-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   .tools-filter-group {
-    @apply flex flex-col gap-2;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
   .tools-filter-group-header {
-    @apply flex items-center justify-between gap-2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
   }
 
   .tools-filter-group-title {
-    @apply text-sm font-semibold;
-    color: var(--color-content-primary);
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hd-label);
   }
 
-  .dark .tools-filter-group-title {
-    color: rgb(229 231 235);
-  }
-
-  /* Filter Chips */
   .tools-filter-chips {
-    @apply flex flex-wrap gap-2;
-  }
-
-  .tools-filter-chip {
-    @apply inline-flex items-center py-1.5 px-3 text-sm font-medium rounded-full cursor-pointer;
-    @apply transition-colors duration-150;
-    background: var(--color-glass-surface);
-    border: 1px solid var(--color-edge-primary);
-    color: var(--color-content-secondary);
-  }
-
-  .tools-filter-chip:hover {
-    @apply border-purple-400 bg-purple-50;
-  }
-
-  .dark .tools-filter-chip {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.1);
-  }
-
-  .dark .tools-filter-chip:hover {
-    background: rgb(55 65 81 / 0.5);
-    @apply border-purple-500;
-  }
-
-  .tools-filter-chip.active {
-    @apply bg-purple-600 text-white border-purple-600;
-    @apply hover:bg-purple-700 hover:border-purple-700;
-    @apply dark:bg-purple-600 dark:border-purple-600;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
   }
 
   .tools-filters-actions {
-    @apply flex justify-end mt-4 pt-4;
-    border-top: 1px solid var(--color-edge-primary);
+    display: flex;
+    justify-content: flex-end;
   }
 
-  .dark .tools-filters-actions {
-    border-color: rgb(255 255 255 / 0.08);
-  }
-
-  /* =================================================================
-     LAYOUT WITH TOC SIDEBAR
-     ================================================================= */
+  /* -----------------------------------------------------------------
+     LAYOUT AND SECTION NAVIGATION
+     ----------------------------------------------------------------- */
 
   .tools-layout {
-    @apply flex gap-8 isolate;
+    display: flex;
+    gap: var(--hd-space-6);
+    align-items: flex-start;
+    isolation: isolate;
   }
 
-  /* Table of Contents Sidebar */
-  .tools-toc {
-    @apply hidden shrink-0 w-56;
+  .tools-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+    flex: 1 1 auto;
+    min-width: 0;
+  }
 
-    @media (min-width: 1024px) {
-      @apply block;
+  /* The rail is the section list where there is a column to spare for
+     it. Anything narrower gets the row instead, and only one of the two
+     is ever in the page. */
+  .tools-toc {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .tools-toc {
+      display: block;
+      flex: none;
+      width: 14rem;
     }
   }
 
   .tools-toc-nav {
-    @apply sticky rounded-xl p-3;
-    top: calc(var(--sticky-offset, 80px) + 1rem);
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
-  }
-
-  .dark .tools-toc-nav {
-    background: rgb(31 41 55 / 0.45);
-    border-color: rgb(255 255 255 / 0.06);
+    position: sticky;
+    top: calc(var(--sticky-offset, 80px) + var(--hd-space-4));
+    padding: var(--hd-space-2-5);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-panel);
   }
 
   .tools-toc-title {
-    @apply text-xs font-bold uppercase tracking-wide mb-3;
-    color: var(--color-content-muted);
+    margin: 0 0 var(--hd-space-2);
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hd-label);
   }
 
   .tools-toc-list {
-    @apply flex flex-col gap-1 list-none p-0 m-0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .tools-toc-link {
-    @apply flex items-center justify-between gap-2 py-2 px-3 rounded-lg no-underline;
-    @apply text-sm font-medium;
-    @apply transition-colors duration-150;
-    color: var(--color-content-secondary);
-    cursor: pointer;
-    border: none;
-    background: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
     width: 100%;
+    min-height: 34px;
+    padding: 0 var(--hd-space-2);
+    border: 0;
+    border-radius: var(--hd-radius-sm);
+    background: none;
+    font-family: inherit;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
     text-align: left;
+    color: var(--hd-label);
+    cursor: pointer;
+    transition:
+      color var(--hd-dur-fast) var(--hd-ease),
+      background-color var(--hd-dur-fast) var(--hd-ease);
   }
 
   .tools-toc-link:hover {
-    background: var(--color-glass-surface-elevated);
+    color: var(--hd-ink);
+    background: var(--hd-seg-track);
   }
 
-  .dark .tools-toc-link:hover {
-    background: rgb(55 65 81 / 0.4);
+  /* A section already read stays legible without competing with the one
+     being read; the current section is named in words by aria-current as
+     well as marked by the tint. */
+  .tools-toc-link--passed {
+    color: var(--hd-ink-2);
   }
 
-  .tools-toc-link.active {
-    @apply bg-purple-100 text-purple-700;
-    @apply dark:bg-purple-900/40 dark:text-purple-300;
+  /* The accent as ink rather than as a fill: --hd-accent is one value in
+     both themes and sinks into the dark surfaces, so anything that reads
+     as text takes --hd-pop-accent. */
+  .tools-toc-link--active {
+    color: var(--hd-pop-accent);
+    background: var(--hd-accent-tint);
+  }
+
+  .tools-toc-link:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
   .tools-toc-link-text {
-    @apply truncate;
-  }
-
-  .tools-toc-link-count {
-    @apply text-xs font-semibold px-1.5 py-0.5 rounded;
-    background: var(--color-surface-tertiary);
-    color: var(--color-content-secondary);
-  }
-
-  .dark .tools-toc-link-count {
-    background: rgb(55 65 81 / 0.5);
-    color: var(--color-content-muted);
-  }
-
-  .tools-toc-link.active .tools-toc-link-count {
-    @apply bg-purple-200 text-purple-700;
-    @apply dark:bg-purple-800 dark:text-purple-300;
-  }
-
-  /* TOC parent heading — non-counting label above child sections */
-  .tools-toc-parent {
-    @apply mt-1;
-  }
-
-  .tools-toc-link-parent {
-    @apply text-xs font-bold uppercase tracking-wide py-1.5 px-3;
-    color: var(--color-content-muted);
-  }
-
-  .tools-toc-link-parent:hover {
-    color: var(--color-content-primary);
-  }
-
-  /* Indent child sections under a parent */
-  .tools-toc-child {
-    @apply pl-3;
-  }
-
-  /* Main Content Area */
-  .tools-content {
-    @apply flex-1 min-w-0;
-    /* Ensure content doesn't touch screen edges on mobile */
-    @media (max-width: 1023px) {
-      padding-left: 0;
-      padding-right: 0;
-    }
-  }
-
-  /* Mobile Section Pills */
-  .tools-section-pills {
-    @apply flex items-center gap-2 mb-4;
-    @apply sticky z-35;
-    background: var(--color-glass-surface-heavy);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border-bottom: 1px solid var(--color-edge-primary);
-    /* top is set dynamically by StickyRegistryService */
-    /* Offset the parent padding so the bar spans full width */
-    margin-left: -1rem;
-    margin-right: -1rem;
-    padding: 0.5rem 1rem;
-
-    @media (min-width: 1024px) {
-      @apply hidden;
-    }
-  }
-
-  .dark .tools-section-pills {
-    background: rgb(17 24 39 / 0.85);
-    border-color: rgb(255 255 255 / 0.06);
-  }
-
-  .tools-section-pills-label {
-    @apply text-xs font-semibold uppercase tracking-wide whitespace-nowrap shrink-0;
-    color: var(--color-content-muted);
-  }
-
-  .tools-section-pills-scroll {
-    @apply flex gap-2 overflow-x-auto pb-2 items-center;
-    flex: 1;
     min-width: 0;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .tools-section-pills-scroll::-webkit-scrollbar {
-    display: none;
+  .tools-toc-count {
+    flex: none;
+    font-size: var(--hd-text-2xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-muted);
   }
 
-  .tools-section-pill {
-    @apply inline-flex items-center gap-1.5 py-2 px-3 text-sm font-medium rounded-full whitespace-nowrap no-underline;
-    @apply transition-colors duration-150;
-    background: var(--color-glass-surface);
-    border: 1px solid var(--color-edge-primary);
-    scroll-snap-align: start;
-    color: var(--color-content-secondary);
+  .tools-toc-link--active .tools-toc-count {
+    color: var(--hd-pop-accent);
+  }
+
+  .tools-toc-group {
+    margin-top: var(--hd-space-2);
+    padding: 0 var(--hd-space-2);
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hd-muted);
+  }
+
+  .tools-toc-child .tools-toc-link {
+    padding-left: var(--hd-space-4);
+  }
+
+  /* The row is the same list on a viewport with no column to spare. It
+     pins under the filter bar rather than sitting over the rows, so the
+     item it names is still the item the reader can see. */
+  .tools-sections {
+    position: sticky;
+    z-index: 30;
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    overflow: hidden;
+    /* top is set inline by StickyRegistryService */
+  }
+
+  @media (min-width: 1024px) {
+    .tools-sections {
+      display: none;
+    }
+  }
+
+  .tools-subtab-count {
+    font-size: var(--hd-text-2xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-muted);
+  }
+
+  .tools-subtab--passed {
+    color: var(--hd-ink-2);
+  }
+
+  /* -----------------------------------------------------------------
+     SECTIONS
+     ----------------------------------------------------------------- */
+
+  .tools-sections-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-6);
+  }
+
+  .tools-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .tools-section-head {
+    margin: 0;
+    padding: var(--hd-space-2) 0;
+    font-size: var(--hd-text-xs);
+    background: var(--hd-canvas);
+  }
+
+  /* Only where the section row is not in the page: pinning both would put
+     the same name twice over the rows the reader is trying to see. */
+  @media (min-width: 1024px) {
+    .tools-section-head {
+      position: sticky;
+      z-index: 20;
+      top: var(--sticky-offset, 0px);
+    }
+  }
+
+  .tools-section-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    min-height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--hd-radius-sm);
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    color: inherit;
     cursor: pointer;
   }
 
-  .dark .tools-section-pill {
-    background: rgb(31 41 55 / 0.5);
-    border-color: rgb(255 255 255 / 0.1);
+  .tools-section-toggle:hover {
+    color: var(--hd-accent);
   }
 
-  .tools-section-pill:hover {
-    @apply border-purple-400 bg-purple-50;
+  .tools-section-toggle:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  .dark .tools-section-pill:hover {
-    background: rgb(55 65 81 / 0.5);
-    @apply border-purple-500;
-  }
-
-  .tools-section-pill.active {
-    --pill-fill: var(--color-purple-600);
-    --pill-empty: var(--color-purple-300);
-    @apply text-white border-purple-600;
-    @apply dark:border-purple-600;
-  }
-
-  .dark .tools-section-pill.active {
-    --pill-fill: var(--color-purple-600);
-    --pill-empty: var(--color-purple-950, var(--color-purple-900));
-  }
-
-  .tools-section-pill.passed {
-    @apply bg-purple-200 border-purple-200;
-    @apply dark:bg-purple-900 dark:border-purple-800;
-    color: var(--color-purple-700);
-  }
-
-  .dark .tools-section-pill.passed {
-    color: var(--color-purple-300);
-  }
-
-  .tools-section-pill-count {
-    @apply text-xs font-semibold px-1.5 py-0.5 rounded-full;
-    background: var(--color-surface-tertiary);
-    color: var(--color-content-secondary);
-  }
-
-  .dark .tools-section-pill-count {
-    background: rgb(75 85 99 / 0.5);
-    color: rgb(209 213 219);
-  }
-
-  .tools-section-pill.active .tools-section-pill-count {
-    @apply bg-purple-500 text-white;
-    @apply dark:bg-purple-500;
-  }
-
-  .tools-section-pill.passed .tools-section-pill-count {
-    @apply bg-purple-300 text-purple-700;
-    @apply dark:bg-purple-800 dark:text-purple-300;
-  }
-
-  /* Section Count Badge in Headers */
   .tools-section-count {
-    @apply text-sm font-semibold px-2 py-0.5 rounded-full;
-    background: var(--color-surface-tertiary);
-    color: var(--color-content-secondary);
+    background: var(--hd-seg-track);
+    color: var(--hd-ink-2);
+    font-variant-numeric: tabular-nums;
   }
 
-  .dark .tools-section-count {
-    background: rgb(55 65 81 / 0.5);
-    color: var(--color-content-muted);
+  /* -----------------------------------------------------------------
+     MARKS
+     ----------------------------------------------------------------- */
+
+  .tools-badge {
+    background: var(--hd-seg-track);
+    color: var(--hd-ink-2);
   }
 
-  /* =================================================================
-     GRID VIEW CARDS
-     ================================================================= */
+  /* Each tone is a ground and an edge; the ink stays at --hd-ink-2 so a
+     mark reads at AA on both themes, and the words on it carry the
+     meaning that the hue only reinforces. */
+  .tools-badge--domain {
+    background: var(--hd-purple-tint);
+    border-color: var(--hd-purple-tint-border);
+  }
+
+  .tools-badge--platform {
+    background: var(--hd-accent-tint);
+    border-color: var(--hd-accent-tint-border);
+  }
+
+  .tools-badge--outline {
+    background: none;
+    border-color: var(--hd-border);
+    color: var(--hd-muted);
+  }
+
+  .tools-badge--recommended {
+    background: var(--hd-green-tint);
+    border-color: var(--hd-green-tint-border);
+  }
+
+  /* The two entries that run on this site say so in words rather than in
+     hue alone: the reader's question is whether there is anything to
+     install, and the badge answers it. */
+  .tools-badge--here {
+    gap: var(--hd-space-1);
+    background: var(--hd-accent);
+    border-color: transparent;
+    color: var(--hd-on-accent);
+  }
+
+  .tools-badge--here .icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .tools-here-note {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-pop-accent);
+  }
+
+  .tools-verified {
+    font-size: var(--hd-text-2xs);
+    color: var(--hd-muted);
+  }
+
+  /* -----------------------------------------------------------------
+     GRID VIEW
+
+     Pressing anywhere on a card that is not one of its links opens the
+     card's full description. The target is the title button stretched
+     over the card rather than a wrapper element that behaves like a
+     button, so the card keeps its heading and its links.
+     ----------------------------------------------------------------- */
 
   .tools-grid {
-    @apply grid gap-4;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: var(--hd-space-3);
   }
 
-  .tools-grid-card {
-    @apply flex flex-col rounded-xl overflow-hidden;
-    background: var(--color-glass-surface);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow:
-      var(--shadow-glass),
-      inset 0 1px 0 0 var(--color-glass-highlight);
+  .tools-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2-5);
+    padding: 0;
+    overflow: hidden;
     transition:
-      box-shadow var(--transition-normal) ease,
-      border-color var(--transition-normal) ease,
-      transform var(--transition-normal) ease,
-      background var(--transition-normal) ease,
-      backdrop-filter var(--transition-normal) ease;
+      border-color var(--hd-dur-fast) var(--hd-ease),
+      box-shadow var(--hd-dur-fast) var(--hd-ease);
   }
 
-  .tools-grid-card:hover {
-    background: var(--color-glass-surface-elevated);
-    border-color: var(--color-glass-border);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-    box-shadow:
-      var(--shadow-glass-hover),
-      inset 0 1px 0 0 var(--color-glass-highlight);
-    transform: translateY(-2px);
+  .tools-card:hover {
+    border-color: var(--hd-accent-tint-border);
+    box-shadow: var(--hd-elev-1);
   }
 
-  .dark .tools-grid-card {
-    background: rgb(31 41 55 / 0.55);
-    border-color: rgb(255 255 255 / 0.1);
-    box-shadow:
-      0 4px 24px rgb(0 0 0 / 0.25),
-      0 1px 2px rgb(0 0 0 / 0.1),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.06);
+  .tools-card--here {
+    border-top-color: var(--hd-accent);
   }
 
-  .dark .tools-grid-card:hover {
-    background: rgb(31 41 55 / 0.65);
-    border-color: rgb(255 255 255 / 0.15);
-    box-shadow:
-      0 8px 32px rgb(0 0 0 / 0.4),
-      0 2px 4px rgb(0 0 0 / 0.15),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+  .tools-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    padding: var(--hd-space-3);
   }
 
-  /* Expanded card - elevated glass tier */
-  .tools-grid-card.expanded {
-    background: var(--color-glass-surface-elevated);
-    backdrop-filter: blur(var(--blur-glass-md));
-    -webkit-backdrop-filter: blur(var(--blur-glass-md));
-    border-color: var(--color-glass-border);
-    box-shadow:
-      var(--shadow-glass-elevated),
-      inset 0 1px 0 0 var(--color-glass-highlight);
+  /* The name keeps its own line: a card is read by its name first, and
+     three marks beside a long one push it into two and three lines that
+     no two cards in a row break the same way. */
+  .tools-card-title {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
-  .dark .tools-grid-card.expanded {
-    background: rgb(31 41 55 / 0.65);
-    border-color: rgb(255 255 255 / 0.14);
-    box-shadow:
-      0 12px 40px rgb(0 0 0 / 0.4),
-      0 4px 8px rgb(0 0 0 / 0.15),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.08);
+  .tools-card-marks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
   }
 
-  .tools-grid-card-recommended {
-    border-left: 3px solid;
-    @apply border-l-yellow-400;
-    background: color-mix(
-      in srgb,
-      rgb(254 252 232) 40%,
-      var(--color-glass-surface)
-    );
-    @apply dark:border-l-yellow-500;
+  .tools-card-toggle,
+  .tools-row-toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
   }
 
-  .dark .tools-grid-card-recommended {
-    background: color-mix(in srgb, rgb(120 53 15) 12%, rgb(31 41 55 / 0.55));
+  .tools-card-toggle::after,
+  .tools-row-toggle::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--hd-radius-md);
   }
 
-  .tools-grid-card-recommended:hover {
-    background: color-mix(
-      in srgb,
-      rgb(254 252 232) 50%,
-      var(--color-glass-surface-elevated)
-    );
+  .tools-card-toggle:focus-visible,
+  .tools-row-toggle:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
   }
 
-  .dark .tools-grid-card-recommended:hover {
-    background: color-mix(in srgb, rgb(120 53 15) 18%, rgb(31 41 55 / 0.65));
+  .tools-card-image {
+    width: 100%;
+    height: 8rem;
+    border: 1px solid var(--hd-stage-rim);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-stage);
+    overflow: hidden;
   }
 
-  .tools-grid-card-header {
-    @apply flex-1 p-4 cursor-pointer;
+  .tools-card-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  .tools-grid-card-image {
-    @apply w-full h-32 mb-3 rounded-md overflow-hidden;
-    background: var(--color-surface-tertiary);
+  .tools-card-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    margin: 0;
+    overflow: hidden;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
   }
 
-  .dark .tools-grid-card-image {
-    background: rgb(55 65 81 / 0.5);
-  }
-
-  .tools-grid-card-image img {
-    @apply w-full h-full object-cover;
-  }
-
-  .tools-grid-card-content {
-    @apply flex flex-col gap-2;
-  }
-
-  /* The badges keep their words at any width: where the name and the badges
-     cannot share a line, the badges take the line under it. */
-  .tools-grid-card-title {
-    @apply text-base font-semibold m-0 flex flex-wrap items-center gap-2;
-    color: var(--color-content-primary);
-  }
-
-  .dark .tools-grid-card-title {
-    color: rgb(243 244 246);
-  }
-
-  .tools-grid-card-badges {
-    @apply flex flex-wrap gap-1.5;
-  }
-
-  .tools-grid-card-desc {
-    @apply text-sm line-clamp-3 m-0;
-    color: var(--color-content-secondary);
-  }
-
-  .dark .tools-grid-card-desc {
-    color: var(--color-content-muted);
-  }
-
-  /* Remove line clamp when card is expanded */
-  .tools-grid-card.expanded .tools-grid-card-desc {
+  .tools-card--expanded .tools-card-desc {
     display: block;
     -webkit-line-clamp: unset;
     line-clamp: unset;
     overflow: visible;
   }
 
-  .tools-grid-card-actions {
-    @apply flex items-center gap-2 p-4;
-    border-top: 1px solid var(--color-glass-border-subtle);
-    background: rgb(249 250 251 / 0.3);
+  .tools-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
   }
 
-  .dark .tools-grid-card-actions {
-    border-top-color: rgb(255 255 255 / 0.06);
-    background: rgb(17 24 39 / 0.15);
+  .tools-card-actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+    margin-top: auto;
+    padding: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border-subtle);
+    background: var(--hd-panel);
   }
 
-  /* =================================================================
-     TABLE ROW ALTERNATING COLORS
-     ================================================================= */
-
-  .table-row-alt .item-list-row {
-    background: var(--color-glass-surface-elevated);
+  .tools-card-actions .hd-btn {
+    text-decoration: none;
   }
 
-  .dark .table-row-alt .item-list-row {
-    background: rgb(31 41 55 / 0.45);
+  /* -----------------------------------------------------------------
+     TABLE VIEW
+     ----------------------------------------------------------------- */
+
+  .tools-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
   }
 
-  .table-row-alt .item-list-row:hover {
-    background: var(--color-glass-surface-heavy);
+  .tools-row {
+    position: relative;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--hd-space-3);
+    padding: var(--hd-space-3);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-panel);
+    font-size: var(--hd-text-md);
+    text-align: left;
+    color: var(--hd-ink);
+    transition:
+      border-color var(--hd-dur-fast) var(--hd-ease),
+      box-shadow var(--hd-dur-fast) var(--hd-ease);
   }
 
-  .dark .table-row-alt .item-list-row:hover {
-    background: rgb(31 41 55 / 0.6);
+  .tools-row:hover {
+    border-color: var(--hd-accent-tint-border);
+    box-shadow: var(--hd-elev-1);
   }
 
-  /* =================================================================
-     EMPTY STATE
-     ================================================================= */
-
-  .state-empty {
-    @apply flex flex-col items-center justify-center py-16 text-center;
+  .tools-row--here {
+    border-left: 2px solid var(--hd-accent);
   }
 
-  .state-empty-icon {
-    @apply w-16 h-16 mb-4;
-    color: var(--color-content-muted);
+  .tools-row-main {
+    display: flex;
+    flex: 1 1 18rem;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
   }
 
-  .state-empty-text {
-    @apply text-lg font-medium m-0;
-    color: var(--color-content-secondary);
+  .tools-row-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
-  /* =================================================================
-     UTILITIES
-     ================================================================= */
-
-  .stack-lg {
-    @apply flex flex-col gap-6;
+  .tools-row-desc {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-ink-2);
   }
 
-  /* Small link button for filter actions */
+  .tools-row-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
+  }
+
+  /* Lifted back above the title's target so the links stay pressable. */
+  .tools-row-side {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .tools-row-side .hd-btn {
+    text-decoration: none;
+  }
+
+  .tools-glyph {
+    flex: none;
+    width: 14px;
+    height: 14px;
+  }
+
+  .tools-chevron {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--hd-muted);
+    transition: transform var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .tools-chevron--open {
+    transform: rotate(180deg);
+  }
+
+  .tools-row-detail {
+    display: grid;
+    flex: 1 0 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hd-space-3);
+    padding-top: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border-subtle);
+  }
+
+  @media (min-width: 640px) {
+    .tools-row-detail--illustrated {
+      grid-template-columns: minmax(0, 1fr) 12rem;
+      align-items: start;
+    }
+  }
+
+  .tools-detail-main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
+  }
+
+  .tools-detail-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2) var(--hd-space-6);
+    margin: 0;
+  }
+
+  .tools-detail-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tools-detail-fact dt {
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .tools-detail-fact dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink);
+  }
+
+  .tools-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .tools-detail-actions .hd-btn {
+    text-decoration: none;
+  }
+
+  .tools-detail-image {
+    border: 1px solid var(--hd-stage-rim);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-stage);
+    overflow: hidden;
+  }
+
+  .tools-detail-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* -----------------------------------------------------------------
+     UTILITIES SHARED WITH OTHER PAGES
+     ----------------------------------------------------------------- */
+
+  /* Read by other pages that have not been rebuilt; it stays on the glass
+     tokens until they are, and this page does not use it. */
   .link-btn-sm {
     @apply text-sm font-medium cursor-pointer bg-transparent border-none p-0;
     color: var(--color-brand-purple);
@@ -720,17 +837,24 @@
     color: var(--color-brand-purple-hover);
   }
 
-  /* Icon sizing for toolbar controls */
-  .tools-icon {
-    @apply w-5 h-5;
-  }
+  /* -----------------------------------------------------------------
+     TOUCH
+     ----------------------------------------------------------------- */
 
-  .tools-icon-sm {
-    @apply w-4 h-4;
-  }
+  @media (pointer: coarse) {
+    .tools-search-clear,
+    .tools-toc-link,
+    .tools-section-toggle {
+      min-height: 44px;
+    }
 
-  /* View toggle button content layout */
-  .tools-view-btn-content {
-    @apply flex gap-2 items-center;
+    .tools-search-clear {
+      width: 44px;
+    }
+
+    /* .hd-input sets a fixed height, which a finger needs more of. */
+    .tools-search-input {
+      height: 44px;
+    }
   }
 }

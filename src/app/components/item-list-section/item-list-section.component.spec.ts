@@ -14,21 +14,6 @@ import {
   FunctionKind,
 } from '../../types/item-types';
 
-// jsdom does not provide IntersectionObserver — stub it
-class FakeIntersectionObserver {
-  observe(): void {
-    /* no-op */
-  }
-  unobserve(): void {
-    /* no-op */
-  }
-  disconnect(): void {
-    /* no-op */
-  }
-}
-globalThis.IntersectionObserver =
-  FakeIntersectionObserver as unknown as typeof IntersectionObserver;
-
 @Component({
   template: `
     <app-item-list-section
@@ -85,7 +70,9 @@ describe('ItemListSectionComponent', () => {
       imports: [
         TestHostComponent,
         TranslocoTestingModule.forRoot({
-          langs: { en: {} },
+          langs: {
+            en: { 'guis_and_tools.last_verified': 'Checked {{date}}' },
+          },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
@@ -106,7 +93,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([]);
     fixture.detectChanges();
 
-    expect(el.querySelector('.table-section-wrapper')).toBeNull();
+    expect(el.querySelector('.tools-section')).toBeNull();
   });
 
   it('should render section header when items are provided', () => {
@@ -144,7 +131,7 @@ describe('ItemListSectionComponent', () => {
     fixture.detectChanges();
 
     const anchor = el.querySelector<HTMLAnchorElement>(
-      '.table-cell-actions a.btn-purple',
+      '.tools-row-side a.hd-btn',
     );
     expect(anchor?.getAttribute('href')).toBe('/generate/image');
     expect(anchor?.getAttribute('target')).toBeNull();
@@ -156,7 +143,7 @@ describe('ItemListSectionComponent', () => {
     fixture.detectChanges();
 
     const anchor = el.querySelector<HTMLAnchorElement>(
-      '.table-cell-actions a.btn-purple',
+      '.tools-row-side a.hd-btn',
     );
     expect(anchor?.getAttribute('href')).toBe('https://example.com');
     expect(anchor?.getAttribute('target')).toBe('_blank');
@@ -174,7 +161,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem({ name: 'ClickMe' })]);
     fixture.detectChanges();
 
-    const row = el.querySelector('.item-list-row') as HTMLElement;
+    const row = el.querySelector('.tools-row-toggle') as HTMLElement;
     row?.click();
     fixture.detectChanges();
 
@@ -185,7 +172,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem()]);
     fixture.detectChanges();
 
-    const header = el.querySelector('h2') as HTMLElement;
+    const header = el.querySelector('.tools-section-toggle') as HTMLElement;
     header?.click();
     fixture.detectChanges();
 
@@ -196,7 +183,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem()]);
     fixture.detectChanges();
 
-    const header = el.querySelector('h2');
+    const header = el.querySelector('.tools-section-toggle');
     expect(header?.getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -206,7 +193,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem()]);
     fixture.detectChanges();
 
-    const header = el.querySelector('h2');
+    const header = el.querySelector('.tools-section-toggle');
     expect(header?.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -216,7 +203,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem({ name: 'HiddenItem' })]);
     fixture.detectChanges();
 
-    expect(el.querySelector('.item-list-row')).toBeNull();
+    expect(el.querySelector('.tools-row')).toBeNull();
   });
 
   it('should display domain and platform badges', () => {
@@ -230,7 +217,7 @@ describe('ItemListSectionComponent', () => {
     ]);
     fixture.detectChanges();
 
-    const badges = el.querySelectorAll('.badge-base');
+    const badges = el.querySelectorAll('.hd-badge');
     expect(badges.length).toBeGreaterThan(0);
   });
 
@@ -240,7 +227,7 @@ describe('ItemListSectionComponent', () => {
     fixture.detectChanges();
 
     expect(el.querySelector('.tools-grid')).not.toBeNull();
-    expect(el.querySelector('.table-items')).toBeNull();
+    expect(el.querySelector('.tools-rows')).toBeNull();
   });
 
   it('should render table view when viewMode is table', () => {
@@ -248,7 +235,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem()]);
     fixture.detectChanges();
 
-    expect(el.querySelector('.table-items')).not.toBeNull();
+    expect(el.querySelector('.tools-rows')).not.toBeNull();
     expect(el.querySelector('.tools-grid')).toBeNull();
   });
 
@@ -256,7 +243,7 @@ describe('ItemListSectionComponent', () => {
     host.items.set([makeItem({ recommended: true })]);
     fixture.detectChanges();
 
-    const badge = el.querySelector('.badge-recommended');
+    const badge = el.querySelector('.tools-badge--recommended');
     expect(badge).not.toBeNull();
   });
 
@@ -271,8 +258,32 @@ describe('ItemListSectionComponent', () => {
     ]);
     fixture.detectChanges();
 
-    const sourceLink = el.querySelector('.btn-source-control');
+    const sourceLink = el.querySelector('.tools-detail-actions a');
     expect(sourceLink).not.toBeNull();
     expect(sourceLink?.textContent).toContain('GitHub');
+  });
+
+  it('should mark an entry that runs on this site', () => {
+    host.items.set([makeItem({ onThisSite: true, link: '/generate/image' })]);
+    fixture.detectChanges();
+
+    expect(el.querySelector('.tools-badge--here')).not.toBeNull();
+    expect(el.querySelector('.tools-row--here')).not.toBeNull();
+  });
+
+  it('should not mark an entry that has no lastVerified date', () => {
+    host.items.set([makeItem()]);
+    fixture.detectChanges();
+
+    expect(el.querySelector('.tools-verified')).toBeNull();
+  });
+
+  it('should show the month and year an entry was last checked', () => {
+    host.items.set([makeItem({ lastVerified: '2026-03-14' })]);
+    fixture.detectChanges();
+
+    expect(el.querySelector('.tools-verified')?.textContent).toContain(
+      'March 2026',
+    );
   });
 });

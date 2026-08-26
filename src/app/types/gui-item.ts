@@ -14,4 +14,8 @@ export interface GuiItem {
   platform?: Platform[];
   recommended?: boolean;
   easyToUse?: boolean;
+  /** The entry is one of this site's own pages: it opens without an install. */
+  onThisSite?: boolean;
+  /** ISO date (YYYY-MM-DD) on which the entry was last checked. */
+  lastVerified?: string;
 }

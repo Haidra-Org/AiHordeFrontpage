@@ -17,7 +17,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TranslocoModule, TranslocoService } from '@jsverse/transloco';
+import { TranslocoModule } from '@jsverse/transloco';
 import { DataService } from '../../services/data.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { GuiItem } from '../../types/gui-item';
@@ -31,7 +31,6 @@ import {
   ItemListSectionComponent,
   DisplayItem,
 } from '../../components/item-list-section/item-list-section.component';
-import { EnumDisplayService } from '../../services/enum-display.service';
 import { scrollToElement } from '../../helper/scroll-utils';
 import { BeginnerHeaderComponent } from '../../components/beginner-header/beginner-header.component';
 import { IconComponent } from '../../components/icon/icon.component';
@@ -71,9 +70,6 @@ export interface SectionInfo {
   templateUrl: './guis-and-tools.component.html',
   styleUrl: './guis-and-tools.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(window:scroll)': 'onWindowScroll()',
-  },
 })
 export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
@@ -81,20 +77,13 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
   private readonly dataService = inject(DataService);
-  private readonly translocoService = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly enumDisplayService = inject(EnumDisplayService);
   private readonly stickyRegistry = inject(StickyRegistryService);
 
   private sectionObserver: IntersectionObserver | null = null;
 
-  /** Tracks whether the user manually scrolled the pills container. */
-  private userOverriddenAt = 0;
-  /** The vertical scroll position when auto-centering last engaged. */
-  private lastAutoEngageScrollY = 0;
-  private static readonly REENGAGE_THRESHOLD = 100;
-
-  readonly pillsScroll = viewChild<ElementRef<HTMLElement>>('pillsScroll');
+  readonly sectionsScroll =
+    viewChild<ElementRef<HTMLElement>>('sectionsScroll');
 
   private imageGuis = toSignal(this.dataService.imageGuis);
   private textGuis = toSignal(this.dataService.textGuis);
@@ -111,8 +100,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   public showFiltersPanel = signal<boolean>(false);
   public viewMode = signal<ViewMode>('grid');
   public activeSection = signal<string>('guis-image');
-  /** 0–100 scroll progress through the currently active section. */
-  public activeSectionProgress = signal<number>(0);
 
   /** Sections configuration for TOC and rendering */
   public readonly sections: SectionInfo[] = [
@@ -178,6 +165,16 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   public visibleSections = computed(() => {
     return this.sections.filter((section) => section.items().length > 0);
   });
+
+  /** True until every data file the page draws from has arrived. */
+  public loading = computed(
+    () =>
+      this.imageGuis() === undefined ||
+      this.textGuis() === undefined ||
+      this.tools() === undefined ||
+      this.resources() === undefined ||
+      this.games() === undefined,
+  );
 
   // Combined items (GUIs, Tools, and Resources)
   public allItems = computed(() => {
@@ -344,17 +341,29 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.selectedTypes().size + this.selectedCategories().size;
   });
 
+  /**
+   * A reader looking for somewhere to start is best served by the two entries
+   * that need no install at all, so they lead their section; the entries the
+   * project recommends follow, and everything else keeps the order of the
+   * data file.
+   */
+  private static byStartingPoint(a: ExtendedItem, b: ExtendedItem): number {
+    const here = (b.onThisSite ? 1 : 0) - (a.onThisSite ? 1 : 0);
+    if (here !== 0) return here;
+    return (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0);
+  }
+
   // Separate items by category for grouped display
   public filteredImageGuis = computed(() => {
     return this.filteredItems()
       .filter((item) => item.itemType === ItemType.GUI_IMAGE)
-      .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
+      .sort(GuisAndToolsComponent.byStartingPoint);
   });
 
   public filteredTextGuis = computed(() => {
     return this.filteredItems()
       .filter((item) => item.itemType === ItemType.GUI_TEXT)
-      .sort((a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0));
+      .sort(GuisAndToolsComponent.byStartingPoint);
   });
 
   /** Combined GUIs (kept for total filteredItems counting). */
@@ -472,11 +481,12 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private scrollSpyReady = false;
 
   constructor() {
-    // Auto-center the active pill when the active section changes
+    // The section row only moves when the reader has scrolled to a new
+    // section, so bringing the current one into view never fights a swipe.
     effect(() => {
       const active = this.activeSection();
       if (!isPlatformBrowser(this.platformId)) return;
-      setTimeout(() => this.autoCenterActivePill(active), 60);
+      setTimeout(() => this.centerActiveSectionTab(active), 60);
     });
 
     // Rebuild IntersectionObserver when sticky offset changes
@@ -535,44 +545,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
         this.sectionObserver?.observe(element);
       }
     });
-  }
-
-  onWindowScroll(): void {
-    const scrollPosition =
-      window.pageYOffset ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
-    // Re-engage auto-centering after enough vertical scroll
-    if (
-      this.userOverriddenAt > 0 &&
-      Math.abs(scrollPosition - this.lastAutoEngageScrollY) >
-        GuisAndToolsComponent.REENGAGE_THRESHOLD
-    ) {
-      this.userOverriddenAt = 0;
-    }
-
-    // Calculate scroll progress through the active section
-    const activeSectionEl = document.getElementById(
-      `section-${this.activeSection()}`,
-    );
-    if (activeSectionEl) {
-      const rect = activeSectionEl.getBoundingClientRect();
-      const sectionHeight = rect.height;
-      if (sectionHeight > 0) {
-        const scrolled = -rect.top;
-        const progress = Math.min(
-          100,
-          Math.max(0, (scrolled / sectionHeight) * 100),
-        );
-        this.activeSectionProgress.set(Math.round(progress));
-      }
-    }
-  }
-
-  /** Called by the pills scroll container on horizontal scroll. */
-  public onPillsManualScroll(): void {
-    this.userOverriddenAt = Date.now();
   }
 
   public toggleType(type: string): void {
@@ -646,13 +618,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.passedSections().has(sectionId);
   }
 
-  /** Returns an inline background style for the active pill's progressive fill. */
-  public pillBackground(sectionId: string): string | null {
-    if (this.activeSection() !== sectionId) return null;
-    const p = this.activeSectionProgress();
-    return `linear-gradient(to right, var(--pill-fill) ${p}%, var(--pill-empty) ${p}%)`;
-  }
-
   public toggleRow(itemName: string): void {
     const expanded = new Set(this.expandedRows());
     if (expanded.has(itemName)) {
@@ -681,55 +646,32 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.collapsedSections().has(sectionName);
   }
 
-  public getButtonText(item: ExtendedItem): string {
-    if (item.downloadButtonText) {
-      // The downloadButtonText already has the name interpolated from context-replacer
-      return item.downloadButtonText;
-    }
-    if (item.itemType === ItemType.TOOL) {
-      return this.translocoService.translate('guis_and_tools.go_to_tool', {
-        toolName: item.name,
-      });
-    }
-    return this.translocoService.translate('guis_and_tools.go_to', {
-      name: item.name,
-    });
-  }
-
-  /** Programmatically center the active pill unless the user recently swiped. */
-  private autoCenterActivePill(activeSectionId: string): void {
-    if (this.userOverriddenAt > 0) return;
-
-    const container = this.pillsScroll()?.nativeElement;
+  /** Bring the tab for the current section into the middle of its row. */
+  private centerActiveSectionTab(activeSectionId: string): void {
+    const container = this.sectionsScroll()?.nativeElement;
     if (!container) return;
 
-    const pill = container.querySelector(
+    const tab = container.querySelector(
       `[data-section-id="${activeSectionId}"]`,
     );
-    if (!pill) return;
+    if (!tab) return;
 
-    // Use horizontal-only scrolling to avoid browser vertical adjustments that
-    // can happen with scrollIntoView on mobile when sticky elements are present.
+    // Scrolling the container horizontally rather than calling scrollIntoView
+    // keeps the browser from also adjusting the page's vertical position,
+    // which it does on touch devices when sticky elements are in the page.
     const containerRect = container.getBoundingClientRect();
-    const pillRect = pill.getBoundingClientRect();
-    const currentLeft = container.scrollLeft;
+    const tabRect = tab.getBoundingClientRect();
     const deltaLeft =
-      pillRect.left -
+      tabRect.left -
       containerRect.left -
-      (container.clientWidth / 2 - pill.clientWidth / 2);
+      (container.clientWidth / 2 - tab.clientWidth / 2);
     const maxLeft = container.scrollWidth - container.clientWidth;
-    const targetLeft = Math.max(0, Math.min(maxLeft, currentLeft + deltaLeft));
+    const targetLeft = Math.max(
+      0,
+      Math.min(maxLeft, container.scrollLeft + deltaLeft),
+    );
 
-    container.scrollTo({
-      left: targetLeft,
-      behavior: 'smooth',
-    });
-
-    this.lastAutoEngageScrollY =
-      window.pageYOffset ||
-      document.documentElement.scrollTop ||
-      document.body.scrollTop ||
-      0;
+    container.scrollTo({ left: targetLeft, behavior: 'smooth' });
   }
 
   // Convert ExtendedItem to DisplayItem for the sub-component
@@ -749,6 +691,8 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
       sourceControlLink: item.sourceControlLink,
       recommended: item.recommended,
       easyToUse: item.easyToUse,
+      onThisSite: item.onThisSite,
+      lastVerified: item.lastVerified,
     };
   }
 }
