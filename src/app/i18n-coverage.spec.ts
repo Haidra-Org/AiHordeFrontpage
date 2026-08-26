@@ -175,7 +175,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'community.community',
   'tools_section_description',
   'view_all_guis_and_tools',
-  'homepage.intro.this_site',
   'homepage.intro.cta.generate',
   'homepage.intro.cta.worker',
   'homepage.intro.cta.api',

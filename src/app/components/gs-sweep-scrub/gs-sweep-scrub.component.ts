@@ -455,40 +455,45 @@ const FILM_EDGE_PX = 8;
          frame rather than under it, so the reader never loses the picture to
          read what it is. -->
     <ng-template #stageChrome let-inViewer="inViewer">
-      <span class="gs-sweep-titles">
-        <span class="gs-sweep-pill">{{ pillText() }}</span>
-        <!-- Two frames drawn the same size on the page can be four times apart
-             in pixels, and on an upscaler strip that difference is the whole
-             subject. The size is said wherever the picture is. -->
-        @if (viewSize(); as size) {
-          <app-gs-pixel-badge
-            class="gs-pixels--stage"
-            [attr.aria-live]="inViewer ? 'polite' : null"
-            [width]="size.width"
-            [height]="size.height"
-            [shown]="inViewer || zoomedIn() ? shownPercent() : null"
-          />
-        }
-      </span>
-      @if (comparisons().length > 0) {
-        <span
-          class="gs-sweep-chips"
-          role="group"
-          [attr.aria-label]="'generate.sweeps.compare_group' | transloco"
-        >
-          @for (against of comparisons(); track against.kind) {
-            <button
-              type="button"
-              class="gs-sweep-chip"
-              [class.is-on]="compareWith() === against.kind"
-              [attr.aria-pressed]="compareWith() === against.kind"
-              (click)="toggleCompare(against.kind); $event.stopPropagation()"
-            >
-              {{ against.labelKey | transloco }}
-            </button>
+      <!-- The value and what the frame is held against share one band along the
+           top, so that where the two cannot fit on a line the chips take the
+           line below rather than lying over the value. -->
+      <span class="gs-sweep-topbar">
+        <span class="gs-sweep-titles">
+          <span class="gs-sweep-pill">{{ pillText() }}</span>
+          <!-- Two frames drawn the same size on the page can be four times apart
+               in pixels, and on an upscaler strip that difference is the whole
+               subject. The size is said wherever the picture is. -->
+          @if (viewSize(); as size) {
+            <app-gs-pixel-badge
+              class="gs-pixels--stage"
+              [attr.aria-live]="inViewer ? 'polite' : null"
+              [width]="size.width"
+              [height]="size.height"
+              [shown]="inViewer || zoomedIn() ? shownPercent() : null"
+            />
           }
         </span>
-      }
+        @if (comparisons().length > 0) {
+          <span
+            class="gs-sweep-chips"
+            role="group"
+            [attr.aria-label]="'generate.sweeps.compare_group' | transloco"
+          >
+            @for (against of comparisons(); track against.kind) {
+              <button
+                type="button"
+                class="gs-sweep-chip"
+                [class.is-on]="compareWith() === against.kind"
+                [attr.aria-pressed]="compareWith() === against.kind"
+                (click)="toggleCompare(against.kind); $event.stopPropagation()"
+              >
+                {{ against.labelKey | transloco }}
+              </button>
+            }
+          </span>
+        }
+      </span>
       @if (!inViewer && offersZoom()) {
         <ng-container [ngTemplateOutlet]="scales" />
       }

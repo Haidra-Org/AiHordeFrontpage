@@ -620,8 +620,10 @@
     @apply flex flex-col gap-2;
   }
 
+  /* The badges keep their words at any width: where the name and the badges
+     cannot share a line, the badges take the line under it. */
   .tools-grid-card-title {
-    @apply text-base font-semibold m-0 flex items-center gap-2;
+    @apply text-base font-semibold m-0 flex flex-wrap items-center gap-2;
     color: var(--color-content-primary);
   }
 

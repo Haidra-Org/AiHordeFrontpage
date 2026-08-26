@@ -10198,16 +10198,29 @@ app-gs-sweep-scrub {
    They stack rather than sit side by side: the value is what the reader came
    for and the size is what stops them mistaking two frames drawn the same size
    on the page for two frames of the same size. */
-.gen-studio .gs-sweep-titles {
+/* The band the two of them share along the top of the picture: the value on the
+   left, what the frame can be held against on the right. One band rather than
+   two corners, because on a phone the two runs of text meet in the middle, and
+   a band lets the right-hand run take the line under the value instead. */
+.gen-studio .gs-sweep-topbar {
   position: absolute;
   top: var(--gs-space-2);
+  right: var(--gs-space-2);
   left: var(--gs-space-2);
   z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gs-space-1);
+  pointer-events: none;
+}
+.gen-studio .gs-sweep-titles {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--gs-space-1);
-  max-width: calc(100% - var(--gs-space-8));
+  min-width: 0;
+  max-width: 100%;
   pointer-events: none;
 }
 .gen-studio .gs-sweep-pill {
@@ -10227,14 +10240,13 @@ app-gs-sweep-scrub {
 /* What the frame can be held against, where the strip was made from something:
    the picture it was painted over, and the map a detector drew from it. */
 .gen-studio .gs-sweep-chips {
-  position: absolute;
-  top: var(--gs-space-2);
-  right: var(--gs-space-2);
-  z-index: 4;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--gs-space-1);
+  /* Held to the right of whichever line of the band it lands on. */
+  margin-left: auto;
+  pointer-events: auto;
 }
 .gen-studio .gs-sweep-chip {
   min-height: 28px;
