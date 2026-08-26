@@ -1,12 +1,13 @@
 /* =================================================================
    GENERATE PAGE — "design studio" fidelity styling
 
-   This page has a privileged, app-unlike visual language (a focused
-   creation workspace) and deliberately departs from the shared design
-   system. Everything here is scoped under the `.gen-studio` page-root
-   class so none of it can leak into the rest of the site. Light is the
-   canonical target (values match the design mockup exactly); dark is a
-   faithful adaptation that keeps the same accents and layout.
+   This page is a focused creation workspace whose visual language became
+   the shared design system's HD family: every `--gs-*` token below is an
+   alias of an `--hd-*` token, and the `.gs-*` primitives duplicate the
+   `.hd-*` ones until the templates migrate. Everything here is scoped
+   under the `.gen-studio` page-root class so none of it leaks into the
+   rest of the site. Light is the canonical target; dark is carried by
+   the tokens and keeps the same accents and layout.
 
    Fonts are self-hosted (latin subset) so the `@font-face` rules only
    trigger a download when text under `.gen-studio` actually uses them,
