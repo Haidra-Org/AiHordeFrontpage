@@ -1166,22 +1166,19 @@
   }
 
   /* A speed far from what the network expects: worth seeing, not worth
-     alarming about, so the figure takes an edge rather than a plate. A
-     plate would have to be a third surface tone on a card that already
-     changes tone when the worker is in trouble. */
-  .worker-speed-highlight-low,
-  .worker-speed-highlight-high {
-    margin: 0 calc(var(--hd-space-1) * -1);
-    padding: 0 var(--hd-space-1);
-    border-radius: var(--hd-radius-sm);
+     alarming about, so the figure itself takes a hue and nothing else on
+     the row changes. An edge or a plate on the row lands beside the label
+     rather than on the number, and a plate would be a third surface tone
+     on a card that already changes tone when the worker is in trouble.
+     Both hues are the family's text-safe ones in dark. */
+  .worker-speed-highlight-low .worker-card-value,
+  .worker-speed-highlight-low .worker-row-metric-value {
+    color: var(--hd-changed);
   }
 
-  .worker-speed-highlight-low {
-    box-shadow: inset 2px 0 0 var(--hd-changed);
-  }
-
-  .worker-speed-highlight-high {
-    box-shadow: inset 2px 0 0 var(--hd-accent);
+  .worker-speed-highlight-high .worker-card-value,
+  .worker-speed-highlight-high .worker-row-metric-value {
+    color: var(--hd-pop-accent);
   }
 
   /* Worker capability badges */
