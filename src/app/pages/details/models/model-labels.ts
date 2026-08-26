@@ -4,6 +4,14 @@
  * same way wherever it appears.
  */
 
+import {
+  baselineSupportsControlNet,
+  baselineSupportsMask,
+  baselineSupportsQrCode,
+  baselineSupportsRemix,
+  baselineSupportsTransparent,
+} from '../../../services/model-reference.service';
+
 /**
  * The name a reader knows a model family by. The reference records the family
  * in the API's own vocabulary; a family that is not listed here reads as the
@@ -57,4 +65,72 @@ export function formatFileSize(bytes: number | null): string {
     return `${gigabytes.toFixed(gigabytes >= 10 ? 0 : 1)} GB`;
   }
   return `${Math.max(1, Math.round(bytes / 1024 ** 2))} MB`;
+}
+
+/** One extra thing a model can do beyond making a picture from a prompt. */
+export interface ModelCapability {
+  id: string;
+  labelKey: string;
+  icon: string;
+}
+
+/**
+ * What a baseline adds beyond making a picture. Each entry is read from the
+ * same table the studio gates its own controls with, so the list, a model's
+ * page and the studio cannot disagree about what a model will accept.
+ */
+const CAPABILITY_RULES: readonly (ModelCapability & {
+  supports: (baseline: string | null) => boolean;
+})[] = [
+  {
+    id: 'controlnet',
+    labelKey: 'details.models.capability.controlnet',
+    icon: 'adjustments-horizontal',
+    supports: baselineSupportsControlNet,
+  },
+  {
+    id: 'mask',
+    labelKey: 'details.models.capability.mask',
+    icon: 'paintbrush',
+    supports: baselineSupportsMask,
+  },
+  {
+    id: 'remix',
+    labelKey: 'details.models.capability.remix',
+    icon: 'refresh-alt',
+    supports: baselineSupportsRemix,
+  },
+  {
+    id: 'qr_code',
+    labelKey: 'details.models.capability.qr_code',
+    icon: 'squares-2x2',
+    supports: baselineSupportsQrCode,
+  },
+  {
+    id: 'transparent',
+    labelKey: 'details.models.capability.transparent',
+    icon: 'photo-alt',
+    supports: baselineSupportsTransparent,
+  },
+];
+
+/** Every extra a baseline offers, in the order they are always listed in. */
+export function capabilitiesFor(baseline: string): ModelCapability[] {
+  // A model the reference has never heard of has no baseline to read, and the
+  // rules answer "allow" for an unknown one, so nothing is claimed for it.
+  if (baseline === '') {
+    return [];
+  }
+  return CAPABILITY_RULES.filter((rule) => rule.supports(baseline)).map(
+    ({ id, labelKey, icon }) => ({ id, labelKey, icon }),
+  );
+}
+
+/** Every extra the list offers to narrow by. */
+export function allCapabilities(): ModelCapability[] {
+  return CAPABILITY_RULES.map(({ id, labelKey, icon }) => ({
+    id,
+    labelKey,
+    icon,
+  }));
 }

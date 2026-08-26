@@ -31,12 +31,13 @@ import {
   SynthesizedUnit,
   UnitConversionService,
 } from '../../../services/unit-conversion.service';
-import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
   baselineLabel,
+  capabilitiesFor,
   formatFileSize,
   formatParameterCount,
+  ModelCapability,
 } from './model-labels';
 
 /** The two kinds of model the horde publishes a reference for. */
@@ -191,13 +192,7 @@ export function textSettingRows(
  */
 @Component({
   selector: 'app-model-detail',
-  imports: [
-    RouterLink,
-    TranslocoPipe,
-    DecimalPipe,
-    IconComponent,
-    UnitTooltipComponent,
-  ],
+  imports: [RouterLink, TranslocoPipe, DecimalPipe, IconComponent],
   templateUrl: './model-detail.component.html',
   styleUrl: './model-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -428,6 +423,42 @@ export class ModelDetailComponent {
       ? this.unitConversion.formatModelPerformanceImage(performance)
       : this.unitConversion.formatModelPerformanceText(performance);
   });
+
+  /**
+   * Which unit the queued and performance figures are counted in. Pictures and
+   * text are measured differently, so the unit is named on the label and the
+   * figure beside it stays a number.
+   */
+  public readonly queuedColumnKey = computed(() =>
+    this.kind() === 'image'
+      ? 'details.models.column.queued_image'
+      : 'details.models.column.queued_text',
+  );
+
+  public readonly performanceColumnKey = computed(() =>
+    this.kind() === 'image'
+      ? 'details.models.column.performance_image'
+      : 'details.models.column.performance_text',
+  );
+
+  public readonly queuedValue = computed(() => {
+    const { value, prefixShort } = this.queuedUnit().primary;
+    return `${value.toFixed(1)}${prefixShort}`;
+  });
+
+  public readonly performanceValue = computed(() => {
+    const unit = this.performanceUnit();
+    if (unit === null) {
+      return '-';
+    }
+    const { value, prefixShort } = unit.primary;
+    return `${value.toFixed(this.kind() === 'image' ? 2 : 1)}${prefixShort}`;
+  });
+
+  /** Everything this model's family accepts, listed in full. */
+  public readonly capabilities = computed<ModelCapability[]>(() =>
+    capabilitiesFor(this.record()?.baseline ?? ''),
+  );
 
   /** Where the back link returns to. */
   public readonly listLink = computed(() => ['/details/models', this.kind()]);

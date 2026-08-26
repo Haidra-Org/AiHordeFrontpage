@@ -89,7 +89,7 @@
           }
         </div>
 
-        <div class="models-list-marks">
+        <div class="model-detail-marks">
           @if (family() !== "") {
             <span class="hd-badge models-mark models-mark--family">{{
               family()
@@ -188,15 +188,15 @@
 
       <!-- What the horde is doing with it -->
       <div class="model-detail-main">
-        <div class="model-detail-tiles">
-          <div class="model-detail-tile">
-            <span class="model-detail-tile-label">{{
-              "details.models.workers" | transloco
+        <div class="stat-tiles">
+          <div class="stat-tile">
+            <span class="stat-tile-label">{{
+              "details.models.column.workers" | transloco
             }}</span>
-            <span class="model-detail-tile-value">{{
+            <span class="stat-tile-value">{{
               status()?.count ?? 0 | number
             }}</span>
-            <span class="model-detail-tile-note">{{
+            <span class="stat-tile-note">{{
               (status()?.count
                 ? "details.model_detail.serving_now"
                 : "details.model_detail.serving_none"
@@ -204,62 +204,67 @@
             }}</span>
           </div>
 
-          <div class="model-detail-tile">
-            <span class="model-detail-tile-label">{{
-              "details.models.queued" | transloco
+          <div class="stat-tile">
+            <span class="stat-tile-label">{{
+              queuedColumnKey() | transloco
             }}</span>
-            <span class="model-detail-tile-value">
-              {{ queuedUnit().primary.value | number: "1.1-1" }}
-              <app-unit-tooltip
-                [unit]="queuedUnit()"
-                [primaryOverride]="
-                  queuedUnit().primary.prefix + queuedUnit().primary.unit
-                "
-              />
-            </span>
+            <span class="stat-tile-value">{{ queuedValue() }}</span>
+            <span class="stat-tile-note">{{
+              queuedUnit().technical.formatted
+            }}</span>
           </div>
 
-          <div class="model-detail-tile">
-            <span class="model-detail-tile-label">{{
-              "details.models.usage" | transloco
+          <div class="stat-tile">
+            <span class="stat-tile-label">{{
+              "details.models.column.usage" | transloco
             }}</span>
-            <span class="model-detail-tile-value">{{
-              usageMonth() | number
-            }}</span>
-            <span class="model-detail-tile-note">{{
+            <span class="stat-tile-value">{{ usageMonth() | number }}</span>
+            <span class="stat-tile-note">{{
               "details.model_detail.usage_total"
                 | transloco: { total: usageTotal() }
             }}</span>
           </div>
 
-          <div class="model-detail-tile">
-            <span class="model-detail-tile-label">{{
-              "details.models.performance" | transloco
+          <div class="stat-tile">
+            <span class="stat-tile-label">{{
+              performanceColumnKey() | transloco
             }}</span>
-            <span class="model-detail-tile-value">
-              @if (performanceUnit(); as perfUnit) {
-                {{ perfUnit.primary.value | number: "1.2-2" }}
-                <app-unit-tooltip
-                  [unit]="perfUnit"
-                  [primaryOverride]="
-                    perfUnit.primary.prefix + perfUnit.primary.unit
-                  "
-                />
-              } @else {
-                -
-              }
-            </span>
+            <span class="stat-tile-value">{{ performanceValue() }}</span>
+            @if (performanceUnit(); as perfUnit) {
+              <span class="stat-tile-note">{{
+                perfUnit.technical.formatted
+              }}</span>
+            }
           </div>
 
-          <div class="model-detail-tile">
-            <span class="model-detail-tile-label">{{
-              "details.models.eta" | transloco
+          <div class="stat-tile">
+            <span class="stat-tile-label">{{
+              "details.models.column.eta" | transloco
             }}</span>
-            <span class="model-detail-tile-value">{{
+            <span class="stat-tile-value">{{
               status()?.count ? formatEta(status()?.eta) : "-"
             }}</span>
           </div>
         </div>
+
+        @if (capabilities().length > 0) {
+          <div class="hd-card">
+            <p class="hd-card-title">
+              {{ "details.models.filters.works_with" | transloco }}
+            </p>
+            <p class="model-detail-note">
+              {{ "details.model_detail.works_with_note" | transloco }}
+            </p>
+            <ul class="model-detail-caps">
+              @for (capability of capabilities(); track capability.id) {
+                <li class="models-cap">
+                  <app-icon [name]="capability.icon" />
+                  {{ capability.labelKey | transloco }}
+                </li>
+              }
+            </ul>
+          </div>
+        }
 
         <!-- Doors -->
         @if (kind() === "image") {

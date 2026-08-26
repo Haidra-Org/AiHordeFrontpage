@@ -138,14 +138,62 @@ describe('ModelsListComponent', () => {
     expect(html).toContain('Added by a worker');
   });
 
-  it('offers every model a way into the studio', () => {
+  it('offers every model a way into the studio, named rather than printed', () => {
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector(
       'a[href^="/generate/image"]',
     ) as HTMLAnchorElement | null;
     expect(link?.getAttribute('href')).toBe('/generate/image?model=Deliberate');
-    expect(link?.textContent?.trim()).toBe('Try this model');
+    // The row is one line, so the way in is a glyph and the words are its name.
+    expect(link?.getAttribute('aria-label')).toBe(
+      'Try this model in the studio',
+    );
+    expect(link?.textContent?.trim()).toBe('');
+  });
+
+  it('names each unit once, on the column, and leaves the cells as numbers', () => {
+    fixture.detectChanges();
+    const html = fixture.nativeElement.innerHTML as string;
+
+    expect(html).toContain('Queued (mps)');
+    expect(html).toContain('Performance (mps/s)');
+    expect(
+      fixture.nativeElement.querySelectorAll('app-unit-tooltip').length,
+    ).toBe(0);
+  });
+
+  it('explains the columns once rather than once per column', () => {
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.hd-help-btn').length).toBe(
+      1,
+    );
+    expect(
+      fixture.nativeElement.querySelectorAll('app-info-tooltip').length,
+    ).toBe(0);
+  });
+
+  it('narrows the list to the models that accept an extra', () => {
+    fixture.detectChanges();
+
+    // The horde's ControlNet annotators are SD 1.5 only, so one row survives.
+    fixture.componentInstance.setCapabilityFilter('controlnet');
+    fixture.detectChanges();
+    expect(rowNames()).toEqual(['Deliberate']);
+
+    fixture.componentInstance.setCapabilityFilter('controlnet');
+    fixture.detectChanges();
+    expect(rowNames().length).toBeGreaterThan(1);
+  });
+
+  it('counts what the filters left, in the filter bar', () => {
+    fixture.detectChanges();
+    expect(fixture.nativeElement.innerHTML).toContain('4 models');
+
+    fixture.componentInstance.setBaselineFilter('stable_diffusion_xl');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.innerHTML).toContain('1 of 4 models');
   });
 
   it('opens a model on its own page', () => {

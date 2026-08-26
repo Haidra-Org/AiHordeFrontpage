@@ -15,29 +15,24 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { DecimalPipe } from '@angular/common';
-import { ScrollFadeComponent } from '../../../helper/scroll-fade.component';
-import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
-import {
-  baselineSupportsControlNet,
-  baselineSupportsMask,
-  baselineSupportsQrCode,
-  baselineSupportsRemix,
-  baselineSupportsTransparent,
-  ModelReferenceService,
-} from '../../../services/model-reference.service';
+import { ModelReferenceService } from '../../../services/model-reference.service';
 import { ActiveModel, mergeModelList } from '../../../types/active-model';
 import { setPageTitle } from '../../../helper/page-title';
 import {
   SynthesizedUnit,
   UnitConversionService,
 } from '../../../services/unit-conversion.service';
-import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
 import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
-import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { baselineLabel, formatParameterCount } from './model-labels';
+import {
+  allCapabilities,
+  baselineLabel,
+  capabilitiesFor,
+  formatParameterCount,
+  ModelCapability,
+} from './model-labels';
 
 export type ModelsTab = 'image' | 'text';
 
@@ -57,13 +52,6 @@ interface ModelSuggestion {
   count: number;
 }
 
-/** One extra thing a model can do, drawn as a small chip on its row. */
-interface ModelCapability {
-  id: string;
-  labelKey: string;
-  icon: string;
-}
-
 /** One row of the list: a model, and everything the row prints about it. */
 export interface ModelRow {
   model: ActiveModel;
@@ -80,57 +68,13 @@ export interface ModelRow {
   capabilities: ModelCapability[];
 }
 
-/**
- * What a baseline adds beyond making a picture. Each is read from the same
- * table the studio gates its own controls with, so the row and the studio
- * cannot disagree about what a model will accept.
- */
-const CAPABILITY_RULES: readonly (ModelCapability & {
-  supports: (baseline: string | null) => boolean;
-})[] = [
-  {
-    id: 'controlnet',
-    labelKey: 'details.models.capability.controlnet',
-    icon: 'adjustments-horizontal',
-    supports: baselineSupportsControlNet,
-  },
-  {
-    id: 'mask',
-    labelKey: 'details.models.capability.mask',
-    icon: 'paintbrush',
-    supports: baselineSupportsMask,
-  },
-  {
-    id: 'remix',
-    labelKey: 'details.models.capability.remix',
-    icon: 'refresh-alt',
-    supports: baselineSupportsRemix,
-  },
-  {
-    id: 'qr_code',
-    labelKey: 'details.models.capability.qr_code',
-    icon: 'squares-2x2',
-    supports: baselineSupportsQrCode,
-  },
-  {
-    id: 'transparent',
-    labelKey: 'details.models.capability.transparent',
-    icon: 'photo-alt',
-    supports: baselineSupportsTransparent,
-  },
-];
-
 @Component({
   selector: 'app-models-list',
   imports: [
     RouterLink,
     TranslocoPipe,
     DecimalPipe,
-    UnitTooltipComponent,
     PageIntroComponent,
-    InfoTooltipComponent,
-    ScrollFadeComponent,
-    StickyHeaderDirective,
     IconComponent,
   ],
   templateUrl: './models-list.component.html',
@@ -187,11 +131,17 @@ export class ModelsListComponent implements OnInit {
   /** The chosen baseline, or null for every baseline. */
   public readonly baselineFilter = signal<string | null>(null);
 
+  /** The capability the list is narrowed to, or null for every model. */
+  public readonly capabilityFilter = signal<string | null>(null);
+
   /** Whether models nobody is running are left out. */
   public readonly workersOnly = signal(false);
 
   /** Whether models marked adult are left out. */
   public readonly hideAdult = signal(false);
+
+  /** Whether the note about what the columns hold is open. */
+  public readonly columnsHelpOpen = signal(false);
 
   /** Sort field. */
   public readonly sortField = signal<ModelsSortField>('count');
@@ -282,10 +232,16 @@ export class ModelsListComponent implements OnInit {
       .map(([baseline]) => baseline);
   });
 
+  /** The extras the current tab can be narrowed to. */
+  public readonly capabilityOptions = computed<ModelCapability[]>(() =>
+    this.activeTab() === 'image' ? allCapabilities() : [],
+  );
+
   /** Filtered and sorted rows. */
   public readonly filteredRows = computed<ModelRow[]>(() => {
     const query = this.searchQuery().toLowerCase().trim();
     const baseline = this.baselineFilter();
+    const capability = this.capabilityFilter();
     const workersOnly = this.workersOnly();
     const hideAdult = this.hideAdult();
     const field = this.sortField();
@@ -294,6 +250,12 @@ export class ModelsListComponent implements OnInit {
     const filtered = this.allRows().filter((row) => {
       if (query && !row.model.name.toLowerCase().includes(query)) return false;
       if (baseline !== null && row.baseline !== baseline) return false;
+      if (
+        capability !== null &&
+        !row.capabilities.some((entry) => entry.id === capability)
+      ) {
+        return false;
+      }
       if (workersOnly && row.model.count === 0) return false;
       if (hideAdult && row.nsfw) return false;
       return true;
@@ -339,10 +301,43 @@ export class ModelsListComponent implements OnInit {
       : this.unitConversion.formatModelQueuedText(total);
   });
 
+  /**
+   * The queued total as a bare number. The unit is named once, on the tile's
+   * label, so the number beside it stays a number.
+   */
+  public readonly totalQueuedValue = computed(() =>
+    this.scaled(this.totalQueuedUnit(), 1),
+  );
+
+  /** The label over the queued total, which names the unit it is counted in. */
+  public readonly totalQueuedLabelKey = computed(() =>
+    this.activeTab() === 'image'
+      ? 'details.models.total_queued_image'
+      : 'details.models.total_queued_text',
+  );
+
+  /**
+   * Which unit the queued and performance columns are counted in. The two tabs
+   * measure different work, so the heading says which before any number is
+   * printed under it.
+   */
+  public readonly queuedColumnKey = computed(() =>
+    this.activeTab() === 'image'
+      ? 'details.models.column.queued_image'
+      : 'details.models.column.queued_text',
+  );
+
+  public readonly performanceColumnKey = computed(() =>
+    this.activeTab() === 'image'
+      ? 'details.models.column.performance_image'
+      : 'details.models.column.performance_text',
+  );
+
   /** Whether anything is narrowing the list. */
   public readonly filtersActive = computed(
     () =>
       this.baselineFilter() !== null ||
+      this.capabilityFilter() !== null ||
       this.workersOnly() ||
       this.hideAdult() ||
       this.searchQuery().trim() !== '',
@@ -359,15 +354,7 @@ export class ModelsListComponent implements OnInit {
       nsfw: record?.nsfw ?? false,
       inpainting: record?.inpainting ?? false,
       usage,
-      // A model the reference has never heard of has no baseline to read, and
-      // the capability rules answer "allow" for an unknown one, so a chip is
-      // only drawn where the reference actually says which family it is.
-      capabilities:
-        baseline === ''
-          ? []
-          : CAPABILITY_RULES.filter((rule) => rule.supports(baseline)).map(
-              ({ id, labelKey, icon }) => ({ id, labelKey, icon }),
-            ),
+      capabilities: capabilitiesFor(baseline),
     };
   }
 
@@ -410,6 +397,30 @@ export class ModelsListComponent implements OnInit {
       : this.unitConversion.formatModelPerformanceText(model.performance);
   }
 
+  /**
+   * A cell's number without its unit. The thousands step stays attached to the
+   * digits, because dropping it would change what the number says.
+   */
+  private scaled(unit: SynthesizedUnit, decimals: number): string {
+    const { value, prefixShort } = unit.primary;
+    return `${value.toFixed(decimals)}${prefixShort}`;
+  }
+
+  public queuedCell(model: ActiveModel): string {
+    if (!model.queued || model.queued <= 0) {
+      return '-';
+    }
+    return this.scaled(this.getModelQueuedUnit(model), 1);
+  }
+
+  public performanceCell(model: ActiveModel): string {
+    const unit = this.getModelPerformanceUnit(model);
+    if (unit === null) {
+      return '-';
+    }
+    return this.scaled(unit, this.activeTab() === 'image' ? 2 : 1);
+  }
+
   constructor() {
     effect(() => {
       const routeType = this.routeModelType();
@@ -449,6 +460,7 @@ export class ModelsListComponent implements OnInit {
     // The columns carry different units on the two tabs, so an order chosen for
     // one of them says nothing about the other.
     this.baselineFilter.set(null);
+    this.capabilityFilter.set(null);
     this.sortField.set('count');
     this.sortDirection.set('desc');
     void this.router.navigate(['/details/models', tab], { replaceUrl: true });
@@ -589,7 +601,7 @@ export class ModelsListComponent implements OnInit {
   /** Handle clicks outside the autocomplete to close it. */
   public onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;
-    if (!target.closest('.filter-search-autocomplete')) {
+    if (!target.closest('.models-search')) {
       this.autocompleteOpen.set(false);
     }
   }
@@ -600,8 +612,19 @@ export class ModelsListComponent implements OnInit {
     );
   }
 
+  public setCapabilityFilter(capability: string | null): void {
+    this.capabilityFilter.update((current) =>
+      current === capability ? null : capability,
+    );
+  }
+
+  public toggleColumnsHelp(): void {
+    this.columnsHelpOpen.update((open) => !open);
+  }
+
   public clearFilters(): void {
     this.baselineFilter.set(null);
+    this.capabilityFilter.set(null);
     this.workersOnly.set(false);
     this.hideAdult.set(false);
     this.searchQuery.set('');
