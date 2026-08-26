@@ -161,28 +161,28 @@
   --gs-dur: 220ms;
   --gs-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   /* The four scales every gs-* rule draws from; see docs/design-language.md. */
-  --gs-text-2xs: 10px;
-  --gs-text-xs: 11.5px;
-  --gs-text-sm: 12.5px;
-  --gs-text-md: 13.5px;
-  --gs-text-lg: 15.5px;
-  --gs-text-xl: 20px;
-  --gs-space-1: 4px;
-  --gs-space-2: 8px;
+  --gs-text-2xs: var(--hd-text-2xs);
+  --gs-text-xs: var(--hd-text-xs);
+  --gs-text-sm: var(--hd-text-sm);
+  --gs-text-md: var(--hd-text-md);
+  --gs-text-lg: var(--hd-text-lg);
+  --gs-text-xl: var(--hd-text-xl);
+  --gs-space-1: var(--hd-space-1);
+  --gs-space-2: var(--hd-space-2);
   /* A half step between 8 and 12, for the studio's dense surfaces: card
      padding on a phone and the rows inside a card, where 12 is loose and 8
      leaves the content touching its edge. */
-  --gs-space-2-5: 10px;
-  --gs-space-3: 12px;
-  --gs-space-4: 16px;
-  --gs-space-6: 24px;
-  --gs-space-8: 32px;
-  --gs-radius-sm: 8px;
-  --gs-radius-md: 12px;
-  --gs-radius-lg: 16px;
-  --gs-radius-pill: 999px;
-  --gs-control-h: 40px;
-  --gs-control-h-dense: 36px;
+  --gs-space-2-5: var(--hd-space-2-5);
+  --gs-space-3: var(--hd-space-3);
+  --gs-space-4: var(--hd-space-4);
+  --gs-space-6: var(--hd-space-6);
+  --gs-space-8: var(--hd-space-8);
+  --gs-radius-sm: var(--hd-radius-sm);
+  --gs-radius-md: var(--hd-radius-md);
+  --gs-radius-lg: var(--hd-radius-lg);
+  --gs-radius-pill: var(--hd-radius-pill);
+  --gs-control-h: var(--hd-control-h);
+  --gs-control-h-dense: var(--hd-control-h-dense);
   /* The tutorials' own hue: a warm amber that belongs to learning alone, so a
      door that starts a tutorial, the dock that runs one and the frame that says
      one is running all read as one family, apart from the accent and from any
@@ -194,7 +194,7 @@
   --gs-tut-glow: rgba(245, 158, 11, 0.35);
   /* The `?` glyph's box. A row without a trigger reserves this width so the
      controls in a group still end on one edge. */
-  --gs-help-trigger: 24px;
+  --gs-help-trigger: var(--hd-help-trigger);
   /* How far a switch may travel from the words it belongs to. A card widened to
      a third of the screen would otherwise leave the two at opposite ends of the
      row, with nothing between them to carry the eye across; every option row
