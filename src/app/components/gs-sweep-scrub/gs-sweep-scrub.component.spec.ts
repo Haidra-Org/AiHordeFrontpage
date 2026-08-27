@@ -1708,6 +1708,22 @@ describe('GsSweepScrubComponent', () => {
       expect(railAt()).toBe(before);
     });
 
+    it('does not open the picture when pointer capture retargets a divider drag click', async () => {
+      await openCompared();
+      const divider = find<HTMLElement>('.gs-wipe-divider')!;
+      const wipe = find<HTMLElement>('.gs-wipe')!;
+
+      pointer(divider, 'pointerdown', { clientX: 100, clientY: 40 });
+      pointer(wipe, 'pointermove', { clientX: 260, clientY: 44 });
+      pointer(wipe, 'pointerup', { clientX: 260, clientY: 44 });
+      wipe.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, cancelable: true }),
+      );
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(false);
+    });
+
     it('opens the picture full size when the glyph is pressed over a wipe', async () => {
       await openCompared();
 

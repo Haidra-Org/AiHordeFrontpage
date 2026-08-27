@@ -69,6 +69,7 @@ function round(value: number): number {
 @Component({
   selector: 'app-gs-compare-wipe',
   imports: [TranslocoPipe, NgTemplateOutlet],
+  host: { '(click)': 'onClick($event)' },
   template: `
     <!-- One side, however this pair has to be drawn. A repeated frame has no
          single image to hang alt text on, so the nine copies are one labelled
@@ -112,7 +113,7 @@ function round(value: number): number {
       (pointerdown)="onPointerDown($event)"
       (pointermove)="onPointerMove($event)"
       (pointerup)="endDrag()"
-      (pointercancel)="endDrag()"
+      (pointercancel)="cancelDrag()"
     >
       <div class="gs-wipe-media gs-wipe-media--before">
         <ng-container
@@ -242,6 +243,8 @@ export class GsCompareWipeComponent {
   private readonly stage = viewChild<ElementRef<HTMLElement>>('stage');
 
   private dragging = false;
+  private suppressClick = false;
+  private suppressClickTimer: ReturnType<typeof setTimeout> | null = null;
   private announcedLoad = false;
 
   public readonly tileCells = TILE_CELLS;
@@ -326,6 +329,11 @@ export class GsCompareWipeComponent {
     // under it at once.
     event.stopPropagation();
     this.dragging = true;
+    this.suppressClick = true;
+    if (this.suppressClickTimer !== null) {
+      clearTimeout(this.suppressClickTimer);
+      this.suppressClickTimer = null;
+    }
     const stage = this.stage()?.nativeElement;
     if (
       stage &&
@@ -345,6 +353,30 @@ export class GsCompareWipeComponent {
 
   public endDrag(): void {
     this.dragging = false;
+    if (this.suppressClick) {
+      this.suppressClickTimer = setTimeout(() => {
+        this.suppressClick = false;
+        this.suppressClickTimer = null;
+      }, 0);
+    }
+  }
+
+  public cancelDrag(): void {
+    this.dragging = false;
+    this.suppressClick = false;
+  }
+
+  /** Pointer capture can retarget the drag's click to the picture underneath. */
+  public onClick(event: MouseEvent): void {
+    if (!this.suppressClick) {
+      return;
+    }
+    event.stopPropagation();
+    this.suppressClick = false;
+    if (this.suppressClickTimer !== null) {
+      clearTimeout(this.suppressClickTimer);
+      this.suppressClickTimer = null;
+    }
   }
 
   /**
