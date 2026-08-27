@@ -94,6 +94,8 @@
 
   .page-intro {
     margin-bottom: var(--hd-space-4);
+    margin-left: var(--hd-space-4);
+    margin-right: var(--hd-space-4);
   }
 
   .page-intro-head {

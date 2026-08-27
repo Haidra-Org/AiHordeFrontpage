@@ -383,6 +383,8 @@
   /* Entity lookup container */
   .entity-lookup {
     margin-bottom: var(--hd-space-4);
+    margin-left: var(--hd-space-4);
+    margin-right: var(--hd-space-4);
   }
 
   /* Entity lookup form */
