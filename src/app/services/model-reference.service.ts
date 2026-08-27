@@ -13,6 +13,16 @@ const MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/image_generation';
 
 /**
+ * Image models awaiting reference review. Workers may offer these models on a
+ * beta basis before their records join the main reference.
+ */
+const PENDING_MODEL_REFERENCE_URL =
+  'https://models.aihorde.net/api/model_references/v2/pending_queue/changes' +
+  '?statuses=pending&categories=image_generation&limit=500';
+
+const ANONYMOUS_API_KEY = '0000000000';
+
+/**
  * The same reference for the models the horde writes text with. It is fetched
  * only when something asks for a text model, because most of the site never
  * does and the text reference is several times the size of the image one.
@@ -21,6 +31,9 @@ const TEXT_MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/text_generation';
 
 const CACHE_KEY = 'aihorde.generate.model_baselines';
+
+/** Pending records expire independently from the main image reference. */
+const PENDING_CACHE_KEY = 'aihorde.generate.pending_model_reference';
 
 /** Where the text reference is kept. The image reference keeps its own key. */
 const TEXT_CACHE_KEY = 'aihorde.generate.text_model_reference';
@@ -179,6 +192,10 @@ interface CachedReference {
   version: number;
   fetchedAt: number;
   records: Record<string, ModelReferenceRecord>;
+}
+
+interface PendingQueuePage {
+  items?: unknown;
 }
 
 interface CachedTextReference {
@@ -356,6 +373,51 @@ export function coerceRecordMap(
   return map;
 }
 
+/**
+ * Read the full model payloads carried by pending image-reference changes.
+ * Deletions and changes for other reference categories cannot describe a beta
+ * image model and are ignored. When several changes name one model, the newest
+ * monotonic change id wins regardless of response ordering.
+ */
+export function coercePendingRecordMap(
+  raw: unknown,
+): Map<string, ModelReferenceRecord> {
+  const records = new Map<string, ModelReferenceRecord>();
+  const changeIds = new Map<string, number>();
+  if (typeof raw !== 'object' || raw === null) {
+    return records;
+  }
+  const items = (raw as PendingQueuePage).items;
+  if (!Array.isArray(items)) {
+    return records;
+  }
+  for (const item of items) {
+    if (typeof item !== 'object' || item === null) {
+      continue;
+    }
+    const change = item as Record<string, unknown>;
+    if (
+      change['status'] !== 'pending' ||
+      change['resource_kind'] !== 'model_reference' ||
+      change['category'] !== 'image_generation' ||
+      change['operation'] === 'delete'
+    ) {
+      continue;
+    }
+    const name = readText(change, 'model_name');
+    const changeId = readNumber(change, 'change_id');
+    if (name === null || changeId === null) {
+      continue;
+    }
+    const record = coerceRecord(name, change['payload']);
+    if (record && changeId > (changeIds.get(name) ?? -1)) {
+      records.set(name, record);
+      changeIds.set(name, changeId);
+    }
+  }
+  return records;
+}
+
 /** Read a text record's recommended sampling settings, or null when it has none. */
 function coerceTextSettings(raw: unknown): TextModelSettings | null {
   if (typeof raw !== 'object' || raw === null) {
@@ -482,6 +544,8 @@ export class ModelReferenceService {
   public readonly requirements = signal<ModelRequirementsMap | null>(null);
   /** The full image record per model; null until something has been loaded. */
   public readonly records = signal<ModelRecordMap | null>(null);
+  /** Beta model records awaiting acceptance into the main image reference. */
+  public readonly pendingRecords = signal<ModelRecordMap | null>(null);
   /** Whether a network round trip is in flight. */
   public readonly loading = signal(false);
 
@@ -505,13 +569,22 @@ export class ModelReferenceService {
     }
     this.started = true;
     const cached = this.readCache();
+    const pendingCached = this.readPendingCache();
     if (cached) {
       this.publish(coerceRecordMap(cached.records));
-      if (this.now() - cached.fetchedAt < MODEL_REFERENCE_TTL_MS) {
-        return;
-      }
     }
-    this.fetch();
+    if (pendingCached) {
+      this.pendingRecords.set(coerceRecordMap(pendingCached.records));
+    }
+    if (!cached || this.now() - cached.fetchedAt >= MODEL_REFERENCE_TTL_MS) {
+      this.fetch();
+    }
+    if (
+      !pendingCached ||
+      this.now() - pendingCached.fetchedAt >= MODEL_REFERENCE_TTL_MS
+    ) {
+      this.fetchPending();
+    }
   }
 
   /**
@@ -542,7 +615,11 @@ export class ModelReferenceService {
     if (name === '') {
       return null;
     }
-    return this.baselines()?.[name] ?? null;
+    return (
+      this.baselines()?.[name] ??
+      this.pendingRecords()?.get(name)?.baseline ??
+      null
+    );
   }
 
   /**
@@ -554,7 +631,11 @@ export class ModelReferenceService {
     if (name === '') {
       return null;
     }
-    return this.requirements()?.[name] ?? null;
+    return (
+      this.requirements()?.[name] ??
+      this.pendingRecords()?.get(name)?.requirements ??
+      null
+    );
   }
 
   /**
@@ -566,7 +647,19 @@ export class ModelReferenceService {
     if (name === '') {
       return null;
     }
-    return this.records()?.get(name) ?? null;
+    return (
+      this.records()?.get(name) ?? this.pendingRecords()?.get(name) ?? null
+    );
+  }
+
+  /** Whether a beta record supplies the details for an otherwise unknown model. */
+  public isPendingModel(modelName: string): boolean {
+    const name = modelName.trim();
+    return (
+      name !== '' &&
+      !this.records()?.has(name) &&
+      (this.pendingRecords()?.has(name) ?? false)
+    );
   }
 
   /** The same for a text model; null until {@link loadText} has answered. */
@@ -666,6 +759,26 @@ export class ModelReferenceService {
       });
   }
 
+  private fetchPending(): void {
+    this.http
+      .get<unknown>(PENDING_MODEL_REFERENCE_URL, {
+        headers: { apikey: ANONYMOUS_API_KEY },
+      })
+      .pipe(catchError(() => of(null)))
+      .subscribe((raw) => {
+        if (raw === null) {
+          return;
+        }
+        const records = coercePendingRecordMap(raw);
+        this.pendingRecords.set(records);
+        this.persist(PENDING_CACHE_KEY, {
+          version: CACHE_VERSION,
+          fetchedAt: this.now(),
+          records: Object.fromEntries(records),
+        } satisfies CachedReference);
+      });
+  }
+
   /**
    * Keep a copy for the next visit. A storage box that will not take it costs
    * one refetch, so a refusal is dropped rather than raised.
@@ -724,6 +837,19 @@ export class ModelReferenceService {
     if (records.size === 0) {
       return null;
     }
+    return {
+      version: CACHE_VERSION,
+      fetchedAt: source['fetchedAt'] as number,
+      records: Object.fromEntries(records),
+    };
+  }
+
+  private readPendingCache(): CachedReference | null {
+    const source = this.readEnvelope(PENDING_CACHE_KEY);
+    if (source === null || typeof source['records'] !== 'object') {
+      return null;
+    }
+    const records = coerceRecordMap(source['records']);
     return {
       version: CACHE_VERSION,
       fetchedAt: source['fetchedAt'] as number,

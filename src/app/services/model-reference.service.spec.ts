@@ -11,6 +11,7 @@ import {
   baselineSupportsQrCode,
   baselineSupportsRemix,
   baselineSupportsTransparent,
+  coercePendingRecordMap,
   coerceRecordMap,
   coerceRequirements,
   coerceTextRecordMap,
@@ -19,9 +20,13 @@ import {
 
 const MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/image_generation';
+const PENDING_MODEL_REFERENCE_URL =
+  'https://models.aihorde.net/api/model_references/v2/pending_queue/changes' +
+  '?statuses=pending&categories=image_generation&limit=500';
 const TEXT_MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/text_generation';
 const CACHE_KEY = 'aihorde.generate.model_baselines';
+const PENDING_CACHE_KEY = 'aihorde.generate.pending_model_reference';
 const TEXT_CACHE_KEY = 'aihorde.generate.text_model_reference';
 const CACHE_VERSION = 4;
 
@@ -80,6 +85,35 @@ const TEXT_FIXTURE = {
     settings: { temperature: 0.7, top_k: 40, top_p: 'nope' },
   },
   Plain: { baseline: 'llama' },
+};
+
+const PENDING_FIXTURE = {
+  items: [
+    {
+      change_id: 301,
+      resource_kind: 'model_reference',
+      category: 'image_generation',
+      model_name: 'Krea2-Turbo_fp8',
+      operation: 'create',
+      status: 'pending',
+      payload: {
+        name: 'Krea2-Turbo_fp8',
+        baseline: 'qwen_image',
+        description: 'A beta image model.',
+        requirements: {
+          min_steps: 8,
+          max_steps: 8,
+          min_cfg_scale: 1,
+          max_cfg_scale: 1,
+          samplers: ['er_sde'],
+          schedulers: ['simple'],
+        },
+      },
+    },
+  ],
+  total: 1,
+  offset: 0,
+  limit: 500,
 };
 
 function setup(): {
@@ -149,6 +183,43 @@ describe('coerceRecordMap', () => {
   it('tolerates a non-object payload', () => {
     expect(coerceRecordMap(null).size).toBe(0);
     expect(coerceRecordMap('nope').size).toBe(0);
+  });
+});
+
+describe('coercePendingRecordMap', () => {
+  it('reads model payloads from pending image-reference changes', () => {
+    const record =
+      coercePendingRecordMap(PENDING_FIXTURE).get('Krea2-Turbo_fp8');
+
+    expect(record?.baseline).toBe('qwen_image');
+    expect(record?.requirements?.samplers).toEqual(['er_sde']);
+    expect(record?.description).toBe('A beta image model.');
+  });
+
+  it('keeps the newest usable change and ignores non-model changes', () => {
+    const records = coercePendingRecordMap({
+      items: [
+        ...PENDING_FIXTURE.items,
+        {
+          ...PENDING_FIXTURE.items[0],
+          change_id: 302,
+          payload: { baseline: 'qwen_image_2' },
+        },
+        {
+          ...PENDING_FIXTURE.items[0],
+          change_id: 303,
+          operation: 'delete',
+        },
+        {
+          ...PENDING_FIXTURE.items[0],
+          change_id: 304,
+          resource_kind: 'guidance',
+        },
+      ],
+    });
+
+    expect(records.size).toBe(1);
+    expect(records.get('Krea2-Turbo_fp8')?.baseline).toBe('qwen_image_2');
   });
 });
 
@@ -237,6 +308,14 @@ describe('baseline capability rules', () => {
 describe('ModelReferenceService', () => {
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem(
+      PENDING_CACHE_KEY,
+      JSON.stringify({
+        version: CACHE_VERSION,
+        fetchedAt: Date.now(),
+        records: {},
+      }),
+    );
   });
 
   afterEach(() => {
@@ -273,6 +352,52 @@ describe('ModelReferenceService', () => {
     expect(service.requirementsFor('Flux')?.max_steps).toBe(8);
     expect(service.requirementsFor('Deliberate')).toBeNull();
     expect(service.requirementsFor('')).toBeNull();
+  });
+
+  it('uses pending details for an offered model without adding it to the reference list', () => {
+    localStorage.removeItem(PENDING_CACHE_KEY);
+    const { service, http } = setup();
+    service.load();
+    http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
+    const pending = http.expectOne(PENDING_MODEL_REFERENCE_URL);
+    expect(pending.request.headers.get('apikey')).toBe('0000000000');
+    pending.flush(PENDING_FIXTURE);
+
+    expect(service.names()).not.toContain('Krea2-Turbo_fp8');
+    expect(service.isPendingModel('Krea2-Turbo_fp8')).toBe(true);
+    expect(service.baselineFor('Krea2-Turbo_fp8')).toBe('qwen_image');
+    expect(service.requirementsFor('Krea2-Turbo_fp8')?.max_steps).toBe(8);
+    expect(service.recordFor('Krea2-Turbo_fp8')?.description).toBe(
+      'A beta image model.',
+    );
+
+    const cached = JSON.parse(
+      localStorage.getItem(PENDING_CACHE_KEY) ?? 'null',
+    );
+    expect(cached.records['Krea2-Turbo_fp8'].baseline).toBe('qwen_image');
+  });
+
+  it('keeps an accepted reference record authoritative over a pending change', () => {
+    localStorage.setItem(
+      PENDING_CACHE_KEY,
+      JSON.stringify({
+        version: CACHE_VERSION,
+        fetchedAt: Date.now(),
+        records: {
+          Flux: {
+            baseline: 'pending_baseline',
+            requirements: { max_steps: 99 },
+          },
+        },
+      }),
+    );
+    const { service, http } = setup();
+    service.load();
+    http.expectOne(MODEL_REFERENCE_URL).flush(REFERENCE_FIXTURE);
+
+    expect(service.isPendingModel('Flux')).toBe(false);
+    expect(service.baselineFor('Flux')).toBe('flux_1');
+    expect(service.requirementsFor('Flux')?.max_steps).toBe(8);
   });
 
   it('persists the reference with its shape version and fetch time', () => {
@@ -381,6 +506,14 @@ describe('ModelReferenceService', () => {
 describe('ModelReferenceService text reference', () => {
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem(
+      PENDING_CACHE_KEY,
+      JSON.stringify({
+        version: CACHE_VERSION,
+        fetchedAt: Date.now(),
+        records: {},
+      }),
+    );
   });
 
   afterEach(() => {
