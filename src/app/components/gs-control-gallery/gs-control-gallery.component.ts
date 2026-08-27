@@ -275,6 +275,84 @@ interface ControlShot {
             </button>
           </header>
 
+          @if (shownTake(); as onShow) {
+            <section class="gs-ctl-world">
+              <!-- The three read left to right as the thing that happened: the
+                   picture the detector was given, what it drew from it, and
+                   what the render made of that. The arrows between them are
+                   the claim the page rests on, so they are drawn rather than
+                   left to the order of the pictures. -->
+              <div class="gs-ctl-strip">
+                @for (
+                  frame of onShow.frames;
+                  track frame.key;
+                  let last = $last
+                ) {
+                  <figure
+                    class="gs-ctl-frame"
+                    [class.gs-ctl-frame--render]="frame.key === 'render'"
+                  >
+                    <figcaption class="gs-ctl-over">
+                      {{ frame.labelKey | transloco }}
+                    </figcaption>
+                    @if (frame.src; as src) {
+                      <button
+                        type="button"
+                        class="gs-ctl-shot"
+                        [attr.aria-label]="
+                          'generate.control_types.frame_enlarge'
+                            | transloco: { frame: frame.labelKey | transloco }
+                        "
+                        (click)="enlarge(frame.key, $event)"
+                      >
+                        <img
+                          [src]="src"
+                          [alt]="frame.altKey | transloco: { name: shown.type }"
+                          loading="lazy"
+                          decoding="async"
+                          (load)="onFrameLoad(src, $event)"
+                        />
+                        <span class="gs-ctl-zoom-glyph" aria-hidden="true">
+                          <app-icon
+                            name="arrows-pointing-out"
+                            class="gs-ico-sm"
+                          />
+                        </span>
+                        <!-- Three frames of one story at three sizes: the
+                             source the detector read, the map it drew, and the
+                             render made from it. Which is which in pixels is
+                             the one thing a row of equal-width tiles cannot
+                             say. -->
+                        <app-gs-pixel-badge
+                          class="gs-pixels--stage gs-pixels--corner"
+                          [width]="frameSize(frame)?.width"
+                          [height]="frameSize(frame)?.height"
+                        />
+                      </button>
+                    } @else {
+                      <span class="gs-ref-map-gap">
+                        {{ 'generate.control_types.missing' | transloco }}
+                      </span>
+                    }
+                  </figure>
+                  @if (!last) {
+                    <span class="gs-ctl-arrow" aria-hidden="true">
+                      <app-icon name="arrow-right" class="gs-ico-sm" />
+                    </span>
+                  }
+                }
+              </div>
+              <p class="gs-ctl-caption">{{ onShow.caption }}</p>
+              @if (onShow.note) {
+                <p class="gs-ctl-caption gs-ctl-note">{{ onShow.note }}</p>
+              }
+              <p class="gs-ctl-meta">
+                {{ 'generate.control_types.rendered_on' | transloco }}
+                <span class="gs-ctl-model">{{ onShow.model }}</span>
+              </p>
+            </section>
+          }
+
           <!-- Two choices side by side rather than one after the other: which
                example, and which kind of picture it was run on. They are the
                same question asked twice, and a reader holding one of them
@@ -355,84 +433,6 @@ interface ControlShot {
                 </div>
               }
             </div>
-          }
-
-          @if (shownTake(); as onShow) {
-            <section class="gs-ctl-world">
-              <!-- The three read left to right as the thing that happened: the
-                   picture the detector was given, what it drew from it, and
-                   what the render made of that. The arrows between them are
-                   the claim the page rests on, so they are drawn rather than
-                   left to the order of the pictures. -->
-              <div class="gs-ctl-strip">
-                @for (
-                  frame of onShow.frames;
-                  track frame.key;
-                  let last = $last
-                ) {
-                  <figure
-                    class="gs-ctl-frame"
-                    [class.gs-ctl-frame--render]="frame.key === 'render'"
-                  >
-                    <figcaption class="gs-ctl-over">
-                      {{ frame.labelKey | transloco }}
-                    </figcaption>
-                    @if (frame.src; as src) {
-                      <button
-                        type="button"
-                        class="gs-ctl-shot"
-                        [attr.aria-label]="
-                          'generate.control_types.frame_enlarge'
-                            | transloco: { frame: frame.labelKey | transloco }
-                        "
-                        (click)="enlarge(frame.key, $event)"
-                      >
-                        <img
-                          [src]="src"
-                          [alt]="frame.altKey | transloco: { name: shown.type }"
-                          loading="lazy"
-                          decoding="async"
-                          (load)="onFrameLoad(src, $event)"
-                        />
-                        <span class="gs-ctl-zoom-glyph" aria-hidden="true">
-                          <app-icon
-                            name="arrows-pointing-out"
-                            class="gs-ico-sm"
-                          />
-                        </span>
-                        <!-- Three frames of one story at three sizes: the
-                             source the detector read, the map it drew, and the
-                             render made from it. Which is which in pixels is
-                             the one thing a row of equal-width tiles cannot
-                             say. -->
-                        <app-gs-pixel-badge
-                          class="gs-pixels--stage gs-pixels--corner"
-                          [width]="frameSize(frame)?.width"
-                          [height]="frameSize(frame)?.height"
-                        />
-                      </button>
-                    } @else {
-                      <span class="gs-ref-map-gap">
-                        {{ 'generate.control_types.missing' | transloco }}
-                      </span>
-                    }
-                  </figure>
-                  @if (!last) {
-                    <span class="gs-ctl-arrow" aria-hidden="true">
-                      <app-icon name="arrow-right" class="gs-ico-sm" />
-                    </span>
-                  }
-                }
-              </div>
-              <p class="gs-ctl-caption">{{ onShow.caption }}</p>
-              @if (onShow.note) {
-                <p class="gs-ctl-caption gs-ctl-note">{{ onShow.note }}</p>
-              }
-              <p class="gs-ctl-meta">
-                {{ 'generate.control_types.rendered_on' | transloco }}
-                <span class="gs-ctl-model">{{ onShow.model }}</span>
-              </p>
-            </section>
           }
 
           <!-- How hard this mode's own maps pull, under the example of what
