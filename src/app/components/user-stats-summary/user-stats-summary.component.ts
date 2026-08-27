@@ -34,7 +34,7 @@ export interface UserStatsInput {
         }
       </div>
     } @else if (hasData()) {
-      <div class="hd-stats">
+      <div class="hd-stats mt-2">
         @if (imagesRequested() !== null) {
           <div class="hd-stat domain-hue--image">
             <span class="hd-stat-label"
