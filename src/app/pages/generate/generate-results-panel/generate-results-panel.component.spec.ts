@@ -222,6 +222,26 @@ describe('GenerateResultsPanelComponent', () => {
     expect(tiles[0].aspect).toBe('512/768');
   });
 
+  it('shows a notice tile for every dropped CSAM filter image', () => {
+    finishedJobs.set([{ ...job('c', 'done'), csamCensoredCount: 2 }]);
+
+    expect(component.tiles().map((tile) => tile.kind)).toEqual([
+      'censored',
+      'censored',
+    ]);
+  });
+
+  it('keeps CSAM evidence cards visible in the errors filter', () => {
+    finishedJobs.set([{ ...job('c', 'done'), csamCensoredCount: 2 }]);
+    component.errorsOnly.set(true);
+
+    expect(component.hasErrors()).toBe(true);
+    expect(component.visibleTiles().map((tile) => tile.kind)).toEqual([
+      'censored',
+      'censored',
+    ]);
+  });
+
   it('labels a tile with the positive half of the stored prompt', () => {
     // The stored prompt is whatever was submitted, and nothing guarantees the
     // horde separator was written with spaces around it: the tile label has to
@@ -614,7 +634,10 @@ describe('GenerateResultsPanelComponent', () => {
       getJobImages
         .mockResolvedValueOnce([resultImage('a', 'a-img')])
         .mockResolvedValueOnce([resultImage('b', 'b-img')]);
-      finishedJobs.set([job('a', 'done'), job('b', 'done')]);
+      finishedJobs.set([
+        { ...job('a', 'done'), resultImageIds: ['a-img'] },
+        { ...job('b', 'done'), resultImageIds: ['b-img'] },
+      ]);
       await loadThumbnails();
     });
 

@@ -335,6 +335,34 @@ describe('GenerationQueueService', () => {
     expect(await result?.blob.text()).toBe('hello');
   });
 
+  it('drops CSAM filter images and records a notice instead', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h1')),
+    );
+    aiHorde.checkImageGenerationResult.mockReturnValue(
+      of(checkResult({ check: { done: true, processing: 0 } })),
+    );
+    const status = doneStatus();
+    status.generations[0] = {
+      ...status.generations[0],
+      censored: true,
+      state: 'censored',
+      gen_metadata: [{ type: 'censorship', value: 'csam' }],
+    };
+    aiHorde.getImageGenerationStatus.mockReturnValue(of(status));
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+    await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+    const job = queue.jobs()[0];
+    expect(job.status).toBe('done');
+    expect(job.resultImageIds).toEqual([]);
+    expect(job.csamCensoredCount).toBe(1);
+    expect(await queue.getJobImages(job.localId)).toEqual([]);
+  });
+
   it('maps in-flight check counts onto the job status', async () => {
     aiHorde.submitImageGenerationResult.mockReturnValue(
       of(submitSuccess('h1')),

@@ -3702,6 +3702,15 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   display: inline-flex;
 }
 
+.gen-studio .gs-icobtn--danger {
+  color: #dc2626;
+}
+.gen-studio .gs-icobtn--censored-large {
+  color: #eead3d;
+  width: 48px;
+  height: 48px;
+}
+
 /* clickable image cover (opens the lightbox) */
 .gen-studio .gs-tile-imgbtn {
   position: absolute;

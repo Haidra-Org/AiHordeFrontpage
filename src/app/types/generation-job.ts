@@ -142,6 +142,8 @@ export interface LocalGenerationJob {
   /** That style's source-qualified key, which is what groups and counts. */
   styleKey?: string;
   resultImageIds: string[];
+  /** Keeps a visible result in the grid without retaining the filter image. */
+  csamCensoredCount?: number;
   /**
    * Epoch ms of the last poll, used by the engine to throttle check calls.
    * Not part of the user-facing model but persisted so a resumed job does not

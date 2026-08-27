@@ -21,6 +21,7 @@ import {
 import { ImageGenerationRequest } from '../../../types/generation';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
@@ -149,7 +150,7 @@ interface TileMenuState {
 /** One cell of the results tile grid, derived from the queue's jobs. */
 interface ResultTile {
   key: string;
-  kind: 'done' | 'generating' | 'queued' | 'error' | 'cancelled';
+  kind: 'done' | 'generating' | 'queued' | 'error' | 'censored' | 'cancelled';
   jobLocalId: string;
   /** CSS `aspect-ratio` value (e.g. `1024/1024`) so tiles match the request. */
   aspect: string;
@@ -284,6 +285,7 @@ function positivePrompt(prompt: string): string {
     NgTemplateOutlet,
     TranslocoPipe,
     IconComponent,
+    InfoTooltipComponent,
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
     GenerateLearnPanelComponent,
@@ -482,7 +484,9 @@ export class GenerateResultsPanelComponent {
   );
   /** Whether any finished job has downloadable result images. */
   public readonly hasDownloadableResults = computed(() =>
-    this.finishedJobs().some((job) => job.status === 'done'),
+    this.finishedJobs().some(
+      (job) => job.status === 'done' && job.resultImageIds.length > 0,
+    ),
   );
 
   private readonly thumbnails = signal<Map<string, JobThumbnail[]>>(new Map());
@@ -708,6 +712,21 @@ export class GenerateResultsPanelComponent {
             styleKey: styleKeyOf(job),
           });
         });
+        for (let index = 0; index < (job.csamCensoredCount ?? 0); index++) {
+          tiles.push({
+            key: `${job.localId}-csam-${index}`,
+            kind: 'censored',
+            jobLocalId: job.localId,
+            aspect,
+            dims,
+            prompt,
+            request: job.request,
+            applyRequest: job.request,
+            retryCount: job.retryCount,
+            styleName: job.styleName,
+            styleKey: styleKeyOf(job),
+          });
+        }
       } else if (job.status === 'error') {
         tiles.push({
           key: `${job.localId}-error`,
@@ -750,7 +769,12 @@ export class GenerateResultsPanelComponent {
     this.tiles().some((tile) => tile.aesthetic != null),
   );
   public readonly hasErrors = computed(() =>
-    this.tiles().some((tile) => (tile.errors?.length ?? 0) > 0),
+    this.tiles().some(
+      (tile) =>
+        tile.kind === 'error' ||
+        tile.kind === 'censored' ||
+        (tile.errors?.length ?? 0) > 0,
+    ),
   );
   public readonly hasNsfw = computed(() =>
     this.tiles().some((tile) => tile.nsfw === true),
@@ -799,7 +823,10 @@ export class GenerateResultsPanelComponent {
     }
     if (this.errorsOnly()) {
       list = list.filter(
-        (tile) => tile.kind === 'done' && (tile.errors?.length ?? 0) > 0,
+        (tile) =>
+          tile.kind === 'error' ||
+          tile.kind === 'censored' ||
+          (tile.kind === 'done' && (tile.errors?.length ?? 0) > 0),
       );
     }
     if (this.sortMode() === 'aesthetic') {
@@ -927,6 +954,13 @@ export class GenerateResultsPanelComponent {
           : t('generate.results.meta_flagged'),
         tone: csam ? 'danger' : 'warn',
       });
+      if (csam) {
+        rows.push({
+          label: t('generate.results.censor_csam_details'),
+          value: t('generate.results.censor_csam_explanation'),
+          tone: 'default',
+        });
+      }
     }
     // The price, quoted against charged, so the raw JSON is not the only place
     // the two can be compared.
@@ -2106,7 +2140,10 @@ export class GenerateResultsPanelComponent {
   public readonly hasSelectedResults = computed(() => {
     const selected = this.selectedJobs();
     return this.finishedJobs().some(
-      (job) => job.status === 'done' && selected.has(job.localId),
+      (job) =>
+        job.status === 'done' &&
+        job.resultImageIds.length > 0 &&
+        selected.has(job.localId),
     );
   });
 

@@ -536,7 +536,12 @@ export class GenerationQueueService {
     }
 
     const resultImageIds: string[] = [];
+    let csamCensoredCount = 0;
     for (const generation of status.generations) {
+      if (this.isCsamCensored(generation)) {
+        csamCensoredCount++;
+        continue;
+      }
       const stored = await this.downloadGeneration(job.localId, generation);
       if (stored) {
         resultImageIds.push(stored.imageId);
@@ -550,8 +555,23 @@ export class GenerationQueueService {
       queuePosition: 0,
       waitTime: 0,
       resultImageIds,
+      csamCensoredCount,
       lastCheckedAt: now,
     });
+  }
+
+  /**
+   * The horde can report the filter in either the generation state or its
+   * metadata. Checking both keeps the filter image out of local storage across
+   * worker versions.
+   */
+  private isCsamCensored(generation: GenerationOutput): boolean {
+    return (
+      generation.state === 'csam' ||
+      generation.gen_metadata?.some(
+        (entry) => entry.type === 'censorship' && entry.value === 'csam',
+      ) === true
+    );
   }
 
   private async downloadGeneration(

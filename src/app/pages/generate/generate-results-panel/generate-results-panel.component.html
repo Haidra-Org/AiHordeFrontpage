@@ -668,9 +668,12 @@
                               tile.censorReason === 'csam'
                             "
                             [title]="
-                              (tile.censorReason
-                                ? 'generate.results.censor_' + tile.censorReason
-                                : 'generate.results.meta_flagged'
+                              (tile.censorReason === 'csam'
+                                ? 'generate.results.censor_csam_explanation'
+                                : tile.censorReason
+                                  ? 'generate.results.censor_' +
+                                    tile.censorReason
+                                  : 'generate.results.meta_flagged'
                               ) | transloco
                             "
                           >
@@ -708,6 +711,12 @@
                                 | transloco
                             }}
                           </span>
+                        }
+                        @if (tile.censorReason === "csam") {
+                          <app-info-tooltip
+                            termKey="generate.results.censor_csam_explanation"
+                            labelKey="generate.results.censor_csam_details"
+                          />
                         }
                         <span class="gs-tile-veil-reveal">
                           {{ "generate.results.nsfw_reveal" | transloco }}
@@ -1104,6 +1113,52 @@
                       }}
                     }
                   </span>
+                  <div
+                    class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
+                  >
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="retryJob(tile.jobLocalId)"
+                    >
+                      <app-icon name="refresh-alt" />
+                      {{ "generate.results.retry" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="openLoadSettings(tile)"
+                    >
+                      <app-icon name="bars-4" />
+                      {{ "generate.results.view_settings" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-tile-btn gs-tile-btn--danger"
+                      (click)="requestDelete([tile.jobLocalId])"
+                    >
+                      {{ "generate.results.delete" | transloco }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+            @case ("censored") {
+              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+                <ng-container
+                  [ngTemplateOutlet]="tileTop"
+                  [ngTemplateOutletContext]="{ $implicit: tile }"
+                />
+                <div class="gs-tile-center">
+                  <app-icon name="warning-triangle" class="gs-icobtn--censored-large mb-6" />
+                  <span class="gs-tile-msg">
+                    {{ "generate.results.censor_csam" | transloco }}
+                    <app-info-tooltip
+                        termKey="generate.results.censor_csam_explanation"
+                        labelKey="generate.results.censor_csam_details"
+                    />
+                  </span>
+
                   <div
                     class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
                   >

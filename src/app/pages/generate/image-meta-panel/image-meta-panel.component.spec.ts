@@ -173,6 +173,20 @@ describe('ImageMetaPanelComponent', () => {
     expect(html).toContain('gs-meta-row--info');
   });
 
+  it('explains a CSAM filter result beside its censorship row', () => {
+    fixture.componentRef.setInput('provenance', {
+      ...PROVENANCE,
+      state: 'csam',
+      censored: true,
+      censorReason: 'csam',
+    } satisfies ImageMetaProvenance);
+    fixture.detectChanges();
+
+    expect(component.infoRows().map((row) => row.value)).toContain(
+      'en.generate.results.censor_csam_explanation',
+    );
+  });
+
   it('omits the style row when the job recorded none', () => {
     fixture.componentRef.setInput('provenance', {
       ...PROVENANCE,

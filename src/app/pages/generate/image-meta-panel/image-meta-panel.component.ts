@@ -179,13 +179,21 @@ export class ImageMetaPanelComponent {
       });
     }
     if (provenance.censored) {
+      const csam = provenance.censorReason === 'csam';
       rows.push({
         label: t('generate.results.meta_nsfw'),
         value: provenance.censorReason
           ? t('generate.results.censor_' + provenance.censorReason)
           : t('generate.results.meta_flagged'),
-        tone: provenance.censorReason === 'csam' ? 'danger' : 'warn',
+        tone: csam ? 'danger' : 'warn',
       });
+      if (csam) {
+        rows.push({
+          label: t('generate.results.censor_csam_details'),
+          value: t('generate.results.censor_csam_explanation'),
+          tone: 'default',
+        });
+      }
     }
     if (provenance.aesthetic != null) {
       rows.push({
