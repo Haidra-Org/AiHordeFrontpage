@@ -462,7 +462,7 @@
   "stats.realtime.usage_link": "Usage details",
   "stats.realtime.models_link": "Model details",
   "quickstart": "Quickstart",
-  "quickstart.register_account": "First <a href='https://aihorde.net/register'>register an account</a> which will generate an API key. Store that key somewhere safe - treat it like a password.",
+  "quickstart.register_account": "First <a href='https://stablehorde.net/register'>register an account</a> which will generate an API key. Store that key somewhere safe - treat it like a password.",
   "quickstart.try_frontend_title": "Ready to start creating?",
   "quickstart.try_frontend_description": "The easiest way to use AI Horde is through one of our user-friendly frontends. We recommend starting with <strong>ArtBot</strong> - a popular web-based client that's perfect for beginners.",
   "quickstart.try_artbot_button": "Try ArtBot Now",
@@ -2235,7 +2235,7 @@
 
   "help.profile_guest.title": "Your AI Horde Profile",
   "help.profile_guest.subtitle": "View your kudos, workers, teams, and generation history",
-  "help.profile_guest.body": "<p>Your profile shows your <strong>kudos balance</strong> (priority credits), <strong>generation history</strong>, <strong>worker statistics</strong>, and <strong>team memberships</strong>. You can also manage shared API keys and custom styles from here.</p><p>To view your profile, enter your <strong>API key</strong>, the account key you received when you <a href='https://aihorde.net/register' target='_blank' rel='noopener noreferrer' class='link'>registered</a>. Your key is only used to fetch your data and is stored locally in your browser.</p><p>Don't have an account? <a href='https://aihorde.net/register' target='_blank' rel='noopener noreferrer' class='link'>Register for free</a> to get an API key, earn kudos, and track your contributions. You can use AI Horde anonymously, but registered users earn kudos for higher priority.</p>",
+  "help.profile_guest.body": "<p>Your profile shows your <strong>kudos balance</strong> (priority credits), <strong>generation history</strong>, <strong>worker statistics</strong>, and <strong>team memberships</strong>. You can also manage shared API keys and custom styles from here.</p><p>To view your profile, enter your <strong>API key</strong>, the account key you received when you <a href='https://stablehorde.net/register' target='_blank' rel='noopener noreferrer' class='link'>registered</a>. Your key is only used to fetch your data and is stored locally in your browser.</p><p>Don't have an account? <a href='https://stablehorde.net/register' target='_blank' rel='noopener noreferrer' class='link'>Register for free</a> to get an API key, earn kudos, and track your contributions. You can use AI Horde anonymously, but registered users earn kudos for higher priority.</p>",
 
   "homepage.hero_cta": "Start Creating Free AI Art",
 
