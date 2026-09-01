@@ -707,6 +707,7 @@ export class GenerateResultsPanelComponent {
           feasibility,
           prompt,
           request: job.request,
+          applyRequest: job.request,
           retryCount: job.retryCount,
           styleName: job.styleName,
           styleKey: styleKeyOf(job),

@@ -956,6 +956,16 @@
                   <span class="gs-tile-status-text">
                     {{ "generate.results.tile_finished_pending" | transloco }}
                   </span>
+                  <div class="gs-tile-btnrow gs-tile-btnrow--status">
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="openLoadSettings(tile)"
+                    >
+                      <app-icon name="bars-4" />
+                      {{ "generate.results.view_settings" | transloco }}
+                    </button>
+                  </div>
                 </div>
               </div>
             }
@@ -996,6 +1006,14 @@
                     <span class="gs-status-summary">
                       {{ "generate.results.claimed_summary" | transloco }}
                     </span>
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="openLoadSettings(tile)"
+                    >
+                      <app-icon name="bars-4" />
+                      {{ "generate.results.view_settings" | transloco }}
+                    </button>
                     <button
                       type="button"
                       class="gs-status-explain"
@@ -1115,6 +1133,14 @@
                         }
                       }
                     </span>
+                    <button
+                      type="button"
+                      class="gs-tile-btn"
+                      (click)="openLoadSettings(tile)"
+                    >
+                      <app-icon name="bars-4" />
+                      {{ "generate.results.view_settings" | transloco }}
+                    </button>
                     <button
                       type="button"
                       class="gs-status-explain"

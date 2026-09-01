@@ -239,6 +239,19 @@ describe('GenerateResultsPanelComponent', () => {
       'queued',
       'queued',
     ]);
+    expect(
+      component.tiles().every((tile) => tile.applyRequest?.prompt === 'x'),
+    ).toBe(true);
+  });
+
+  it('opens the submitted settings from an in-flight tile', () => {
+    pendingJobs.set([job('pending', 'queued')]);
+    const tile = component.tiles()[0];
+
+    component.openLoadSettings(tile);
+
+    expect(component.metaTile()?.applyRequest).toBe(tile.request);
+    expect(component.metaMode()).toBe('replace');
   });
 
   it('clamps racing lifecycle counts to the requested batch size', () => {
