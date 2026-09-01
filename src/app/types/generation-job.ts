@@ -125,6 +125,14 @@ export interface LocalGenerationJob {
    * check answers.
    */
   isPossible?: boolean;
+  /** Optional because jobs stored before lifecycle reporting do not carry these values. */
+  finishedCount?: number;
+  processingCount?: number;
+  waitingCount?: number;
+  restartedCount?: number;
+  eligibleWorkers?: number;
+  eligibleWorkerThreads?: number;
+  mightStall?: boolean;
   /**
    * The horde's return code for a refused submit, where it sent one. Kept beside
    * the message so the studio can put the message under the control the code

@@ -65,6 +65,10 @@ import {
   type WorkerFeasibility,
 } from '../../../services/worker-pool.service';
 import {
+  GenerationWaitInsight,
+  GenerationWaitInsightsService,
+} from '../../../services/generation-wait-insights.service';
+import {
   parseStyleRecordKey,
   storedStyleKey,
 } from '../../../services/style-record';
@@ -150,7 +154,14 @@ interface TileMenuState {
 /** One cell of the results tile grid, derived from the queue's jobs. */
 interface ResultTile {
   key: string;
-  kind: 'done' | 'generating' | 'queued' | 'error' | 'censored' | 'cancelled';
+  kind:
+    | 'done'
+    | 'finished-pending'
+    | 'claimed'
+    | 'queued'
+    | 'error'
+    | 'censored'
+    | 'cancelled';
   jobLocalId: string;
   /** CSS `aspect-ratio` value (e.g. `1024/1024`) so tiles match the request. */
   aspect: string;
@@ -169,6 +180,10 @@ interface ResultTile {
    * failure: the job waits, so the tile says so rather than looking stuck.
    */
   isPossible?: boolean;
+  eligibleWorkers?: number;
+  eligibleWorkerThreads?: number;
+  restartedCount?: number;
+  insight?: GenerationWaitInsight;
   /**
    * How many workers could generate this job, and which of its settings shut them
    * out, run against the request it was submitted with. Null when the worker
@@ -206,6 +221,36 @@ interface ResultTile {
   styleName?: string;
   /** That style's source-qualified key, which is what the filter groups by. */
   styleKey?: string;
+}
+
+type PendingTileKind = 'finished-pending' | 'claimed' | 'queued';
+
+/** Keep a racing count response useful without ever drawing more than requested. */
+function pendingTileKinds(job: LocalGenerationJob): PendingTileKind[] {
+  const count = Math.max(1, job.request.params?.n ?? 1);
+  const hasCounts =
+    job.finishedCount !== undefined ||
+    job.processingCount !== undefined ||
+    job.waitingCount !== undefined;
+  if (!hasCounts) {
+    return Array.from({ length: count }, () =>
+      job.status === 'processing' ? 'claimed' : 'queued',
+    );
+  }
+
+  const kinds: PendingTileKind[] = [];
+  const append = (kind: PendingTileKind, requested: number | undefined) => {
+    const amount = Math.min(
+      Math.max(0, Math.trunc(requested ?? 0)),
+      count - kinds.length,
+    );
+    kinds.push(...Array.from({ length: amount }, () => kind));
+  };
+  append('finished-pending', job.finishedCount);
+  append('claimed', job.processingCount);
+  append('queued', job.waitingCount);
+  append(job.status === 'processing' ? 'claimed' : 'queued', count);
+  return kinds;
 }
 
 /**
@@ -316,6 +361,7 @@ export class GenerateResultsPanelComponent {
   private readonly tutorial = inject(TutorialEngineService);
   private readonly helpDock = inject(GsHelpDockService);
   private readonly workerPool = inject(WorkerPoolService);
+  private readonly waitInsights = inject(GenerationWaitInsightsService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   public readonly fullscreen = inject(FullscreenService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -638,24 +684,26 @@ export class GenerateResultsPanelComponent {
       }
       const { dims, aspect } = this.geometryOf(job);
       const prompt = positivePrompt(job.request.prompt);
-      const kind = job.status === 'processing' ? 'generating' : 'queued';
-      const count = Math.max(1, job.request.params?.n ?? 1);
+      const requirement = workerRequirementForRequest(job.request);
       // Asked once per job rather than once per placeholder tile: a batch of
       // eight shares one request and therefore one answer.
-      const feasibility = evaluateWorkerFeasibility(
-        workers,
-        workerRequirementForRequest(job.request),
-      );
-      for (let i = 0; i < count; i++) {
+      const feasibility = evaluateWorkerFeasibility(workers, requirement);
+      const insight = this.waitInsights.forJob(job, requirement, feasibility);
+      const kinds = pendingTileKinds(job);
+      for (let i = 0; i < kinds.length; i++) {
         tiles.push({
           key: `${job.localId}-p${i}`,
-          kind,
+          kind: kinds[i],
           jobLocalId: job.localId,
           aspect,
           dims,
           queuePosition: job.queuePosition,
           waitTime: job.waitTime,
           isPossible: job.isPossible,
+          eligibleWorkers: job.eligibleWorkers,
+          eligibleWorkerThreads: job.eligibleWorkerThreads,
+          restartedCount: job.restartedCount,
+          insight,
           feasibility,
           prompt,
           request: job.request,
@@ -1003,21 +1051,102 @@ export class GenerateResultsPanelComponent {
   public readonly statsOpen = signal(false);
 
   /**
-   * The job whose wait is being explained, by local id, or null. Keyed by job
-   * rather than by tile because a batch's placeholders share one wait.
+   * The placeholder whose status is being explained, or null. Batch members
+   * share the analysis while only the card the reader opened changes face.
    */
   public readonly waitWhyFor = signal<string | null>(null);
+  private waitOpener: HTMLElement | null = null;
+  private waitBackFocusTimer: ReturnType<typeof setTimeout> | null = null;
+  private stopWorkerMonitoring: (() => void) | null = null;
 
-  public toggleWaitWhy(jobLocalId: string): void {
-    this.waitWhyFor.update((open) => (open === jobLocalId ? null : jobLocalId));
+  public toggleWaitWhy(tileKey: string, opener?: EventTarget | null): void {
+    if (this.waitWhyFor() === tileKey) {
+      this.closeWaitWhy();
+      return;
+    }
+    this.waitOpener = opener instanceof HTMLElement ? opener : null;
+    this.waitWhyFor.set(tileKey);
+    this.waitBackFocusTimer = setTimeout(() => {
+      this.waitBackFocusTimer = null;
+      this.host.nativeElement
+        .querySelector<HTMLElement>(`[data-wait-close="${tileKey}"]`)
+        ?.focus();
+    }, 0);
+  }
+
+  public closeWaitWhy(): void {
+    if (this.waitWhyFor() === null) {
+      return;
+    }
+    if (this.waitBackFocusTimer !== null) {
+      clearTimeout(this.waitBackFocusTimer);
+      this.waitBackFocusTimer = null;
+    }
+    this.waitWhyFor.set(null);
+    const opener = this.waitOpener;
+    this.waitOpener = null;
+    queueMicrotask(() => opener?.focus());
+  }
+
+  public waitReasonKey(tile: ResultTile): string {
+    switch (tile.insight?.reason) {
+      case 'refreshing':
+        return 'generate.results.wait_reason_refreshing';
+      case 'no-route-model':
+        return 'generate.results.wait_reason_no_route_model';
+      case 'no-route-size':
+        return 'generate.results.wait_reason_no_route_size';
+      case 'no-route-pending':
+        return 'generate.results.wait_reason_no_route_pending';
+      case 'no-route':
+        return 'generate.results.wait_reason_no_route';
+      case 'pressure':
+        return 'generate.results.wait_reason_pressure';
+      case 'model-change':
+        return 'generate.results.wait_reason_model_change';
+      case 'size-change':
+        return 'generate.results.wait_reason_size_change';
+      case 'limited':
+        return 'generate.results.wait_reason_limited';
+      case 'supported':
+        return 'generate.results.wait_reason_supported';
+      default:
+        return 'generate.results.wait_reason_unknown';
+    }
+  }
+
+  public queueTrendKey(tile: ResultTile): string {
+    switch (tile.insight?.trend) {
+      case 'mixed':
+        return 'generate.results.queue_trend_mixed';
+      case 'improved':
+        return 'generate.results.queue_trend_improved';
+      case 'worsened':
+        return 'generate.results.queue_trend_worsened';
+      default:
+        return 'generate.results.queue_trend_steady';
+    }
+  }
+
+  public waitMinutes(seconds: number): number {
+    return Math.max(1, Math.round(seconds / 60));
   }
 
   constructor() {
-    // Queued tiles explain themselves with the worker list, so it is asked for
-    // as soon as the pane exists rather than waiting on the form's own fetch:
-    // this pane is also mounted where there is no form.
-    this.workerPool.load();
     this.watchViewport();
+
+    effect(() => {
+      const needsWorkerSnapshots = this.pendingJobs().some(
+        (job) =>
+          (job.waitingCount ?? (job.status === 'processing' ? 0 : 1)) > 0,
+      );
+      if (needsWorkerSnapshots && this.stopWorkerMonitoring === null) {
+        this.stopWorkerMonitoring = this.workerPool.startMonitoring();
+      } else if (!needsWorkerSnapshots && this.stopWorkerMonitoring !== null) {
+        this.stopWorkerMonitoring();
+        this.stopWorkerMonitoring = null;
+      }
+    });
 
     effect(() => {
       for (const job of this.finishedJobs()) {
@@ -1041,6 +1170,11 @@ export class GenerateResultsPanelComponent {
       this.detachViewerKeys();
       this.gridObserver?.disconnect();
       this.clearAnnounceTimer();
+      if (this.waitBackFocusTimer !== null) {
+        clearTimeout(this.waitBackFocusTimer);
+      }
+      this.stopWorkerMonitoring?.();
+      this.stopWorkerMonitoring = null;
     });
   }
 
@@ -1868,7 +2002,9 @@ export class GenerateResultsPanelComponent {
   public onDocumentEscape(): void {
     if (this.tileMenu()) {
       this.closeTileMenu();
+      return;
     }
+    this.closeWaitWhy();
   }
 
   // --- View controls -------------------------------------------------------

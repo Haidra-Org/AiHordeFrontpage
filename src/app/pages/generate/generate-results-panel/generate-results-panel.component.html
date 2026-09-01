@@ -934,7 +934,7 @@
                 </div>
               </div>
             }
-            @case ("generating") {
+            @case ("finished-pending") {
               <div class="gs-tile" [style.aspectRatio]="tile.aspect">
                 <ng-container
                   [ngTemplateOutlet]="tileTop"
@@ -952,141 +952,337 @@
                   </button>
                 </div>
                 <div class="gs-tile-center">
-                  <span class="gs-tile-ring gs-spin" aria-hidden="true"></span>
+                  <app-icon name="check" class="gs-ico-sm" aria-hidden="true" />
                   <span class="gs-tile-status-text">
-                    {{ "generate.results.tile_generating" | transloco }}
+                    {{ "generate.results.tile_finished_pending" | transloco }}
                   </span>
                 </div>
               </div>
             }
-            @case ("queued") {
-              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
-                <span class="gs-shimmer gs-tile-fill" aria-hidden="true"></span>
-                <ng-container
-                  [ngTemplateOutlet]="tileTop"
-                  [ngTemplateOutletContext]="{ $implicit: tile }"
-                />
-                <div class="gs-tile-actions-top">
-                  <button
-                    type="button"
-                    class="gs-icobtn"
-                    (click)="cancelJob(tile.jobLocalId)"
-                    [attr.aria-label]="'generate.results.cancel' | transloco"
-                    [title]="'generate.results.cancel' | transloco"
-                  >
-                    <app-icon name="x-mark" />
-                  </button>
-                </div>
-                <div class="gs-tile-queued-box">
-                  <span class="gs-tile-status-text">
-                    {{ "generate.results.tile_queued" | transloco }}
-                  </span>
-                  @if (tile.queuePosition || tile.waitTime) {
-                    <!-- The wait is a claim the horde made, so it can be
-                         pressed to find out what it was made of. -->
+            @case ("claimed") {
+              <div
+                class="gs-tile gs-wait-card"
+                [class.gs-wait-card--flipped]="waitWhyFor() === tile.key"
+                [style.aspectRatio]="tile.aspect"
+              >
+                <div
+                  class="gs-wait-card-inner"
+                  [attr.aria-hidden]="waitWhyFor() === tile.key"
+                  [attr.inert]="waitWhyFor() === tile.key ? '' : null"
+                >
+                  <ng-container
+                    [ngTemplateOutlet]="tileTop"
+                    [ngTemplateOutletContext]="{ $implicit: tile }"
+                  />
+                  <div class="gs-tile-actions-top">
                     <button
                       type="button"
-                      class="gs-tile-substatus gs-tile-substatus--why"
-                      (click)="toggleWaitWhy(tile.jobLocalId)"
-                      [attr.aria-expanded]="waitWhyFor() === tile.jobLocalId"
-                      aria-haspopup="dialog"
+                      class="gs-icobtn"
+                      (click)="cancelJob(tile.jobLocalId)"
+                      [attr.aria-label]="'generate.results.cancel' | transloco"
+                      [title]="'generate.results.cancel' | transloco"
                     >
-                      @if (tile.queuePosition) {
+                      <app-icon name="x-mark" />
+                    </button>
+                  </div>
+                  <div class="gs-tile-center gs-status-front">
+                    <span
+                      class="gs-tile-ring gs-spin"
+                      aria-hidden="true"
+                    ></span>
+                    <span class="gs-tile-status-text">
+                      {{ "generate.results.tile_claimed" | transloco }}
+                    </span>
+                    <span class="gs-status-summary">
+                      {{ "generate.results.claimed_summary" | transloco }}
+                    </span>
+                    <button
+                      type="button"
+                      class="gs-status-explain"
+                      (click)="toggleWaitWhy(tile.key, $event.currentTarget)"
+                      [attr.aria-expanded]="waitWhyFor() === tile.key"
+                      [attr.aria-controls]="'wait-insight-' + tile.key"
+                    >
+                      {{ "generate.results.claimed_why" | transloco }}
+                    </button>
+                  </div>
+                </div>
+                <section
+                  class="gs-wait-card-back"
+                  [id]="'wait-insight-' + tile.key"
+                  role="region"
+                  [attr.aria-label]="'generate.results.claimed_why' | transloco"
+                  [attr.aria-hidden]="waitWhyFor() !== tile.key"
+                  [attr.inert]="waitWhyFor() !== tile.key ? '' : null"
+                >
+                  <header class="gs-wait-card-head">
+                    <strong>{{
+                      "generate.results.claimed_why" | transloco
+                    }}</strong>
+                    <button
+                      type="button"
+                      class="gs-wait-card-close"
+                      [attr.data-wait-close]="tile.key"
+                      (click)="closeWaitWhy()"
+                      [attr.aria-label]="
+                        'generate.results.wait_back' | transloco
+                      "
+                    >
+                      <app-icon name="arrow-left" class="gs-ico-sm" />
+                    </button>
+                  </header>
+                  <div class="gs-wait-card-body">
+                    <div class="gs-wait-callout gs-wait-callout--info">
+                      <app-icon name="cpu-chip" aria-hidden="true" />
+                      <p>{{ "generate.results.claimed_detail" | transloco }}</p>
+                    </div>
+                    <h4>
+                      {{ "generate.results.wait_next_title" | transloco }}
+                    </h4>
+                    <p>{{ "generate.results.claimed_next" | transloco }}</p>
+                  </div>
+                </section>
+              </div>
+            }
+            @case ("queued") {
+              <div
+                class="gs-tile gs-wait-card"
+                [class.gs-wait-card--flipped]="waitWhyFor() === tile.key"
+                [style.aspectRatio]="tile.aspect"
+              >
+                <div
+                  class="gs-wait-card-inner"
+                  [attr.aria-hidden]="waitWhyFor() === tile.key"
+                  [attr.inert]="waitWhyFor() === tile.key ? '' : null"
+                >
+                  <span
+                    class="gs-shimmer gs-tile-fill"
+                    aria-hidden="true"
+                  ></span>
+                  <ng-container
+                    [ngTemplateOutlet]="tileTop"
+                    [ngTemplateOutletContext]="{ $implicit: tile }"
+                  />
+                  <div class="gs-tile-actions-top">
+                    <button
+                      type="button"
+                      class="gs-icobtn"
+                      (click)="cancelJob(tile.jobLocalId)"
+                      [attr.aria-label]="'generate.results.cancel' | transloco"
+                      [title]="'generate.results.cancel' | transloco"
+                    >
+                      <app-icon name="x-mark" />
+                    </button>
+                  </div>
+                  <div class="gs-tile-queued-box gs-status-front">
+                    <app-icon
+                      name="clock"
+                      class="gs-ico-sm"
+                      aria-hidden="true"
+                    />
+                    <span class="gs-tile-status-text">
+                      @if (tile.insight?.returnedToQueue) {
+                        {{ "generate.results.tile_returned" | transloco }}
+                      } @else {
+                        {{ "generate.results.tile_queued" | transloco }}
+                      }
+                    </span>
+                    <span class="gs-status-summary">
+                      @if (tile.queuePosition !== undefined) {
                         {{
                           "generate.results.queue_position"
                             | transloco: { position: tile.queuePosition }
                         }}
                       }
-                      @if (tile.queuePosition && tile.waitTime) {
+                      @if (
+                        tile.queuePosition !== undefined &&
+                        tile.waitTime !== undefined
+                      ) {
                         ·
                       }
-                      @if (tile.waitTime) {
-                        {{
-                          "generate.results.wait_time"
-                            | transloco: { seconds: tile.waitTime }
-                        }}
+                      @if (tile.waitTime !== undefined) {
+                        @if (tile.waitTime < 60) {
+                          {{
+                            "generate.results.wait_seconds"
+                              | transloco: { seconds: tile.waitTime }
+                          }}
+                        } @else {
+                          {{
+                            "generate.results.wait_minutes"
+                              | transloco
+                                : { minutes: waitMinutes(tile.waitTime) }
+                          }}
+                        }
                       }
+                    </span>
+                    <button
+                      type="button"
+                      class="gs-status-explain"
+                      (click)="toggleWaitWhy(tile.key, $event.currentTarget)"
+                      [attr.aria-expanded]="waitWhyFor() === tile.key"
+                      [attr.aria-controls]="'wait-insight-' + tile.key"
+                    >
+                      {{ "generate.results.queue_why" | transloco }}
                     </button>
-                  }
-                  @if (waitWhyFor() === tile.jobLocalId) {
-                    <div
-                      class="gs-wait-why"
-                      role="dialog"
+                  </div>
+                </div>
+                <section
+                  class="gs-wait-card-back"
+                  [id]="'wait-insight-' + tile.key"
+                  role="region"
+                  [attr.aria-label]="'generate.results.queue_why' | transloco"
+                  [attr.aria-hidden]="waitWhyFor() !== tile.key"
+                  [attr.inert]="waitWhyFor() !== tile.key ? '' : null"
+                >
+                  <header class="gs-wait-card-head">
+                    <strong>{{
+                      "generate.results.queue_why" | transloco
+                    }}</strong>
+                    <button
+                      type="button"
+                      class="gs-wait-card-close"
+                      [attr.data-wait-close]="tile.key"
+                      (click)="closeWaitWhy()"
                       [attr.aria-label]="
-                        'generate.results.queue_why' | transloco
+                        'generate.results.wait_back' | transloco
                       "
                     >
-                      <button
-                        type="button"
-                        class="gs-wait-why-close"
-                        (click)="toggleWaitWhy(tile.jobLocalId)"
-                        [attr.aria-label]="
-                          'generate.results.queue_why_close' | transloco
-                        "
-                      >
-                        <app-icon name="x-mark" class="gs-ico-sm" />
-                      </button>
-                      <p class="gs-wait-why-title">
-                        {{ "generate.results.queue_why" | transloco }}
-                      </p>
-                      <ul class="gs-wait-why-list">
-                        @if (tile.queuePosition) {
-                          <li>
-                            {{
-                              "generate.results.queue_why_position"
-                                | transloco: { position: tile.queuePosition }
-                            }}
-                          </li>
-                        }
-                        @if (tile.waitTime) {
-                          <li>
-                            {{
-                              "generate.results.queue_why_wait"
-                                | transloco: { seconds: tile.waitTime }
-                            }}
-                          </li>
-                        }
-                        @if (tile.feasibility; as fit) {
-                          <li>
-                            {{
-                              fit.message.key | transloco: fit.message.params
-                            }}
-                          </li>
-                        }
-                      </ul>
-                      <p class="gs-wait-why-note">
-                        {{ "generate.results.queue_why_note" | transloco }}
-                      </p>
-                    </div>
-                  }
-                  <!-- The horde's own answer that nobody can serve this. Said
-                       plainly and not as a failure: the job keeps its place and
-                       runs the moment a worker that fits appears. -->
-                  @if (tile.isPossible === false) {
-                    <div class="gs-tile-impossible">
+                      <app-icon name="arrow-left" class="gs-ico-sm" />
+                    </button>
+                  </header>
+                  <div class="gs-wait-card-body">
+                    <div
+                      class="gs-wait-callout"
+                      [class.gs-wait-callout--warn]="
+                        tile.insight?.stableStall || tile.isPossible === false
+                      "
+                    >
                       <app-icon
-                        name="warning-triangle"
-                        class="gs-ico-sm"
+                        [name]="
+                          tile.insight?.stableStall || tile.isPossible === false
+                            ? 'warning-triangle'
+                            : 'info-circle'
+                        "
                         aria-hidden="true"
                       />
-                      <span class="gs-tile-impossible-title">
-                        {{ "generate.results.impossible" | transloco }}
-                      </span>
-                      @if (tile.feasibility; as fit) {
-                        @if (fit.blockedBy !== null) {
-                          <span class="gs-tile-impossible-why">
-                            {{
-                              fit.message.key | transloco: fit.message.params
-                            }}
-                          </span>
-                        }
-                      }
-                      <span class="gs-tile-impossible-note">
-                        {{ "generate.results.impossible_note" | transloco }}
-                      </span>
+                      <p>{{ waitReasonKey(tile) | transloco }}</p>
                     </div>
-                  }
-                </div>
+                    <dl class="gs-wait-metrics">
+                      <div>
+                        <dt>
+                          {{
+                            "generate.results.wait_metric_position" | transloco
+                          }}
+                        </dt>
+                        <dd>{{ tile.queuePosition ?? "—" }}</dd>
+                      </div>
+                      <div>
+                        <dt>
+                          {{ "generate.results.wait_metric_eta" | transloco }}
+                        </dt>
+                        <dd>
+                          @if (tile.waitTime !== undefined) {
+                            @if (tile.waitTime < 60) {
+                              {{
+                                "generate.results.wait_seconds"
+                                  | transloco: { seconds: tile.waitTime }
+                              }}
+                            } @else {
+                              {{
+                                "generate.results.wait_minutes"
+                                  | transloco
+                                    : {
+                                        minutes: waitMinutes(tile.waitTime),
+                                      }
+                              }}
+                            }
+                          } @else {
+                            —
+                          }
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>
+                          {{
+                            "generate.results.wait_metric_workers" | transloco
+                          }}
+                        </dt>
+                        <dd>{{ tile.eligibleWorkers ?? "—" }}</dd>
+                      </div>
+                      <div>
+                        <dt>
+                          {{
+                            "generate.results.wait_metric_threads" | transloco
+                          }}
+                        </dt>
+                        <dd>{{ tile.eligibleWorkerThreads ?? "—" }}</dd>
+                      </div>
+                    </dl>
+                    @if (
+                      tile.insight?.trend !== "steady" ||
+                      tile.insight?.capacityChanged ||
+                      tile.insight?.modelOfferChanged ||
+                      tile.insight?.sizeOfferChanged ||
+                      tile.insight?.returnedToQueue ||
+                      (tile.restartedCount ?? 0) > 0
+                    ) {
+                      <div class="gs-wait-changes">
+                        <h4>
+                          {{
+                            "generate.results.wait_changes_title" | transloco
+                          }}
+                        </h4>
+                        <ul>
+                          @if (tile.insight?.trend !== "steady") {
+                            <li>{{ queueTrendKey(tile) | transloco }}</li>
+                          }
+                          @if (tile.insight?.capacityChanged) {
+                            <li>
+                              {{
+                                "generate.results.wait_capacity_changed"
+                                  | transloco
+                              }}
+                            </li>
+                          }
+                          @if (tile.insight?.modelOfferChanged) {
+                            <li>
+                              {{
+                                "generate.results.wait_model_changed"
+                                  | transloco
+                              }}
+                            </li>
+                          }
+                          @if (tile.insight?.sizeOfferChanged) {
+                            <li>
+                              {{
+                                "generate.results.wait_size_changed" | transloco
+                              }}
+                            </li>
+                          }
+                          @if (
+                            tile.insight?.returnedToQueue ||
+                            (tile.restartedCount ?? 0) > 0
+                          ) {
+                            <li>
+                              {{
+                                "generate.results.wait_returned_detail"
+                                  | transloco
+                              }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                    <h4>
+                      {{ "generate.results.wait_meaning_title" | transloco }}
+                    </h4>
+                    <p>{{ "generate.results.wait_meaning" | transloco }}</p>
+                    <h4>
+                      {{ "generate.results.wait_influence_title" | transloco }}
+                    </h4>
+                    <p>{{ "generate.results.wait_influence" | transloco }}</p>
+                  </div>
+                </section>
               </div>
             }
             @case ("error") {
@@ -1150,12 +1346,15 @@
                   [ngTemplateOutletContext]="{ $implicit: tile }"
                 />
                 <div class="gs-tile-center">
-                  <app-icon name="warning-triangle" class="gs-icobtn--censored-large mb-6" />
+                  <app-icon
+                    name="warning-triangle"
+                    class="gs-icobtn--censored-large mb-6"
+                  />
                   <span class="gs-tile-msg">
                     {{ "generate.results.censor_csam" | transloco }}
                     <app-info-tooltip
-                        termKey="generate.results.censor_csam_explanation"
-                        labelKey="generate.results.censor_csam_details"
+                      termKey="generate.results.censor_csam_explanation"
+                      labelKey="generate.results.censor_csam_details"
                     />
                   </span>
 

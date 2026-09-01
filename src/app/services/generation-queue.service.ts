@@ -27,6 +27,7 @@ import {
 } from '../types/generation-job';
 import { base64ToBlob, blobToBase64 } from '../helper/blob-base64';
 import { randomUuid } from '../helper/random-uuid';
+import { GenerationWaitInsightsService } from './generation-wait-insights.service';
 
 const ANONYMOUS_API_KEY = '0000000000';
 
@@ -71,6 +72,7 @@ export class GenerationQueueService {
   private readonly db = inject(GenerationDbService);
   private readonly aiHorde = inject(AiHordeService);
   private readonly auth = inject(AuthService);
+  private readonly waitInsights = inject(GenerationWaitInsightsService);
   private readonly ngZone = inject(NgZone);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -213,6 +215,7 @@ export class GenerationQueueService {
   public async deleteJob(localId: string): Promise<void> {
     await this.db.deleteJobCascade(localId);
     this.checkBackoffUntil.delete(localId);
+    this.waitInsights.clear(localId);
     this.removeFromState(localId);
   }
 
@@ -223,6 +226,7 @@ export class GenerationQueueService {
   public async clearHistory(): Promise<void> {
     await this.db.clearAll();
     this.checkBackoffUntil.clear();
+    this.waitInsights.clearAll();
     this.setState([]);
   }
 
@@ -498,6 +502,7 @@ export class GenerationQueueService {
     }
 
     const check = result.check;
+    this.waitInsights.recordCheck(job.localId, check, now);
     if (check.faulted) {
       await this.patchJob(job.localId, {
         status: 'error',
@@ -513,10 +518,17 @@ export class GenerationQueueService {
 
     await this.patchJob(job.localId, {
       status: check.processing > 0 ? 'processing' : 'queued',
+      finishedCount: check.finished,
+      processingCount: check.processing,
+      waitingCount: check.waiting,
+      restartedCount: check.restarted,
       queuePosition: check.queue_position,
       waitTime: check.wait_time,
       kudos: check.kudos,
       isPossible: check.is_possible,
+      eligibleWorkers: check.eligible_workers,
+      eligibleWorkerThreads: check.eligible_worker_threads,
+      mightStall: check.might_stall,
       lastCheckedAt: now,
     });
   }
@@ -672,6 +684,9 @@ export class GenerationQueueService {
     };
     await this.db.putJob(updated);
     this.replaceInState(updated);
+    if (FINISHED_STATUSES.has(updated.status)) {
+      this.waitInsights.clear(localId);
+    }
   }
 
   private setState(jobs: LocalGenerationJob[]): void {

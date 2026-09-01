@@ -1,13 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { PLATFORM_ID } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   evaluateWorkerFeasibility,
   largestSquareSide,
   modelFactsFrom,
   pickableWorkers,
   workerShortfall,
+  WorkerPoolService,
+  WORKER_POOL_POLL_MS,
+  WORKER_POOL_TTL_MS,
   type WorkerRequirement,
 } from './worker-pool.service';
 import { HordeWorker } from '../types/horde-worker';
+import { HordeApiCacheService } from './horde-api-cache.service';
+import { API_BASE_URL } from './api-config';
 
 function worker(overrides: Partial<HordeWorker> = {}): HordeWorker {
   return {
@@ -57,6 +65,96 @@ function requirement(
     ...overrides,
   };
 }
+
+describe('WorkerPoolService monitoring', () => {
+  let cachedGet: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    cachedGet = vi.fn().mockReturnValue(of([worker()]));
+    TestBed.configureTestingModule({
+      providers: [
+        WorkerPoolService,
+        { provide: HordeApiCacheService, useValue: { cachedGet } },
+        { provide: API_BASE_URL, useValue: 'https://example.test/api/v2' },
+        { provide: PLATFORM_ID, useValue: 'browser' },
+      ],
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    TestBed.resetTestingModule();
+  });
+
+  it('shares one monitor until every consumer stops', async () => {
+    const service = TestBed.inject(WorkerPoolService);
+    const stopFirst = service.startMonitoring();
+    const stopSecond = service.startMonitoring();
+    expect(cachedGet).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(WORKER_POOL_POLL_MS);
+    expect(cachedGet).toHaveBeenCalledTimes(2);
+
+    stopFirst();
+    await vi.advanceTimersByTimeAsync(WORKER_POOL_POLL_MS);
+    expect(cachedGet).toHaveBeenCalledTimes(3);
+
+    stopSecond();
+    await vi.advanceTimersByTimeAsync(WORKER_POOL_TTL_MS);
+    expect(cachedGet).toHaveBeenCalledTimes(3);
+  });
+
+  it('refetches for a monitor several times inside one on-demand lifetime', async () => {
+    const service = TestBed.inject(WorkerPoolService);
+    service.startMonitoring();
+
+    await vi.advanceTimersByTimeAsync(WORKER_POOL_TTL_MS);
+    expect(cachedGet).toHaveBeenCalledTimes(
+      1 + WORKER_POOL_TTL_MS / WORKER_POOL_POLL_MS,
+    );
+  });
+
+  it('holds an on-demand reader to the longer lifetime', async () => {
+    const service = TestBed.inject(WorkerPoolService);
+    service.load();
+    expect(cachedGet).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(WORKER_POOL_TTL_MS - 1_000);
+    service.load();
+    expect(cachedGet).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    service.load();
+    expect(cachedGet).toHaveBeenCalledTimes(2);
+  });
+
+  it('stores a fetched list for no longer than the monitored rate', () => {
+    TestBed.inject(WorkerPoolService).load();
+
+    expect(cachedGet).toHaveBeenCalledWith(
+      expect.stringContaining('/workers?type=image'),
+      undefined,
+      { ttl: WORKER_POOL_POLL_MS, category: 'worker-pool' },
+    );
+  });
+
+  it('does not start a monitor during server rendering', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        WorkerPoolService,
+        { provide: HordeApiCacheService, useValue: { cachedGet } },
+        { provide: API_BASE_URL, useValue: 'https://example.test/api/v2' },
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    });
+
+    TestBed.inject(WorkerPoolService).startMonitoring();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(cachedGet).not.toHaveBeenCalled();
+  });
+});
 
 describe('largestSquareSide', () => {
   it('rounds down to the size control granularity', () => {

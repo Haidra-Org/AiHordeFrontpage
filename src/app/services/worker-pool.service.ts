@@ -1,5 +1,6 @@
 import {
   Injectable,
+  NgZone,
   PLATFORM_ID,
   computed,
   inject,
@@ -11,9 +12,23 @@ import { HordeWorker } from '../types/horde-worker';
 import { bridgeTakesControlStrength } from '../helper/bridge-agent';
 import { HordeApiCacheService } from './horde-api-cache.service';
 import { API_BASE_URL } from './api-config';
+import { GenerationWaitInsightsService } from './generation-wait-insights.service';
 
-/** How long a fetched list of workers is served before it is fetched again. */
-export const WORKER_POOL_TTL_MS = 3 * 60 * 1000;
+/**
+ * How long a fetched list of workers is served to an on-demand reader before
+ * it is fetched again. The studio asks for the pool every time the form is
+ * rebuilt, so this is what keeps someone typing a prompt from pulling the
+ * whole list on every keystroke.
+ */
+export const WORKER_POOL_TTL_MS = 60 * 1000;
+
+/**
+ * How often the list is refetched while a consumer is monitoring it. The horde
+ * republishes worker offers every few seconds, and an explanation of why a
+ * request is waiting can only be as specific as the gap between two observed
+ * lists, so a monitored pool is refreshed far more often than an idle one.
+ */
+export const WORKER_POOL_POLL_MS = 10 * 1000;
 
 /**
  * What a request needs of a worker, read off the form. Every field is a plain
@@ -417,6 +432,8 @@ export function evaluateWorkerFeasibility(
 export class WorkerPoolService {
   private readonly cache = inject(HordeApiCacheService);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly ngZone = inject(NgZone);
+  private readonly waitInsights = inject(GenerationWaitInsightsService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   /** Every image worker the horde listed, or null while none are known. */
@@ -437,19 +454,51 @@ export class WorkerPoolService {
 
   private fetchedAt = 0;
   private inFlight = false;
+  private monitorReferences = 0;
+  private monitorTimer: ReturnType<typeof setInterval> | null = null;
 
   /**
-   * Fetch the worker list when the known copy is older than
-   * {@link WORKER_POOL_TTL_MS}. Safe to call as often as the form changes.
+   * Keep the public worker offers fresh while a consumer has queued work.
+   * A disposer makes several mounted consumers share one browser timer.
    */
-  public load(): void {
+  public startMonitoring(): () => void {
+    if (!this.isBrowser) {
+      return () => undefined;
+    }
+    this.monitorReferences += 1;
+    this.load(WORKER_POOL_POLL_MS);
+    if (this.monitorTimer === null) {
+      this.ngZone.runOutsideAngular(() => {
+        this.monitorTimer = setInterval(
+          () => this.load(WORKER_POOL_POLL_MS),
+          WORKER_POOL_POLL_MS,
+        );
+      });
+    }
+    let stopped = false;
+    return () => {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      this.monitorReferences = Math.max(0, this.monitorReferences - 1);
+      if (this.monitorReferences === 0 && this.monitorTimer !== null) {
+        clearInterval(this.monitorTimer);
+        this.monitorTimer = null;
+      }
+    };
+  }
+
+  /**
+   * Fetch the worker list when the known copy is older than `maxAgeMs`, which
+   * defaults to what an on-demand reader accepts. Safe to call as often as the
+   * form changes.
+   */
+  public load(maxAgeMs: number = WORKER_POOL_TTL_MS): void {
     if (!this.isBrowser || this.inFlight) {
       return;
     }
-    if (
-      this.workers() !== null &&
-      Date.now() - this.fetchedAt < WORKER_POOL_TTL_MS
-    ) {
+    if (this.workers() !== null && Date.now() - this.fetchedAt < maxAgeMs) {
       return;
     }
     this.inFlight = true;
@@ -457,7 +506,10 @@ export class WorkerPoolService {
       .cachedGet<HordeWorker[]>(
         `${this.baseUrl}/workers?type=image`,
         undefined,
-        { ttl: WORKER_POOL_TTL_MS, category: 'worker-pool' },
+        // A cached response is served against the lifetime it was stored with,
+        // so the store always uses the shortest age any caller accepts. The
+        // guard above is what holds on-demand readers to their coarser rate.
+        { ttl: WORKER_POOL_POLL_MS, category: 'worker-pool' },
       )
       .pipe(catchError(() => of(null)))
       .subscribe((list) => {
@@ -466,6 +518,7 @@ export class WorkerPoolService {
           return;
         }
         this.fetchedAt = Date.now();
+        this.waitInsights.recordWorkerSnapshot(list, this.fetchedAt);
         this.workers.set(list);
       });
   }

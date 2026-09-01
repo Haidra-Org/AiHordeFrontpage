@@ -212,14 +212,50 @@ describe('GenerateResultsPanelComponent', () => {
     finishedJobs.set([job('e', 'error'), job('x', 'cancelled')]);
 
     const tiles = component.tiles();
-    // 2 generating tiles (batch of 2) + 1 error tile + 1 cancelled tile.
+    // 2 claimed tiles (batch of 2) + 1 error tile + 1 cancelled tile.
     expect(tiles.map((t) => t.kind)).toEqual([
-      'generating',
-      'generating',
+      'claimed',
+      'claimed',
       'error',
       'cancelled',
     ]);
     expect(tiles[0].aspect).toBe('512/768');
+  });
+
+  it('uses lifecycle counts to show mixed batch progress', () => {
+    pendingJobs.set([
+      {
+        ...job('mixed', 'processing'),
+        request: { prompt: 'x', params: { n: 4 } },
+        finishedCount: 1,
+        processingCount: 1,
+        waitingCount: 2,
+      },
+    ]);
+
+    expect(component.tiles().map((tile) => tile.kind)).toEqual([
+      'finished-pending',
+      'claimed',
+      'queued',
+      'queued',
+    ]);
+  });
+
+  it('clamps racing lifecycle counts to the requested batch size', () => {
+    pendingJobs.set([
+      {
+        ...job('racing', 'processing'),
+        request: { prompt: 'x', params: { n: 2 } },
+        finishedCount: 1,
+        processingCount: 3,
+        waitingCount: 4,
+      },
+    ]);
+
+    expect(component.tiles().map((tile) => tile.kind)).toEqual([
+      'finished-pending',
+      'claimed',
+    ]);
   });
 
   it('shows a notice tile for every dropped CSAM filter image', () => {
@@ -1418,9 +1454,7 @@ describe('GenerateResultsPanelComponent', () => {
 
       const fit = component.tiles()[0].feasibility;
       expect(fit?.blockedBy).toBe('model');
-      expect(TRANSLATIONS[fit!.message.key]).toContain(
-        'not carrying this model',
-      );
+      expect(TRANSLATIONS[fit!.message.key]).toContain('may be temporary');
     });
 
     it('says nothing about who can take it while the workers are unknown', () => {
@@ -1466,6 +1500,18 @@ describe('GenerateResultsPanelComponent', () => {
 
       component.toggleWaitWhy('other');
       expect(component.waitWhyFor()).toBeNull();
+    });
+
+    it('closes the status explanation with Escape and restores its opener', async () => {
+      const opener = document.createElement('button');
+      const focus = vi.spyOn(opener, 'focus');
+      component.toggleWaitWhy('impossible-1-p0', opener);
+
+      component.onDocumentEscape();
+      await Promise.resolve();
+
+      expect(component.waitWhyFor()).toBeNull();
+      expect(focus).toHaveBeenCalled();
     });
   });
 });

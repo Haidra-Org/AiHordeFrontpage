@@ -370,7 +370,17 @@ describe('GenerationQueueService', () => {
     aiHorde.checkImageGenerationResult.mockReturnValue(
       of(
         checkResult({
-          check: { processing: 1, queue_position: 4, wait_time: 9 },
+          check: {
+            finished: 1,
+            processing: 1,
+            waiting: 2,
+            restarted: 3,
+            queue_position: 4,
+            wait_time: 9,
+            eligible_workers: 2,
+            eligible_worker_threads: 5,
+            might_stall: true,
+          },
         }),
       ),
     );
@@ -384,6 +394,13 @@ describe('GenerationQueueService', () => {
     expect(job.status).toBe('processing');
     expect(job.queuePosition).toBe(4);
     expect(job.waitTime).toBe(9);
+    expect(job.finishedCount).toBe(1);
+    expect(job.processingCount).toBe(1);
+    expect(job.waitingCount).toBe(2);
+    expect(job.restartedCount).toBe(3);
+    expect(job.eligibleWorkers).toBe(2);
+    expect(job.eligibleWorkerThreads).toBe(5);
+    expect(job.mightStall).toBe(true);
   });
 
   it('backs off submits after a 429 and does not immediately resubmit', async () => {

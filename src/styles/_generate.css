@@ -4344,162 +4344,203 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-3);
   border: 1px dashed var(--gs-field-border);
   border-radius: 10px;
+  text-align: center;
 }
 .gen-studio .gs-tile-status-text {
-  font-size: 11px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-label);
-  font-weight: 600;
+  font-weight: 700;
+  line-height: 1.3;
 }
-.gen-studio .gs-tile-substatus {
-  font-size: 10px;
+.gen-studio .gs-status-front {
+  padding: 36px var(--gs-space-3) var(--gs-space-3);
+}
+.gen-studio .gs-status-summary {
+  max-width: 22rem;
+  font-size: var(--gs-text-2xs);
+  line-height: 1.4;
   color: var(--gs-muted);
 }
-/* The wait, pressable because it is an estimate the horde made and the reader
-   is owed the parts it was made of. */
-.gen-studio .gs-tile-substatus--why {
-  position: relative;
-  border: 0;
-  padding: 2px 4px;
-  background: none;
+.gen-studio .gs-status-explain {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--gs-space-1);
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border: 1px solid var(--gs-blue);
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-field);
+  color: var(--gs-blue);
   font-family: inherit;
-  text-decoration: underline dotted;
-  text-underline-offset: 2px;
+  font-size: var(--gs-text-2xs);
+  font-weight: 700;
   cursor: pointer;
 }
-.gen-studio .gs-tile-substatus--why:hover {
-  color: var(--gs-ink-2);
+.gen-studio .gs-status-explain:hover {
+  background: var(--gs-blue-tint);
 }
-.gen-studio .gs-tile-substatus--why:focus-visible {
+.gen-studio .gs-status-explain:focus-visible,
+.gen-studio .gs-wait-card-close:focus-visible {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
-  .gen-studio .gs-tile-substatus--why::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    min-width: 44px;
-    height: 44px;
-    transform: translate(-50%, -50%);
+  .gen-studio .gs-status-explain,
+  .gen-studio .gs-wait-card-close {
+    min-height: 44px;
   }
 }
-/* What the wait is made of. Sits over the placeholder rather than beside it:
-   the tile is the whole cell and there is nowhere else for it to go. */
-.gen-studio .gs-wait-why {
+
+/* Both faces occupy the tile, so the explanation keeps the requested image's
+   footprint instead of changing the grid when it opens. */
+.gen-studio .gs-wait-card {
+  perspective: 900px;
+}
+.gen-studio .gs-wait-card-inner,
+.gen-studio .gs-wait-card-back {
   position: absolute;
-  inset: 6px;
-  z-index: 20;
-  overflow-y: auto;
+  inset: 0;
+  backface-visibility: hidden;
+  transition: transform 320ms ease;
+  transform-style: preserve-3d;
+}
+.gen-studio .gs-wait-card-inner {
+  transform: rotateY(0deg);
+}
+.gen-studio .gs-wait-card-back {
+  z-index: 21;
+  overflow: hidden auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 9px 10px;
+  transform: rotateY(180deg);
   text-align: left;
   background: var(--gs-pop-surface);
   border: 1px solid var(--gs-pop-border);
-  border-radius: 9px;
+  border-radius: 10px;
   box-shadow: var(--gs-pop-shadow);
+  scrollbar-width: thin;
 }
-.gen-studio .gs-wait-why-title {
-  font-size: 11px;
-  font-weight: 700;
+.gen-studio .gs-wait-card--flipped .gs-wait-card-inner {
+  transform: rotateY(-180deg);
+}
+.gen-studio .gs-wait-card--flipped .gs-wait-card-back {
+  transform: rotateY(0deg);
+}
+.gen-studio .gs-wait-card-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-2) var(--gs-space-2)
+    var(--gs-space-3);
+  border-bottom: 1px solid var(--gs-pop-border);
+  background: var(--gs-pop-surface);
   color: var(--gs-ink);
-  /* Room for the close button standing in the corner. */
-  padding-right: 26px;
+  font-size: var(--gs-text-xs);
 }
-.gen-studio .gs-wait-why-close {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+.gen-studio .gs-wait-card-close {
   display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: none;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  border-radius: var(--gs-radius-sm);
   color: var(--gs-muted);
 }
-.gen-studio .gs-wait-why-close:hover {
+.gen-studio .gs-wait-card-close:hover {
   background: var(--gs-field-soft);
   color: var(--gs-ink);
 }
-.gen-studio .gs-wait-why-close:focus-visible {
-  outline: 2px solid var(--gs-blue);
-  outline-offset: 1px;
-}
-@media (pointer: coarse) {
-  .gen-studio .gs-wait-why-close::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 44px;
-    height: 44px;
-    transform: translate(-50%, -50%);
-  }
-}
-.gen-studio .gs-wait-why-list {
+.gen-studio .gs-wait-card-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 10.5px;
-  line-height: 1.4;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-3);
   color: var(--gs-ink-2);
+  font-size: var(--gs-text-2xs);
+  line-height: 1.45;
+}
+.gen-studio .gs-wait-card-body h4 {
+  margin-top: var(--gs-space-1);
+  color: var(--gs-ink);
+  font-size: var(--gs-text-2xs);
+  font-weight: 800;
+}
+.gen-studio .gs-wait-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2);
+  border: 1px solid var(--gs-blue);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-blue-tint);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-wait-callout app-icon {
+  flex: none;
+  color: var(--gs-blue);
+}
+.gen-studio .gs-wait-callout--warn {
+  border-color: var(--gs-sec-source);
+  background: var(--gs-sec-source-tint);
+}
+.gen-studio .gs-wait-callout--warn app-icon {
+  color: var(--gs-sec-source);
+}
+.gen-studio .gs-wait-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gs-space-2);
+  margin: 0;
+}
+.gen-studio .gs-wait-metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--gs-space-2);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-wait-metrics dt {
+  color: var(--gs-muted);
+  font-size: 9px;
+  line-height: 1.25;
+}
+.gen-studio .gs-wait-metrics dd {
+  margin: 0;
+  color: var(--gs-ink);
+  font-size: var(--gs-text-xs);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
-.gen-studio .gs-wait-why-note {
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--gs-muted);
+.gen-studio .gs-wait-changes {
+  padding: var(--gs-space-2);
+  border-left: 3px solid var(--gs-blue);
+  background: var(--gs-field-soft);
 }
-/* Nobody can serve this one. Amber rather than red: the job is not lost, it is
-   waiting, and the sentence beneath says which setting is holding it there. */
-.gen-studio .gs-tile-impossible {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  margin-top: 6px;
-  padding: 6px 8px;
-  max-width: 100%;
-  border: 1px solid rgba(180, 83, 9, 0.34);
-  border-radius: 8px;
-  background: rgba(251, 191, 36, 0.16);
-  text-align: center;
+.gen-studio .gs-wait-changes ul {
+  margin: var(--gs-space-1) 0 0;
+  padding-left: 1rem;
 }
-.gen-studio .gs-tile-impossible app-icon {
-  color: #b45309;
+.gen-studio .gs-wait-changes li + li {
+  margin-top: 3px;
 }
-.gen-studio .gs-tile-impossible-title {
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1.3;
-  color: #b45309;
-}
-.gen-studio .gs-tile-impossible-why,
-.gen-studio .gs-tile-impossible-note {
-  font-size: 10px;
-  line-height: 1.35;
-  color: var(--gs-ink-2);
-}
-.gen-studio .gs-tile-impossible-note {
-  color: var(--gs-muted);
-}
-.dark .gen-studio .gs-tile-impossible {
-  border-color: rgba(251, 191, 36, 0.3);
-  background: rgba(251, 191, 36, 0.12);
-}
-.dark .gen-studio .gs-tile-impossible app-icon,
-.dark .gen-studio .gs-tile-impossible-title {
-  color: #fbbf24;
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-wait-card-inner,
+  .gen-studio .gs-wait-card-back {
+    transition: none;
+  }
 }
 .gen-studio .gs-tile-msg {
   font-size: 11px;
