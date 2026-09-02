@@ -16,6 +16,7 @@ import {
   SAMPLERS,
   STEPS_SLIDER_MAX,
   UPSCALERS,
+  StylePickerGroup,
   buildStyledImageRequest,
   coerceFormValue,
   createGenerateForm,
@@ -31,6 +32,7 @@ import { evaluateRequestLint, type RequestWarning } from '../request-lint';
 import type { ActiveModel } from '../../../types/active-model';
 import type { HordeWorker } from '../../../types/horde-worker';
 import { ToastService } from '../../../services/toast.service';
+import { DatabaseService } from '../../../services/database.service';
 import { FullscreenService } from '../../../services/fullscreen.service';
 import { DOCS_IMAGE_SETTINGS } from '../../../content/docs-links';
 import { GenerateSourceImageComponent } from '../generate-source-image/generate-source-image.component';
@@ -3723,5 +3725,168 @@ describe('GenerateFormComponent folding the source card', () => {
 
     expect(host.card().open()).toBe(false);
     expect(host.panel().anyGroupOpen()).toBe(false);
+  });
+});
+
+describe('GenerateFormComponent suggested looks', () => {
+  /** The catalogue as the studio would hand it over, with two looks missing. */
+  const GROUPS: StylePickerGroup[] = [
+    { category: 'general', names: ['flux', 'sdxlanime', 'pixelart'] },
+    { category: 'artistic', names: ['Impressionist Oil Painting'] },
+  ];
+
+  async function render(groups: StylePickerGroup[] = GROUPS): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    host: HTMLElement;
+    form: GenerateFormGroup;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'a fox',
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.componentRef.setInput('styleGroups', groups);
+    fixture.detectChanges();
+    return { fixture, host: fixture.nativeElement as HTMLElement, form };
+  }
+
+  function chips(host: HTMLElement): HTMLButtonElement[] {
+    return Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.gs-chip--look'),
+    );
+  }
+
+  it('offers only the looks the loaded catalogue can serve', async () => {
+    const { host } = await render();
+
+    // Four of the seven are in this catalogue, in the registry's order, and the
+    // spelling the catalogue uses is what the chip is built from.
+    expect(chips(host).map((chip) => chip.textContent?.trim())).toEqual([
+      'Flux',
+      'Oil painting',
+      'Anime',
+      'Pixel art',
+    ]);
+  });
+
+  it('draws nothing until the catalogue arrives', async () => {
+    const { host } = await render([]);
+
+    expect(chips(host)).toHaveLength(0);
+  });
+
+  it('applies the style a chip names, and takes it off again', async () => {
+    const { fixture, host, form } = await render();
+    const [flux] = chips(host);
+
+    flux.click();
+    fixture.detectChanges();
+
+    expect(form.controls.styleName.value).toBe('curated:flux');
+    expect(chips(host)[0].getAttribute('aria-pressed')).toBe('true');
+    expect(chips(host)[0].classList).toContain('gs-chip--active');
+
+    chips(host)[0].click();
+    fixture.detectChanges();
+
+    expect(form.controls.styleName.value).toBe('');
+    expect(chips(host)[0].getAttribute('aria-pressed')).toBe('false');
+  });
+});
+
+describe('GenerateFormComponent first-visit prompt line', () => {
+  let dbGet: ReturnType<typeof vi.fn>;
+  let dbStore: ReturnType<typeof vi.fn>;
+
+  async function render(finishedCount = 0): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    host: HTMLElement;
+  }> {
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: DatabaseService,
+          useValue: { get: dbGet, store: dbStore },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a fox' }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.componentRef.setInput('finishedCount', finishedCount);
+    fixture.detectChanges();
+    return { fixture, host: fixture.nativeElement as HTMLElement };
+  }
+
+  function line(host: HTMLElement): HTMLElement | null {
+    return host.querySelector<HTMLElement>('.gs-prompt-first-done');
+  }
+
+  beforeEach(() => {
+    dbGet = vi.fn().mockReturnValue(undefined);
+    dbStore = vi.fn();
+  });
+
+  it('tells a reader with nothing generated that the prompt is enough', async () => {
+    const { host } = await render();
+
+    expect(host.textContent).toContain(
+      'Only the prompt is required. Say what you want to see, then press Generate.',
+    );
+    expect(line(host)?.textContent?.trim()).toBe('Got it');
+  });
+
+  it('goes when the reader says they have read it', async () => {
+    const { fixture, host } = await render();
+
+    line(host)!.click();
+    fixture.detectChanges();
+
+    expect(line(host)).toBeNull();
+    expect(dbStore).toHaveBeenCalledWith(
+      'aihorde.generate.prompt_hint_done',
+      true,
+    );
+  });
+
+  it('stays away on a later visit', async () => {
+    dbGet.mockImplementation((key: string) =>
+      key === 'aihorde.generate.prompt_hint_done' ? true : undefined,
+    );
+
+    const { host } = await render();
+
+    expect(line(host)).toBeNull();
+  });
+
+  it('retires itself once the reader has two pictures back', async () => {
+    const { host } = await render(2);
+
+    expect(line(host)).toBeNull();
   });
 });

@@ -4719,6 +4719,13 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: rgba(17, 24, 39, 0.4);
   backdrop-filter: blur(2px);
 }
+/* The panel takes focus when a dialog opens so a held Enter cannot press its
+   confirm; that focus is not a place a reader navigated to, so the browser's
+   ring around the whole dialog is noise. The trap keeps Tab inside, where the
+   controls draw their own rings. */
+.gen-studio .gs-modal-panel:focus {
+  outline: none;
+}
 .gen-studio .gs-modal-panel {
   width: 660px;
   max-width: 92vw;
@@ -7695,30 +7702,87 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: #bfdbfe;
 }
 
-/* ------- first-visit welcome card (results empty state) -------------- */
-/* Takes the empty state's place, so it keeps its centred column and borrows the
-   documentation plane's blue zone tokens: the doors lead to the same explanatory
-   material the guide CTA below them does. Column-stacked doors at every width;
-   three side by side would be unreadable in a pane this narrow. */
+/* ------- suggested looks (beside the Style select) ------------------- */
+/* Named for what comes out rather than for the style's own name, so the row
+   reads as a set of answers to "what should this look like?" and not as a
+   second style list. A chip is a choice, so it wears the chip's chosen state;
+   it stands a finger tall wherever a finger is what presses it, which the
+   general chip cannot be without moving every dense row in the panel. */
+.gen-studio .gs-looks-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-looks-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-chip--look {
+    min-height: 44px;
+  }
+}
+
+/* ------- first-visit line under the prompt --------------------------- */
+/* The sublabel the model's own note is written in, with the way out on the
+   same line: the line is one sentence and a second row for dismissing it would
+   cost more of the panel than the sentence does. */
+.gen-studio .gs-prompt-first-done {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--gs-blue);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.gen-studio .gs-prompt-first-done:hover {
+  color: var(--gs-blue-hover);
+}
+.dark .gen-studio .gs-prompt-first-done {
+  color: #bfdbfe;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-prompt-first-done {
+    min-height: 44px;
+  }
+}
+
+/* ------- first-visit welcome ----------------------------------------- */
+/* Drawn into two chassis, the bottom sheet and a centred dialog, so it carries
+   no surface of its own: the doors are the boxes and the chassis is the frame.
+   The doors borrow the documentation plane's blue tokens, because they lead to
+   the same explanatory material the reading link beside them does. Stacked at
+   every width; three side by side would be unreadable in either chassis. */
 .gen-studio .gs-welcome {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 14px;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 56px 2px 0;
+}
+.gen-studio .gs-welcome-panel {
+  width: 480px;
+  padding: 20px;
   animation: gs-fadeup 0.24s ease both;
 }
 .gen-studio .gs-welcome-title {
-  margin: 0;
+  margin: 0 0 10px;
   color: var(--gs-ink);
   font-size: 15px;
   font-weight: 700;
   text-align: center;
 }
 .gen-studio .gs-welcome-sub {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--gs-ink-2);
   font-size: 12px;
   line-height: 1.6;
@@ -7755,8 +7819,21 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-size: 11.5px;
   line-height: 1.55;
 }
+/* The three answers on one line under the doors: the one that keeps the offer
+   away, the one that ends it for now, and the way to read about it first. */
+.gen-studio .gs-welcome-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 14px;
+}
+.gen-studio .gs-welcome-remember {
+  min-height: 44px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
 .gen-studio .gs-welcome-skip {
-  align-self: center;
   min-height: 44px;
   padding: 6px 12px;
   border: 0;
@@ -7770,8 +7847,24 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-welcome-skip:hover {
   color: var(--gs-ink-2);
 }
+.gen-studio .gs-welcome-learn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 12px;
+  color: var(--gs-blue);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.gen-studio .gs-welcome-learn:hover {
+  color: var(--gs-blue-hover);
+}
+.dark .gen-studio .gs-welcome-learn {
+  color: #bfdbfe;
+}
 @media (prefers-reduced-motion: reduce) {
-  .gen-studio .gs-welcome {
+  .gen-studio .gs-welcome-panel {
     animation: none;
   }
 }
@@ -16398,33 +16491,6 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-guide-practice {
   margin: 0 0 var(--gs-space-3);
   max-width: 480px;
-}
-
-/* ------- welcome card foot ------------------------------------------- */
-/* The way past the card and the way to read about it first, on one line under
-   the doors. */
-.gen-studio .gs-welcome-foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 4px 14px;
-}
-.gen-studio .gs-welcome-learn {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 6px 12px;
-  color: var(--gs-blue);
-  font-size: 11.5px;
-  font-weight: 600;
-  text-decoration: underline;
-}
-.gen-studio .gs-welcome-learn:hover {
-  color: var(--gs-blue-hover);
-}
-.dark .gen-studio .gs-welcome-learn {
-  color: #bfdbfe;
 }
 
 /* ------- tutorial completion note ------------------------------------ */

@@ -19,6 +19,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DOCS_IMAGE_SETTINGS } from '../../../content/docs-links';
+import { STUDIO_LOOKS } from '../../../content/looks';
 import {
   AbstractControl,
   FormControl,
@@ -412,6 +413,12 @@ export interface LedgerRow {
   labelKey: string;
 }
 
+/** One offered look, resolved to the style key the select would hold for it. */
+interface OfferedLook {
+  key: string;
+  labelKey: string;
+}
+
 /** The changed settings of one panel area, listed under its heading. */
 export interface LedgerGroupRows {
   section: LedgerSection;
@@ -507,6 +514,10 @@ const LEDGER_SECTION_TITLE_KEY: Readonly<Record<LedgerSection, string>> = {
 
 /** Where the reader's open groups are remembered between visits. */
 const GROUPS_OPEN_KEY = 'aihorde.generate.groups_open';
+/** Set once the first-visit line under the prompt has been dismissed. */
+const PROMPT_HINT_KEY = 'aihorde.generate.prompt_hint_done';
+/** Results after which the first-visit line goes away on its own. */
+const PROMPT_HINT_RESULTS = 2;
 
 /**
  * What the panel does with a group it has never been told anything about. A
@@ -627,6 +638,8 @@ export class GenerateFormComponent implements OnInit {
    * presented and whether the header has room for the walkthrough's word.
    */
   public readonly narrow = input(false);
+  /** How many generations have come back, which retires the first-visit line. */
+  public readonly finishedCount = input(0);
   /** Recent distinct prompts for the quick-pick, newest first. */
   public readonly promptHistory = input<readonly PromptHistoryEntry[]>([]);
   /**
@@ -792,6 +805,27 @@ export class GenerateFormComponent implements OnInit {
 
   /** Which prompt field, if any, is open in the full-screen editor. */
   public readonly promptEditor = signal<PromptEditorField | null>(null);
+
+  /** Whether the reader has read the first-visit line and put it away. */
+  private readonly promptHintDone = signal(
+    this.db.get(PROMPT_HINT_KEY) === true,
+  );
+
+  /**
+   * Whether the line saying the prompt is the only field that has to be filled
+   * in is drawn. It is the whole telegraph a first-time reader gets: two
+   * results in and it goes, because by then the reader has done the thing it
+   * describes.
+   */
+  public readonly showPromptHint = computed(
+    () => !this.promptHintDone() && this.finishedCount() < PROMPT_HINT_RESULTS,
+  );
+
+  /** Put the first-visit line away, here and on every later visit. */
+  public dismissPromptHint(): void {
+    this.promptHintDone.set(true);
+    this.db.store(PROMPT_HINT_KEY, true);
+  }
 
   /** The prompt box, so a picked history entry or starter prompt can focus it. */
   private readonly promptInput =
@@ -2567,6 +2601,39 @@ export class GenerateFormComponent implements OnInit {
   /** The key a preset is listed under, so the select can offer it. */
   public curatedKey(name: string): string {
     return styleRecordKey('curated', name);
+  }
+
+  /**
+   * The looks the loaded catalogue can actually serve, as the keys the select
+   * holds. The catalogue arrives over the network, so the row draws nothing
+   * until it does, and a look whose style has gone is offered nowhere rather
+   * than offered dead. The key is built from the catalogue's own spelling of
+   * the name, so a chip and the select's option are never two different keys.
+   */
+  public readonly offeredLooks = computed<readonly OfferedLook[]>(() => {
+    const catalogue = new Map<string, string>();
+    for (const group of this.styleGroups()) {
+      for (const name of group.names) {
+        catalogue.set(name.toLowerCase(), name);
+      }
+    }
+    return STUDIO_LOOKS.flatMap((look) => {
+      const name = catalogue.get(look.name.toLowerCase());
+      return name
+        ? [{ key: this.curatedKey(name), labelKey: look.labelKey }]
+        : [];
+    });
+  });
+
+  /**
+   * Apply a look, or take it off again when it is the one already applied. The
+   * chip writes the control the select writes, so a look and a style chosen by
+   * name are one selection rather than two that can disagree.
+   */
+  public toggleLook(key: string): void {
+    const control = this.form().controls.styleName;
+    control.setValue(control.value === key ? '' : key);
+    control.markAsDirty();
   }
 
   /**

@@ -44,6 +44,7 @@
       [panelSize]="panelSize()"
       [expandable]="panelCanExpand()"
       [narrow]="isNarrow()"
+      [finishedCount]="finishedCount()"
       [promptHistory]="promptHistory()"
       [qrSupported]="qrSupported()"
       [modelBaseline]="modelBaseline()"
@@ -175,6 +176,13 @@
       (goTo)="goToBlocker($event)"
       (closed)="closeBlockers()"
     />
+  }
+
+  <!-- The ways in, asked once over the whole page. The panes stack on a narrow
+       screen, so an offer made inside the results pane would sit under every
+       setting where a first-time reader never meets it. -->
+  @if (showWelcome()) {
+    <app-generate-welcome [narrow]="isNarrow()" (closed)="closeWelcome()" />
   }
 
   @if (previewRequest(); as request) {

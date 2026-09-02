@@ -1,0 +1,91 @@
+@if (narrow()) {
+  <app-gs-sheet
+    [startExpanded]="true"
+    [label]="'generate.welcome.heading' | transloco"
+    (closed)="skip()"
+  >
+    <span sheet-bar class="gs-sheet-title">{{
+      "generate.welcome.heading" | transloco
+    }}</span>
+    <ng-container *ngTemplateOutlet="welcomeBody" />
+  </app-gs-sheet>
+} @else {
+  <div
+    class="gs-modal-overlay"
+    (click)="onBackdrop($event)"
+    (keydown.escape)="skip()"
+    tabindex="-1"
+  >
+    <div
+      #panel
+      class="gs-modal-panel gs-welcome-panel gs-fadeup"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="gs-welcome-title"
+      tabindex="-1"
+    >
+      <h2 id="gs-welcome-title" class="gs-welcome-title">
+        {{ "generate.welcome.heading" | transloco }}
+      </h2>
+      <ng-container *ngTemplateOutlet="welcomeBody" />
+    </div>
+  </div>
+}
+
+<!-- One list of doors, drawn into whichever surface the width calls for. The
+     heading is the only thing the two presentations word differently: the sheet
+     carries it on its bar, where it names the sheet as well. -->
+<ng-template #welcomeBody>
+  <div class="gs-welcome">
+    <p class="gs-welcome-sub">
+      {{ "generate.welcome.sub" | transloco }}
+    </p>
+    <div class="gs-welcome-doors">
+      @for (door of doors; track door.id) {
+        <button
+          type="button"
+          class="gs-welcome-door"
+          [class.gs-welcome-door--tutorial]="door.flowId !== null"
+          (click)="enterVia(door)"
+        >
+          @if (door.flowId !== null) {
+            <span class="gs-cap-eyebrow gs-tut-eyebrow">
+              <span class="gs-tut-mark" aria-hidden="true">
+                <app-icon name="academic-cap" />
+              </span>
+              {{ "generate.learn.badge" | transloco }}
+            </span>
+          }
+          <span class="gs-welcome-door-title">
+            {{ "generate.welcome." + door.id + ".title" | transloco }}
+          </span>
+          <span class="gs-welcome-door-hint">
+            {{ "generate.welcome." + door.id + ".hint" | transloco }}
+          </span>
+        </button>
+      }
+    </div>
+    <!-- The way past the offer sits beside the way to read about it first, and
+         beside the answer that keeps it away for good: a reader who wants
+         neither a walkthrough nor this question again ends up here. -->
+    <div class="gs-welcome-foot">
+      <label class="gs-switch gs-welcome-remember">
+        <span>{{ "generate.welcome.dont_show" | transloco }}</span>
+        <input
+          type="checkbox"
+          [checked]="dontShow()"
+          (change)="setDontShow($event)"
+        />
+        <span class="gs-switch-track"
+          ><span class="gs-switch-knob"></span
+        ></span>
+      </label>
+      <button type="button" class="gs-welcome-skip" (click)="skip()">
+        {{ "generate.welcome.skip" | transloco }}
+      </button>
+      <a class="gs-welcome-learn" [routerLink]="docsLink" (click)="skip()">
+        {{ "generate.welcome.browse_learn" | transloco }}
+      </a>
+    </div>
+  </div>
+</ng-template>

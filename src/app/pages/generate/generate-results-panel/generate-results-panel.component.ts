@@ -4,7 +4,6 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  PLATFORM_ID,
   computed,
   effect,
   inject,
@@ -13,11 +12,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import {
-  DecimalPipe,
-  NgTemplateOutlet,
-  isPlatformBrowser,
-} from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -84,7 +79,6 @@ import { EdgeAwarePopoverDirective } from '../../../directives/edge-aware-popove
 import { FullscreenService } from '../../../services/fullscreen.service';
 import {
   TutorialEngineService,
-  TutorialLevel,
   canonicalFlowId,
 } from '../../../services/tutorial-engine.service';
 import { isConceptFlow } from '../../../content/flows';
@@ -103,8 +97,6 @@ const DEFAULT_PER_ROW = 4;
 const SHOW_PROMPTS_KEY = 'aihorde.generate.show_prompts';
 const SHOW_QUICK_ACTIONS_KEY = 'aihorde.generate.show_quick_actions';
 const META_PINNED_KEY = 'aihorde.generate.meta_pinned';
-/** Set once the welcome card has been answered, dismissed or otherwise. */
-const WELCOMED_KEY = 'aihorde.generate.learn.welcomed';
 
 /**
  * Narrowest tile the grid will render. A per-row preference chosen on a wide
@@ -133,16 +125,6 @@ interface JobThumbnail {
   url: string;
   mimeType: string;
   metadata?: StoredJobImageMetadata;
-}
-
-/** One of the ways in offered by the first-visit welcome card. */
-export interface WelcomeDoor {
-  /** Suffix of the door's `generate.welcome.*` keys, and of nothing else. */
-  id: string;
-  /** The Learn level taking this door settles on. */
-  level: TutorialLevel;
-  /** The tutorial to start, or null to leave the reader in a bare studio. */
-  flowId: string | null;
 }
 
 /** An open per-tile menu connected to its button or to a context-menu press. */
@@ -363,8 +345,6 @@ export class GenerateResultsPanelComponent {
   private readonly waitInsights = inject(GenerationWaitInsightsService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   public readonly fullscreen = inject(FullscreenService);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
-
   public readonly perRowOptions = PER_ROW_OPTIONS;
 
   /**
@@ -449,44 +429,6 @@ export class GenerateResultsPanelComponent {
     this.tutorial.dismissCompletion();
     void this.tutorial.start(flowId);
   }
-
-  /**
-   * The ways in offered to a reader who has not been here before. The first
-   * door runs the txt2img walkthrough, which makes an image by working the
-   * panel; the second starts the migrating track, since a reader comfortable
-   * with this has almost always generated somewhere else and needs their
-   * vocabulary mapped rather than image generation taught, and it hands over to
-   * that same walkthrough at the end. Pointing a door at another track is this
-   * list's `flowId` and nothing else.
-   */
-  public readonly welcomeDoors: readonly WelcomeDoor[] = [
-    { id: 'door1', level: 'new_to_this', flowId: 'txt2img' },
-    { id: 'door2', level: 'comfortable', flowId: 'concepts_migrating' },
-    { id: 'door3', level: 'expert', flowId: null },
-  ];
-
-  /** Whether the welcome card has been answered, in this visit or an earlier one. */
-  private readonly welcomed = signal<boolean>(
-    this.db.get(WELCOMED_KEY) === true,
-  );
-
-  /**
-   * Whether the welcome card stands in for the empty state. Browser-only: the
-   * flag lives in local storage, which a server render cannot read, and showing
-   * a first-visit card to a reader who answered it long ago is worse than having
-   * it arrive with hydration.
-   */
-  public readonly showWelcome = computed(
-    () =>
-      this.isBrowser &&
-      !this.welcomed() &&
-      this.showStarters() &&
-      !this.helpDockOpen() &&
-      !this.tutorialOpen() &&
-      // A parked tutorial's way back is the offer this pane makes; three more
-      // doors beside it would be two starts competing for one reader.
-      !this.tutorial.parked(),
-  );
 
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
@@ -2143,26 +2085,6 @@ export class GenerateResultsPanelComponent {
 
   public toggleErrorsOnly(): void {
     this.errorsOnly.update((value) => !value);
-  }
-
-  /**
-   * Take one of the welcome card's doors: settle the Learn level it stands for
-   * and start its tutorial, if it has one. Only a door sets a level, so the card
-   * can be dismissed without committing the reader to a register they never
-   * chose.
-   */
-  public enterVia(door: WelcomeDoor): void {
-    this.tutorial.setLevel(door.level);
-    this.dismissWelcome();
-    if (door.flowId) {
-      void this.tutorial.start(door.flowId);
-    }
-  }
-
-  /** Put the welcome card away for good, leaving the level as it was. */
-  public dismissWelcome(): void {
-    this.welcomed.set(true);
-    this.db.store(WELCOMED_KEY, true);
   }
 
   /** Put the reference entry away and give the pane back to the results. */

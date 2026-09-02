@@ -75,6 +75,10 @@ import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.
 import { StudioPasteModalComponent } from './studio-paste-modal/studio-paste-modal.component';
 import { GenerateReviewModalComponent } from './generate-review-modal/generate-review-modal.component';
 import { GenerateBlockersModalComponent } from './generate-blockers-modal/generate-blockers-modal.component';
+import {
+  GenerateWelcomeComponent,
+  WELCOMED_KEY,
+} from './generate-welcome/generate-welcome.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
 import {
@@ -233,6 +237,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     StudioPasteModalComponent,
     GenerateReviewModalComponent,
     GenerateBlockersModalComponent,
+    GenerateWelcomeComponent,
     ResultActionConfirmComponent,
     StudioImageDropDirective,
     GsSheetComponent,
@@ -371,6 +376,39 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * often folded away or off the screen.
    */
   public readonly pendingBlockers = signal<SubmitBlocker[] | null>(null);
+
+  /** Whether the first-visit offer has been answered for good, here or before. */
+  private readonly welcomeStored = signal(this.db.get(WELCOMED_KEY) === true);
+  /** Whether the reader has put the first-visit offer away for this visit. */
+  private readonly welcomeClosed = signal(false);
+
+  /** Generations that have come back, which retires the first-visit copy. */
+  public readonly finishedCount = computed(
+    () =>
+      this.queue.finishedJobs().filter((job) => job.status === 'done').length,
+  );
+
+  /**
+   * Whether a reader who has not been here before is being offered the ways in.
+   * Browser-only: the answer lives in local storage, which a server render
+   * cannot read, and asking a reader who answered long ago is worse than the
+   * offer arriving with hydration.
+   *
+   * Nothing else may be over the page at the time. A tutorial, the reference
+   * entry and the two dialogs Generate can raise are each something the reader
+   * asked for; a question they did not ask does not go on top of one.
+   */
+  public readonly showWelcome = computed(
+    () =>
+      this.isBrowser &&
+      !this.welcomeStored() &&
+      !this.welcomeClosed() &&
+      !this.tutorial.active() &&
+      !this.tutorial.parked() &&
+      !this.helpDock.isOpen() &&
+      this.pendingReview() === null &&
+      this.pendingBlockers() === null,
+  );
 
   /**
    * What the review-and-apply panel calls the settings it is showing. A preset
@@ -751,6 +789,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     // applied: the page had no form to write to, and this is the form.
     this.tryIt.registerHost(this);
     this.destroyRef.onDestroy(() => this.tryIt.unregisterHost(this));
+
+    // A reader who has a picture back does not need to be asked how much they
+    // want explained, whatever they did with the offer, so the first result
+    // retires it for good.
+    effect(() => {
+      if (this.finishedCount() > 0) {
+        untracked(() => this.retireWelcome());
+      }
+    });
 
     this.watchViewport();
     this.registerGlossaryContext();
@@ -1500,6 +1547,20 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public closeBlockers(): void {
     this.pendingBlockers.set(null);
     this.formRef()?.focusGenerateButton();
+  }
+
+  /** The reader answered the first-visit offer; whether it comes back is its own. */
+  public closeWelcome(): void {
+    this.welcomeClosed.set(true);
+  }
+
+  /** Put the first-visit offer away for every later visit as well. */
+  private retireWelcome(): void {
+    if (this.welcomeStored()) {
+      return;
+    }
+    this.welcomeStored.set(true);
+    this.db.store(WELCOMED_KEY, true);
   }
 
   /**

@@ -50,6 +50,7 @@ describe('GenerateComponent', () => {
   let styleIncrement: ReturnType<typeof vi.fn>;
   let getJobImages: ReturnType<typeof vi.fn>;
   let jobs: WritableSignal<LocalGenerationJob[]>;
+  let finishedJobs: WritableSignal<LocalGenerationJob[]>;
   let baselines: WritableSignal<ModelBaselineMap | null>;
   let linkQuery: Record<string, string>;
   let navigate: ReturnType<typeof vi.fn>;
@@ -64,6 +65,7 @@ describe('GenerateComponent', () => {
     styleIncrement = vi.fn();
     getJobImages = vi.fn().mockResolvedValue([]);
     jobs = signal<LocalGenerationJob[]>([]);
+    finishedJobs = signal<LocalGenerationJob[]>([]);
     baselines = signal<ModelBaselineMap | null>(null);
     linkQuery = {};
     navigate = vi.fn().mockResolvedValue(true);
@@ -123,7 +125,7 @@ describe('GenerateComponent', () => {
             enqueue,
             jobs,
             pendingJobs: signal([]),
-            finishedJobs: signal([]),
+            finishedJobs,
             getJobImages,
           },
         },
@@ -1412,6 +1414,67 @@ describe('GenerateComponent', () => {
       TestBed.tick();
 
       expect(component.panelSize()).toBe('double');
+    });
+  });
+
+  describe('the first-visit offer', () => {
+    // The dialog itself is exercised in its own spec; what belongs here is when
+    // the studio puts it on screen. (The template is blanked in this suite.)
+    it('asks a reader who has not been here before', () => {
+      expect(component.showWelcome()).toBe(true);
+    });
+
+    it('asks once: an answer stands for the rest of the visit', () => {
+      component.closeWelcome();
+
+      expect(component.showWelcome()).toBe(false);
+    });
+
+    it('leaves a reader who answered it before alone', () => {
+      localStorage.setItem('aihorde.generate.learn.welcomed', 'true');
+
+      const returning = TestBed.createComponent(GenerateComponent);
+
+      expect(returning.componentInstance.showWelcome()).toBe(false);
+      returning.destroy();
+    });
+
+    it('stays out from under anything else over the page', () => {
+      const dock = TestBed.inject(GsHelpDockService);
+
+      dock.open('steps');
+      expect(component.showWelcome()).toBe(false);
+      dock.close();
+
+      component.pendingBlockers.set([
+        { anchor: 'prompt', key: 'generate.blockers.prompt_required' },
+      ]);
+      expect(component.showWelcome()).toBe(false);
+      component.pendingBlockers.set(null);
+
+      const engine = TestBed.inject(TutorialEngineService);
+      void engine.start('txt2img');
+      expect(component.showWelcome()).toBe(false);
+      engine.stop();
+    });
+
+    it('retires for good once a picture has come back', () => {
+      finishedJobs.set([
+        {
+          localId: 'done-1',
+          status: 'done',
+          createdAt: 0,
+          updatedAt: 0,
+          request: { prompt: 'a fox' },
+          resultImageIds: ['i1'],
+        },
+      ]);
+      TestBed.tick();
+
+      expect(component.showWelcome()).toBe(false);
+      expect(localStorage.getItem('aihorde.generate.learn.welcomed')).toBe(
+        'true',
+      );
     });
   });
 

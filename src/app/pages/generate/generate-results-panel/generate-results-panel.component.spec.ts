@@ -3,18 +3,17 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TranslocoService } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { GenerateResultsPanelComponent } from './generate-results-panel.component';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
-import { Router } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import { WorkerPoolService } from '../../../services/worker-pool.service';
 import { HordeWorker } from '../../../types/horde-worker';
-import { flowSteps, isConceptFlow } from '../../../content/flows';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -22,6 +21,7 @@ import {
 } from '../../../types/generation-job';
 import en from '../../../../assets/i18n/en.json';
 import { studioLinkFromText } from '../studio-link';
+import { DOCS_IMAGE } from '../../../content/docs-links';
 
 const TRANSLATIONS = en as Record<string, string>;
 
@@ -1280,116 +1280,10 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.tutorialHasWorlds()).toBe(true);
   });
 
-  it('welcomes a reader who has not been here before', () => {
-    expect(component.showWelcome()).toBe(true);
-    // Three doors, each standing for a different level, and none repeated.
-    expect(component.welcomeDoors.map((door) => door.level)).toEqual([
-      'new_to_this',
-      'comfortable',
-      'expert',
-    ]);
-    for (const door of component.welcomeDoors) {
-      expect(TRANSLATIONS[`generate.welcome.${door.id}.title`]).toBeTruthy();
-      expect(TRANSLATIONS[`generate.welcome.${door.id}.hint`]).toBeTruthy();
-    }
-  });
-
-  it('offers the Learn section beside the way past the welcome card', () => {
-    // The card's third door and its skip line are where a reader who wants
-    // neither a walkthrough nor a blank panel ends up, so the way to read
-    // about it first is offered there.
-    expect(TRANSLATIONS['generate.welcome.browse_learn']).toBeTruthy();
-  });
-
-  it('seeds the level and starts the tutorial behind a guided door', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-
-    for (const door of component.welcomeDoors.filter((d) => d.flowId)) {
-      engine.stop();
-      component.enterVia(door);
-
-      expect(engine.level()).toBe(door.level);
-      expect(engine.activeFlowId()).toBe(door.flowId);
-    }
-  });
-
-  it('sends the second door through the concepts before the walkthrough', () => {
-    // Door 1 makes an image by working the panel; door 2 is for the reader who
-    // already generates elsewhere, so it opens the track that maps their
-    // vocabulary rather than a second copy of the same walkthrough.
-    const engine = TestBed.inject(TutorialEngineService);
-    const [door1, door2] = component.welcomeDoors;
-
-    expect(isConceptFlow(door1.flowId)).toBe(false);
-    expect(isConceptFlow(door2.flowId)).toBe(true);
-    expect(door2.flowId).toBe('concepts_migrating');
-
-    engine.stop();
-    component.enterVia(door2);
-
-    expect(engine.activeFlowId()).toBe('concepts_migrating');
-    // The track ends by handing the reader on to the walkthrough door 1 runs.
-    expect(flowSteps('concepts_migrating').at(-1)?.startsFlow).toBe(
-      door1.flowId,
-    );
-  });
-
-  it('seeds the level and leaves the studio alone behind the last door', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-    const door = component.welcomeDoors[2];
-
-    component.enterVia(door);
-
-    expect(engine.level()).toBe('expert');
-    expect(engine.active()).toBe(false);
-    expect(component.showStarters()).toBe(true);
-  });
-
-  it('remembers that the welcome card was answered', () => {
-    component.enterVia(component.welcomeDoors[2]);
-
-    expect(dbStore).toHaveBeenCalledWith(
-      'aihorde.generate.learn.welcomed',
-      true,
-    );
-    expect(component.showWelcome()).toBe(false);
-  });
-
-  it('lets the welcome card be skipped without settling on a level', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-    const before = engine.level();
-
-    component.dismissWelcome();
-
-    expect(component.showWelcome()).toBe(false);
-    expect(engine.level()).toBe(before);
-    expect(dbStore).not.toHaveBeenCalledWith(
-      'aihorde.generate.learn.level',
-      expect.anything(),
-    );
-  });
-
-  it('leaves the welcome card away once it has been answered before', () => {
-    dbGet.mockImplementation((key: string) =>
-      key === 'aihorde.generate.learn.welcomed' ? true : undefined,
-    );
-
-    const returning = TestBed.createComponent(GenerateResultsPanelComponent);
-
-    expect(returning.componentInstance.showWelcome()).toBe(false);
-    expect(returning.componentInstance.showStarters()).toBe(true);
-    returning.destroy();
-  });
-
-  it('keeps the welcome card out of a pane with anything else in it', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-
-    void engine.start('txt2img');
-    expect(component.showWelcome()).toBe(false);
-    engine.stop();
-
+  it('gives the pane to the work as soon as there is any', () => {
     pendingJobs.set([job('p', 'processing')]);
-    expect(component.showWelcome()).toBe(false);
+
+    expect(component.showStarters()).toBe(false);
   });
 
   describe('the docked reference entry', () => {
@@ -1411,12 +1305,6 @@ describe('GenerateResultsPanelComponent', () => {
       component.closeHelpDock();
 
       expect(component.helpDockTopic()).toBeNull();
-    });
-
-    it('keeps the welcome card out of a pane the entry has', () => {
-      dock.open('steps');
-
-      expect(component.showWelcome()).toBe(false);
     });
 
     it('leaves a running tutorial running behind it', () => {
@@ -1558,5 +1446,85 @@ describe('GenerateResultsPanelComponent', () => {
       expect(component.waitWhyFor()).toBeNull();
       expect(focus).toHaveBeenCalled();
     });
+  });
+});
+
+describe('GenerateResultsPanelComponent empty pane', () => {
+  let fixture: ComponentFixture<GenerateResultsPanelComponent>;
+  let host: HTMLElement;
+
+  beforeEach(async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+
+    await TestBed.configureTestingModule({
+      // What the pane draws with nothing in it is the claim, so the real
+      // template and the real copy are both loaded.
+      imports: [
+        GenerateResultsPanelComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            pendingJobs: signal<LocalGenerationJob[]>([]),
+            finishedJobs: signal<LocalGenerationJob[]>([]),
+            cancel: vi.fn(),
+            retry: vi.fn(),
+            deleteJob: vi.fn(),
+            getJobImages: vi.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+        },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+    host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  it('offers the reading and a few prompts to depart from', () => {
+    const empty = host.querySelector('.gs-empty');
+
+    expect(empty).not.toBeNull();
+    expect(empty!.textContent).toContain(
+      TRANSLATIONS['generate.results.empty_learn'],
+    );
+    expect(empty!.querySelector('.gs-guide-cta')?.getAttribute('href')).toBe(
+      DOCS_IMAGE,
+    );
+
+    const starters = empty!.querySelectorAll<HTMLElement>('.gs-chip--starter');
+    expect(starters).toHaveLength(
+      fixture.componentInstance.starterPrompts.length,
+    );
+    for (const [
+      index,
+      starter,
+    ] of fixture.componentInstance.starterPrompts.entries()) {
+      expect(starters[index].textContent).toContain(
+        TRANSLATIONS[`generate.results.starters.${starter}.label`],
+      );
+    }
   });
 });

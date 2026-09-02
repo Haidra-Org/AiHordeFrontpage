@@ -364,6 +364,21 @@
               }
             }
           </div>
+          <!-- The one thing a reader meeting the panel has to be told: every
+               other card can be left as it is. It goes once two pictures have
+               come back, which is proof enough that the reader knows. -->
+          @if (showPromptHint()) {
+            <p class="gs-sublabel">
+              {{ "generate.form.prompt_first_hint" | transloco }}
+              <button
+                type="button"
+                class="gs-prompt-first-done"
+                (click)="dismissPromptHint()"
+              >
+                {{ "generate.form.prompt_first_hint_dismiss" | transloco }}
+              </button>
+            </p>
+          }
         </section>
 
         <!-- Negative prompt (one row by default; drag the grip to grow it). It
@@ -485,6 +500,34 @@
                 {{ "generate.form.browse_styles" | transloco }}
               </button>
             </div>
+            <!-- The select lists every style under the name its author gave
+                 it, which says nothing to a reader who has never picked one.
+                 These few are named for what comes out, and each writes the
+                 same control the select writes. -->
+            @if (offeredLooks().length > 0) {
+              <div class="mt-2">
+                <span id="generate-looks-label" class="gs-looks-label">
+                  {{ "generate.form.looks_label" | transloco }}
+                </span>
+                <div
+                  class="gs-looks-row"
+                  role="group"
+                  aria-labelledby="generate-looks-label"
+                >
+                  @for (look of offeredLooks(); track look.key) {
+                    <button
+                      type="button"
+                      class="gs-chip gs-chip--look"
+                      [class.gs-chip--active]="selectedStyleKey() === look.key"
+                      [attr.aria-pressed]="selectedStyleKey() === look.key"
+                      (click)="toggleLook(look.key)"
+                    >
+                      {{ look.labelKey | transloco }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
             <p class="gs-sublabel mt-1">
               {{ "generate.form.style_hint" | transloco }}
             </p>

@@ -412,64 +412,7 @@
         </button>
       </div>
     }
-    @if (showWelcome()) {
-      <!-- Stands in for the empty state until it is answered: a reader who has
-           never been here needs a way in more than a prompt to copy. -->
-      <div
-        class="gs-welcome"
-        role="group"
-        [attr.aria-label]="'generate.welcome.heading' | transloco"
-      >
-        <div>
-          <h2 class="gs-welcome-title">
-            {{ "generate.welcome.heading" | transloco }}
-          </h2>
-          <p class="gs-welcome-sub">
-            {{ "generate.welcome.sub" | transloco }}
-          </p>
-        </div>
-        <div class="gs-welcome-doors">
-          @for (door of welcomeDoors; track door.id) {
-            <button
-              type="button"
-              class="gs-welcome-door"
-              [class.gs-welcome-door--tutorial]="door.flowId !== null"
-              (click)="enterVia(door)"
-            >
-              @if (door.flowId !== null) {
-                <span class="gs-cap-eyebrow gs-tut-eyebrow">
-                  <span class="gs-tut-mark" aria-hidden="true">
-                    <app-icon name="academic-cap" />
-                  </span>
-                  {{ "generate.learn.badge" | transloco }}
-                </span>
-              }
-              <span class="gs-welcome-door-title">
-                {{ "generate.welcome." + door.id + ".title" | transloco }}
-              </span>
-              <span class="gs-welcome-door-hint">
-                {{ "generate.welcome." + door.id + ".hint" | transloco }}
-              </span>
-            </button>
-          }
-        </div>
-        <!-- The way past the card sits beside the way to read about it first:
-             the last door and the skip line are where a reader who wants
-             neither a walkthrough nor a blank panel ends up. -->
-        <div class="gs-welcome-foot">
-          <button
-            type="button"
-            class="gs-welcome-skip"
-            (click)="dismissWelcome()"
-          >
-            {{ "generate.welcome.skip" | transloco }}
-          </button>
-          <a class="gs-welcome-learn" [routerLink]="docsLink">
-            {{ "generate.welcome.browse_learn" | transloco }}
-          </a>
-        </div>
-      </div>
-    } @else if (showStarters()) {
+    @if (showStarters()) {
       <div class="gs-empty">
         <app-icon name="photo" />
         <div>
