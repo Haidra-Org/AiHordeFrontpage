@@ -20,6 +20,7 @@ import {
   DOCS_IMAGE_SETTINGS,
   docsSettingLink,
 } from '../../../content/docs-links';
+import { settingCardUrl } from '../../../content/share-cards';
 import { setPageMeta } from '../../../helper/page-meta';
 import {
   hasReference,
@@ -150,6 +151,10 @@ export class DocsSettingsEntryComponent {
       descriptionKey: () => {
         const id = this.topic();
         return id ? settingLeadKey(id) : null;
+      },
+      image: () => {
+        const id = this.topic();
+        return id ? settingCardUrl(id) : null;
       },
     });
     effect(() => {

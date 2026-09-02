@@ -16,6 +16,13 @@ export const environment = {
    * index and the manifests are fetched with XHR rather than loaded as images.
    */
   evidenceBaseUrl: 'https://assets.aihorde.net/param-sweeps',
+  /*
+   * The share cards cut from that library for link previews. They are
+   * promotional material rather than evidence, so they are published beside
+   * the library under a prefix of their own. Absolute: an unfurler reads it
+   * from outside the site.
+   */
+  promoBaseUrl: 'https://assets.aihorde.net/promo',
   features: {
     ratingsPage: false,
   },

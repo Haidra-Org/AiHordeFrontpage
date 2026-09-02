@@ -10,6 +10,8 @@ export const environment = {
   ratingsApiBaseUrl: 'https://ratings.aihorde.net/api/v1',
   statusApiBaseUrl: '/status-api/api/v1',
   evidenceBaseUrl: '/assets/param-sweeps',
+  /* Link previews are only ever read from the published site. */
+  promoBaseUrl: 'https://assets.aihorde.net/promo',
   features: {
     ratingsPage: false,
   },

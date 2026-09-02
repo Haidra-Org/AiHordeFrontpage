@@ -8,6 +8,7 @@ export const environment = {
   statusApiBaseUrl: 'https://alerts.haidra.net/api/v1',
   /* See environment.ts: one base URL for every published asset. */
   evidenceBaseUrl: 'https://assets.aihorde.net/param-sweeps',
+  promoBaseUrl: 'https://assets.aihorde.net/promo',
   features: {
     ratingsPage: false,
   },

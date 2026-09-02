@@ -5,6 +5,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { siteCardUrl } from '../content/share-cards';
 import { TranslatorService } from '../services/translator.service';
 
 /** A key that may be fixed for the page, or read from what the page is showing. */
@@ -18,6 +19,11 @@ export interface PageMeta {
   descriptionKey: MetaKey;
   /** Interpolations for either, where they name something. */
   params?: Record<string, unknown> | (() => Record<string, unknown>);
+  /**
+   * Absolute address of the picture a link preview shows. A page with a
+   * picture of its own names it here; every other page shows the site's card.
+   */
+  image?: MetaKey;
 }
 
 function read(key: MetaKey): string | null {
@@ -76,6 +82,13 @@ export function setPageMeta(meta: PageMeta): void {
     const canonical = `${environment.siteUrl}${path}`;
     tags.updateTag({ property: 'og:url', content: canonical });
     tags.updateTag({ property: 'og:type', content: 'article' });
+
+    // The card is what a shared link shows before anyone opens it, so a page
+    // whose subject comes out of the URL re-reads it with the rest.
+    const image = (meta.image ? read(meta.image) : null) ?? siteCardUrl();
+    tags.updateTag({ property: 'og:image', content: image });
+    tags.updateTag({ name: 'twitter:card', content: 'summary_large_image' });
+    tags.updateTag({ name: 'twitter:image', content: image });
 
     const head = document.head;
     if (!head) {

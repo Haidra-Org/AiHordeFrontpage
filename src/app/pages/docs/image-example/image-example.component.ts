@@ -67,6 +67,7 @@ import {
   STUDIO_IMAGE,
   docsExampleLink,
 } from '../../../content/docs-links';
+import { tutorialCardUrl } from '../../../content/share-cards';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 import {
@@ -548,6 +549,10 @@ export class DocsImageExampleComponent {
       descriptionKey: () => {
         const id = this.activeId();
         return id ? `generate.tutorials.flows.${id}.summary` : null;
+      },
+      image: () => {
+        const id = this.activeId();
+        return id ? tutorialCardUrl(id) : null;
       },
     });
     // The page is named by the technique it is showing, so the name follows the
