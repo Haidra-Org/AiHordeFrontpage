@@ -1,8 +1,12 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
+import {
+  GsIndexRailComponent,
+  GsIndexRailEntry,
+} from '../../../components/gs-index-rail/gs-index-rail.component';
 import {
   ControlWorldStrips,
   GsControlGalleryComponent,
@@ -85,6 +89,7 @@ interface ControlGroup {
     RouterLink,
     IconComponent,
     GsAnchorLinkComponent,
+    GsIndexRailComponent,
     GsControlGalleryComponent,
   ],
   templateUrl: './control-types.component.html',
@@ -129,6 +134,27 @@ export class DocsControlTypesComponent {
       introKey: `generate.control_types.group_${group.id}`,
       types: group.types,
     }));
+
+  /**
+   * The groups as the contents rail names them. No glyph per line: every group
+   * on this page belongs to the same part of the panel, so seven copies of one
+   * mark would say nothing seven times.
+   */
+  public readonly railEntries: readonly GsIndexRailEntry[] = this.groups.map(
+    (group) => ({
+      id: group.id,
+      labelKey: group.labelKey,
+      hueClass: this.identity.className,
+      targetId: group.sectionId,
+    }),
+  );
+
+  /** Whether the rest of the introduction is open. Shut on arrival. */
+  public readonly howOpen = signal(false);
+
+  public toggleHow(): void {
+    this.howOpen.update((open) => !open);
+  }
 
   constructor() {
     setPageMeta({

@@ -45,6 +45,7 @@ import {
   worldFlowId,
 } from '../../../services/tutorial-engine.service';
 import {
+  CONCEPT_FLOWS,
   FLOWS,
   FlowDef,
   FlowStep,
@@ -110,6 +111,23 @@ const LIFECYCLE = ['submit', 'check', 'status'] as const;
 
 /** The headers the submit call needs. */
 const REQUEST_HEADERS = ['apikey', 'client_agent', 'content_type'] as const;
+
+/**
+ * The mark each short read is known by, which is the one the area's landing
+ * page already gives it. A read has no panel area behind it, so it takes no
+ * section hue and this is the only thing that tells one from another in a list.
+ */
+const CONCEPT_MARKS: Readonly<Record<string, string>> = {
+  concepts_images: 'photo-simple',
+  concepts_horde: 'user-group',
+  concepts_migrating: 'adjustments-horizontal',
+};
+
+/** One fragment of the line under the lead, and what it interpolates. */
+interface MetaFragment {
+  key: string;
+  params?: Record<string, number>;
+}
 
 /**
  * The learning surface for the image studio: for each flow, the request that
@@ -230,6 +248,15 @@ export class DocsImageExampleComponent {
       ? canonical
       : null;
   });
+
+  /**
+   * Whether the page is a short read rather than a worked technique.
+   *
+   * A read teaches an idea: there is no committed request behind it, so no
+   * pictures, no recipe and nothing for the walkthrough to write. What is left
+   * is the prose, which is the whole of what the page has to be.
+   */
+  public readonly isConcept = computed(() => isConceptFlow(this.activeId()));
 
   /**
    * The flow on screen, and only ever the one the URL names, in the world the
@@ -471,6 +498,58 @@ export class DocsImageExampleComponent {
   });
 
   /**
+   * Whether this technique starts from a picture the reader has to bring. Read
+   * off the step that points at the source card, so a technique that gains or
+   * loses one says the right thing without anybody remembering to edit a line.
+   */
+  private readonly needsSource = computed(() =>
+    this.steps().some((step) => step.anchorId === 'source'),
+  );
+
+  /**
+   * The line under the lead: how much there is, and what the reader has to have
+   * before they start. Both parts are read off what the page already knows, so
+   * neither can drift from the flow it describes.
+   *
+   * A read carries the same line in its own terms. It asks the reader for
+   * nothing, so what is left to say is that it is a read and how many parts it
+   * comes in.
+   */
+  public readonly metaRow = computed<readonly MetaFragment[]>(() => {
+    const count = this.spine().length;
+    if (count === 0) {
+      return [];
+    }
+    if (this.isConcept()) {
+      return [
+        { key: 'generate.learn.badge_read' },
+        {
+          key:
+            count === 1
+              ? 'generate.learn.meta_parts_one'
+              : 'generate.learn.meta_parts',
+          params: { count },
+        },
+      ];
+    }
+    const fragments: MetaFragment[] = [
+      {
+        key:
+          count === 1
+            ? 'generate.tutorials.meta_steps_one'
+            : 'generate.tutorials.meta_steps',
+        params: { count },
+      },
+    ];
+    fragments.push({
+      key: this.needsSource()
+        ? 'generate.tutorials.meta_prepare_source'
+        : 'generate.tutorials.meta_prepare_nothing',
+    });
+    return fragments;
+  });
+
+  /**
    * On a technique only the newcomer register gets the sweep strips, as in the
    * studio pane: the other registers assume the reader knows what the number
    * does and want the page shorter.
@@ -521,7 +600,7 @@ export class DocsImageExampleComponent {
         .filter((flow) => flow.status === 'skipped')
         .map((flow) => canonicalFlowId(flow.id)),
     );
-    return this.flows().map((flow) => {
+    const techniques = this.flows().map((flow) => {
       const identity = sectionIdentity(flow.section);
       return {
         id: flow.id,
@@ -536,6 +615,18 @@ export class DocsImageExampleComponent {
           : undefined,
       };
     });
+    // The short reads after the techniques rather than among them: a reader
+    // scanning for a technique is scanning a list of things that make a
+    // picture, and each read says under its name that it is a read instead.
+    const reads = CONCEPT_FLOWS.map((id) => ({
+      id,
+      labelKey: this.taskNameKey(id),
+      subLabelKey: 'generate.learn.badge_read',
+      done: this.tutorial.isDone(id),
+      icon: CONCEPT_MARKS[id],
+      link: docsExampleLink(id),
+    }));
+    return [...techniques, ...reads];
   });
 
   constructor() {
@@ -545,20 +636,18 @@ export class DocsImageExampleComponent {
     setPageMeta({
       titleKey: () => {
         const id = this.activeId();
-        return id ? `generate.tutorials.flows.${id}.task_name` : null;
+        return id ? this.taskNameKey(id) : null;
       },
       descriptionKey: () => {
         const id = this.activeId();
-        // A concept track's copy lives on the flow itself and carries no
-        // per-flow summary string, so asking for one only produces a missing
-        // translation.
-        return id && !isConceptFlow(id)
-          ? `generate.tutorials.flows.${id}.summary`
-          : null;
+        return id ? this.summaryKey(id) : null;
       },
       image: () => {
         const id = this.activeId();
-        return id ? tutorialCardUrl(id) : null;
+        // A card is drawn from a flow's published run, and a short read has no
+        // run behind it. Naming one anyway would unfurl a link as a missing
+        // picture; null asks for the site's own card instead.
+        return id && !isConceptFlow(id) ? tutorialCardUrl(id) : null;
       },
     });
     // The page is named by the technique it is showing, so the name follows the
@@ -592,9 +681,10 @@ export class DocsImageExampleComponent {
 
     // Waits for the manifest: until it has arrived there is nothing to say a
     // URL is wrong with, and a reader who deep-linked a real flow would be
-    // thrown off it.
+    // thrown off it. A short read has no manifest entry by design, so it is
+    // never measured against one.
     effect(() => {
-      if (this.manifest() && !this.activeFlow()) {
+      if (this.manifest() && !this.isConcept() && !this.activeFlow()) {
         void this.router.navigateByUrl(DOCS_IMAGE);
       }
     });
@@ -674,6 +764,21 @@ export class DocsImageExampleComponent {
     return id ? sectionIdentity(flowDef(id)?.section) : null;
   });
 
+  /** The key holding a flow's one-line description of itself. */
+  public summaryKey(flowId: string): string {
+    return isConceptFlow(flowId)
+      ? `generate.learn.flows.${flowId}.summary`
+      : `generate.tutorials.flows.${flowId}.summary`;
+  }
+
+  /**
+   * The label of a read's closing handoff, in that read's own words. The same
+   * key the studio pane reads, so the offer is worded once.
+   */
+  public stepCtaKey(flowId: string, step: FlowStep): string {
+    return `generate.learn.flows.${flowId}.steps.${step.id}.cta`;
+  }
+
   /** A step's title: the same key the studio pane reads. */
   public stepTitleKey(flowId: string, step: FlowStep): string {
     return `generate.learn.flows.${canonicalFlowId(flowId)}.steps.${step.id}.title`;
@@ -719,18 +824,15 @@ export class DocsImageExampleComponent {
    * from the example run and is written for someone who already knows the
    * technique, which is the wrong register for the first thing a reader reads.
    *
-   * A concept track has no per-flow summary string to override with, so it goes
-   * straight to the manifest rather than asking for a key that cannot exist.
+   * A short read has no manifest entry at all, so its own key is the only
+   * answer there is.
    */
   public readonly activeSummary = computed<string>(() => {
     const id = this.activeId();
     if (!id) {
       return '';
     }
-    if (isConceptFlow(id)) {
-      return this.activeFlow()?.summary ?? '';
-    }
-    const key = `generate.tutorials.flows.${id}.summary`;
+    const key = this.summaryKey(id);
     const text = this.transloco.translate(key);
     if (text && text !== key) {
       return text;

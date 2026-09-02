@@ -1,4 +1,4 @@
-<div class="gs-ref-page-inner">
+<div class="gs-ref-page-inner gs-ref-page-inner--rail">
   <a class="gs-ref-back" [routerLink]="indexLink">
     <app-icon name="arrow-left" class="gs-ico-sm" />
     {{ "generate.control_types.back" | transloco }}
@@ -13,47 +13,86 @@
     </h1>
     <p class="gs-ref-lead">
       {{ "generate.control_types.lead" | transloco }}
-      {{ "generate.control_types.subjects" | transloco }}
     </p>
   </header>
 
-  <p class="gs-ref-body">{{ "generate.control_types.body" | transloco }}</p>
-  <p class="gs-ref-body">{{ "generate.control_types.worlds" | transloco }}</p>
+  <!-- Seven groups and thirty-three modes, which is more of a page than a
+       reader who came to compare two of them should have to walk. -->
+  <div class="gs-index-layout">
+    <app-gs-index-rail [entries]="railEntries" />
 
-  @for (group of groups; track group.id) {
-    <section
-      class="gs-ref-maps-group"
-      [class]="identity.className"
-      [id]="group.sectionId"
-    >
-      <h2 class="gs-guide-head gs-ref-maps-head">
-        {{ group.labelKey | transloco }}
-        <app-gs-anchor-link
-          [targetId]="group.sectionId"
-          [label]="group.labelKey | transloco"
-        />
-      </h2>
-      <p class="gs-ref-maps-intro">{{ group.introKey | transloco }}</p>
+    <div class="gs-index-layout-main gs-index-layout-main--bands">
+      <!-- The rest of the introduction, folded rather than cut: it answers what
+           a control map is and how the three pictures per mode were made, which
+           a reader wants once and not on every visit. -->
+      <div class="gs-tut-raw">
+        <button
+          type="button"
+          class="gs-tut-raw-toggle"
+          aria-controls="gs-ref-how-body"
+          [attr.aria-expanded]="howOpen()"
+          (click)="toggleHow()"
+        >
+          <app-icon
+            [name]="howOpen() ? 'chevron-up' : 'chevron-down'"
+            class="gs-ico-sm"
+          />
+          {{ "generate.control_types.how_head" | transloco }}
+        </button>
+        @if (howOpen()) {
+          <div id="gs-ref-how-body">
+            <p class="gs-ref-body">
+              {{ "generate.control_types.lead_more" | transloco }}
+            </p>
+            <p class="gs-ref-body">
+              {{ "generate.control_types.subjects" | transloco }}
+            </p>
+            <p class="gs-ref-body">
+              {{ "generate.control_types.body" | transloco }}
+            </p>
+            <p class="gs-ref-body">
+              {{ "generate.control_types.worlds" | transloco }}
+            </p>
+          </div>
+        }
+      </div>
 
-      <app-gs-control-gallery
-        [types]="group.types"
-        [worlds]="worlds"
-        [descriptionKeys]="descriptionKeys"
-        [nameKeys]="nameKeys"
-        [noteKeys]="noteKeys"
-        [groupLabelKey]="group.labelKey"
-      />
-    </section>
-  }
+      @for (group of groups; track group.id) {
+        <section
+          class="gs-ref-maps-group"
+          [class]="identity.className"
+          [id]="group.sectionId"
+        >
+          <h2 class="gs-guide-head gs-ref-maps-head">
+            {{ group.labelKey | transloco }}
+            <app-gs-anchor-link
+              [targetId]="group.sectionId"
+              [label]="group.labelKey | transloco"
+            />
+          </h2>
+          <p class="gs-ref-maps-intro">{{ group.introKey | transloco }}</p>
 
-  <p class="gs-ref-body">
-    {{ "generate.control_types.lesson" | transloco }}
-    <a [routerLink]="lessonLink">{{
-      "generate.control_types.lesson_link" | transloco
-    }}</a>
-  </p>
+          <app-gs-control-gallery
+            [types]="group.types"
+            [worlds]="worlds"
+            [descriptionKeys]="descriptionKeys"
+            [nameKeys]="nameKeys"
+            [noteKeys]="noteKeys"
+            [groupLabelKey]="group.labelKey"
+          />
+        </section>
+      }
 
-  <a class="gs-ref-full" [routerLink]="studioLink">
-    {{ "generate.control_types.open_studio" | transloco }}
-  </a>
+      <p class="gs-ref-body">
+        {{ "generate.control_types.lesson" | transloco }}
+        <a [routerLink]="lessonLink">{{
+          "generate.control_types.lesson_link" | transloco
+        }}</a>
+      </p>
+
+      <a class="gs-ref-full" [routerLink]="studioLink">
+        {{ "generate.control_types.open_studio" | transloco }}
+      </a>
+    </div>
+  </div>
 </div>

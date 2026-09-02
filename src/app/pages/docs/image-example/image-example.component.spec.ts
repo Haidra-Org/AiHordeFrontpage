@@ -15,7 +15,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageExampleComponent } from './image-example.component';
 import { ExampleFlow, ExampleManifest } from '../../../content/examples';
-import { FLOWS, flowSteps } from '../../../content/flows';
+import { CONCEPT_FLOWS, FLOWS, flowSteps } from '../../../content/flows';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
@@ -55,6 +55,12 @@ const CANONICAL = MANIFEST.flows.filter(
   (flow) => canonicalFlowId(flow.id) === flow.id,
 );
 const AVAILABLE = CANONICAL.filter((flow) => flow.status === 'available');
+/**
+ * Every line the picker draws, in its order: the techniques the manifest
+ * carries, then the short reads, which have no manifest entry by design and are
+ * pages all the same.
+ */
+const PICKER_IDS = [...CANONICAL.map((flow) => flow.id), ...CONCEPT_FLOWS];
 
 /**
  * The same library with one technique unserved. Every published example is
@@ -137,6 +143,12 @@ const CHROME_KEYS = [
   'meta_made_with_local',
   'meta_kudos',
   'meta_time',
+  // The line under the lead: how much there is, and what the reader has to
+  // have before they start.
+  'meta_steps',
+  'meta_steps_one',
+  'meta_prepare_nothing',
+  'meta_prepare_source',
   'run_cost',
   'run_time',
   'recipe_label',
@@ -323,16 +335,19 @@ describe('DocsImageExampleComponent', () => {
     const translations = en as Record<string, string>;
     const lines = harness.query<HTMLElement>('.gs-index-entry');
 
-    expect(lines).toHaveLength(CANONICAL.length);
+    expect(lines).toHaveLength(PICKER_IDS.length);
     expect(harness.component.flows()).toHaveLength(CANONICAL.length);
-    // Named by what each one makes, not by the technique behind it.
+    // Named by what each one makes, not by the technique behind it. A read is
+    // named the same way, out of the keys its own copy is written under.
     expect(
       lines.map((line) =>
         line.querySelector('.gs-index-entry-label')?.textContent?.trim(),
       ),
     ).toEqual(
-      CANONICAL.map(
-        (flow) => translations[`generate.tutorials.flows.${flow.id}.task_name`],
+      PICKER_IDS.map(
+        (id) =>
+          translations[`generate.tutorials.flows.${id}.task_name`] ??
+          translations[`generate.learn.flows.${id}.task_name`],
       ),
     );
   });
@@ -350,8 +365,10 @@ describe('DocsImageExampleComponent', () => {
         line.querySelector('.gs-index-entry-sub')?.textContent?.trim(),
       ),
     ).toEqual(
-      CANONICAL.map(
-        (flow) => translations[`generate.tutorials.flows.${flow.id}.technique`],
+      PICKER_IDS.map(
+        (id) =>
+          translations[`generate.tutorials.flows.${id}.technique`] ??
+          translations['generate.learn.badge_read'],
       ),
     );
   });
@@ -892,23 +909,101 @@ describe('DocsImageExampleComponent', () => {
     expect(harness.component.activeSummary()).not.toBe(flow.summary);
   });
 
-  it('asks for no per-flow summary on a concept track', async () => {
-    // A track's copy is written per step, so the summary key a technique has is
-    // one a track never gets; probing for it would put the key itself on the
-    // page and a missing-translation warning in the console.
+  it('leads a short read with the summary written under its own keys', async () => {
+    // A read's copy lives under the learn keys throughout, so the summary a
+    // technique carries under the tutorials keys is one it never gets; asking
+    // for that one would put the key itself on the page.
     const track = FLOWS.find((flow) => flow.concept)!;
+    const translations = en as Record<string, string>;
     const page = await createPage(track.id);
     flushAll(page);
 
     expect(
-      (en as Record<string, string>)[
-        `generate.tutorials.flows.${track.id}.summary`
-      ],
+      translations[`generate.tutorials.flows.${track.id}.summary`],
     ).toBeUndefined();
-    expect(page.component.activeSummary()).toBe('');
+    expect(page.component.activeSummary()).toBe(
+      translations[`generate.learn.flows.${track.id}.summary`],
+    );
     expect(page.text()).not.toContain(
       `generate.tutorials.flows.${track.id}.summary`,
     );
+  });
+
+  it('renders a short read as its own page instead of sending it away', async () => {
+    const track = FLOWS.find((flow) => flow.concept)!;
+    const page = await createPage(track.id);
+    page.http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(MANIFEST);
+    page.fixture.detectChanges();
+
+    // A read has no entry in the library at all, which is the state that used
+    // to send its URL back to the landing page.
+    expect(MANIFEST.flows.some((flow) => flow.id === track.id)).toBe(false);
+    expect(page.navigate).not.toHaveBeenCalled();
+    expect(page.query('.gs-tut-step-title')).toHaveLength(track.steps.length);
+
+    // And nothing a walkthrough owns: no way into the studio, no developer
+    // switch, no recipe, no pictures, no choice of subject.
+    expect(page.query('.gs-tut-start-btn')).toHaveLength(0);
+    expect(page.query('.gs-tut-modes')).toHaveLength(0);
+    expect(page.query('.gs-tut-evidence')).toHaveLength(0);
+    expect(page.query('app-gs-recipe-chips')).toHaveLength(0);
+    expect(page.query('.gs-tut-worlds')).toHaveLength(0);
+  });
+
+  it('keeps the tutorial hue and the run line off a short read', async () => {
+    const translations = en as Record<string, string>;
+    const track = FLOWS.find((flow) => flow.concept)!;
+    const page = await createPage(track.id);
+    page.http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(MANIFEST);
+    page.fixture.detectChanges();
+
+    // The amber bar means "a walkthrough can pick this up", which a read
+    // cannot, so its header keeps the area's own hue.
+    expect(page.query<HTMLElement>('.gs-tut-head')[0].classList).toContain(
+      'gs-tut-head--read',
+    );
+    expect(
+      page
+        .query<HTMLElement>('.gs-tut-meta-item')
+        .map((item) => item.textContent?.trim()),
+    ).toEqual([
+      translations['generate.learn.badge_read'],
+      translations['generate.learn.meta_parts'].replace(
+        '{{ count }}',
+        String(track.steps.length),
+      ),
+    ]);
+  });
+
+  it('says how much there is and what the reader has to have first', async () => {
+    const translations = en as Record<string, string>;
+    const page = await createPage('txt2img');
+    flushAll(page);
+
+    expect(
+      page
+        .query<HTMLElement>('.gs-tut-meta-item')
+        .map((item) => item.textContent?.trim()),
+    ).toEqual([
+      translations['generate.tutorials.meta_steps'].replace(
+        '{{ count }}',
+        String(page.component.spine().length),
+      ),
+      // Text to image starts from nothing, so the reader brings nothing.
+      translations['generate.tutorials.meta_prepare_nothing'],
+    ]);
+  });
+
+  it('says a technique that starts from a picture needs one', async () => {
+    const translations = en as Record<string, string>;
+    const page = await createPage('img2img');
+    flushAll(page);
+
+    expect(
+      page
+        .query<HTMLElement>('.gs-tut-meta-item')
+        .map((item) => item.textContent?.trim()),
+    ).toContain(translations['generate.tutorials.meta_prepare_source']);
   });
 
   it('leads with its own summary before the library has answered', () => {
@@ -984,7 +1079,7 @@ describe('DocsImageExampleComponent', () => {
       harness
         .query<HTMLAnchorElement>('.gs-index-entry')
         .map((line) => line.getAttribute('href')),
-    ).toEqual(CANONICAL.map((flow) => `/docs/image/learn/${flow.id}`));
+    ).toEqual(PICKER_IDS.map((id) => `/docs/image/learn/${id}`));
   });
 
   describe('the world the pictures are drawn from', () => {
@@ -1000,7 +1095,7 @@ describe('DocsImageExampleComponent', () => {
       // The committed set really does carry variants, so this is a filter
       // being exercised rather than a manifest with nothing to leave out.
       expect(MANIFEST.flows.length).toBeGreaterThan(CANONICAL.length);
-      expect(hrefs).toHaveLength(CANONICAL.length);
+      expect(hrefs).toHaveLength(PICKER_IDS.length);
       expect(hrefs.join(' ')).not.toContain('--w');
       expect(harness.component.flows().map((flow) => flow.id)).toEqual(
         CANONICAL.map((flow) => flow.id),

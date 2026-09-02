@@ -1,290 +1,318 @@
-<div class="gs-ref-page-inner">
+<div
+  class="gs-ref-page-inner"
+  [class.gs-ref-page-inner--rail]="railEntries().length > 0"
+>
   <a class="gs-ref-back" [routerLink]="indexLink">
     <app-icon name="arrow-left" class="gs-ico-sm" />
     {{ "alchemy.usecases.back" | transloco }}
   </a>
 
   @if (topic(); as id) {
-    <app-gs-param-entry [topic]="id" mode="page" />
+    <!-- Thirty-three maps in seven groups is more of a page than a reader who
+         came to compare two detectors should have to walk, so the groups are
+         offered as contents where they exist. -->
+    <div [class.gs-index-layout]="railEntries().length > 0">
+      @if (railEntries().length > 0) {
+        <app-gs-index-rail [entries]="railEntries()" />
+      }
+      <div class="gs-index-layout-main gs-index-layout-main--bands">
+        <app-gs-param-entry [topic]="id" mode="page" />
 
-    <!-- What the forms on this page actually produced. Shown only once the
+        <!-- What the forms on this page actually produced. Shown only once the
          library has answered and only where it answered with something: an
          empty evidence band would promise pictures the library has not
          published, and the prose above stands on its own without them. -->
-    @if (evidenceSettled() && !isGallery() && shots().length > 0) {
-      <section
-        class="gs-ref-evidence"
-        [class]="identity.className"
-        id="gs-ref-sec-evidence"
-      >
-        <h2 class="gs-guide-head">
-          <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
-            ><app-icon [name]="identity.icon"
-          /></span>
-          {{ "alchemy.usecases.evidence_head" | transloco }}
-          <app-gs-anchor-link
-            targetId="gs-ref-sec-evidence"
-            [label]="'alchemy.usecases.evidence_head' | transloco"
-          />
-        </h2>
+        @if (evidenceSettled() && !isGallery() && shots().length > 0) {
+          <section
+            class="gs-ref-evidence"
+            [class]="identity.className"
+            id="gs-ref-sec-evidence"
+          >
+            <h2 class="gs-guide-head">
+              <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+                ><app-icon [name]="identity.icon"
+              /></span>
+              {{ "alchemy.usecases.evidence_head" | transloco }}
+              <app-gs-anchor-link
+                targetId="gs-ref-sec-evidence"
+                [label]="'alchemy.usecases.evidence_head' | transloco"
+              />
+            </h2>
 
-        @for (shot of shots(); track shot.form) {
-          <figure class="gs-ref-shot">
-            <figcaption class="gs-ref-shot-head">
-              <span class="gs-ref-shot-name">
-                {{ shot.formNameKey | transloco }}
-              </span>
-              @if (shot.model; as model) {
-                <span class="gs-ref-shot-meta gs-mono">{{ model }}</span>
-              }
-            </figcaption>
+            @for (shot of shots(); track shot.form) {
+              <figure class="gs-ref-shot">
+                <figcaption class="gs-ref-shot-head">
+                  <span class="gs-ref-shot-name">
+                    {{ shot.formNameKey | transloco }}
+                  </span>
+                  @if (shot.model; as model) {
+                    <span class="gs-ref-shot-meta gs-mono">{{ model }}</span>
+                  }
+                </figcaption>
 
-            <div class="gs-ref-shot-pair">
-              <span class="gs-ref-shot-frame">
-                <!-- The two frames are drawn at one width, so the only place a
+                <div class="gs-ref-shot-pair">
+                  <span class="gs-ref-shot-frame">
+                    <!-- The two frames are drawn at one width, so the only place a
                      reader can learn that the result is four times the source
                      is the badge on each picture. -->
-                <span class="gs-ref-shot-pic">
+                    <span class="gs-ref-shot-pic">
+                      <img
+                        [src]="shot.source"
+                        [alt]="
+                          'alchemy.usecases.evidence_source_alt' | transloco
+                        "
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <app-gs-pixel-badge
+                        class="gs-pixels--stage gs-pixels--corner"
+                        [width]="shot.sourceWidth"
+                        [height]="shot.sourceHeight"
+                      />
+                    </span>
+                    <span class="gs-ref-shot-label">
+                      {{ "alchemy.usecases.evidence_source" | transloco }}
+                    </span>
+                  </span>
+
+                  @if (shot.result; as result) {
+                    <span class="gs-ref-shot-frame">
+                      <span class="gs-ref-shot-pic">
+                        <img
+                          [src]="result"
+                          [alt]="
+                            'alchemy.usecases.evidence_result_alt'
+                              | transloco
+                                : { form: shot.formNameKey | transloco }
+                          "
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <app-gs-pixel-badge
+                          class="gs-pixels--stage gs-pixels--corner"
+                          [width]="shot.resultWidth"
+                          [height]="shot.resultHeight"
+                        />
+                      </span>
+                      <span class="gs-ref-shot-label">
+                        {{ "alchemy.usecases.evidence_result" | transloco }}
+                      </span>
+                    </span>
+                  } @else if (shot.answer; as answer) {
+                    <!-- The studio's own reader, on the studio's own answer, so a
+                     reader is shown here exactly what they will be shown
+                     there. -->
+                    <div class="gs-ref-shot-frame gs-ref-shot-frame--answer">
+                      <app-alchemy-result
+                        [form]="answer"
+                        [defaultOpen]="true"
+                      />
+                      <span class="gs-ref-shot-label">
+                        {{ "alchemy.usecases.evidence_result" | transloco }}
+                      </span>
+                    </div>
+                  } @else if (shot.text; as text) {
+                    <!-- A form that answers with words shows the words, verbatim.
+                     A summary of a caption is not the caption. -->
+                    <span class="gs-ref-shot-frame gs-ref-shot-frame--text">
+                      <output class="gs-ref-shot-text">{{ text }}</output>
+                      <span class="gs-ref-shot-label">
+                        {{ "alchemy.usecases.evidence_result" | transloco }}
+                      </span>
+                    </span>
+                  }
+                </div>
+
+                @if (shot.notes; as notes) {
+                  <p class="gs-ref-shot-note">{{ notes }}</p>
+                }
+              </figure>
+            }
+          </section>
+        }
+
+        <!-- The control map gallery: one source read thirty-three ways. The
+         source is shown once at the top and the maps sit under the group each
+         detector belongs to, in the order the picker offers them, so the page
+         and the panel are the same list. -->
+        @if (evidenceSettled() && gallerySource(); as source) {
+          <section
+            class="gs-ref-evidence"
+            [class]="identity.className"
+            id="gs-ref-sec-evidence"
+          >
+            <h2 class="gs-guide-head">
+              <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
+                ><app-icon [name]="identity.icon"
+              /></span>
+              {{ "alchemy.usecases.evidence_head" | transloco }}
+              <app-gs-anchor-link
+                targetId="gs-ref-sec-evidence"
+                [label]="'alchemy.usecases.evidence_head' | transloco"
+              />
+            </h2>
+
+            <figure class="gs-ref-shot gs-ref-shot--lead">
+              <span class="gs-ref-shot-frame gs-ref-shot-frame--lead">
+                <button
+                  type="button"
+                  class="gs-ref-zoom"
+                  [attr.aria-label]="
+                    'alchemy.usecases.control_map.enlarge'
+                      | transloco
+                        : {
+                            name:
+                              'alchemy.usecases.evidence_source' | transloco,
+                          }
+                  "
+                  (click)="openSource(source, $event)"
+                >
                   <img
-                    [src]="shot.source"
+                    [src]="source.src"
                     [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
                     loading="lazy"
                     decoding="async"
                   />
                   <app-gs-pixel-badge
                     class="gs-pixels--stage gs-pixels--corner"
-                    [width]="shot.sourceWidth"
-                    [height]="shot.sourceHeight"
+                    [width]="source.width"
+                    [height]="source.height"
                   />
-                </span>
+                </button>
                 <span class="gs-ref-shot-label">
                   {{ "alchemy.usecases.evidence_source" | transloco }}
                 </span>
               </span>
+              <figcaption class="gs-ref-shot-note">
+                {{ "alchemy.usecases.control_map.gallery_lead" | transloco }}
+              </figcaption>
+            </figure>
 
-              @if (shot.result; as result) {
-                <span class="gs-ref-shot-frame">
-                  <span class="gs-ref-shot-pic">
-                    <img
-                      [src]="result"
-                      [alt]="
-                        'alchemy.usecases.evidence_result_alt'
-                          | transloco: { form: shot.formNameKey | transloco }
-                      "
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <app-gs-pixel-badge
-                      class="gs-pixels--stage gs-pixels--corner"
-                      [width]="shot.resultWidth"
-                      [height]="shot.resultHeight"
-                    />
-                  </span>
-                  <span class="gs-ref-shot-label">
-                    {{ "alchemy.usecases.evidence_result" | transloco }}
-                  </span>
-                </span>
-              } @else if (shot.answer; as answer) {
-                <!-- The studio's own reader, on the studio's own answer, so a
-                     reader is shown here exactly what they will be shown
-                     there. -->
-                <div class="gs-ref-shot-frame gs-ref-shot-frame--answer">
-                  <app-alchemy-result [form]="answer" [defaultOpen]="true" />
-                  <span class="gs-ref-shot-label">
-                    {{ "alchemy.usecases.evidence_result" | transloco }}
-                  </span>
-                </div>
-              } @else if (shot.text; as text) {
-                <!-- A form that answers with words shows the words, verbatim.
-                     A summary of a caption is not the caption. -->
-                <span class="gs-ref-shot-frame gs-ref-shot-frame--text">
-                  <output class="gs-ref-shot-text">{{ text }}</output>
-                  <span class="gs-ref-shot-label">
-                    {{ "alchemy.usecases.evidence_result" | transloco }}
-                  </span>
-                </span>
-              }
-            </div>
+            <p class="gs-ref-body">
+              {{ "alchemy.usecases.control_map.pick" | transloco }}
+            </p>
 
-            @if (shot.notes; as notes) {
-              <p class="gs-ref-shot-note">{{ notes }}</p>
+            @for (group of galleryGroups(); track group.id) {
+              <section
+                class="gs-ref-maps-group"
+                [id]="'gs-ref-sec-' + group.id"
+              >
+                <h3 class="gs-guide-head gs-ref-maps-head">
+                  {{ group.labelKey | transloco }}
+                  <app-gs-anchor-link
+                    [targetId]="'gs-ref-sec-' + group.id"
+                    [label]="group.labelKey | transloco"
+                  />
+                </h3>
+                <p class="gs-ref-maps-intro">
+                  {{ group.introKey | transloco }}
+                </p>
+
+                <ul class="gs-ref-maps-grid">
+                  @for (tile of group.tiles; track tile.type) {
+                    <li>
+                      <figure class="gs-ref-map">
+                        @if (tile.result; as result) {
+                          <button
+                            type="button"
+                            class="gs-ref-zoom"
+                            [attr.aria-label]="
+                              'alchemy.usecases.control_map.enlarge'
+                                | transloco: { name: tile.type }
+                            "
+                            (click)="openMap(tile, $event)"
+                          >
+                            <img
+                              [src]="result"
+                              [alt]="
+                                'alchemy.usecases.control_map.map_alt'
+                                  | transloco: { detector: tile.type }
+                              "
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </button>
+                        } @else {
+                          <span class="gs-ref-map-gap">
+                            {{
+                              "alchemy.usecases.control_map.map_missing"
+                                | transloco
+                            }}
+                          </span>
+                        }
+                        <figcaption>
+                          <span class="gs-ref-map-name gs-mono">{{
+                            tile.type
+                          }}</span>
+                          @if (tile.notes; as notes) {
+                            <span class="gs-ref-map-note">{{ notes }}</span>
+                          }
+                        </figcaption>
+                      </figure>
+                    </li>
+                  }
+                </ul>
+              </section>
             }
-          </figure>
-        }
-      </section>
-    }
-
-    <!-- The control map gallery: one source read thirty-three ways. The
-         source is shown once at the top and the maps sit under the group each
-         detector belongs to, in the order the picker offers them, so the page
-         and the panel are the same list. -->
-    @if (evidenceSettled() && gallerySource(); as source) {
-      <section
-        class="gs-ref-evidence"
-        [class]="identity.className"
-        id="gs-ref-sec-evidence"
-      >
-        <h2 class="gs-guide-head">
-          <span class="gs-sec-chip gs-sec-chip--lg" aria-hidden="true"
-            ><app-icon [name]="identity.icon"
-          /></span>
-          {{ "alchemy.usecases.evidence_head" | transloco }}
-          <app-gs-anchor-link
-            targetId="gs-ref-sec-evidence"
-            [label]="'alchemy.usecases.evidence_head' | transloco"
-          />
-        </h2>
-
-        <figure class="gs-ref-shot gs-ref-shot--lead">
-          <span class="gs-ref-shot-frame gs-ref-shot-frame--lead">
-            <button
-              type="button"
-              class="gs-ref-zoom"
-              [attr.aria-label]="
-                'alchemy.usecases.control_map.enlarge'
-                  | transloco
-                    : { name: 'alchemy.usecases.evidence_source' | transloco }
-              "
-              (click)="openSource(source, $event)"
-            >
-              <img
-                [src]="source.src"
-                [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
-                loading="lazy"
-                decoding="async"
-              />
-              <app-gs-pixel-badge
-                class="gs-pixels--stage gs-pixels--corner"
-                [width]="source.width"
-                [height]="source.height"
-              />
-            </button>
-            <span class="gs-ref-shot-label">
-              {{ "alchemy.usecases.evidence_source" | transloco }}
-            </span>
-          </span>
-          <figcaption class="gs-ref-shot-note">
-            {{ "alchemy.usecases.control_map.gallery_lead" | transloco }}
-          </figcaption>
-        </figure>
-
-        <p class="gs-ref-body">
-          {{ "alchemy.usecases.control_map.pick" | transloco }}
-        </p>
-
-        @for (group of galleryGroups(); track group.id) {
-          <section class="gs-ref-maps-group" [id]="'gs-ref-sec-' + group.id">
-            <h3 class="gs-guide-head gs-ref-maps-head">
-              {{ group.labelKey | transloco }}
-              <app-gs-anchor-link
-                [targetId]="'gs-ref-sec-' + group.id"
-                [label]="group.labelKey | transloco"
-              />
-            </h3>
-            <p class="gs-ref-maps-intro">{{ group.introKey | transloco }}</p>
-
-            <ul class="gs-ref-maps-grid">
-              @for (tile of group.tiles; track tile.type) {
-                <li>
-                  <figure class="gs-ref-map">
-                    @if (tile.result; as result) {
-                      <button
-                        type="button"
-                        class="gs-ref-zoom"
-                        [attr.aria-label]="
-                          'alchemy.usecases.control_map.enlarge'
-                            | transloco: { name: tile.type }
-                        "
-                        (click)="openMap(tile, $event)"
-                      >
-                        <img
-                          [src]="result"
-                          [alt]="
-                            'alchemy.usecases.control_map.map_alt'
-                              | transloco: { detector: tile.type }
-                          "
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </button>
-                    } @else {
-                      <span class="gs-ref-map-gap">
-                        {{
-                          "alchemy.usecases.control_map.map_missing" | transloco
-                        }}
-                      </span>
-                    }
-                    <figcaption>
-                      <span class="gs-ref-map-name gs-mono">{{
-                        tile.type
-                      }}</span>
-                      @if (tile.notes; as notes) {
-                        <span class="gs-ref-map-note">{{ notes }}</span>
-                      }
-                    </figcaption>
-                  </figure>
-                </li>
-              }
-            </ul>
           </section>
         }
-      </section>
-    }
 
-    @if (enlargedMap(); as enlarged) {
-      <app-gs-shot-viewer
-        [src]="enlarged.src"
-        [label]="enlarged.label"
-        [width]="enlarged.width"
-        [height]="enlarged.height"
-        (closed)="closeMap()"
-      />
-    }
-
-    <a class="gs-ref-full" [routerLink]="studioLink">
-      {{ "alchemy.usecases.open_studio" | transloco }}
-    </a>
-
-    @if (previous() || next()) {
-      <nav
-        class="gs-ref-onwards"
-        [attr.aria-label]="'alchemy.usecases.onwards_label' | transloco"
-      >
-        @if (previous(); as entry) {
-          <a
-            class="gs-ref-onward"
-            [class]="identity.className"
-            [routerLink]="entry.link"
-          >
-            <app-icon name="chevron-left" class="gs-ico-sm" />
-            <span class="gs-ref-onward-text">
-              <span class="gs-ref-onward-rel">{{
-                "generate.reference.previous" | transloco
-              }}</span>
-              <span class="gs-ref-onward-name">{{
-                entry.titleKey | transloco
-              }}</span>
-            </span>
-          </a>
+        @if (enlargedMap(); as enlarged) {
+          <app-gs-shot-viewer
+            [src]="enlarged.src"
+            [label]="enlarged.label"
+            [width]="enlarged.width"
+            [height]="enlarged.height"
+            (closed)="closeMap()"
+          />
         }
-        @if (next(); as entry) {
-          <a
-            class="gs-ref-onward gs-ref-onward--next"
-            [class]="identity.className"
-            [routerLink]="entry.link"
+
+        <a class="gs-ref-full" [routerLink]="studioLink">
+          {{ "alchemy.usecases.open_studio" | transloco }}
+        </a>
+
+        @if (previous() || next()) {
+          <nav
+            class="gs-ref-onwards"
+            [attr.aria-label]="'alchemy.usecases.onwards_label' | transloco"
           >
-            <span class="gs-ref-onward-text">
-              <span class="gs-ref-onward-rel">{{
-                "generate.reference.next" | transloco
-              }}</span>
-              <span class="gs-ref-onward-name">{{
-                entry.titleKey | transloco
-              }}</span>
-            </span>
-            <app-icon name="chevron-right" class="gs-ico-sm" />
-          </a>
+            @if (previous(); as entry) {
+              <a
+                class="gs-ref-onward"
+                [class]="identity.className"
+                [routerLink]="entry.link"
+              >
+                <app-icon name="chevron-left" class="gs-ico-sm" />
+                <span class="gs-ref-onward-text">
+                  <span class="gs-ref-onward-rel">{{
+                    "generate.reference.previous" | transloco
+                  }}</span>
+                  <span class="gs-ref-onward-name">{{
+                    entry.titleKey | transloco
+                  }}</span>
+                </span>
+              </a>
+            }
+            @if (next(); as entry) {
+              <a
+                class="gs-ref-onward gs-ref-onward--next"
+                [class]="identity.className"
+                [routerLink]="entry.link"
+              >
+                <span class="gs-ref-onward-text">
+                  <span class="gs-ref-onward-rel">{{
+                    "generate.reference.next" | transloco
+                  }}</span>
+                  <span class="gs-ref-onward-name">{{
+                    entry.titleKey | transloco
+                  }}</span>
+                </span>
+                <app-icon name="chevron-right" class="gs-ico-sm" />
+              </a>
+            }
+          </nav>
         }
-      </nav>
-    }
+      </div>
+    </div>
   }
 </div>

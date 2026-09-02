@@ -83,14 +83,45 @@ describe('DocsControlTypesComponent', () => {
     expect(all('app-gs-sweep-scrub').length).toBe(0);
   });
 
-  it('tells the reader on the lead what pressing a control type opens', () => {
+  it('leads with the one sentence that answers what a control type is', () => {
     const lead = el().querySelector('.gs-ref-lead')?.textContent ?? '';
 
-    expect(lead).toContain('three pictures');
-    expect(lead).toContain('as you raise the control strength');
-    // And that each of those examples comes on more than one kind of picture,
-    // which is the second choice the layer offers.
-    expect(lead).toContain('a character, a building and a flat colour drawing');
+    expect(lead).toContain('reads something different from your picture');
+    // The rest of the introduction is a fold rather than a fourth paragraph
+    // before the first picture, so the lead is one sentence long.
+    expect(lead).not.toContain('three pictures');
+  });
+
+  it('keeps the rest of the introduction behind a fold that opens', () => {
+    const toggle = el().querySelector<HTMLButtonElement>('.gs-tut-raw-toggle');
+
+    expect(toggle?.textContent).toContain('How to read this page');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(el().querySelector('#gs-ref-how-body')).toBeNull();
+
+    toggle?.click();
+    fixture.detectChanges();
+
+    const body = el().querySelector('#gs-ref-how-body')?.textContent ?? '';
+
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(body).toContain('three pictures');
+    expect(body).toContain('as you raise the control strength');
+    // Each of those examples comes on more than one kind of picture, which is
+    // the second choice a tile's layer offers.
+    expect(body).toContain('a character, a building and a flat colour drawing');
+    // What a control map is at all, which the lead no longer has room for.
+    expect(body).toContain('A detector reads your picture first');
+  });
+
+  it('offers the groups as contents aimed at the sections they name', () => {
+    const entries = all<HTMLElement>('.gs-index-entry');
+
+    expect(entries.length).toBe(ANNOTATION_DETECTOR_GROUPS.length);
+    expect(entries[0].textContent).toContain('Edges and outlines');
+    for (const group of ANNOTATION_DETECTOR_GROUPS) {
+      expect(el().querySelector(`#gs-ref-sec-${group.id}`)).not.toBeNull();
+    }
   });
 
   it('gives every published mode a way in that says what it opens', () => {

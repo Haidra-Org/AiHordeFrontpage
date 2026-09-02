@@ -12,6 +12,10 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
+import {
+  GsIndexRailComponent,
+  GsIndexRailEntry,
+} from '../../../components/gs-index-rail/gs-index-rail.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsShotViewerComponent } from '../../../components/gs-shot-viewer/gs-shot-viewer.component';
 import { GsPixelBadgeComponent } from '../../../components/gs-pixel-badge/gs-pixel-badge.component';
@@ -117,6 +121,7 @@ interface OnwardUseCase {
     RouterLink,
     IconComponent,
     GsAnchorLinkComponent,
+    GsIndexRailComponent,
     GsParamEntryComponent,
     GsShotViewerComponent,
     GsPixelBadgeComponent,
@@ -252,6 +257,23 @@ export class DocsAlchemyUseCaseComponent {
       }),
     }));
   });
+
+  /**
+   * The groups as the contents rail names them, and only once the sections they
+   * point at are on the page: a rail whose lines lead nowhere is worse than no
+   * rail. No glyph per line, because every group here belongs to the same part
+   * of the studio and one mark seven times says nothing.
+   */
+  public readonly railEntries = computed<readonly GsIndexRailEntry[]>(() =>
+    this.evidenceSettled() && this.gallerySource()
+      ? this.galleryGroups().map((group) => ({
+          id: group.id,
+          labelKey: group.labelKey,
+          hueClass: this.identity.className,
+          targetId: `gs-ref-sec-${group.id}`,
+        }))
+      : [],
+  );
 
   /** Open one map whole. The press is on the picture, so the picture is the way. */
   public openMap(tile: ControlMapTile, event: Event): void {

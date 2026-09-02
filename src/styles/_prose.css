@@ -273,4 +273,86 @@
     font-size: 0.9em;
     overflow-wrap: anywhere;
   }
+
+  /* The same literal written on a line of its own: a prompt of sixty words is
+     something the reader takes rather than reads, so it is set apart on the
+     code ground with the way to take it under it. */
+  .gs-prose-quote {
+    display: block;
+    margin-top: 0.75em;
+    padding: 0.6em 0.75em;
+    border: 1px solid var(--gs-prose-code-border);
+    border-radius: 6px;
+    background: var(--gs-prose-code-bg);
+  }
+
+  .gs-prose-quote-text {
+    display: block;
+    color: var(--gs-prose-code-ink);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 0.9em;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .gs-prose-quote-tail {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5em;
+    margin-top: 0.5em;
+  }
+
+  .gs-prose-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    padding: 0.25em 0.6em;
+    border: 1px solid var(--gs-prose-code-border);
+    border-radius: 999px;
+    background: var(--color-white);
+    color: var(--gs-prose-code-ink);
+    font: inherit;
+    font-size: 0.8em;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .dark .gs-prose-copy {
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .gs-prose-copy:hover {
+    border-color: var(--gs-prose-accent);
+    color: var(--gs-prose-accent);
+  }
+
+  .gs-prose-copy:focus-visible {
+    outline: 2px solid var(--gs-prose-accent);
+    outline-offset: 2px;
+  }
+
+  @media (pointer: coarse) {
+    .gs-prose-copy {
+      min-height: 44px;
+      padding-inline: 0.9em;
+    }
+  }
+
+  .gs-prose-copied {
+    font-size: 0.8em;
+    color: var(--color-gray-600);
+  }
+
+  .dark .gs-prose-copied {
+    color: var(--color-gray-400);
+  }
+
+  @media (forced-colors: active) {
+    .gs-prose-quote,
+    .gs-prose-copy {
+      border: 1px solid CanvasText;
+    }
+  }
 }

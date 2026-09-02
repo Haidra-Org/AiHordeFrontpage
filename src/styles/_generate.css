@@ -10024,6 +10024,28 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-radius: 2px;
   background: var(--gs-tut);
 }
+/* A short read teaches an idea and sends the reader nowhere to perform it, so
+   it keeps the area's hue: the amber is reserved for the pages a walkthrough
+   can actually pick up, and a bar that says "tutorial" on a page that is not
+   one costs the amber its meaning everywhere else. */
+.gen-studio .gs-tut-head--read::before {
+  background: var(--gs-sec, var(--gs-zone, var(--gs-blue)));
+}
+/* What the page costs the reader, under the lead: a count, the run behind it,
+   and what they need to hand. The dot between the parts is drawn rather than
+   written so each part is announced as itself. */
+.gen-studio .gs-tut-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: var(--gs-space-2) 0 0;
+  color: var(--gs-muted);
+  font-size: var(--gs-text-xs);
+}
+.gen-studio .gs-tut-meta-item + .gs-tut-meta-item::before {
+  content: "·";
+  margin: 0 var(--gs-space-2);
+}
 .gen-studio .gs-tut-flow-title {
   display: flex;
   flex-wrap: wrap;
@@ -16927,7 +16949,8 @@ html:has(app-gs-sheet) {
   /* Both pages centre one 880px reading column; the rail is paid for out of
      the margins rather than out of the measure. */
   .gen-studio .gs-guide > *,
-  .gen-studio .gs-ref-index-inner {
+  .gen-studio .gs-ref-index-inner,
+  .gen-studio .gs-ref-page-inner--rail {
     max-width: 1120px;
   }
   .gen-studio .gs-index-layout {

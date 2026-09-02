@@ -101,12 +101,10 @@ export const serverRoutes: ServerRoute[] = [
   {
     path: 'docs/image/learn/:flow',
     renderMode: RenderMode.Prerender,
+    // Every flow, techniques and short reads alike: a read is a page of its
+    // own, so it is built like one and can be linked to and shared.
     getPrerenderParams: () =>
-      Promise.resolve(
-        FLOWS.filter((flow) => !flow.concept).map((flow) => ({
-          flow: flow.id,
-        })),
-      ),
+      Promise.resolve(FLOWS.map((flow) => ({ flow: flow.id }))),
   },
   {
     path: 'faq',

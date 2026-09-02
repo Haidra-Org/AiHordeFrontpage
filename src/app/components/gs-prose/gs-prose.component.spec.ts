@@ -12,6 +12,9 @@ const LANG = {
   [KEY]: 'placeholder',
   // The name a sentence uses for guidance, which is the chip's inline face.
   'generate.help.cfg.title': 'Guidance',
+  'docs.prose.copy': 'Copy',
+  'docs.prose.copy_aria': 'Copy the quoted text',
+  'docs.prose.copied': 'Copied',
 };
 
 @Component({
@@ -125,5 +128,64 @@ describe('GsProseComponent', () => {
     expect(blocks).toHaveLength(2);
     expect(blocks[0].textContent?.trim()).toBe('One.');
     expect(blocks[1].textContent?.trim()).toBe('Two.');
+  });
+
+  it('sets a literal written on its own line apart, with a way to take it', async () => {
+    await render('This example asked for:\n\n`{{ prompt }}`');
+    fixture.componentInstance.paragraphs.set(true);
+    fixture.componentInstance.params.set({ prompt: 'a fox in the rain' });
+    fixture.detectChanges();
+
+    const quote = el().querySelector('.gs-prose-quote');
+    expect(quote?.querySelector('.gs-prose-quote-text')?.textContent).toBe(
+      'a fox in the rain',
+    );
+    // The lead is still a sentence; only the literal is set apart.
+    expect(el().querySelectorAll('.gs-prose-p')).toHaveLength(1);
+    // And it is a block rather than the inline mark it would otherwise be.
+    expect(el().querySelector('.gs-prose-code')).toBeNull();
+
+    const copy = quote?.querySelector<HTMLButtonElement>('.gs-prose-copy');
+    expect(copy?.getAttribute('aria-label')).toBe('Copy the quoted text');
+    expect(copy?.textContent?.trim()).toBe('Copy');
+  });
+
+  it('confirms a copy where it was taken from', async () => {
+    const written: string[] = [];
+    Object.defineProperty(globalThis.navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (value: string) => {
+          written.push(value);
+          return Promise.resolve();
+        },
+      },
+    });
+    Object.defineProperty(globalThis, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
+
+    await render('Asked for:\n\n`a fox in the rain`');
+    fixture.componentInstance.paragraphs.set(true);
+    fixture.detectChanges();
+
+    el().querySelector<HTMLButtonElement>('.gs-prose-copy')!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(written).toEqual(['a fox in the rain']);
+    expect(el().querySelector('.gs-prose-copied')?.textContent?.trim()).toBe(
+      'Copied',
+    );
+  });
+
+  it('leaves a literal set in a sentence inline', async () => {
+    await render('It asked for `a fox` and no more.');
+    fixture.componentInstance.paragraphs.set(true);
+    fixture.detectChanges();
+
+    expect(el().querySelector('.gs-prose-quote')).toBeNull();
+    expect(el().querySelector('.gs-prose-code')?.textContent).toBe('a fox');
   });
 });

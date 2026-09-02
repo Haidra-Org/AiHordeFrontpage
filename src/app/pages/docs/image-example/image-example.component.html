@@ -19,9 +19,12 @@
            and the lead come from the app rather than from the library, so the
            page is itself before its pictures arrive and can be built ahead of
            any of them existing. -->
-      <header class="gs-tut-head">
+      <!-- The amber bar says "you are being taught something you will then go
+           and do". A short read is not that, so it keeps the area's own hue and
+           the amber is left to mean the one thing it means. -->
+      <header class="gs-tut-head" [class.gs-tut-head--read]="isConcept()">
         <h1 class="gs-tut-flow-title">
-          {{ "generate.tutorials.flows." + flowId + ".task_name" | transloco }}
+          {{ taskNameKey(flowId) | transloco }}
           <!-- The technique and the chain travel together, so a narrow column
                that cannot fit them after the name wraps the pair rather than
                leaving the chain on a line of its own.
@@ -29,24 +32,35 @@
                One technique to a page, so the page is what there is to hand
                somebody: no fragment, because there is nowhere else to land. -->
           <span class="gs-tut-title-tail">
-            @if (activeFlow(); as flow) {
-              <span class="gs-tut-technique">{{ flow.title }}</span>
+            @if (!isConcept()) {
+              @if (activeFlow(); as flow) {
+                <span class="gs-tut-technique">{{ flow.title }}</span>
+              }
             }
-            <app-gs-anchor-link
-              [label]="
-                'generate.tutorials.flows.' + flowId + '.task_name' | transloco
-              "
-            />
+            <app-gs-anchor-link [label]="taskNameKey(flowId) | transloco" />
           </span>
         </h1>
         <p class="gs-tut-lead">{{ activeSummary() }}</p>
+
+        <!-- What the page costs the reader, in the order they want to know it:
+             how much there is, how long the run behind it took, and what they
+             have to have before they start. -->
+        @if (metaRow().length > 0) {
+          <p class="gs-tut-meta-line">
+            @for (fragment of metaRow(); track fragment.key) {
+              <span class="gs-tut-meta-item">{{
+                fragment.key | transloco: fragment.params
+              }}</span>
+            }
+          </p>
+        }
 
         <!-- Which subject the pictures are drawn with. Only offered where this
                flow was drawn more than once: a technique that exists in one
                world has no choice to put in front of a reader. Each option
                says what it varies, because the names alone are scenes and the
                point is the lesson surviving a change of subject and model. -->
-        @if (worldChoice()) {
+        @if (!isConcept() && worldChoice()) {
           <app-gs-world-picker
             class="gs-tut-worlds"
             [standIn]="worldStandIn()"
@@ -54,7 +68,90 @@
         }
       </header>
 
-      @if (skippedReason(); as reason) {
+      @if (isConcept()) {
+        <!-- A read rather than a walk: nothing here is pressed or written, so
+             the page is the prose in the register the reader picked, and it
+             ends at the one thing it has to offer. -->
+        <section class="gs-tut-section" id="gs-tut-sec-read">
+          <div class="gs-tut-steps-head">
+            <h2 class="gs-guide-head">
+              {{ "generate.learn.read_head" | transloco }}
+              <app-gs-anchor-link
+                targetId="gs-tut-sec-read"
+                [label]="'generate.learn.read_head' | transloco"
+              />
+            </h2>
+            <div class="gs-tut-level">
+              <span class="gs-tut-level-label" [id]="'gs-tut-level-label'">
+                {{ "generate.learn.level_label" | transloco }}
+              </span>
+              <div
+                class="gs-seg gs-seg--xs"
+                role="group"
+                aria-labelledby="gs-tut-level-label"
+              >
+                @for (option of levels; track option) {
+                  <button
+                    type="button"
+                    class="gs-seg-opt"
+                    [attr.aria-pressed]="level() === option"
+                    (click)="setLevel(option)"
+                  >
+                    {{ levelKey(option) | transloco }}
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+          <ol class="gs-tut-spine">
+            @for (entry of spine(); track entry.step.id; let i = $index) {
+              <li class="gs-tut-step">
+                <h3 class="gs-tut-step-title">
+                  {{
+                    "generate.learn.step_heading"
+                      | transloco
+                        : {
+                            n: i + 1,
+                            title: stepTitleKey(flowId, entry.step) | transloco,
+                          }
+                  }}
+                </h3>
+                <div class="gs-tut-step-body">
+                  <app-gs-prose
+                    [key]="stepBodyKey(flowId, entry.step)"
+                    [params]="copyParams()"
+                    [paragraphs]="true"
+                  />
+                </div>
+                <!-- A read's strips are what the part is about rather than a
+                     newcomer's aid, which is why they are shown in every
+                     register and open where the studio pane opens them. -->
+                @for (
+                  parameter of entry.step.sweepParameters ?? [];
+                  track parameter
+                ) {
+                  <app-gs-sweep-scrub
+                    [parameter]="parameter"
+                    [startExpanded]="true"
+                  />
+                }
+                @if (entry.step.startsFlow; as next) {
+                  <app-gs-door
+                    kind="tutorial"
+                    [eyebrow]="'generate.learn.badge' | transloco"
+                    [title]="stepCtaKey(flowId, entry.step) | transloco"
+                    [meta]="
+                      'generate.tutorials.flows.' + next + '.technique'
+                        | transloco
+                    "
+                    (entered)="goToFlow(next)"
+                  />
+                }
+              </li>
+            }
+          </ol>
+        </section>
+      } @else if (skippedReason(); as reason) {
         <!-- Shown rather than hidden: a technique the studio still offers but
              the horde could not serve is itself worth knowing about. -->
         <section class="gs-card gs-tut-card">

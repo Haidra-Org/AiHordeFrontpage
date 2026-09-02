@@ -2,13 +2,16 @@ import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
   inject,
   input,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { GlossaryService } from '../../services/glossary.service';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
 import {
   ProseRun,
   proseParamSentinels,
@@ -16,12 +19,17 @@ import {
   splitProseBlocks,
   tokenizeProse,
 } from '../../helper/gs-prose';
+import { IconComponent } from '../icon/icon.component';
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 
 /** A block of the body with its text already cut into runs. */
 type RenderedBlock =
   | { readonly kind: 'paragraph'; readonly runs: ProseRun[] }
-  | { readonly kind: 'list'; readonly items: ProseRun[][] };
+  | { readonly kind: 'list'; readonly items: ProseRun[][] }
+  | { readonly kind: 'quote'; readonly text: string };
+
+/** How long the confirmation stands before the chip goes back to offering. */
+const SAID_MS = 2000;
 
 /** What a body's `{{ }}` placeholders are filled with, as `| transloco` takes it. */
 export type ProseParams = Record<string, string | number>;
@@ -48,7 +56,12 @@ export type ProseParams = Record<string, string | number>;
  */
 @Component({
   selector: 'app-gs-prose',
-  imports: [NgTemplateOutlet, GsSettingChipComponent],
+  imports: [
+    NgTemplateOutlet,
+    TranslocoPipe,
+    IconComponent,
+    GsSettingChipComponent,
+  ],
   template: `
     <ng-template #runs let-list>
       @for (run of list; track $index) {
@@ -84,7 +97,7 @@ export type ProseParams = Record<string, string | number>;
     </ng-template>
 
     @if (paragraphs()) {
-      @for (block of blocks(); track $index) {
+      @for (block of blocks(); track $index; let i = $index) {
         @if (block.kind === 'list') {
           <ul class="gs-prose-list">
             @for (item of block.items; track $index) {
@@ -96,6 +109,36 @@ export type ProseParams = Record<string, string | number>;
               </li>
             }
           </ul>
+        } @else if (block.kind === 'quote') {
+          <!-- A literal written on a line of its own: a prompt, a value, a
+               field. Long enough to be worth taking rather than retyping, so
+               it is set as a block with the way to take it beside it. -->
+          <div class="gs-prose-quote">
+            <code class="gs-prose-quote-text">{{ block.text }}</code>
+            <div class="gs-prose-quote-tail">
+              <button
+                type="button"
+                class="gs-prose-copy"
+                [attr.aria-label]="'docs.prose.copy_aria' | transloco"
+                (click)="copyQuote(i, block.text)"
+              >
+                <app-icon
+                  [name]="saidAt() === i ? 'check' : 'clipboard-document'"
+                  class="gs-ico-sm"
+                  aria-hidden="true"
+                />
+                {{ 'docs.prose.copy' | transloco }}
+              </button>
+              <!-- Present from the start rather than added on the press: a
+                   live region inserted at the moment it has something to say
+                   is announced by some readers and missed by others. -->
+              <span class="gs-prose-copied" role="status" aria-live="polite">
+                @if (saidAt() === i) {
+                  {{ 'docs.prose.copied' | transloco }}
+                }
+              </span>
+            </div>
+          </div>
         } @else {
           <span class="gs-prose-p"
             ><ng-container
@@ -180,16 +223,58 @@ export class GsProseComponent {
     this.cut(this.source()),
   );
 
-  /** In paragraph mode, the body's blocks with their text cut into runs. */
+  /**
+   * In paragraph mode, the body's blocks with their text cut into runs.
+   *
+   * A paragraph that is nothing but a quoted literal is a block rather than a
+   * sentence: bodies interpolate prompts of sixty words, and a prompt set in a
+   * sentence wraps into a dozen lines of monospace that a reader can neither
+   * skim past nor take. Written on a line of its own it becomes a thing the
+   * page hands over, so the rule is the author's: put the literal on its own
+   * line and it is set apart with a way to copy it.
+   */
   public readonly blocks = computed<RenderedBlock[]>(() =>
-    splitProseBlocks(this.source()).map((block) =>
-      block.kind === 'list'
-        ? { kind: 'list', items: block.items.map((item) => this.cut(item)) }
-        : { kind: 'paragraph', runs: this.cut(block.text) },
-    ),
+    splitProseBlocks(this.source()).map((block) => {
+      if (block.kind === 'list') {
+        return {
+          kind: 'list',
+          items: block.items.map((item) => this.cut(item)),
+        };
+      }
+      const runs = this.cut(block.text);
+      return runs.length === 1 && runs[0].kind === 'code'
+        ? { kind: 'quote', text: runs[0].text }
+        : { kind: 'paragraph', runs };
+    }),
   );
+
+  /** Which quoted block was last taken, or null while none has been. */
+  public readonly saidAt = signal<number | null>(null);
+
+  private timer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.clearTimer());
+  }
 
   public openTerm(termId: string): void {
     this.glossary.open(termId);
+  }
+
+  /** Put one quoted literal on the clipboard, and say so where it was taken. */
+  public async copyQuote(index: number, text: string): Promise<void> {
+    if (!(await copyToClipboard(text))) {
+      return;
+    }
+    this.saidAt.set(index);
+    this.clearTimer();
+    this.timer = setTimeout(() => this.saidAt.set(null), SAID_MS);
+  }
+
+  private clearTimer(): void {
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
   }
 }
