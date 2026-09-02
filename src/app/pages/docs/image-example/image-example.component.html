@@ -228,6 +228,17 @@
                         ) {
                           <app-gs-sweep-scrub [parameter]="parameter" />
                         }
+                        <!-- Said under the pictures where they are not the
+                             request the step is about, so nobody reads them as
+                             a claim about this example. -->
+                        @if (entry.step.evidenceNote) {
+                          <p class="gs-sublabel mt-1">
+                            {{
+                              stepEvidenceNoteKey(flowId, entry.step)
+                                | transloco
+                            }}
+                          </p>
+                        }
                       }
                     </li>
                   }

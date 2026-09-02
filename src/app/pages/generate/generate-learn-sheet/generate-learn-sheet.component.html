@@ -247,6 +247,11 @@
                pictures and the controls together, so the offer opens it. -->
           <app-gs-sweep-scrub [parameter]="parameter" [viewerFirst]="true" />
         }
+        @if (current.evidenceNote) {
+          <p class="gs-sublabel mt-1">
+            {{ evidenceNoteKey(current) | transloco }}
+          </p>
+        }
       }
 
       @if (revealNote()) {

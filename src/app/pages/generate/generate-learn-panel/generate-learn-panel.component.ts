@@ -133,6 +133,11 @@ export class GenerateLearnPanelComponent {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.body.${this.level()}`;
   }
 
+  /** What the strips under a step are, where they are not this example's own. */
+  public evidenceNoteKey(step: FlowStep): string {
+    return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.evidence_note`;
+  }
+
   /**
    * The panel area a step is about, so the tutorial wears the same glyph and
    * hue as the card it is pointing at. Steps that are about the page rather

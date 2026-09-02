@@ -50,6 +50,14 @@ export interface FlowStep {
    */
   sweepParameters?: readonly string[];
   /**
+   * Whether the strips carry a note of their own, read from
+   * `generate.learn.flows.<flow>.steps.<step>.evidence_note` and shown under
+   * them. A step needs one where the published strips are not the request the
+   * step is about: they show how a setting behaves in general, and saying so is
+   * the difference between evidence and a false claim about this example.
+   */
+  evidenceNote?: boolean;
+  /**
    * The form fields this step's Apply writes, picked out of the committed
    * request rather than restated here, so a step can never set something the
    * example did not. Typed against the form, so a field that is renamed or
@@ -373,6 +381,7 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'cfg',
         helpTopic: 'cfg',
         sweepParameters: ['cfg_scale'],
+        evidenceNote: true,
         applyFields: ['cfg_scale', 'steps', 'sampler_name', 'scheduler'],
       },
       { id: 'generate', anchorId: 'generate' },

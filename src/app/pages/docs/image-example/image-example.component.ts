@@ -684,6 +684,11 @@ export class DocsImageExampleComponent {
     return `generate.learn.flows.${canonicalFlowId(flowId)}.steps.${step.id}.body.${this.level()}`;
   }
 
+  /** What the strips under a step are, where they are not this example's own. */
+  public stepEvidenceNoteKey(flowId: string, step: FlowStep): string {
+    return `generate.learn.flows.${canonicalFlowId(flowId)}.steps.${step.id}.evidence_note`;
+  }
+
   public levelKey(level: TutorialLevel): string {
     return `generate.learn.level.${level}`;
   }

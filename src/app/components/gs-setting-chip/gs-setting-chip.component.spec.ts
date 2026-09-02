@@ -230,7 +230,7 @@ describe('GsSettingChipComponent', () => {
     // `0_15`, which is the name of a file rather than a setting anybody set.
     render('denoise', 0.15);
 
-    expect(text()).toBe('Denoise 0.15');
+    expect(text()).toBe('Denoising strength 0.15');
   });
 
   it('reads a flag that is on as the state the page has words for', () => {

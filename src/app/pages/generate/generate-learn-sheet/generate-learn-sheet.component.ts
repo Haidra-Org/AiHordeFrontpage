@@ -195,6 +195,11 @@ export class GenerateLearnSheetComponent {
     return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.body.${this.level()}`;
   }
 
+  /** What the strips under a step are, where they are not this example's own. */
+  public evidenceNoteKey(step: FlowStep): string {
+    return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.evidence_note`;
+  }
+
   /** The panel area a step is about, so card and field share one hue. */
   public identityFor(step: FlowStep): SectionIdentity | null {
     return sectionIdentity(sectionFor(step.id));

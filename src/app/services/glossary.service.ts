@@ -121,7 +121,7 @@ const FULL_PAGE_LINK_LABEL = 'help.glossary.link.full_page';
  * page label above so a term carrying both a reference and a worked example
  * offers two distinguishable ways onwards rather than the same phrase twice.
  */
-const WALKTHROUGH_LINK_LABEL = 'help.glossary.link.walkthrough';
+const TUTORIAL_LINK_LABEL = 'help.glossary.link.tutorial';
 
 /**
  * The page a term is about, where one exists.
@@ -140,7 +140,7 @@ function docsLinkFor(term: GlossaryTerm): GlossaryLink | null {
   }
   if ((!area || area === 'example') && flowDef(id)) {
     return {
-      labelKey: WALKTHROUGH_LINK_LABEL,
+      labelKey: TUTORIAL_LINK_LABEL,
       routerLink: docsExampleLink(id),
     };
   }
