@@ -145,12 +145,10 @@ export interface WelcomeDoor {
   flowId: string | null;
 }
 
-/** An open per-tile actions menu, anchored at viewport coordinates. */
-interface TileMenuState {
-  tile: ResultTile;
-  x: number;
-  y: number;
-}
+/** An open per-tile menu connected to its button or to a context-menu press. */
+type TileMenuState =
+  | { tile: ResultTile; source: 'button'; anchor: HTMLElement }
+  | { tile: ResultTile; source: 'context'; x: number; y: number };
 
 /** One cell of the results tile grid, derived from the queue's jobs. */
 interface ResultTile {
@@ -1947,7 +1945,16 @@ export class GenerateResultsPanelComponent {
   public openTileMenu(tile: ResultTile, event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.openTileMenuAt(tile, event.clientX, event.clientY);
+    const open = this.tileMenu();
+    if (open?.source === 'button' && open.tile.key === tile.key) {
+      this.closeTileMenu();
+      return;
+    }
+    const anchor = event.currentTarget;
+    if (!(anchor instanceof HTMLElement)) {
+      return;
+    }
+    this.tileMenu.set({ tile, source: 'button', anchor });
   }
 
   /** Open the actions menu from a right-click / context-menu gesture. */
@@ -1964,16 +1971,17 @@ export class GenerateResultsPanelComponent {
     clientX: number,
     clientY: number,
   ): void {
-    // Clamp to the viewport so the menu is never opened partly off-screen.
-    const menuW = 214;
-    const menuH = 256;
-    const vw =
-      typeof window !== 'undefined' ? window.innerWidth : clientX + menuW;
-    const vh =
-      typeof window !== 'undefined' ? window.innerHeight : clientY + menuH;
-    const x = Math.max(8, Math.min(clientX, vw - menuW - 8));
-    const y = Math.max(8, Math.min(clientY, vh - menuH - 8));
-    this.tileMenu.set({ tile, x, y });
+    this.tileMenu.set({
+      tile,
+      source: 'context',
+      x: clientX,
+      y: clientY,
+    });
+  }
+
+  public isTileMenuButtonOpen(tile: ResultTile): boolean {
+    const menu = this.tileMenu();
+    return menu?.source === 'button' && menu.tile.key === tile.key;
   }
 
   public closeTileMenu(): void {

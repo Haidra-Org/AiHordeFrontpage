@@ -794,7 +794,10 @@
                       <button
                         type="button"
                         class="gs-icobtn"
+                        [class.gs-icobtn--on]="isTileMenuButtonOpen(tile)"
                         (click)="openTileMenu(tile, $event)"
+                        aria-haspopup="menu"
+                        [attr.aria-expanded]="isTileMenuButtonOpen(tile)"
                         [attr.aria-label]="
                           'generate.results.actions' | transloco
                         "
@@ -1947,13 +1950,28 @@
 
 @if (tileMenu(); as menu) {
   <div
-    class="gs-tile-menu gs-fadeup"
+    class="gs-tile-menu"
+    appEdgeAware
+    edgeAlign="end"
+    [viewportPoint]="menu.source === 'context' ? menu : null"
+    [viewportAnchor]="menu.source === 'button' ? menu.anchor : null"
+    [attr.data-edge-placement]="menu.source === 'context' ? 'point' : 'bottom'"
     role="menu"
-    [style.left.px]="menu.x"
-    [style.top.px]="menu.y"
   >
-    <div class="gs-result-action-group-label" role="presentation">
-      {{ "generate.results.use_in_request" | transloco }}
+    <div
+      class="gs-result-action-group-label gs-result-action-group-label--closable"
+      role="presentation"
+    >
+      <span>{{ "generate.results.use_in_request" | transloco }}</span>
+      <button
+        type="button"
+        class="gs-tile-menu-close"
+        role="menuitem"
+        [attr.aria-label]="'generate.results.close' | transloco"
+        (click)="closeTileMenu()"
+      >
+        <app-icon name="x-mark" aria-hidden="true" />
+      </button>
     </div>
     <button
       type="button"

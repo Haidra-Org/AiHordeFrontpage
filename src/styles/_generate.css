@@ -3664,6 +3664,16 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 
 /* ------- per-tile actions menu (kebab / long-press / right-click) ---- */
+@keyframes gs-tile-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
 .gen-studio .gs-tile-menu {
   position: fixed;
   z-index: 40;
@@ -3676,6 +3686,17 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 1px solid var(--gs-border);
   border-radius: 11px;
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+  transform-origin: top right;
+  animation: gs-tile-menu-in 0.14s var(--gs-ease);
+}
+.gen-studio .gs-tile-menu[data-edge-placement="point"] {
+  transform-origin: top left;
+}
+.gen-studio .gs-tile-menu[data-edge-placement="bottom"] {
+  transform-origin: top right;
+}
+.gen-studio .gs-tile-menu[data-edge-placement="top"] {
+  transform-origin: bottom right;
 }
 .gen-studio .gs-tile-menu-item {
   display: flex;
@@ -3723,6 +3744,42 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-flip-item--back + .gs-result-action-group-label {
   border-top: 0;
 }
+.gen-studio .gs-result-action-group-label--closable {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 1px 3px 1px 10px;
+}
+.gen-studio .gs-tile-menu-close {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-tile-menu-close:hover {
+  background: var(--gs-seg-track);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-tile-menu-close:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 1px;
+}
+.gen-studio .gs-tile-menu-close app-icon,
+.gen-studio .gs-tile-menu-close app-icon svg {
+  display: inline-flex;
+  width: 13px;
+  height: 13px;
+}
 .gen-studio .gs-icobtn {
   width: 26px;
   height: 26px;
@@ -3737,6 +3794,13 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-icobtn:hover {
   background: #fff;
+}
+.gen-studio .gs-icobtn--on,
+.gen-studio .gs-icobtn--on:hover {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--gs-blue-tint-border);
 }
 .gen-studio button.gs-icobtn {
   padding: 0;
@@ -7076,6 +7140,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   .gen-studio .gs-shimmer,
   .gen-studio .gs-spin,
   .gen-studio .gs-fadeup,
+  .gen-studio .gs-tile-menu,
   .gen-studio .gs-pulse,
   .gen-studio .gs-rail-thumb--new {
     animation: none;

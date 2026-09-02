@@ -6,11 +6,24 @@ import { EdgeAwarePopoverDirective } from './edge-aware-popover.directive';
 @Component({
   imports: [EdgeAwarePopoverDirective],
   template: `<div class="anchor">
-    <div class="pop" appEdgeAware [edgeAlign]="align()"></div>
+    <div
+      class="pop"
+      appEdgeAware
+      [edgeAlign]="align()"
+      [viewportPoint]="point()"
+      [viewportAnchor]="fixedAnchor()"
+    ></div>
   </div>`,
 })
 class HostComponent {
   public readonly align = signal<'start' | 'end'>('start');
+  public readonly point = signal<{ x: number; y: number } | null>(null);
+  public readonly fixedAnchor = signal<{
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  } | null>(null);
 }
 
 /** jsdom lays nothing out, so both boxes are measured by hand. */
@@ -31,17 +44,26 @@ function place(element: Element, left: number, width: number): void {
 
 describe('EdgeAwarePopoverDirective', () => {
   const originalWidth = window.innerWidth;
+  const originalHeight = window.innerHeight;
 
   afterEach(() => {
     Object.defineProperty(window, 'innerWidth', {
       value: originalWidth,
       configurable: true,
     });
+    Object.defineProperty(window, 'innerHeight', {
+      value: originalHeight,
+      configurable: true,
+    });
   });
 
-  function setViewport(width: number): void {
+  function setViewport(width: number, height = originalHeight): void {
     Object.defineProperty(window, 'innerWidth', {
       value: width,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      value: height,
       configurable: true,
     });
   }
@@ -109,5 +131,188 @@ describe('EdgeAwarePopoverDirective', () => {
 
     expect(pop.style.left).toBe('');
     expect(pop.style.right).toBe('');
+  });
+
+  it('measures and clamps a fixed overlay on both viewport axes', async () => {
+    setViewport(360, 480);
+    const { pop, fixture } = await render(0, 0, 214);
+    pop.style.position = 'fixed';
+    place(pop, 0, 214);
+    pop.getBoundingClientRect = (): DOMRect =>
+      ({
+        left: 0,
+        right: 214,
+        width: 214,
+        top: 0,
+        bottom: 420,
+        height: 420,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    fixture.componentInstance.point.set({ x: 340, y: 460 });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.left).toBe('134px');
+    expect(pop.style.top).toBe('48px');
+  });
+
+  it('caps and scrolls an overlay taller than the viewport', async () => {
+    setViewport(360, 240);
+    const { pop, fixture } = await render(0, 0, 214);
+    pop.style.position = 'fixed';
+    pop.getBoundingClientRect = (): DOMRect =>
+      ({
+        left: 0,
+        right: 214,
+        width: 214,
+        top: 0,
+        bottom: 216,
+        height: 216,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    fixture.componentInstance.point.set({ x: 20, y: 220 });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.maxHeight).toBe('216px');
+    expect(pop.style.top).toBe('12px');
+    expect(pop.style.overflow).toBe('auto');
+  });
+
+  it('opens a fixed overlay below and end-aligned with its trigger', async () => {
+    setViewport(800, 700);
+    const { pop, fixture } = await render(0, 0, 200, 'end');
+    pop.style.position = 'fixed';
+    pop.getBoundingClientRect = (): DOMRect =>
+      ({
+        left: 0,
+        right: 200,
+        width: 200,
+        top: 0,
+        bottom: 300,
+        height: 300,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    fixture.componentInstance.fixedAnchor.set({
+      top: 100,
+      right: 500,
+      bottom: 126,
+      left: 474,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.left).toBe('300px');
+    expect(pop.style.top).toBe('132px');
+    expect(pop.dataset['edgePlacement']).toBe('bottom');
+  });
+
+  it('flips a trigger-connected overlay above when the bottom is crowded', async () => {
+    setViewport(800, 700);
+    const { pop, fixture } = await render(0, 0, 200, 'end');
+    pop.style.position = 'fixed';
+    pop.getBoundingClientRect = (): DOMRect =>
+      ({
+        left: 0,
+        right: 200,
+        width: 200,
+        top: 0,
+        bottom: 300,
+        height: 300,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    fixture.componentInstance.fixedAnchor.set({
+      top: 600,
+      right: 500,
+      bottom: 626,
+      left: 474,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.left).toBe('300px');
+    expect(pop.style.top).toBe('294px');
+    expect(pop.dataset['edgePlacement']).toBe('top');
+  });
+
+  it('caps an upward overlay before it can overlap its trigger', async () => {
+    setViewport(800, 500);
+    const { pop, fixture } = await render(0, 0, 200, 'end');
+    pop.style.position = 'fixed';
+    pop.getBoundingClientRect = (): DOMRect => {
+      const height = Math.min(
+        476,
+        Number.parseFloat(pop.style.maxHeight) || 476,
+      );
+      return {
+        left: 0,
+        right: 200,
+        width: 200,
+        top: 0,
+        bottom: height,
+        height,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRect;
+    };
+    fixture.componentInstance.fixedAnchor.set({
+      top: 300,
+      right: 500,
+      bottom: 326,
+      left: 474,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.maxHeight).toBe('282px');
+    expect(pop.style.top).toBe('12px');
+    expect(Number.parseFloat(pop.style.top) + 282).toBe(294);
+  });
+
+  it('uses the full layout height while an upward menu is scaling open', async () => {
+    setViewport(800, 700);
+    const { pop, fixture } = await render(0, 0, 200, 'end');
+    pop.style.position = 'fixed';
+    Object.defineProperty(pop, 'offsetWidth', {
+      configurable: true,
+      value: 200,
+    });
+    Object.defineProperty(pop, 'offsetHeight', {
+      configurable: true,
+      value: 300,
+    });
+    pop.getBoundingClientRect = (): DOMRect =>
+      ({
+        left: 0,
+        right: 192,
+        width: 192,
+        top: 0,
+        bottom: 288,
+        height: 288,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    fixture.componentInstance.fixedAnchor.set({
+      top: 600,
+      right: 500,
+      bottom: 626,
+      left: 474,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.left).toBe('300px');
+    expect(pop.style.top).toBe('294px');
+    expect(Number.parseFloat(pop.style.top) + pop.offsetHeight).toBe(594);
   });
 });

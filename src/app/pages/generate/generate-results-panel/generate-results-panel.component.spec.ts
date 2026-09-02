@@ -254,6 +254,31 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.metaMode()).toBe('replace');
   });
 
+  it('anchors the Actions menu to its button and toggles its open state', () => {
+    pendingJobs.set([job('pending', 'queued')]);
+    const tile = component.tiles()[0];
+    const button = document.createElement('button');
+    const event = {
+      currentTarget: button,
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+    } as unknown as MouseEvent;
+
+    component.openTileMenu(tile, event);
+
+    expect(component.tileMenu()).toMatchObject({
+      tile,
+      source: 'button',
+      anchor: button,
+    });
+    expect(component.isTileMenuButtonOpen(tile)).toBe(true);
+
+    component.openTileMenu(tile, event);
+
+    expect(component.tileMenu()).toBeNull();
+    expect(component.isTileMenuButtonOpen(tile)).toBe(false);
+  });
+
   it('clamps racing lifecycle counts to the requested batch size', () => {
     pendingJobs.set([
       {
