@@ -1536,6 +1536,21 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.formRef()?.fillPrompt(prompt);
   }
 
+  /** Scroll the results pane into view without moving focus. */
+  private revealResults(): void {
+    const pane = this.resultsRef()?.nativeElement;
+    if (!pane) {
+      return;
+    }
+    const reduceMotion = globalThis.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    pane.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }
+
   /**
    * Move keyboard focus to the results pane (the skip link's action). On narrow
    * viewports the panes stack, so the pane is scrolled to as well.
@@ -1722,6 +1737,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());
       this.toast.success('generate.form.enqueued', { transloco: true });
+      // On a phone the panes stack, so a press that only raised a toast would
+      // leave the reader looking at the button while the job runs below the
+      // fold: the results pane comes up to meet them.
+      if (this.isNarrow()) {
+        this.revealResults();
+      }
       // The submit itself is the signal a follow-along tutorial is finished, so
       // nothing has to watch the queue for one.
       this.tutorial.notifySubmitted();
