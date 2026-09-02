@@ -9,6 +9,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageHomeComponent } from './image-home.component';
 import { FLOWS } from '../../../content/flows';
+import { DOCS_IMAGE_EXAMPLES_ANCHOR } from '../../../content/docs-links';
 import { ExampleFlow, ExampleManifest } from '../../../content/examples';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
@@ -174,6 +175,16 @@ describe('DocsImageHomeComponent', () => {
     expect(engine.consumeArmed()).toBe('txt2img');
   });
 
+  it('shelves the techniques where the rest of the docs point for them', () => {
+    flush();
+
+    // The settings reference sends a reader here for the whole list, so the
+    // place it lands has to be the band that holds it.
+    expect(
+      query('#' + DOCS_IMAGE_EXAMPLES_ANCHOR + ' .gs-learn-shelf'),
+    ).toHaveLength(1);
+  });
+
   it('offers the reader arriving from another tool a door of equal rank', () => {
     flush();
 
@@ -184,9 +195,16 @@ describe('DocsImageHomeComponent', () => {
       'concepts_migrating',
     ]);
     expect(doors).toHaveLength(2);
-    // One treatment across the pair: the second is another way in rather than a
-    // footnote to the first, so neither carries a class the other does not.
-    expect(new Set(doors.map((door) => door.className)).size).toBe(1);
+    // One card across the pair, at one width: the second is another way in
+    // rather than a footnote to the first. What separates them is the amber
+    // cap, which the reader meets on every press that starts a tutorial and on
+    // none that does not.
+    for (const door of doors) {
+      expect(door.classList.contains('gs-cap')).toBe(true);
+      expect(door.classList.contains('gs-door')).toBe(true);
+    }
+    expect(doors[0].classList.contains('gs-door--tutorial')).toBe(true);
+    expect(doors[1].classList.contains('gs-door--tutorial')).toBe(false);
     expect(doors[0].textContent).toContain(
       TRANSLATIONS['generate.learn.hero_cta'],
     );

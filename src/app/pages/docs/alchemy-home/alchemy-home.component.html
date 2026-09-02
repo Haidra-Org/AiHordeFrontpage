@@ -11,6 +11,25 @@
     </p>
   </header>
 
+  <!-- Five pages of equal rank say nothing about where to begin, and a reader
+       who has not used any of this arrives wanting one of them far more often
+       than the other four. -->
+  <section class="gs-learn-band" id="gs-alchemy-band-start">
+    <h2 class="gs-guide-head">
+      {{ "alchemy.usecases.start_head" | transloco }}
+      <app-gs-anchor-link
+        targetId="gs-alchemy-band-start"
+        [label]="'alchemy.usecases.start_head' | transloco"
+      />
+    </h2>
+    <p class="gs-ref-index-lead">
+      {{ "alchemy.usecases.start_lead" | transloco }}
+      <a class="gs-ref-link" [routerLink]="startLink">
+        {{ "alchemy.usecases.enlarge.title" | transloco }}
+      </a>
+    </p>
+  </section>
+
   <div class="gs-ref-cards">
     @for (card of cards(); track card.id) {
       <a class="gs-ref-card" [routerLink]="card.link">
@@ -48,4 +67,15 @@
       </a>
     }
   </div>
+
+  <!-- Reading about the five is not doing any of them, and the studio is the
+       only place the reader can. It is the last thing on the page because it is
+       the thing to do once the page has been read. -->
+  <app-gs-door
+    kind="studio"
+    [icon]="identity.icon"
+    [title]="'alchemy.usecases.open_studio' | transloco"
+    [meta]="'alchemy.usecases.studio_door_note' | transloco"
+    (entered)="openStudio()"
+  />
 </div>

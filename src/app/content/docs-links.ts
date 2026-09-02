@@ -53,3 +53,10 @@ export function docsControlTypeAnchor(type: string): string {
 export function docsAlchemyUseCaseLink(id: string): string {
   return `${DOCS_ALCHEMY}/${id}`;
 }
+
+/**
+ * The band on the image landing that shelves every technique. There is no page
+ * of tutorials on their own, so a surface offering all of them points here.
+ * It is rendered as the section id in image-home.component.html.
+ */
+export const DOCS_IMAGE_EXAMPLES_ANCHOR = 'gs-learn-band-further';

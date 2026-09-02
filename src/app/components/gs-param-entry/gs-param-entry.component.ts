@@ -18,7 +18,11 @@ import {
 import { SectionIdentity } from '../../content/sections';
 import { AlchemyEvidenceService } from '../../services/alchemy-evidence.service';
 import { SweepLibraryService } from '../../services/sweep-library.service';
-import { STUDIO_IMAGE } from '../../content/docs-links';
+import {
+  DOCS_IMAGE,
+  DOCS_IMAGE_EXAMPLES_ANCHOR,
+  STUDIO_IMAGE,
+} from '../../content/docs-links';
 import { ReferenceTopic, referenceTopic } from '../../content/reference-topics';
 import {
   SettingApply,
@@ -62,6 +66,16 @@ interface CropPair {
    */
   stopAt: number | null;
 }
+
+/**
+ * How many tutorials an entry names before it points at the whole list instead.
+ *
+ * A prompt is written in every technique there is, and a row of eight is a
+ * second index rather than a way on: three is enough to show what kind of thing
+ * is on the other side, and the shelf on the landing is already the list of all
+ * of them.
+ */
+const TUTORIAL_LINK_CAP = 3;
 
 /** How the meta-line marks each kind of cost. */
 const TRADEOFF_ICONS = {
@@ -193,10 +207,22 @@ const TRADEOFF_ICONS = {
       </p>
     }
 
+    @if (bodyText && bodyText !== bodyKey) {
+      <!-- A div rather than a paragraph: a body long enough to need paragraphs
+           and bullets of its own cannot render them inside a p element. -->
+      <div class="gs-ref-body">
+        <app-gs-prose [key]="bodyKey" [paragraphs]="true" />
+      </div>
+    }
+
     <!-- The routed page has no form to write to: taking one of these numbers is
          a trip to the panel with the value in hand, which is a door rather than
          a chip. It carries the arrow every hand-off carries, and says what it
-         will do before it does it. -->
+         will do before it does it.
+
+         It stands under the explanation rather than over it. A reader who has
+         not been told yet what the number does has nothing to take to the panel,
+         and an offer to go and try it is the wrong thing to meet first. -->
     @if (onPage() && applies().length > 0) {
       <div class="gs-ref-try-row">
         @for (option of applies(); track option.display) {
@@ -208,14 +234,6 @@ const TRADEOFF_ICONS = {
             (entered)="runApply(option)"
           />
         }
-      </div>
-    }
-
-    @if (bodyText && bodyText !== bodyKey) {
-      <!-- A div rather than a paragraph: a body long enough to need paragraphs
-           and bullets of its own cannot render them inside a p element. -->
-      <div class="gs-ref-body">
-        <app-gs-prose [key]="bodyKey" [paragraphs]="true" />
       </div>
     }
 
@@ -346,7 +364,7 @@ const TRADEOFF_ICONS = {
       </section>
     }
 
-    @if (related().length > 0) {
+    @if (related().length > 0 || tutorials().length > 0) {
       <nav
         class="gs-ref-related"
         [attr.aria-label]="'generate.reference.related_label' | transloco"
@@ -366,6 +384,37 @@ const TRADEOFF_ICONS = {
               /></span>
             }
             {{ sibling.titleKey | transloco }}
+          </a>
+        }
+        <!-- Where the setting is actually set. A neighbour says what else is in
+             the same part of the panel, which is a poor answer to "and when
+             would I change this"; a tutorial shows somebody changing it. They
+             carry the tutorials' cap and hue, and say so in words as well, so
+             the two kinds of link are told apart without colour. -->
+        @for (tutorial of tutorials(); track tutorial.id) {
+          <a
+            class="gs-ref-related-link gs-ref-related-link--tutorial"
+            [routerLink]="tutorial.link"
+          >
+            <span class="gs-sec-chip" aria-hidden="true"
+              ><app-icon name="academic-cap"
+            /></span>
+            <span class="sr-only"
+              >{{ 'generate.reference.related_tutorial' | transloco }}
+            </span>
+            {{ tutorial.titleKey | transloco }}
+          </a>
+        }
+        @if (moreTutorials()) {
+          <a
+            class="gs-ref-related-link gs-ref-related-link--tutorial"
+            [routerLink]="allTutorialsLink"
+            [fragment]="allTutorialsFragment"
+          >
+            <span class="gs-sec-chip" aria-hidden="true"
+              ><app-icon name="academic-cap"
+            /></span>
+            {{ 'generate.reference.related_tutorials_all' | transloco }}
           </a>
         }
       </nav>
@@ -559,6 +608,24 @@ export class GsParamEntryComponent {
 
   /** The siblings this entry points on to, already resolved for the template. */
   public readonly related = computed(() => this.entry()?.related ?? []);
+
+  /**
+   * The tutorials that set this subject, read off the flows they are made of and
+   * cut to the few the row can carry. The registry answers with all of them; how
+   * many are worth naming beside a setting is this surface's question.
+   */
+  public readonly tutorials = computed(() =>
+    (this.entry()?.tutorials ?? []).slice(0, TUTORIAL_LINK_CAP),
+  );
+
+  /** Whether more tutorials set this subject than the row has named. */
+  public readonly moreTutorials = computed(
+    () => (this.entry()?.tutorials ?? []).length > TUTORIAL_LINK_CAP,
+  );
+
+  /** Where the whole list of them is, which is the landing's shelf. */
+  public readonly allTutorialsLink = DOCS_IMAGE;
+  public readonly allTutorialsFragment = DOCS_IMAGE_EXAMPLES_ANCHOR;
 
   /**
    * The horde's own words this entry uses, as the dictionary holds them. Named

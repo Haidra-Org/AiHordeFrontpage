@@ -11,6 +11,7 @@ import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
 import {
   TutorialEngineService,
@@ -96,6 +97,7 @@ interface LearnDoor {
     RouterLink,
     IconComponent,
     GsAnchorLinkComponent,
+    GsDoorComponent,
     GsWorldPickerComponent,
   ],
   templateUrl: './image-home.component.html',
@@ -294,6 +296,15 @@ export class DocsImageHomeComponent {
    */
   public startTrack(door: LearnDoor): void {
     this.start(door.flow);
+  }
+
+  /**
+   * Which card a hero door is drawn as. A door that starts a tutorial wears the
+   * tutorials' amber cap, wherever it appears; the read beside it goes to the
+   * same panel without teaching a technique, so it takes the panel's own blue.
+   */
+  public doorKind(door: LearnDoor): 'studio' | 'tutorial' {
+    return isConceptFlow(door.flow) ? 'studio' : 'tutorial';
   }
 
   private start(flowId: string): void {

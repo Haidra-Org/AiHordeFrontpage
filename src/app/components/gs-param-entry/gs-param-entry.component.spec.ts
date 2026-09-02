@@ -428,8 +428,72 @@ describe('GsParamEntryComponent', () => {
       '/docs/image/settings/cfg',
       '/docs/image/settings/sampler',
       '/docs/image/settings/requirements',
+      '/docs/image/learn/txt2img',
     ]);
     expect(links[0].querySelector('.gs-sec-chip')).not.toBeNull();
+  });
+
+  it('points on to the tutorials that set the subject', async () => {
+    // Two techniques set the denoise number, and both are named.
+    await setUp({ topic: 'denoise' });
+    const tutorials = all<HTMLAnchorElement>(
+      '.gs-ref-related-link--tutorial',
+    ).map((link) => link.getAttribute('href'));
+
+    expect(tutorials).toEqual([
+      '/docs/image/learn/img2img',
+      '/docs/image/learn/controlnet',
+    ]);
+  });
+
+  it('names three of them and points at the shelf for the rest', async () => {
+    // Four techniques start from a source picture, and eight write a prompt.
+    // Either way the row names three and hands the reader the whole list.
+    for (const topic of ['source', 'prompt']) {
+      await setUp({ topic });
+      const tutorials = all<HTMLAnchorElement>(
+        '.gs-ref-related-link--tutorial',
+      );
+
+      expect(tutorials).toHaveLength(4);
+      expect(
+        tutorials.slice(0, 3).map((link) => link.getAttribute('href')),
+      ).toEqual(
+        topic === 'source'
+          ? [
+              '/docs/image/learn/img2img',
+              '/docs/image/learn/inpainting',
+              '/docs/image/learn/controlnet',
+            ]
+          : [
+              '/docs/image/learn/txt2img',
+              '/docs/image/learn/img2img',
+              '/docs/image/learn/inpainting',
+            ],
+      );
+      expect(tutorials[3].getAttribute('href')).toBe(
+        '/docs/image#gs-learn-band-further',
+      );
+      expect(tutorials[3].textContent?.trim()).toBe('All tutorials');
+    }
+  });
+
+  it('names every tutorial where three or fewer set the subject', async () => {
+    await setUp({ topic: 'steps' });
+    const tutorials = all<HTMLAnchorElement>('.gs-ref-related-link--tutorial');
+
+    expect(tutorials).toHaveLength(1);
+    expect(tutorials[0].getAttribute('href')).toBe('/docs/image/learn/txt2img');
+  });
+
+  it('says a tutorial is one in words as well as in its mark', async () => {
+    await setUp({ topic: 'steps' });
+    const tutorial = find<HTMLAnchorElement>('.gs-ref-related-link--tutorial');
+
+    expect(tutorial?.querySelector('.gs-sec-chip')).not.toBeNull();
+    expect(tutorial?.querySelector('.sr-only')?.textContent?.trim()).toBe(
+      'Tutorial:',
+    );
   });
 
   it('offers the model list from the entries that are about models', async () => {

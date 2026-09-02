@@ -4,6 +4,7 @@ import {
 } from '../pages/generate/generate-form.model';
 import { docsAlchemyUseCaseLink } from './docs-links';
 import { SectionId } from './sections';
+import { settingIdFor } from './settings';
 
 /**
  * What a step needs shown before it can point at anything. Only the source mode
@@ -511,6 +512,46 @@ export const CONCEPT_FLOWS: readonly string[] = FLOWS.filter(
 /** Whether a flow is a concept track rather than a worked technique. */
 export function isConceptFlow(flowId: string | null): boolean {
   return flowId !== null && (FLOW_BY_ID.get(flowId)?.concept ?? false);
+}
+
+/**
+ * The i18n key holding a technique's name, which is what it makes rather than
+ * how it makes it.
+ */
+export function flowTaskNameKey(flowId: string): string {
+  return `generate.tutorials.flows.${flowId}.task_name`;
+}
+
+/**
+ * Whether a step works with a setting.
+ *
+ * A step names its subject three ways and all three count: the `?` note it
+ * opens, the control it points the reader at, and the strips it is read
+ * against. The names are read through the settings registry, so a step naming
+ * an API field (`cfg_scale`, `denoising_strength`) matches the setting the
+ * panel calls it by.
+ */
+function stepWorksSetting(step: FlowStep, settingId: string): boolean {
+  return [step.helpTopic, step.anchorId, ...(step.sweepParameters ?? [])].some(
+    (name) => name !== undefined && settingIdFor(name) === settingId,
+  );
+}
+
+/**
+ * The techniques whose steps work with a setting, in the order the Learn area
+ * meets them.
+ *
+ * A setting's reference page uses this to send the reader to somewhere the
+ * setting is actually set, which the page's own neighbours cannot do. Concept
+ * tracks are left out: a reader who has come to a setting wants to watch it
+ * being used, and a track teaches an idea without touching a control.
+ */
+export function flowsUsingSetting(settingId: string): readonly string[] {
+  return FLOWS.filter(
+    (flow) =>
+      flow.concept !== true &&
+      flow.steps.some((step) => stepWorksSetting(step, settingId)),
+  ).map((flow) => flow.id);
 }
 
 /**

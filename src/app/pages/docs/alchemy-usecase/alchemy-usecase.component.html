@@ -174,7 +174,7 @@
 
         @for (group of galleryGroups(); track group.id) {
           <section class="gs-ref-maps-group" [id]="'gs-ref-sec-' + group.id">
-            <h3 class="gs-ref-maps-head">
+            <h3 class="gs-guide-head gs-ref-maps-head">
               {{ group.labelKey | transloco }}
               <app-gs-anchor-link
                 [targetId]="'gs-ref-sec-' + group.id"

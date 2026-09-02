@@ -4,8 +4,10 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
+import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
@@ -13,9 +15,15 @@ import {
   alchemyUseCaseLeadKey,
   alchemyUseCaseTitleKey,
 } from '../../../content/alchemy-usecases';
-import { docsAlchemyUseCaseLink } from '../../../content/docs-links';
+import {
+  STUDIO_ALCHEMY,
+  docsAlchemyUseCaseLink,
+} from '../../../content/docs-links';
 import { AlchemyEvidenceService } from '../../../services/alchemy-evidence.service';
 import { setPageMeta } from '../../../helper/page-meta';
+
+/** The use case a reader with no history here is pointed at first. */
+const START_USE_CASE = 'enlarge';
 
 /** One card of the landing: a thing the studio is used for. */
 interface UseCaseCard {
@@ -40,7 +48,13 @@ interface UseCaseCard {
  */
 @Component({
   selector: 'app-docs-alchemy-home',
-  imports: [TranslocoPipe, RouterLink, IconComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    GsAnchorLinkComponent,
+    GsDoorComponent,
+    IconComponent,
+  ],
   templateUrl: './alchemy-home.component.html',
   host: {
     class: 'gs-ref-index',
@@ -49,8 +63,16 @@ interface UseCaseCard {
 })
 export class DocsAlchemyHomeComponent {
   private readonly evidence = inject(AlchemyEvidenceService);
+  private readonly router = inject(Router);
 
   public readonly identity = SECTION_IDENTITIES.alchemy;
+
+  /**
+   * The page the landing sends a reader to first. Enlarging is what most people
+   * arrive for, and the other four are read the same way once one of them has
+   * been.
+   */
+  public readonly startLink = docsAlchemyUseCaseLink(START_USE_CASE);
 
   public readonly cards = computed<readonly UseCaseCard[]>(() =>
     ALCHEMY_USE_CASES.map((useCase) => ({
@@ -70,6 +92,11 @@ export class DocsAlchemyHomeComponent {
       descriptionKey: 'alchemy.usecases.lead',
     });
     void this.evidence.ensureLoaded();
+  }
+
+  /** The studio itself, which is the only place any of this is actually done. */
+  public openStudio(): void {
+    void this.router.navigateByUrl(STUDIO_ALCHEMY);
   }
 
   /**

@@ -10001,9 +10001,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   margin: 0 auto;
 }
 /* The flow is the page's subject, so its name is the page's heading and the
-   header is a masthead rather than a line of prose: the area's hue as a leading
-   bar down the side of it, and a hairline under the whole thing separating the
-   claim from the evidence for it. */
+   header is a masthead rather than a line of prose: the tutorials' own amber as
+   a leading bar down the side of it, and a hairline under the whole thing
+   separating the claim from the evidence for it.
+
+   The bar is amber rather than the setting area's hue because that is what the
+   amber says everywhere else it appears, on the door that starts a tutorial and
+   on the studio's edge while one runs: the reader is being taught. The area's
+   hue is still carried by the steps, which is where it answers a question. */
 .gen-studio .gs-tut-head {
   position: relative;
   padding: var(--gs-space-1) 0 var(--gs-space-4) var(--gs-space-4);
@@ -10017,7 +10022,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   bottom: 15px;
   width: 3px;
   border-radius: 2px;
-  background: var(--gs-sec, var(--gs-zone));
+  background: var(--gs-tut);
 }
 .gen-studio .gs-tut-flow-title {
   display: flex;
@@ -10029,7 +10034,10 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   line-height: 1.25;
   color: var(--gs-ink);
 }
-/* The heads inside the dossier, one step under the flow's own name. */
+/* A head inside a card on the tutorial page. The page's own section heads take
+   the eyebrow the rest of the documentation uses; this is the sentence-case
+   head for a card that carries one, which is the one place the area still wants
+   it. */
 .gen-studio .gs-tut-head-2 {
   font-size: var(--gs-text-md);
   font-weight: 700;
@@ -10138,7 +10146,11 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   justify-content: space-between;
   gap: var(--gs-space-2) var(--gs-space-4);
 }
-.gen-studio .gs-tut-steps-head .gs-tut-head-2 {
+/* The head and the depth picker share a row, so the head takes what is left of
+   it and its hairline runs up to the picker rather than collapsing to nothing
+   against a shrink-to-fit heading. */
+.gen-studio .gs-tut-steps-head .gs-guide-head {
+  flex: 1 1 12rem;
   margin: 0;
 }
 .gen-studio .gs-tut-level {
@@ -12388,7 +12400,7 @@ app-gs-sweep-scrub + app-gs-door {
   display: flex;
   flex-wrap: wrap;
   gap: var(--gs-space-2);
-  margin-bottom: var(--gs-space-3);
+  margin-top: var(--gs-space-4);
 }
 .gen-studio .gs-ref-try-row app-gs-door {
   flex: 1 1 260px;
@@ -13324,11 +13336,6 @@ app-gs-compare-wipe {
 .gen-studio .gs-welcome-door--tutorial .gs-cap-eyebrow {
   margin-bottom: 4px;
 }
-.gen-studio .gs-learn-hero-door .gs-tut-mark {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(252, 211, 77, 0.6);
-  color: #fcd34d;
-}
 .gen-studio .gs-tut-pane-title {
   display: flex;
   flex-wrap: wrap;
@@ -14099,10 +14106,14 @@ app-gs-compare-wipe {
     rgba(3, 7, 18, 0.5) 100%
   );
 }
+/* The block takes the hero, and the measures are kept by the lines that need
+   one: the two ways in sit under the copy at the full width rather than in a
+   column beside an empty half of the picture. */
 .gen-studio .gs-learn-hero-text {
   position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: var(--gs-space-6) var(--gs-space-6) var(--gs-space-6);
-  max-width: 62ch;
 }
 /* The area's eyebrow grammar, in the one place it has to be drawn in literal
    inks: the hairline carries the hue, the word never does. */
@@ -14124,6 +14135,7 @@ app-gs-compare-wipe {
   background: rgba(147, 197, 253, 0.5);
 }
 .gen-studio .gs-learn-hero-title {
+  max-width: 24ch;
   font-size: clamp(28px, 4.6vw, 40px);
   font-weight: 800;
   letter-spacing: -0.02em;
@@ -14137,65 +14149,34 @@ app-gs-compare-wipe {
   line-height: 1.7;
   color: #e2e8f0;
 }
-/* The hero's two doors. Squared, like every other control in the studio: the
-   pill is retired as a way of saying "press me". Equal width and one treatment,
-   because they are two ways in rather than an offer and its footnote; the
-   trailing arrow is the docs' door grammar, saying the press leaves for the
-   panel. Blue tint over the scrim rather than the capsule's own card, which is
-   a light-theme surface and would have to be repainted to sit here. */
+/* The hero's two ways in, on the same card the rest of the documentation hands
+   the reader. They are given the whole width of the hero rather than the
+   reading measure the copy above them keeps: a hint set in a 150px column wraps
+   to eight lines while half the picture stays empty, and two cards of equal
+   width say "two ways in" where a wide one and a narrow one would say "an offer
+   and its footnote". They fall to one column where a row of two would leave
+   each card narrower than its own words. */
 .gen-studio .gs-learn-hero-doors {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--gs-space-3);
   margin-top: var(--gs-space-6);
 }
+/* The card keeps a measure of its own wherever it is mounted in a column; here
+   the grid is the measure, and each of the pair fills its own cell. The gap
+   between stacked cards is the grid's, so the second of a row does not take the
+   space a column would have put above it and sit lower than the first. */
+.gen-studio .gs-learn-hero-doors app-gs-door + app-gs-door {
+  margin-top: 0;
+}
 .gen-studio .gs-learn-hero-door {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--gs-space-3);
-  min-height: 40px;
-  padding: var(--gs-space-3) var(--gs-space-4);
-  border: 1px solid rgba(147, 197, 253, 0.45);
-  border-radius: var(--gs-radius-sm);
-  background: rgba(37, 99, 235, 0.28);
-  color: #ffffff;
-  font-family: inherit;
-  text-align: left;
-  cursor: pointer;
+  max-width: none;
+  height: 100%;
 }
-.gen-studio .gs-learn-hero-door:hover {
-  background: rgba(37, 99, 235, 0.45);
-  border-color: rgba(191, 219, 254, 0.7);
-}
-.gen-studio .gs-learn-hero-door:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 2px;
-}
-.gen-studio .gs-learn-hero-door-mark {
-  flex: 0 0 auto;
-  margin-top: 1px;
-}
-.gen-studio .gs-learn-hero-door-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gs-space-1);
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.gen-studio .gs-learn-hero-door-title {
-  font-size: var(--gs-text-md);
-  font-weight: 600;
-  line-height: 1.35;
-}
-.gen-studio .gs-learn-hero-door-hint {
-  font-size: var(--gs-text-xs);
-  line-height: 1.55;
-  color: #dbeafe;
-}
-.gen-studio .gs-learn-hero-door-arrow {
-  flex: 0 0 auto;
-  margin-top: 1px;
-  color: #bfdbfe;
+/* At this size the coloured strip is a mark rather than a panel: the full one
+   costs a phone a third of the card and breaks the hint into two-word lines. */
+.gen-studio .gs-learn-hero-door .gs-door-panel {
+  flex-basis: 56px;
 }
 
 .gen-studio .gs-learn-band {
@@ -14376,32 +14357,6 @@ app-gs-compare-wipe {
   font-size: var(--gs-text-xs);
   line-height: 1.55;
   color: var(--gs-muted);
-}
-
-/* The two doors stay side by side on a phone, so the choice reads as one
-   choice; what gives is the hint, which is dropped under 480px, and the door
-   becomes an icon over its title. */
-@media (max-width: 479.98px) {
-  .gen-studio .gs-learn-hero-door {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--gs-space-2);
-    padding: var(--gs-space-3) var(--gs-space-3);
-  }
-  .gen-studio .gs-learn-hero-door-hint {
-    display: none;
-  }
-  /* Named through the element as well: the shared `.gs-ico-sm` sizing rule is
-     an element-qualified selector, so a class on its own never reached this. */
-  .gen-studio app-icon.gs-learn-hero-door-arrow {
-    display: none;
-  }
-}
-
-@media (pointer: coarse) {
-  .gen-studio .gs-learn-hero-door {
-    min-height: 44px;
-  }
 }
 
 /* ------- settings reference ------------------------------------------ */
@@ -14836,11 +14791,10 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-maps-group {
   margin-top: var(--gs-space-6);
 }
+/* A group's name is a section head, so it is drawn as one; all this adds is the
+   group's own spacing, which the head would otherwise take from the browser. */
 .gen-studio .gs-ref-maps-head {
   margin: 0;
-  font-size: var(--gs-text-md);
-  font-weight: 700;
-  color: var(--gs-ink);
 }
 .gen-studio .gs-ref-maps-intro {
   margin: var(--gs-space-1) 0 var(--gs-space-3);
@@ -15509,6 +15463,15 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-related-link:focus-visible {
   outline: 2px solid var(--gs-sec, var(--gs-blue));
   outline-offset: 2px;
+}
+/* A link on to a tutorial stands in the same row as the neighbouring settings
+   and is told apart by the tutorials' own amber, which is the hue every other
+   way into one carries. The hue is set as the section the link belongs to, so
+   the mark, the hover and the focus ring all follow without a rule each. */
+.gen-studio .gs-ref-related-link--tutorial {
+  --gs-sec: var(--gs-tut);
+  --gs-sec-tint: var(--gs-tut-tint);
+  --gs-sec-tint-border: var(--gs-tut-tint-border);
 }
 
 .gen-studio .gs-ref-links {
@@ -17220,7 +17183,6 @@ html:has(app-gs-sheet) {
   box-shadow: var(--gs-elev-2);
 }
 .gen-studio .gs-welcome-door,
-.gen-studio .gs-learn-hero-door,
 .gen-studio .gs-tut-step,
 .gen-studio .gs-learn-card {
   transition:
@@ -17361,7 +17323,6 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-hub-nav-link,
   .gen-studio .gs-index-entry,
   .gen-studio .gs-learn-door,
-  .gen-studio .gs-learn-hero-door,
   .gen-studio .gs-cap,
   .gen-studio .gs-ref-chip,
   .gen-studio .gs-setting-chip:not(.gs-setting-chip--inline),

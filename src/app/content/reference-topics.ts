@@ -8,7 +8,12 @@ import {
   alchemyUseCaseNoteKey,
   alchemyUseCaseTitleKey,
 } from './alchemy-usecases';
-import { docsAlchemyUseCaseLink, docsSettingLink } from './docs-links';
+import {
+  docsAlchemyUseCaseLink,
+  docsExampleLink,
+  docsSettingLink,
+} from './docs-links';
+import { flowTaskNameKey, flowsUsingSetting } from './flows';
 import { SectionId, SectionIdentity, sectionIdentity } from './sections';
 import {
   SettingApply,
@@ -66,6 +71,12 @@ export interface ReferenceTopic {
   /** Values the entry offers to write into a form, where it has any. */
   applies: readonly SettingApply[];
   related: readonly ReferenceRelated[];
+  /**
+   * The tutorials that set this subject, so a reader who has just read what a
+   * number does can go and watch somebody choose one. Empty on the alchemy
+   * subjects, which the image tutorials do not touch.
+   */
+  tutorials: readonly ReferenceTutorial[];
   links: readonly SettingLink[];
   glossaryTerms: readonly string[];
   strip: string | null;
@@ -87,6 +98,13 @@ export interface ReferenceTopic {
    * eleven upscalers under "enlarge". Empty on a subject that is one thing.
    */
   variants: readonly ReferenceVariant[];
+}
+
+/** One way onwards from an entry to a tutorial that sets its subject. */
+export interface ReferenceTutorial {
+  id: string;
+  titleKey: string;
+  link: string;
 }
 
 /** One way onwards from an entry to a sibling of the same kind. */
@@ -150,6 +168,11 @@ function settingTopicFor(id: string): ReferenceTopic | null {
         className: identity?.className ?? '',
       };
     }),
+    tutorials: flowsUsingSetting(id).map((flowId) => ({
+      id: flowId,
+      titleKey: flowTaskNameKey(flowId),
+      link: docsExampleLink(flowId),
+    })),
     links: reference?.links ?? [],
     glossaryTerms: reference?.glossaryTerms ?? [],
     strip: settingSweepStrip(id),
@@ -187,6 +210,7 @@ function alchemyTopicFor(id: string): ReferenceTopic | null {
       icon: identity?.icon ?? '',
       className: identity?.className ?? '',
     })),
+    tutorials: [],
     links: useCase.links ?? [],
     glossaryTerms: [],
     strip: useCase.strip ?? null,

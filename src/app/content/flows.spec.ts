@@ -5,6 +5,8 @@ import {
   flowDef,
   flowFollowable,
   flowSteps,
+  flowTaskNameKey,
+  flowsUsingSetting,
   isConceptFlow,
 } from './flows';
 import { docsAlchemyUseCaseLink } from './docs-links';
@@ -405,5 +407,56 @@ describe('followability', () => {
   it('runs nothing for a flow that does not exist or has no steps', () => {
     expect(flowFollowable('not_a_flow')).toBe(false);
     expect(flowSteps('not_a_flow')).toEqual([]);
+  });
+});
+
+describe('the tutorials that set a setting', () => {
+  it('finds a setting through the note a step opens', () => {
+    expect(flowsUsingSetting('steps')).toContain('txt2img');
+  });
+
+  it('finds a setting through the control a step points at', () => {
+    // No step opens the prompt's note, so this can only come from the anchor.
+    expect(flowsUsingSetting('prompt')).toContain('txt2img');
+  });
+
+  it('finds a setting a step names by its API field', () => {
+    // The steps carry `cfg_scale` and `denoising_strength`; the panel calls
+    // them cfg and denoise, and the reference pages are filed under those.
+    expect(flowsUsingSetting('cfg')).toContain('txt2img');
+    expect(flowsUsingSetting('denoise')).toContain('img2img');
+  });
+
+  it('gives the source picture every technique that starts from one', () => {
+    expect(flowsUsingSetting('source')).toEqual([
+      'img2img',
+      'inpainting',
+      'controlnet',
+      'remix',
+    ]);
+  });
+
+  it('leaves the concept tracks out', () => {
+    // A track carries a seed strip without anybody setting a seed in it.
+    expect(flowsUsingSetting('seed')).not.toContain('concepts_migrating');
+    for (const id of CONCEPT_FLOWS) {
+      expect(flowsUsingSetting('seed')).not.toContain(id);
+    }
+  });
+
+  it('answers nothing for a setting no technique touches', () => {
+    expect(flowsUsingSetting('webhook')).toEqual([]);
+    expect(flowsUsingSetting('not_a_setting')).toEqual([]);
+  });
+
+  it('names every technique it returns in the translations', () => {
+    const strings: Record<string, string> = JSON.parse(
+      readFileSync('src/assets/i18n/en.json', 'utf8'),
+    );
+    const unnamed = techniques
+      .filter((flow) => !strings[flowTaskNameKey(flow.id)])
+      .map((flow) => flow.id);
+
+    expect(unnamed).toEqual([]);
   });
 });

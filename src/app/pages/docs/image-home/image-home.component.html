@@ -16,38 +16,23 @@
       <p class="gs-learn-hero-sub">
         {{ "generate.learn.hero_sub" | transloco }}
       </p>
-      <!-- Two doors of one rank: the reader who has never made an image and the
-           reader who has made hundreds elsewhere both belong here, and putting
-           the second one under the fold would answer the question of which of
-           them the area is for. The door grammar rather than the capsule's:
-           both presses leave for the studio, so both carry the arrow, but the
-           hero is dark in both themes and the capsule chassis is not. -->
+      <!-- Two ways in of one rank: the reader who has never made an image and
+           the reader who has made hundreds elsewhere both belong here, and
+           putting the second one under the fold would answer the question of
+           which of them the area is for. They are the same card every other
+           press in the documentation is, so a reader who has learned one has
+           learned these; the first wears the tutorials' amber because that is
+           what it starts. -->
       <div class="gs-learn-hero-doors">
         @for (door of heroDoors; track door.titleKey) {
-          <button
-            type="button"
-            class="gs-learn-hero-door"
-            (click)="startTrack(door)"
-          >
-            <span
-              class="gs-tut-mark gs-learn-hero-door-mark"
-              aria-hidden="true"
-            >
-              <app-icon name="academic-cap" />
-            </span>
-            <span class="gs-learn-hero-door-text">
-              <span class="gs-learn-hero-door-title">
-                {{ door.titleKey | transloco }}
-              </span>
-              <span class="gs-learn-hero-door-hint">
-                {{ door.hintKey | transloco }}
-              </span>
-            </span>
-            <app-icon
-              name="arrow-right"
-              class="gs-ico-sm gs-learn-hero-door-arrow"
-            />
-          </button>
+          <app-gs-door
+            [kind]="doorKind(door)"
+            [icon]="door.icon"
+            controlClass="gs-learn-hero-door"
+            [title]="door.titleKey | transloco"
+            [meta]="door.hintKey | transloco"
+            (entered)="startTrack(door)"
+          />
         }
       </div>
     </div>
