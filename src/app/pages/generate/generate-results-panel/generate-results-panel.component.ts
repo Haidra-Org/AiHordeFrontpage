@@ -440,6 +440,18 @@ export class GenerateResultsPanelComponent {
     void this.tutorial.start(flowId);
   }
 
+  /**
+   * Whether the reader's own settings are still put away for a tutorial. The
+   * offer to bring them back stands here rather than only on the tutorial's
+   * parting note: a reader who walks away mid-lesson never sees that note, and
+   * their settings would have nowhere left to be asked for.
+   */
+  public readonly settingsSetAside = this.tutorial.settingsSetAside;
+
+  public restoreSetAsideSettings(): void {
+    this.tutorial.restoreSettings();
+  }
+
   /** Ask the parent to write a selection of one image's parameters to the form. */
   public readonly applyMeta = output<{
     request: ImageGenerationRequest;

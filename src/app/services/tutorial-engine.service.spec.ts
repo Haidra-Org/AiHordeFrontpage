@@ -35,6 +35,9 @@ import type { ExampleManifest } from '../content/examples';
 
 const LEVEL_KEY = 'aihorde.generate.learn.level';
 const WORLD_KEY = 'aihorde.generate.learn.world';
+const SESSION_KEY = 'aihorde.generate.learn.session';
+/** The studio's own key, mirrored here so the spy can answer across a reload. */
+const SET_ASIDE_KEY = 'aihorde.generate.learn.set_aside';
 
 // The committed payload carries the negative inline, the way the horde takes
 // it. Every value the tutorial shows is read back off that one string, so the
@@ -84,6 +87,44 @@ class HostSpy implements TutorialStudioHost {
   }
   public openBulkApply(example: GenerateFormValue): void {
     this.bulk.push(example);
+  }
+  /** Every clearing of the panel the engine asked for, in order. */
+  public readonly setAsides: { flowId: string; keepSource: boolean }[] = [];
+  public restored = 0;
+
+  /**
+   * Whether settings are put away. Kept in storage as the studio keeps them, so
+   * a spy standing in for a studio built after a reload answers what the real
+   * one would rather than starting from nothing.
+   */
+  public get held(): boolean {
+    return localStorage.getItem(SET_ASIDE_KEY) !== null;
+  }
+  public set held(value: boolean) {
+    if (value) {
+      localStorage.setItem(SET_ASIDE_KEY, '{}');
+    } else {
+      localStorage.removeItem(SET_ASIDE_KEY);
+    }
+  }
+
+  public setAside(flowId: string, keepSource: boolean): void {
+    if (this.held) {
+      return;
+    }
+    this.held = true;
+    this.setAsides.push({ flowId, keepSource });
+  }
+  public hasSetAside(): boolean {
+    return this.held;
+  }
+  public restoreSetAside(): boolean {
+    if (!this.held) {
+      return false;
+    }
+    this.held = false;
+    this.restored++;
+    return true;
   }
 }
 
@@ -1053,6 +1094,184 @@ describe('TutorialEngineService', () => {
       engine.arm('txt2img--w2');
 
       expect(engine.consumeArmed()).toBe('txt2img');
+    });
+  });
+
+  describe('the clean bench a technique starts on', () => {
+    it('has the studio put the settings away, once per set', async () => {
+      await startTxt2img();
+
+      expect(host.setAsides).toEqual([
+        { flowId: 'txt2img', keepSource: false },
+      ]);
+      expect(engine.settingsSetAside()).toBe(true);
+
+      // Starting the same lesson again must not save the cleared panel over the
+      // settings the first start put away. The example is already loaded, so
+      // this start fetches nothing.
+      await engine.start('txt2img');
+
+      expect(host.setAsides).toHaveLength(1);
+    });
+
+    it('keeps an attached picture for a technique whose steps use one', async () => {
+      const started = engine.start('img2img');
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+      await settle();
+      flushExample('img2img');
+      await started;
+
+      expect(host.setAsides).toEqual([{ flowId: 'img2img', keepSource: true }]);
+    });
+
+    it('clears nothing for a concept track', async () => {
+      await engine.start('concepts_images');
+
+      expect(host.setAsides).toEqual([]);
+      expect(engine.settingsSetAside()).toBe(false);
+    });
+
+    it('brings the settings back only when asked, and only once', async () => {
+      await startTxt2img();
+
+      engine.restoreSettings();
+
+      expect(host.restored).toBe(1);
+      expect(engine.settingsSetAside()).toBe(false);
+
+      engine.restoreSettings();
+
+      expect(host.restored).toBe(1);
+    });
+
+    it('leaves the settings put away when the tutorial ends', async () => {
+      await startTxt2img();
+
+      engine.stop();
+
+      expect(host.restored).toBe(0);
+      expect(engine.settingsSetAside()).toBe(true);
+    });
+
+    it('reads the studio answer when a studio registers', () => {
+      const waiting = new HostSpy();
+      waiting.held = true;
+
+      engine.registerHost(waiting);
+
+      expect(engine.settingsSetAside()).toBe(true);
+    });
+  });
+
+  describe('the tutorial a reload interrupted', () => {
+    /** A fresh service over whatever is in storage, as a reload builds one. */
+    function reopen(): TutorialEngineService {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting()],
+      });
+      const fresh = TestBed.inject(TutorialEngineService);
+      http = TestBed.inject(HttpTestingController);
+      host = new HostSpy();
+      fresh.registerHost(host);
+      return fresh;
+    }
+
+    it('writes down the step it is on and offers it back', async () => {
+      await startTxt2img();
+      engine.goTo(2);
+
+      const fresh = reopen();
+
+      expect(fresh.resumeOffered()).toBe(true);
+      expect(fresh.resumableFlowId()).toBe('txt2img');
+      expect(fresh.resumableStep()).toBe(3);
+      expect(fresh.resumableTotal()).toBe(flowSteps('txt2img').length);
+      // The offer is an offer: nothing has started.
+      expect(fresh.active()).toBe(false);
+    });
+
+    it('picks the tutorial up at the step it was left on', async () => {
+      await startTxt2img();
+      engine.goTo(2);
+      const fresh = reopen();
+
+      const continued = fresh.continueSession();
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+      await settle();
+      flushExample('txt2img');
+      await continued;
+
+      expect(fresh.active()).toBe(true);
+      expect(fresh.stepIndex()).toBe(2);
+      expect(fresh.resumeOffered()).toBe(false);
+    });
+
+    it('drops the offer when the reader turns it down', async () => {
+      await startTxt2img();
+      const fresh = reopen();
+
+      fresh.leaveSession();
+
+      expect(fresh.resumeOffered()).toBe(false);
+      // Turning the tutorial down says nothing about the settings it put away.
+      expect(fresh.settingsSetAside()).toBe(true);
+      expect(reopen().resumeOffered()).toBe(false);
+    });
+
+    it('forgets a tutorial that finished', async () => {
+      await startTxt2img();
+      engine.goTo(flowSteps('txt2img').length - 1);
+      engine.notifySubmitted();
+
+      expect(reopen().resumeOffered()).toBe(false);
+    });
+
+    it('forgets a tutorial left more than a day ago', async () => {
+      await startTxt2img();
+      const stored = JSON.parse(
+        localStorage.getItem(SESSION_KEY) ?? 'null',
+      ) as {
+        savedAt: number;
+      };
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          ...stored,
+          savedAt: stored.savedAt - 25 * 60 * 60 * 1000,
+        }),
+      );
+
+      expect(reopen().resumeOffered()).toBe(false);
+    });
+
+    it('writes nothing down for a concept track', async () => {
+      await engine.start('concepts_images');
+
+      expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+      expect(reopen().resumeOffered()).toBe(false);
+    });
+
+    it('lets a tutorial asked for by name replace the one written down', async () => {
+      await startTxt2img();
+
+      engine.arm('img2img');
+
+      expect(engine.resumeOffered()).toBe(false);
+      expect(reopen().resumeOffered()).toBe(false);
+    });
+
+    it('ignores a stored step the flow no longer has', async () => {
+      await startTxt2img();
+      const stored = JSON.parse(
+        localStorage.getItem(SESSION_KEY) ?? 'null',
+      ) as object;
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ ...stored, index: 99 }),
+      );
+
+      expect(reopen().resumeOffered()).toBe(false);
     });
   });
 

@@ -47,6 +47,16 @@ class HostStub implements TutorialStudioHost {
   public openBulkApply(): void {
     /* the bulk route is the panel's, and stays there */
   }
+  /** The studio's answer while a tutorial has the panel: settings put away. */
+  public setAside(): void {
+    /* the engine asks on start; this stub is already cleared */
+  }
+  public hasSetAside(): boolean {
+    return true;
+  }
+  public restoreSetAside(): boolean {
+    return true;
+  }
 }
 
 describe('GenerateLearnSheetComponent', () => {
@@ -109,6 +119,15 @@ describe('GenerateLearnSheetComponent', () => {
 
     fixture = TestBed.createComponent(GenerateLearnSheetComponent);
     await settle();
+  });
+
+  it('says the settings were set aside, on the first step only', async () => {
+    expect(text()).toContain(TRANSLATIONS['generate.learn.set_aside_note']);
+
+    engine.next();
+    await settle();
+
+    expect(text()).not.toContain(TRANSLATIONS['generate.learn.set_aside_note']);
   });
 
   it('docks as a bar of the flow: its name, the step, and progress on the edge', () => {

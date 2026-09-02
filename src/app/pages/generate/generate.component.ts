@@ -120,6 +120,7 @@ import {
   promptHistoryFromJobs,
   requestModelNames,
   requestToFormValue,
+  resetFormValue,
   stripEphemeralExtras,
   UPSCALERS,
   workerRequirementForRequest,
@@ -183,6 +184,30 @@ function sameBlobs(a: readonly Blob[], b: readonly Blob[]): boolean {
 }
 
 const STORAGE_KEY = 'aihorde.generate.form';
+
+/**
+ * The reader's own settings while a tutorial has the panel. A tutorial promises
+ * one field at a time with everything explained, and it cannot keep that promise
+ * on a panel carrying a style that locks the fields the steps point at, or a
+ * picture that quietly turns a from-nothing lesson into something else. The
+ * settings are kept whole under their own key so nothing is lost by clearing
+ * them, and they come back only when the reader asks.
+ */
+const SET_ASIDE_KEY = 'aihorde.generate.learn.set_aside';
+
+/**
+ * How long settings put away for a tutorial are kept. Past a week the reader has
+ * moved on, and an offer to bring back a panelful they have forgotten is worse
+ * than the settings they are working with now.
+ */
+const SET_ASIDE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The settings a tutorial cleared away, and which tutorial cleared them. */
+interface SetAsideDraft {
+  form: GenerateFormValue;
+  flowId: string;
+  savedAt: number;
+}
 
 /** Whether Generate opens the review dialog instead of sending straight away. */
 const REVIEW_KEY = 'aihorde.generate.review_before_send';
@@ -1070,6 +1095,114 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public openBulkApply(example: GenerateFormValue): void {
     this.loadTitleKey.set('generate.learn.bulk_title');
     this.pendingLoad.set(example);
+  }
+
+  /**
+   * The attached picture a tutorial cleared away, held for the length of the
+   * visit. A source image lives in memory anyway (nothing re-attaches one after
+   * a reload), so the picture is kept exactly as long as it would have been had
+   * the tutorial never run.
+   */
+  private setAsideSource: GenerateSourceState | null = null;
+
+  /** See {@link TutorialStudioHost.setAside}. */
+  public setAside(flowId: string, keepSource: boolean): void {
+    if (this.readSetAside() !== null) {
+      return;
+    }
+    const current = this.form.getRawValue();
+    try {
+      this.db.store(SET_ASIDE_KEY, {
+        form: stripEphemeralExtras(current),
+        flowId,
+        savedAt: Date.now(),
+      } satisfies SetAsideDraft);
+    } catch {
+      // A browser refusing storage would leave the panel cleared with no way
+      // back, so nothing is cleared: the reader keeps their settings and the
+      // tutorial runs over them, which is what it did before.
+      return;
+    }
+    // The one reset the studio has, so a bench cleared for a tutorial and a
+    // bench cleared by the panel's own button are the same bench.
+    const next = resetFormValue(current);
+    if (!keepSource) {
+      next.sourceMode = DEFAULT_GENERATE_FORM_VALUE.sourceMode;
+      this.setAsideSource = this.sourceState();
+      void this.sourceImageRef()?.applyDraft(DEFAULT_SOURCE_STATE);
+      this.sourceState.set(DEFAULT_SOURCE_STATE);
+      this.clearSourceEncodings();
+    }
+    this.form.setValue(next);
+    this.form.markAsDirty();
+  }
+
+  /** See {@link TutorialStudioHost.hasSetAside}. */
+  public hasSetAside(): boolean {
+    return this.readSetAside() !== null;
+  }
+
+  /** See {@link TutorialStudioHost.restoreSetAside}. */
+  public restoreSetAside(): boolean {
+    const draft = this.readSetAside();
+    if (draft === null) {
+      return false;
+    }
+    this.clearSetAside();
+    const source = this.setAsideSource;
+    this.setAsideSource = null;
+    this.form.setValue(coerceFormValue(draft.form));
+    this.form.markAsDirty();
+    if (source !== null) {
+      this.sourceState.set(DEFAULT_SOURCE_STATE);
+      this.clearSourceEncodings();
+      void this.sourceImageRef()?.applyDraft(source);
+    }
+    this.toast.success('generate.learn.set_aside_restored', {
+      transloco: true,
+    });
+    return true;
+  }
+
+  /**
+   * The settings waiting to be brought back, or null where there are none. A
+   * set that has sat here past its week is dropped where it is read, so nothing
+   * else has to know how long it has been.
+   */
+  private readSetAside(): SetAsideDraft | null {
+    let stored: unknown;
+    try {
+      stored = this.db.get(SET_ASIDE_KEY);
+    } catch {
+      return null;
+    }
+    if (typeof stored !== 'object' || stored === null) {
+      return null;
+    }
+    const draft = stored as Partial<SetAsideDraft>;
+    if (
+      typeof draft.flowId !== 'string' ||
+      typeof draft.savedAt !== 'number' ||
+      typeof draft.form !== 'object' ||
+      draft.form === null
+    ) {
+      this.clearSetAside();
+      return null;
+    }
+    if (Date.now() - draft.savedAt > SET_ASIDE_MAX_AGE_MS) {
+      this.clearSetAside();
+      return null;
+    }
+    return { form: draft.form, flowId: draft.flowId, savedAt: draft.savedAt };
+  }
+
+  private clearSetAside(): void {
+    try {
+      this.db.store(SET_ASIDE_KEY, null);
+    } catch {
+      // Nothing to be done and nothing lost: the read that follows treats a
+      // key it cannot clear the same way it treats one it cannot parse.
+    }
   }
 
   /**

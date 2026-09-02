@@ -1223,6 +1223,32 @@ describe('GenerateResultsPanelComponent', () => {
     expect('guideOpen' in component).toBe(false);
   });
 
+  it('offers the set-aside settings back, and only while they are away', () => {
+    const engine = TestBed.inject(TutorialEngineService);
+    let held = true;
+    engine.registerHost({
+      applyFields: () => undefined,
+      currentSourceMode: () => 'none',
+      setSourceMode: () => undefined,
+      openFieldGroup: () => false,
+      openBulkApply: () => undefined,
+      setAside: () => undefined,
+      hasSetAside: () => held,
+      restoreSetAside: () => {
+        held = false;
+        return true;
+      },
+    });
+
+    expect(component.settingsSetAside()).toBe(true);
+    expect(TRANSLATIONS['generate.learn.set_aside_offer']).toBeTruthy();
+    expect(TRANSLATIONS['generate.learn.set_aside_restore']).toBeTruthy();
+
+    component.restoreSetAsideSettings();
+
+    expect(component.settingsSetAside()).toBe(false);
+  });
+
   it('carries the tutorial completion note until it is dismissed', () => {
     const engine = TestBed.inject(TutorialEngineService);
     void engine.start('txt2img');

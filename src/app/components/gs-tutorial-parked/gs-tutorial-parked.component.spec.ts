@@ -10,14 +10,21 @@ import en from '../../../assets/i18n/en.json';
 
 const translations = en as Record<string, string>;
 
+/** The engine's own key, written directly so the strip meets a real reload. */
+const SESSION_KEY = 'aihorde.generate.learn.session';
+
 describe('GsTutorialParkedComponent', () => {
   let fixture: ComponentFixture<GsTutorialParkedComponent>;
   let engine: TutorialEngineService;
 
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
 
-  beforeEach(async () => {
-    localStorage.clear();
+  /**
+   * Build the strip over whatever is in storage. Separate from the setup so a
+   * test can write down a left tutorial first, which is what the engine reads
+   * once, when it is built.
+   */
+  async function mount(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [
         GsTutorialParkedComponent,
@@ -35,6 +42,11 @@ describe('GsTutorialParkedComponent', () => {
     engine = TestBed.inject(TutorialEngineService);
     fixture = TestBed.createComponent(GsTutorialParkedComponent);
     fixture.detectChanges();
+  }
+
+  beforeEach(async () => {
+    localStorage.clear();
+    await mount();
   });
 
   it('renders nothing while no tutorial is parked', () => {
@@ -60,6 +72,47 @@ describe('GsTutorialParkedComponent', () => {
     expect(engine.active()).toBe(true);
     expect(engine.stepIndex()).toBe(1);
     expect(el().querySelector('.gs-parked')).toBeNull();
+  });
+
+  describe('a tutorial left before a reload', () => {
+    /** Write down a left tutorial, then build the strip that reads it. */
+    async function remount(index: number): Promise<void> {
+      localStorage.clear();
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({
+          flowId: 'txt2img',
+          index,
+          world: 'w1',
+          savedAt: Date.now(),
+        }),
+      );
+      TestBed.resetTestingModule();
+      await mount();
+    }
+
+    it('says where the reader was and names the tutorial', async () => {
+      await remount(2);
+
+      const strip = el().querySelector('.gs-parked');
+      expect(strip?.textContent).toContain('You were on step 3 of');
+      expect(strip?.textContent).toContain(
+        translations['generate.tutorials.flows.txt2img.task_name'],
+      );
+      expect(
+        el().querySelector<HTMLButtonElement>('.gs-parked-return')?.textContent,
+      ).toContain(translations['generate.learn.resume_continue']);
+    });
+
+    it('drops the offer when the reader leaves the tutorial', async () => {
+      await remount(1);
+
+      el().querySelector<HTMLButtonElement>('.gs-parked-end')!.click();
+      fixture.detectChanges();
+
+      expect(engine.resumeOffered()).toBe(false);
+      expect(el().querySelector('.gs-parked')).toBeNull();
+    });
   });
 
   it('ends the parked tutorial from its own control', () => {

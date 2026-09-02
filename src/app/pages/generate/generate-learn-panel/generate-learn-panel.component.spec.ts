@@ -56,6 +56,16 @@ class HostStub implements TutorialStudioHost {
   public openBulkApply(example: GenerateFormValue): void {
     this.bulk.push(example);
   }
+  /** The studio's answer while a tutorial has the panel: settings put away. */
+  public setAside(): void {
+    /* the engine asks on start; this stub is already cleared */
+  }
+  public hasSetAside(): boolean {
+    return true;
+  }
+  public restoreSetAside(): boolean {
+    return true;
+  }
 }
 
 describe('GenerateLearnPanelComponent', () => {
@@ -104,6 +114,15 @@ describe('GenerateLearnPanelComponent', () => {
 
     fixture = TestBed.createComponent(GenerateLearnPanelComponent);
     fixture.detectChanges();
+  });
+
+  it('says the settings were set aside, on the first step only', () => {
+    expect(text()).toContain(TRANSLATIONS['generate.learn.set_aside_note']);
+
+    engine.next();
+    fixture.detectChanges();
+
+    expect(text()).not.toContain(TRANSLATIONS['generate.learn.set_aside_note']);
   });
 
   it('lists every step of the flow, the current one marked', () => {

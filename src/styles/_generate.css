@@ -214,6 +214,10 @@
      one is running all read as one family, apart from the accent and from any
      panel area's tint. */
   --gs-tut: #b45309;
+  /* Ink on a control filled with the tutorials' hue. It is not white in both
+     themes the way the accent's is: the dark half of the hue is a light amber,
+     meant for glyphs and edges, and a white label on it clears nothing. */
+  --gs-tut-fill-ink: #ffffff;
   --gs-tut-ink: #92400e;
   --gs-tut-tint: #fef3c7;
   --gs-tut-tint-border: #fcd34d;
@@ -307,6 +311,7 @@
 
 .dark .gen-studio {
   --gs-tut: #fbbf24;
+  --gs-tut-fill-ink: #111827;
   --gs-tut-ink: #fcd34d;
   --gs-tut-tint: rgba(251, 191, 36, 0.14);
   --gs-tut-tint-border: rgba(251, 191, 36, 0.45);
@@ -13664,6 +13669,27 @@ app-gs-compare-wipe {
   max-width: 68ch;
 }
 
+/* The settings a tutorial put away, offered back. It stands where the parting
+   note stands and outlives it, so it is quieter: the tutorial's own tint rather
+   than the finished-work green, and a line of sublabel beside a plain button. */
+.gen-studio .gs-learn-restore {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--gs-tut-tint-border);
+  border-radius: 10px;
+  background: var(--gs-tut-tint);
+}
+.gen-studio .gs-learn-restore .gs-sublabel {
+  flex: 1 1 220px;
+  margin: 0;
+  min-width: 0;
+}
+
 /* The aside for a reader whose picture is already made, which is a different
    reader from the one the handoff under it addresses. Set apart by a rule of
    its own so it is not taken for the recap. */
@@ -16157,7 +16183,7 @@ html:has(app-gs-sheet) {
   border: 0;
   border-radius: 999px;
   background: var(--gs-tut);
-  color: #fff;
+  color: var(--gs-tut-fill-ink);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -16221,6 +16247,16 @@ html:has(app-gs-sheet) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* The offer to carry on says where the reader was and which lesson it was, in
+   one sentence. Cut to the parked strip's single line it would name neither, so
+   the phone gives it the three lines the sentence takes beside the button. */
+.gen-studio .gs-parked-host--phone .gs-parked--resume .gs-parked-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  white-space: normal;
 }
 @media (forced-colors: active) {
   .gen-studio .gs-parked,

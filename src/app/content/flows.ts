@@ -504,6 +504,23 @@ export function flowSteps(flowId: string): readonly FlowStep[] {
   return FLOW_BY_ID.get(flowId)?.steps ?? [];
 }
 
+/**
+ * Whether a flow works on a picture the reader brings.
+ *
+ * Read rather than listed, so a flow that gains or loses a source step answers
+ * differently on its own. All three ways a step can be about the source count:
+ * pointing at the card, opening its note, and setting the mode the card is put
+ * into.
+ */
+export function flowUsesSource(flowId: string): boolean {
+  return flowSteps(flowId).some(
+    (step) =>
+      step.anchorId === 'source' ||
+      step.helpTopic === 'source' ||
+      step.reveal?.sourceMode !== undefined,
+  );
+}
+
 /** The tracks that teach an idea rather than a technique. */
 export const CONCEPT_FLOWS: readonly string[] = FLOWS.filter(
   (flow) => flow.concept,

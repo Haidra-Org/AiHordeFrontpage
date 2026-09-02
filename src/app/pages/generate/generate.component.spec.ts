@@ -1469,6 +1469,93 @@ describe('GenerateComponent', () => {
     });
   });
 
+  describe('settings set aside for a tutorial', () => {
+    const setAsideKey = 'aihorde.generate.learn.set_aside';
+
+    /** A panel carrying a style, a post-processor and an attached picture. */
+    function fillPanel(): void {
+      component.form.patchValue({
+        styleName: 'curated:cinematic',
+        steps: 40,
+        post_processing: ['GFPGAN'],
+        sourceMode: 'img2img',
+      });
+      component.sourceState.set({
+        mode: 'img2img',
+        sourceBlob: new Blob([new Uint8Array([1])]),
+        maskBlob: null,
+        valid: true,
+        validationMessage: null,
+      });
+    }
+
+    it('clears the style, the post-processing and the picture for txt2img', () => {
+      fillPanel();
+
+      component.setAside('txt2img', false);
+
+      const value = component.form.getRawValue();
+      expect(value.styleName).toBe('');
+      expect(value.post_processing).toEqual([]);
+      expect(value.steps).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+      expect(value.sourceMode).toBe('none');
+      expect(component.sourceState().sourceBlob).toBeNull();
+      expect(localStorage.getItem(setAsideKey)).toContain('curated:cinematic');
+    });
+
+    it('keeps the picture and its mode for a technique that works on one', () => {
+      fillPanel();
+
+      component.setAside('img2img', true);
+
+      expect(component.form.getRawValue().styleName).toBe('');
+      expect(component.form.getRawValue().sourceMode).toBe('img2img');
+      expect(component.sourceState().sourceBlob).not.toBeNull();
+    });
+
+    it('does not save the cleared panel over the settings already put away', () => {
+      fillPanel();
+      component.setAside('txt2img', false);
+
+      component.setAside('img2img', true);
+
+      expect(localStorage.getItem(setAsideKey)).toContain('curated:cinematic');
+      expect(component.hasSetAside()).toBe(true);
+    });
+
+    it('brings the settings back when asked, and only once', () => {
+      fillPanel();
+      component.setAside('txt2img', false);
+      component.form.patchValue({ prompt: 'what the tutorial built' });
+
+      expect(component.restoreSetAside()).toBe(true);
+
+      const value = component.form.getRawValue();
+      expect(value.styleName).toBe('curated:cinematic');
+      expect(value.steps).toBe(40);
+      expect(component.hasSetAside()).toBe(false);
+      expect(component.restoreSetAside()).toBe(false);
+    });
+
+    it('drops a set that has sat here past its week', () => {
+      fillPanel();
+      component.setAside('txt2img', false);
+      const stored = JSON.parse(
+        localStorage.getItem(setAsideKey) ?? 'null',
+      ) as { savedAt: number };
+      localStorage.setItem(
+        setAsideKey,
+        JSON.stringify({
+          ...stored,
+          savedAt: stored.savedAt - 8 * 24 * 60 * 60 * 1000,
+        }),
+      );
+
+      expect(component.hasSetAside()).toBe(false);
+      expect(component.restoreSetAside()).toBe(false);
+    });
+  });
+
   describe('the reference entry on a phone', () => {
     // The sheet itself is exercised in the chassis's own spec; what belongs
     // here is that the studio reads the same topic the note wrote, which is

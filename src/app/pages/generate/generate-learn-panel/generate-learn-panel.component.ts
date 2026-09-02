@@ -119,6 +119,15 @@ export class GenerateLearnPanelComponent {
    */
   public readonly hasExample = computed(() => this.engine.example() !== null);
 
+  /**
+   * Whether to say the panel was cleared. Only on the first step, and only
+   * while there is something to bring back: a reader who meets an empty panel
+   * with no explanation assumes the studio lost their work.
+   */
+  public readonly setAsideNote = computed(
+    () => this.stepIndex() === 0 && this.engine.settingsSetAside(),
+  );
+
   public readonly progressParams = computed(() => ({
     current: this.stepIndex() + 1,
     total: this.total(),

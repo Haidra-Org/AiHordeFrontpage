@@ -273,6 +273,15 @@
         </p>
       }
 
+      @if (setAsideNote()) {
+        <!-- The panel under the sheet is empty because this tutorial emptied
+             it. Saying so once, on the step where the reader first looks at it,
+             is the difference between a clean start and lost work. -->
+        <p class="gs-sublabel mt-1">
+          {{ "generate.learn.set_aside_note" | transloco }}
+        </p>
+      }
+
       @if (onFinale() && hasExample()) {
         <p class="gs-info-note gs-learn-finale">
           {{ "generate.learn.finale_hint" | transloco }}

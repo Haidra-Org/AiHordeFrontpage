@@ -396,6 +396,24 @@
         </button>
       </div>
     }
+    @if (settingsSetAside()) {
+      <!-- Stands on its own rather than inside the parting note, so a reader who
+           left the tutorial part-way, or dismissed the note, still has somewhere
+           to ask for their settings. Never automatic: what the lesson built may
+           be the thing they want to keep. -->
+      <div class="gs-learn-restore">
+        <p class="gs-sublabel">
+          {{ "generate.learn.set_aside_offer" | transloco }}
+        </p>
+        <button
+          type="button"
+          class="gs-learn-show"
+          (click)="restoreSetAsideSettings()"
+        >
+          {{ "generate.learn.set_aside_restore" | transloco }}
+        </button>
+      </div>
+    }
     @if (showStarters()) {
       <div class="gs-empty">
         <app-icon name="photo" />

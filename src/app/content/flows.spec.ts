@@ -6,6 +6,7 @@ import {
   flowFollowable,
   flowSteps,
   flowTaskNameKey,
+  flowUsesSource,
   flowsUsingSetting,
   isConceptFlow,
 } from './flows';
@@ -442,6 +443,17 @@ describe('the tutorials that set a setting', () => {
     for (const id of CONCEPT_FLOWS) {
       expect(flowsUsingSetting('seed')).not.toContain(id);
     }
+  });
+
+  it('knows which techniques work on a picture the reader brings', () => {
+    // Asserted whole rather than one at a time, so a flow that gains or loses a
+    // source step names itself here instead of failing an anonymous loop.
+    const sourced = FLOWS.filter((flow) => flowUsesSource(flow.id)).map(
+      (flow) => flow.id,
+    );
+
+    expect(sourced).toEqual(['img2img', 'inpainting', 'controlnet', 'remix']);
+    expect(flowUsesSource('not_a_flow')).toBe(false);
   });
 
   it('answers nothing for a setting no technique touches', () => {

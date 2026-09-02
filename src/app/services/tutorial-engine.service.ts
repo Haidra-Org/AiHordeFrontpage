@@ -42,6 +42,7 @@ import {
   flowDef,
   flowFollowable,
   flowSteps,
+  flowUsesSource,
   isConceptFlow,
 } from '../content/flows';
 
@@ -50,6 +51,27 @@ const LEVEL_KEY = 'aihorde.generate.learn.level';
 const WORLD_KEY = 'aihorde.generate.learn.world';
 /** Which techniques this browser has finished, so the Learn surfaces can say so. */
 const DONE_KEY = 'aihorde.generate.learn.done';
+
+/**
+ * Where a tutorial was left, so a reload lands on the studio with the tutorial
+ * offered back rather than on a half-written panel with nothing explaining it.
+ */
+const SESSION_KEY = 'aihorde.generate.learn.session';
+
+/**
+ * How long a left tutorial is offered back for. Past a day the reader has come
+ * to the studio for something else, and an offer to carry on with a lesson they
+ * have forgotten starting is noise.
+ */
+const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** Where a tutorial was left: enough to put the reader back on the same step. */
+export interface TutorialSession {
+  flowId: string;
+  index: number;
+  world: TutorialWorld;
+  savedAt: number;
+}
 
 /**
  * Which cast the worked examples are drawn from. The three tell the same lesson
@@ -193,6 +215,22 @@ export interface TutorialStudioHost {
   openFieldGroup(anchorId: string): boolean;
   /** Offer the whole example through the studio's review-and-apply panel. */
   openBulkApply(example: GenerateFormValue): void;
+  /**
+   * Put the reader's own settings away and clear the panel for a tutorial. A
+   * style forces its own values over the fields the steps point at, and a
+   * picture left attached turns a from-nothing lesson into something else, so a
+   * tutorial that promises one field at a time has to start from a panel with
+   * nothing of the reader's on it. `keepSource` holds an attached picture and
+   * its mode, for the techniques whose steps are about that picture.
+   *
+   * Does nothing where settings are already put away, so a tutorial started
+   * again keeps the first set rather than saving the cleared panel over them.
+   */
+  setAside(flowId: string, keepSource: boolean): void;
+  /** Whether settings are waiting to be brought back. */
+  hasSetAside(): boolean;
+  /** Put the settings back and forget them; false where there were none. */
+  restoreSetAside(): boolean;
 }
 
 /**
@@ -284,6 +322,23 @@ export class TutorialEngineService {
 
   /** The flow the Learn page asked for, consumed once by the studio. */
   private armed: string | null = null;
+
+  /**
+   * Whether the reader's own settings are put away for a tutorial. Answered by
+   * the studio, which owns the draft, and re-read whenever this service has
+   * reason to believe it has changed: on a studio opening, on a tutorial
+   * clearing the panel, and on the offer to bring them back being taken.
+   */
+  private readonly setAsideHeld = signal(false);
+  public readonly settingsSetAside = this.setAsideHeld.asReadonly();
+
+  /**
+   * The tutorial this browser was left in the middle of, offered back rather
+   * than resumed: a reader who reloads may have meant to leave, and dropping
+   * them into a walkthrough they did not ask for again is worse than asking.
+   */
+  private readonly session = signal<TutorialSession | null>(this.loadSession());
+  public readonly resumable = this.session.asReadonly();
 
   private highlighted: HTMLElement | null = null;
   /** The `gs-sec--*` class put on {@link highlighted}, to take off again. */
@@ -388,6 +443,7 @@ export class TutorialEngineService {
 
   public registerHost(host: TutorialStudioHost): void {
     this.host = host;
+    this.setAsideHeld.set(host.hasSetAside());
   }
 
   public unregisterHost(host: TutorialStudioHost): void {
@@ -403,6 +459,9 @@ export class TutorialEngineService {
    */
   public arm(flowId: string): void {
     this.armed = canonicalFlowId(flowId);
+    // The reader has just asked for this tutorial by name, which answers the
+    // question the offer to carry on with the last one would be asking.
+    this.dropSession();
   }
 
   public consumeArmed(): string | null {
@@ -428,6 +487,11 @@ export class TutorialEngineService {
     this.paused.set(false);
     this.flowId.set(flowId);
     this.index.set(0);
+    if (!isConceptFlow(flowId) && this.host) {
+      // A track changes nothing in the panel, so it has nothing to clear away.
+      this.host.setAside(flowId, flowUsesSource(flowId));
+      this.setAsideHeld.set(this.host.hasSetAside());
+    }
     if (isConceptFlow(flowId)) {
       // A concept track has no committed request behind it. Clearing both
       // rather than leaving a previous flow's is what makes every surface that
@@ -454,6 +518,7 @@ export class TutorialEngineService {
       this.loading.set(false);
     }
     this.enterStep();
+    this.saveSession();
   }
 
   /**
@@ -473,6 +538,10 @@ export class TutorialEngineService {
     this.revealed.set(null);
     this.clearHighlight();
     this.help.releaseRequested();
+    // The tutorial is over, so there is nothing to be offered back. The
+    // settings put away for it are not: they are the reader's, and only the
+    // reader takes them back.
+    this.dropSession();
   }
 
   /**
@@ -513,6 +582,7 @@ export class TutorialEngineService {
     }
     this.index.set(index);
     this.enterStep();
+    this.saveSession();
   }
 
   public setLevel(level: TutorialLevel): void {
@@ -531,6 +601,7 @@ export class TutorialEngineService {
     }
     this.world.set(world);
     this.db.store(WORLD_KEY, world);
+    this.saveSession();
     void this.reloadWorld();
   }
 
@@ -988,6 +1059,128 @@ export class TutorialEngineService {
     this.flowMeta.set(flow);
     this.request.set(files.request);
     this.runMeta.set(files.meta);
+  }
+
+  /**
+   * Carry on with the tutorial this browser was left in the middle of, at the
+   * step it was left on. The example is fetched as it is on any start, so the
+   * reader comes back to a whole tutorial rather than a step with no picture.
+   */
+  public async continueSession(): Promise<void> {
+    const session = this.session();
+    if (!session) {
+      return;
+    }
+    this.setWorld(session.world);
+    await this.start(session.flowId);
+    this.goTo(session.index);
+  }
+
+  /** Leave the offered tutorial. The settings put away for it stay put away. */
+  public leaveSession(): void {
+    this.dropSession();
+  }
+
+  /**
+   * Put the reader's own settings back over whatever the tutorial wrote. Never
+   * automatic: the reader may want to keep what the lesson built, and only they
+   * know which of the two they are holding.
+   */
+  public restoreSettings(): void {
+    if (this.host?.restoreSetAside()) {
+      this.setAsideHeld.set(false);
+    }
+  }
+
+  /**
+   * Whether the offer to carry on should be made: a tutorial was left here, and
+   * none is running now. A reader already inside one has the steps in front of
+   * them and needs no offer to find them.
+   */
+  public readonly resumeOffered = computed(
+    () => this.session() !== null && this.flowId() === null,
+  );
+
+  /** The tutorial the offer to carry on names, for the line that names it. */
+  public readonly resumableFlowId = computed(
+    () => this.session()?.flowId ?? null,
+  );
+
+  /** How far through the offered tutorial the reader got, counting from one. */
+  public readonly resumableStep = computed(() => {
+    const session = this.session();
+    return session ? session.index + 1 : 0;
+  });
+
+  /** How many steps the offered tutorial has, read from its own step list. */
+  public readonly resumableTotal = computed(() => {
+    const session = this.session();
+    return session ? flowSteps(canonicalFlowId(session.flowId)).length : 0;
+  });
+
+  private saveSession(): void {
+    const flowId = this.flowId();
+    if (flowId === null || isConceptFlow(flowId)) {
+      // A read writes nothing into the panel and takes a moment to pick up
+      // again, so there is nothing for an offer to rescue.
+      return;
+    }
+    const session: TutorialSession = {
+      flowId,
+      index: this.index(),
+      world: this.world(),
+      savedAt: Date.now(),
+    };
+    this.session.set(session);
+    try {
+      this.db.store(SESSION_KEY, session);
+    } catch {
+      // A browser refusing storage costs the offer after a reload and nothing
+      // else; the tutorial the reader is in the middle of is unaffected.
+    }
+  }
+
+  private dropSession(): void {
+    this.session.set(null);
+    try {
+      this.db.store(SESSION_KEY, null);
+    } catch {
+      // See saveSession.
+    }
+  }
+
+  private loadSession(): TutorialSession | null {
+    let stored: unknown;
+    try {
+      stored = this.db.get(SESSION_KEY);
+    } catch {
+      return null;
+    }
+    if (typeof stored !== 'object' || stored === null) {
+      return null;
+    }
+    const session = stored as Partial<TutorialSession>;
+    if (
+      typeof session.flowId !== 'string' ||
+      typeof session.index !== 'number' ||
+      typeof session.savedAt !== 'number' ||
+      !TUTORIAL_WORLDS.includes(session.world as TutorialWorld) ||
+      !flowFollowable(canonicalFlowId(session.flowId)) ||
+      isConceptFlow(canonicalFlowId(session.flowId)) ||
+      Date.now() - session.savedAt > SESSION_MAX_AGE_MS
+    ) {
+      return null;
+    }
+    const total = flowSteps(canonicalFlowId(session.flowId)).length;
+    if (session.index < 0 || session.index >= total) {
+      return null;
+    }
+    return {
+      flowId: session.flowId,
+      index: session.index,
+      world: session.world as TutorialWorld,
+      savedAt: session.savedAt,
+    };
   }
 
   private loadLevel(): TutorialLevel {
