@@ -90,23 +90,15 @@
   }
 
   /* =================================================================
-     PANEL VARIANT - Admin-style cards with simpler styling
+     PANEL - An admin page region
+     A container, not a card: it groups a page's content under its own
+     heading and draws no fill, border or shadow of its own, so the page
+     reads as one plane rather than as boxes inside boxes. Only the
+     unsaved outline marks it out, and only while it needs marking.
      ================================================================= */
 
   .panel {
     @apply rounded-xl overflow-hidden;
-    background: var(--color-glass-surface-panel);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border: 1px solid var(--color-glass-border-subtle);
-    box-shadow: var(--shadow-glass);
-    transition: box-shadow var(--transition-normal) ease;
-  }
-
-  .dark .panel {
-    background: var(--color-glass-surface-dark);
-    border-color: var(--color-glass-border-dark-subtle);
-    box-shadow: var(--shadow-glass-dark);
   }
 
   .panel--unsaved {

@@ -104,7 +104,10 @@
   --gs-sec-finishing: #0e7490;
   --gs-sec-horde: #475569;
   --gs-sec-workflows: #4d7c0f;
-  --gs-sec-alchemy: #7e22ce;
+  /* The finishing forms are the alchemy domain's, so their section wears
+     the domain's green rather than a hue of its own; a purple here would
+     vanish against the image plane's purple edge. */
+  --gs-sec-alchemy: var(--hd-green);
 }
 
 /* The lightbox the evidence capsules are drawn on, under the studio's own
@@ -386,36 +389,38 @@
 }
 
 /* ------- concept zones ---------------------------------------------- */
-/* Each workspace plane carries a concept hue that its structural devices
-   (section ticks, pane-title ticks, card edges, step numbers) inherit:
-   blue = create/input, green = results/output, purple = alchemy's
-   transformation form. One hue per zone, applied through repeated small
-   devices rather than washes, so the coding aids scanning without turning
-   the studio technicolor. */
+/* Each workspace plane carries a hue that its structural devices (section
+   ticks, pane-title ticks, card edges, step numbers) inherit. The hue is
+   the site's domain hue, so a studio's create plane is the same colour as
+   its domain everywhere else on the site: purple = image, green = alchemy.
+   The results plane carries no hue of its own: it is the neutral picture
+   space, and a picture is judged best against nothing. One hue per zone,
+   applied through repeated small devices rather than washes, so the
+   coding aids scanning without turning the studio technicolor. */
 /* Each rule also restates its hue under the design system's --hd-zone* names,
    which is the contract the shared primitives read: a promoted primitive drawn
    inside one of these planes picks the plane's hue up without knowing the
    studio's names. */
 .gen-studio .gs-panel {
-  --gs-zone: var(--gs-blue);
-  --gs-zone-tint: var(--gs-blue-tint);
-  --gs-zone-tint-border: var(--gs-blue-tint-border);
+  --gs-zone: var(--gs-purple);
+  --gs-zone-tint: var(--gs-purple-tint);
+  --gs-zone-tint-border: var(--gs-purple-tint-border);
   --hd-zone: var(--gs-zone);
   --hd-zone-tint: var(--gs-zone-tint);
   --hd-zone-tint-border: var(--gs-zone-tint-border);
 }
 .gen-studio .gs-results {
-  --gs-zone: var(--gs-green);
-  --gs-zone-tint: var(--gs-green-tint);
-  --gs-zone-tint-border: var(--gs-green-tint-border);
+  --gs-zone: var(--gs-muted);
+  --gs-zone-tint: var(--gs-panel);
+  --gs-zone-tint-border: var(--gs-border);
   --hd-zone: var(--gs-zone);
   --hd-zone-tint: var(--gs-zone-tint);
   --hd-zone-tint-border: var(--gs-zone-tint-border);
 }
 .gen-studio.gs-alchemy .gs-panel {
-  --gs-zone: var(--gs-purple);
-  --gs-zone-tint: var(--gs-purple-tint);
-  --gs-zone-tint-border: var(--gs-purple-tint-border);
+  --gs-zone: var(--gs-green);
+  --gs-zone-tint: var(--gs-green-tint);
+  --gs-zone-tint-border: var(--gs-green-tint-border);
   --hd-zone: var(--gs-zone);
   --hd-zone-tint: var(--gs-zone-tint);
   --hd-zone-tint-border: var(--gs-zone-tint-border);
@@ -654,10 +659,10 @@
   color: var(--gs-ink);
 }
 .gen-studio .gs-subtab--image.gs-subtab--active {
-  border-bottom-color: #1d4ed8;
+  border-bottom-color: var(--gs-purple);
 }
 .gen-studio .gs-subtab--alchemy.gs-subtab--active {
-  border-bottom-color: #9333ea;
+  border-bottom-color: var(--gs-green);
 }
 .gen-studio .gs-subtab:focus-visible {
   outline: 2px solid var(--gs-blue);
@@ -4889,30 +4894,16 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 
 /* ===================================================================
-   ALCHEMY STUDIO — the purple sibling of the generate studio.
+   ALCHEMY STUDIO — the sibling of the generate studio.
 
-   The whole gs-* system keys its accent off --gs-blue, so flipping that
-   token (plus its hover/tint variants) on the .gs-alchemy page-root
-   recolours buttons, chips, sliders, switches, status pills, and focus
-   rings to purple without duplicating a single component rule. Only the
-   alchemy-specific structure (step spine, operation grid, job cards,
-   volunteer strip, API modal chrome) needs its own classes below.
+   It shares every control with the generate studio, accent included:
+   buttons, chips, sliders, switches and focus rings are the site accent
+   here as everywhere, and the alchemy domain's green appears only where
+   an identity hue is allowed to, on the plane's edges and glyphs (the
+   zone tokens above). Only the alchemy-specific structure (step spine,
+   operation grid, job cards, volunteer strip, API modal chrome) needs
+   its own classes below.
    =================================================================== */
-.gen-studio.gs-alchemy {
-  --gs-blue: #9333ea;
-  --gs-blue-hover: #7e22ce;
-  --gs-blue-tint: #faf5ff;
-  --gs-blue-tint-border: #e9d5ff;
-}
-.dark .gen-studio.gs-alchemy {
-  --gs-blue: #a855f7;
-  --gs-blue-hover: #9333ea;
-  --gs-blue-tint: rgba(147, 51, 234, 0.16);
-  --gs-blue-tint-border: rgba(147, 51, 234, 0.4);
-}
-.gen-studio.gs-alchemy .gs-genbtn {
-  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.28);
-}
 
 /* header badge + API affordance */
 .gen-studio .gs-alchemy-badge {
@@ -4924,7 +4915,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: linear-gradient(135deg, #9333ea, #c084fc);
+  background: var(--gs-green);
 }
 .gen-studio .gs-alchemy-badge app-icon,
 .gen-studio .gs-alchemy-badge app-icon svg {
@@ -7731,10 +7722,10 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   gap: 4px;
   min-height: 28px;
   padding: 3px 10px;
-  border: 1px solid rgba(37, 99, 235, 0.32);
+  border: 1px solid var(--gs-blue-tint-border);
   border-radius: 999px;
-  background: rgba(37, 99, 235, 0.1);
-  color: #1d4ed8;
+  background: var(--gs-blue-tint);
+  color: var(--gs-blue);
   font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
@@ -13394,12 +13385,14 @@ app-gs-compare-wipe {
   color: var(--gs-ink);
 }
 .gs-docs .gs-docs-area-link--image[aria-current] {
-  border-color: color-mix(in srgb, #1d4ed8 35%, var(--gs-border));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #1d4ed8 12%, transparent);
+  border-color: color-mix(in srgb, var(--gs-purple) 35%, var(--gs-border));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--gs-purple) 12%, transparent);
 }
 .gs-docs .gs-docs-area-link--alchemy[aria-current] {
-  border-color: color-mix(in srgb, #9333ea 35%, var(--gs-border));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #9333ea 12%, transparent);
+  border-color: color-mix(in srgb, var(--gs-green) 35%, var(--gs-border));
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--gs-green) 12%, transparent);
 }
 .gs-docs app-icon.gs-docs-area-icon {
   display: inline-flex;
@@ -13436,10 +13429,10 @@ app-gs-compare-wipe {
   text-decoration: none;
 }
 .gs-docs .gs-docs-studio-link--image:hover {
-  border-color: color-mix(in srgb, #1d4ed8 40%, var(--gs-border));
+  border-color: color-mix(in srgb, var(--gs-purple) 40%, var(--gs-border));
 }
 .gs-docs .gs-docs-studio-link--alchemy:hover {
-  border-color: color-mix(in srgb, #9333ea 40%, var(--gs-border));
+  border-color: color-mix(in srgb, var(--gs-green) 40%, var(--gs-border));
 }
 .gs-docs app-icon.gs-docs-studio-icon {
   display: inline-flex;
@@ -13545,12 +13538,12 @@ app-gs-compare-wipe {
 .gen-studio
   .gs-hub-nav.gs-hub-nav--image
   .gs-hub-nav-link[aria-current]::before {
-  background: #1d4ed8;
+  background: var(--gs-purple);
 }
 .gen-studio
   .gs-hub-nav.gs-hub-nav--alchemy
   .gs-hub-nav-link[aria-current]::before {
-  background: #9333ea;
+  background: var(--gs-green);
 }
 .gen-studio app-icon.gs-hub-nav-mark {
   display: inline-flex;
@@ -13572,13 +13565,13 @@ app-gs-compare-wipe {
   .gs-hub-nav.gs-hub-nav--image
   .gs-hub-nav-link[aria-current]
   .gs-hub-nav-mark {
-  color: #1d4ed8;
+  color: var(--gs-purple);
 }
 .gen-studio
   .gs-hub-nav.gs-hub-nav--alchemy
   .gs-hub-nav-link[aria-current]
   .gs-hub-nav-mark {
-  color: #9333ea;
+  color: var(--gs-green);
 }
 
 /* On mobile the studio scrolls with the page, so a subnav pins under the site

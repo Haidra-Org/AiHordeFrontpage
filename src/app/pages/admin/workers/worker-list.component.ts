@@ -190,10 +190,6 @@ export class WorkerListComponent implements OnInit {
     this.workerTypeChanged.emit(type);
   }
 
-  public openGlossary(): void {
-    this.glossary.open();
-  }
-
   // Computed filtered and sorted workers
   public filteredWorkers = computed(() => {
     let result = this.workers().filter((w) => w.type === this.workerType());

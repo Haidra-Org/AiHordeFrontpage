@@ -1044,22 +1044,17 @@
     text-decoration: none;
   }
 
-  /* The row of links pins under the site header, so it carries the
-     panel's top edge and an opaque surface of its own. */
+  /* The row of links pins under the site header; the opaque surface and
+     the hairline under it come from .hd-subtabs. The shell is a container,
+     so neither the row nor the panel below draws a frame: the areas sit
+     on the page canvas and the cards inside them are the only boxes. */
   .details-nav {
     position: sticky;
     z-index: 30;
-    border: 1px solid var(--hd-card-border);
-    border-bottom: 1px solid var(--hd-border);
-    border-radius: var(--hd-radius-md) var(--hd-radius-md) 0 0;
   }
 
   .details-panel {
-    padding: var(--hd-space-4);
-    border: 1px solid var(--hd-card-border);
-    border-top: 0;
-    border-radius: 0 0 var(--hd-radius-md) var(--hd-radius-md);
-    background: var(--hd-canvas);
+    padding-top: var(--hd-space-4);
 
     /* Routed children inherit display:flex from the app shell; a block
        box is what the areas below are laid out against. */
@@ -1070,7 +1065,7 @@
 
   @media (max-width: 639.98px) {
     .details-panel {
-      padding: var(--hd-space-2-5);
+      padding-top: var(--hd-space-2-5);
     }
   }
 

@@ -26,6 +26,11 @@ Frontpage-only material sits in [docs/design-system.md](docs/design-system.md),
 5. Both themes come out of tokens. Light and dark are checked together, and a colour appears in both or in neither.
 6. Accessibility is part of the style: visible focus, WCAG AA contrast in both themes, 44px touch targets on coarse
    pointers, reduced motion honoured, colour never the only signal.
+7. Containers are flat; only leaves are boxes. A shell, a tab bar, a routed panel, a page region or a note that
+   frames other content draws no fill, border or shadow of its own: it sits on the canvas, and a tab bar keeps only
+   the hairline under it. The boxes are the things a reader acts on or reads as one object: a card of controls, a
+   stat tile, a result tile, a dialog, a menu. Nesting a box inside a box is the smell; when a container needs
+   structure, give it a heading, not a frame.
 
 ## The two families
 
@@ -182,7 +187,9 @@ scoped under the `.gen-studio` page-root class, and its controls are still `.gs-
 - Controls HD has no equivalent for: the slider, the switch, the tile grid, the viewer, the sweep plates, the tutorial
   and reference surfaces.
 - Section and zone identity hues, one per panel area, which the studio then republishes under the `--hd-sec*` and
-  `--hd-zone*` names so shared primitives inside it pick the right hue up.
+  `--hd-zone*` names so shared primitives inside it pick the right hue up. A studio's create plane carries its
+  domain's hue (image purple, alchemy green, the same tokens the rest of the site reads), its results plane carries
+  none, and its accent is the site accent in both studios: identity hues colour edges and glyphs, never controls.
 - Self-hosted Inter and JetBrains Mono, declared with `@font-face` in `_generate.css` so the download only fires for
   text under `.gen-studio`.
 

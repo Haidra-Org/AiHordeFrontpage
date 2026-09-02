@@ -3179,9 +3179,6 @@
   "admin.workers.tabs.text": "Text Workers",
   "admin.workers.tabs.interrogation": "Alchemy Workers",
   "admin.workers.refresh": "Refresh",
-  "admin.workers.glossary_hint.title": "Tip:",
-  "admin.workers.glossary_hint.body": "All status symbols and capability badges on worker cards are explained in the glossary.",
-  "admin.workers.glossary_hint.link": "Open Glossary",
   "admin.workers.loading": "Loading workers...",
   "admin.workers.no_workers": "No workers found.",
   "admin.workers.raw_json_label": "View worker raw JSON",
@@ -4135,7 +4132,7 @@
   "workers.types.alchemy.description": "Handle post-processing tasks such as image upscaling, face fixing, captioning, and interrogation. Alchemists complement image workers by enhancing their outputs, and several of these operations run on an ordinary CPU, so you can contribute without a graphics card.",
   "workers.types.alchemy.worker_desc": "Official bridge supporting alchemy operations including upscaling, captioning, and interrogation",
 
-  "workers.faq.title": "Good to Know",
+  "workers.faq.title": "Our Guarantees to Workers",
   "workers.faq.privacy.title": "User Privacy",
   "workers.faq.privacy.description": "Workers never receive any identifying information about the user who submitted a request. All requests are anonymized by the API before being dispatched to workers.",
   "workers.faq.security.title": "Network Security",
