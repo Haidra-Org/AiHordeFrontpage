@@ -253,7 +253,7 @@ describe('AlchemyQueueService', () => {
         ],
       });
 
-      expect(fetchMock).toHaveBeenCalledWith(RESULT_URL);
+      expect(fetchMock).toHaveBeenCalledWith(RESULT_URL, { cache: 'no-store' });
       expect(
         (await service.getResultImages(localId)).map((i) => i.imageId),
       ).toEqual(['GFPGAN']);
@@ -409,7 +409,7 @@ describe('AlchemyQueueService', () => {
         ],
       });
 
-      expect(fetchMock).toHaveBeenCalledWith(RESULT_URL);
+      expect(fetchMock).toHaveBeenCalledWith(RESULT_URL, { cache: 'no-store' });
       expect((await service.getResultImages(localId)).length).toBe(1);
       expect((await db.getJob(localId))?.failedResultForms).toEqual([]);
     });

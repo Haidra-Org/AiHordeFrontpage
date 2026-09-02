@@ -533,7 +533,10 @@ export class AlchemyQueueService {
       live.map(async (image) => {
         const attemptKey = `${job.localId}::${image.key}`;
         try {
-          const response = await fetch(image.url);
+          // The result card shows the link in an <img> before the bytes are
+          // stored, and that load caches a response without CORS headers; a
+          // fetch served from that entry is refused, so it bypasses the cache.
+          const response = await fetch(image.url, { cache: 'no-store' });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }

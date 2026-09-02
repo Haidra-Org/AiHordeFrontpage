@@ -70,6 +70,11 @@ export class AlchemyResultsBrowserComponent {
   public readonly toggleSelected = output<string>();
   public readonly download = output<AlchemyJob>();
   public readonly cancelRequest = output<string>();
+  /** Carry one result image over to the image studio as its source. */
+  public readonly useResultInStudio = output<{
+    job: AlchemyJob;
+    key: string;
+  }>();
 
   /** Pure view helpers exposed for the template (see `alchemy-job-view`). */
   protected readonly stateView = jobStateView;

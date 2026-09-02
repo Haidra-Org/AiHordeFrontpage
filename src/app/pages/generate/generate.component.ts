@@ -22,6 +22,7 @@ import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
+import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { DatabaseService } from '../../services/database.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
@@ -290,6 +291,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly sweeps = inject(SweepLibraryService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly handoff = inject(StudioHandoffService);
   /** The reference entry the mobile sheet is showing, if any. */
   public readonly helpDock = inject(GsHelpDockService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -865,6 +867,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         'generate.title',
       );
       void this.loadControlUndoHistory();
+      void this.consumeHandoff();
     });
 
     if (this.isBrowser) {
@@ -1553,6 +1556,29 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (choice !== 'source') {
       this.offerLinkedRequest(offer.payload);
     }
+  }
+
+  /**
+   * Pick up a picture sent here from alchemy, if one is waiting. It is consumed
+   * unconditionally so a later visit never re-applies a stale image, and it
+   * goes in as an already-encoded blob rather than a file: these are bytes this
+   * studio made and stored, so there is nothing in them to ask the reader about.
+   */
+  private async consumeHandoff(): Promise<void> {
+    const pending = this.handoff.consume();
+    if (!pending) {
+      return;
+    }
+    // The first-visit offer sits over the whole page, and a reader arriving
+    // with a picture in hand has asked for the studio, not for the offer.
+    this.welcomeClosed.set(true);
+    const section = await this.openSourceSection();
+    if (!section) {
+      this.toast.error('generate.source.attach_failed', { transloco: true });
+      return;
+    }
+    await section.applySource(pending.blob);
+    this.toast.success('generate.source.attached', { transloco: true });
   }
 
   /** Put a picture in as the source image, saying so once it is in. */

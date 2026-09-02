@@ -15,7 +15,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DocsImageExampleComponent } from './image-example.component';
 import { ExampleFlow, ExampleManifest } from '../../../content/examples';
-import { flowSteps } from '../../../content/flows';
+import { FLOWS, flowSteps } from '../../../content/flows';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
@@ -890,6 +890,25 @@ describe('DocsImageExampleComponent', () => {
       translations[`generate.tutorials.flows.${flow.id}.summary`],
     );
     expect(harness.component.activeSummary()).not.toBe(flow.summary);
+  });
+
+  it('asks for no per-flow summary on a concept track', async () => {
+    // A track's copy is written per step, so the summary key a technique has is
+    // one a track never gets; probing for it would put the key itself on the
+    // page and a missing-translation warning in the console.
+    const track = FLOWS.find((flow) => flow.concept)!;
+    const page = await createPage(track.id);
+    flushAll(page);
+
+    expect(
+      (en as Record<string, string>)[
+        `generate.tutorials.flows.${track.id}.summary`
+      ],
+    ).toBeUndefined();
+    expect(page.component.activeSummary()).toBe('');
+    expect(page.text()).not.toContain(
+      `generate.tutorials.flows.${track.id}.summary`,
+    );
   });
 
   it('leads with its own summary before the library has answered', () => {

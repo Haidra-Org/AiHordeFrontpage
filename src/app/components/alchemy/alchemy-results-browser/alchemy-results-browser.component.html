@@ -228,6 +228,7 @@
           [form]="result.form"
           [storedImageUrl]="storedImageUrl(job, result.key)"
           [detector]="result.detector"
+          (useInStudio)="useResultInStudio.emit({ job: job, key: result.key })"
         />
       }
     </div>

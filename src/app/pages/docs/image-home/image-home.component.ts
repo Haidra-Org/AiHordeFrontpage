@@ -24,7 +24,7 @@ import {
   exampleResultUrl,
 } from '../../../content/examples';
 import { STUDIO_IMAGE, docsExampleLink } from '../../../content/docs-links';
-import { FLOWS } from '../../../content/flows';
+import { FLOWS, isConceptFlow } from '../../../content/flows';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
@@ -265,8 +265,14 @@ export class DocsImageHomeComponent {
    * The flow's one-line description in the page's own voice, falling back to
    * the manifest's where a flow has no override, exactly as the examples page
    * does: the manifest is written for someone who already knows the technique.
+   *
+   * A concept track has no per-flow summary string to override with, so it goes
+   * straight to the manifest rather than asking for a key that cannot exist.
    */
   public summaryFor(card: ShelfCard): string {
+    if (isConceptFlow(card.id)) {
+      return card.published?.summary ?? '';
+    }
     const key = `generate.tutorials.flows.${card.id}.summary`;
     const text = this.transloco.translate(key);
     if (text && text !== key) {

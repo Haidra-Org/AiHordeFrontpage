@@ -5,7 +5,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,6 +25,7 @@ import {
 } from '../../content/alchemy-usecases';
 import { referenceTopic } from '../../content/reference-topics';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
+import { StudioHandoffService } from '../../services/studio-handoff.service';
 
 /**
  * Stands in for the root queue so the page can be exercised without a database
@@ -96,6 +97,7 @@ describe('AlchemyComponent', () => {
   let toastSuccess: ReturnType<typeof vi.fn>;
   let toastError: ReturnType<typeof vi.fn>;
   let getStoredApiKey: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn>;
   let queue: FakeAlchemyQueue;
 
   beforeEach(async () => {
@@ -105,6 +107,7 @@ describe('AlchemyComponent', () => {
     toastSuccess = vi.fn();
     toastError = vi.fn();
     getStoredApiKey = vi.fn(() => 'my-key');
+    navigate = vi.fn().mockResolvedValue(true);
     queue = new FakeAlchemyQueue();
 
     await TestBed.configureTestingModule({
@@ -123,6 +126,9 @@ describe('AlchemyComponent', () => {
         },
         // The page-title effect subscribes to this, so it has to be a stream.
         { provide: TranslatorService, useValue: { get: () => of('') } },
+        // The studio's routes are not loaded here, so the trip to the image
+        // studio is watched rather than followed.
+        { provide: Router, useValue: { navigate } },
       ],
     })
       .overrideComponent(AlchemyComponent, { set: { template: '' } })
@@ -667,6 +673,50 @@ describe('AlchemyComponent', () => {
       fixture.destroy();
 
       expect(revoked).toContain('blob:one');
+    });
+  });
+
+  describe('sending a result to the image studio', () => {
+    const storedResult = (): unknown => ({
+      localId: 'local-job-s',
+      imageId: 'RealESRGAN_x4plus',
+      kind: 'result',
+      blob: new Blob(['x'], { type: 'image/webp' }),
+      mimeType: 'image/webp',
+    });
+
+    it('parks the stored bytes and opens the image studio', async () => {
+      const image = storedResult() as { blob: Blob };
+      queue.getResultImages.mockResolvedValue([image] as never);
+      queue.add('job-s');
+
+      await component.useResultInStudio({
+        job: component.jobs()[0],
+        key: 'RealESRGAN_x4plus',
+      });
+
+      expect(TestBed.inject(StudioHandoffService).consume()).toEqual({
+        blob: image.blob,
+        mimeType: 'image/webp',
+      });
+      expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    });
+
+    it('says so rather than navigating when the bytes are gone', async () => {
+      queue.getResultImages.mockResolvedValue([] as never);
+      queue.add('job-s');
+
+      await component.useResultInStudio({
+        job: component.jobs()[0],
+        key: 'RealESRGAN_x4plus',
+      });
+
+      expect(TestBed.inject(StudioHandoffService).has()).toBe(false);
+      expect(navigate).not.toHaveBeenCalled();
+      expect(toastError).toHaveBeenCalledWith(
+        'alchemy.result.use_in_studio_failed',
+        { transloco: true },
+      );
     });
   });
 

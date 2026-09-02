@@ -2311,6 +2311,8 @@
   "alchemy.result.aesthetic_rating.unknown": "",
   "alchemy.result.image_alt": "Processed image result",
   "alchemy.result.open_image": "Open full image",
+  "alchemy.result.use_in_studio": "Use in image studio",
+  "alchemy.result.use_in_studio_failed": "Could not send that image to the image studio.",
   "alchemy.result.save_hint": "Saved in this browser. Use the link above to keep a copy on disk.",
   "alchemy.result.save_hint_remote": "This image link expires soon. Right-click it and choose 'Save image as…' to keep it.",
   "alchemy.result.sections.tags": "Tags",

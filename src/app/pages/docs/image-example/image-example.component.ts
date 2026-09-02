@@ -51,6 +51,7 @@ import {
   flowDef,
   flowFollowable,
   flowSteps,
+  isConceptFlow,
 } from '../../../content/flows';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
@@ -548,7 +549,12 @@ export class DocsImageExampleComponent {
       },
       descriptionKey: () => {
         const id = this.activeId();
-        return id ? `generate.tutorials.flows.${id}.summary` : null;
+        // A concept track's copy lives on the flow itself and carries no
+        // per-flow summary string, so asking for one only produces a missing
+        // translation.
+        return id && !isConceptFlow(id)
+          ? `generate.tutorials.flows.${id}.summary`
+          : null;
       },
       image: () => {
         const id = this.activeId();
@@ -655,7 +661,11 @@ export class DocsImageExampleComponent {
    * kept as a second line rather than as the name.
    */
   public taskNameKey(flowId: string): string {
-    return `generate.tutorials.flows.${canonicalFlowId(flowId)}.task_name`;
+    // A concept track is named under the learn keys; only the worked
+    // techniques have tutorial entries.
+    return isConceptFlow(flowId)
+      ? `generate.learn.flows.${flowId}.task_name`
+      : `generate.tutorials.flows.${canonicalFlowId(flowId)}.task_name`;
   }
 
   /** The mark and hue the technique on screen is read by. */
@@ -703,11 +713,17 @@ export class DocsImageExampleComponent {
    * to the manifest's when a flow has no override. The manifest is generated
    * from the example run and is written for someone who already knows the
    * technique, which is the wrong register for the first thing a reader reads.
+   *
+   * A concept track has no per-flow summary string to override with, so it goes
+   * straight to the manifest rather than asking for a key that cannot exist.
    */
   public readonly activeSummary = computed<string>(() => {
     const id = this.activeId();
     if (!id) {
       return '';
+    }
+    if (isConceptFlow(id)) {
+      return this.activeFlow()?.summary ?? '';
     }
     const key = `generate.tutorials.flows.${id}.summary`;
     const text = this.transloco.translate(key);

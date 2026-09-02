@@ -171,6 +171,7 @@
           <img
             class="alchemy-result__image"
             [src]="imageUrl()!"
+            crossorigin="anonymous"
             alt="{{ 'alchemy.result.image_alt' | transloco }}"
           />
           <a
@@ -182,6 +183,16 @@
           >
             {{ "alchemy.result.open_image" | transloco }}
           </a>
+          @if (usingStoredImage()) {
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense"
+              (click)="useInStudio.emit()"
+            >
+              <app-icon name="photo" class="gs-ico-sm" />
+              {{ "alchemy.result.use_in_studio" | transloco }}
+            </button>
+          }
           <p class="gs-sublabel alchemy-result__save-hint">
             {{
               (usingStoredImage()

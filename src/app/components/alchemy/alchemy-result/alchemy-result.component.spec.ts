@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { TranslocoTestingModule } from '@jsverse/transloco';
+import { describe, expect, it, vi } from 'vitest';
 import { AlchemyResultComponent } from './alchemy-result.component';
 import { AlchemyForm } from '../../../types/generation';
 
@@ -270,5 +271,68 @@ describe('AlchemyResultComponent', () => {
     expect(c.tagTier(75)).toBe('high');
     expect(c.tagTier(50)).toBe('mid');
     expect(c.tagTier(39)).toBe('low');
+  });
+});
+
+describe('AlchemyResultComponent (rendered)', () => {
+  /** A post-processor result: the one kind that can be carried to the studio. */
+  const upscale: AlchemyForm = {
+    form: 'RealESRGAN_x4plus',
+    state: 'done',
+    result: { RealESRGAN_x4plus: 'https://r2.example.com/out.webp' },
+  };
+
+  async function render(
+    storedImageUrl: string | null,
+  ): Promise<ComponentFixture<AlchemyResultComponent>> {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [
+        AlchemyResultComponent,
+        // No translations are loaded, so the pipe echoes its key, which is
+        // enough to show which copy the button is wired to.
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { defaultLang: 'en' },
+        }),
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(AlchemyResultComponent);
+    fixture.componentRef.setInput('form', upscale);
+    fixture.componentRef.setInput('storedImageUrl', storedImageUrl);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function studioButton(
+    fixture: ComponentFixture<AlchemyResultComponent>,
+  ): HTMLButtonElement | null {
+    const buttons = [
+      ...fixture.nativeElement.querySelectorAll('button.gs-btn'),
+    ] as HTMLButtonElement[];
+    return (
+      buttons.find((button) =>
+        button.textContent?.includes('alchemy.result.use_in_studio'),
+      ) ?? null
+    );
+  }
+
+  it('offers the studio only for the copy held in this browser', async () => {
+    const remote = await render(null);
+    expect(studioButton(remote)).toBeNull();
+
+    const stored = await render('blob:local');
+    expect(studioButton(stored)).not.toBeNull();
+  });
+
+  it('asks for the result to be carried over when pressed', async () => {
+    const fixture = await render('blob:local');
+    const asked = vi.fn();
+    fixture.componentInstance.useInStudio.subscribe(asked);
+
+    studioButton(fixture)?.click();
+
+    expect(asked).toHaveBeenCalledTimes(1);
   });
 });

@@ -15,6 +15,7 @@ import { GenerateComponent } from './generate.component';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
+import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
 import { StyleUsageService } from '../../services/style-usage.service';
@@ -1570,6 +1571,41 @@ describe('GenerateComponent', () => {
       expect(component.showWelcome()).toBe(false);
       expect(localStorage.getItem('aihorde.generate.learn.welcomed')).toBe(
         'true',
+      );
+    });
+  });
+
+  describe('an image sent over from alchemy', () => {
+    it('attaches it as the source once the studio has rendered', async () => {
+      const blob = new Blob(['x'], { type: 'image/webp' });
+      const handoff = TestBed.inject(StudioHandoffService);
+      handoff.set({ blob, mimeType: 'image/webp' });
+      const applySource = vi.fn().mockResolvedValue(undefined);
+      // The source section lives in the projected template, absent under the
+      // stubbed one, so stand in for the view query.
+      Object.defineProperty(component, 'sourceImageRef', {
+        value: () => ({ applySource }),
+      });
+
+      fixture.detectChanges();
+      await vi.waitFor(() => expect(applySource).toHaveBeenCalledWith(blob));
+
+      expect(component.form.getRawValue().sourceMode).toBe('img2img');
+      // Nothing is left behind, so a later visit never re-applies this picture.
+      expect(handoff.has()).toBe(false);
+      expect(toastSuccess).toHaveBeenCalledWith('generate.source.attached', {
+        transloco: true,
+      });
+    });
+
+    it('leaves the form alone when nothing was sent', async () => {
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.form.getRawValue().sourceMode).toBe('none');
+      expect(toastSuccess).not.toHaveBeenCalledWith(
+        'generate.source.attached',
+        expect.anything(),
       );
     });
   });

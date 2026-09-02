@@ -7814,9 +7814,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-chip--starter:hover {
   border-color: var(--gs-blue);
 }
-.dark .gen-studio .gs-chip--starter {
-  color: #bfdbfe;
-}
 
 /* ------- suggested looks (beside the Style select) ------------------- */
 /* Named for what comes out rather than for the style's own name, so the row
@@ -12800,9 +12797,6 @@ app-gs-sweep-scrub + app-gs-door {
   border: 0;
   cursor: pointer;
 }
-.dark .gen-studio .gs-sweep-pair-mode {
-  color: var(--gs-pop-accent);
-}
 
 /* ------- the before/after wipe --------------------------------------- */
 
@@ -15491,14 +15485,9 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-back {
   align-self: flex-start;
 }
-/* --gs-blue is the same #1d4ed8 in both themes and sinks into the dark page at
-   2.8:1, text and focus ring alike, so the reference links take the lighter
-   blue the dark theme uses for links elsewhere. */
-.dark .gen-studio .gs-ref-link,
-.dark .gen-studio .gs-ref-full,
-.dark .gen-studio .gs-ref-back {
-  color: #93c5fd;
-}
+/* The link ink flips with the theme through --gs-blue-text, but the ring is
+   drawn in --gs-blue, the same #1d4ed8 in both themes, which sinks into the
+   dark page at 2.8:1. Only the ring needs lifting here. */
 .dark .gen-studio .gs-ref-link:focus-visible,
 .dark .gen-studio .gs-ref-full:focus-visible,
 .dark .gen-studio .gs-ref-back:focus-visible {
@@ -15681,11 +15670,8 @@ app-gs-compare-wipe {
   outline: 2px solid var(--gs-blue);
   outline-offset: 2px;
 }
-/* --gs-blue sinks into the dark page at 2.8:1, so the note's links take the
-   lighter blue the reference entries already use there. */
-.dark .gen-studio .gs-help-link {
-  color: #93c5fd;
-}
+/* --gs-blue sinks into the dark page at 2.8:1, so the note's focus ring takes
+   the lift the reference entries already have there. */
 .dark .gen-studio .gs-help-link:focus-visible {
   outline-color: #93c5fd;
 }

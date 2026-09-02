@@ -5,6 +5,7 @@ import {
   computed,
   input,
   inject,
+  output,
   signal,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
@@ -186,6 +187,13 @@ export class AlchemyResultComponent {
   public readonly usingStoredImage = computed(
     () => this.storedImageUrl() !== null,
   );
+
+  /**
+   * Asks for this result to be carried over to the image studio as its source.
+   * Only offered for the local copy: the horde's own link is presigned and
+   * would be gone before the studio could read the bytes from it.
+   */
+  public readonly useInStudio = output<void>();
 
   /**
    * Pins the initial open state. The studio leaves this unset, so compact

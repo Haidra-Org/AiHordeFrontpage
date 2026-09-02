@@ -18,7 +18,7 @@ import {
   NgTemplateOutlet,
   isPlatformBrowser,
 } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../services/auth.service';
@@ -174,6 +174,7 @@ export class AlchemyComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly db = inject(DatabaseService);
   private readonly handoff = inject(StudioHandoffService);
+  private readonly router = inject(Router);
 
   /** The source picker, so an image handed over from /generate can be applied. */
   private readonly imageInput = viewChild(AlchemyImageInputComponent);
@@ -815,6 +816,30 @@ export class AlchemyComponent {
       return;
     }
     await input.applyBlob(pending.blob, pending.mimeType);
+  }
+
+  /**
+   * Send one result picture over to the image studio as its source. Only the
+   * copy held here is offered, so the bytes are in hand: the horde's own link
+   * has usually expired by the time a reader gets back to a finished request.
+   */
+  public async useResultInStudio(event: {
+    job: AlchemyJob;
+    key: string;
+  }): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const images = await this.queue.getResultImages(event.job.localId);
+    const image = images.find((candidate) => candidate.imageId === event.key);
+    if (!image) {
+      this.toast.error('alchemy.result.use_in_studio_failed', {
+        transloco: true,
+      });
+      return;
+    }
+    this.handoff.set({ blob: image.blob, mimeType: image.mimeType });
+    await this.router.navigate(['/generate/image']);
   }
 
   public onSourceImage(value: string | null): void {

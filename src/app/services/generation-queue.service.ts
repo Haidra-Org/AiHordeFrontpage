@@ -662,7 +662,9 @@ export class GenerationQueueService {
   ): Promise<{ blob: Blob | null; mimeType: string }> {
     if (/^https?:\/\//i.test(img)) {
       try {
-        const response = await fetch(img);
+        // Bypass the HTTP cache: a prior <img> load of the same link stores a
+        // response without CORS headers, which a fetch cannot read back.
+        const response = await fetch(img, { cache: 'no-store' });
         if (!response.ok) {
           return { blob: null, mimeType: DEFAULT_RESULT_MIME };
         }
