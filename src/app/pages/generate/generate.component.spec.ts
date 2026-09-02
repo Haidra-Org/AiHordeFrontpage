@@ -5,10 +5,10 @@ import {
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WritableSignal, signal } from '@angular/core';
-import { TranslocoTestingModule } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { convertToParamMap, provideRouter } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import en from '../../../assets/i18n/en.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateComponent } from './generate.component';
@@ -72,7 +72,15 @@ describe('GenerateComponent', () => {
     localStorage.clear();
 
     await TestBed.configureTestingModule({
-      imports: [GenerateComponent],
+      // The page words a refusal itself, so the real copy is loaded rather than
+      // stubbed: a test asserting a sentence has to read the sentence shipped.
+      imports: [
+        GenerateComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
@@ -167,6 +175,10 @@ describe('GenerateComponent', () => {
       .overrideComponent(GenerateComponent, { set: { template: '' } })
       .compileComponents();
 
+    // The refusal dialog words a field's name itself, so the copy has to be in
+    // hand before a test presses Generate.
+    await firstValueFrom(TestBed.inject(TranslocoService).load('en'));
+
     fixture = TestBed.createComponent(GenerateComponent);
     component = fixture.componentInstance;
   });
@@ -214,6 +226,7 @@ describe('GenerateComponent', () => {
         { blob: new Blob(['y'], { type: 'image/webp' }), strength: 0.5 },
       ],
       valid: true,
+      validationMessage: null,
     });
     await vi.waitFor(() => expect(estimateKudos).toHaveBeenCalled());
 
@@ -237,6 +250,7 @@ describe('GenerateComponent', () => {
         { blob: new Blob(['y'], { type: 'image/webp' }), strength: 0.5 },
       ],
       valid: true,
+      validationMessage: null,
     });
     await vi.waitFor(() => expect(estimateKudos).toHaveBeenCalled());
 
@@ -393,6 +407,60 @@ describe('GenerateComponent', () => {
     expect(enqueue).not.toHaveBeenCalled();
   });
 
+  it('says what is standing in the way instead of doing nothing', async () => {
+    component.form.controls.prompt.setValue('   ');
+
+    await component.onCreate();
+
+    expect(component.pendingBlockers()).toEqual([
+      { anchor: 'prompt', key: 'generate.blockers.prompt_required' },
+    ]);
+    expect(component.form.controls.prompt.touched).toBe(true);
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('names the range a number typed past a bound fell outside', async () => {
+    component.form.controls.prompt.setValue('a castle on a hill');
+    component.form.controls.steps.setValue(9000);
+
+    await component.onCreate();
+
+    expect(component.pendingBlockers()).toEqual([
+      {
+        anchor: 'steps',
+        key: 'generate.blockers.range',
+        params: { field: 'Steps', min: 1, max: 500 },
+      },
+    ]);
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('closes the dialog and points at the control a row named', () => {
+    const goToField = vi.fn();
+    // The panel itself is not rendered in this suite, so the query the page
+    // reaches it through is stood in for.
+    Object.defineProperty(component, 'formRef', {
+      value: () => ({ goToField }),
+    });
+    component.pendingBlockers.set([
+      { anchor: 'steps', key: 'generate.blockers.range' },
+    ]);
+
+    component.goToBlocker('steps');
+
+    expect(component.pendingBlockers()).toBeNull();
+    expect(goToField).toHaveBeenCalledWith('steps');
+  });
+
+  it('stands aside for a request that can be sent', async () => {
+    component.form.controls.prompt.setValue('a castle on a hill');
+
+    await component.onCreate();
+
+    expect(component.pendingBlockers()).toBeNull();
+    expect(enqueue).toHaveBeenCalledTimes(1);
+  });
+
   it('blocks enqueue and shows validation when the source section is invalid', async () => {
     component.form.patchValue({
       prompt: 'a valid prompt',
@@ -403,6 +471,7 @@ describe('GenerateComponent', () => {
       sourceBlob: null,
       maskBlob: null,
       valid: false,
+      validationMessage: 'generate.source.error_no_image',
     });
 
     await component.onCreate();
@@ -424,6 +493,7 @@ describe('GenerateComponent', () => {
       sourceBlob,
       maskBlob,
       valid: true,
+      validationMessage: null,
     });
 
     await component.onCreate();
@@ -460,6 +530,7 @@ describe('GenerateComponent', () => {
         { blob: second, strength: 0.5 },
       ],
       valid: true,
+      validationMessage: null,
     });
 
     await component.onCreate();
@@ -490,6 +561,7 @@ describe('GenerateComponent', () => {
       maskBlob: null,
       extras: [{ blob: new Blob([new Uint8Array([2])]), strength: 1 }],
       valid: true,
+      validationMessage: null,
     });
 
     await component.onCreate();
@@ -665,6 +737,7 @@ describe('GenerateComponent', () => {
       sourceBlob,
       maskBlob: null,
       valid: true,
+      validationMessage: null,
     });
 
     await component.onCreate();
@@ -973,6 +1046,7 @@ describe('GenerateComponent', () => {
         sourceBlob: new Blob([new Uint8Array([1])], { type: 'image/webp' }),
         maskBlob: null,
         valid: true,
+        validationMessage: null,
       });
 
       await component.onApplyMeta({
@@ -1663,6 +1737,7 @@ describe('GenerateComponent', () => {
         sourceBlob: new Blob(['x']),
         maskBlob: null,
         valid: true,
+        validationMessage: null,
       });
 
       expect(component.linkSourceMissing()).toBe(false);
@@ -1756,7 +1831,13 @@ describe('GenerateComponent', () => {
  */
 async function createPaneOnlyStudio(): Promise<void> {
   await TestBed.configureTestingModule({
-    imports: [GenerateComponent],
+    imports: [
+      GenerateComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
     providers: [
       provideRouter([]),
       { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
@@ -2021,6 +2102,7 @@ describe('GenerateComponent request warnings', () => {
       sourceWidth: 1024,
       sourceHeight: 1024,
       valid: true,
+      validationMessage: null,
     });
     fixture.detectChanges();
 

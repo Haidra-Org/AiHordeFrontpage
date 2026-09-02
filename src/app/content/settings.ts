@@ -1052,6 +1052,8 @@ const SETTING_BY_ID: ReadonlyMap<string, SettingEntry> = new Map(
  */
 export const SETTING_ID_BY_PARAMETER: Readonly<Record<string, string>> = {
   cfg_scale: 'cfg',
+  // The API calls the number of images `n`, which names nothing on its own.
+  n: 'batch',
   // The treatments are a reading of the one field the panel has: the payload
   // box that selects the workflow. The strength beside them is the control
   // strength setting, which has an entry of its own.

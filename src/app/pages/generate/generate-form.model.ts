@@ -1777,6 +1777,50 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
   return merged;
 }
 
+/** A numeric field the form refuses a value outside the horde's range for. */
+export type BoundedFieldName =
+  | 'n'
+  | 'steps'
+  | 'cfg_scale'
+  | 'clip_skip'
+  | 'denoising_strength'
+  | 'facefixer_strength'
+  | 'hires_fix_denoising_strength';
+
+export const BOUNDED_FIELD_NAMES: readonly BoundedFieldName[] = [
+  'n',
+  'steps',
+  'cfg_scale',
+  'clip_skip',
+  'denoising_strength',
+  'facefixer_strength',
+  'hires_fix_denoising_strength',
+];
+
+/**
+ * The range each bounded field is held to. The validators are built from this
+ * table and so is the sentence that tells a reader why a value was refused: a
+ * refusal naming a range the control does not actually enforce would send them
+ * to type a second value that is refused as well.
+ */
+export const BOUNDED_FIELD_RANGES: Readonly<
+  Record<BoundedFieldName, { min: number; max: number }>
+> = {
+  n: { min: MIN_BATCH, max: MAX_API_BATCH },
+  steps: { min: MIN_STEPS, max: MAX_STEPS },
+  cfg_scale: { min: MIN_CFG_SCALE, max: MAX_CFG_SCALE },
+  clip_skip: { min: MIN_CLIP_SKIP, max: MAX_CLIP_SKIP },
+  denoising_strength: { min: MIN_DENOISE, max: MAX_DENOISE },
+  facefixer_strength: {
+    min: MIN_FACEFIXER_STRENGTH,
+    max: MAX_FACEFIXER_STRENGTH,
+  },
+  hires_fix_denoising_strength: {
+    min: MIN_HIRES_DENOISE,
+    max: MAX_HIRES_DENOISE,
+  },
+};
+
 export function createGenerateForm(
   value: GenerateFormValue,
 ): GenerateFormGroup {
@@ -1785,24 +1829,26 @@ export function createGenerateForm(
   // Bounded numbers validate against the horde's schema rather than against the
   // range their slider offers, so a value typed past the slider's end is still
   // submittable as long as the horde would accept it.
-  const bounded = (initial: number, min: number, max: number) =>
-    new FormControl<number>(initial, {
+  const bounded = (initial: number, field: BoundedFieldName) => {
+    const { min, max } = BOUNDED_FIELD_RANGES[field];
+    return new FormControl<number>(initial, {
       nonNullable: true,
       validators: [Validators.min(min), Validators.max(max)],
     });
+  };
   return new FormGroup<GenerateFormControls>({
     styleName: control(value.styleName),
     styleDetach: control(value.styleDetach),
     prompt: control(value.prompt),
     negativePrompt: control(value.negativePrompt),
-    n: bounded(value.n, MIN_BATCH, MAX_API_BATCH),
+    n: bounded(value.n, 'n'),
     model: control(value.model),
     valuesBeforeStyle: control(value.valuesBeforeStyle),
     extraModels: control(value.extraModels),
     sampler_name: control(value.sampler_name),
-    steps: bounded(value.steps, MIN_STEPS, MAX_STEPS),
-    cfg_scale: bounded(value.cfg_scale, MIN_CFG_SCALE, MAX_CFG_SCALE),
-    clip_skip: bounded(value.clip_skip, MIN_CLIP_SKIP, MAX_CLIP_SKIP),
+    steps: bounded(value.steps, 'steps'),
+    cfg_scale: bounded(value.cfg_scale, 'cfg_scale'),
+    clip_skip: bounded(value.clip_skip, 'clip_skip'),
     seed: control(value.seed),
     width: control(value.width),
     height: control(value.height),
@@ -1818,11 +1864,7 @@ export function createGenerateForm(
     maskEnabled: control(value.maskEnabled),
     outpaintEnabled: control(value.outpaintEnabled),
     outpaintAnchor: control(value.outpaintAnchor),
-    denoising_strength: bounded(
-      value.denoising_strength,
-      MIN_DENOISE,
-      MAX_DENOISE,
-    ),
+    denoising_strength: bounded(value.denoising_strength, 'denoising_strength'),
     control_type: control(value.control_type),
     control_strength: control(value.control_strength),
     image_is_control: control(value.image_is_control),
@@ -1836,15 +1878,10 @@ export function createGenerateForm(
     sampler_order: control(value.sampler_order),
     sampler_solver_type: control(value.sampler_solver_type),
     flow_shift: control(value.flow_shift),
-    facefixer_strength: bounded(
-      value.facefixer_strength,
-      MIN_FACEFIXER_STRENGTH,
-      MAX_FACEFIXER_STRENGTH,
-    ),
+    facefixer_strength: bounded(value.facefixer_strength, 'facefixer_strength'),
     hires_fix_denoising_strength: bounded(
       value.hires_fix_denoising_strength,
-      MIN_HIRES_DENOISE,
-      MAX_HIRES_DENOISE,
+      'hires_fix_denoising_strength',
     ),
     seed_variation: control(value.seed_variation),
     loras: control(value.loras),

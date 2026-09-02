@@ -435,6 +435,13 @@
   "generate.review.cancel": "Back to the settings",
   "generate.review.send_one": "Send {{ count }} image",
   "generate.review.send_other": "Send {{ count }} images",
+
+  "generate.blockers.title": "Before this can be sent",
+  "generate.blockers.intro": "Fix these and press Generate again.",
+  "generate.blockers.prompt_required": "Write a prompt. The picture starts from it.",
+  "generate.blockers.range": "{{ field }} must be between {{ min }} and {{ max }}.",
+  "generate.blockers.go_to": "Go to setting",
+  "generate.blockers.back": "Back to the settings",
   "generate.form.load_title": "Load preset",
   "generate.form.presets": "Presets & history",
   "generate.form.presets_short": "Presets",

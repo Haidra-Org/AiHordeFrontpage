@@ -18,6 +18,7 @@ function checkpoint(id: string, createdAt: number): StudioControlCheckpoint {
       sourceBlob: new Blob([id], { type: 'image/webp' }),
       maskBlob: null,
       valid: true,
+      validationMessage: null,
     },
   };
 }

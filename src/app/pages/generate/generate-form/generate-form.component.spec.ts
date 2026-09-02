@@ -2732,7 +2732,7 @@ describe('GenerateFormComponent docked Generate', () => {
     expect(row!.querySelector('.gs-batch')).not.toBeNull();
   });
 
-  it('keeps the docked button on the form invalid state', async () => {
+  it('stays pressable whatever the form holds', async () => {
     const { host, fixture } = await render();
     fixture.componentRef.setInput('pinGenerate', true);
     fixture.detectChanges();
@@ -2742,12 +2742,14 @@ describe('GenerateFormComponent docked Generate', () => {
     );
     expect(button?.disabled).toBe(false);
 
+    // A greyed-out button says only that something somewhere is wrong. The
+    // press is taken and answered with the list of what is in the way instead.
     fixture.componentInstance.form().controls.prompt.setErrors({
       required: true,
     });
     fixture.detectChanges();
 
-    expect(button?.disabled).toBe(true);
+    expect(button?.disabled).toBe(false);
   });
 
   it('offers the switch only where the studio owns the screen', async () => {

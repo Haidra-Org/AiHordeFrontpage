@@ -91,6 +91,17 @@ describe('GenerateSourceImageComponent', () => {
     expect(last.sourceBlob).not.toBeNull();
   });
 
+  it('carries what it is missing beside the flag, for the page to word', async () => {
+    const { component, states } = await createComponent();
+    expect(states.at(-1)!.validationMessage).toBeNull();
+
+    component.setMode('img2img');
+
+    expect(states.at(-1)!.validationMessage).toBe(
+      'generate.source.error_no_image',
+    );
+  });
+
   it('requires a control type for controlnet', async () => {
     const { component, form, states } = await createComponent();
     component.sourceImage.set(fakeImage());

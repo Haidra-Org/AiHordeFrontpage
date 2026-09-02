@@ -108,6 +108,12 @@ export interface GenerateSourceState {
    */
   extras?: GenerateSourceExtra[];
   valid: boolean;
+  /**
+   * Transloco key of what the section is missing, null while it is valid. The
+   * page words its own refusal from this rather than reconstructing one, so the
+   * dialog beside Generate and the line inside the card say the same sentence.
+   */
+  validationMessage: string | null;
 }
 
 /** A remix extra held locally, with the object URL its thumbnail renders from. */
@@ -1101,6 +1107,7 @@ export class GenerateSourceImageComponent implements OnInit {
             }))
           : [],
       valid: this.computeValid(),
+      validationMessage: this.validationMessage(),
     });
   }
 }

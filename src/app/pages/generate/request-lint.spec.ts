@@ -8,11 +8,16 @@ import {
   namedWorkerWarning,
   rejectionField,
   rejectionWatchValue,
+  submitBlockers,
   violatedCompatRules,
   warningsAtAnchor,
   warningsInSection,
 } from './request-lint';
-import { DEFAULT_GENERATE_FORM_VALUE } from './generate-form.model';
+import {
+  BOUNDED_FIELD_NAMES,
+  DEFAULT_GENERATE_FORM_VALUE,
+} from './generate-form.model';
+import { SETTING_FALLBACK_LABEL_KEY } from '../../content/settings';
 import type { LoraSelection } from '../../types/civitai-asset';
 import type { HordeWorker } from '../../types/horde-worker';
 import type { WorkerRequirement } from '../../services/worker-pool.service';
@@ -1125,5 +1130,100 @@ describe('a request naming several models', () => {
     expect(rejectionWatchValue('model', before)).not.toBe(
       rejectionWatchValue('model', { ...before, extraModels: ['c'] }),
     );
+  });
+});
+
+describe('submit blockers', () => {
+  const blockers = (
+    overrides: Partial<Parameters<typeof submitBlockers>[0]> = {},
+  ) =>
+    submitBlockers({
+      value: { ...DEFAULT_GENERATE_FORM_VALUE, prompt: 'a lighthouse' },
+      invalidRanges: [],
+      usesSource: false,
+      sourceMessage: null,
+      // The label is the caller's to translate, so the test reads the key back.
+      translate: (key) => key,
+      ...overrides,
+    });
+
+  it('finds nothing wrong with a request that can be sent', () => {
+    expect(blockers()).toEqual([]);
+  });
+
+  it('asks for a prompt, and points at the box it goes in', () => {
+    expect(
+      blockers({ value: { ...DEFAULT_GENERATE_FORM_VALUE, prompt: '  ' } }),
+    ).toEqual([{ anchor: 'prompt', key: 'generate.blockers.prompt_required' }]);
+  });
+
+  it('names the range a typed number fell outside, at that control', () => {
+    expect(
+      blockers({
+        invalidRanges: [{ field: 'cfg_scale', min: 0, max: 100 }],
+      }),
+    ).toEqual([
+      {
+        anchor: 'cfg',
+        key: 'generate.blockers.range',
+        params: { field: 'generate.help.cfg.title', min: 0, max: 100 },
+      },
+    ]);
+  });
+
+  it('sends each bounded field to a control that exists', () => {
+    const anchors = BOUNDED_FIELD_NAMES.map(
+      (field) => blockers({ invalidRanges: [{ field, min: 1, max: 2 }] })[0],
+    );
+
+    expect(anchors.map((blocker) => blocker.anchor)).toEqual([
+      'generate',
+      'steps',
+      'cfg',
+      'clip_skip',
+      'denoise',
+      'facefixer_strength',
+      'hires_denoise',
+    ]);
+    // "this", the fallback for a setting nothing is known about, would read as
+    // nonsense in a sentence that is not beside the control.
+    expect(anchors.map((blocker) => blocker.params?.['field'])).not.toContain(
+      SETTING_FALLBACK_LABEL_KEY,
+    );
+  });
+
+  it('shows the source section its own sentence, at the control it names', () => {
+    expect(
+      blockers({
+        usesSource: true,
+        sourceMessage: 'generate.source.error_no_control_type',
+      }),
+    ).toEqual([
+      { anchor: 'control_type', key: 'generate.source.error_no_control_type' },
+    ]);
+  });
+
+  it('says nothing about the source while the request does not use one', () => {
+    expect(
+      blockers({
+        usesSource: false,
+        sourceMessage: 'generate.source.error_no_image',
+      }),
+    ).toEqual([]);
+  });
+
+  it('reads down the panel: the prompt, then the numbers, then the picture', () => {
+    const rows = blockers({
+      value: { ...DEFAULT_GENERATE_FORM_VALUE, prompt: '' },
+      invalidRanges: [{ field: 'steps', min: 1, max: 500 }],
+      usesSource: true,
+      sourceMessage: 'generate.source.error_no_image',
+    });
+
+    expect(rows.map((row) => row.anchor)).toEqual([
+      'prompt',
+      'steps',
+      'source',
+    ]);
   });
 });

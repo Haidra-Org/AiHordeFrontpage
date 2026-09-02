@@ -169,6 +169,14 @@
     />
   }
 
+  @if (pendingBlockers(); as blockers) {
+    <app-generate-blockers-modal
+      [blockers]="blockers"
+      (goTo)="goToBlocker($event)"
+      (closed)="closeBlockers()"
+    />
+  }
+
   @if (previewRequest(); as request) {
     <app-studio-json-modal
       [title]="'generate.form.preview_title' | transloco"

@@ -28,9 +28,11 @@ import {
   scheduleAdvisory,
   sizeAdvisory,
   stepsAdvisory,
+  type BoundedFieldName,
   type GenerateFormValue,
   type RequirementHint,
 } from './generate-form.model';
+import { settingProseLabelKey } from '../../content/settings';
 import type { SectionId } from '../../content/sections';
 import type { HordeWorker } from '../../types/horde-worker';
 import {
@@ -52,9 +54,11 @@ import {
  * from all three.
  */
 export type FieldAnchorId =
+  | 'prompt'
   | 'model'
   | 'size'
   | 'hires'
+  | 'hires_denoise'
   | 'steps'
   | 'cfg'
   | 'sampler'
@@ -68,6 +72,7 @@ export type FieldAnchorId =
   | 'control_strength'
   | 'qr'
   | 'transparent'
+  | 'facefixer_strength'
   | 'workers'
   | 'generate'
   | 'advanced_sampling'
@@ -674,6 +679,97 @@ export function warningsInSection(
   section: SectionId,
 ): readonly RequestWarning[] {
   return warnings.filter((warning) => warning.section === section);
+}
+
+// --- Blockers --------------------------------------------------------------
+//
+// The few things the studio itself cannot send. Unlike the advisory rules above
+// these are not judgements about what the horde will accept: a request with no
+// prompt, with a number outside the schema's range or with a source mode whose
+// picture is missing cannot be built at all. Each one names the control that
+// answers it, so pressing Generate with any of them standing says what is
+// wrong and offers the way there rather than doing nothing.
+
+/** One reason the studio cannot turn a press of Generate into a request. */
+export interface SubmitBlocker {
+  anchor: FieldAnchorId;
+  /** Transloco key of the row's text. */
+  key: string;
+  params?: Record<string, string | number>;
+}
+
+/** A bounded control holding a value outside the range it validates against. */
+export interface InvalidRange {
+  field: BoundedFieldName;
+  min: number;
+  max: number;
+}
+
+/** The control each bounded field is reached at. */
+const RANGE_FIELD_ANCHORS: Readonly<Record<BoundedFieldName, FieldAnchorId>> = {
+  // The batch stepper sits in the submit row beside Generate itself.
+  n: 'generate',
+  steps: 'steps',
+  cfg_scale: 'cfg',
+  clip_skip: 'clip_skip',
+  denoising_strength: 'denoise',
+  facefixer_strength: 'facefixer_strength',
+  hires_fix_denoising_strength: 'hires_denoise',
+};
+
+/**
+ * Where each of the source section's own failures is answered. The section
+ * already words them for the line it draws inside itself, so the blocker row
+ * shows the same sentence and only has to know where to send the reader.
+ */
+const SOURCE_MESSAGE_ANCHORS: ReadonlyMap<string, FieldAnchorId> = new Map([
+  ['generate.source.error_no_image', 'source' as FieldAnchorId],
+  ['generate.source.error_no_control_type', 'control_type'],
+  ['generate.source.error_no_room', 'source_mode'],
+  ['generate.source.error_no_mask', 'source'],
+  ['generate.source.remix_unsupported', 'source_mode'],
+]);
+
+/**
+ * Everything standing between the request as described and a submit, in the
+ * order the panel reads: the prompt at the top, then the numbers, then the
+ * picture the mode works from.
+ */
+export function submitBlockers(input: {
+  value: GenerateFormValue;
+  /** Controls whose validator failed, with the range it failed against. */
+  invalidRanges: readonly InvalidRange[];
+  usesSource: boolean;
+  /** The source section's failure key, null when the section is valid. */
+  sourceMessage: string | null;
+  /** The word a row calls a field by, given that field's label key. */
+  translate: (key: string) => string;
+}): SubmitBlocker[] {
+  const blockers: SubmitBlocker[] = [];
+  if (input.value.prompt.trim() === '') {
+    blockers.push({
+      anchor: 'prompt',
+      key: 'generate.blockers.prompt_required',
+    });
+  }
+  for (const range of input.invalidRanges) {
+    blockers.push({
+      anchor: RANGE_FIELD_ANCHORS[range.field],
+      key: 'generate.blockers.range',
+      params: {
+        field: input.translate(settingProseLabelKey(range.field)),
+        min: range.min,
+        max: range.max,
+      },
+    });
+  }
+  if (input.usesSource && input.sourceMessage !== null) {
+    blockers.push({
+      anchor: SOURCE_MESSAGE_ANCHORS.get(input.sourceMessage) ?? 'source',
+      key: input.sourceMessage,
+    });
+  }
+  return blockers;
 }
 
 // --- Horde rejections ------------------------------------------------------

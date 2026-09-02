@@ -17,7 +17,7 @@ import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Params, Router } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
@@ -74,6 +74,7 @@ import { GsTutorialParkedComponent } from '../../components/gs-tutorial-parked/g
 import { StudioJsonModalComponent } from './studio-json-modal/studio-json-modal.component';
 import { StudioPasteModalComponent } from './studio-paste-modal/studio-paste-modal.component';
 import { GenerateReviewModalComponent } from './generate-review-modal/generate-review-modal.component';
+import { GenerateBlockersModalComponent } from './generate-blockers-modal/generate-blockers-modal.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
 import {
@@ -81,6 +82,8 @@ import {
   GenerateSourceState,
 } from './generate-source-image/generate-source-image.component';
 import {
+  BOUNDED_FIELD_NAMES,
+  BOUNDED_FIELD_RANGES,
   DEFAULT_GENERATE_FORM_VALUE,
   FACE_FIXERS,
   GenerateFormValue,
@@ -123,9 +126,12 @@ import {
   FieldRejection,
   RequestWarning,
   evaluateRequestLint,
+  type FieldAnchorId,
   type LintModelSelection,
   rejectionField,
   rejectionWatchValue,
+  type SubmitBlocker,
+  submitBlockers,
   warningsInSection,
 } from './request-lint';
 import {
@@ -149,6 +155,7 @@ const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   sourceBlob: null,
   maskBlob: null,
   valid: true,
+  validationMessage: null,
 };
 
 /** Whether two lists hold the same blobs in the same order. */
@@ -225,6 +232,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     StudioJsonModalComponent,
     StudioPasteModalComponent,
     GenerateReviewModalComponent,
+    GenerateBlockersModalComponent,
     ResultActionConfirmComponent,
     StudioImageDropDirective,
     GsSheetComponent,
@@ -243,6 +251,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly toast = inject(ToastService);
   private readonly db = inject(DatabaseService);
   private readonly translator = inject(TranslatorService);
+  private readonly transloco = inject(TranslocoService);
   private readonly styles = inject(HordeStylesService);
   private readonly styleApi = inject(StyleService);
   private readonly title = inject(Title);
@@ -354,6 +363,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** What the review dialog is holding, or null while nothing awaits a look. */
   public readonly pendingReview = signal<SubmitPlan | null>(null);
+
+  /**
+   * What a press of Generate ran into, or null while nothing is standing in the
+   * way. Generate itself stays live: a button that greys out says only that
+   * something somewhere is wrong, and on a phone the line explaining it is
+   * often folded away or off the screen.
+   */
+  public readonly pendingBlockers = signal<SubmitBlocker[] | null>(null);
 
   /**
    * What the review-and-apply panel calls the settings it is showing. A preset
@@ -1400,6 +1417,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   public async onCreate(): Promise<void> {
+    const blockers = this.collectBlockers();
+    if (blockers.length > 0) {
+      this.pendingBlockers.set(blockers);
+      return;
+    }
     const plan = this.planSubmit();
     if (!plan) {
       return;
@@ -1435,6 +1457,48 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   public cancelReview(): void {
     this.pendingReview.set(null);
+    this.formRef()?.focusGenerateButton();
+  }
+
+  /**
+   * Everything stopping this press, with the inline marks the panel already
+   * draws put up beside them: the dialog is a way of finding those marks, not a
+   * replacement for them.
+   */
+  private collectBlockers(): SubmitBlocker[] {
+    const controls = this.form.controls;
+    const effective = this.effectiveValue();
+    const usesSource = effective.sourceMode !== 'none';
+    const source = this.sourceState();
+    const blockers = submitBlockers({
+      value: this.form.getRawValue(),
+      invalidRanges: BOUNDED_FIELD_NAMES.filter(
+        (field) => controls[field].invalid,
+      ).map((field) => ({ field, ...BOUNDED_FIELD_RANGES[field] })),
+      usesSource,
+      sourceMessage: source.valid ? null : source.validationMessage,
+      translate: (key) => this.transloco.translate(key),
+    });
+    if (blockers.length === 0) {
+      return blockers;
+    }
+    if (controls.prompt.value.trim().length === 0) {
+      controls.prompt.markAsTouched();
+    }
+    if (usesSource && !source.valid) {
+      this.sourceValidationVisible.set(true);
+    }
+    return blockers;
+  }
+
+  /** Close the dialog and put the reader in front of the control it named. */
+  public goToBlocker(anchor: FieldAnchorId): void {
+    this.pendingBlockers.set(null);
+    this.formRef()?.goToField(anchor);
+  }
+
+  public closeBlockers(): void {
+    this.pendingBlockers.set(null);
     this.formRef()?.focusGenerateButton();
   }
 

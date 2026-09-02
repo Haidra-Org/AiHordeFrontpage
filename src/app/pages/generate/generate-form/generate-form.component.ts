@@ -195,6 +195,12 @@ const KNOB_ANCHORS: readonly FieldAnchorId[] = [
   'flow_shift',
 ];
 
+/**
+ * How many frames the pointing waits before checking whether the control it
+ * scrolled to is still on the screen; see {@link GenerateFormComponent.pointAt}.
+ */
+const SETTLE_FRAMES = 6;
+
 /** Which of the two prompt boxes the full-screen editor is holding. */
 export type PromptEditorField = 'prompt' | 'negative';
 
@@ -3166,18 +3172,41 @@ export class GenerateFormComponent implements OnInit {
     this.openGroupForAnchor(anchor);
     const element = this.anchors.element(anchor);
     if (element) {
-      this.anchors.flash(element);
+      this.pointAt(element);
       return;
     }
     afterNextRender(
       () => {
         const revealed = this.anchors.element(anchor);
         if (revealed) {
-          this.anchors.flash(revealed);
+          this.pointAt(revealed);
         }
       },
       { injector: this.injector },
     );
+  }
+
+  /**
+   * Bring one control onto the screen and hold it there. A group that has just
+   * been unfolded grows the page, and the browser's own scroll anchoring moves
+   * the page back under the reader once that growth lands, which undoes a
+   * scroll asked for before it. So the pointing checks its work once the growth
+   * has had time to arrive, and asks again where the control was carried off.
+   */
+  private pointAt(element: HTMLElement): void {
+    this.anchors.flash(element);
+    let frames = SETTLE_FRAMES;
+    const settle = (): void => {
+      if (frames-- > 0) {
+        requestAnimationFrame(settle);
+        return;
+      }
+      const rect = element.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        this.anchors.flash(element);
+      }
+    };
+    requestAnimationFrame(settle);
   }
 
   // --- Model recommendations, applied --------------------------------------

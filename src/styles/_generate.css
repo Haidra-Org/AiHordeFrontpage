@@ -5963,6 +5963,75 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   max-height: min(52vh, 520px);
   overflow-y: auto;
 }
+
+/* ------- what is standing in the way of a submit ------- */
+/* A list of sentences, each with the way to the control it is about. The rows
+   are hairline-separated rather than boxed: the dialog is already the object
+   being read, and a card per row would be a box inside a box. */
+.gen-studio .gs-blockers-panel {
+  width: min(520px, 94vw);
+}
+.gen-studio .gs-blockers-body {
+  max-height: min(52vh, 520px);
+  overflow-y: auto;
+}
+.gen-studio .gs-blockers-intro {
+  margin: 0 0 var(--gs-space-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-blockers-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-blockers-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-3);
+  padding: 10px 0;
+  border-top: 1px solid var(--gs-border-soft);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-blockers-text {
+  flex: 1;
+  min-width: 0;
+}
+.gen-studio .gs-blockers-goto {
+  flex: none;
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-card);
+  color: var(--gs-blue);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gen-studio .gs-blockers-goto:hover {
+  border-color: var(--gs-blue);
+}
+.gen-studio .gs-blockers-goto:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-blockers-goto {
+    min-height: 44px;
+  }
+}
+/* One action, and it belongs where every dialog's actions are. */
+.gen-studio .gs-blockers-panel .gs-modal-footer {
+  justify-content: flex-end;
+}
 .gen-studio .gs-api-section-title {
   margin-bottom: 8px;
   font-size: 11.5px;

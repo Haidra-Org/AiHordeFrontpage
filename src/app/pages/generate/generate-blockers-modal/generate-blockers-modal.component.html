@@ -1,0 +1,59 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="close()"
+  tabindex="-1"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-blockers-panel gs-fadeup"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gs-blockers-title"
+    aria-describedby="gs-blockers-intro"
+    tabindex="-1"
+  >
+    <div class="gs-modal-header">
+      <div id="gs-blockers-title" class="gs-modal-title">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ "generate.blockers.title" | transloco }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="close()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-body gs-blockers-body">
+      <p id="gs-blockers-intro" class="gs-blockers-intro">
+        {{ "generate.blockers.intro" | transloco }}
+      </p>
+      <ul class="gs-blockers-list">
+        @for (row of blockers(); track $index) {
+          <li class="gs-blockers-row">
+            <span class="gs-blockers-text">{{
+              row.key | transloco: row.params
+            }}</span>
+            <button
+              type="button"
+              class="gs-blockers-goto"
+              (click)="goToField(row.anchor)"
+            >
+              {{ "generate.blockers.go_to" | transloco }}
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div class="gs-modal-footer">
+      <button type="button" class="gs-btn-tonal" (click)="close()">
+        {{ "generate.blockers.back" | transloco }}
+      </button>
+    </div>
+  </div>
+</div>
