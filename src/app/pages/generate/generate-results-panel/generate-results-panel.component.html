@@ -871,6 +871,15 @@
                           <app-icon name="refresh-alt" />
                           {{ "generate.results.reuse" | transloco }}
                         </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="openLoadSettings(tile)"
+                        >
+                          <app-icon name="adjustments-horizontal" />
+                          {{ "generate.results.menu_load" | transloco }}
+                        </button>
                         <div
                           class="gs-result-action-group-label"
                           role="presentation"
@@ -933,15 +942,6 @@
                         >
                           <app-icon name="bars-4" />
                           {{ "generate.results.metadata" | transloco }}
-                        </button>
-                        <button
-                          type="button"
-                          class="gs-flip-item"
-                          role="menuitem"
-                          (click)="openLoadSettings(tile)"
-                        >
-                          <app-icon name="adjustments-horizontal" />
-                          {{ "generate.results.menu_load" | transloco }}
                         </button>
                         <button
                           type="button"
@@ -2001,6 +2001,15 @@
       <app-icon name="adjustments-horizontal" />
       {{ "generate.results.copy_settings" | transloco }}
     </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      (click)="openLoadSettings(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="adjustments-horizontal" />
+      {{ "generate.results.menu_load" | transloco }}
+    </button>
     <div class="gs-result-action-group-label" role="presentation">
       {{ "generate.results.other_actions" | transloco }}
     </div>
@@ -2060,15 +2069,6 @@
     >
       <app-icon name="bars-4" />
       {{ "generate.results.metadata" | transloco }}
-    </button>
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      (click)="openLoadSettings(menu.tile); closeTileMenu()"
-    >
-      <app-icon name="adjustments-horizontal" />
-      {{ "generate.results.menu_load" | transloco }}
     </button>
   </div>
 }
