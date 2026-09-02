@@ -51,7 +51,6 @@ describe('feature compatibility rules', () => {
       'inpainting_model',
       'remix_baseline',
       'mask_baseline',
-      'hires_with_mask',
       'outpaint_target',
       'qr_code_baseline',
       'transparent_baseline',
@@ -88,31 +87,6 @@ describe('feature compatibility rules', () => {
     expect(
       violated(lintInput({ value: painting, baseline: null })),
     ).not.toContain('mask_baseline');
-  });
-
-  it('warns about hires fix with a mask, and not without one', () => {
-    const base = { ...DEFAULT_GENERATE_FORM_VALUE, hires_fix: true };
-    expect(violated(lintInput({ value: base }))).not.toContain(
-      'hires_with_mask',
-    );
-    expect(
-      violated(
-        lintInput({
-          value: { ...base, sourceMode: 'img2img', maskEnabled: true },
-        }),
-      ),
-    ).toContain('hires_with_mask');
-    expect(
-      violated(lintInput({ value: { ...base, sourceMode: 'inpainting' } })),
-    ).toContain('hires_with_mask');
-    // ControlNet loses the mask to its own pipeline, so the pass still runs.
-    expect(
-      violated(
-        lintInput({
-          value: { ...base, sourceMode: 'controlnet', maskEnabled: true },
-        }),
-      ),
-    ).not.toContain('hires_with_mask');
   });
 
   it('warns when a canvas is being grown with nowhere to grow', () => {

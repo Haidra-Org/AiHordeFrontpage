@@ -115,7 +115,6 @@ export type FeatureCompatRuleId =
   | 'transparent_baseline'
   | 'remix_baseline'
   | 'mask_baseline'
-  | 'hires_with_mask'
   | 'outpaint_target'
   | 'source_required';
 
@@ -250,21 +249,6 @@ export const FEATURE_COMPAT_RULES: readonly FeatureCompatRule[] = [
     messageKey: 'generate.lint.mask_baseline',
     applies: (input) => requestIsMasked(input.value),
     satisfied: (input) => baselineSupportsMask(input.baseline),
-  },
-  {
-    // Two different failures, one rule, because the answer is the same: do not
-    // send both. With a mask attached the worker software picks the masked
-    // pipeline, which has no second pass in it, and returns the render at the
-    // smaller size the first pass was shrunk to. While painting it drops the
-    // flag outright. Wording them alike would claim a size error the painting
-    // modes never produce.
-    id: 'hires_with_mask',
-    anchor: 'hires',
-    section: 'size',
-    baselines: [],
-    messageKey: 'generate.lint.hires_with_mask',
-    applies: (input) => input.value.hires_fix && requestIsMasked(input.value),
-    satisfied: () => false,
   },
   {
     id: 'outpaint_target',
