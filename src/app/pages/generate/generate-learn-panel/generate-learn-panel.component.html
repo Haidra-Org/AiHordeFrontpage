@@ -153,6 +153,15 @@
             </p>
           }
 
+          @if (modelNoteKey(); as noteKey) {
+            <!-- The example was committed a long time before this reader
+                 arrived, and the horde's models come and go. The value is
+                 still written; the note says what will happen because of it. -->
+            <p class="gs-sublabel gs-sublabel--warn mt-1">
+              {{ noteKey | transloco }}
+            </p>
+          }
+
           @if (setAsideNote()) {
             <!-- The panel under the step is empty because this tutorial emptied
                  it. Saying so once, on the step where the reader first looks at

@@ -17138,7 +17138,7 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-door-panel--tutorial {
   background: linear-gradient(135deg, var(--gs-tut) 0%, #d97706 100%);
-  color: #ffffff;
+  color: var(--gs-tut-fill-ink);
 }
 .gen-studio .gs-door--tutorial {
   border-color: var(--gs-tut-tint-border);

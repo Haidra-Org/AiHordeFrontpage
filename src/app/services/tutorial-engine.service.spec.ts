@@ -6,6 +6,7 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  ModelAvailability,
   TutorialEngineService,
   TutorialStudioHost,
   canonicalFlowId,
@@ -65,6 +66,16 @@ class HostSpy implements TutorialStudioHost {
     'qr',
   ]);
   public sourceMode: GenerateSourceMode = 'none';
+
+  /**
+   * What the live model list says about each model. A model nothing is said
+   * about is being carried, which is the case every other test runs in.
+   */
+  public readonly availability = new Map<string, ModelAvailability>();
+
+  public modelAvailability(name: string): ModelAvailability {
+    return this.availability.get(name) ?? 'available';
+  }
 
   public applyFields(fields: Partial<GenerateFormValue>): void {
     this.applied.push(fields);
@@ -898,6 +909,63 @@ describe('TutorialEngineService', () => {
 
       expect(engine.example()).toBeNull();
       expect(engine.flow()).toBeNull();
+    });
+  });
+
+  describe('the model the step writes', () => {
+    /** Where the model step stands in the technique the tests follow. */
+    const modelStep = flowSteps('txt2img').findIndex(
+      (step) => step.anchorId === 'model',
+    );
+
+    /** The model the committed example was generated with. */
+    function exampleModel(): string {
+      return engine.example()?.model ?? '';
+    }
+
+    it('says nothing while a worker is carrying it', async () => {
+      await startTxt2img();
+
+      engine.goTo(modelStep);
+
+      expect(engine.stepModelNoteKey()).toBeNull();
+    });
+
+    it('says the picture will wait where nobody is carrying it', async () => {
+      await startTxt2img();
+      host.availability.set(exampleModel(), 'no_workers');
+
+      engine.goTo(modelStep);
+
+      expect(engine.stepModelNoteKey()).toBe('generate.learn.model_no_workers');
+    });
+
+    it('says to pick another where the horde no longer lists it', async () => {
+      await startTxt2img();
+      host.availability.set(exampleModel(), 'unknown');
+
+      engine.goTo(modelStep);
+
+      expect(engine.stepModelNoteKey()).toBe('generate.learn.model_gone');
+    });
+
+    it('says nothing on a step that is about something else', async () => {
+      await startTxt2img();
+      host.availability.set(exampleModel(), 'unknown');
+
+      engine.goTo(0);
+
+      expect(flowSteps('txt2img')[0].anchorId).not.toBe('model');
+      expect(engine.stepModelNoteKey()).toBeNull();
+    });
+
+    it('says nothing on a concept track, which writes no model', async () => {
+      await startTxt2img();
+      host.availability.set(exampleModel(), 'unknown');
+
+      await engine.start('concepts_images');
+
+      expect(engine.stepModelNoteKey()).toBeNull();
     });
   });
 

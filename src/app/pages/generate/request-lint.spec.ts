@@ -412,6 +412,77 @@ describe('evaluateRequestLint', () => {
     ]);
   });
 
+  describe('a sampler the horde is not offering', () => {
+    it('names it and says the request may be refused', () => {
+      const warnings = evaluateRequestLint(
+        lintInput({
+          value: {
+            ...DEFAULT_GENERATE_FORM_VALUE,
+            sampler_name: 'k_not_a_sampler',
+          },
+          contract: coerceSamplerConstraints(live),
+        }),
+      );
+
+      expect(warnings).toEqual([
+        {
+          id: 'sampler_unavailable',
+          section: 'sampling',
+          anchor: 'sampler',
+          key: 'generate.lint.sampler_unavailable',
+          params: { sampler: 'k_not_a_sampler' },
+        },
+      ]);
+    });
+
+    it('outranks the model recommendation about the same control', () => {
+      const warnings = evaluateRequestLint(
+        lintInput({
+          value: {
+            ...DEFAULT_GENERATE_FORM_VALUE,
+            sampler_name: 'k_not_a_sampler',
+          },
+          requirements: { samplers: ['k_euler'] },
+          contract: coerceSamplerConstraints(live),
+        }),
+      );
+
+      expect(warnings.map((warning) => warning.key)).toEqual([
+        'generate.lint.sampler_unavailable',
+      ]);
+      expect(warningsAtAnchor(warnings, 'sampler')).toHaveLength(1);
+    });
+
+    it('says nothing about one the contract carries', () => {
+      const warnings = evaluateRequestLint(
+        lintInput({
+          value: { ...DEFAULT_GENERATE_FORM_VALUE, sampler_name: 'uni_pc' },
+          contract: coerceSamplerConstraints(live),
+        }),
+      );
+
+      expect(warnings).toEqual([]);
+    });
+
+    it('falls back to the long-standing list while the contract is absent', () => {
+      const offered = evaluateRequestLint(
+        lintInput({
+          value: { ...DEFAULT_GENERATE_FORM_VALUE, sampler_name: 'k_lms' },
+        }),
+      );
+      const unoffered = evaluateRequestLint(
+        lintInput({
+          value: { ...DEFAULT_GENERATE_FORM_VALUE, sampler_name: 'uni_pc' },
+        }),
+      );
+
+      expect(offered).toEqual([]);
+      expect(unoffered.map((warning) => warning.key)).toEqual([
+        'generate.lint.sampler_unavailable',
+      ]);
+    });
+  });
+
   it('names the control every warning is about', () => {
     const warnings = evaluateRequestLint(
       lintInput({

@@ -198,12 +198,26 @@ export function stepFieldLabelKey(anchorId: string): string {
 }
 
 /**
+ * Whether the horde can render with a model right now: a worker is carrying it,
+ * the model is listed with nobody carrying it, or the list has never heard of
+ * it at all.
+ */
+export type ModelAvailability = 'available' | 'no_workers' | 'unknown';
+
+/**
  * What the tutorial needs the studio to do on its behalf. The studio page
  * registers itself; the engine never reaches into the form directly.
  */
 export interface TutorialStudioHost {
   /** Write the named fields, leaving everything else alone. */
   applyFields(fields: Partial<GenerateFormValue>): void;
+  /**
+   * What the live model list says about a model, so a step that writes one can
+   * say what the panel would say about it. Read off the same list the pickers
+   * offer, and read inside a computed, so an answer given while the list is
+   * still arriving is given again once it has.
+   */
+  modelAvailability(name: string): ModelAvailability;
   currentSourceMode(): GenerateSourceMode;
   setSourceMode(mode: GenerateSourceMode): void;
   /**
@@ -440,6 +454,32 @@ export class TutorialEngineService {
   public readonly runCost = computed<ExampleRunCost | null>(() =>
     exampleRunCost(this.runMeta()),
   );
+
+  /**
+   * The line to print under the model step: the example was committed long
+   * before the reader arrived, and the horde's models come and go. The step
+   * still writes the value it always wrote; the note says what the reader will
+   * meet because of it, so a picture that never starts is explained before it
+   * happens rather than after.
+   *
+   * Null on every other step, on a concept track (which writes nothing) and
+   * while a worker is carrying the model.
+   */
+  public readonly stepModelNoteKey = computed<string | null>(() => {
+    const step = this.step();
+    const model = this.example()?.model.trim();
+    if (step?.anchorId !== 'model' || !model || !this.host) {
+      return null;
+    }
+    switch (this.host.modelAvailability(model)) {
+      case 'no_workers':
+        return 'generate.learn.model_no_workers';
+      case 'unknown':
+        return 'generate.learn.model_gone';
+      default:
+        return null;
+    }
+  });
 
   public registerHost(host: TutorialStudioHost): void {
     this.host = host;

@@ -74,6 +74,19 @@ export const SAMPLERS: readonly ImageSamplerName[] = [
 ];
 
 /**
+ * The samplers the panel's select actually offers: every one the horde's
+ * contract names, and the long-standing list where the contract has not
+ * loaded. Written once because two surfaces have to agree on it: the select
+ * that draws the options, and the lint that says when a request holds a value
+ * none of them carries.
+ */
+export function offeredSamplers(
+  contract: SamplerConstraintsDocument | null,
+): readonly string[] {
+  return contract ? Object.keys(contract.samplers) : SAMPLERS;
+}
+
+/**
  * Every post-processor a request may carry. The horde decides which of them a
  * worker can run, so the form offers the whole vocabulary.
  */

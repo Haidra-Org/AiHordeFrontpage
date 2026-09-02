@@ -9,6 +9,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateLearnSheetComponent } from './generate-learn-sheet.component';
 import {
+  ModelAvailability,
   TutorialEngineService,
   TutorialStudioHost,
 } from '../../../services/tutorial-engine.service';
@@ -31,6 +32,14 @@ const [PROMPT, NEGATIVE] = splitCombinedPrompt(request.prompt);
 
 class HostStub implements TutorialStudioHost {
   public readonly applied: Partial<GenerateFormValue>[] = [];
+  /**
+   * What the live model list says about each model. A model nothing is said
+   * about is being carried, which is what these tests run in.
+   */
+  public readonly availability = new Map<string, ModelAvailability>();
+  public modelAvailability(name: string): ModelAvailability {
+    return this.availability.get(name) ?? 'available';
+  }
   public applyFields(fields: Partial<GenerateFormValue>): void {
     this.applied.push(fields);
   }
@@ -119,6 +128,18 @@ describe('GenerateLearnSheetComponent', () => {
 
     fixture = TestBed.createComponent(GenerateLearnSheetComponent);
     await settle();
+  });
+
+  it('says on the model step what the live list says about that model', async () => {
+    const modelStep = flowSteps('txt2img').findIndex(
+      (step) => step.anchorId === 'model',
+    );
+    host.availability.set(engine.example()?.model ?? '', 'no_workers');
+
+    engine.goTo(modelStep);
+    await settle();
+
+    expect(text()).toContain(TRANSLATIONS['generate.learn.model_no_workers']);
   });
 
   it('says the settings were set aside, on the first step only', async () => {

@@ -58,6 +58,7 @@ import { ActiveGenerationsService } from '../../services/active-generations.serv
 import { SamplerConstraintsService } from '../../services/sampler-constraints.service';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import {
+  ModelAvailability,
   TutorialEngineService,
   TutorialStudioHost,
 } from '../../services/tutorial-engine.service';
@@ -1068,6 +1069,26 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       this.form.controls.post_processing.setValue([...current, ...additions]);
     }
     this.form.markAsDirty();
+  }
+
+  /**
+   * See {@link TutorialStudioHost.modelAvailability}. The same merged list the
+   * pickers offer answers it, so a tutorial and the model line under the picker
+   * cannot say different things about one model.
+   *
+   * An empty list is the reference and the status call not having answered yet,
+   * which is a fact about the network rather than about the model.
+   */
+  public modelAvailability(name: string): ModelAvailability {
+    const models = this.models();
+    if (models.length === 0) {
+      return 'available';
+    }
+    const match = models.find((model) => model.name === name);
+    if (!match) {
+      return 'unknown';
+    }
+    return match.count === 0 ? 'no_workers' : 'available';
   }
 
   /**

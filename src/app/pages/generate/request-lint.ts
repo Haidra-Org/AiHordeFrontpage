@@ -24,6 +24,7 @@ import {
   cfgAdvisory,
   clipSkipAdvisory,
   hiresUnneededHint,
+  offeredSamplers,
   samplerRequirementHint,
   scheduleAdvisory,
   sizeAdvisory,
@@ -536,6 +537,31 @@ export function namedWorkerWarning(
 }
 
 /**
+ * A sampler the horde is not offering. The panel keeps the value and sends it,
+ * because a saved draft or a shared link is the reader's and rewriting it under
+ * them would change the picture without saying so; the horde is the one that
+ * decides, and it may refuse the job. Silent while the sampler is one the
+ * select offers, which includes every one the long-standing list names while
+ * the contract has not loaded.
+ */
+export function staleSamplerWarning(
+  value: GenerateFormValue,
+  contract: SamplerConstraintsDocument | null,
+): RequestWarning | null {
+  const sampler = value.sampler_name;
+  if (!sampler || offeredSamplers(contract).includes(sampler)) {
+    return null;
+  }
+  return {
+    id: 'sampler_unavailable',
+    section: 'sampling',
+    anchor: 'sampler',
+    key: 'generate.lint.sampler_unavailable',
+    params: { sampler },
+  };
+}
+
+/**
  * Turn a field's one advisory line into a warning, or null where the field has
  * no line or its line does not contradict the form. Every card's inline line
  * comes from the same per-field resolvers, so the count beside Generate is
@@ -594,12 +620,17 @@ export function evaluateRequestLint(
       clipSkipAdvisory(requirements, value.clip_skip),
     ),
   );
+  // Both of these are about the sampler, and the panel draws one line per
+  // field. A sampler nothing is offering outranks a sampler the model would
+  // rather not have: the second is advice about the picture, the first is the
+  // reason there may be no picture.
   push(
-    fromHint(
-      'sampling',
-      'sampler',
-      samplerRequirementHint(requirements, value.sampler_name),
-    ),
+    staleSamplerWarning(value, contract) ??
+      fromHint(
+        'sampling',
+        'sampler',
+        samplerRequirementHint(requirements, value.sampler_name),
+      ),
   );
   push(
     fromHint(

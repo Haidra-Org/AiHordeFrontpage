@@ -197,6 +197,13 @@ export class GenerateLearnSheetComponent {
     () => this.stepIndex() === 0 && this.engine.settingsSetAside(),
   );
 
+  /**
+   * What the live model list says about the model this step writes, or null
+   * where there is nothing to say. See
+   * {@link TutorialEngineService.stepModelNoteKey}.
+   */
+  public readonly modelNoteKey = this.engine.stepModelNoteKey;
+
   public readonly progressParams = computed(() => ({
     current: this.stepIndex() + 1,
     total: this.total(),

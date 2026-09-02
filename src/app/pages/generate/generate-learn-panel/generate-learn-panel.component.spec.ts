@@ -9,6 +9,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateLearnPanelComponent } from './generate-learn-panel.component';
 import {
+  ModelAvailability,
   TUTORIAL_LEVELS,
   TutorialEngineService,
   TutorialStudioHost,
@@ -39,6 +40,14 @@ const [PROMPT, NEGATIVE] = splitCombinedPrompt(request.prompt);
 
 class HostStub implements TutorialStudioHost {
   public readonly applied: Partial<GenerateFormValue>[] = [];
+  /**
+   * What the live model list says about each model. A model nothing is said
+   * about is being carried, which is what these tests run in.
+   */
+  public readonly availability = new Map<string, ModelAvailability>();
+  public modelAvailability(name: string): ModelAvailability {
+    return this.availability.get(name) ?? 'available';
+  }
   public readonly bulk: GenerateFormValue[] = [];
   public applyFields(fields: Partial<GenerateFormValue>): void {
     this.applied.push(fields);
@@ -123,6 +132,27 @@ describe('GenerateLearnPanelComponent', () => {
     fixture.detectChanges();
 
     expect(text()).not.toContain(TRANSLATIONS['generate.learn.set_aside_note']);
+  });
+
+  it('says on the model step what the live list says about that model', () => {
+    const modelStep = flowSteps('txt2img').findIndex(
+      (step) => step.anchorId === 'model',
+    );
+    host.availability.set(engine.example()?.model ?? '', 'no_workers');
+
+    engine.goTo(modelStep);
+    fixture.detectChanges();
+
+    expect(text()).toContain(TRANSLATIONS['generate.learn.model_no_workers']);
+
+    host.availability.set(engine.example()?.model ?? '', 'unknown');
+    // Leaving the step and coming back is what asks the list again; a reader
+    // gets the answer that was true when they arrived.
+    engine.goTo(0);
+    engine.goTo(modelStep);
+    fixture.detectChanges();
+
+    expect(text()).toContain(TRANSLATIONS['generate.learn.model_gone']);
   });
 
   it('lists every step of the flow, the current one marked', () => {

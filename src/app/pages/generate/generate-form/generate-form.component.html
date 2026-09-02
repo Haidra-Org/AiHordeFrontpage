@@ -1196,6 +1196,19 @@
                       }
                     </optgroup>
                   }
+                  <!-- A sampler the horde no longer offers is still the
+                       reader's setting and is still what would be sent, so it
+                       is drawn as its own option and named as unavailable. A
+                       select with no option for its value renders blank, which
+                       hides the value instead of questioning it. -->
+                  @if (staleSampler(); as sampler) {
+                    <option [value]="sampler">
+                      {{
+                        "generate.form.sampler_option_unavailable"
+                          | transloco: { sampler: sampler }
+                      }}
+                    </option>
+                  }
                 </select>
                 <ng-container
                   *ngTemplateOutlet="reqHint; context: { hint: samplerHint() }"

@@ -105,6 +105,7 @@ import {
   KudosBreakdownLine,
   ModelSizeBase,
   ModelSizeFamily,
+  offeredSamplers,
   PanelSize,
   PromptHistoryEntry,
   QR_MODULE_DRAWERS,
@@ -864,6 +865,20 @@ export class GenerateFormComponent implements OnInit {
     return Object.keys(contract.samplers).filter(
       (name) => !recommended.has(name),
     );
+  });
+  /**
+   * The sampler the request holds where the select has no option for it: a
+   * saved draft, a shared link or a walkthrough's example can all name one the
+   * horde has since stopped offering. Kept and shown rather than rewritten,
+   * because the value is the reader's and a select that renders blank is a
+   * setting nobody can see.
+   */
+  public readonly staleSampler = computed(() => {
+    const sampler = this.selectedSampler();
+    return sampler !== '' &&
+      !offeredSamplers(this.samplerContract()).includes(sampler)
+      ? sampler
+      : null;
   });
   public readonly samplerSettings = computed(() => {
     const sampler = this.samplerContract()?.samplers[this.selectedSampler()];
