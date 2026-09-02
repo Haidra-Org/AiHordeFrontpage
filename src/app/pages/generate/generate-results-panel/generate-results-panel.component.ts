@@ -78,6 +78,7 @@ import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-w
 import { GsParamEntryComponent } from '../../../components/gs-param-entry/gs-param-entry.component';
 import { GsSettingChipComponent } from '../../../components/gs-setting-chip/gs-setting-chip.component';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
+import { ResultControlActionRequest } from '../result-control-action';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
 import { EdgeAwarePopoverDirective } from '../../../directives/edge-aware-popover.directive';
 import { FullscreenService } from '../../../services/fullscreen.service';
@@ -374,8 +375,8 @@ export class GenerateResultsPanelComponent {
    */
   public readonly formValue = input<GenerateFormValue | null>(null);
 
-  /** Ask the parent to attach one stored result as the form's source image. */
-  public readonly useAsSource = output<{ localId: string; imageId: string }>();
+  /** Ask the parent to guard and perform an action that changes the controls. */
+  public readonly controlAction = output<ResultControlActionRequest>();
 
   /** Ask the parent to put a prompt in the form (the empty state's starters). */
   public readonly usePrompt = output<string>();
@@ -495,18 +496,6 @@ export class GenerateResultsPanelComponent {
     localId: string;
     keys: (keyof GenerateFormValue)[];
     mode: MetaApplyEvent['mode'];
-  }>();
-
-  /**
-   * Ask the parent to write one image's whole request to the form. `seed` is
-   * the seed to hold the form at, and null lets the horde pick a fresh one:
-   * that single difference is what separates a variation of this image from a
-   * second try at the same settings.
-   */
-  public readonly loadSettings = output<{
-    request: ImageGenerationRequest;
-    localId: string;
-    seed: string | null;
   }>();
 
   public readonly pendingJobs = this.queue.pendingJobs;
@@ -1800,24 +1789,29 @@ export class GenerateResultsPanelComponent {
    * lands next door to it rather than somewhere else entirely.
    */
   public makeVariation(tile: ResultTile): void {
-    this.loadOwnSettings(tile, tile.seed ?? null);
+    this.requestSettingsAction(tile, 'variation', tile.seed ?? null);
   }
 
-  /** The same settings with the seed let go, so the horde picks a new picture. */
+  /** Load the same settings with the seed let go for a new picture. */
   public copySettings(tile: ResultTile): void {
-    this.loadOwnSettings(tile, null);
+    this.requestSettingsAction(tile, 'settings', null);
   }
 
-  private loadOwnSettings(tile: ResultTile, seed: string | null): void {
+  private requestSettingsAction(
+    tile: ResultTile,
+    action: 'variation' | 'settings',
+    seed: string | null,
+  ): void {
     const request = tile.applyRequest ?? tile.request;
     if (!request) {
       return;
     }
-    this.loadSettings.emit({ request, localId: tile.jobLocalId, seed });
-    this.closeMeta();
-    this.closeViewer();
-    this.closeTileMenu();
-    this.unflip();
+    this.controlAction.emit({
+      action,
+      request,
+      localId: tile.jobLocalId,
+      seed,
+    });
   }
 
   /**
@@ -1829,11 +1823,18 @@ export class GenerateResultsPanelComponent {
     if (!tile.thumb) {
       return;
     }
-    this.useAsSource.emit({
+    this.controlAction.emit({
+      action: 'source',
       localId: tile.jobLocalId,
       imageId: tile.thumb.imageId,
     });
+  }
+
+  /** Close whichever result surface launched an action after it is applied. */
+  public finishControlAction(): void {
+    this.closeMeta();
     this.closeViewer();
+    this.closeTileMenu();
     this.unflip();
   }
 

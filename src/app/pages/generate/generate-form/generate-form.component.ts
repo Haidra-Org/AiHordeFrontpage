@@ -58,6 +58,7 @@ import {
 import { CivitaiPickerComponent } from '../../../components/civitai-picker/civitai-picker.component';
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
 import { GsGroupComponent } from './gs-group/gs-group.component';
+import { ResultControlAction } from '../result-control-action';
 import {
   FACE_FIXERS,
   FormLoraEntry,
@@ -664,6 +665,12 @@ export class GenerateFormComponent implements OnInit {
    */
   public readonly reviewBeforeSend = input(false);
 
+  /** Whether result actions ask before changing this panel's controls. */
+  public readonly confirmResultActions = input(true);
+
+  /** The newest restorable result action, or null when there is no checkpoint. */
+  public readonly resultUndoAction = input<ResultControlAction | null>(null);
+
   /**
    * Whether keeping Generate on screen is on offer at all. The docked bar
    * belongs to the studio's own screen, which is the only place it has a bottom
@@ -684,6 +691,8 @@ export class GenerateFormComponent implements OnInit {
   public readonly styleFound = output<StyleRecord>();
   public readonly panelSizeChange = output<PanelSize>();
   public readonly reviewBeforeSendChange = output<boolean>();
+  public readonly confirmResultActionsChange = output<boolean>();
+  public readonly undoResultAction = output<void>();
   public readonly pinGenerateChange = output<boolean>();
   /** Ask the parent to open a preview of the request this form would submit. */
   public readonly preview = output<void>();
@@ -2814,6 +2823,26 @@ export class GenerateFormComponent implements OnInit {
 
   public toggleReviewBeforeSend(): void {
     this.reviewBeforeSendChange.emit(!this.reviewBeforeSend());
+  }
+
+  public toggleConfirmResultActions(): void {
+    this.confirmResultActionsChange.emit(!this.confirmResultActions());
+  }
+
+  public undoResultActionFromOptions(): void {
+    this.closeOptionsAndFocus();
+    this.undoResultAction.emit();
+  }
+
+  public resultActionKey(action: ResultControlAction): string {
+    switch (action) {
+      case 'variation':
+        return 'generate.results.action_variation';
+      case 'source':
+        return 'generate.results.action_source';
+      case 'settings':
+        return 'generate.results.action_settings';
+    }
   }
 
   public togglePinGenerate(): void {

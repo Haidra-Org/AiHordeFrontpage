@@ -749,6 +749,34 @@ export class GenerateSourceImageComponent implements OnInit {
     }
   }
 
+  /** Restore the complete attachment snapshot kept by the studio undo history. */
+  public async applyDraft(state: GenerateSourceState): Promise<void> {
+    this.clearExtras();
+    if (!state.sourceBlob) {
+      this.clearImage();
+      return;
+    }
+    await this.applySource(state.sourceBlob, state.maskBlob);
+    if (!this.isBrowser || !state.extras?.length) {
+      return;
+    }
+    try {
+      const extras: RemixExtra[] = [];
+      for (const extra of state.extras) {
+        const image = await blobToSourceImage(extra.blob);
+        extras.push({
+          image,
+          strength: extra.strength,
+          previewUrl: URL.createObjectURL(image.blob),
+        });
+      }
+      this.extras.set(extras);
+      this.emitState();
+    } catch {
+      this.error.set('generate.source.encode_failed');
+    }
+  }
+
   public clearImage(): void {
     this.revokePreview();
     this.sourceImage.set(null);

@@ -731,7 +731,16 @@
                       <!-- One word apiece: three tiles to a row leaves no
                            space for the full label, and the whole sentence
                            stays as the button's name. -->
-                      <div class="gs-quick-acts gs-quick-acts--tile">
+                      <div
+                        class="gs-quick-acts gs-quick-acts--tile"
+                        role="group"
+                        [attr.aria-label]="
+                          'generate.results.use_in_request' | transloco
+                        "
+                      >
+                        <span class="gs-quick-acts-label">{{
+                          "generate.results.use_in_request" | transloco
+                        }}</span>
                         <button
                           type="button"
                           class="gs-quick-act gs-quick-act--primary"
@@ -826,6 +835,12 @@
                           <app-icon name="arrow-left" />
                           {{ "generate.results.back_to_image" | transloco }}
                         </button>
+                        <div
+                          class="gs-result-action-group-label"
+                          role="presentation"
+                        >
+                          {{ "generate.results.use_in_request" | transloco }}
+                        </div>
                         <button
                           type="button"
                           class="gs-flip-item"
@@ -844,6 +859,21 @@
                           <app-icon name="adjustments-horizontal" />
                           {{ "generate.results.copy_settings" | transloco }}
                         </button>
+                        <button
+                          type="button"
+                          class="gs-flip-item"
+                          role="menuitem"
+                          (click)="reuseAsSource(tile)"
+                        >
+                          <app-icon name="refresh-alt" />
+                          {{ "generate.results.reuse" | transloco }}
+                        </button>
+                        <div
+                          class="gs-result-action-group-label"
+                          role="presentation"
+                        >
+                          {{ "generate.results.other_actions" | transloco }}
+                        </div>
                         <button
                           type="button"
                           class="gs-flip-item"
@@ -871,15 +901,6 @@
                         >
                           <app-icon name="arrow-down-tray" />
                           {{ "generate.results.download" | transloco }}
-                        </button>
-                        <button
-                          type="button"
-                          class="gs-flip-item"
-                          role="menuitem"
-                          (click)="reuseAsSource(tile)"
-                        >
-                          <app-icon name="refresh-alt" />
-                          {{ "generate.results.reuse" | transloco }}
                         </button>
                         <button
                           type="button"
@@ -1548,32 +1569,43 @@
              is here; on a phone that is three buttons, and everything else is
              one press away in the list at the end of the row. -->
         <div class="gs-viewer-actions">
-          <button
-            type="button"
-            class="gs-viewer-act gs-viewer-act--primary"
-            (click)="makeVariation(view)"
+          <div
+            class="gs-viewer-action-group"
+            role="group"
+            [attr.aria-label]="'generate.results.use_in_request' | transloco"
           >
-            <app-icon name="squares-2x2" />
-            {{ "generate.results.make_variation" | transloco }}
-          </button>
+            <span class="gs-viewer-action-group-label">{{
+              "generate.results.use_in_request" | transloco
+            }}</span>
+            <button
+              type="button"
+              class="gs-viewer-act gs-viewer-act--primary"
+              (click)="makeVariation(view)"
+            >
+              <app-icon name="squares-2x2" />
+              {{ "generate.results.make_variation" | transloco }}
+            </button>
+            @if (!viewerNarrow()) {
+              <button
+                type="button"
+                class="gs-viewer-act"
+                [disabled]="!view.thumb"
+                (click)="reuseAsSource(view)"
+              >
+                <app-icon name="refresh-alt" />
+                {{ "generate.results.reuse" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-viewer-act"
+                (click)="copySettings(view)"
+              >
+                <app-icon name="adjustments-horizontal" />
+                {{ "generate.results.copy_settings" | transloco }}
+              </button>
+            }
+          </div>
           @if (!viewerNarrow()) {
-            <button
-              type="button"
-              class="gs-viewer-act"
-              [disabled]="!view.thumb"
-              (click)="reuseAsSource(view)"
-            >
-              <app-icon name="refresh-alt" />
-              {{ "generate.results.reuse" | transloco }}
-            </button>
-            <button
-              type="button"
-              class="gs-viewer-act"
-              (click)="copySettings(view)"
-            >
-              <app-icon name="adjustments-horizontal" />
-              {{ "generate.results.copy_settings" | transloco }}
-            </button>
             <button
               type="button"
               class="gs-viewer-act"
@@ -1743,10 +1775,10 @@
      surface the width calls for. What the row above already carries is left
      out here rather than said twice. -->
 <ng-template #viewerMoreRows let-view>
-  <p class="gs-opt-head">
-    {{ "generate.results.viewer_more_use" | transloco }}
-  </p>
   @if (viewerNarrow()) {
+    <p class="gs-opt-head">
+      {{ "generate.results.use_in_request" | transloco }}
+    </p>
     <button
       type="button"
       class="gs-opt-row"
@@ -1777,6 +1809,9 @@
       </span>
     </button>
   }
+  <p class="gs-opt-head">
+    {{ "generate.results.other_actions" | transloco }}
+  </p>
   <button
     type="button"
     class="gs-opt-row"
@@ -1917,16 +1952,9 @@
     [style.left.px]="menu.x"
     [style.top.px]="menu.y"
   >
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      [disabled]="!menu.tile.thumb"
-      (click)="downloadTile(menu.tile); closeTileMenu()"
-    >
-      <app-icon name="arrow-down-tray" />
-      {{ "generate.results.download" | transloco }}
-    </button>
+    <div class="gs-result-action-group-label" role="presentation">
+      {{ "generate.results.use_in_request" | transloco }}
+    </div>
     <button
       type="button"
       class="gs-tile-menu-item"
@@ -1940,10 +1968,33 @@
       type="button"
       class="gs-tile-menu-item"
       role="menuitem"
+      [disabled]="!menu.tile.thumb"
+      (click)="reuseAsSource(menu.tile)"
+    >
+      <app-icon name="refresh-alt" />
+      {{ "generate.results.reuse" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
       (click)="copySettings(menu.tile)"
     >
       <app-icon name="adjustments-horizontal" />
       {{ "generate.results.copy_settings" | transloco }}
+    </button>
+    <div class="gs-result-action-group-label" role="presentation">
+      {{ "generate.results.other_actions" | transloco }}
+    </div>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      [disabled]="!menu.tile.thumb"
+      (click)="downloadTile(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="arrow-down-tray" />
+      {{ "generate.results.download" | transloco }}
     </button>
     <button
       type="button"
@@ -1962,15 +2013,6 @@
     >
       <app-icon name="link" />
       {{ "generate.link.copy_settings" | transloco }}
-    </button>
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      (click)="reuseAsSource(menu.tile); closeTileMenu()"
-    >
-      <app-icon name="refresh-alt" />
-      {{ "generate.results.reuse" | transloco }}
     </button>
     <button
       type="button"

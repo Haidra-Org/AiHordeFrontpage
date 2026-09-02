@@ -38,6 +38,7 @@ import {
   buildImageRequest,
 } from './generate-form.model';
 import { studioLinkFromText, studioLinkParams } from './studio-link';
+import { StudioControlHistoryService } from './studio-control-history.service';
 
 describe('GenerateComponent', () => {
   let fixture: ComponentFixture<GenerateComponent>;
@@ -52,6 +53,8 @@ describe('GenerateComponent', () => {
   let baselines: WritableSignal<ModelBaselineMap | null>;
   let linkQuery: Record<string, string>;
   let navigate: ReturnType<typeof vi.fn>;
+  let historyPush: ReturnType<typeof vi.fn>;
+  let historyRemove: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
@@ -64,6 +67,8 @@ describe('GenerateComponent', () => {
     baselines = signal<ModelBaselineMap | null>(null);
     linkQuery = {};
     navigate = vi.fn().mockResolvedValue(true);
+    historyPush = vi.fn().mockResolvedValue(undefined);
+    historyRemove = vi.fn().mockResolvedValue(undefined);
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -115,6 +120,14 @@ describe('GenerateComponent', () => {
           },
         },
         { provide: StyleUsageService, useValue: { increment: styleIncrement } },
+        {
+          provide: StudioControlHistoryService,
+          useValue: {
+            list: vi.fn().mockResolvedValue([]),
+            push: historyPush,
+            remove: historyRemove,
+          },
+        },
         {
           // Stubbed rather than stubbing HttpClient, so a test can publish a
           // baseline map and drive the remix/QR gating directly.
@@ -710,6 +723,71 @@ describe('GenerateComponent', () => {
         height: 1216,
       },
     };
+
+    it('waits for confirmation before a result replaces prepared settings', async () => {
+      component.form.patchValue({ prompt: 'carefully prepared', steps: 12 });
+
+      component.onResultControlAction({
+        action: 'variation',
+        request,
+        localId: 'job-1',
+        seed: '4242',
+      });
+
+      expect(component.pendingResultAction()?.action).toBe('variation');
+      expect(component.form.controls.prompt.value).toBe('carefully prepared');
+
+      component.confirmResultControlAction({ dontAskAgain: false });
+      await vi.waitFor(() =>
+        expect(component.form.controls.prompt.value).toBe('a lighthouse'),
+      );
+      expect(historyPush).toHaveBeenCalled();
+    });
+
+    it('lets the confirmation disable future prompts from Studio Options', async () => {
+      component.onResultControlAction({
+        action: 'settings',
+        request,
+        localId: 'job-1',
+      });
+
+      component.confirmResultControlAction({ dontAskAgain: true });
+      await vi.waitFor(() =>
+        expect(component.confirmResultActions()).toBe(false),
+      );
+
+      component.form.controls.prompt.setValue('another draft');
+      component.onResultControlAction({
+        action: 'settings',
+        request,
+        localId: 'job-1',
+      });
+      await vi.waitFor(() =>
+        expect(component.form.controls.prompt.value).toBe('a lighthouse'),
+      );
+      expect(component.pendingResultAction()).toBeNull();
+    });
+
+    it('keeps undo available until it restores the previous settings', async () => {
+      component.form.patchValue({ prompt: 'carefully prepared', steps: 12 });
+      component.setConfirmResultActions(false);
+
+      component.onResultControlAction({
+        action: 'settings',
+        request,
+        localId: 'job-1',
+      });
+      await vi.waitFor(() =>
+        expect(component.latestControlUndo()).not.toBeNull(),
+      );
+
+      await component.undoLastResultAction();
+
+      expect(component.form.controls.prompt.value).toBe('carefully prepared');
+      expect(component.form.controls.steps.value).toBe(12);
+      expect(component.latestControlUndo()).toBeNull();
+      expect(historyRemove).toHaveBeenCalled();
+    });
 
     it('holds the form at the image seed for a variation', async () => {
       await component.onLoadSettings({

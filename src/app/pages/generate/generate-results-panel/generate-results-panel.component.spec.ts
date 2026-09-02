@@ -778,19 +778,21 @@ describe('GenerateResultsPanelComponent', () => {
     });
 
     it('asks the parent to attach a result as the source image', () => {
-      const emitted: { localId: string; imageId: string }[] = [];
-      component.useAsSource.subscribe((event) => emitted.push(event));
+      const emitted: unknown[] = [];
+      component.controlAction.subscribe((event) => emitted.push(event));
       component.openViewer(component.viewerTiles()[0]);
 
       component.reuseAsSource(component.viewerTiles()[0]);
 
-      expect(emitted).toEqual([{ localId: 'f', imageId: 'img' }]);
-      expect(component.viewerKey()).toBeNull();
+      expect(emitted).toEqual([
+        { action: 'source', localId: 'f', imageId: 'img' },
+      ]);
+      expect(component.viewerKey()).not.toBeNull();
     });
 
     it('pins the seed the worker returned when a variation is asked for', () => {
       const emitted: { seed: string | null; localId: string }[] = [];
-      component.loadSettings.subscribe((event) =>
+      component.controlAction.subscribe((event) =>
         emitted.push({ seed: event.seed, localId: event.localId }),
       );
       component.openViewer(component.viewerTiles()[0]);
@@ -798,12 +800,20 @@ describe('GenerateResultsPanelComponent', () => {
       component.makeVariation(component.viewerTiles()[0]);
 
       expect(emitted).toEqual([{ seed: 'img', localId: 'f' }]);
+      expect(component.viewerKey()).not.toBeNull();
+    });
+
+    it('closes the launching result surface only after the action is applied', () => {
+      component.openViewer(component.viewerTiles()[0]);
+
+      component.finishControlAction();
+
       expect(component.viewerKey()).toBeNull();
     });
 
     it('lets the seed go when only the settings are copied', () => {
       const emitted: (string | null)[] = [];
-      component.loadSettings.subscribe((event) => emitted.push(event.seed));
+      component.controlAction.subscribe((event) => emitted.push(event.seed));
 
       component.copySettings(component.viewerTiles()[0]);
 
@@ -812,7 +822,7 @@ describe('GenerateResultsPanelComponent', () => {
 
     it('sends the request with the returned seed already folded in', () => {
       const emitted: unknown[] = [];
-      component.loadSettings.subscribe((event) => emitted.push(event.request));
+      component.controlAction.subscribe((event) => emitted.push(event.request));
 
       component.makeVariation(component.viewerTiles()[0]);
 
@@ -822,18 +832,15 @@ describe('GenerateResultsPanelComponent', () => {
     });
 
     it('routes the three actions from the metadata panel to the same places', () => {
-      const loaded: (string | null)[] = [];
-      const sourced: string[] = [];
-      component.loadSettings.subscribe((event) => loaded.push(event.seed));
-      component.useAsSource.subscribe((event) => sourced.push(event.imageId));
+      const actions: string[] = [];
+      component.controlAction.subscribe((event) => actions.push(event.action));
       const tile = component.viewerTiles()[0];
 
       component.onQuickAction('variation', tile);
       component.onQuickAction('copy', tile);
       component.onQuickAction('source', tile);
 
-      expect(loaded).toEqual(['img', null]);
-      expect(sourced).toEqual(['img']);
+      expect(actions).toEqual(['variation', 'settings', 'source']);
     });
 
     it('parks the blob and navigates when sending to alchemy', async () => {

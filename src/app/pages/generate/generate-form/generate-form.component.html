@@ -217,6 +217,16 @@
     </div>
   </header>
 
+  @if (resultUndoAction()) {
+    <div class="gs-control-undo" role="status">
+      <app-icon name="refresh-alt" aria-hidden="true" />
+      <span>{{ "generate.results.undo_available" | transloco }}</span>
+      <button type="button" (click)="undoResultAction.emit()">
+        {{ "generate.results.undo_controls" | transloco }}
+      </button>
+    </div>
+  }
+
   <!-- Scrollable control body. The panel is read in three passes: what the
        picture is, how it is drawn, and what comes back. Each keeps its own
        column so that widening the panel only puts the passes side by side:
@@ -2797,6 +2807,50 @@
       }}</span>
     </span>
   </button>
+
+  <p class="gs-opt-head">
+    {{ "generate.form.options_result_actions" | transloco }}
+  </p>
+  <button
+    type="button"
+    class="gs-opt-row gs-opt-row--switch"
+    [class.gs-opt-row--on]="confirmResultActions()"
+    [attr.aria-pressed]="confirmResultActions()"
+    (click)="toggleConfirmResultActions()"
+  >
+    <app-icon name="shield-check" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.form.confirm_result_actions" | transloco
+      }}</span>
+      <span class="gs-opt-hint">{{
+        "generate.form.confirm_result_actions_hint" | transloco
+      }}</span>
+    </span>
+    <span class="gs-opt-state" aria-hidden="true">{{
+      (confirmResultActions()
+        ? "generate.form.options_on"
+        : "generate.form.options_off"
+      ) | transloco
+    }}</span>
+  </button>
+  @if (resultUndoAction(); as action) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      (click)="undoResultActionFromOptions()"
+    >
+      <app-icon name="refresh-alt" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.undo_controls" | transloco
+        }}</span>
+        <span class="gs-opt-hint">{{
+          resultActionKey(action) | transloco
+        }}</span>
+      </span>
+    </button>
+  }
 
   <p class="gs-opt-head">{{ "generate.form.options_view" | transloco }}</p>
   @if (pinnable()) {

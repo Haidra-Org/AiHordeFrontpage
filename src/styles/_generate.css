@@ -1163,6 +1163,44 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   padding: var(--gs-space-3) var(--gs-space-4);
   border-bottom: 2px solid var(--gs-zone-tint-border, var(--gs-border-soft));
 }
+.gen-studio .gs-control-undo {
+  display: flex;
+  min-height: 42px;
+  flex: none;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-4);
+  border-bottom: 1px solid var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+  color: var(--gs-ink-2);
+  font-size: var(--gs-text-xs);
+}
+.gen-studio .gs-control-undo app-icon {
+  color: var(--gs-blue);
+}
+.gen-studio .gs-control-undo button {
+  min-height: 32px;
+  margin-left: auto;
+  padding: var(--gs-space-1) var(--gs-space-2);
+  border: 1px solid var(--gs-blue);
+  border-radius: var(--gs-radius-sm);
+  color: var(--gs-blue);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.gen-studio .gs-control-undo button:hover {
+  background: var(--gs-field);
+}
+.gen-studio .gs-control-undo button:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-control-undo button {
+    min-height: 44px;
+  }
+}
 /* The tool group is one flex item, so on a 360px phone its four buttons and the
    detail toggle overran the header's edge by a few pixels rather than wrapping
    with it. The group wraps inside itself the same way. */
@@ -3671,6 +3709,19 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   height: 15px;
   display: inline-flex;
   flex: none;
+}
+.gen-studio .gs-result-action-group-label {
+  padding: 7px 10px 4px;
+  border-top: 1px solid var(--gs-border-soft);
+  color: var(--gs-muted);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.gen-studio .gs-result-action-group-label:first-child,
+.gen-studio .gs-flip-item--back + .gs-result-action-group-label {
+  border-top: 0;
 }
 .gen-studio .gs-icobtn {
   width: 26px;
@@ -6385,6 +6436,24 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   padding: 12px 10px calc(14px + env(safe-area-inset-bottom, 0px));
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
 }
+.gen-studio .gs-viewer-action-group {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  padding: 15px 6px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 11px;
+}
+.gen-studio .gs-viewer-action-group-label {
+  position: absolute;
+  top: 2px;
+  left: 9px;
+  color: #d1d5db;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .gen-studio .gs-viewer-act {
   display: inline-flex;
   align-items: center;
@@ -6487,6 +6556,15 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   flex-wrap: wrap;
   gap: 6px;
 }
+.gen-studio .gs-quick-acts-label {
+  flex: 1 0 100%;
+  color: var(--gs-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: uppercase;
+}
 .gen-studio .gs-quick-act {
   display: inline-flex;
   align-items: center;
@@ -6555,6 +6633,10 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     gap: 5px;
     padding: 0 8px;
   }
+  .gen-studio .gs-quick-acts--tile .gs-quick-acts-label {
+    color: #e5e7eb;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+  }
   .gen-studio .gs-quick-acts--tile .gs-quick-act {
     min-height: 32px;
     padding: 5px 8px;
@@ -6579,6 +6661,49 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     background: var(--gs-blue);
     color: #fff;
   }
+}
+
+.gen-studio .gs-result-action-confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-4);
+}
+.gen-studio .gs-result-action-confirm-body p {
+  margin: 0;
+  color: var(--gs-ink-2);
+  line-height: 1.55;
+}
+.gen-studio .gs-result-action-checkbox {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2);
+  border: 0;
+  border-radius: var(--gs-radius-sm);
+  color: var(--gs-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-result-action-checkbox:hover {
+  background: var(--gs-field);
+}
+.gen-studio .gs-result-action-checkbox:focus-visible {
+  outline: 2px solid var(--gs-blue);
+  outline-offset: 2px;
+}
+.gen-studio .gs-result-action-check {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gs-field-border);
+  border-radius: 5px;
+  background: var(--gs-field);
+  color: var(--gs-blue);
 }
 @media (min-width: 1024px) and (pointer: coarse) {
   .gen-studio .gs-quick-acts--tile .gs-quick-act {

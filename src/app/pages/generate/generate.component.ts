@@ -134,6 +134,15 @@ import {
   studioLinkAddress,
 } from './studio-link';
 import { copyToClipboard } from '../../helper/copy-to-clipboard';
+import { ResultActionConfirmComponent } from './result-action-confirm/result-action-confirm.component';
+import {
+  ResultControlAction,
+  ResultControlActionRequest,
+} from './result-control-action';
+import {
+  StudioControlCheckpoint,
+  StudioControlHistoryService,
+} from './studio-control-history.service';
 
 const DEFAULT_SOURCE_STATE: GenerateSourceState = {
   mode: 'none',
@@ -154,6 +163,9 @@ const REVIEW_KEY = 'aihorde.generate.review_before_send';
 
 /** Whether Generate stays at the foot of the screen on a narrow viewport. */
 const PIN_GENERATE_KEY = 'aihorde.generate.pinned_generate';
+
+/** Whether result actions ask before changing the current controls. */
+const RESULT_ACTION_CONFIRM_KEY = 'aihorde.generate.confirm_result_actions';
 
 /** What the glossary files the studio's this-page entries under. */
 const STUDIO_GLOSSARY_PAGE_ID = 'generate-image';
@@ -213,6 +225,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     StudioJsonModalComponent,
     StudioPasteModalComponent,
     GenerateReviewModalComponent,
+    ResultActionConfirmComponent,
     StudioImageDropDirective,
     GsSheetComponent,
     GsParamEntryComponent,
@@ -238,6 +251,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly workerPool = inject(WorkerPoolService);
+  private readonly controlHistory = inject(StudioControlHistoryService);
   private readonly auth = inject(AuthService);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
   private readonly tutorial = inject(TutorialEngineService);
@@ -259,6 +273,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** The results pane, the skip link's target. */
   private readonly resultsRef =
     viewChild<ElementRef<HTMLElement>>('resultsPane');
+  private readonly resultsPanelRef = viewChild(GenerateResultsPanelComponent);
 
   public readonly form = createGenerateForm(
     coerceFormValue(this.db.get(STORAGE_KEY)),
@@ -318,6 +333,24 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * someone sending one request after another.
    */
   public readonly pinGenerate = signal(this.db.get(PIN_GENERATE_KEY) === true);
+
+  /** Result actions ask before replacing controls unless the reader opts out. */
+  public readonly confirmResultActions = signal(
+    this.db.get(RESULT_ACTION_CONFIRM_KEY) !== false,
+  );
+
+  /** The result action awaiting confirmation, or null when none is armed. */
+  public readonly pendingResultAction =
+    signal<ResultControlActionRequest | null>(null);
+
+  /** Newest first; every entry remains until restored, including across reloads. */
+  public readonly controlUndoHistory = signal<StudioControlCheckpoint[]>([]);
+  public readonly latestControlUndo = computed(
+    () => this.controlUndoHistory()[0] ?? null,
+  );
+  public readonly latestControlUndoAction = computed(
+    () => this.latestControlUndo()?.action ?? null,
+  );
 
   /** What the review dialog is holding, or null while nothing awaits a look. */
   public readonly pendingReview = signal<SubmitPlan | null>(null);
@@ -655,6 +688,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         this.destroyRef,
         'generate.title',
       );
+      void this.loadControlUndoHistory();
     });
 
     if (this.isBrowser) {
@@ -1070,6 +1104,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (event.keys.length === 0) {
       return;
     }
+    const checkpoint = this.controlCheckpoint('settings');
     const source = requestToFormValue(event.request);
     const next: GenerateFormValue =
       event.mode === 'replace'
@@ -1099,6 +1134,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       transloco: true,
       messageParams: { count: event.keys.length },
     });
+    this.keepControlCheckpoint(checkpoint);
   }
 
   /**
@@ -1112,6 +1148,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     localId: string;
     seed: string | null;
   }): Promise<void> {
+    await this.applyLoadedSettings(event);
+  }
+
+  private async applyLoadedSettings(event: {
+    request: ImageGenerationRequest;
+    localId: string;
+    seed: string | null;
+  }): Promise<boolean> {
     const next = requestToFormValue(event.request);
     next.seed = event.seed ?? '';
     // A stale source blob would otherwise outlive the settings that wanted it.
@@ -1133,6 +1177,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         transloco: true,
       });
     }
+    return true;
   }
 
   /**
@@ -1143,7 +1188,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public async onUseAsSource(event: {
     localId: string;
     imageId: string;
-  }): Promise<void> {
+  }): Promise<boolean> {
     const images = await this.queue.getJobImages(event.localId);
     const image = images.find(
       (candidate) =>
@@ -1151,15 +1196,129 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     );
     if (!image) {
       this.toast.error('generate.results.reuse_failed', { transloco: true });
-      return;
+      return false;
     }
     const section = await this.openSourceSection();
     if (!section) {
       this.toast.error('generate.results.reuse_failed', { transloco: true });
-      return;
+      return false;
     }
     await section.applySource(image.blob);
     this.toast.success('generate.results.reuse_done', { transloco: true });
+    return true;
+  }
+
+  /** Guard every result action, regardless of which tile or menu emitted it. */
+  public onResultControlAction(event: ResultControlActionRequest): void {
+    if (this.confirmResultActions()) {
+      this.pendingResultAction.set(event);
+      return;
+    }
+    void this.applyResultControlAction(event);
+  }
+
+  public cancelResultControlAction(): void {
+    this.pendingResultAction.set(null);
+  }
+
+  public confirmResultControlAction(event: { dontAskAgain: boolean }): void {
+    const pending = this.pendingResultAction();
+    this.pendingResultAction.set(null);
+    if (event.dontAskAgain) {
+      this.setConfirmResultActions(false);
+    }
+    if (pending) {
+      void this.applyResultControlAction(pending);
+    }
+  }
+
+  /** Remember the confirmation preference and expose the same switch in Options. */
+  public setConfirmResultActions(on: boolean): void {
+    this.confirmResultActions.set(on);
+    this.db.store(RESULT_ACTION_CONFIRM_KEY, on);
+  }
+
+  private async applyResultControlAction(
+    event: ResultControlActionRequest,
+  ): Promise<void> {
+    const checkpoint = this.controlCheckpoint(event.action);
+    let applied = false;
+    if (event.action === 'source' && event.imageId) {
+      applied = await this.onUseAsSource({
+        localId: event.localId,
+        imageId: event.imageId,
+      });
+    } else if (event.request) {
+      applied = await this.applyLoadedSettings({
+        request: event.request,
+        localId: event.localId,
+        seed: event.action === 'variation' ? (event.seed ?? null) : null,
+      });
+    }
+    if (applied) {
+      this.keepControlCheckpoint(checkpoint);
+      this.resultsPanelRef()?.finishControlAction();
+    }
+  }
+
+  private controlCheckpoint(
+    action: ResultControlAction,
+  ): StudioControlCheckpoint {
+    const source = this.sourceState();
+    return {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      action,
+      form: structuredClone(this.form.getRawValue()),
+      source: {
+        ...source,
+        extras: source.extras?.map((extra) => ({ ...extra })),
+      },
+    };
+  }
+
+  private keepControlCheckpoint(checkpoint: StudioControlCheckpoint): void {
+    this.controlUndoHistory.update((history) => [checkpoint, ...history]);
+    void this.controlHistory
+      .push(checkpoint)
+      .catch((error) =>
+        console.warn('Could not persist studio control undo history.', error),
+      );
+  }
+
+  private async loadControlUndoHistory(): Promise<void> {
+    try {
+      const stored = await this.controlHistory.list();
+      this.controlUndoHistory.update((current) => {
+        const currentIds = new Set(current.map((entry) => entry.id));
+        return [
+          ...current,
+          ...stored.filter((entry) => !currentIds.has(entry.id)),
+        ].sort((a, b) => b.createdAt - a.createdAt);
+      });
+    } catch (error) {
+      console.warn('Could not restore studio control undo history.', error);
+    }
+  }
+
+  /** Restore the newest checkpoint and leave the next one available. */
+  public async undoLastResultAction(): Promise<void> {
+    const checkpoint = this.latestControlUndo();
+    if (!checkpoint) {
+      return;
+    }
+    this.form.setValue(structuredClone(checkpoint.form));
+    this.form.markAsDirty();
+    this.sourceState.set(DEFAULT_SOURCE_STATE);
+    this.clearSourceEncodings();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    await this.sourceImageRef()?.applyDraft(checkpoint.source);
+    this.controlUndoHistory.update((history) =>
+      history.filter((entry) => entry.id !== checkpoint.id),
+    );
+    await this.controlHistory.remove(checkpoint.id);
+    this.toast.success('generate.results.undo_restored', { transloco: true });
+    this.formRef()?.focusPrompt();
   }
 
   /**

@@ -1,0 +1,56 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="cancel()"
+  tabindex="-1"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-modal-panel--sm gs-fadeup"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="gs-result-action-title"
+    aria-describedby="gs-result-action-body"
+    tabindex="-1"
+  >
+    <div class="gs-modal-header">
+      <div id="gs-result-action-title" class="gs-modal-title">
+        <app-icon name="adjustments-horizontal" class="gs-ico-sm" />
+        {{ key("title") | transloco }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="cancel()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+    <div class="gs-modal-body gs-result-action-confirm-body">
+      <p id="gs-result-action-body">{{ key("body") | transloco }}</p>
+      <button
+        type="button"
+        class="gs-result-action-checkbox"
+        role="checkbox"
+        [attr.aria-checked]="dontAskAgain()"
+        (click)="toggleDontAskAgain()"
+      >
+        <span class="gs-result-action-check" aria-hidden="true">
+          @if (dontAskAgain()) {
+            <app-icon name="check" />
+          }
+        </span>
+        {{ "generate.results.confirm_dont_ask" | transloco }}
+      </button>
+    </div>
+    <div class="gs-modal-footer">
+      <button type="button" class="gs-tile-btn" (click)="cancel()">
+        {{ "generate.results.confirm_cancel" | transloco }}
+      </button>
+      <button type="button" class="gs-modal-done" (click)="confirm()">
+        {{ key("confirm") | transloco }}
+      </button>
+    </div>
+  </div>
+</div>

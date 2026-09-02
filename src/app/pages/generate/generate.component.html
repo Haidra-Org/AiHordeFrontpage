@@ -52,10 +52,14 @@
       [lintWarnings]="lintWarnings()"
       [fieldRejection]="fieldRejection()"
       [reviewBeforeSend]="reviewBeforeSend()"
+      [confirmResultActions]="confirmResultActions()"
+      [resultUndoAction]="latestControlUndoAction()"
       [pinnable]="true"
       [pinGenerate]="pinGenerate()"
       (panelSizeChange)="panelSize.set($event)"
       (reviewBeforeSendChange)="setReviewBeforeSend($event)"
+      (confirmResultActionsChange)="setConfirmResultActions($event)"
+      (undoResultAction)="undoLastResultAction()"
       (pinGenerateChange)="setPinGenerate($event)"
       (create)="onCreate()"
       (preview)="openPreview()"
@@ -88,8 +92,7 @@
       class="gs-fill"
       [formValue]="formValue()"
       (applyMeta)="onApplyMeta($event)"
-      (useAsSource)="onUseAsSource($event)"
-      (loadSettings)="onLoadSettings($event)"
+      (controlAction)="onResultControlAction($event)"
       (usePrompt)="onUsePrompt($event)"
     />
   </section>
@@ -203,5 +206,13 @@
         (closed)="cancelLoad()"
       />
     </div>
+  }
+
+  @if (pendingResultAction(); as pending) {
+    <app-result-action-confirm
+      [action]="pending.action"
+      (confirmed)="confirmResultControlAction($event)"
+      (cancelled)="cancelResultControlAction()"
+    />
   }
 </div>
