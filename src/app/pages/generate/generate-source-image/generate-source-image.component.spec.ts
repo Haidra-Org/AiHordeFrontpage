@@ -6,7 +6,9 @@ import en from '../../../../assets/i18n/en.json';
 import {
   GenerateSourceImageComponent,
   GenerateSourceState,
+  SourceSettingsOffer,
 } from './generate-source-image.component';
+import { webpFile } from '../../../testing/webp-fixture';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormGroup,
@@ -367,6 +369,43 @@ describe('GenerateSourceImageComponent', () => {
     expect(states.length).toBe(before);
   });
 
+  it('hands a picture that carries its settings to the page before encoding', async () => {
+    const { component } = await createComponent();
+    const offers: SourceSettingsOffer[] = [];
+    component.settingsOffer.subscribe((offer) => offers.push(offer));
+    const file = webpFile('a fox in the snow\nSteps: 25, Model: Deliberate');
+
+    await component.applyFile(file);
+
+    expect(offers).toHaveLength(1);
+    expect(offers[0].file).toBe(file);
+    expect(offers[0].payload.request.models).toEqual(['Deliberate']);
+    // Nothing was encoded, so the card is exactly as it was.
+    expect(component.error()).toBeNull();
+  });
+
+  it('encodes without asking once the page has settled the question', async () => {
+    const { component } = await createComponent();
+    const offers: SourceSettingsOffer[] = [];
+    component.settingsOffer.subscribe((offer) => offers.push(offer));
+
+    await component.applyFile(webpFile('a fox\nSteps: 25'), {
+      skipSettings: true,
+    });
+
+    expect(offers).toHaveLength(0);
+    expect(component.error()).toBe('generate.source.encode_failed');
+  });
+
+  it('says a picture with nothing to declare has nothing to declare', async () => {
+    const { component } = await createComponent();
+    const offers: SourceSettingsOffer[] = [];
+    component.settingsOffer.subscribe((offer) => offers.push(offer));
+
+    expect(await component.checkForSettings(webpFile(null))).toBe(false);
+    expect(offers).toHaveLength(0);
+  });
+
   it('tracks and clears the mask overlay URL when a drawn mask is applied', async () => {
     const { component } = await createComponent();
     const source = fakeImage();
@@ -679,6 +718,7 @@ describe('GenerateSourceImageComponent licence lines', () => {
     const { host, detect, form } = await renderCard([
       {
         name: 'control_openpose',
+        category: 'controlnet',
         fact: {
           status: 'allowed_with_conditions',
           licenseId: 'OpenRAIL-M',
@@ -689,6 +729,7 @@ describe('GenerateSourceImageComponent licence lines', () => {
       },
       {
         name: 'annotator_openpose',
+        category: 'controlnet_annotator',
         fact: {
           status: 'prohibited',
           licenseId: 'LicenseRef-OpenPose-NonCommercial',
@@ -705,8 +746,16 @@ describe('GenerateSourceImageComponent licence lines', () => {
     detect();
 
     expect(lines(host)).toEqual([
-      'Commercial use: allowed with conditions (OpenRAIL-M) for control_openpose',
-      'Commercial use: not allowed (LicenseRef-OpenPose-NonCommercial) for annotator_openpose',
+      'Commercial use: allowed with conditions (OpenRAIL-M) for control_openpose See the licence record',
+      'Commercial use: not allowed (LicenseRef-OpenPose-NonCommercial) for annotator_openpose See the licence record',
+    ]);
+    expect(
+      Array.from(
+        host.querySelectorAll<HTMLAnchorElement>('.gs-sublabel a[target]'),
+      ).map((link) => link.getAttribute('href')),
+    ).toEqual([
+      'https://reference.aihorde.net/categories/controlnet/model/control_openpose',
+      'https://reference.aihorde.net/categories/controlnet_annotator/model/annotator_openpose',
     ]);
   });
 

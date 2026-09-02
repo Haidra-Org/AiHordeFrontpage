@@ -3982,7 +3982,7 @@ describe('GenerateFormComponent licence lines', () => {
     form.patchValue({ model: 'Deliberate' });
     detect();
     expect(lines(host)).toEqual([
-      'Commercial use: allowed with conditions (OpenRAIL-M)',
+      'Commercial use: allowed with conditions (OpenRAIL-M) See the licence record',
     ]);
 
     // With more than one model accepted the line has to say which of them the
@@ -3990,8 +3990,11 @@ describe('GenerateFormComponent licence lines', () => {
     form.patchValue({ extraModels: ['Stable Cascade 1.0'] });
     detect();
     expect(lines(host)).toEqual([
-      'Commercial use: not allowed (LicenseRef-Stable-Cascade-NC-Community) for Stable Cascade 1.0',
+      'Commercial use: not allowed (LicenseRef-Stable-Cascade-NC-Community) for Stable Cascade 1.0 See the licence record',
     ]);
+    expect(host.querySelector('.gs-model-facts a')?.getAttribute('href')).toBe(
+      'https://reference.aihorde.net/categories/image_generation/model/Stable%20Cascade%201.0',
+    );
   });
 
   it('carries the licence of the upscaler and of the face fixer', async () => {
@@ -4004,8 +4007,16 @@ describe('GenerateFormComponent licence lines', () => {
     detect();
 
     expect(lines(host)).toEqual([
-      'Commercial use: not allowed (CC-BY-NC-SA-4.0)',
-      'Commercial use: allowed (Apache-2.0)',
+      'Commercial use: not allowed (CC-BY-NC-SA-4.0) See the licence record',
+      'Commercial use: allowed (Apache-2.0) See the licence record',
+    ]);
+    expect(
+      Array.from(host.querySelectorAll('p.gs-sublabel a[target]')).map((link) =>
+        link.getAttribute('href'),
+      ),
+    ).toEqual([
+      'https://reference.aihorde.net/categories/esrgan/model/4x_AnimeSharp',
+      'https://reference.aihorde.net/categories/gfpgan/model/GFPGANv1.3',
     ]);
   });
 
@@ -4016,5 +4027,73 @@ describe('GenerateFormComponent licence lines', () => {
     detect();
 
     expect(lines(host)).toEqual([]);
+  });
+});
+
+describe('GenerateFormComponent post-processing selects', () => {
+  /** The panel opened on a form that already carries a finishing pass. */
+  async function renderWithPostProcessing(
+    post: GenerateFormValue['post_processing'],
+  ): Promise<{
+    host: HTMLElement;
+    component: GenerateFormComponent;
+    detect: () => void;
+  }> {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    fixture.componentRef.setInput(
+      'form',
+      createGenerateForm({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        prompt: 'a fox',
+        post_processing: post,
+      }),
+    );
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+    return {
+      host: fixture.nativeElement as HTMLElement,
+      component: fixture.componentInstance,
+      detect: () => fixture.detectChanges(),
+    };
+  }
+
+  function chosen(host: HTMLElement, id: string): string {
+    return host.querySelector<HTMLSelectElement>(`#${id}`)?.value ?? '';
+  }
+
+  it('shows the pass the form was restored with rather than None', async () => {
+    const { host, component, detect } = await renderWithPostProcessing([
+      '4x_AnimeSharp',
+      'GFPGANv1.3',
+    ]);
+    component.openGroup('post');
+    detect();
+
+    expect(chosen(host, 'generate-upscaler')).toBe('4x_AnimeSharp');
+    expect(chosen(host, 'generate-facefixer')).toBe('GFPGANv1.3');
+  });
+
+  it('follows the form when the choice is cleared', async () => {
+    const { host, component, detect } = await renderWithPostProcessing([
+      '4x_AnimeSharp',
+    ]);
+    component.openGroup('post');
+    detect();
+    component.setUpscaler('');
+    detect();
+
+    expect(chosen(host, 'generate-upscaler')).toBe('');
   });
 });

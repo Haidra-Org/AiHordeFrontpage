@@ -37,7 +37,12 @@ import {
   GenerateFormValue,
   buildImageRequest,
 } from './generate-form.model';
-import { studioLinkFromText, studioLinkParams } from './studio-link';
+import {
+  studioLinkFromText,
+  studioLinkParams,
+  studioPayloadFromImage,
+} from './studio-link';
+import { webpFile } from '../../testing/webp-fixture';
 import { StudioControlHistoryService } from './studio-control-history.service';
 import {
   LicensingService,
@@ -1200,6 +1205,92 @@ describe('GenerateComponent', () => {
       expect(toastError).toHaveBeenCalledWith('generate.source.not_an_image', {
         transloco: true,
       });
+    });
+  });
+
+  describe('an image that carries its own settings', () => {
+    const PARAMETERS = 'a fox in the snow\nSteps: 25, Model: Deliberate';
+
+    /** Stand in for the source section, absent under the stubbed template. */
+    function stubSourceSection(): ReturnType<typeof vi.fn> {
+      const applyFile = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(component, 'sourceImageRef', {
+        value: () => ({ applyFile }),
+      });
+      return applyFile;
+    }
+
+    async function offer(): Promise<void> {
+      await component.onDroppedImage(webpFile(PARAMETERS));
+    }
+
+    it('asks rather than attaching when one is dropped on the page', async () => {
+      await offer();
+
+      expect(component.settingsOffer()?.payload.request.models).toEqual([
+        'Deliberate',
+      ]);
+      // Nothing has been touched yet, not even the mode an attach would set.
+      expect(component.form.getRawValue().sourceMode).toBe('none');
+      expect(toastSuccess).not.toHaveBeenCalledWith(
+        'generate.source.attached',
+        expect.anything(),
+      );
+    });
+
+    it('attaches the picture alone when that is the answer', async () => {
+      const applyFile = stubSourceSection();
+      await offer();
+
+      await component.onSettingsChoice('source');
+
+      expect(applyFile).toHaveBeenCalledWith(expect.any(File), {
+        skipSettings: true,
+      });
+      expect(component.pendingLoad()).toBeNull();
+      expect(component.settingsOffer()).toBeNull();
+    });
+
+    it('attaches the picture and puts its settings up for review', async () => {
+      const applyFile = stubSourceSection();
+      await offer();
+
+      await component.onSettingsChoice('both');
+
+      expect(applyFile).toHaveBeenCalledTimes(1);
+      expect(component.pendingLoad()?.prompt).toBe('a fox in the snow');
+      expect(component.pendingLoad()?.steps).toBe(25);
+    });
+
+    it('takes the settings and leaves the picture where it was', async () => {
+      const applyFile = stubSourceSection();
+      await offer();
+
+      await component.onSettingsChoice('settings');
+
+      expect(applyFile).not.toHaveBeenCalled();
+      expect(component.form.getRawValue().sourceMode).toBe('none');
+      expect(component.pendingLoad()?.prompt).toBe('a fox in the snow');
+    });
+
+    it('changes nothing when the question is dismissed', async () => {
+      const applyFile = stubSourceSection();
+      await offer();
+
+      component.cancelSettingsOffer();
+
+      expect(component.settingsOffer()).toBeNull();
+      expect(applyFile).not.toHaveBeenCalled();
+      expect(component.pendingLoad()).toBeNull();
+    });
+
+    it('takes the same question from the source card', async () => {
+      const file = webpFile(PARAMETERS);
+      const payload = await studioPayloadFromImage(file);
+
+      component.onSourceSettingsOffer({ file, payload: payload! });
+
+      expect(component.settingsOffer()?.file).toBe(file);
     });
   });
 
@@ -2414,10 +2505,12 @@ describe('GenerateComponent licence advisories', () => {
     const component = await createStudioWithLicensing({}, [
       {
         name: 'control_openpose',
+        category: 'controlnet',
         fact: fact('allowed_with_conditions', 'OpenRAIL-M'),
       },
       {
         name: 'annotator_openpose',
+        category: 'controlnet_annotator',
         fact: fact('prohibited', 'LicenseRef-OpenPose-NonCommercial'),
       },
     ]);

@@ -1,8 +1,9 @@
 /**
- * Writes an EXIF chunk carrying A1111-style `parameters` text into WebP bytes,
- * so a downloaded result still says how it was made when it is opened anywhere
- * else. The horde returns WebP and the browser cannot write EXIF, so the RIFF
- * container is edited directly.
+ * Writes and reads an EXIF chunk carrying A1111-style `parameters` text in WebP
+ * bytes, so a downloaded result still says how it was made when it is opened
+ * anywhere else, and so the studio can take those settings back off a picture.
+ * The horde returns WebP and the browser can neither write nor read EXIF, so the
+ * RIFF container is handled directly.
  *
  * Anything that is not a WebP, or any malformed container, is returned
  * untouched: a download must never fail over metadata.
@@ -354,5 +355,235 @@ export async function embedWebpExifInBlob(
     });
   } catch {
     return blob;
+  }
+}
+
+/** The Exif sub-IFD pointer in IFD0. UserComment lives behind it, not in IFD0. */
+const TAG_EXIF_IFD = 0x8769;
+/** The UserComment tag, which carries the `parameters` text. */
+const TAG_USER_COMMENT = 0x9286;
+/** Byte count of the charset marker EXIF puts in front of a UserComment. */
+const COMMENT_CHARSET_SIZE = 8;
+
+/** Byte width of each TIFF value type, by its type number. */
+const TIFF_TYPE_SIZES: Record<number, number> = {
+  1: 1,
+  2: 1,
+  3: 2,
+  4: 4,
+  5: 8,
+  6: 1,
+  7: 1,
+  8: 2,
+  9: 4,
+  10: 8,
+  11: 4,
+  12: 8,
+};
+
+/** A TIFF block being read: its bounds within the file and its byte order. */
+interface TiffBlock {
+  bytes: Uint8Array;
+  /** Where the block starts. Every offset inside it counts from here. */
+  base: number;
+  /** One past the block's last byte. */
+  end: number;
+  littleEndian: boolean;
+}
+
+/** One located IFD entry, with its value already resolved to a file position. */
+interface TiffEntry {
+  count: number;
+  /** Absolute position of the value, inline or pointed at. */
+  valueAt: number;
+}
+
+/** Reject a read that leaves the block, so a truncated file cannot be misread. */
+function requireRange(block: TiffBlock, at: number, length: number): void {
+  if (at < block.base || at + length > block.end) {
+    throw new Error('tiff read leaves the block');
+  }
+}
+
+function readTiffUint16(block: TiffBlock, offset: number): number {
+  const at = block.base + offset;
+  requireRange(block, at, 2);
+  const { bytes } = block;
+  return block.littleEndian
+    ? bytes[at] | (bytes[at + 1] << 8)
+    : (bytes[at] << 8) | bytes[at + 1];
+}
+
+function readTiffUint32(block: TiffBlock, offset: number): number {
+  const at = block.base + offset;
+  requireRange(block, at, 4);
+  const { bytes } = block;
+  return (
+    (block.littleEndian
+      ? bytes[at] |
+        (bytes[at + 1] << 8) |
+        (bytes[at + 2] << 16) |
+        (bytes[at + 3] << 24)
+      : (bytes[at] << 24) |
+        (bytes[at + 1] << 16) |
+        (bytes[at + 2] << 8) |
+        bytes[at + 3]) >>> 0
+  );
+}
+
+/**
+ * Locate `tag` in the IFD at `ifdOffset`. A value of four bytes or fewer sits
+ * in the entry itself and a longer one is pointed at, so the position handed
+ * back is already the one the value is read from.
+ */
+function findTiffEntry(
+  block: TiffBlock,
+  ifdOffset: number,
+  tag: number,
+): TiffEntry | null {
+  const entries = readTiffUint16(block, ifdOffset);
+  for (let index = 0; index < entries; index++) {
+    const entry = ifdOffset + 2 + index * IFD_ENTRY_SIZE;
+    if (readTiffUint16(block, entry) !== tag) {
+      continue;
+    }
+    const type = readTiffUint16(block, entry + 2);
+    const count = readTiffUint32(block, entry + 4);
+    const width = TIFF_TYPE_SIZES[type] ?? 1;
+    const size = width * count;
+    const valueAt =
+      size <= 4
+        ? block.base + entry + 8
+        : block.base + readTiffUint32(block, entry + 8);
+    requireRange(block, valueAt, size);
+    return { count, valueAt };
+  }
+  return null;
+}
+
+/** The 32-bit number an entry holds, which for a pointer tag is another IFD. */
+function entryLongValue(block: TiffBlock, entry: TiffEntry): number {
+  return readTiffUint32(block, entry.valueAt - block.base);
+}
+
+/** The ASCII characters at a position, used to read a charset marker. */
+function readAscii(bytes: Uint8Array, at: number, length: number): string {
+  let text = '';
+  for (let index = 0; index < length; index++) {
+    text += String.fromCharCode(bytes[at + index]);
+  }
+  return text;
+}
+
+/** UTF-16 big-endian text, the inverse of {@link encodeUtf16BE}. */
+function decodeUtf16BE(bytes: Uint8Array): string {
+  let text = '';
+  for (let index = 0; index + 1 < bytes.length; index += 2) {
+    text += String.fromCharCode((bytes[index] << 8) | bytes[index + 1]);
+  }
+  return text;
+}
+
+/** Text one byte per character, for a comment written as ASCII. */
+function decodeAscii(bytes: Uint8Array): string {
+  let text = '';
+  for (const byte of bytes) {
+    text += String.fromCharCode(byte);
+  }
+  return text;
+}
+
+/**
+ * The comment text behind a UserComment entry. EXIF puts an eight-byte charset
+ * marker in front of the text; an unset marker is the spec's "undefined", which
+ * every writer that leaves it unset means as plain bytes.
+ */
+function readUserComment(block: TiffBlock, entry: TiffEntry): string | null {
+  if (entry.count <= COMMENT_CHARSET_SIZE) {
+    return null;
+  }
+  const charset = readAscii(block.bytes, entry.valueAt, COMMENT_CHARSET_SIZE);
+  const body = block.bytes.subarray(
+    entry.valueAt + COMMENT_CHARSET_SIZE,
+    entry.valueAt + entry.count,
+  );
+  let text: string;
+  if (charset.startsWith('UNICODE')) {
+    text = decodeUtf16BE(body);
+  } else if (charset.startsWith('ASCII') || charset.charCodeAt(0) === 0) {
+    text = decodeAscii(body);
+  } else {
+    return null;
+  }
+  return text.replace(/^\ufeff/, '').replace(/\0+$/, '');
+}
+
+/**
+ * Read the UserComment out of a TIFF block. The byte order is whichever the
+ * block declares, because a file re-saved elsewhere comes back in the tool's
+ * own order rather than the one this app writes.
+ */
+function readTiffUserComment(
+  bytes: Uint8Array,
+  start: number,
+  size: number,
+): string | null {
+  let base = start;
+  // A block lifted out of a JPEG keeps the APP1 marker in front of it.
+  if (size >= 6 && readAscii(bytes, base, 6) === 'Exif\0\0') {
+    base += 6;
+  }
+  const end = start + size;
+  if (end - base < TIFF_HEADER_SIZE) {
+    return null;
+  }
+  const order = readAscii(bytes, base, 2);
+  if (order !== 'II' && order !== 'MM') {
+    return null;
+  }
+  const block: TiffBlock = { bytes, base, end, littleEndian: order === 'II' };
+  if (readTiffUint16(block, 2) !== 0x2a) {
+    return null;
+  }
+  const exifIfd = findTiffEntry(block, readTiffUint32(block, 4), TAG_EXIF_IFD);
+  if (exifIfd === null) {
+    return null;
+  }
+  const comment = findTiffEntry(
+    block,
+    entryLongValue(block, exifIfd),
+    TAG_USER_COMMENT,
+  );
+  return comment === null ? null : readUserComment(block, comment);
+}
+
+/**
+ * The `parameters` text {@link embedWebpExif} wrote, read back out of WebP
+ * bytes, or null when the file carries none. Anything unreadable, from a file
+ * that is not a WebP to a truncated EXIF block, answers null rather than
+ * throwing: the callers are offering the reader a convenience, and a picture
+ * that has nothing to say about itself is the ordinary case.
+ */
+export function readWebpExifComment(bytes: Uint8Array): string | null {
+  try {
+    if (
+      bytes.length < 12 ||
+      readFourCC(bytes, 0) !== 'RIFF' ||
+      readFourCC(bytes, 8) !== 'WEBP'
+    ) {
+      return null;
+    }
+    const exif = readChunks(bytes).find((chunk) => chunk.fourCC === 'EXIF');
+    if (exif === undefined) {
+      return null;
+    }
+    const text = readTiffUserComment(
+      bytes,
+      exif.payloadStart,
+      exif.payloadSize,
+    );
+    return text === null || text === '' ? null : text;
+  } catch {
+    return null;
   }
 }

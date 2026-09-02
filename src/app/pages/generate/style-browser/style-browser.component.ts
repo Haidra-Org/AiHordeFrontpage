@@ -62,6 +62,8 @@ export interface StyleBrowserCard {
   /** One URL in a single-subject mode, up to three in `all`, empty when none. */
   previewUrls: string[];
   count: number;
+  /** Who published it. Only a published style names one. */
+  creator?: string;
 }
 
 /** A rendered section of cards, titled by its curated category. */
@@ -115,6 +117,9 @@ const MATURE_PREF_KEY = 'aihorde.generate.style_browser_mature';
 
 /** Where the fullscreen choice is remembered between visits. */
 const FULLSCREEN_PREF_KEY = 'aihorde.generate.style_browser_fullscreen';
+
+/** Where the "show previews for published styles" choice is remembered. */
+const RECORD_PREVIEWS_PREF_KEY = 'aihorde.generate.style_browser_previews';
 
 /**
  * Curated categories whose members are mature as a body. The catalogue already
@@ -370,6 +375,21 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
   public toggleFullscreen(): void {
     this.fullscreen.update((v) => !v);
     this.db.store(FULLSCREEN_PREF_KEY, this.fullscreen());
+  }
+
+  /**
+   * Whether published styles are shown as preview cards. Off by default: hardly
+   * any of them carry an example, so the cards come out as a sheet of empty
+   * frames where a list of names reads faster. The presets, which do have
+   * renders, keep their cards either way.
+   */
+  public readonly recordPreviews = signal(
+    this.db.get<boolean>(RECORD_PREVIEWS_PREF_KEY, false) === true,
+  );
+
+  public toggleRecordPreviews(): void {
+    this.recordPreviews.update((v) => !v);
+    this.db.store(RECORD_PREVIEWS_PREF_KEY, this.recordPreviews());
   }
 
   public readonly variant = signal<StyleBrowserVariantOption>('all');
@@ -1030,6 +1050,7 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       name: record.name,
       previewUrls: this.previewsSvc.recordPreviewUrls(record).slice(0, 3),
       count: this.usageSvc.count(record.key),
+      creator: record.creator,
     };
   }
 }

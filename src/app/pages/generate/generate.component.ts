@@ -91,7 +91,12 @@ import { GenerateResultsPanelComponent } from './generate-results-panel/generate
 import {
   GenerateSourceImageComponent,
   GenerateSourceState,
+  SourceSettingsOffer,
 } from './generate-source-image/generate-source-image.component';
+import {
+  SourceSettingsChoice,
+  SourceSettingsModalComponent,
+} from './source-settings-modal/source-settings-modal.component';
 import {
   BOUNDED_FIELD_NAMES,
   BOUNDED_FIELD_RANGES,
@@ -150,6 +155,7 @@ import {
   StudioLinkPayload,
   parseStudioLink,
   studioLinkAddress,
+  studioPayloadFromImage,
 } from './studio-link';
 import { copyToClipboard } from '../../helper/copy-to-clipboard';
 import { ResultActionConfirmComponent } from './result-action-confirm/result-action-confirm.component';
@@ -243,6 +249,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     ImageMetaPanelComponent,
     StudioJsonModalComponent,
     StudioPasteModalComponent,
+    SourceSettingsModalComponent,
     GenerateReviewModalComponent,
     GenerateBlockersModalComponent,
     GenerateWelcomeComponent,
@@ -343,6 +350,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** Whether the box that takes settings from somewhere else is showing. */
   public readonly pasteOpen = signal(false);
+
+  /**
+   * A picture that turned out to carry the settings that made it, waiting on
+   * the reader to say what they want taken from it. Null while nothing is asked.
+   */
+  public readonly settingsOffer = signal<SourceSettingsOffer | null>(null);
 
   /**
    * Whether Generate stops at the review dialog instead of sending. Off by
@@ -592,7 +605,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
           selection.name,
         )();
         if (fact !== null) {
-          models.push({ name: selection.name, fact });
+          models.push({
+            name: selection.name,
+            category: 'image_generation',
+            fact,
+          });
         }
       }
       const pushProhibited = (
@@ -642,12 +659,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         ) {
           continue;
         }
-        const fact = this.licensing.commercialUse(
-          postProcessorCategory(processor),
-          processor,
-        )();
+        const category = postProcessorCategory(processor);
+        const fact = this.licensing.commercialUse(category, processor)();
         if (fact !== null) {
-          post.push({ name: processor, fact });
+          post.push({ name: processor, category, fact });
         }
       }
       // The go-to points at whichever of the two controls carries the first
@@ -1498,14 +1513,56 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * Adopt an image pasted onto the page or dropped on the workspace as the
    * source image. It goes through the source section's own encode path, so a
    * dropped 8000px PNG is downscaled and re-encoded exactly as a picked file is.
+   *
+   * A picture that carries the settings that made it is asked about before
+   * anything is attached, because attaching it is only one of the three things
+   * the reader might have dropped it for.
    */
   public async onDroppedImage(file: File): Promise<void> {
+    const payload = await studioPayloadFromImage(file);
+    if (payload !== null) {
+      this.settingsOffer.set({ file, payload });
+      return;
+    }
+    await this.attachSourceFile(file);
+  }
+
+  /** The source card found settings in a picture it was handed. */
+  public onSourceSettingsOffer(offer: SourceSettingsOffer): void {
+    this.settingsOffer.set(offer);
+  }
+
+  public cancelSettingsOffer(): void {
+    this.settingsOffer.set(null);
+  }
+
+  /**
+   * Act on what the reader wants taken from such a picture. Settings go through
+   * the review panel wherever they are wanted, the way a followed link's do, so
+   * a draft already in the panel is never replaced without a look.
+   */
+  public async onSettingsChoice(choice: SourceSettingsChoice): Promise<void> {
+    const offer = this.settingsOffer();
+    this.settingsOffer.set(null);
+    if (offer === null) {
+      return;
+    }
+    if (choice !== 'settings') {
+      await this.attachSourceFile(offer.file);
+    }
+    if (choice !== 'source') {
+      this.offerLinkedRequest(offer.payload);
+    }
+  }
+
+  /** Put a picture in as the source image, saying so once it is in. */
+  private async attachSourceFile(file: File): Promise<void> {
     const section = await this.openSourceSection();
     if (!section) {
       this.toast.error('generate.source.attach_failed', { transloco: true });
       return;
     }
-    await section.applyFile(file);
+    await section.applyFile(file, { skipSettings: true });
     this.toast.success('generate.source.attached', { transloco: true });
   }
 

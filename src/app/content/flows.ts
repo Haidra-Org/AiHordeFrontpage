@@ -429,7 +429,7 @@ export const FLOWS: readonly FlowDef[] = [
       { id: 'noise_to_picture', sweepParameters: ['step_preview'] },
       { id: 'prompt_as_conditioning' },
       { id: 'what_a_model_is' },
-      { id: 'the_knobs', sweepParameters: ['steps', 'cfg_scale'] },
+      { id: 'steps_and_guidance', sweepParameters: ['steps', 'cfg_scale'] },
       { id: 'why_it_differs', sweepParameters: ['seed'] },
       { id: 'try_it', startsFlow: 'txt2img' },
     ],
@@ -459,7 +459,9 @@ export const FLOWS: readonly FlowDef[] = [
     concept: true,
     // A map rather than a lesson: the reader already knows the controls, so
     // each section answers one of their questions (where did my setting go,
-    // what is different, what is not here) and the last one is a door.
+    // what is different, what is not here) and the last one is a door. The
+    // differences are one step each, so a reader who already knows one of
+    // them skips it rather than reading past it.
     steps: [
       // The two controls that moved are the two the library has strips for,
       // so "same control, new place" is shown rather than asserted.
@@ -467,7 +469,11 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'where_things_are',
         sweepParameters: ['hires_fix', 'clip_skip'],
       },
-      { id: 'what_is_different', sweepParameters: ['seed'] },
+      { id: 'nothing_runs_here' },
+      { id: 'kudos_set_priority' },
+      { id: 'models_come_and_go' },
+      { id: 'tuned_settings_shown' },
+      { id: 'seed_varies_by_worker', sweepParameters: ['seed'] },
       { id: 'what_is_not_here' },
       { id: 'try_it', startsFlow: 'txt2img' },
     ],

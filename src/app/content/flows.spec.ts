@@ -150,7 +150,7 @@ describe('concept tracks', () => {
       'noise_to_picture',
       'prompt_as_conditioning',
       'what_a_model_is',
-      'the_knobs',
+      'steps_and_guidance',
       'why_it_differs',
       'try_it',
     ]);
@@ -161,11 +161,11 @@ describe('concept tracks', () => {
       .filter((step) => step.sweepParameters?.length)
       .map((step) => `${step.id}:${step.sweepParameters!.join('+')}`);
 
-    // The knobs step names both of them: a reader being shown what "the knobs"
-    // are learns only half of it from one strip.
+    // The steps-and-guidance step names both of them: a reader being shown the
+    // two settings learns only half of it from one strip.
     expect(attached).toEqual([
       'noise_to_picture:step_preview',
-      'the_knobs:steps+cfg_scale',
+      'steps_and_guidance:steps+cfg_scale',
       'why_it_differs:seed',
     ]);
   });
@@ -176,7 +176,11 @@ describe('concept tracks', () => {
     // track ends where the walkthrough begins, as the other two tracks do.
     expect(flowSteps('concepts_migrating').map((step) => step.id)).toEqual([
       'where_things_are',
-      'what_is_different',
+      'nothing_runs_here',
+      'kudos_set_priority',
+      'models_come_and_go',
+      'tuned_settings_shown',
+      'seed_varies_by_worker',
       'what_is_not_here',
       'try_it',
     ]);
@@ -193,7 +197,7 @@ describe('concept tracks', () => {
     // a claim the library has pictures for should not be asking to be believed.
     expect(attached).toEqual([
       'where_things_are:hires_fix+clip_skip',
-      'what_is_different:seed',
+      'seed_varies_by_worker:seed',
     ]);
   });
 

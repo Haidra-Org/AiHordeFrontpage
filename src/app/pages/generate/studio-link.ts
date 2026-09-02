@@ -5,6 +5,8 @@ import {
   parseStyleRecordKey,
   styleRecordKey,
 } from '../../services/style-record';
+import { readWebpExifComment } from '../../helper/webp-exif';
+import { parseParametersText } from './image-metadata';
 
 /**
  * The shape of the packed parameter. Only version 1 is understood; a link
@@ -312,4 +314,31 @@ export function studioLinkFromText(text: string): StudioLinkPayload | null {
   }
   const params = new URLSearchParams(trimmed.slice(query + 1));
   return readLink((key) => params.get(key));
+}
+
+/**
+ * Read the settings the studio wrote into a picture when it was downloaded, or
+ * null when the picture carries none. The same settings text every other tool
+ * of this kind writes is understood, so an image made elsewhere opens here too.
+ *
+ * A file that cannot be read at all answers null rather than raising: offering
+ * this is a convenience, and most pictures have nothing to say about themselves.
+ */
+export async function studioPayloadFromImage(
+  file: File,
+): Promise<StudioLinkPayload | null> {
+  let comment: string | null;
+  try {
+    comment = readWebpExifComment(new Uint8Array(await file.arrayBuffer()));
+  } catch {
+    return null;
+  }
+  if (comment === null) {
+    return null;
+  }
+  const request = parseParametersText(comment);
+  if (request === null) {
+    return null;
+  }
+  return { request: sanitizeRequest(request), styleKey: null, kind: 'full' };
 }

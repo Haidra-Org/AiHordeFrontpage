@@ -5,6 +5,7 @@ import {
   imageErrorFieldKey,
   imageErrorReasonKey,
   kudosDiverged,
+  parseParametersText,
 } from './image-metadata';
 import en from '../../../assets/i18n/en.json';
 import { ImageGenerationRequest } from '../../types/generation';
@@ -233,5 +234,82 @@ describe('buildParametersText', () => {
 
   it('has nothing to say about a job with no request', () => {
     expect(buildParametersText(undefined, metadata)).toBe('');
+  });
+});
+
+describe('parseParametersText', () => {
+  it('reads back everything buildParametersText wrote', () => {
+    const request: ImageGenerationRequest = {
+      prompt: 'a fox in the snow ### blurry, watermark',
+      models: ['AlbedoBase XL'],
+      source_processing: 'img2img',
+      params: {
+        steps: 30,
+        sampler_name: 'k_dpmpp_2m',
+        scheduler: 'simple',
+        cfg_scale: 7.5,
+        seed: '12345',
+        width: 1024,
+        height: 768,
+        clip_skip: 2,
+        denoising_strength: 0.6,
+      },
+    };
+    const parsed = parseParametersText(buildParametersText(request, undefined));
+
+    expect(parsed?.prompt).toBe('a fox in the snow ### blurry, watermark');
+    expect(parsed?.models).toEqual(['AlbedoBase XL']);
+    expect(parsed?.params).toEqual({
+      steps: 30,
+      sampler_name: 'k_dpmpp_2m',
+      scheduler: 'simple',
+      cfg_scale: 7.5,
+      seed: '12345',
+      width: 1024,
+      height: 768,
+      clip_skip: 2,
+      denoising_strength: 0.6,
+    });
+  });
+
+  it('turns a Karras schedule back into the flag that asks for it', () => {
+    const parsed = parseParametersText(
+      'a fox\nSteps: 20, Schedule type: Karras',
+    );
+    expect(parsed?.params?.karras).toBe(true);
+    expect(parsed?.params?.scheduler).toBeUndefined();
+  });
+
+  it('reads a sampler named the horde way as well as the A1111 way', () => {
+    expect(
+      parseParametersText('a fox\nSampler: Euler a')?.params?.sampler_name,
+    ).toBe('k_euler_a');
+    expect(
+      parseParametersText('a fox\nSampler: k_dpmpp_sde')?.params?.sampler_name,
+    ).toBe('k_dpmpp_sde');
+    expect(
+      parseParametersText('a fox\nSampler: nothing of the sort, Steps: 20')
+        ?.params?.sampler_name,
+    ).toBeUndefined();
+  });
+
+  it('keeps a plain sentence as a prompt and nothing else', () => {
+    const parsed = parseParametersText('a fox in the snow');
+    expect(parsed?.prompt).toBe('a fox in the snow');
+    expect(parsed?.params).toBeUndefined();
+    expect(parsed?.models).toBeUndefined();
+  });
+
+  it('reads a prompt that runs over several lines', () => {
+    const parsed = parseParametersText(
+      'a fox\nin the snow\nNegative prompt: blurry\nwatermark\nSteps: 20',
+    );
+    expect(parsed?.prompt).toBe('a fox\nin the snow ### blurry\nwatermark');
+    expect(parsed?.params?.steps).toBe(20);
+  });
+
+  it('has nothing to answer with for text that says nothing', () => {
+    expect(parseParametersText('')).toBeNull();
+    expect(parseParametersText('   \n  ')).toBeNull();
   });
 });

@@ -1,6 +1,15 @@
-import { ImageGenerationRequest } from '../../types/generation';
+import {
+  ImageGenerationParams,
+  ImageGenerationRequest,
+} from '../../types/generation';
 import { StoredJobImageMetadata } from '../../types/generation-job';
-import { splitCombinedPrompt } from './generate-form.model';
+import { IMAGE_SCHEDULERS } from '../../types/sampler-constraints';
+import type { ImageSamplerName } from '../../types/style';
+import {
+  SAMPLERS,
+  combinePrompt,
+  splitCombinedPrompt,
+} from './generate-form.model';
 
 /** gen_metadata values that mark an entry as a failure worth surfacing. */
 const ERROR_VALUES = new Set([
@@ -287,6 +296,189 @@ export function buildParametersText(
     lines.push(settings.join(', '));
   }
   return lines.join('\n');
+}
+
+/** {@link A1111_SAMPLER_NAMES} the other way round, keyed for a case-blind lookup. */
+const HORDE_SAMPLER_NAMES: Record<string, ImageSamplerName> =
+  Object.fromEntries(
+    Object.entries(A1111_SAMPLER_NAMES).map(([horde, a1111]) => [
+      a1111.toLowerCase(),
+      horde,
+    ]),
+  );
+
+/** The settings {@link buildParametersText} writes, as the line names them. */
+const PARAMETER_KEYS = new Set([
+  'steps',
+  'sampler',
+  'schedule type',
+  'cfg scale',
+  'seed',
+  'size',
+  'model',
+  'clip skip',
+  'denoising strength',
+]);
+
+/** How the negative prompt introduces itself on its own line. */
+const NEGATIVE_PROMPT_PREFIX = /^negative prompt:\s*/i;
+
+/**
+ * The settings a comma-separated line names, or null when it names none. A
+ * value runs to the next comma, which is what every writer of this format
+ * assumes, so a model name with a comma in it is the one thing that cannot
+ * survive the trip.
+ */
+function readSettingsLine(line: string): Map<string, string> | null {
+  const settings = new Map<string, string>();
+  const pattern = /([A-Za-z][A-Za-z ]*):\s*([^,]*)(?:,\s*|$)/g;
+  let match = pattern.exec(line);
+  while (match !== null) {
+    const key = match[1].trim().toLowerCase();
+    if (PARAMETER_KEYS.has(key)) {
+      settings.set(key, match[2].trim());
+    }
+    match = pattern.exec(line);
+  }
+  return settings.size > 0 ? settings : null;
+}
+
+/** A finite number, or undefined for anything that is not one. */
+function readNumber(raw: string | undefined): number | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const value = Number.parseFloat(raw);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+/** A whole number, for the settings the horde only accepts as integers. */
+function readWhole(raw: string | undefined): number | undefined {
+  const value = readNumber(raw);
+  return value === undefined ? undefined : Math.round(value);
+}
+
+/**
+ * The sampler a settings line names, in the horde's vocabulary. The line is
+ * written in A1111's names, but text pasted from elsewhere often carries the
+ * horde's own, so a name that is already one of those is taken as it stands.
+ */
+function readSampler(raw: string | undefined): ImageSamplerName | undefined {
+  if (raw === undefined || raw === '') {
+    return undefined;
+  }
+  const known = HORDE_SAMPLER_NAMES[raw.toLowerCase()];
+  if (known !== undefined) {
+    return known;
+  }
+  return SAMPLERS.includes(raw) ? raw : undefined;
+}
+
+/** Write the schedule a settings line names onto `params`. */
+function applySchedule(params: ImageGenerationParams, raw: string): void {
+  const value = raw.trim().toLowerCase();
+  if (value === 'karras') {
+    params.karras = true;
+    return;
+  }
+  const scheduler = IMAGE_SCHEDULERS.find((name) => name === value);
+  if (scheduler !== undefined) {
+    params.scheduler = scheduler;
+  }
+}
+
+/**
+ * Read a request back out of A1111 `parameters` text, the inverse of
+ * {@link buildParametersText}. This is how a picture the studio wrote hands its
+ * settings back when it is dropped on the studio again, and it reads the same
+ * text every other tool writes in this format.
+ *
+ * Null when the text says nothing usable: no prompt and no setting anyone could
+ * act on. Everything it cannot make sense of is dropped rather than guessed at,
+ * so a half-understood line never becomes a setting nobody chose.
+ */
+export function parseParametersText(
+  text: string,
+): ImageGenerationRequest | null {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const settings = readSettingsLine(lines[lines.length - 1] ?? '');
+  if (settings !== null) {
+    lines.pop();
+  }
+
+  const negativeAt = lines.findIndex((line) =>
+    NEGATIVE_PROMPT_PREFIX.test(line),
+  );
+  const prompt = (negativeAt === -1 ? lines : lines.slice(0, negativeAt))
+    .join('\n')
+    .trim();
+  const negative =
+    negativeAt === -1
+      ? ''
+      : [
+          lines[negativeAt].replace(NEGATIVE_PROMPT_PREFIX, ''),
+          ...lines.slice(negativeAt + 1),
+        ]
+          .join('\n')
+          .trim();
+
+  const request: ImageGenerationRequest = {
+    prompt: combinePrompt(prompt, negative),
+  };
+  if (settings === null) {
+    return request.prompt === '' ? null : request;
+  }
+
+  const params: ImageGenerationParams = {};
+  const steps = readWhole(settings.get('steps'));
+  if (steps !== undefined) {
+    params.steps = steps;
+  }
+  const sampler = readSampler(settings.get('sampler'));
+  if (sampler !== undefined) {
+    params.sampler_name = sampler;
+  }
+  const schedule = settings.get('schedule type');
+  if (schedule !== undefined) {
+    applySchedule(params, schedule);
+  }
+  const cfg = readNumber(settings.get('cfg scale'));
+  if (cfg !== undefined) {
+    params.cfg_scale = cfg;
+  }
+  const seed = settings.get('seed');
+  if (seed !== undefined && seed !== '') {
+    params.seed = seed;
+  }
+  const size = /^(\d+)\s*x\s*(\d+)$/.exec(settings.get('size') ?? '');
+  if (size !== null) {
+    params.width = Number.parseInt(size[1], 10);
+    params.height = Number.parseInt(size[2], 10);
+  }
+  const clipSkip = readWhole(settings.get('clip skip'));
+  if (clipSkip !== undefined) {
+    params.clip_skip = clipSkip;
+  }
+  const denoise = readNumber(settings.get('denoising strength'));
+  if (denoise !== undefined) {
+    params.denoising_strength = denoise;
+  }
+
+  const model = settings.get('model');
+  if (model !== undefined && model !== '') {
+    request.models = [model];
+  }
+  if (Object.keys(params).length > 0) {
+    request.params = params;
+  }
+  if (
+    request.prompt === '' &&
+    request.models === undefined &&
+    request.params === undefined
+  ) {
+    return null;
+  }
+  return request;
 }
 
 /**

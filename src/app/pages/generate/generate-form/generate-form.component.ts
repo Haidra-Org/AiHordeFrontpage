@@ -45,6 +45,7 @@ import { GsPromptEditorComponent } from '../../../components/gs-prompt-editor/gs
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
 import { GeneratePresetsService } from '../../../services/generate-presets.service';
 import { GlossaryService } from '../../../services/glossary.service';
+import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
 import { UnitConversionService } from '../../../services/unit-conversion.service';
@@ -159,6 +160,7 @@ import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import {
   LicensingService,
+  licensingExplorerUrl,
   licensingLineText,
   postProcessorCategory,
   worstLicensingFact,
@@ -585,6 +587,8 @@ export class GenerateFormComponent implements OnInit {
      tools, so this header is the studio's top line and the place the glossary
      is reached from. The shell's copy takes over from 1024px up. */
   public readonly glossary = inject(GlossaryService);
+  private readonly auth = inject(AuthService);
+  public readonly isLoggedIn = this.auth.isLoggedIn;
   /** Backs the full-screen control: in Options wide, beside it on a phone. */
   public readonly fullscreen = inject(FullscreenService);
   private readonly toast = inject(ToastService);
@@ -1436,7 +1440,7 @@ export class GenerateFormComponent implements OnInit {
     for (const name of this.licensingModelNames()) {
       const fact = this.licensing.commercialUse('image_generation', name)();
       if (fact !== null) {
-        entries.push({ name, fact });
+        entries.push({ name, category: 'image_generation', fact });
       }
     }
     return worstLicensingFact(entries);
@@ -2304,6 +2308,16 @@ export class GenerateFormComponent implements OnInit {
     nameAsset: boolean,
   ): string {
     return licensingLineText(this.transloco, fact, name, nameAsset);
+  }
+
+  /** Where a fact line's link takes a reader who wants the whole licence. */
+  public explorerUrl(entry: NamedLicensingFact): string {
+    return licensingExplorerUrl(entry.category, entry.name);
+  }
+
+  /** The same for a post-processor, whose line carries only its own name. */
+  public postProcessorExplorerUrl(name: ImagePostProcessor): string {
+    return licensingExplorerUrl(postProcessorCategory(name), name);
   }
 
   public stripBackground(): boolean {

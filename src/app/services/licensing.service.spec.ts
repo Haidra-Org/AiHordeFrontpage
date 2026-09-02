@@ -13,6 +13,7 @@ import {
   coerceAssetPage,
   coerceLicenseDefinition,
   controlnetAssetName,
+  licensingExplorerUrl,
   postProcessorCategory,
   prohibitedFacts,
   worstLicensingFact,
@@ -151,6 +152,7 @@ function flushDefinitions(http: HttpTestingController): void {
 function named(name: string, status: LicensingStatus): NamedLicensingFact {
   return {
     name,
+    category: 'image_generation',
     fact: {
       status,
       licenseId: 'X',
@@ -257,6 +259,20 @@ describe('asset name conventions', () => {
     expect(postProcessorCategory('RestoreFormer')).toBe('gfpgan');
     expect(postProcessorCategory('RealESRGAN_x4plus')).toBe('esrgan');
     expect(postProcessorCategory('4x_AnimeSharp')).toBe('esrgan');
+  });
+});
+
+describe('licensingExplorerUrl', () => {
+  it('addresses the asset in its own category, name and all', () => {
+    expect(licensingExplorerUrl('image_generation', 'Deliberate')).toBe(
+      'https://reference.aihorde.net/categories/image_generation/model/Deliberate',
+    );
+    expect(licensingExplorerUrl('image_generation', 'Stable Cascade 1.0')).toBe(
+      'https://reference.aihorde.net/categories/image_generation/model/Stable%20Cascade%201.0',
+    );
+    expect(licensingExplorerUrl('controlnet_annotator', 'annotator_mlsd')).toBe(
+      'https://reference.aihorde.net/categories/controlnet_annotator/model/annotator_mlsd',
+    );
   });
 });
 

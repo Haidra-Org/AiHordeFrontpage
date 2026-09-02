@@ -236,6 +236,9 @@
         @for (entry of controlLicensing(); track entry.name) {
           <p class="gs-sublabel mt-1">
             {{ licensingLine(entry.fact, entry.name) }}
+            <a [href]="explorerUrl(entry)" target="_blank" rel="noopener">{{
+              "generate.licensing.explorer" | transloco
+            }}</a>
           </p>
         }
         @if (rejectionFor("control_type"); as message) {

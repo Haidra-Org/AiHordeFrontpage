@@ -30,6 +30,10 @@ import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
 import { setPageTitle } from '../../helper/page-title';
 import {
+  markRetentionNoticeSeen,
+  retentionNoticeSeen,
+} from '../../helper/retention-notice';
+import {
   ALCHEMY_DATA_FORMS,
   ALCHEMY_POST_PROCESSOR_FORMS,
   AlchemyFormName,
@@ -549,6 +553,8 @@ export class AlchemyComponent {
   public readonly isNarrow = signal(false);
 
   public readonly isLoggedIn = this.auth.isLoggedIn;
+  /** The full retention note is read once per visit, then a one-line reminder. */
+  public readonly retentionFull = signal(!retentionNoticeSeen());
 
   public readonly hasSource = computed(() => this.sourceImage() !== null);
   public readonly selectedCount = computed(() => this.selectedForms().size);
@@ -592,6 +598,7 @@ export class AlchemyComponent {
   );
 
   constructor() {
+    markRetentionNoticeSeen();
     // Thumbnails for every uploaded source, so the rail and gallery are
     // populated as soon as the queue hands over a restored history. A job's
     // blobs are written just after the job itself appears, so this also runs

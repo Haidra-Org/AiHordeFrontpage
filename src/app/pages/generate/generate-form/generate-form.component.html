@@ -528,9 +528,13 @@
                 </div>
               </div>
             }
-            <p class="gs-sublabel mt-1">
-              {{ "generate.form.style_hint" | transloco }}
-            </p>
+            <!-- The hint explains what a style is; once one is chosen the
+                 select and the lit chip say it. -->
+            @if (!selectedStyleName()) {
+              <p class="gs-sublabel mt-1">
+                {{ "generate.form.style_hint" | transloco }}
+              </p>
+            }
           </div>
 
           <!-- Model -->
@@ -607,13 +611,21 @@
                   }
                 }
                 @if (modelLicensing(); as licence) {
-                  <span>{{
-                    licensingLine(
-                      licence.fact,
-                      licence.name,
-                      modelLicensingNamesAsset()
-                    )
-                  }}</span>
+                  <span
+                    >{{
+                      licensingLine(
+                        licence.fact,
+                        licence.name,
+                        modelLicensingNamesAsset()
+                      )
+                    }}
+                    <a
+                      [href]="explorerUrl(licence)"
+                      target="_blank"
+                      rel="noopener"
+                      >{{ "generate.licensing.explorer" | transloco }}</a
+                    ></span
+                  >
                 }
               </p>
             }
@@ -1628,8 +1640,14 @@
                 <option value="">
                   {{ "generate.form.upscaler_none" | transloco }}
                 </option>
+                <!-- The select's value is bound before its options exist, so a
+                     stored choice is marked on the option itself; without it
+                     the control opens on None whatever was saved. -->
                 @for (upscaler of upscalers; track upscaler) {
-                  <option [value]="upscaler">
+                  <option
+                    [value]="upscaler"
+                    [selected]="upscaler === selectedUpscaler()"
+                  >
                     {{ "alchemy.form_names." + upscaler | transloco }}
                   </option>
                 }
@@ -1641,6 +1659,12 @@
                 @if (postProcessorLicensing(upscaler); as licence) {
                   <p class="gs-sublabel mt-1">
                     {{ licensingLine(licence, upscaler, false) }}
+                    <a
+                      [href]="postProcessorExplorerUrl(upscaler)"
+                      target="_blank"
+                      rel="noopener"
+                      >{{ "generate.licensing.explorer" | transloco }}</a
+                    >
                   </p>
                 }
               }
@@ -1660,8 +1684,13 @@
                 <option value="">
                   {{ "generate.form.facefixer_none" | transloco }}
                 </option>
+                <!-- Marked on the option for the same reason as the upscaler
+                     above: the value binding lands before the options do. -->
                 @for (fixer of faceFixers; track fixer) {
-                  <option [value]="fixer">
+                  <option
+                    [value]="fixer"
+                    [selected]="fixer === selectedFaceFixer()"
+                  >
                     {{ "alchemy.form_names." + fixer | transloco }}
                   </option>
                 }
@@ -1673,6 +1702,12 @@
                 @if (postProcessorLicensing(fixer); as licence) {
                   <p class="gs-sublabel mt-1">
                     {{ licensingLine(licence, fixer, false) }}
+                    <a
+                      [href]="postProcessorExplorerUrl(fixer)"
+                      target="_blank"
+                      rel="noopener"
+                      >{{ "generate.licensing.explorer" | transloco }}</a
+                    >
                   </p>
                 }
               }
@@ -2789,6 +2824,14 @@
         }}
       </button>
     </div>
+    @if (!isLoggedIn()) {
+      <p class="gs-anon-line">
+        {{ "generate.form.anonymous_line" | transloco }}
+        <a routerLink="/profile/">{{
+          "generate.form.anonymous_login" | transloco
+        }}</a>
+      </p>
+    }
   </footer>
 </form>
 

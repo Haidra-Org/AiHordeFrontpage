@@ -5,7 +5,10 @@ import {
   parseStudioLink,
   studioLinkFromText,
   studioLinkParams,
+  studioPayloadFromImage,
 } from './studio-link';
+import { webpFile } from '../../testing/webp-fixture';
+import { buildParametersText } from './image-metadata';
 import {
   DEFAULT_GENERATE_FORM_VALUE,
   GenerateFormValue,
@@ -222,5 +225,33 @@ describe('studioLinkFromText', () => {
     expect(studioLinkFromText('{not json')).toBeNull();
     expect(studioLinkFromText('[1,2,3]')).toBeNull();
     expect(studioLinkFromText('https://aihorde.net/generate/image')).toBeNull();
+  });
+});
+
+describe('studioPayloadFromImage', () => {
+  it('takes the settings back off an image the studio wrote', async () => {
+    const request = buildImageRequest(
+      value({ prompt: 'a fox in the snow', model: 'Deliberate', steps: 25 }),
+    );
+    const payload = await studioPayloadFromImage(
+      webpFile(buildParametersText(request, undefined)),
+    );
+
+    expect(payload?.kind).toBe('full');
+    expect(payload?.styleKey).toBeNull();
+    expect(payload?.request.prompt).toBe('a fox in the snow');
+    expect(payload?.request.models).toEqual(['Deliberate']);
+    expect(payload?.request.params?.steps).toBe(25);
+  });
+
+  it('finds nothing in an image that carries no settings', async () => {
+    expect(await studioPayloadFromImage(webpFile(null))).toBeNull();
+  });
+
+  it('finds nothing in a file that is not an image at all', async () => {
+    const file = new File(['not a picture'], 'notes.txt', {
+      type: 'text/plain',
+    });
+    expect(await studioPayloadFromImage(file)).toBeNull();
   });
 });

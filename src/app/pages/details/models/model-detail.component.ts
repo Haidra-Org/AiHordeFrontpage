@@ -23,6 +23,7 @@ import {
 } from '../../../services/model-reference.service';
 import {
   LicensingService,
+  licensingExplorerUrl,
   type LicensingFact,
 } from '../../../services/licensing.service';
 import { ActiveModel } from '../../../types/active-model';
@@ -313,6 +314,11 @@ export class ModelDetailComponent {
     this.kind() === 'image'
       ? this.licensing.commercialUse('image_generation', this.modelName())()
       : null,
+  );
+
+  /** This model's page in the reference explorer, where the licence is set out in full. */
+  public readonly licensingExplorer = computed(() =>
+    licensingExplorerUrl('image_generation', this.modelName()),
   );
 
   /** The licence's conditions in plain words, or '' when it attaches none. */

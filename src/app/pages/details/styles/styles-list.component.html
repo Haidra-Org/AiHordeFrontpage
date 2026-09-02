@@ -186,30 +186,5 @@
         </div>
       }
     }
-
-    <!-- Load More -->
-    @if (!loading() && !error() && hasMore()) {
-      <div class="action-row action-row-responsive">
-        <button
-          type="button"
-          class="btn-source-control"
-          (click)="loadMore()"
-          [disabled]="loadingMore()"
-        >
-          @if (loadingMore()) {
-            <div class="spinner spinner-sm" aria-hidden="true"></div>
-          } @else {
-            <app-icon name="plus" />
-          }
-          {{ "styles.load_more" | transloco }}
-        </button>
-      </div>
-    }
-
-    @if (!loading() && !error() && exhaustionNote()) {
-      <div class="action-row action-row-responsive text-secondary">
-        <span>{{ exhaustionNote() | transloco }}</span>
-      </div>
-    }
   </div>
 </div>

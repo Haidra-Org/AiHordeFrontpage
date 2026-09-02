@@ -155,12 +155,6 @@
             </span>
           </div>
 
-          @if (!isLoggedIn()) {
-            <p class="gs-info-note">
-              {{ "alchemy.anonymous_notice" | transloco }}
-            </p>
-          }
-
           <app-alchemy-image-input
             [disabled]="isSubmitting()"
             (sourceImage)="onSourceImage($event)"
@@ -485,6 +479,14 @@
             {{ "alchemy.submit.hint_incomplete" | transloco }}
           }
         </div>
+        @if (!isLoggedIn()) {
+          <p class="gs-anon-line">
+            {{ "generate.form.anonymous_line" | transloco }}
+            <a routerLink="/profile/">{{
+              "generate.form.anonymous_login" | transloco
+            }}</a>
+          </p>
+        }
       </footer>
     </div>
   </section>
@@ -658,13 +660,22 @@
             </div>
           </div>
         } @else {
-          <div class="gs-retention gs-retention--amber gs-retention--flush">
-            <app-icon name="clock" class="gs-ico-sm" />
-            <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
-            <a class="gs-retention-link" routerLink="/generate/storage">
-              {{ "studio.storage.manage_link" | transloco }}
-            </a>
-          </div>
+          @if (retentionFull()) {
+            <div class="gs-retention gs-retention--amber gs-retention--flush">
+              <app-icon name="clock" class="gs-ico-sm" />
+              <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
+              <a class="gs-retention-link" routerLink="/generate/storage">
+                {{ "studio.storage.manage_link" | transloco }}
+              </a>
+            </div>
+          } @else {
+            <p class="gs-retention gs-retention--quiet gs-retention--flush">
+              <span>{{ "studio.storage.kept_note" | transloco }}</span>
+              <a class="gs-retention-link" routerLink="/generate/storage">
+                {{ "studio.storage.manage_link" | transloco }}
+              </a>
+            </p>
+          }
 
           <app-alchemy-results-browser
             [jobs]="jobs()"

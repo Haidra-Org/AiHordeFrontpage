@@ -279,6 +279,16 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.isTileMenuButtonOpen(tile)).toBe(false);
   });
 
+  it('opens the View menu, closes it on Escape and marks the retention note read', () => {
+    expect(sessionStorage.getItem('aihorde.studio.retention_seen')).toBe('1');
+
+    component.toggleViewMenu();
+    expect(component.viewMenuOpen()).toBe(true);
+
+    component.onDocumentEscape();
+    expect(component.viewMenuOpen()).toBe(false);
+  });
+
   it('clamps racing lifecycle counts to the requested batch size', () => {
     pendingJobs.set([
       {

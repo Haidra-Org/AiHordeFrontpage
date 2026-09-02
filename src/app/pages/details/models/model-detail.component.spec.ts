@@ -314,9 +314,15 @@ describe('ModelDetailComponent licence row', () => {
     expect(text).toContain(
       'Conditions: credit the authors, include the licence.',
     );
-    const link = row!.querySelector('a') as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe('https://example.invalid/rail');
-    expect(link.textContent?.trim()).toBe('OpenRAIL-M');
+    const [licence, explorer] = [
+      ...row!.querySelectorAll<HTMLAnchorElement>('a'),
+    ];
+    expect(licence.getAttribute('href')).toBe('https://example.invalid/rail');
+    expect(licence.textContent?.trim()).toBe('OpenRAIL-M');
+    expect(explorer.getAttribute('href')).toBe(
+      'https://reference.aihorde.net/categories/image_generation/model/Deliberate',
+    );
+    expect(explorer.textContent?.trim()).toBe('See the licence record');
   });
 
   it('draws no row while the export has not answered', async () => {

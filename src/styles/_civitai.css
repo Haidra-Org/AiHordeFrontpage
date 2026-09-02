@@ -791,7 +791,7 @@
    Deliberately not applied inside the studio: doing so would shadow the tokens
    the studio itself sets, including the variants it uses for alchemy. */
 .gs-civit-scope {
-  --gs-blue: #1d4ed8;
+  --gs-blue: var(--hd-accent);
   --gs-blue-tint: #eff6ff;
   --gs-blue-tint-border: #dbeafe;
   --gs-border: #e5e7eb;
@@ -800,7 +800,7 @@
   --gs-label: #6b7280;
   --gs-muted: #737b88;
   --gs-panel: #ffffff;
-  --gs-purple: #9333ea;
+  --gs-purple: var(--hd-purple);
   --gs-purple-tint: #faf5ff;
   --gs-seg-track: #f3f4f6;
   --gs-space-2: 8px;

@@ -23,6 +23,7 @@ import { DatabaseService } from '../../../services/database.service';
 import { ModelReferenceService } from '../../../services/model-reference.service';
 import {
   LicensingService,
+  licensingExplorerUrl,
   licensingLineText,
   type LicensingFact,
   type NamedLicensingFact,
@@ -79,12 +80,19 @@ import {
   type SourceEditorDoc,
   type SourceEditorResult,
 } from '../source-editor/source-editor.component';
+import { type StudioLinkPayload, studioPayloadFromImage } from '../studio-link';
 
 /** Where the reader's choice to fold this card away is remembered. */
 const SOURCE_OPEN_KEY = 'aihorde.generate.source_open';
 
 /** The separator the folded card reads its values between. */
 const SUMMARY_SEPARATOR = ' · ';
+
+/** A picture offered to the page along with the settings it was found to carry. */
+export interface SourceSettingsOffer {
+  file: File;
+  payload: StudioLinkPayload;
+}
 
 /** One remix extra source image, in the order it is submitted. */
 export interface GenerateSourceExtra {
@@ -194,6 +202,11 @@ export class GenerateSourceImageComponent implements OnInit {
   public readonly linkSourceMissing = input(false);
 
   public readonly stateChange = output<GenerateSourceState>();
+  /**
+   * A file that turned out to carry the settings that made it, with what was
+   * read off it, so the page can ask what the reader wants done with both.
+   */
+  public readonly settingsOffer = output<SourceSettingsOffer>();
 
   /** The horde's refusal for one control, or null when it named another. */
   public rejectionFor(anchor: FieldAnchorId): string | null {
@@ -314,6 +327,11 @@ export class GenerateSourceImageComponent implements OnInit {
   /** One licensing fact as the line shown under the control type. */
   public licensingLine(fact: LicensingFact, name: string): string {
     return licensingLineText(this.transloco, fact, name, true);
+  }
+
+  /** Where a fact line's link takes a reader who wants the whole licence. */
+  public explorerUrl(entry: NamedLicensingFact): string {
+    return licensingExplorerUrl(entry.category, entry.name);
   }
 
   /** The ways of starting from a picture the card offers. */
@@ -746,7 +764,7 @@ export class GenerateSourceImageComponent implements OnInit {
   public onFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      void this.encodeFile(file);
+      void this.applyFile(file);
     }
   }
 
@@ -758,7 +776,7 @@ export class GenerateSourceImageComponent implements OnInit {
     }
     const file = event.dataTransfer?.files?.[0];
     if (file) {
-      void this.encodeFile(file);
+      void this.applyFile(file);
     }
   }
 
@@ -778,9 +796,33 @@ export class GenerateSourceImageComponent implements OnInit {
    * Adopt a file handed over from the page (an image pasted onto the studio or
    * dropped on the workspace), taking the same decode/downscale/encode path as a
    * file picked here so the size cap and error handling apply identically.
+   *
+   * A picture that carries the settings that made it is worth more than its
+   * pixels, so unless the caller has already settled the question the page is
+   * asked first and nothing is attached until it answers.
    */
-  public applyFile(file: File): Promise<void> {
-    return this.encodeFile(file);
+  public async applyFile(
+    file: File,
+    options: { skipSettings?: boolean } = {},
+  ): Promise<void> {
+    if (options.skipSettings !== true && (await this.checkForSettings(file))) {
+      return;
+    }
+    await this.encodeFile(file);
+  }
+
+  /**
+   * Whether the file carries settings. When it does the choice of what to do
+   * with them is handed to the page, which is the only place that can offer it:
+   * settings reach the form through the review panel, not through this card.
+   */
+  public async checkForSettings(file: File): Promise<boolean> {
+    const payload = await studioPayloadFromImage(file);
+    if (payload === null) {
+      return false;
+    }
+    this.settingsOffer.emit({ file, payload });
+    return true;
   }
 
   /**

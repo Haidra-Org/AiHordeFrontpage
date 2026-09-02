@@ -4,6 +4,26 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import en from '../../../../assets/i18n/en.json';
 import { StudioPasteModalComponent } from './studio-paste-modal.component';
 import { StudioLinkPayload } from '../studio-link';
+import { webpFile } from '../../../testing/webp-fixture';
+
+/** A change event from the hidden file input, standing in for a picked file. */
+function pickEvent(file: File): Event {
+  return {
+    target: { files: [file], value: 'result.webp' },
+  } as unknown as Event;
+}
+
+function dropEvent(file: File): DragEvent {
+  return {
+    preventDefault: () => undefined,
+    dataTransfer: { files: [file] },
+  } as unknown as DragEvent;
+}
+
+/** Let the file read and the parse behind it settle. */
+function settle(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 describe('StudioPasteModalComponent', () => {
   let fixture: ComponentFixture<StudioPasteModalComponent>;
@@ -63,5 +83,40 @@ describe('StudioPasteModalComponent', () => {
     expect(applied).toHaveLength(1);
     expect(applied[0].kind).toBe('simple');
     expect(applied[0].request.models).toEqual(['Deliberate']);
+  });
+
+  it('reads the settings off a chosen image', async () => {
+    const parameters = [
+      'a fox in the snow',
+      'Steps: 25, Seed: 12345, Model: Deliberate',
+    ].join('\n');
+    component.onImagePicked(pickEvent(webpFile(parameters)));
+    await settle();
+
+    expect(applied).toHaveLength(1);
+    expect(applied[0].kind).toBe('full');
+    expect(applied[0].request.prompt).toBe('a fox in the snow');
+    expect(applied[0].request.models).toEqual(['Deliberate']);
+    expect(component.error()).toBeNull();
+  });
+
+  it('reads the settings off an image dropped on the box', async () => {
+    component.onDragOver(dropEvent(webpFile(null)));
+    expect(component.dragActive()).toBe(true);
+
+    component.onDrop(dropEvent(webpFile('a fox\nSteps: 20')));
+    await settle();
+
+    expect(component.dragActive()).toBe(false);
+    expect(applied).toHaveLength(1);
+    expect(applied[0].request.params?.steps).toBe(20);
+  });
+
+  it('says so in the box when the image carries no settings', async () => {
+    component.onImagePicked(pickEvent(webpFile(null)));
+    await settle();
+
+    expect(component.error()).toBe('generate.link.paste_image_none');
+    expect(applied).toHaveLength(0);
   });
 });

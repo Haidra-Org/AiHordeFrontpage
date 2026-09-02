@@ -823,4 +823,90 @@ describe('StyleBrowserComponent', () => {
       expect(harness.closeCount()).toBe(1);
     });
   });
+  describe('published styles', () => {
+    /** A published style as the horde serves it, examples left off. */
+    const published = (
+      id: string,
+      name: string,
+      creator?: string,
+    ): Record<string, unknown> => ({
+      id,
+      name,
+      prompt: '{p}{np}',
+      params: {},
+      models: [],
+      nsfw: false,
+      ...(creator ? { creator } : {}),
+    });
+
+    /** Answer the community list request that switching areas fires. */
+    const flushCommunity = (
+      harness: Harness,
+      styles: Record<string, unknown>[],
+    ): void => {
+      harness.component.setArea('community');
+      TestBed.inject(HttpTestingController)
+        .expectOne((request) => request.url.endsWith('/styles/image'))
+        .flush(styles);
+      harness.fixture.detectChanges();
+    };
+
+    it('lists published styles flat, with creator and usage, and no cards', async () => {
+      const harness = await createBrowser();
+      harness.usage.increment('native:s1');
+      flushCommunity(harness, [
+        published('s1', 'Dreamy', 'someone'),
+        published('s2', 'Stark'),
+      ]);
+
+      const rows = [...harness.el.querySelectorAll('.gs-sb-row')];
+      expect(rows.length).toBe(2);
+      expect(harness.el.querySelector('.gs-sb-card')).toBeNull();
+      expect(
+        rows[0].querySelector('.gs-sb-row-name')?.textContent?.trim(),
+      ).toBe('Dreamy');
+      expect(rows[0].querySelector('.gs-sb-row-by')).not.toBeNull();
+      expect(rows[0].querySelector('.gs-sb-badge')).not.toBeNull();
+      // A style whose author is not named carries no creator line.
+      expect(rows[1].querySelector('.gs-sb-row-by')).toBeNull();
+    });
+
+    it('opens the preview from a row and commits from its button', async () => {
+      const harness = await createBrowser();
+      flushCommunity(harness, [published('s1', 'Dreamy', 'someone')]);
+
+      harness.el.querySelector<HTMLButtonElement>('.gs-sb-row-open')!.click();
+      harness.fixture.detectChanges();
+      expect(harness.el.querySelector('.gs-sb-viewer')).not.toBeNull();
+
+      harness.component.closeExpanded();
+      harness.fixture.detectChanges();
+      harness.el.querySelector<HTMLButtonElement>('.gs-sb-row-use')!.click();
+      harness.fixture.detectChanges();
+      expect(harness.form.controls.styleName.value).toBe('native:s1');
+      expect(harness.closeCount()).toBe(1);
+    });
+
+    it('swaps to cards on the previews toggle and remembers the choice', async () => {
+      const harness = await createBrowser();
+      flushCommunity(harness, [published('s1', 'Dreamy', 'someone')]);
+
+      harness.el.querySelector<HTMLButtonElement>('.gs-sb-previews')!.click();
+      harness.fixture.detectChanges();
+      expect(harness.el.querySelector('.gs-sb-row')).toBeNull();
+      expect(harness.el.querySelector('.gs-sb-card')).not.toBeNull();
+
+      const next = await createBrowser({
+        prefs: { 'aihorde.generate.style_browser_previews': true },
+      });
+      expect(next.component.recordPreviews()).toBe(true);
+    });
+
+    it('keeps preset cards whatever the toggle says', async () => {
+      const harness = await createBrowser();
+      expect(harness.component.recordPreviews()).toBe(false);
+      expect(harness.el.querySelectorAll('.gs-sb-card').length).toBe(3);
+      expect(harness.el.querySelector('.gs-sb-row')).toBeNull();
+    });
+  });
 });

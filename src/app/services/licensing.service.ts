@@ -24,6 +24,9 @@ const LICENSING_URL =
 /** The address the export's own `definition_urls` are relative to. */
 const API_ROOT = 'https://models.aihorde.net/api';
 
+/** Where the same reference is published for a reader to browse. */
+const EXPLORER_ROOT = 'https://reference.aihorde.net';
+
 /** How many assets one page of the assets endpoint carries. */
 const PAGE_LIMIT = 500;
 
@@ -117,6 +120,8 @@ export interface LicensingFact {
 /** A fact together with the asset it belongs to, for a line that names it. */
 export interface NamedLicensingFact {
   name: string;
+  /** The category the asset is filed under, which its name alone does not say. */
+  category: LicensingCategory;
   fact: LicensingFact;
 }
 
@@ -366,6 +371,17 @@ export function postProcessorCategory(name: string): LicensingCategory {
 }
 
 /**
+ * The explorer's page for one asset, where its licence is set out in full
+ * alongside everything else the reference publishes about it.
+ */
+export function licensingExplorerUrl(
+  category: LicensingCategory,
+  name: string,
+): string {
+  return `${EXPLORER_ROOT}/categories/${category}/model/${encodeURIComponent(name)}`;
+}
+
+/**
  * One fact as the line a reader sees. `nameAsset` is for the places where the
  * control the line sits under does not itself name the asset, such as a control
  * type that brings both a ControlNet model and a detector with it.
@@ -517,7 +533,7 @@ export class LicensingService {
     }
     const fact = this.factFor(category, name);
     if (fact !== null) {
-      entries.push({ name, fact });
+      entries.push({ name, category, fact });
     }
   }
 

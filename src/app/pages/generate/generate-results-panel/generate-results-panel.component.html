@@ -137,48 +137,32 @@
            choices about a view the reader is not in. The filters stay, because
            they change what is there rather than how it is arranged. -->
       @if (!tutorialOpen()) {
-        <label class="gs-view-ctl">
-          <app-icon name="squares-2x2" class="gs-ico-sm" />
-          <span class="gs-view-ctl-label">
-            {{ "generate.results.per_row" | transloco }}
-          </span>
-          <select
-            class="gs-view-select"
-            (change)="setImagesPerRow(+$any($event.target).value)"
-            [attr.aria-label]="'generate.results.per_row' | transloco"
+        <div class="gs-options gs-view-menu" #viewMenuHost>
+          <button
+            type="button"
+            class="gs-view-toggle"
+            [class.gs-view-toggle--on]="viewMenuOpen()"
+            (click)="toggleViewMenu()"
+            [attr.aria-expanded]="viewMenuOpen()"
+            aria-haspopup="dialog"
           >
-            @for (n of perRowOptions; track n) {
-              <option [value]="n" [selected]="n === imagesPerRow()">
-                {{ n }}
-              </option>
-            }
-          </select>
-        </label>
-
-        <button
-          type="button"
-          class="gs-view-toggle"
-          [class.gs-view-toggle--on]="showPrompts()"
-          [attr.aria-pressed]="showPrompts()"
-          (click)="toggleShowPrompts()"
-        >
-          <app-icon name="document-text" class="gs-ico-sm" />
-          {{ "generate.results.show_prompts" | transloco }}
-        </button>
-
-        <!-- Only offered at the widths where a tile carries the buttons; below
-             that the same three moves lead the flip menu and there is nothing
-             for this to turn on. CSS drops it under 1024px. -->
-        <button
-          type="button"
-          class="gs-view-toggle gs-view-toggle--wide"
-          [class.gs-view-toggle--on]="showQuickActions()"
-          [attr.aria-pressed]="showQuickActions()"
-          (click)="toggleShowQuickActions()"
-        >
-          <app-icon name="bolt" class="gs-ico-sm" />
-          {{ "generate.results.show_quick_actions" | transloco }}
-        </button>
+            <app-icon
+              name="adjustments-horizontal"
+              class="gs-ico-sm"
+              aria-hidden="true"
+            />
+            {{ "generate.results.view_menu" | transloco }}
+          </button>
+          @if (viewMenuOpen() && !viewerNarrow()) {
+            <div
+              class="gs-options-pop gs-view-pop"
+              role="dialog"
+              [attr.aria-label]="'generate.results.view_menu' | transloco"
+            >
+              <ng-container *ngTemplateOutlet="viewRows" />
+            </div>
+          }
+        </div>
       }
 
       @if (styleOptions().length > 0) {
@@ -1449,13 +1433,22 @@
         }
       </div>
 
-      <div class="gs-retention">
-        <app-icon name="info-circle" class="gs-ico-sm" />
-        <span>{{ "generate.results.retention_note" | transloco }}</span>
-        <a class="gs-retention-link" routerLink="/generate/storage">
-          {{ "studio.storage.manage_link" | transloco }}
-        </a>
-      </div>
+      @if (retentionFull()) {
+        <div class="gs-retention">
+          <app-icon name="info-circle" class="gs-ico-sm" />
+          <span>{{ "generate.results.retention_note" | transloco }}</span>
+          <a class="gs-retention-link" routerLink="/generate/storage">
+            {{ "studio.storage.manage_link" | transloco }}
+          </a>
+        </div>
+      } @else {
+        <p class="gs-retention gs-retention--quiet">
+          <span>{{ "studio.storage.kept_note" | transloco }}</span>
+          <a class="gs-retention-link" routerLink="/generate/storage">
+            {{ "studio.storage.manage_link" | transloco }}
+          </a>
+        </p>
+      }
     }
   </div>
 </div>
@@ -2100,4 +2093,89 @@
       (closed)="metaJsonOpen.set(false)"
     />
   }
+}
+
+<!-- The view preferences, one list drawn two ways so the presentations cannot
+     drift: the popover beside the View button, and the bottom sheet on a
+     phone. -->
+<ng-template #viewRows>
+  <label class="gs-opt-row gs-opt-row--field">
+    <app-icon name="squares-2x2" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.results.per_row" | transloco
+      }}</span>
+    </span>
+    <select
+      class="gs-view-select"
+      (change)="setImagesPerRow(+$any($event.target).value)"
+      [attr.aria-label]="'generate.results.per_row' | transloco"
+    >
+      @for (n of perRowOptions; track n) {
+        <option [value]="n" [selected]="n === imagesPerRow()">
+          {{ n }}
+        </option>
+      }
+    </select>
+  </label>
+  <button
+    type="button"
+    class="gs-opt-row gs-opt-row--switch"
+    [class.gs-opt-row--on]="showPrompts()"
+    [attr.aria-pressed]="showPrompts()"
+    (click)="toggleShowPrompts()"
+  >
+    <app-icon name="document-text" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.results.show_prompts" | transloco
+      }}</span>
+    </span>
+    <span class="gs-opt-state" aria-hidden="true">{{
+      (showPrompts() ? "generate.form.options_on" : "generate.form.options_off")
+        | transloco
+    }}</span>
+  </button>
+  <!-- Only where a tile carries the buttons; below 1024px the same moves lead
+       the flip menu and there is nothing for this to turn on. -->
+  @if (!viewerNarrow()) {
+    <button
+      type="button"
+      class="gs-opt-row gs-opt-row--switch"
+      [class.gs-opt-row--on]="showQuickActions()"
+      [attr.aria-pressed]="showQuickActions()"
+      (click)="toggleShowQuickActions()"
+    >
+      <app-icon name="bolt" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.show_quick_actions" | transloco
+        }}</span>
+        <span class="gs-opt-hint">{{
+          "generate.results.show_quick_actions_hint" | transloco
+        }}</span>
+      </span>
+      <span class="gs-opt-state" aria-hidden="true">{{
+        (showQuickActions()
+          ? "generate.form.options_on"
+          : "generate.form.options_off"
+        ) | transloco
+      }}</span>
+    </button>
+  }
+</ng-template>
+
+@if (viewMenuOpen() && viewerNarrow()) {
+  <app-gs-sheet
+    [startExpanded]="true"
+    [label]="'generate.results.view_menu' | transloco"
+    (closed)="closeViewMenu()"
+  >
+    <span sheet-bar class="gs-sheet-title">{{
+      "generate.results.view_menu" | transloco
+    }}</span>
+    <div class="gs-options-rows">
+      <ng-container *ngTemplateOutlet="viewRows" />
+    </div>
+  </app-gs-sheet>
 }

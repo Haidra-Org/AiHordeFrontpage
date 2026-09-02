@@ -6,7 +6,12 @@
   aria-modal="true"
   tabindex="0"
 >
-  <div class="gs-modal-panel gs-fadeup">
+  <div
+    class="gs-modal-panel gs-fadeup"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+  >
     <div class="gs-modal-header">
       <div class="gs-modal-title">
         <app-icon name="clipboard-document" class="gs-ico-sm" />
@@ -34,6 +39,22 @@
         (input)="onInput($event)"
         [attr.placeholder]="'generate.link.paste_placeholder' | transloco"
       ></textarea>
+      <button
+        type="button"
+        class="gs-chip mt-3 gap-1.5"
+        [class.gs-chip--active]="dragActive()"
+        (click)="chooseImage()"
+      >
+        <app-icon name="photo" class="gs-ico-sm" />
+        {{ "generate.link.paste_image_choose" | transloco }}
+      </button>
+      <input
+        #imageInput
+        type="file"
+        accept="image/webp,image/*"
+        class="sr-only"
+        (change)="onImagePicked($event)"
+      />
       @if (error(); as message) {
         <p class="gs-warn" role="alert">
           <app-icon name="warning-triangle" class="gs-ico-sm" />

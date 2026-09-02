@@ -12,7 +12,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { concatMap, EMPTY, finalize, from, tap, Observable } from 'rxjs';
+import { EMPTY, expand, finalize, Observable } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { StyleService } from '../../../services/style.service';
@@ -60,8 +60,13 @@ export class StylesListComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly stickyRegistry = inject(StickyRegistryService);
-  private readonly initialPageBatchCount = 2;
   private readonly pageSize = 25;
+  /**
+   * A ceiling on the fetch loop. The horde ends a list with a short page, so
+   * this only bites if it ever stops doing so: without it a full page every
+   * time would keep the loop asking indefinitely.
+   */
+  private readonly maxPages = 40;
 
   /** Route parameters as signals. */
   private readonly params = toSignal(this.route.params, {
@@ -117,18 +122,6 @@ export class StylesListComponent implements OnInit {
   public readonly clientFilters = signal<StyleClientFilters>(
     DEFAULT_CLIENT_FILTERS,
   );
-
-  /** Note to show when no further pages are available (i18n key). */
-  public readonly exhaustionNote = signal<string | null>(null);
-
-  /** Loading additional pages. */
-  public readonly loadingMore = signal(false);
-
-  /** Whether more pages are available. */
-  public readonly hasMore = signal(true);
-
-  /** Next page number to request. */
-  public readonly nextPageToLoad = signal(1);
 
   /** Whether user is logged in. */
   public readonly isLoggedIn = computed(() => this.auth.isLoggedIn());
@@ -258,14 +251,12 @@ export class StylesListComponent implements OnInit {
     this.activeTab.set(tab);
     this.queryParams.set(DEFAULT_QUERY_PARAMS);
     this.clientFilters.set(DEFAULT_CLIENT_FILTERS);
-    this.resetPaginationState();
     this.loadStyles();
     void this.router.navigate(['/details/styles', tab], { replaceUrl: true });
   }
 
   public onQueryParamsChange(params: StyleQueryParams): void {
     this.queryParams.set(params);
-    this.resetPaginationState();
     this.loadStyles();
   }
 
@@ -273,78 +264,33 @@ export class StylesListComponent implements OnInit {
     this.clientFilters.set(filters);
   }
 
+  /**
+   * Fetch the whole tab before showing it. The search runs over what is held
+   * here, so a list that stopped at the pages someone had paged through would
+   * answer for part of the catalogue and stay silent about the rest.
+   */
   public loadStyles(): void {
     const tab = this.activeTab();
 
-    this.resetPaginationState();
     this.clearAllStyles();
-    this.exhaustionNote.set(null);
     this.loading.set(true);
     this.error.set(null);
 
-    from(Array.from({ length: this.initialPageBatchCount }))
+    this.fetchPage(tab, 1)
       .pipe(
-        concatMap(() => {
-          if (!this.hasMore()) {
-            return EMPTY;
-          }
-
-          const page = this.nextPageToLoad();
-          return this.fetchPage(tab, page).pipe(
-            tap((items: StyleList) => {
-              const dedupe = this.appendPageResults(tab, items);
-              this.nextPageToLoad.set(page + 1);
-              if (dedupe.duplicates > 1) {
-                this.hasMore.set(false);
-                this.exhaustionNote.set('styles.all_loaded');
-              } else {
-                this.hasMore.set(
-                  items.length === this.pageSize && dedupe.addedCount > 0,
-                );
-              }
-            }),
-          );
+        expand((items: StyleList, index: number) => {
+          const dedupe = this.appendPageResults(tab, items);
+          const exhausted =
+            items.length !== this.pageSize ||
+            dedupe.addedCount === 0 ||
+            dedupe.duplicates > 1 ||
+            index + 1 >= this.maxPages;
+          return exhausted ? EMPTY : this.fetchPage(tab, index + 2);
         }),
         takeUntilDestroyed(this.destroyRef),
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        error: (err: unknown) =>
-          this.error.set(
-            err instanceof Error ? err.message : this.getLoadError(tab),
-          ),
-      });
-  }
-
-  public loadMore(): void {
-    if (!this.hasMore() || this.loadingMore() || this.loading()) {
-      return;
-    }
-
-    const tab = this.activeTab();
-    const page = this.nextPageToLoad();
-
-    this.loadingMore.set(true);
-    this.error.set(null);
-
-    this.fetchPage(tab, page)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.loadingMore.set(false)),
-      )
-      .subscribe({
-        next: (items: StyleList) => {
-          const dedupe = this.appendPageResults(tab, items);
-          this.nextPageToLoad.set(page + 1);
-          if (dedupe.duplicates > 1) {
-            this.hasMore.set(false);
-            this.exhaustionNote.set('styles.all_loaded');
-          } else {
-            this.hasMore.set(
-              items.length === this.pageSize && dedupe.addedCount > 0,
-            );
-          }
-        },
         error: (err: unknown) =>
           this.error.set(
             err instanceof Error ? err.message : this.getLoadError(tab),
@@ -365,13 +311,6 @@ export class StylesListComponent implements OnInit {
         type: targetType,
       },
     });
-  }
-
-  private resetPaginationState(): void {
-    this.hasMore.set(true);
-    this.loadingMore.set(false);
-    this.nextPageToLoad.set(1);
-    this.exhaustionNote.set(null);
   }
 
   private clearAllStyles(): void {

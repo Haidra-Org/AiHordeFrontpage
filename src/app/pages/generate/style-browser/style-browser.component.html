@@ -119,6 +119,17 @@
       >
         {{ "generate.form.show_mature" | transloco }}
       </button>
+      @if (area() === "community") {
+        <button
+          type="button"
+          class="gs-sb-previews"
+          [class.gs-sb-previews--on]="recordPreviews()"
+          [attr.aria-pressed]="recordPreviews()"
+          (click)="toggleRecordPreviews()"
+        >
+          {{ "generate.form.show_previews" | transloco }}
+        </button>
+      }
       @if (area() === "presets") {
         <div
           class="gs-seg gs-seg--xs gs-sb-variant"
@@ -185,13 +196,9 @@
               <app-icon name="star" class="gs-ico-sm" />
               {{ "generate.form.your_styles" | transloco }}
             </h3>
-            <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
-              @for (card of yourCards(); track card.key) {
-                <ng-container
-                  *ngTemplateOutlet="styleCard; context: { card: card }"
-                />
-              }
-            </div>
+            <ng-container
+              *ngTemplateOutlet="recordCards; context: { cards: yourCards() }"
+            />
           </section>
         }
         <section class="gs-sb-section">
@@ -207,13 +214,12 @@
               {{ "generate.form.community_empty" | transloco }}
             </div>
           } @else {
-            <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
-              @for (card of communityCards(); track card.key) {
-                <ng-container
-                  *ngTemplateOutlet="styleCard; context: { card: card }"
-                />
-              }
-            </div>
+            <ng-container
+              *ngTemplateOutlet="
+                recordCards;
+                context: { cards: communityCards() }
+              "
+            />
           }
           @if (communityLoading()) {
             <p class="gs-sb-note">
@@ -273,6 +279,65 @@
     </div>
   </div>
 </div>
+
+<!-- Published styles, listed rather than shown. Hardly any of them carry an
+     example, so a sheet of cards comes out as empty frames; the previews toggle
+     in the dock brings the cards back for the ones that do. A row opens the
+     preview and its button commits, the same two outcomes a card offers. -->
+<ng-template #recordCards let-cards="cards">
+  @if (recordPreviews()) {
+    <div class="gs-sb-grid" [class.gs-sb-grid--all]="isAllVariants()">
+      @for (card of cards; track card.key) {
+        <ng-container *ngTemplateOutlet="styleCard; context: { card: card }" />
+      }
+    </div>
+  } @else {
+    <ul class="gs-sb-list">
+      @for (card of cards; track card.key) {
+        <li class="gs-sb-row">
+          <button
+            type="button"
+            class="gs-sb-row-open"
+            [class.gs-sb-row-open--active]="selectedStyle() === card.key"
+            (click)="openExpanded(card.key, $event)"
+            [attr.aria-label]="
+              'generate.form.style_expand' | transloco: { style: card.name }
+            "
+          >
+            <span class="gs-sb-row-name">{{ card.name }}</span>
+            @if (card.creator) {
+              <span class="gs-sb-row-by">
+                {{
+                  "generate.form.style_creator"
+                    | transloco: { creator: card.creator }
+                }}
+              </span>
+            }
+            @if (card.count > 0) {
+              <span class="gs-sb-badge">
+                {{
+                  "generate.form.style_used_count"
+                    | transloco: { count: card.count }
+                }}
+              </span>
+            }
+          </button>
+          <button
+            type="button"
+            class="gs-sb-row-use"
+            [attr.aria-pressed]="selectedStyle() === card.key"
+            (click)="select(card.key)"
+            [attr.aria-label]="
+              'generate.form.style_use_named' | transloco: { style: card.name }
+            "
+          >
+            {{ "generate.form.style_use" | transloco }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+</ng-template>
 
 <!-- One style card: preview (or placeholder), name, and usage badge. The card
      opens the preview, which is what a thumbnail invites; committing to the

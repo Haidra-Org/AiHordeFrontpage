@@ -27,6 +27,10 @@ import {
   sessionStatsToday,
 } from '../../../types/generation-job';
 import { Router, RouterLink } from '@angular/router';
+import {
+  markRetentionNoticeSeen,
+  retentionNoticeSeen,
+} from '../../../helper/retention-notice';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { buildJobImageArchive, extensionFor } from '../generate-archive';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
@@ -504,6 +508,20 @@ export class GenerateResultsPanelComponent {
 
   /** Grid density (columns per row), persisted so it sticks across sessions. */
   public readonly imagesPerRow = signal<number>(this.loadPerRow());
+
+  /**
+   * The view preferences behind one button: a popover beside it where there is
+   * room, the studio's bottom sheet on a phone.
+   */
+  public readonly viewMenuOpen = signal(false);
+  private readonly viewMenuHost =
+    viewChild<ElementRef<HTMLElement>>('viewMenuHost');
+
+  /**
+   * The full retention note is read once per visit; after that a one-line
+   * reminder keeps the storage link without repeating the warning.
+   */
+  public readonly retentionFull = signal(!retentionNoticeSeen());
 
   /** Measured width of the tile grid; 0 until a ResizeObserver reports one. */
   public readonly gridWidth = signal(0);
@@ -1097,6 +1115,7 @@ export class GenerateResultsPanelComponent {
 
   constructor() {
     this.watchViewport();
+    markRetentionNoticeSeen();
 
     effect(() => {
       const needsWorkerSnapshots = this.pendingJobs().some(
@@ -1975,6 +1994,12 @@ export class GenerateResultsPanelComponent {
         this.closeViewerMore();
       }
     }
+    if (this.viewMenuOpen() && !this.viewerNarrow()) {
+      const host = this.viewMenuHost()?.nativeElement;
+      if (host && target && !host.contains(target)) {
+        this.closeViewMenu();
+      }
+    }
     if (!this.tileMenu()) {
       return;
     }
@@ -1987,6 +2012,10 @@ export class GenerateResultsPanelComponent {
   public onDocumentEscape(): void {
     if (this.tileMenu()) {
       this.closeTileMenu();
+      return;
+    }
+    if (this.viewMenuOpen()) {
+      this.closeViewMenu();
       return;
     }
     this.closeWaitWhy();
@@ -2027,6 +2056,14 @@ export class GenerateResultsPanelComponent {
   public setImagesPerRow(count: number): void {
     this.imagesPerRow.set(count);
     this.db.store(PER_ROW_KEY, count);
+  }
+
+  public toggleViewMenu(): void {
+    this.viewMenuOpen.update((open) => !open);
+  }
+
+  public closeViewMenu(): void {
+    this.viewMenuOpen.set(false);
   }
 
   public toggleShowNsfw(): void {

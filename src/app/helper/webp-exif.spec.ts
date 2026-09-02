@@ -3,6 +3,7 @@ import {
   buildExifPayload,
   embedWebpExif,
   embedWebpExifInBlob,
+  readWebpExifComment,
 } from './webp-exif';
 
 /** Assemble a RIFF/WEBP container out of raw chunks, padding odd payloads. */
@@ -291,5 +292,108 @@ describe('embedWebpExifInBlob', () => {
       arrayBuffer: () => Promise.reject(new Error('unreadable')),
     } as unknown as Blob;
     expect(await embedWebpExifInBlob(blob, PARAMS)).toBe(blob);
+  });
+});
+
+/**
+ * A TIFF block in the byte order and charset this app does not write: big-endian
+ * with an ASCII comment, which is what a file re-saved by another tool comes
+ * back as. Optionally prefixed the way a block lifted out of a JPEG is.
+ */
+function bigEndianExif(text: string, jpegPrefix = false): number[] {
+  const comment = [
+    ...'ASCII   '.split('').map((c) => c.charCodeAt(0)),
+    ...text.split('').map((c) => c.charCodeAt(0)),
+  ];
+  const long = (value: number): number[] => [
+    (value >>> 24) & 0xff,
+    (value >>> 16) & 0xff,
+    (value >>> 8) & 0xff,
+    value & 0xff,
+  ];
+  const short = (value: number): number[] => [
+    (value >>> 8) & 0xff,
+    value & 0xff,
+  ];
+  const exifIfdAt = 8 + 18;
+  const commentAt = exifIfdAt + 18;
+  const block = [
+    ...'MM'.split('').map((c) => c.charCodeAt(0)),
+    ...short(0x2a),
+    ...long(8),
+    ...short(1),
+    ...short(0x8769),
+    ...short(4),
+    ...long(1),
+    ...long(exifIfdAt),
+    ...long(0),
+    ...short(1),
+    ...short(0x9286),
+    ...short(7),
+    ...long(comment.length),
+    ...long(commentAt),
+    ...long(0),
+    ...comment,
+  ];
+  const prefix = jpegPrefix
+    ? [...'Exif'.split('').map((c) => c.charCodeAt(0)), 0, 0]
+    : [];
+  return [...prefix, ...block];
+}
+
+describe('readWebpExifComment', () => {
+  it('reads back what embedWebpExif wrote', () => {
+    const source = makeWebp([{ fourCC: 'VP8 ', payload: vp8Payload() }]);
+    expect(readWebpExifComment(embedWebpExif(source, PARAMS))).toBe(PARAMS);
+  });
+
+  it('reads back non-ASCII text', () => {
+    const text = 'котик 🐈 café';
+    const source = makeWebp([{ fourCC: 'VP8L', payload: vp8lPayload(false) }]);
+    expect(readWebpExifComment(embedWebpExif(source, text))).toBe(text);
+  });
+
+  it('reads a big-endian block written as ASCII', () => {
+    const source = makeWebp([
+      { fourCC: 'VP8X', payload: [0x08, 0, 0, 0, 0x3f, 0, 0, 0x2f, 0, 0] },
+      { fourCC: 'VP8 ', payload: vp8Payload() },
+      { fourCC: 'EXIF', payload: bigEndianExif(PARAMS) },
+    ]);
+    expect(readWebpExifComment(source)).toBe(PARAMS);
+  });
+
+  it('reads a block that kept its JPEG marker', () => {
+    const source = makeWebp([
+      { fourCC: 'VP8 ', payload: vp8Payload() },
+      { fourCC: 'EXIF', payload: bigEndianExif(PARAMS, true) },
+    ]);
+    expect(readWebpExifComment(source)).toBe(PARAMS);
+  });
+
+  it('answers null for a webp that carries no EXIF chunk', () => {
+    const source = makeWebp([{ fourCC: 'VP8 ', payload: vp8Payload() }]);
+    expect(readWebpExifComment(source)).toBeNull();
+  });
+
+  it('answers null for bytes that are not a webp at all', () => {
+    expect(readWebpExifComment(new Uint8Array([1, 2, 3, 4]))).toBeNull();
+    expect(readWebpExifComment(new Uint8Array(0))).toBeNull();
+  });
+
+  it('answers null for an EXIF chunk full of nonsense', () => {
+    const source = makeWebp([
+      { fourCC: 'VP8 ', payload: vp8Payload() },
+      { fourCC: 'EXIF', payload: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9] },
+    ]);
+    expect(readWebpExifComment(source)).toBeNull();
+  });
+
+  it('answers null when the block promises more than it holds', () => {
+    const truncated = bigEndianExif(PARAMS).slice(0, 40);
+    const source = makeWebp([
+      { fourCC: 'VP8 ', payload: vp8Payload() },
+      { fourCC: 'EXIF', payload: truncated },
+    ]);
+    expect(readWebpExifComment(source)).toBeNull();
   });
 });

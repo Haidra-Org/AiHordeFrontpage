@@ -1535,16 +1535,22 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 /* Facts about the workers carrying the chosen model, read as a short list on
    one line. The separator is drawn rather than typed so a fact that is left out
-   takes its separator with it. */
+   takes its separator with it.
+
+   It trails the fact before it rather than leading the fact after it, and with
+   no whitespace between the two there is no break opportunity: a list that
+   wraps can never open a line with a stranded dot. The margin sits on the
+   separator's own side, so the run reads identically while it fits on one
+   line. */
 .gen-studio .gs-model-facts {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 10px;
   font-variant-numeric: tabular-nums;
 }
-.gen-studio .gs-model-facts span + span::before {
+.gen-studio .gs-model-facts span:not(:last-child)::after {
   content: "·";
-  margin-right: 10px;
+  margin-left: 10px;
 }
 
 /* One row per further model the request would also accept. Same shape as a
@@ -3590,6 +3596,16 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .dark .gen-studio .gs-retention {
   color: #93c5fd;
 }
+/* The reminder that follows the full note: the storage link kept, the warning
+   not repeated, so it sits in the sublabel register with no plate. */
+.gen-studio .gs-retention--quiet,
+.dark .gen-studio .gs-retention--quiet {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+}
 .gen-studio .gs-empty {
   display: flex;
   flex-direction: column;
@@ -3951,6 +3967,21 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-muted);
   font-variant-numeric: tabular-nums;
 }
+/* The View menu hangs from the left of its button, which opens the view bar,
+   where the Options popover hangs from the right of one that ends a row. */
+.gen-studio .gs-view-pop {
+  left: 0;
+  right: auto;
+}
+/* A preference row that holds a field: the label is the row, the select sits
+   at its end where a switch row shows its state. */
+.gen-studio .gs-opt-row--field {
+  align-items: center;
+}
+.gen-studio .gs-opt-row--field .gs-view-select {
+  margin-left: auto;
+  min-height: 28px;
+}
 .gen-studio .gs-view-ctl {
   display: inline-flex;
   align-items: center;
@@ -4232,7 +4263,9 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-size: 10px;
   font-weight: 700;
   color: #fff;
-  background: rgba(147, 51, 234, 0.9);
+  /* The neutral plate the other tile badges sit on. A purple fill would read as
+     the image domain on a badge that only reports how many attempts it took. */
+  background: rgba(17, 24, 39, 0.62);
   padding: 2px 7px;
   border-radius: 999px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -5311,6 +5344,21 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-size: 10.5px;
   text-align: center;
   color: var(--gs-muted);
+}
+/* A reader on the anonymous key is told once, under the button, why the wait
+   is long; a line rather than a note, because nothing here is wrong. */
+.gen-studio .gs-anon-line {
+  margin: 6px 0 0;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+}
+.gen-studio .gs-anon-line a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.gen-studio .gs-anon-line a:hover {
+  color: var(--gs-ink);
 }
 
 /* live "N alchemists online" readout */
@@ -8962,7 +9010,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   scroll-padding-inline: 8px;
 }
 
-.gen-studio .gs-sb-mature {
+.gen-studio .gs-sb-mature,
+.gen-studio .gs-sb-previews {
   flex: none;
   min-height: 44px;
   padding: 6px 13px;
@@ -8975,10 +9024,99 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-panel);
   cursor: pointer;
 }
-.gen-studio .gs-sb-mature--on {
+.gen-studio .gs-sb-mature--on,
+.gen-studio .gs-sb-previews--on {
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
   color: var(--gs-blue);
+}
+
+/* Published styles read as a list rather than a grid of cards: hardly any of
+   them carry an example, so the cards come out as empty frames. The container
+   stays flat and the hairline sits on the rows, which are the leaves here. */
+.gen-studio .gs-sb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.gen-studio .gs-sb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-sb-row:last-child {
+  border-bottom: 0;
+}
+.gen-studio .gs-sb-row-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-sb-row-open:hover {
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-sb-row-open--active {
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-sb-row-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gs-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-sb-row-open--active .gs-sb-row-name {
+  color: var(--gs-blue);
+}
+.gen-studio .gs-sb-row-by {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--gs-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The usage badge closes the row, whatever else the style did or did not name. */
+.gen-studio .gs-sb-row .gs-sb-badge {
+  margin-left: auto;
+}
+.gen-studio .gs-sb-row-use {
+  flex: none;
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--gs-blue);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-panel);
+  cursor: pointer;
+}
+.gen-studio .gs-sb-row-use:hover {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-sb-row-open,
+  .gen-studio .gs-sb-row-use {
+    min-height: 44px;
+  }
 }
 
 /* ------- style browser: enlarged preview ---------------------------- */
@@ -9272,8 +9410,9 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
 }
 @media (max-width: 1023.98px) {
-  /* The fold handle collapses the whole control bar, mature toggle included. */
-  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-mature {
+  /* The fold handle collapses the whole control bar, toggles included. */
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-mature,
+  .gen-studio .gs-modal-panel--browser .gs-sb-bar--folded .gs-sb-previews {
     display: none;
   }
   .gen-studio .gs-sb-toc .gs-index-rail-nav {
