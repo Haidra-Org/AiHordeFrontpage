@@ -40,6 +40,17 @@
     <p class="gs-welcome-sub">
       {{ "generate.welcome.sub" | transloco }}
     </p>
+    <!-- On a phone the three answers below the doors sit under the fold of the
+         sheet, so declining is something a reader has to scroll for. The two
+         that decline come up here instead, above the doors and on one line;
+         the reading link stays with the doors, where it is another offer
+         rather than a way out. -->
+    @if (narrow()) {
+      <div class="gs-welcome-decline">
+        <ng-container *ngTemplateOutlet="rememberControl" />
+        <ng-container *ngTemplateOutlet="skipControl" />
+      </div>
+    }
     <div class="gs-welcome-doors">
       @for (door of doors; track door.id) {
         <button
@@ -69,23 +80,33 @@
          beside the answer that keeps it away for good: a reader who wants
          neither a walkthrough nor this question again ends up here. -->
     <div class="gs-welcome-foot">
-      <label class="gs-switch gs-welcome-remember">
-        <span>{{ "generate.welcome.dont_show" | transloco }}</span>
-        <input
-          type="checkbox"
-          [checked]="dontShow()"
-          (change)="setDontShow($event)"
-        />
-        <span class="gs-switch-track"
-          ><span class="gs-switch-knob"></span
-        ></span>
-      </label>
-      <button type="button" class="gs-welcome-skip" (click)="skip()">
-        {{ "generate.welcome.skip" | transloco }}
-      </button>
+      @if (!narrow()) {
+        <ng-container *ngTemplateOutlet="rememberControl" />
+        <ng-container *ngTemplateOutlet="skipControl" />
+      }
       <a class="gs-welcome-learn" [routerLink]="docsLink" (click)="skip()">
         {{ "generate.welcome.browse_learn" | transloco }}
       </a>
     </div>
   </div>
+</ng-template>
+
+<!-- The two answers that decline, drawn once and placed where the width puts
+     them, so a reader tabs through one of each rather than through two. -->
+<ng-template #rememberControl>
+  <label class="gs-switch gs-welcome-remember">
+    <span>{{ "generate.welcome.dont_show" | transloco }}</span>
+    <input
+      type="checkbox"
+      [checked]="dontShow()"
+      (change)="setDontShow($event)"
+    />
+    <span class="gs-switch-track"><span class="gs-switch-knob"></span></span>
+  </label>
+</ng-template>
+
+<ng-template #skipControl>
+  <button type="button" class="gs-welcome-skip" (click)="skip()">
+    {{ "generate.welcome.skip" | transloco }}
+  </button>
 </ng-template>

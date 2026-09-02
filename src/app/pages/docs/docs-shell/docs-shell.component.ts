@@ -34,7 +34,7 @@ import {
 } from '../../../content/docs-links';
 import {
   ALCHEMY_USE_CASES,
-  alchemyUseCaseTitleKey,
+  alchemyUseCaseShortKey,
 } from '../../../content/alchemy-usecases';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import { GlossaryService } from '../../../services/glossary.service';
@@ -146,8 +146,10 @@ export const DOCS_AREAS: readonly DocsArea[] = [
       },
       // The area is four pages, so the subnav is the four pages. An index entry
       // standing for all of them would be the landing page a second time.
+      // The row takes the short names: the pages are titled with sentences, and
+      // five of those wrap the row onto a second line at desktop widths.
       ...ALCHEMY_USE_CASES.map((useCase) => ({
-        labelKey: alchemyUseCaseTitleKey(useCase.id),
+        labelKey: alchemyUseCaseShortKey(useCase.id),
         link: docsAlchemyUseCaseLink(useCase.id),
         activePath: docsAlchemyUseCaseLink(useCase.id),
         icon: useCase.icon,

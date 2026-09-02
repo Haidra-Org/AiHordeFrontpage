@@ -72,6 +72,42 @@ body at a readable height), full (from under the site nav to the safe area). The
 peek; the body scrolls internally with `overscroll-behavior: contain` and a scroll shadow at its top edge. Focus is
 trapped at full and the sheet is `aria-modal` there. Stop controls carry a word and a chevron.
 
+## The documentation area
+
+`/docs` is not a studio; it opts into the studio's vocabulary. `DocsShellComponent` carries
+`gen-studio hd-deep gs-docs`, so every rule below is scoped under `.gen-studio` in `_generate.css` like the rest.
+
+**The shell.** The router outlet is the page's `<main>`: the area's chrome is wayfinding around one document, and a
+page inside it never declares a second main landmark. The chrome is the area switcher, the pages of the area and the
+way back to the studio, in one row.
+
+**The hub row.** One row of entries, `.gs-hub-nav`, scrolling rather than wrapping below 1024px so it costs one line of
+every page at every width. It scrolls the entry marked `aria-current` into its centre on each navigation, so a reader
+arriving on an inner page can see where they are. The edge with entries behind it is masked out, from classes set off a
+measurement of the element, so nothing fades where nothing is hidden. From 1024px it wraps instead, because a row that
+carries five pages, the area switcher and the studio door is more than one line holds and a name cut in half is not a
+link anyone presses. The glossary rides in the row below 1024px and is hidden from 1024px up, where the site's floating
+`?` stands clear in the page margin and carries it instead: one way in at every width, said once. Entries take the
+shortest name that identifies them; where a page is titled with a sentence, the row gets a separate short key used
+nowhere else.
+
+**Heads.** A section head in the documentation is the uppercase eyebrow with a rule beside it, `.gs-guide-head`.
+Sentence-case bold is a head inside a card and nowhere else, so the two levels stay a hierarchy rather than two ways of
+saying the same thing.
+
+**Doors.** Anything that takes the reader somewhere else is a `gs-door`: the same capsule with an eyebrow, a title and
+a line of meta, from the landing hero through the reference entries to the offer at the end of a concept read. A door
+is never a bare link styled like a button.
+
+**Reference entries.** A setting's entry puts its Try doors after the body, so the reader has the explanation before
+the offer to go and use it. The related row names at most three tutorials and then hands over the whole shelf with an
+All tutorials link rather than growing.
+
+**Tutorials and concept reads.** Both render on the tutorial page. A tutorial is something the reader will go and do,
+so it carries the tutorials' amber, `--gs-tut`. A concept read is prose with nothing to press, so it keeps the hue of
+the area it belongs to and leaves the amber to mean the one thing it means. Below 1024px the pair of readings (the
+walkthrough and the request behind it) follows the steps rather than standing between the start door and step one.
+
 ## Rules that hold everywhere in the studio
 
 - Touch targets are at least 44px on coarse pointers, drag targets included.

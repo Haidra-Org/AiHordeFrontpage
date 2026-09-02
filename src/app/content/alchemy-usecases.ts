@@ -327,6 +327,16 @@ export function alchemyUseCaseTitleKey(id: string): string {
   return `alchemy.usecases.${id}.title`;
 }
 
+/**
+ * The one or two words a wayfinding row calls a use case by. The full names are
+ * sentences describing what the page teaches, and five of those in a row of
+ * links push the row past the width it has; the short form is for that row and
+ * for nothing else, so a page, a card or a heading keeps the full name.
+ */
+export function alchemyUseCaseShortKey(id: string): string {
+  return `alchemy.usecases.${id}.short`;
+}
+
 /** The two or three lines the panel's `?` note shows. */
 export function alchemyUseCaseNoteKey(id: string): string {
   return `alchemy.usecases.${id}.note`;

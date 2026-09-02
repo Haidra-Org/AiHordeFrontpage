@@ -99,6 +99,27 @@ describe('GenerateWelcomeComponent', () => {
     expect(el.querySelectorAll('.gs-welcome-door')).toHaveLength(3);
   });
 
+  it('puts the answers that decline above the doors in the sheet', () => {
+    fixture.componentRef.setInput('narrow', true);
+    fixture.detectChanges();
+
+    const decline = el.querySelector('.gs-welcome-decline')!;
+    expect(decline.querySelector('.gs-welcome-remember')).not.toBeNull();
+    expect(decline.querySelector('.gs-welcome-skip')).not.toBeNull();
+    // One of each, so the reader tabs through the offer once. The doors follow
+    // the row rather than standing between it and the reader.
+    expect(el.querySelectorAll('.gs-welcome-skip')).toHaveLength(1);
+    expect(el.querySelectorAll('.gs-welcome-remember')).toHaveLength(1);
+    expect(
+      decline.compareDocumentPosition(el.querySelector('.gs-welcome-doors')!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    // The reading link is another offer, so it stays with the doors.
+    expect(
+      el.querySelector('.gs-welcome-foot .gs-welcome-learn'),
+    ).not.toBeNull();
+  });
+
   it('settles the level and starts the tutorial behind a guided door', () => {
     const engine = TestBed.inject(TutorialEngineService);
 

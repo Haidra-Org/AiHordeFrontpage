@@ -192,6 +192,9 @@ scoped under the `.gen-studio` page-root class, and its controls are still `.gs-
   none, and its accent is the site accent in both studios: identity hues colour edges and glyphs, never controls.
 - Self-hosted Inter and JetBrains Mono, declared with `@font-face` in `_generate.css` so the download only fires for
   text under `.gen-studio`.
+- The `/docs` area, which is not a studio but opts into the studio's vocabulary: its shell carries `gen-studio` beside
+  `gs-docs`, and its rules (the hub row, the section heads, the doors, the reference and tutorial pages) live in
+  `_generate.css` under the same scope. See [docs/design-language.md](docs/design-language.md).
 
 Everything else is now HD. The `--gs-*` token set is a set of aliases: `--gs-card` is `var(--hd-card)`, `--gs-blue` is
 `var(--hd-accent)`, and so on down the scales. Change a value in the submodule and the studio moves with the rest of the

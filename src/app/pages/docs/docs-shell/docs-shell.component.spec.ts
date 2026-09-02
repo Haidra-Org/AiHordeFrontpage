@@ -259,7 +259,8 @@ describe('DocsShellComponent', () => {
       areaLinks().map((link) => link.getAttribute('aria-current')),
     ).toEqual([null, 'page']);
     expect(links()).toHaveLength(ALCHEMY.entries.length);
-    expect(current()).toBe(translations['alchemy.usecases.enlarge.title']);
+    // The row says the short name; the page it opens keeps the full one.
+    expect(current()).toBe(translations['alchemy.usecases.enlarge.short']);
   });
 
   it('keeps the phone tool bar the reader arrived on, with the documentation as the page on screen', async () => {

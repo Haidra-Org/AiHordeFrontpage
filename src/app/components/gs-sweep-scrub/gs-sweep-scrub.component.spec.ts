@@ -1166,7 +1166,9 @@ describe('GsSweepScrubComponent', () => {
       why.click();
       fixture.detectChanges();
 
-      expect(text()).toContain('Re-rollers, the ancestral and SDE samplers');
+      expect(text()).toContain(
+        'The samplers that add fresh noise, the ancestral and SDE ones',
+      );
       expect(find('.gs-sweep-why-link')).not.toBeNull();
     });
   });

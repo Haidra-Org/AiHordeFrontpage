@@ -181,9 +181,9 @@ export interface SettingSweeps {
  *
  * Some things a strip is asked to show have two readings rather than one fuller
  * one, and the toggle between them belongs wherever the frames are. What the two
- * sides are called is part of the pairing: "a sampler that re-rolls" and "the
- * model's guess" are answers to different questions, and one set of words for
- * both would name neither.
+ * sides are called is part of the pairing: "a sampler that adds fresh noise"
+ * and "the model's guess" are answers to different questions, and one set of
+ * words for both would name neither.
  */
 export interface SweepVariantPair {
   /** The parameter of the second strip. */
