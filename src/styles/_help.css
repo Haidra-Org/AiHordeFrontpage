@@ -107,7 +107,7 @@
 
   .page-intro-glyph {
     flex: none;
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
   }
 
   /* The title and the lead share the row the press occupies, and the

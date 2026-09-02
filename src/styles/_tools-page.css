@@ -428,7 +428,7 @@
   }
 
   .tools-section-toggle:hover {
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
   }
 
   .tools-section-toggle:focus-visible {

@@ -694,11 +694,9 @@
 
   .filter-label {
     @apply text-[0.8125rem] font-medium;
-    color: var(--color-text-muted);
-  }
-
-  .dark .filter-label {
-    @apply text-gray-500;
+    /* The grey this was written in measures 3.03:1 on the dark panel; the token
+       is theme-aware and clears AA on both. */
+    color: var(--hd-label);
   }
 
   /* Small link button */
@@ -1032,7 +1030,7 @@
     flex: none;
     width: 18px;
     height: 18px;
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
   }
 
   .details-cta-actions {

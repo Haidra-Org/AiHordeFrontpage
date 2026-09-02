@@ -461,7 +461,7 @@
 }
 
 .gen-studio .alchemy-tagrow--high .alchemy-tagrow__conf {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-weight: 600;
 }
 
@@ -488,7 +488,7 @@
   font-family: inherit;
   font-size: var(--gs-text-xs);
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   cursor: pointer;
 }
 
@@ -616,6 +616,7 @@
 .gen-studio .gs-devdoc {
   grid-column: 1 / -1;
   --gs-zone: var(--gs-blue);
+  --gs-zone-text: var(--gs-blue-text);
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
@@ -786,7 +787,7 @@
   cursor: pointer;
 }
 .gen-studio .gs-devdoc-code-btn:hover:not(:disabled) {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-devdoc-code-btn:disabled {
@@ -853,7 +854,7 @@
 }
 .gen-studio .gs-devdoc-link:hover {
   border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   text-decoration: none;
 }
 .gen-studio .gs-devdoc-link:focus-visible {

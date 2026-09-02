@@ -26,8 +26,14 @@ describe('NavDropdownComponent keyboard', () => {
   const trigger = (): HTMLButtonElement =>
     el().querySelector<HTMLButtonElement>('.nav-dropdown-trigger')!;
 
+  /* Scoped to the panel: the trigger is a menuitem of the bar's menubar and
+     answers to it, not to the panel's own arrow keys. */
   const items = (): HTMLAnchorElement[] =>
-    Array.from(el().querySelectorAll<HTMLAnchorElement>('[role="menuitem"]'));
+    Array.from(
+      el().querySelectorAll<HTMLAnchorElement>(
+        '.nav-dropdown-menu [role="menuitem"]',
+      ),
+    );
 
   const press = (target: Element, key: string): KeyboardEvent => {
     const event = new KeyboardEvent('keydown', {

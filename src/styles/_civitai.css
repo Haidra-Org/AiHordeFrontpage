@@ -49,7 +49,7 @@
 }
 .gs-tag--ti {
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gs-addon-sub {
   font-size: 10px;
@@ -169,7 +169,7 @@
   border-left: 1px solid var(--gs-border);
 }
 .gs-civit-split-btn--add {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: var(--gs-blue-tint);
 }
 .gs-civit-split-btn--remove {
@@ -236,7 +236,7 @@
   flex: none;
   font-size: 11px;
   font-weight: 700;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border: 1px solid var(--gs-blue-tint-border);
   background: var(--gs-blue-tint);
   padding: 3px 12px;
@@ -617,7 +617,7 @@
 .gs-cv-trigger-act--done {
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gs-cv-trigger-act--on {
   border-color: var(--gs-purple);

@@ -67,7 +67,7 @@
   }
 
   .models-docs-link a {
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
   }
 
   /* -----------------------------------------------------------------
@@ -188,7 +188,7 @@
   }
 
   .models-list-name:hover {
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
     text-decoration: underline;
   }
 
@@ -217,7 +217,7 @@
   .models-mark--family {
     background: var(--hd-accent-tint);
     border-color: var(--hd-accent-tint-border);
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
   }
 
   /* What a model is built from, which a phone drops: the name is what the
@@ -647,7 +647,7 @@
     flex: none;
     width: 14px;
     height: 14px;
-    color: var(--hd-accent);
+    color: var(--hd-accent-text);
   }
 
   @media (pointer: coarse) {

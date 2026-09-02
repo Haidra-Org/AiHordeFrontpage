@@ -92,18 +92,22 @@
    two sets of hexes to keep in agreement. The studio derives its tints from
    these; nothing else redeclares them.
 
-   Audited as graphic colour only: every one clears 3:1 against the studio's
-   panel and card, but `size` falls under 4.5:1, so these may tint glyphs and
-   edges and must never colour text. */
+   A section hue is set as text by the step eyebrow, so each one is measured on
+   the canvas, the deepest ground it lands on, as well as against the panel and
+   the card it edges. Three sat under AA as text and are deepened to clear it:
+   `size` from 3.22:1 to 4.71:1, `source` from 4.33:1 to 5.39:1, `workflows`
+   from 4.30:1 to 5.18:1. The five below run from 4.62:1 to 6.53:1. `alchemy`
+   is the exception: it takes the domain's own green rather than a hue of its
+   own, at 2.84:1, so that one section's eyebrow is still short as text. */
 :root {
   --gs-sec-prompt: #4f46e5;
   --gs-sec-model: #a21caf;
-  --gs-sec-size: #0d9488;
-  --gs-sec-source: #b45309;
+  --gs-sec-size: #0f766e;
+  --gs-sec-source: #9a4a08;
   --gs-sec-sampling: #be123c;
   --gs-sec-finishing: #0e7490;
   --gs-sec-horde: #475569;
-  --gs-sec-workflows: #4d7c0f;
+  --gs-sec-workflows: #456e0d;
   /* The finishing forms are the alchemy domain's, so their section wears
      the domain's green rather than a hue of its own; a purple here would
      vanish against the image plane's purple edge. */
@@ -187,6 +191,7 @@
   --gs-pop-accent: var(--hd-pop-accent);
   --gs-pop-shadow: var(--hd-pop-shadow);
   --gs-blue: var(--hd-accent);
+  --gs-blue-text: var(--hd-accent-text);
   --gs-on-accent: var(--hd-on-accent);
   --gs-blue-hover: var(--hd-accent-hover);
   --gs-blue-tint: var(--hd-accent-tint);
@@ -401,8 +406,13 @@
    which is the contract the shared primitives read: a promoted primitive drawn
    inside one of these planes picks the plane's hue up without knowing the
    studio's names. */
+/* Each plane also names the hue it lends to words and glyphs. It is the plane's
+   own hue wherever that hue was picked to be read against the plane, and the
+   accent as ink where the plane borrows the accent, which is a fill colour and
+   sinks into a dark ground when it is set as text. */
 .gen-studio .gs-panel {
   --gs-zone: var(--gs-purple);
+  --gs-zone-text: var(--gs-purple);
   --gs-zone-tint: var(--gs-purple-tint);
   --gs-zone-tint-border: var(--gs-purple-tint-border);
   --hd-zone: var(--gs-zone);
@@ -411,6 +421,7 @@
 }
 .gen-studio .gs-results {
   --gs-zone: var(--gs-muted);
+  --gs-zone-text: var(--gs-muted);
   --gs-zone-tint: var(--gs-panel);
   --gs-zone-tint-border: var(--gs-border);
   --hd-zone: var(--gs-zone);
@@ -419,6 +430,7 @@
 }
 .gen-studio.gs-alchemy .gs-panel {
   --gs-zone: var(--gs-green);
+  --gs-zone-text: var(--gs-green);
   --gs-zone-tint: var(--gs-green-tint);
   --gs-zone-tint-border: var(--gs-green-tint-border);
   --hd-zone: var(--gs-zone);
@@ -550,7 +562,7 @@
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 .gen-studio .gs-blue {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-purple {
   color: var(--gs-purple);
@@ -755,7 +767,7 @@
   .gen-studio .gs-subtab.gs-subtab--active,
   .gen-studio .gs-subtab--image.gs-subtab--active,
   .gen-studio .gs-subtab--alchemy.gs-subtab--active {
-    color: var(--gs-blue);
+    color: var(--gs-blue-text);
     border-top-color: var(--gs-blue);
     border-bottom-color: transparent;
   }
@@ -1181,7 +1193,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-size: var(--gs-text-xs);
 }
 .gen-studio .gs-control-undo app-icon {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-control-undo button {
   min-height: 32px;
@@ -1189,7 +1201,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   padding: var(--gs-space-1) var(--gs-space-2);
   border: 1px solid var(--gs-blue);
   border-radius: var(--gs-radius-sm);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -1237,7 +1249,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   text-decoration: none;
 }
 .gen-studio .gs-title-link:hover {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-border);
   background: var(--gs-field-soft);
 }
@@ -1308,7 +1320,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 12px;
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 
 /* ------- scrolling body + footer ------------------------------------ */
@@ -1638,7 +1650,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-panel);
 }
 .gen-studio .gs-help-btn[aria-expanded="true"] {
-  color: var(--gs-zone, var(--gs-blue));
+  color: var(--gs-zone-text, var(--gs-blue-text));
   border-color: var(--gs-zone, var(--gs-blue));
   background: var(--gs-zone-tint, var(--gs-blue-tint));
 }
@@ -1888,7 +1900,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 /* A header tool that is a standing choice rather than a one-off press wears
    the same lit state the results pane's view switches do. */
 .gen-studio .gs-mini-btn--on {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
 }
@@ -2047,7 +2059,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-dock-chip:hover {
   border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-dock-chip:focus-visible {
   outline: 2px solid var(--gs-blue);
@@ -2159,7 +2171,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 0;
   padding: 4px 6px;
   background: none;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-family: inherit;
   font-size: 11px;
   font-weight: 600;
@@ -2241,7 +2253,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-opt-row--on .gs-opt-label,
 .gen-studio .gs-opt-row--on .gs-opt-state {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-opt-row app-icon {
   flex: none;
@@ -2466,7 +2478,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-browse-btn,
 .gen-studio .gs-guide-cta {
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-btn-tonal:hover:not(:disabled),
 .gen-studio .gs-browse-btn:hover:not(:disabled),
@@ -2563,20 +2575,30 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-sec, var(--gs-blue));
 }
 /* The chosen one wears its area's hue as a surface, so a card's selection is
-   read in the same hue as the card's mark and top edge. The hue is mixed back
-   towards the card rather than laid on at full strength: a panel of chips is
-   read past on the way to the picture, and a saturated block holds the eye
-   longer than the choice it reports is worth. */
+   read in the same hue as the card's mark and top edge. The light hues are deep
+   enough to be laid on whole and still carry white: 6.70:1 on the blue, 6.32:1
+   on the model area's magenta, 5.02:1 on the source area's amber. Mixing them
+   back towards the card is what put the ink under AA, at 3.28:1 on the amber
+   and 3.99:1 on the blue. */
 .gen-studio .gs-chip--active {
   color: var(--gs-on-accent);
+  border-color: var(--gs-sec, var(--gs-blue));
+  background: var(--gs-sec, var(--gs-blue));
+}
+/* The dark theme's area hues are lifted so they can be read as ink on a dark
+   ground, which leaves none of them able to carry white at full strength; the
+   blue is the one exception. So the fill takes the card back into the hue until
+   white clears AA on every one of them: 4.78:1 at the shallowest, 5.57:1 on the
+   source area's amber, 11.07:1 on the blue. */
+.dark .gen-studio .gs-chip--active {
   border-color: color-mix(
     in srgb,
-    var(--gs-sec, var(--gs-blue)) 60%,
+    var(--gs-sec, var(--gs-blue)) 40%,
     var(--gs-card)
   );
   background: color-mix(
     in srgb,
-    var(--gs-sec, var(--gs-blue)) 74%,
+    var(--gs-sec, var(--gs-blue)) 40%,
     var(--gs-card)
   );
 }
@@ -3331,10 +3353,10 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    clear something. The accent marks it as the one press on the card that acts
    on the settings, which the muted default does not read as. */
 .gen-studio .gs-textlink--accent {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-textlink--accent:hover {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-textlink:hover {
   color: var(--gs-ink);
@@ -3414,7 +3436,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   flex: none;
   font-size: 10px;
   font-weight: 700;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: none;
   border: 0;
   padding: 0;
@@ -3541,7 +3563,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-status--busy {
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-status--done {
   background: var(--gs-green-tint);
@@ -4037,7 +4059,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
 }
 .gen-studio .gs-view-toggle--on {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
 }
@@ -4553,7 +4575,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 1px solid var(--gs-blue);
   border-radius: var(--gs-radius-pill);
   background: var(--gs-field);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-family: inherit;
   font-size: var(--gs-text-2xs);
   font-weight: 700;
@@ -4666,7 +4688,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-wait-callout app-icon {
   flex: none;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-wait-callout--warn {
   border-color: var(--gs-sec-source);
@@ -5003,7 +5025,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   justify-content: center;
   font-size: var(--gs-text-2xs);
   font-weight: 700;
-  color: var(--gs-zone, var(--gs-muted));
+  color: var(--gs-zone-text, var(--gs-muted));
   background: var(--gs-zone-tint, var(--gs-seg-track));
   border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
 }
@@ -5046,12 +5068,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-focus-name {
   font-size: var(--gs-text-sm);
   font-weight: 700;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-focus-badge {
   font-size: var(--gs-text-2xs);
   font-weight: 700;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: var(--gs-field);
   border: 1px solid var(--gs-blue-tint-border);
   padding: 1px var(--gs-space-2);
@@ -5219,7 +5241,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   cursor: pointer;
 }
 .gen-studio .gs-op-info:hover {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-op-info:focus-visible {
   outline: 2px solid var(--gs-blue);
@@ -5480,7 +5502,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-job-state--processing {
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-job-state--done {
   background: var(--gs-green-tint);
@@ -5552,7 +5574,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-muted);
 }
 .gen-studio .gs-checkrow--processing .gs-checkrow-ico {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-checkrow--done .gs-checkrow-ico {
   color: var(--gs-green);
@@ -5589,7 +5611,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: var(--gs-blue-tint);
 }
 .gen-studio .gs-volunteer-ico app-icon,
@@ -5610,7 +5632,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   margin-top: 4px;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-volunteer-cta {
   flex: none;
@@ -6104,7 +6126,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 1px solid var(--gs-border);
   border-radius: 999px;
   background: var(--gs-card);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-family: inherit;
   font-size: 11.5px;
   font-weight: 700;
@@ -6922,7 +6944,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 1px solid var(--gs-field-border);
   border-radius: 5px;
   background: var(--gs-field);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 @media (min-width: 1024px) and (pointer: coarse) {
   .gen-studio .gs-quick-acts--tile .gs-quick-act {
@@ -7070,7 +7092,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 0;
   border-radius: 6px;
   background: none;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-family: inherit;
   font-size: 11.5px;
   font-weight: 700;
@@ -7102,7 +7124,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-meta-pin--on {
   border-color: var(--gs-blue-tint-border);
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-meta-pin app-icon,
 .gen-studio .gs-meta-pin app-icon svg {
@@ -7196,13 +7218,13 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   align-self: center;
   width: 7px;
   margin-left: -5px;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-weight: 800;
   line-height: 1;
 }
 .gen-studio .gs-meta-note-delta {
   display: block;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-meta-val--good {
   color: var(--gs-green);
@@ -7658,7 +7680,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   width: 34px;
   height: 34px;
   display: inline-flex;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio.gs-alchemy .gs-dropzone-card {
   border-color: var(--gs-purple);
@@ -7695,7 +7717,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   cursor: pointer;
 }
 .gen-studio .gs-prompt-hist-btn:hover {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-prompt-hist-btn:focus-visible {
@@ -7787,7 +7809,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-chip--starter {
   border-color: var(--gs-blue-tint-border);
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-chip--starter:hover {
   border-color: var(--gs-blue);
@@ -7832,7 +7854,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   padding: 0 6px;
   border: 0;
   background: none;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-family: inherit;
   font-size: inherit;
   font-weight: 600;
@@ -7946,7 +7968,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   align-items: center;
   min-height: 44px;
   padding: 6px 12px;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-size: 11.5px;
   font-weight: 600;
   text-decoration: underline;
@@ -7981,7 +8003,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 1px solid var(--gs-blue-tint-border);
   border-radius: 999px;
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
@@ -8388,7 +8410,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border: 1px solid var(--gs-border);
   border-radius: 999px;
   background: var(--gs-card);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-size: 10.5px;
   font-weight: 700;
   white-space: nowrap;
@@ -8562,7 +8584,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-hist-expand:hover {
   background: var(--gs-pop-hover);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-hist-expand:focus-visible {
   outline: 2px solid var(--gs-blue);
@@ -9028,7 +9050,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-sb-previews--on {
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 
 /* Published styles read as a list rather than a grid of cards: hardly any of
@@ -9080,7 +9102,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   white-space: nowrap;
 }
 .gen-studio .gs-sb-row-open--active .gs-sb-row-name {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-sb-row-by {
   flex: 0 1 auto;
@@ -9102,7 +9124,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-size: 11.5px;
   font-weight: 700;
   font-family: inherit;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border: 1px solid var(--gs-border);
   border-radius: 999px;
   background: var(--gs-panel);
@@ -9448,7 +9470,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-sb-full--on {
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-modal-overlay--full {
   padding: 0;
@@ -9666,12 +9688,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gs-anchor-link:hover,
 .gs-anchor-link:focus-visible {
-  color: var(--gs-zone, var(--gs-blue));
+  color: var(--gs-zone-text, var(--gs-blue-text));
   background: var(--gs-sec-tint, var(--gs-zone-tint, transparent));
 }
 /* The press landed, and the glyph is a check until the line beside it clears. */
 .gs-anchor--said .gs-anchor-link {
-  color: var(--gs-zone, var(--gs-blue));
+  color: var(--gs-zone-text, var(--gs-blue-text));
 }
 @media (pointer: coarse) {
   .gs-anchor-link {
@@ -9961,6 +9983,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-tut {
   display: block;
   --gs-zone: var(--gs-blue);
+  --gs-zone-text: var(--gs-blue-text);
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
@@ -10806,7 +10829,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gs-sec, var(--gs-zone, var(--gs-label)));
+  color: var(--gs-sec, var(--gs-zone-text, var(--gs-label)));
 }
 .gen-studio .gs-learn-eyebrow::after {
   content: "";
@@ -10933,7 +10956,7 @@ app-gs-sweep-scrub {
   background: none;
   font-size: var(--gs-text-sm);
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   cursor: pointer;
 }
 .dark .gen-studio .gs-sweep-card-door {
@@ -11970,7 +11993,7 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-cap:hover .gs-cap-go {
   border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .dark .gen-studio .gs-cap:hover .gs-cap-go {
   border-color: var(--gs-pop-accent);
@@ -12349,7 +12372,7 @@ app-gs-sweep-scrub {
   flex: 0 0 auto;
   align-self: center;
   margin-right: var(--gs-space-4);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .dark .gen-studio .gs-door-arrow {
   color: var(--gs-pop-accent);
@@ -12472,7 +12495,7 @@ app-gs-sweep-scrub + app-gs-door {
   padding: 0 var(--gs-space-1);
   font-size: var(--gs-text-sm);
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: none;
   border: 0;
   cursor: pointer;
@@ -12491,7 +12514,7 @@ app-gs-sweep-scrub + app-gs-door {
   font-size: var(--gs-text-sm);
   font-weight: 600;
   text-align: left;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: none;
   border: 0;
   cursor: pointer;
@@ -12521,7 +12544,7 @@ app-gs-sweep-scrub + app-gs-door {
   min-height: 44px;
   line-height: 44px;
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .dark .gen-studio .gs-sweep-why-link {
   color: var(--gs-pop-accent);
@@ -12547,7 +12570,7 @@ app-gs-sweep-scrub + app-gs-door {
      link goes back to the page's accent: the plate ink it wears out here would
      be the stage's quiet grey on a lit surface. */
   .gen-studio .gs-plate .gs-sweep-why-body .gs-sweep-why-link {
-    color: var(--gs-blue);
+    color: var(--gs-blue-text);
   }
   .dark .gen-studio .gs-plate .gs-sweep-why-body .gs-sweep-why-link {
     color: var(--gs-pop-accent);
@@ -12772,7 +12795,7 @@ app-gs-sweep-scrub + app-gs-door {
   padding: 0 var(--gs-space-1);
   font-size: var(--gs-text-sm);
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   background: none;
   border: 0;
   cursor: pointer;
@@ -13243,6 +13266,14 @@ app-gs-compare-wipe {
   line-height: 1.4;
   color: var(--gs-muted);
 }
+/* The plate is the same dark in both themes, so the quiet inks on it are the
+   stage's own rather than the page's. The light theme's muted grey measures
+   3.36:1 on the stage and the cell badge's second ink 1.75:1, against 6.95:1
+   for the stage label. */
+.gen-studio .gs-plate .gs-sweep-option-text,
+.gen-studio .gs-plate .gs-pixels--cell {
+  color: var(--gs-stage-label);
+}
 .gen-studio .gs-sweep-grid-cell-view {
   display: flex;
   flex-direction: column;
@@ -13481,7 +13512,7 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-learn-show:hover {
   border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-learn-finale {
   margin-top: 12px;
@@ -13698,10 +13729,11 @@ app-gs-compare-wipe {
    its domain hue, in the same scrolling line as the pages and the studio
    door so the chrome costs one line at every width. */
 .gs-docs .gs-docs-areas {
+  /* The row scrolls; the pills must not shrink and spill over the tabs. */
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: var(--gs-space-1);
-  min-width: 0;
 }
 .gs-docs .gs-docs-area-link {
   display: inline-flex;
@@ -13723,6 +13755,13 @@ app-gs-compare-wipe {
   background: var(--gs-panel);
   border-color: var(--gs-border-soft);
   text-decoration: none;
+}
+/* The pill is reached with a thumb on the surfaces where the row scrolls, and
+   the row above it is the one place in the chrome a press can be off by a line. */
+@media (pointer: coarse) {
+  .gs-docs .gs-docs-area-link {
+    min-height: 44px;
+  }
 }
 .gs-docs .gs-docs-area-link:focus-visible,
 .gs-docs .gs-docs-studio-link:focus-visible {
@@ -13906,7 +13945,7 @@ app-gs-compare-wipe {
   height: 14px;
 }
 .gen-studio .gs-hub-nav-link[aria-current] .gs-hub-nav-mark {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   opacity: 1;
 }
 .gen-studio
@@ -13950,6 +13989,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-home {
   display: block;
   --gs-zone: var(--gs-blue);
+  --gs-zone-text: var(--gs-blue-text);
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
@@ -14168,7 +14208,7 @@ app-gs-compare-wipe {
   width: 16px;
   height: 16px;
   margin-top: 1px;
-  color: var(--gs-sec, var(--gs-zone, var(--gs-blue)));
+  color: var(--gs-sec, var(--gs-zone-text, var(--gs-blue-text)));
   opacity: 0.8;
 }
 .gen-studio app-icon.gs-learn-door-mark svg {
@@ -14223,7 +14263,7 @@ app-gs-compare-wipe {
   height: 12px;
 }
 .gen-studio .gs-learn-door:hover .gs-learn-door-go {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 
 /* The shelf of techniques: each card is its own worked example, led by the
@@ -14324,6 +14364,7 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-page {
   display: block;
   --gs-zone: var(--gs-blue);
+  --gs-zone-text: var(--gs-blue-text);
   --gs-zone-tint: var(--gs-blue-tint);
   --gs-zone-tint-border: var(--gs-blue-tint-border);
   background: var(--gs-canvas);
@@ -15433,7 +15474,7 @@ app-gs-compare-wipe {
   min-height: 34px;
   font-size: var(--gs-text-sm);
   font-weight: 600;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   text-decoration: none;
 }
 .gen-studio .gs-ref-link:hover,
@@ -15629,7 +15670,7 @@ app-gs-compare-wipe {
   display: inline-flex;
   min-height: 34px;
   align-items: center;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font-weight: 600;
   text-decoration: none;
 }
@@ -16256,7 +16297,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-bar-btn:hover,
 .gen-studio .gs-tut-bar-next:hover {
   border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-tut-bar-do {
   border-color: var(--gs-blue);
@@ -16395,7 +16436,7 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-tut-sheet-exit:hover {
   border-color: var(--gs-blue);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 
 /* ------- glossary integration --------------------------------------- */
@@ -16434,7 +16475,7 @@ html:has(app-gs-sheet) {
   cursor: pointer;
 }
 .gen-studio .gs-ref-term:hover {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-blue-tint-border);
 }
 .gen-studio .gs-ref-term:focus-visible {
@@ -16626,7 +16667,7 @@ html:has(app-gs-sheet) {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -17344,7 +17385,7 @@ html:has(app-gs-sheet) {
   flex: none;
 }
 .gen-studio .gs-prompt-expand:hover {
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-prompt-expand:focus-visible {
@@ -17786,7 +17827,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-se-btn--on {
   border-color: var(--gs-blue);
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-se-ink-btn--mask {
   border-color: color-mix(in srgb, #0284c7 45%, var(--gs-field-border));
@@ -18129,6 +18170,8 @@ html:has(app-gs-sheet) {
     width: 14px;
     height: 14px;
   }
+  /* The fill here is mixed with white rather than with a surface token, so it
+     is a light plate in both themes and the ink stays the deep blue. */
   .gen-studio .gs-se-pan-fab--on {
     border-color: var(--gs-blue);
     background: color-mix(in srgb, var(--gs-blue) 16%, white);
@@ -18179,7 +18222,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-badge--mask {
   border-color: color-mix(in srgb, var(--gs-blue) 40%, transparent);
   background: var(--gs-blue-tint);
-  color: var(--gs-blue);
+  color: var(--gs-blue-text);
 }
 .gen-studio .gs-badge--grow {
   border-color: color-mix(in srgb, var(--gs-sec-source) 40%, transparent);

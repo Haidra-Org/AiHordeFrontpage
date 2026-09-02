@@ -262,9 +262,12 @@
   }
 
   .faq-toc-question-link {
-    @apply block w-full text-left text-xs py-1 px-2 rounded text-gray-500;
+    @apply block w-full text-left text-xs py-1 px-2 rounded;
     @apply transition-all duration-200;
     line-height: 1.4;
+    /* The grey the list was written in sits at 3.03:1 on the dark sidebar; the
+       token carries the same quiet weight and clears AA in both themes. */
+    color: var(--hd-muted);
   }
 
   .faq-toc-question-link:hover {
@@ -282,10 +285,6 @@
 
   .faq-toc-question-link.faq-toc-near-2 {
     font-size: 0.775rem;
-  }
-
-  .dark .faq-toc-question-link {
-    @apply text-gray-500;
   }
 
   .dark .faq-toc-question-link:hover {
@@ -358,11 +357,8 @@
   }
 
   .faq-toc-sidebar-title {
-    @apply text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-2;
-  }
-
-  .dark .faq-toc-sidebar-title {
-    @apply text-gray-500;
+    @apply text-xs font-bold uppercase tracking-wider mb-3 px-2;
+    color: var(--hd-label);
   }
 
   .faq-toc-sidebar-body {

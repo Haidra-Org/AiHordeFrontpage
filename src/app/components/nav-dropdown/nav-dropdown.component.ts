@@ -13,6 +13,12 @@ import { IconComponent } from '../icon/icon.component';
 /** Where focus lands when the panel is opened from the keyboard. */
 type PendingFocus = 'first' | 'last' | null;
 
+/*
+ * The trigger carries role="menuitem" because this component is mounted
+ * directly inside the bar's menubar, and a menubar may hold nothing else. The
+ * panel it opens stays a menu of its own, which is the submenu pattern.
+ */
+
 @Component({
   selector: 'app-nav-dropdown',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +35,7 @@ type PendingFocus = 'first' | 'last' | null;
         [attr.aria-expanded]="isOpen()"
         [attr.aria-controls]="menuId()"
         aria-haspopup="true"
+        role="menuitem"
         (click)="toggle()"
         (keydown)="onTriggerKeydown($event)"
       >
