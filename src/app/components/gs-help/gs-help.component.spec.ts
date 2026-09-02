@@ -231,7 +231,7 @@ describe('GsHelpComponent', () => {
   });
 
   describe('the pages the note names', () => {
-    it('lists the links the subject names, each a route into the site', () => {
+    it('leads with the subject own page, then the pages it names', () => {
       const { fixture, click } = setup();
 
       // The fourth trigger is `control_type`, whose entry names the page that
@@ -242,27 +242,41 @@ describe('GsHelpComponent', () => {
       const links = Array.from(
         host.querySelectorAll<HTMLAnchorElement>('.gs-help-link'),
       );
-      const expected = referenceTopic('control_type')?.links ?? [];
-      expect(expected.length).toBeGreaterThan(0);
-      expect(links).toHaveLength(expected.length);
-      expect(links.map((link) => link.getAttribute('href'))).toEqual(
-        expected.map((link) => link.routerLink),
-      );
+      const subject = referenceTopic('control_type');
+      const named = subject?.links ?? [];
+      expect(subject?.hasEntry).toBe(true);
+      expect(named.length).toBeGreaterThan(0);
+      // The entry is the reader's next step from the note, so it goes first.
+      expect(links.map((link) => link.getAttribute('href'))).toEqual([
+        subject?.fullLink,
+        ...named.map((link) => link.routerLink),
+      ]);
       // The words are the entry's own, so a link cannot come to say one thing
       // beside the field and another on the page.
-      expect(links.map((link) => link.textContent?.trim())).toEqual(
-        expected.map((link) => link.labelKey),
-      );
+      expect(links.map((link) => link.textContent?.trim())).toEqual([
+        'generate.help.full_entry',
+        ...named.map((link) => link.labelKey),
+      ]);
     });
 
-    it('writes no lead-in where the subject names no page', () => {
+    it('offers the entry alone where the subject names no other page, and nothing where there is no entry either', () => {
       const { fixture, click } = setup();
+      const host = fixture.nativeElement as HTMLElement;
 
       // `steps` has an entry and nothing outside the reference to point at.
       click(0);
-
       expect(referenceTopic('steps')?.links).toEqual([]);
-      expect(fixture.nativeElement.querySelector('.gs-help-links')).toBeNull();
+      expect(
+        Array.from(
+          host.querySelectorAll<HTMLAnchorElement>('.gs-help-link'),
+        ).map((link) => link.getAttribute('href')),
+      ).toEqual([referenceTopic('steps')?.fullLink]);
+
+      // `sampling` has neither, so the note ends at its own words.
+      click(1);
+      expect(referenceTopic('sampling')?.hasEntry).toBe(false);
+      expect(referenceTopic('sampling')?.links).toEqual([]);
+      expect(host.querySelector('.gs-help-links')).toBeNull();
     });
   });
 

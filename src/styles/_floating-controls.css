@@ -100,6 +100,13 @@
         -1 * (var(--gs-tabbar-height) + env(safe-area-inset-bottom))
       );
     }
+
+    /* At these widths the button stands over the reading column, on the words
+       of the page it is offering to explain. The documentation's own row of
+       entries carries the glossary here instead. */
+    html:has(.gs-docs) .glossary-fab {
+      display: none;
+    }
   }
 }
 

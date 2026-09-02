@@ -12,9 +12,12 @@
          wrapping one, so it costs one line of every page it sits on at any
          width, and a phone keeps the area switch instead of losing it. -->
     <nav
+      #hubNav
       class="gs-hub-nav"
       [class.gs-hub-nav--image]="current.id === 'image'"
       [class.gs-hub-nav--alchemy]="current.id === 'alchemy'"
+      [class.gs-hub-nav--fade-start]="fadeStart()"
+      [class.gs-hub-nav--fade-end]="fadeEnd()"
       [attr.aria-label]="'generate.learn.nav_label' | transloco"
     >
       <div
@@ -49,6 +52,20 @@
           <span class="gs-hub-nav-label">{{ entry.labelKey | transloco }}</span>
         </a>
       }
+      <!-- The words the documentation uses, in the row rather than in the
+           floating "?" that stands over the reading column on a narrow screen.
+           One way in at every width: the floating button carries it where the
+           row does not. -->
+      <button
+        type="button"
+        class="gs-hub-nav-link gs-hub-nav-glossary"
+        (click)="glossary.open()"
+      >
+        <app-icon name="question-mark-circle" class="gs-hub-nav-mark" />
+        <span class="gs-hub-nav-label">{{
+          "docs.nav_glossary" | transloco
+        }}</span>
+      </button>
       <!-- The way back to the studio this area documents, at the end of the
            row so it reads as the exit rather than as one more page. -->
       <a
@@ -66,9 +83,9 @@
   </div>
 }
 
-<div class="gs-learn-outlet">
+<main class="gs-learn-outlet">
   <router-outlet />
-</div>
+</main>
 
 <!-- The reader arrives here from the studio's bottom bar on a phone, so the bar
      stays with them: without it, reading a page is a one-way door and the way

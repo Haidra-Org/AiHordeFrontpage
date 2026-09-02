@@ -217,9 +217,13 @@ export class DocsImageHomeComponent {
   private readonly docsPage = inject(DocsPageContextService);
 
   constructor() {
+    // The area's own name rather than the hero's, which is the name of the
+    // first tutorial and is already the title of that tutorial's page: a tab, a
+    // history entry and a shared link have to tell the front door of the area
+    // from the first lesson in it. The hero heading on the page is unchanged.
     setPageMeta({
-      titleKey: 'generate.learn.hero_title',
-      descriptionKey: 'generate.learn.hero_sub',
+      titleKey: 'docs.area_image',
+      descriptionKey: 'docs.area_image_hint',
     });
     this.docsPage.declare('docs.nav_overview');
     this.http

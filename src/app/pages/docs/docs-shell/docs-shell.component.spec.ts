@@ -11,6 +11,7 @@ import {
 } from '../../../content/docs-links';
 import en from '../../../../assets/i18n/en.json';
 import { StickyRegistryService } from '../../../services/sticky-registry.service';
+import { GlossaryService } from '../../../services/glossary.service';
 
 /** Stands in for the area's pages, so the subnav has somewhere to navigate. */
 @Component({ template: 'page' })
@@ -28,11 +29,17 @@ describe('DocsShellComponent', () => {
   let fixture: ComponentFixture<DocsShellComponent>;
   let router: Router;
 
+  /** The row's page entries. The glossary shares their shape and goes nowhere. */
   const links = (): HTMLAnchorElement[] =>
     Array.from(
       (
         fixture.nativeElement as HTMLElement
-      ).querySelectorAll<HTMLAnchorElement>('.gs-hub-nav-link'),
+      ).querySelectorAll<HTMLAnchorElement>('a.gs-hub-nav-link'),
+    );
+
+  const glossaryEntry = (): HTMLButtonElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.gs-hub-nav-glossary',
     );
 
   const areaLinks = (): HTMLAnchorElement[] =>
@@ -98,6 +105,9 @@ describe('DocsShellComponent', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
+    // The row brings the entry it marks into view, which the test DOM has no
+    // implementation of.
+    Element.prototype.scrollIntoView = vi.fn();
     fixture = TestBed.createComponent(DocsShellComponent);
     fixture.detectChanges();
   });
@@ -375,5 +385,45 @@ describe('DocsShellComponent', () => {
       (fixture.nativeElement as HTMLElement).querySelector('.gs-learn-outlet')
         ?.textContent,
     ).toContain('page');
+  });
+
+  it('gives the page it renders the document its main landmark', async () => {
+    await go('/docs/image/control-types');
+
+    const mains = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      'main',
+    );
+    expect(mains).toHaveLength(1);
+    expect(mains[0].className).toContain('gs-learn-outlet');
+  });
+
+  it('brings the entry it marks into the middle of the row', async () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+
+    await go('/docs/image/settings');
+
+    const marked = links().find(
+      (link) => link.getAttribute('aria-current') === 'page',
+    );
+    expect(marked).toBeDefined();
+    expect(scrollIntoView.mock.instances.at(-1)).toBe(marked);
+    expect(scrollIntoView.mock.calls.at(-1)?.[0]).toMatchObject({
+      block: 'nearest',
+      inline: 'center',
+    });
+  });
+
+  it('carries the glossary in the row, where the floating button is withheld', async () => {
+    const glossary = TestBed.inject(GlossaryService);
+    const open = vi.spyOn(glossary, 'open');
+
+    await go('/docs/image/settings');
+    const entry = glossaryEntry();
+    expect(entry).not.toBeNull();
+    expect(entry?.textContent?.trim()).toBe(translations['docs.nav_glossary']);
+
+    entry?.click();
+    expect(open).toHaveBeenCalled();
   });
 });

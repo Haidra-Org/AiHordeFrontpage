@@ -456,6 +456,15 @@ export class TutorialEngineService {
     this.enterStep();
   }
 
+  /**
+   * Fetch the flow's example again after a failed load. The flow, the step and
+   * the register stay where they are: only the fetch is repeated, which is the
+   * one thing that failed.
+   */
+  public retryExample(): void {
+    void this.reloadWorld();
+  }
+
   /** End the tutorial, putting the results back and forgetting the step. */
   public stop(): void {
     this.flowId.set(null);

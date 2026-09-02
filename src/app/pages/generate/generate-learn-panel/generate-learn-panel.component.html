@@ -29,6 +29,18 @@
 
 @if (loadFailed()) {
   <p class="gs-info-note">{{ "generate.learn.load_error" | transloco }}</p>
+  <!-- A failed fetch is usually a moment of network rather than a missing
+       example, so the first offer is to ask again. The second is the same
+       lesson written out, which is on the site itself and needs nothing
+       fetched. -->
+  <div class="gs-learn-actions">
+    <button type="button" class="gs-learn-show" (click)="retryExample()">
+      {{ "generate.learn.load_retry" | transloco }}
+    </button>
+    <a class="gs-learn-show" [routerLink]="docsLink()">
+      {{ "generate.learn.load_read_steps" | transloco }}
+    </a>
+  </div>
 } @else if (loading()) {
   <p class="gs-guide-lead">{{ "generate.learn.loading" | transloco }}</p>
 } @else {

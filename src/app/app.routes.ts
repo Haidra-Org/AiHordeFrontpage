@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/admin.guard';
 import { environment } from '../environments/environment';
+import { DOCS_IMAGE, DOCS_IMAGE_SETTINGS } from './content/docs-links';
 
 export const routes: Routes = [
   {
@@ -117,7 +118,10 @@ export const routes: Routes = [
             (c) => c.DocsImageExampleComponent,
           ),
       },
-      { path: 'image/learn', redirectTo: 'image', pathMatch: 'full' },
+      // Written from the site root for the reason the guide's redirect is:
+      // the server resolves a relative target against the URL it was asked
+      // for, which on a path of more than one segment repeats a segment.
+      { path: 'image/learn', redirectTo: DOCS_IMAGE, pathMatch: 'full' },
       // Every way a render can be held to a source picture, read as one page:
       // the choice is between the seven kinds of guidance before it is between
       // thirty-three names, and that is a comparison rather than a page each.
@@ -129,8 +133,16 @@ export const routes: Routes = [
           ),
       },
       // The walkthrough said again what the reference already says setting by
-      // setting, so the reference is where its readers are sent.
-      { path: 'image/guide', redirectTo: 'image/settings', pathMatch: 'full' },
+      // setting, so the reference is where its readers are sent. Written from
+      // the site root because a redirect of more than one segment is resolved
+      // differently on the server than in the browser: the server answers this
+      // URL itself, and resolves a relative target against the URL asked for,
+      // which for a two-segment target repeats the first segment.
+      {
+        path: 'image/guide',
+        redirectTo: DOCS_IMAGE_SETTINGS,
+        pathMatch: 'full',
+      },
       // The settings reference: an index of every setting the panel explains,
       // and a page per setting. A `:param` naming no setting is sent back to the
       // index by the page itself, which is the only place that knows what the

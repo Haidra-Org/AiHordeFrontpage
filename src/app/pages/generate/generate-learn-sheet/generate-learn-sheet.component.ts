@@ -8,6 +8,7 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsSheetComponent } from '../../../components/gs-sheet/gs-sheet.component';
 import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
@@ -22,6 +23,7 @@ import {
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import { FlowStep, isConceptFlow } from '../../../content/flows';
+import { docsExampleLink } from '../../../content/docs-links';
 import {
   SectionIdentity,
   sectionIdentity,
@@ -56,6 +58,7 @@ export interface LearnShot {
 @Component({
   selector: 'app-generate-learn-sheet',
   imports: [
+    RouterLink,
     TranslocoPipe,
     IconComponent,
     GsProseComponent,
@@ -98,6 +101,15 @@ export class GenerateLearnSheetComponent {
 
   public readonly conceptTrack = computed(() =>
     isConceptFlow(this.engine.activeFlowId()),
+  );
+
+  /**
+   * The page where this tutorial is written out. The steps are authored on the
+   * site rather than fetched, so the page holds the whole lesson even when the
+   * example behind the values will not load.
+   */
+  public readonly docsLink = computed(() =>
+    docsExampleLink(this.engine.activeFlowId() ?? ''),
   );
 
   /**
@@ -267,6 +279,11 @@ export class GenerateLearnSheetComponent {
   /** Point at the current field again, for a reader who has scrolled away. */
   public showMe(): void {
     this.uncover(() => this.engine.focusStep(true));
+  }
+
+  /** Ask for the example again, after it would not load. */
+  public retryExample(): void {
+    this.engine.retryExample();
   }
 
   /**

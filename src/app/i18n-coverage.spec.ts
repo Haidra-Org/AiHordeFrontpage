@@ -79,7 +79,6 @@ const UNRESOLVED_ALLOWLIST: readonly string[] = [];
 const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'docs.title',
   'docs.lead',
-  'docs.area_image_hint',
   'docs.area_alchemy_hint',
   'docs.area_read',
   'generate.intro',

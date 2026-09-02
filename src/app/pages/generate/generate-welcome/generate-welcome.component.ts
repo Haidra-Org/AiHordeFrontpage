@@ -21,6 +21,7 @@ import {
   TutorialLevel,
 } from '../../../services/tutorial-engine.service';
 import { DOCS_IMAGE } from '../../../content/docs-links';
+import { isConceptFlow } from '../../../content/flows';
 
 /** Set once the reader has asked not to be welcomed again. */
 export const WELCOMED_KEY = 'aihorde.generate.learn.welcomed';
@@ -111,6 +112,18 @@ export class GenerateWelcomeComponent {
 
   public setDontShow(event: Event): void {
     this.dontShow.set((event.target as HTMLInputElement).checked);
+  }
+
+  /**
+   * What the door offers, in the words the rest of the studio uses for it. Two
+   * of the three run something from the same registry, and one of those two
+   * teaches an idea rather than a technique: calling that one a tutorial
+   * promises a walkthrough the reader will not be given.
+   */
+  public badgeKey(door: WelcomeDoor): string {
+    return door.flowId !== null && isConceptFlow(door.flowId)
+      ? 'generate.learn.badge_read'
+      : 'generate.learn.badge';
   }
 
   /**

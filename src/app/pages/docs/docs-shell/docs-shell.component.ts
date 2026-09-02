@@ -2,9 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  afterRenderEffect,
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -34,6 +37,7 @@ import {
   alchemyUseCaseTitleKey,
 } from '../../../content/alchemy-usecases';
 import { SECTION_IDENTITIES } from '../../../content/sections';
+import { GlossaryService } from '../../../services/glossary.service';
 
 /** One entry of an area's subnav. */
 export interface DocsNavEntry {
@@ -185,6 +189,21 @@ export class DocsShellComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
+  /** The words the documentation uses, which the row's own entry opens. */
+  public readonly glossary = inject(GlossaryService);
+
+  private readonly hubNav = viewChild<ElementRef<HTMLElement>>('hubNav');
+
+  /**
+   * Whether the row has entries out of sight to one side, which is what the
+   * edge fade is drawn from: a row that ends in a half-drawn word reads as the
+   * last entry rather than as there being another after it. Read from the
+   * element, because whether it overflows depends on the width it was given
+   * and on how long the names came out.
+   */
+  public readonly fadeStart = signal(false);
+  public readonly fadeEnd = signal(false);
+
   /** The studio an area documents, which its row's last door opens. */
   public studioLinkFor(areaId: string): string {
     return areaId === 'alchemy' ? STUDIO_ALCHEMY : STUDIO_IMAGE;
@@ -213,6 +232,52 @@ export class DocsShellComponent {
   );
 
   constructor() {
+    // The row carries more entries than fit on a phone, and the scrollbar is
+    // hidden, so the edge with entries behind it is faded out. Measured from
+    // the element rather than counted from the entries: nothing here knows how
+    // long the names came out or how much width the row was given.
+    afterRenderEffect((onCleanup) => {
+      const nav = this.hubNav()?.nativeElement;
+      if (!nav) {
+        return;
+      }
+      const measure = (): void => {
+        const slack = nav.scrollWidth - nav.clientWidth;
+        // A sub-pixel remainder is rounding, not an entry out of sight.
+        const overflows = slack > 1;
+        this.fadeStart.set(overflows && nav.scrollLeft > 1);
+        this.fadeEnd.set(overflows && nav.scrollLeft < slack - 1);
+      };
+
+      measure();
+      nav.addEventListener('scroll', measure, { passive: true });
+      const resize =
+        typeof ResizeObserver === 'undefined'
+          ? null
+          : new ResizeObserver(measure);
+      resize?.observe(nav);
+      onCleanup(() => {
+        nav.removeEventListener('scroll', measure);
+        resize?.disconnect();
+      });
+    });
+
+    // A reader who arrives on an inner page finds the row scrolled to its
+    // start, with the page they are on off the end of it, so the entry the row
+    // marks is brought into the middle of the row on every page.
+    afterRenderEffect(() => {
+      this.path();
+      const nav = this.hubNav()?.nativeElement;
+      const current = nav?.querySelector<HTMLElement>(
+        '.gs-hub-nav-link[aria-current]',
+      );
+      current?.scrollIntoView({
+        behavior: this.scrollBehavior(),
+        block: 'nearest',
+        inline: 'center',
+      });
+    });
+
     const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');
     if (!mq) {
       return;
@@ -289,5 +354,12 @@ export class DocsShellComponent {
 
   private pathOf(url: string): string {
     return url.split('?')[0].split('#')[0];
+  }
+
+  private scrollBehavior(): ScrollBehavior {
+    const reduced = globalThis.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    return reduced ? 'auto' : 'smooth';
   }
 }

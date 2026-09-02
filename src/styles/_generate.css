@@ -13508,6 +13508,13 @@ app-gs-compare-wipe {
   border-color: var(--gs-blue);
   color: var(--gs-blue-text);
 }
+/* Where the way on is a page rather than a press, the link takes the button's
+   shape: the two stand in one row and are the same size of thing to do. */
+.gen-studio a.gs-learn-show {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
 .gen-studio .gs-learn-finale {
   margin-top: 12px;
 }
@@ -13844,15 +13851,19 @@ app-gs-compare-wipe {
   }
 }
 
-/* One scrolling row rather than a wrapping one: the list is short and should
-   cost one line of every page it sits on, at any width. */
+/* One scrolling row rather than a wrapping one on a narrow screen: the list is
+   short and should cost one line of the page it sits on. The hairline under it
+   is the block's rather than the row's, so fading the row's scrollable edge
+   does not fade the rule under it away with the names. */
+.gs-docs .gs-docs-chrome {
+  border-bottom: 1px solid var(--gs-border);
+}
 .gen-studio .gs-hub-nav {
   flex: none;
   display: flex;
   flex-wrap: nowrap;
   padding: 0 var(--gs-space-4);
   background: var(--gs-panel);
-  border-bottom: 1px solid var(--gs-border);
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -13860,6 +13871,47 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-hub-nav::-webkit-scrollbar {
   height: 0;
+}
+/* The edge that has entries behind it is faded out: an edge that stops
+   mid-word reads as the end of the row rather than as there being more of it.
+   The classes are set from the measured element, so nothing fades where
+   nothing is hidden. */
+.gen-studio .gs-hub-nav--fade-start {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px);
+}
+.gen-studio .gs-hub-nav--fade-end {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 28px);
+  mask-image: linear-gradient(to left, transparent 0, #000 28px);
+}
+.gen-studio .gs-hub-nav--fade-start.gs-hub-nav--fade-end {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+}
+/* Wide enough for a second line: the alchemy row carries five pages, two area
+   pills and the studio door, which at 1280 is more than one line holds, and a
+   door cut off mid-word is a door nobody presses. */
+@media (min-width: 1024px) {
+  .gen-studio .gs-hub-nav {
+    flex-wrap: wrap;
+  }
+  /* Here the floating "?" stands in the page's margin and covers nothing, so
+     it carries the glossary and the row does not say it twice. */
+  .gen-studio button.gs-hub-nav-glossary {
+    display: none;
+  }
 }
 /* The index rail's bar form, one level up: hairline-separated lines under one
    hairline, and a 2px underline on the page being read. Neutral throughout,
@@ -13883,6 +13935,12 @@ app-gs-compare-wipe {
   border-radius: 0;
   background: none;
   text-decoration: none;
+}
+/* The one entry of the row that is pressed rather than followed, which a
+   button does not take the row's own type or pointer from. */
+.gen-studio button.gs-hub-nav-link {
+  font-family: inherit;
+  cursor: pointer;
 }
 /* Hairlines between entries rather than around them: the subnav is a list, and
    an outline per line would read as four buttons. */

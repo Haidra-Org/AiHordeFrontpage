@@ -5,6 +5,7 @@ import {
   ElementRef,
   inject,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsProseComponent } from '../../../components/gs-prose/gs-prose.component';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
@@ -16,6 +17,7 @@ import {
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
 import { FlowStep, isConceptFlow } from '../../../content/flows';
+import { docsExampleLink } from '../../../content/docs-links';
 import {
   SectionIdentity,
   sectionIdentity,
@@ -37,6 +39,7 @@ import {
 @Component({
   selector: 'app-generate-learn-panel',
   imports: [
+    RouterLink,
     TranslocoPipe,
     IconComponent,
     GsDoorComponent,
@@ -84,6 +87,15 @@ export class GenerateLearnPanelComponent {
   /** Whether the track being read teaches an idea rather than a technique. */
   public readonly conceptTrack = computed(() =>
     isConceptFlow(this.engine.activeFlowId()),
+  );
+
+  /**
+   * The page where this tutorial is written out. The steps are authored on the
+   * site rather than fetched, so the page holds the whole lesson even when the
+   * example behind the values will not load.
+   */
+  public readonly docsLink = computed(() =>
+    docsExampleLink(this.engine.activeFlowId() ?? ''),
   );
 
   /**
@@ -209,6 +221,11 @@ export class GenerateLearnPanelComponent {
   /** Point at the current field again, for a reader who has scrolled away. */
   public showMe(): void {
     this.engine.focusStep(true);
+  }
+
+  /** Ask for the example again, after it would not load. */
+  public retryExample(): void {
+    this.engine.retryExample();
   }
 
   /** Leave for the results; the flow is parked, not ended. */

@@ -4,6 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { GenerateLearnSheetComponent } from './generate-learn-sheet.component';
@@ -16,6 +17,7 @@ import { GenerateFormValue, GenerateSourceMode } from '../generate-form.model';
 import en from '../../../../assets/i18n/en.json';
 import manifest from '../../../testing/fixtures/example-manifest.stub.json';
 import { EXAMPLES_ROOT } from '../../../content/examples';
+import { docsExampleLink } from '../../../content/docs-links';
 import request from '../../../testing/fixtures/example-request.stub.json';
 import meta from '../../../testing/fixtures/example-meta.stub.json';
 import { splitCombinedPrompt } from '../generate-form.model';
@@ -58,6 +60,8 @@ describe('GenerateLearnSheetComponent', () => {
     );
   const first = <T extends Element>(selector: string): T =>
     query<T>(selector)[0];
+  const text = (): string =>
+    (fixture.nativeElement as HTMLElement).textContent ?? '';
   const segs = (): HTMLElement[] => query<HTMLElement>('.gs-tut-progress-seg');
   const barTitle = (): string =>
     first<HTMLElement>('.gs-tut-bar-title').lastChild?.textContent?.trim() ??
@@ -82,7 +86,11 @@ describe('GenerateLearnSheetComponent', () => {
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
     }).compileComponents();
 
     engine = TestBed.inject(TutorialEngineService);
@@ -409,5 +417,40 @@ describe('GenerateLearnSheetComponent', () => {
     expect(query('.gs-tut-sheet-nav .gs-tut-sheet-exit')).toHaveLength(1);
     expect(query('.gs-tut-bar .gs-tut-sheet-exit')).toHaveLength(0);
     expect(TRANSLATIONS['generate.learn.sheet_exit']).toBeTruthy();
+  });
+
+  it('offers a retry and the written steps when the example will not load', async () => {
+    const http = TestBed.inject(HttpTestingController);
+    engine.retryExample();
+    http
+      .expectOne(`${EXAMPLES_ROOT}/manifest.json`)
+      .error(new ProgressEvent('error'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(text()).toContain(TRANSLATIONS['generate.learn.load_error']);
+    const retry = query<HTMLButtonElement>('.gs-learn-actions button')[0];
+    const read = query<HTMLAnchorElement>('.gs-learn-actions a')[0];
+    expect(retry.textContent?.trim()).toBe(
+      TRANSLATIONS['generate.learn.load_retry'],
+    );
+    expect(read.textContent?.trim()).toBe(
+      TRANSLATIONS['generate.learn.load_read_steps'],
+    );
+    expect(read.getAttribute('href')).toBe(docsExampleLink('txt2img'));
+
+    // The lesson comes back once the fetch does, rather than needing the
+    // tutorial to be started again.
+    retry.click();
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    http
+      .expectOne(`${EXAMPLES_ROOT}/txt2img/request.json`)
+      .flush(structuredClone(request));
+    http.expectOne(`${EXAMPLES_ROOT}/txt2img/meta.json`).flush(meta);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(text()).not.toContain(TRANSLATIONS['generate.learn.load_error']);
   });
 });

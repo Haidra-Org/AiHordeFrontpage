@@ -118,12 +118,18 @@ import { IconComponent } from '../icon/icon.component';
       }
       <!-- Written last so the picture, where there is one, stays the loudest
            offer under the note, and the pages read as further reading rather
-           than as competition for it. -->
-      @if (links().length > 0) {
+           than as competition for it. The subject's own page leads the row,
+           because a reader who wants more of this answer wants that one first. -->
+      @if (hasEntry() || links().length > 0) {
         <p class="gs-help-links">
           <span class="gs-help-links-head">{{
             'generate.help.read_more' | transloco
           }}</span>
+          @if (hasEntry()) {
+            <a class="gs-help-link" [routerLink]="fullLink()">
+              {{ 'generate.help.full_entry' | transloco }}
+            </a>
+          }
           @for (link of links(); track link.routerLink) {
             <a class="gs-help-link" [routerLink]="link.routerLink">
               {{ link.labelKey | transloco }}
@@ -170,6 +176,9 @@ export class GsHelpComponent {
 
   /** Whether the reference has an entry this note can send a reader on to. */
   public readonly hasEntry = computed(() => this.subject()?.hasEntry ?? false);
+
+  /** Where that entry is read in full, which is a page of the documentation. */
+  public readonly fullLink = computed(() => this.subject()?.fullLink ?? '');
 
   /**
    * The pages the subject names, whichever registry named them. Present on a
