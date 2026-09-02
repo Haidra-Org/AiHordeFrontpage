@@ -94,6 +94,12 @@ export class ImageMetaPanelComponent {
   /** The panel's heading, so hosts that review something other than an image
    * can say what it is. */
   public readonly titleKey = input('generate.results.metadata_title');
+  /**
+   * A line explaining why there are no settings rows, for an image whose
+   * request this browser never held. Shown in place of them, and null where
+   * there is a request to read.
+   */
+  public readonly noteKey = input<string | null>(null);
 
   /**
    * Whether the panel offers the three whole-image actions above its own row of
@@ -156,6 +162,25 @@ export class ImageMetaPanelComponent {
     const t = (key: string, params?: Record<string, unknown>): string =>
       this.transloco.translate(key, params);
     const rows: MetaInfoRow[] = [];
+    // With no request there are no settings rows, so the two things the worker
+    // reported that would normally be read off the request are said here
+    // instead of being lost.
+    if (!this.formValue()) {
+      if (provenance.model) {
+        rows.push({
+          label: t('generate.results.meta_row_model'),
+          value: provenance.model,
+          tone: 'default',
+        });
+      }
+      if (provenance.seed) {
+        rows.push({
+          label: t('generate.results.meta_row_seed'),
+          value: provenance.seed,
+          tone: 'default',
+        });
+      }
+    }
     if (provenance.styleName) {
       rows.push({
         label: t('generate.results.meta_row_style'),

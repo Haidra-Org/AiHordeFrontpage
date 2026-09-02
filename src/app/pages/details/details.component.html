@@ -4,9 +4,14 @@
       <h1 class="details-title">
         {{ headingKey() | transloco }}
       </h1>
-      <p class="details-lead">
-        {{ "details.subtitle" | transloco }}
-      </p>
+      @if (activeTab(); as tab) {
+        <app-page-intro
+          [lead]="true"
+          [pageKey]="tab.pageKey"
+          [readMoreLink]="tab.readMoreLink"
+          [prose]="tab.prose ?? false"
+        />
+      }
     </div>
   </div>
 </section>

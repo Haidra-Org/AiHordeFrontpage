@@ -4199,6 +4199,31 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   max-height: 8em;
   overflow-y: auto;
 }
+/* Where a taken-over generation says so, in place of the prompt it has none
+   of. Sits on the same dark plate as the prompt header so it stays legible
+   over any picture. */
+.gen-studio .gs-tile-adopted {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: 7px;
+  background: rgba(17, 24, 39, 0.62);
+  color: #fff;
+  font-size: 10.5px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gen-studio .gs-tile-adopted app-icon,
+.gen-studio .gs-tile-adopted app-icon svg {
+  width: 11px;
+  height: 11px;
+  flex: none;
+}
 .gen-studio .gs-tile-retry {
   flex: none;
   display: inline-flex;
@@ -5780,6 +5805,21 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-muted);
 }
 
+/* A request taken over from the account, said on the card itself. */
+.gen-studio .gs-adopted-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--gs-muted);
+}
+.gen-studio .gs-adopted-line {
+  color: var(--gs-ink);
+  font-weight: 600;
+}
+
 /* Results card grid: multi-column when wide, one column when narrow. */
 .gen-studio .gs-result-cards {
   display: grid;
@@ -7181,6 +7221,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.gen-studio .gs-meta-empty-note {
+  margin: 0 0 10px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--gs-muted);
+}
 .gen-studio .gs-meta-note {
   flex-basis: 100%;
   margin: 0;
@@ -7708,14 +7754,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    second style list. A chip is a choice, so it wears the chip's chosen state;
    it stands a finger tall wherever a finger is what presses it, which the
    general chip cannot be without moving every dense row in the panel. */
+/* A row label in the same register as "Style" and "Model" above it: the
+   uppercase eyebrow is the section landmarks' and would read as one. */
 .gen-studio .gs-looks-label {
   display: block;
   margin-bottom: 6px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--gs-muted);
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-ink-2);
 }
 .gen-studio .gs-looks-row {
   display: flex;
@@ -12177,6 +12223,21 @@ app-gs-door + app-gs-sweep-scrub,
 app-gs-sweep-scrub + app-gs-door {
   margin-top: var(--gs-space-2);
 }
+/* Two values to try are one choice, so their doors share a row where there
+   is room and stack only on a phone. */
+.gen-studio .gs-ref-try-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+  margin-bottom: var(--gs-space-3);
+}
+.gen-studio .gs-ref-try-row app-gs-door {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.gen-studio .gs-ref-try-row app-gs-door + app-gs-door {
+  margin-top: 0;
+}
 .gen-studio .gs-cap:focus-visible,
 .gen-studio .gs-tickrail:focus-visible,
 .gen-studio .gs-plate-x:focus-visible,
@@ -13494,22 +13555,9 @@ app-gs-compare-wipe {
   }
 }
 
-/* Desktop bridge between docs and studio: it keeps area switching and
-   "return to studio" in the same visible place, which shortens the path back
-   when a docs deep-link pulls someone out of /generate. */
-.gs-docs .gs-docs-bridge {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--gs-space-3);
-  padding: var(--gs-space-2) var(--gs-space-4);
-  border-bottom: 1px solid var(--gs-border);
-  background: linear-gradient(
-    90deg,
-    var(--gs-card) 0%,
-    color-mix(in srgb, var(--gs-panel) 92%, var(--gs-blue) 8%) 100%
-  );
-}
+/* The area switch leads the docs row: two pills, the current one edged in
+   its domain hue, in the same scrolling line as the pages and the studio
+   door so the chrome costs one line at every width. */
 .gs-docs .gs-docs-areas {
   display: inline-flex;
   align-items: center;
@@ -13520,7 +13568,7 @@ app-gs-compare-wipe {
   display: inline-flex;
   align-items: center;
   gap: var(--gs-space-2);
-  min-height: 36px;
+  min-height: 32px;
   padding: 0 var(--gs-space-3);
   border: 1px solid transparent;
   border-radius: 999px;
@@ -13528,6 +13576,7 @@ app-gs-compare-wipe {
   background: transparent;
   font-size: var(--gs-text-sm);
   font-weight: 600;
+  white-space: nowrap;
   text-decoration: none;
 }
 .gs-docs .gs-docs-area-link:hover {
@@ -13563,18 +13612,24 @@ app-gs-compare-wipe {
   color: inherit;
   opacity: 0.85;
 }
-.gs-docs .gs-docs-studio-jumps {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--gs-space-2);
-  flex-wrap: wrap;
-  justify-content: flex-end;
+/* A hairline stands between the areas and the pages of the one chosen. */
+.gen-studio .gs-hub-nav-divider {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--gs-space-2);
+  background: var(--gs-border);
 }
 .gs-docs .gs-docs-studio-link {
   display: inline-flex;
   align-items: center;
+  align-self: center;
+  flex: none;
   gap: var(--gs-space-2);
-  min-height: 36px;
+  margin-left: auto;
+  min-height: 32px;
+  white-space: nowrap;
   padding: 0 var(--gs-space-3);
   border-radius: 999px;
   border: 1px solid var(--gs-border);
@@ -13608,20 +13663,12 @@ app-gs-compare-wipe {
   opacity: 0.7;
 }
 
+/* The area pills keep their words on a phone; the row scrolls instead. The
+   studio door there is the bottom bar's job, so the row's door stands down
+   below the wide layout. */
 @media (max-width: 1023.98px) {
-  /* Phone already has the shared bottom bar under the thumb; this row is for
-     desktop wayfinding and would only crowd mobile chrome. */
-  .gs-docs .gs-docs-bridge {
+  .gs-docs .gs-docs-studio-link {
     display: none;
-  }
-}
-@media (max-width: 1299.98px) {
-  .gs-docs .gs-docs-bridge {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .gs-docs .gs-docs-studio-jumps {
-    justify-content: flex-start;
   }
 }
 
@@ -15103,7 +15150,8 @@ app-gs-compare-wipe {
 
 .gen-studio .gs-ref-head {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--gs-space-2);
 }
 .gen-studio .gs-ref-title {

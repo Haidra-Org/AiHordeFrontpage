@@ -56,7 +56,7 @@ describe('AppLandingComponent', () => {
     expect(doors()).toHaveLength(4);
     expect(text()).toContain('Generate images');
     expect(text()).toContain('Alchemy');
-    expect(text()).toContain('Learn');
+    expect(text()).toContain('Docs');
     expect(text()).toContain('Your account');
     expect(text()).not.toContain('app_landing.');
   });

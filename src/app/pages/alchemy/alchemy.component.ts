@@ -25,6 +25,7 @@ import { AuthService } from '../../services/auth.service';
 import { DatabaseService } from '../../services/database.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AlchemyQueueService } from '../../services/alchemy-queue.service';
+import { ActiveGenerationsService } from '../../services/active-generations.service';
 import { ToastService } from '../../services/toast.service';
 import { TranslatorService } from '../../services/translator.service';
 import { setPageTitle } from '../../helper/page-title';
@@ -159,6 +160,7 @@ export class AlchemyComponent {
   private readonly auth = inject(AuthService);
   public readonly ns = inject(NetworkStatusService);
   private readonly queue = inject(AlchemyQueueService);
+  private readonly activeGenerations = inject(ActiveGenerationsService);
   private readonly toast = inject(ToastService);
   private readonly injector = inject(Injector);
   private readonly translator = inject(TranslatorService);
@@ -597,7 +599,7 @@ export class AlchemyComponent {
     effect(() => {
       this.queue.imagesVersion();
       for (const job of this.queue.jobs()) {
-        if (job.sourceMode === 'url' || this.loadedThumbs.has(job.localId)) {
+        if (job.sourceMode !== 'upload' || this.loadedThumbs.has(job.localId)) {
           continue;
         }
         this.loadedThumbs.add(job.localId);
@@ -638,6 +640,9 @@ export class AlchemyComponent {
         this.destroyRef,
         'alchemy.title',
       );
+      // Anything already running under this key belongs in the request list,
+      // including what another device started.
+      this.activeGenerations.start();
       void this.selectNewestJob();
       this.watchViewport();
       void this.consumeHandoff();

@@ -185,8 +185,10 @@ export class DocsShellComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  public readonly studioImage = STUDIO_IMAGE;
-  public readonly studioAlchemy = STUDIO_ALCHEMY;
+  /** The studio an area documents, which its row's last door opens. */
+  public studioLinkFor(areaId: string): string {
+    return areaId === 'alchemy' ? STUDIO_ALCHEMY : STUDIO_IMAGE;
+  }
 
   public readonly areaBridgeEntries: readonly DocsAreaBridgeEntry[] =
     DOCS_AREAS.map((area) => ({

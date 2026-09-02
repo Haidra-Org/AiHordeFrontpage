@@ -6,7 +6,8 @@ import {
   input,
   output,
 } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { formatUptime } from '../../../helper/account-age';
 import { HordeWorker } from '../../../types/horde-worker';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -32,6 +33,7 @@ import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tool
 })
 export class WorkerRowComponent {
   private readonly toastService = inject(ToastService);
+  private readonly transloco = inject(TranslocoService);
   public readonly auth = inject(AuthService);
   private readonly unitConversion = inject(UnitConversionService);
 
@@ -171,13 +173,7 @@ export class WorkerRowComponent {
   });
 
   public formatUptime(seconds: number): string {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
+    return formatUptime(this.transloco, seconds);
   }
 
   public truncateName(name: string, length = 24): string {

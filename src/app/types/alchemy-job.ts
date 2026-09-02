@@ -4,8 +4,12 @@ import {
   AnnotationControlType,
 } from './generation';
 
-/** Whether the request's source image was uploaded or referenced by URL. */
-export type AlchemySourceMode = 'url' | 'upload';
+/**
+ * Where the request's source image came from. `none` belongs to an adopted job:
+ * the request was made somewhere else, so this browser never held its image and
+ * has nothing to render or resolve.
+ */
+export type AlchemySourceMode = 'url' | 'upload' | 'none';
 
 /**
  * What an alchemy image blob is. `source` and `thumb` belong to the request;
@@ -49,6 +53,13 @@ export interface StoredAlchemyJob {
   jobId: string;
   createdAt: number;
   updatedAt: number;
+  /**
+   * The job was taken from the account's own list of active requests rather
+   * than submitted from this browser. It starts with no operations recorded,
+   * because only the horde knows what was asked for; the first status answer
+   * fills them in.
+   */
+  adopted?: true;
   forms: AlchemyFormName[];
   /** Detectors requested by control-map forms, in the order they were picked. */
   annotationControlTypes?: readonly AnnotationControlType[];

@@ -197,16 +197,18 @@ const TRADEOFF_ICONS = {
          a trip to the panel with the value in hand, which is a door rather than
          a chip. It carries the arrow every hand-off carries, and says what it
          will do before it does it. -->
-    @if (onPage()) {
-      @for (option of applies(); track option.display) {
-        <app-gs-door
-          kind="studio"
-          controlClass="gs-ref-try-door"
-          [title]="tryKey() | transloco: { value: option.display }"
-          [meta]="'generate.sweeps.studio_door_note' | transloco"
-          (entered)="runApply(option)"
-        />
-      }
+    @if (onPage() && applies().length > 0) {
+      <div class="gs-ref-try-row">
+        @for (option of applies(); track option.display) {
+          <app-gs-door
+            kind="studio"
+            controlClass="gs-ref-try-door"
+            [title]="tryKey() | transloco: { value: option.display }"
+            [meta]="'generate.sweeps.studio_door_note' | transloco"
+            (entered)="runApply(option)"
+          />
+        }
+      </div>
     }
 
     @if (bodyText && bodyText !== bodyKey) {

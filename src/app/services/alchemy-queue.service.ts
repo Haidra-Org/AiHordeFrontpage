@@ -13,6 +13,9 @@ import { AlchemyDbService } from './alchemy-db.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 import {
+  ALCHEMY_ANNOTATION_FORMS,
+  ALCHEMY_DATA_FORMS,
+  ALCHEMY_POST_PROCESSOR_FORMS,
   AlchemyFormName,
   AlchemyStatusResponse,
   AnnotationControlType,
@@ -44,7 +47,12 @@ import {
 
 const ANONYMOUS_API_KEY = '0000000000';
 
-const POLL_MS = 10_000;
+/**
+ * How often a tracked request is asked about. Exported because the account's
+ * list of active generations is read on the same cadence rather than on a timer
+ * of its own.
+ */
+export const ALCHEMY_POLL_INTERVAL_MS = 10_000;
 
 /**
  * How many consecutive download failures a result image gets before it is
@@ -96,6 +104,44 @@ interface UnresolvedImage {
 
 function isUrlSource(source: string): AlchemySourceMode {
   return /^https?:\/\//i.test(source) ? 'url' : 'upload';
+}
+
+/** Every operation the studio knows how to name and render a result for. */
+const KNOWN_FORM_NAMES: ReadonlySet<string> = new Set<string>([
+  ...ALCHEMY_DATA_FORMS,
+  ...ALCHEMY_POST_PROCESSOR_FORMS,
+  ...ALCHEMY_ANNOTATION_FORMS,
+]);
+
+function isKnownFormName(name: string): name is AlchemyFormName {
+  return KNOWN_FORM_NAMES.has(name);
+}
+
+/**
+ * What an adopted job turned out to have asked for, read off the first status
+ * answer. The request itself was made elsewhere, so the horde's own list of
+ * forms is the only record of it this browser can have; an operation this
+ * version does not know is left out rather than shown as a raw name.
+ */
+function reportedForms(status: AlchemyStatusResponse): {
+  forms: AlchemyFormName[];
+  detectors: AnnotationControlType[];
+} {
+  const forms: AlchemyFormName[] = [];
+  const detectors: AnnotationControlType[] = [];
+  for (const form of status.forms ?? []) {
+    if (!isKnownFormName(form.form)) {
+      continue;
+    }
+    if (!forms.includes(form.form)) {
+      forms.push(form.form);
+    }
+    const detector = form.payload?.control_type;
+    if (detector && !detectors.includes(detector)) {
+      detectors.push(detector);
+    }
+  }
+  return { forms, detectors };
 }
 
 /**
@@ -283,6 +329,46 @@ export class AlchemyQueueService {
   }
 
   /**
+   * Take over alchemy requests the account reports as running that this browser
+   * holds no record of: one submitted from another device, or one whose submit
+   * landed after a reload took the page away. An adopted job starts with no
+   * operations recorded and no source image, and the poll loop visits it like
+   * any other. Ids already held are skipped, so this is safe to run on every
+   * read of the account record.
+   */
+  public async adoptActive(ids: readonly string[]): Promise<void> {
+    const known = new Set(this.stored().map((job) => job.jobId));
+    for (const jobId of ids) {
+      if (known.has(jobId)) {
+        continue;
+      }
+      known.add(jobId);
+      const now = Date.now();
+      const job: StoredAlchemyJob = {
+        localId: crypto.randomUUID(),
+        jobId,
+        createdAt: now,
+        updatedAt: now,
+        adopted: true,
+        // Neither the operations nor the source image are knowable from an id;
+        // the first status answer fills the operations in.
+        forms: [],
+        slowWorkers: false,
+        sourceMode: 'none',
+        status: null,
+        done: false,
+        faulted: false,
+        cancelled: false,
+        notFound: false,
+        storedResultForms: [],
+        failedResultForms: [],
+      };
+      await this.db.putJob(job);
+      this.ngZone.run(() => this.stored.update((jobs) => [job, ...jobs]));
+    }
+  }
+
+  /**
    * Keep the request's own image. A URL source is left alone: it is durable,
    * renders straight into an `<img>`, and fetching it would run into CORS.
    */
@@ -325,7 +411,7 @@ export class AlchemyQueueService {
     this.ngZone.runOutsideAngular(() => {
       this.pollTimer = setInterval(() => {
         void this.pollTick();
-      }, POLL_MS);
+      }, ALCHEMY_POLL_INTERVAL_MS);
     });
   }
 
@@ -368,11 +454,34 @@ export class AlchemyQueueService {
               status,
               done: status.state === 'done',
               faulted: status.state === 'faulted',
+              ...this.adoptedFormsPatch(job, status),
             }
           : {}),
       });
     }
     await this.harvestResultImages(current);
+  }
+
+  /**
+   * Record what an adopted job asked for, once the horde has said. The
+   * checklist and the progress count are built from `forms`, so until this
+   * lands such a job reads as having no operations at all.
+   */
+  private adoptedFormsPatch(
+    job: StoredAlchemyJob,
+    status: AlchemyStatusResponse,
+  ): Partial<StoredAlchemyJob> {
+    if (!job.adopted || job.forms.length > 0) {
+      return {};
+    }
+    const { forms, detectors } = reportedForms(status);
+    if (forms.length === 0) {
+      return {};
+    }
+    return {
+      forms,
+      ...(detectors.length > 0 ? { annotationControlTypes: detectors } : {}),
+    };
   }
 
   /**

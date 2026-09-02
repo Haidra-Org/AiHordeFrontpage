@@ -10,6 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { formatUptime } from '../../../helper/account-age';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -22,7 +23,6 @@ import { Team } from '../../../types/team';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { setPageTitle } from '../../../helper/page-title';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
-import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { extractUserId } from '../../../helper/user-parser';
 import { scrollToElementCentered } from '../../../helper/scroll-utils';
 import { IconComponent } from '../../../components/icon/icon.component';
@@ -34,7 +34,6 @@ import { IconComponent } from '../../../components/icon/icon.component';
     RouterLink,
     FormatNumberPipe,
     EntityLookupComponent,
-    PageIntroComponent,
     IconComponent,
   ],
   templateUrl: './teams-list.component.html',
@@ -189,7 +188,7 @@ export class TeamsListComponent implements OnInit {
           this.loading.set(false);
         },
         error: () => {
-          this.error.set('Failed to load teams');
+          this.error.set(this.transloco.translate('details.teams.load_error'));
           this.loading.set(false);
         },
       });
@@ -215,19 +214,7 @@ export class TeamsListComponent implements OnInit {
   }
 
   public formatUptime(seconds: number): string {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const daysUnit = this.transloco.translate(
-      'details.teams.uptime_days_short',
-    );
-    const hoursUnit = this.transloco.translate(
-      'details.teams.uptime_hours_short',
-    );
-
-    if (days > 0) {
-      return `${days}${daysUnit} ${hours}${hoursUnit}`;
-    }
-    return `${hours}${hoursUnit}`;
+    return formatUptime(this.transloco, seconds);
   }
 
   /**

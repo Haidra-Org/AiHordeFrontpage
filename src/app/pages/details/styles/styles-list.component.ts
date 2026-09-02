@@ -30,7 +30,6 @@ import {
 import { StyleCardComponent } from '../../../components/style/style-card/style-card.component';
 import { StyleFiltersComponent } from '../../../components/style/style-filters/style-filters.component';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
-import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { scrollToElementCentered } from '../../../helper/scroll-utils';
 
@@ -45,7 +44,6 @@ type StyleList = ImageStyle[] | TextStyle[] | StyleCollection[];
     StyleCardComponent,
     StyleFiltersComponent,
     EntityLookupComponent,
-    PageIntroComponent,
     RouterLink,
     IconComponent,
   ],

@@ -561,6 +561,49 @@ describe('AlchemyQueueService', () => {
     });
   });
 
+  describe('adoptActive', () => {
+    it('takes over an active id the queue does not already hold', async () => {
+      await service.adoptActive(['elsewhere-1']);
+
+      const job = service.jobs()[0];
+      expect(job.id).toBe('elsewhere-1');
+      expect(job.adopted).toBe(true);
+      expect(job.forms).toEqual([]);
+      const stored = await db.getJob(job.localId);
+      expect(stored?.adopted).toBe(true);
+      expect(stored?.sourceMode).toBe('none');
+    });
+
+    it('ignores an active id it is already tracking', async () => {
+      await submit('job-a');
+
+      await service.adoptActive(['job-a']);
+
+      expect(service.jobs()).toHaveLength(1);
+      expect(service.jobs()[0].adopted).toBe(false);
+    });
+
+    it('records what an adopted request asked for from its first status', async () => {
+      await service.adoptActive(['elsewhere-2']);
+
+      await poll('elsewhere-2', {
+        state: 'done',
+        forms: [
+          { form: 'caption', state: 'done', result: { caption: 'hi' } },
+          {
+            form: 'annotation',
+            state: 'done',
+            payload: { control_type: 'depth' },
+          },
+        ],
+      });
+
+      const job = service.jobs()[0];
+      expect(job.forms).toEqual(['caption', 'annotation']);
+      expect(job.annotationControlTypes).toEqual(['depth']);
+    });
+  });
+
   describe('deletion', () => {
     it('drops a job and its blobs', async () => {
       const localId = await submit('job-d');

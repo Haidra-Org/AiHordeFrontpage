@@ -173,6 +173,47 @@
                 <dd>{{ textDetails()?.instruct_format }}</dd>
               </div>
             }
+            <!-- What the licence on the weights allows. The status names the
+                 licence it comes from, so a reader can read the licence itself
+                 rather than take the one-line answer on trust. -->
+            @if (licensingFact(); as licence) {
+              <div class="model-detail-fact">
+                <dt>
+                  {{ "details.model_detail.licensing_label" | transloco }}
+                </dt>
+                <dd>
+                  {{
+                    "details.model_detail.licensing_status." + licence.status
+                      | transloco
+                  }}
+                  @if (licence.licenseId !== "") {
+                    {{ "details.model_detail.licensing_licence" | transloco }}
+                    @if (licence.licenseUrl !== null) {
+                      <a
+                        class="link"
+                        [href]="licence.licenseUrl"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        >{{ licence.licenseId }}</a
+                      >
+                    } @else {
+                      {{ licence.licenseId }}
+                    }
+                  }
+                  @if (licence.licenseName !== null) {
+                    <p class="model-detail-note">{{ licence.licenseName }}</p>
+                  }
+                  @if (licensingObligations() !== "") {
+                    <p class="model-detail-note">
+                      {{
+                        "details.model_detail.licensing_obligations"
+                          | transloco: { list: licensingObligations() }
+                      }}
+                    </p>
+                  }
+                </dd>
+              </div>
+            }
             @if (homepage() !== "") {
               <div class="model-detail-fact">
                 <dt>{{ "details.model_detail.homepage" | transloco }}</dt>

@@ -12,7 +12,7 @@ import {
 import { DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import {
@@ -21,6 +21,10 @@ import {
   ModelRequirements,
   TextModelReferenceRecord,
 } from '../../../services/model-reference.service';
+import {
+  LicensingService,
+  type LicensingFact,
+} from '../../../services/licensing.service';
 import { ActiveModel } from '../../../types/active-model';
 import { HordeWorker } from '../../../types/horde-worker';
 import { ImageGenerationRequest } from '../../../types/generation';
@@ -206,6 +210,8 @@ export class ModelDetailComponent {
   private readonly aiHorde = inject(AiHordeService);
   private readonly workerService = inject(AdminWorkerService);
   private readonly reference = inject(ModelReferenceService);
+  private readonly licensing = inject(LicensingService);
+  private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   public readonly unitConversion = inject(UnitConversionService);
@@ -297,6 +303,32 @@ export class ModelDetailComponent {
   public readonly known = computed(
     () => this.record() !== null || this.textDetails() !== null,
   );
+
+  /**
+   * What the reference says about using this model's pictures commercially.
+   * Null on a text model, where the licensing export has no answer for any of
+   * them, and while the export has not been read.
+   */
+  public readonly licensingFact = computed<LicensingFact | null>(() =>
+    this.kind() === 'image'
+      ? this.licensing.commercialUse('image_generation', this.modelName())()
+      : null,
+  );
+
+  /** The licence's conditions in plain words, or '' when it attaches none. */
+  public readonly licensingObligations = computed<string>(() => {
+    const fact = this.licensingFact();
+    if (fact === null) {
+      return '';
+    }
+    return fact.obligations
+      .map((obligation) =>
+        this.transloco.translate(
+          `details.model_detail.obligation.${obligation}`,
+        ),
+      )
+      .join(', ');
+  });
 
   /** Whether nothing at all could be found under this name. */
   public readonly missing = computed(

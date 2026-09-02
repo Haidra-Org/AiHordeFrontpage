@@ -471,10 +471,18 @@
     } @else {
       <!-- Prompt header + retry badge, shared by every tile kind. `hidePrompt`
            drops the collapsible header when the grid-wide prompt overlay is on,
-           which supersedes it; the retry badge stays either way. -->
+           which supersedes it; the retry badge stays either way. A generation
+           taken over from the account says so where its prompt would be, since
+           there is no prompt here to show. -->
       <ng-template #tileTop let-t let-hidePrompt="hidePrompt">
-        @if ((t.prompt && !hidePrompt) || t.retryCount) {
+        @if (t.adopted || (t.prompt && !hidePrompt) || t.retryCount) {
           <div class="gs-tile-top">
+            @if (t.adopted) {
+              <span class="gs-tile-adopted">
+                <app-icon name="globe-alt" aria-hidden="true" />
+                {{ "generate.results.adopted_line" | transloco }}
+              </span>
+            }
             @if (t.prompt && !hidePrompt) {
               <button
                 type="button"
@@ -684,20 +692,22 @@
                         <span class="gs-quick-acts-label">{{
                           "generate.results.use_in_request" | transloco
                         }}</span>
-                        <button
-                          type="button"
-                          class="gs-quick-act gs-quick-act--primary"
-                          (click)="makeVariation(tile)"
-                          [attr.aria-label]="
-                            'generate.results.make_variation' | transloco
-                          "
-                          [title]="
-                            'generate.results.make_variation' | transloco
-                          "
-                        >
-                          <app-icon name="squares-2x2" />
-                          {{ "generate.results.variation_short" | transloco }}
-                        </button>
+                        @if (!tile.adopted) {
+                          <button
+                            type="button"
+                            class="gs-quick-act gs-quick-act--primary"
+                            (click)="makeVariation(tile)"
+                            [attr.aria-label]="
+                              'generate.results.make_variation' | transloco
+                            "
+                            [title]="
+                              'generate.results.make_variation' | transloco
+                            "
+                          >
+                            <app-icon name="squares-2x2" />
+                            {{ "generate.results.variation_short" | transloco }}
+                          </button>
+                        }
                         <button
                           type="button"
                           class="gs-quick-act"
@@ -711,18 +721,22 @@
                           <app-icon name="refresh-alt" />
                           {{ "generate.results.source_short" | transloco }}
                         </button>
-                        <button
-                          type="button"
-                          class="gs-quick-act"
-                          (click)="copySettings(tile)"
-                          [attr.aria-label]="
-                            'generate.results.copy_settings' | transloco
-                          "
-                          [title]="'generate.results.copy_settings' | transloco"
-                        >
-                          <app-icon name="adjustments-horizontal" />
-                          {{ "generate.results.settings_short" | transloco }}
-                        </button>
+                        @if (!tile.adopted) {
+                          <button
+                            type="button"
+                            class="gs-quick-act"
+                            (click)="copySettings(tile)"
+                            [attr.aria-label]="
+                              'generate.results.copy_settings' | transloco
+                            "
+                            [title]="
+                              'generate.results.copy_settings' | transloco
+                            "
+                          >
+                            <app-icon name="adjustments-horizontal" />
+                            {{ "generate.results.settings_short" | transloco }}
+                          </button>
+                        }
                       </div>
                     }
                     <div class="gs-tile-bar">
@@ -787,24 +801,26 @@
                         >
                           {{ "generate.results.use_in_request" | transloco }}
                         </div>
-                        <button
-                          type="button"
-                          class="gs-flip-item"
-                          role="menuitem"
-                          (click)="makeVariation(tile)"
-                        >
-                          <app-icon name="squares-2x2" />
-                          {{ "generate.results.make_variation" | transloco }}
-                        </button>
-                        <button
-                          type="button"
-                          class="gs-flip-item"
-                          role="menuitem"
-                          (click)="copySettings(tile)"
-                        >
-                          <app-icon name="adjustments-horizontal" />
-                          {{ "generate.results.copy_settings" | transloco }}
-                        </button>
+                        @if (!tile.adopted) {
+                          <button
+                            type="button"
+                            class="gs-flip-item"
+                            role="menuitem"
+                            (click)="makeVariation(tile)"
+                          >
+                            <app-icon name="squares-2x2" />
+                            {{ "generate.results.make_variation" | transloco }}
+                          </button>
+                          <button
+                            type="button"
+                            class="gs-flip-item"
+                            role="menuitem"
+                            (click)="copySettings(tile)"
+                          >
+                            <app-icon name="adjustments-horizontal" />
+                            {{ "generate.results.copy_settings" | transloco }}
+                          </button>
+                        }
                         <button
                           type="button"
                           class="gs-flip-item"
@@ -814,15 +830,17 @@
                           <app-icon name="refresh-alt" />
                           {{ "generate.results.reuse" | transloco }}
                         </button>
-                        <button
-                          type="button"
-                          class="gs-flip-item"
-                          role="menuitem"
-                          (click)="openLoadSettings(tile)"
-                        >
-                          <app-icon name="adjustments-horizontal" />
-                          {{ "generate.results.menu_load" | transloco }}
-                        </button>
+                        @if (!tile.adopted) {
+                          <button
+                            type="button"
+                            class="gs-flip-item"
+                            role="menuitem"
+                            (click)="openLoadSettings(tile)"
+                          >
+                            <app-icon name="adjustments-horizontal" />
+                            {{ "generate.results.menu_load" | transloco }}
+                          </button>
+                        }
                         <div
                           class="gs-result-action-group-label"
                           role="presentation"
@@ -838,15 +856,17 @@
                           <app-icon name="link" />
                           {{ "generate.link.copy_image" | transloco }}
                         </button>
-                        <button
-                          type="button"
-                          class="gs-flip-item"
-                          role="menuitem"
-                          (click)="copySettingsLink(tile)"
-                        >
-                          <app-icon name="link" />
-                          {{ "generate.link.copy_settings" | transloco }}
-                        </button>
+                        @if (!tile.adopted) {
+                          <button
+                            type="button"
+                            class="gs-flip-item"
+                            role="menuitem"
+                            (click)="copySettingsLink(tile)"
+                          >
+                            <app-icon name="link" />
+                            {{ "generate.link.copy_settings" | transloco }}
+                          </button>
+                        }
                         <button
                           type="button"
                           class="gs-flip-item"
@@ -923,16 +943,18 @@
                   <span class="gs-tile-status-text">
                     {{ "generate.results.tile_finished_pending" | transloco }}
                   </span>
-                  <div class="gs-tile-btnrow gs-tile-btnrow--status">
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="openLoadSettings(tile)"
-                    >
-                      <app-icon name="bars-4" />
-                      {{ "generate.results.view_settings" | transloco }}
-                    </button>
-                  </div>
+                  @if (!tile.adopted) {
+                    <div class="gs-tile-btnrow gs-tile-btnrow--status">
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    </div>
+                  }
                 </div>
               </div>
             }
@@ -973,14 +995,16 @@
                     <span class="gs-status-summary">
                       {{ "generate.results.claimed_summary" | transloco }}
                     </span>
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="openLoadSettings(tile)"
-                    >
-                      <app-icon name="bars-4" />
-                      {{ "generate.results.view_settings" | transloco }}
-                    </button>
+                    @if (!tile.adopted) {
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    }
                     <button
                       type="button"
                       class="gs-status-explain"
@@ -1100,14 +1124,16 @@
                         }
                       }
                     </span>
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="openLoadSettings(tile)"
-                    >
-                      <app-icon name="bars-4" />
-                      {{ "generate.results.view_settings" | transloco }}
-                    </button>
+                    @if (!tile.adopted) {
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    }
                     <button
                       type="button"
                       class="gs-status-explain"
@@ -1305,22 +1331,24 @@
                   <div
                     class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
                   >
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="retryJob(tile.jobLocalId)"
-                    >
-                      <app-icon name="refresh-alt" />
-                      {{ "generate.results.retry" | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="openLoadSettings(tile)"
-                    >
-                      <app-icon name="bars-4" />
-                      {{ "generate.results.view_settings" | transloco }}
-                    </button>
+                    @if (!tile.adopted) {
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="retryJob(tile.jobLocalId)"
+                      >
+                        <app-icon name="refresh-alt" />
+                        {{ "generate.results.retry" | transloco }}
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    }
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
@@ -1354,22 +1382,24 @@
                   <div
                     class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
                   >
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="retryJob(tile.jobLocalId)"
-                    >
-                      <app-icon name="refresh-alt" />
-                      {{ "generate.results.retry" | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="openLoadSettings(tile)"
-                    >
-                      <app-icon name="bars-4" />
-                      {{ "generate.results.view_settings" | transloco }}
-                    </button>
+                    @if (!tile.adopted) {
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="retryJob(tile.jobLocalId)"
+                      >
+                        <app-icon name="refresh-alt" />
+                        {{ "generate.results.retry" | transloco }}
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    }
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
@@ -1394,14 +1424,16 @@
                   <div
                     class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
                   >
-                    <button
-                      type="button"
-                      class="gs-tile-btn"
-                      (click)="openLoadSettings(tile)"
-                    >
-                      <app-icon name="bars-4" />
-                      {{ "generate.results.view_settings" | transloco }}
-                    </button>
+                    @if (!tile.adopted) {
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    }
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
@@ -1523,14 +1555,16 @@
             <span class="gs-viewer-action-group-label">{{
               "generate.results.use_in_request" | transloco
             }}</span>
-            <button
-              type="button"
-              class="gs-viewer-act gs-viewer-act--primary"
-              (click)="makeVariation(view)"
-            >
-              <app-icon name="squares-2x2" />
-              {{ "generate.results.make_variation" | transloco }}
-            </button>
+            @if (!view.adopted) {
+              <button
+                type="button"
+                class="gs-viewer-act gs-viewer-act--primary"
+                (click)="makeVariation(view)"
+              >
+                <app-icon name="squares-2x2" />
+                {{ "generate.results.make_variation" | transloco }}
+              </button>
+            }
             @if (!viewerNarrow()) {
               <button
                 type="button"
@@ -1541,14 +1575,16 @@
                 <app-icon name="refresh-alt" />
                 {{ "generate.results.reuse" | transloco }}
               </button>
-              <button
-                type="button"
-                class="gs-viewer-act"
-                (click)="copySettings(view)"
-              >
-                <app-icon name="adjustments-horizontal" />
-                {{ "generate.results.copy_settings" | transloco }}
-              </button>
+              @if (!view.adopted) {
+                <button
+                  type="button"
+                  class="gs-viewer-act"
+                  (click)="copySettings(view)"
+                >
+                  <app-icon name="adjustments-horizontal" />
+                  {{ "generate.results.copy_settings" | transloco }}
+                </button>
+              }
             }
           </div>
           @if (!viewerNarrow()) {
@@ -1641,7 +1677,8 @@
           [currentValue]="formValue()"
           [defaultMode]="metaMode()"
           [pinned]="metaPinned()"
-          [quickActions]="true"
+          [noteKey]="tile.adopted ? adoptedNoteKey : null"
+          [quickActions]="!tile.adopted"
           (apply)="onMetaApply($event)"
           (quickAction)="onQuickAction($event, tile)"
           (rawJson)="metaJsonOpen.set(true)"
@@ -1738,22 +1775,24 @@
         }}</span>
       </span>
     </button>
-    <button
-      type="button"
-      class="gs-opt-row"
-      (click)="closeViewerMoreAndFocus(); copySettings(view)"
-    >
-      <app-icon
-        name="adjustments-horizontal"
-        class="gs-ico-sm"
-        aria-hidden="true"
-      />
-      <span class="gs-opt-text">
-        <span class="gs-opt-label">{{
-          "generate.results.copy_settings" | transloco
-        }}</span>
-      </span>
-    </button>
+    @if (!view.adopted) {
+      <button
+        type="button"
+        class="gs-opt-row"
+        (click)="closeViewerMoreAndFocus(); copySettings(view)"
+      >
+        <app-icon
+          name="adjustments-horizontal"
+          class="gs-ico-sm"
+          aria-hidden="true"
+        />
+        <span class="gs-opt-text">
+          <span class="gs-opt-label">{{
+            "generate.results.copy_settings" | transloco
+          }}</span>
+        </span>
+      </button>
+    }
   }
   <p class="gs-opt-head">
     {{ "generate.results.other_actions" | transloco }}
@@ -1770,18 +1809,20 @@
       }}</span>
     </span>
   </button>
-  <button
-    type="button"
-    class="gs-opt-row"
-    (click)="closeViewerMoreAndFocus(); copySettingsLink(view)"
-  >
-    <app-icon name="link" class="gs-ico-sm" aria-hidden="true" />
-    <span class="gs-opt-text">
-      <span class="gs-opt-label">{{
-        "generate.link.copy_settings" | transloco
-      }}</span>
-    </span>
-  </button>
+  @if (!view.adopted) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      (click)="closeViewerMoreAndFocus(); copySettingsLink(view)"
+    >
+      <app-icon name="link" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.link.copy_settings" | transloco
+        }}</span>
+      </span>
+    </button>
+  }
   <button
     type="button"
     class="gs-opt-row"
@@ -1916,15 +1957,17 @@
         <app-icon name="x-mark" aria-hidden="true" />
       </button>
     </div>
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      (click)="makeVariation(menu.tile)"
-    >
-      <app-icon name="squares-2x2" />
-      {{ "generate.results.make_variation" | transloco }}
-    </button>
+    @if (!menu.tile.adopted) {
+      <button
+        type="button"
+        class="gs-tile-menu-item"
+        role="menuitem"
+        (click)="makeVariation(menu.tile)"
+      >
+        <app-icon name="squares-2x2" />
+        {{ "generate.results.make_variation" | transloco }}
+      </button>
+    }
     <button
       type="button"
       class="gs-tile-menu-item"
@@ -1935,24 +1978,26 @@
       <app-icon name="refresh-alt" />
       {{ "generate.results.reuse" | transloco }}
     </button>
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      (click)="copySettings(menu.tile)"
-    >
-      <app-icon name="adjustments-horizontal" />
-      {{ "generate.results.copy_settings" | transloco }}
-    </button>
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      (click)="openLoadSettings(menu.tile); closeTileMenu()"
-    >
-      <app-icon name="adjustments-horizontal" />
-      {{ "generate.results.menu_load" | transloco }}
-    </button>
+    @if (!menu.tile.adopted) {
+      <button
+        type="button"
+        class="gs-tile-menu-item"
+        role="menuitem"
+        (click)="copySettings(menu.tile)"
+      >
+        <app-icon name="adjustments-horizontal" />
+        {{ "generate.results.copy_settings" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="gs-tile-menu-item"
+        role="menuitem"
+        (click)="openLoadSettings(menu.tile); closeTileMenu()"
+      >
+        <app-icon name="adjustments-horizontal" />
+        {{ "generate.results.menu_load" | transloco }}
+      </button>
+    }
     <div class="gs-result-action-group-label" role="presentation">
       {{ "generate.results.other_actions" | transloco }}
     </div>
@@ -1975,15 +2020,17 @@
       <app-icon name="link" />
       {{ "generate.link.copy_image" | transloco }}
     </button>
-    <button
-      type="button"
-      class="gs-tile-menu-item"
-      role="menuitem"
-      (click)="copySettingsLink(menu.tile)"
-    >
-      <app-icon name="link" />
-      {{ "generate.link.copy_settings" | transloco }}
-    </button>
+    @if (!menu.tile.adopted) {
+      <button
+        type="button"
+        class="gs-tile-menu-item"
+        role="menuitem"
+        (click)="copySettingsLink(menu.tile)"
+      >
+        <app-icon name="link" />
+        {{ "generate.link.copy_settings" | transloco }}
+      </button>
+    }
     <button
       type="button"
       class="gs-tile-menu-item"
@@ -2033,7 +2080,8 @@
         [currentValue]="formValue()"
         [defaultMode]="metaMode()"
         [pinned]="metaPinned()"
-        [quickActions]="true"
+        [noteKey]="tile.adopted ? adoptedNoteKey : null"
+        [quickActions]="!tile.adopted"
         (apply)="onMetaApply($event)"
         (quickAction)="onQuickAction($event, tile)"
         (rawJson)="metaJsonOpen.set(true)"

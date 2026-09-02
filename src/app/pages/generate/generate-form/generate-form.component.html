@@ -577,30 +577,42 @@
                 {{ "generate.form.model_hint" | transloco }}
               }
             </p>
-            <!-- What the workers carrying this model can do between them. Every
-                 fact is one the horde reports about them, and each is left out
-                 when nobody offers it rather than stated as a zero. -->
-            @if (selectedModelFacts(); as facts) {
+            <!-- What the workers carrying this model can do between them, and
+                 what its licence allows. Every fact is one the horde reports,
+                 and each is left out when nobody offers it rather than stated
+                 as a zero. -->
+            @if (selectedModelFacts() !== null || modelLicensing() !== null) {
               <p class="gs-sublabel gs-model-facts mt-1">
-                @if (facts.maxSide > 0) {
-                  <span>{{
-                    "generate.form.model_fact_size"
-                      | transloco: { side: facts.maxSide }
-                  }}</span>
-                }
-                <!-- Many models are marked NSFW, but there is no point displaying
-                 fact_adult to the user unless they also have enabled NSFW content. 
+                @if (selectedModelFacts(); as facts) {
+                  @if (facts.maxSide > 0) {
+                    <span>{{
+                      "generate.form.model_fact_size"
+                        | transloco: { side: facts.maxSide }
+                    }}</span>
+                  }
+                  <!-- Many models are marked NSFW, but there is no point displaying
+                 fact_adult to the user unless they also have enabled NSFW content.
                  for the request -->
-                @if (facts.nsfw > 0 && form().controls.nsfw.value) {
-                  <span>{{
-                    "generate.form.model_fact_adult"
-                      | transloco: { count: facts.nsfw }
-                  }}</span>
+                  @if (facts.nsfw > 0 && form().controls.nsfw.value) {
+                    <span>{{
+                      "generate.form.model_fact_adult"
+                        | transloco: { count: facts.nsfw }
+                    }}</span>
+                  }
+                  @if (facts.painting > 0) {
+                    <span>{{
+                      "generate.form.model_fact_painting"
+                        | transloco: { count: facts.painting }
+                    }}</span>
+                  }
                 }
-                @if (facts.painting > 0) {
+                @if (modelLicensing(); as licence) {
                   <span>{{
-                    "generate.form.model_fact_painting"
-                      | transloco: { count: facts.painting }
+                    licensingLine(
+                      licence.fact,
+                      licence.name,
+                      modelLicensingNamesAsset()
+                    )
                   }}</span>
                 }
               </p>
@@ -1601,7 +1613,7 @@
                 />
               }
             </div>
-            <div>
+            <div appTutAnchor="upscaler">
               <div class="gs-field-head">
                 <label class="gs-slabel" for="generate-upscaler">
                   {{ "generate.form.upscaler_label" | transloco }} </label
@@ -1626,6 +1638,11 @@
                 <p class="gs-sublabel mt-1">
                   {{ "alchemy.form_meta." + upscaler + ".desc" | transloco }}
                 </p>
+                @if (postProcessorLicensing(upscaler); as licence) {
+                  <p class="gs-sublabel mt-1">
+                    {{ licensingLine(licence, upscaler, false) }}
+                  </p>
+                }
               }
             </div>
             <div appTutAnchor="facefixer">
@@ -1653,6 +1670,11 @@
                 <p class="gs-sublabel mt-1">
                   {{ "alchemy.form_meta." + fixer + ".desc" | transloco }}
                 </p>
+                @if (postProcessorLicensing(fixer); as licence) {
+                  <p class="gs-sublabel mt-1">
+                    {{ licensingLine(licence, fixer, false) }}
+                  </p>
+                }
               }
             </div>
             @if (usesFaceFixer()) {

@@ -46,7 +46,14 @@ import { ImagePostProcessor } from '../../types/style';
 import { GeneratePresetsService } from '../../services/generate-presets.service';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { ModelReferenceService } from '../../services/model-reference.service';
+import {
+  LicensingService,
+  postProcessorCategory,
+  prohibitedFacts,
+  type NamedLicensingFact,
+} from '../../services/licensing.service';
 import { AuthService } from '../../services/auth.service';
+import { ActiveGenerationsService } from '../../services/active-generations.service';
 import { SamplerConstraintsService } from '../../services/sampler-constraints.service';
 import { SweepLibraryService } from '../../services/sweep-library.service';
 import {
@@ -108,6 +115,7 @@ import {
   requestModelNames,
   requestToFormValue,
   stripEphemeralExtras,
+  UPSCALERS,
   workerRequirementForRequest,
 } from './generate-form.model';
 import {
@@ -264,9 +272,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly presets = inject(GeneratePresetsService);
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
+  private readonly licensing = inject(LicensingService);
   private readonly workerPool = inject(WorkerPoolService);
   private readonly controlHistory = inject(StudioControlHistoryService);
   private readonly auth = inject(AuthService);
+  private readonly activeGenerations = inject(ActiveGenerationsService);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly tryIt = inject(GsTryItService);
@@ -558,8 +568,104 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       contract: this.samplerContract(),
       workers: this.workerPool.workers(),
       requirement: this.workerRequirement(),
-    });
+    }).concat(this.licensingWarnings());
   });
+
+  /**
+   * The licence advisories the request earns. They are assembled here rather
+   * than inside {@link evaluateRequestLint}, which is a pure table over the
+   * request and knows nothing of a reference that is fetched; a licence that
+   * could not be read must not become a claim about the licence.
+   *
+   * Only a licence that forbids commercial use is loud. The quiet facts sit
+   * under the controls themselves, one line each.
+   */
+  private readonly licensingWarnings = computed<readonly RequestWarning[]>(
+    () => {
+      const value = this.styledValue();
+      const warnings: RequestWarning[] = [];
+
+      const models: NamedLicensingFact[] = [];
+      for (const selection of this.selectedModels()) {
+        const fact = this.licensing.commercialUse(
+          'image_generation',
+          selection.name,
+        )();
+        if (fact !== null) {
+          models.push({ name: selection.name, fact });
+        }
+      }
+      const pushProhibited = (
+        id: string,
+        section: SectionId,
+        anchor: FieldAnchorId,
+        entries: readonly NamedLicensingFact[],
+      ): void => {
+        const prohibited = prohibitedFacts(entries);
+        if (prohibited.length === 0) {
+          return;
+        }
+        warnings.push({
+          id,
+          section,
+          anchor,
+          key: 'generate.lint.licensing_prohibited',
+          params: {
+            what: prohibited.map((entry) => entry.name).join(', '),
+            licence: [
+              ...new Set(prohibited.map((entry) => entry.fact.licenseId)),
+            ].join(', '),
+          },
+        });
+      };
+
+      pushProhibited('licensing_model', 'model', 'model', models);
+
+      if (value.sourceMode === 'controlnet' && value.control_type !== '') {
+        pushProhibited(
+          'licensing_control',
+          'source',
+          'control_type',
+          this.licensing.controlTypeFacts(
+            value.control_type,
+            this.modelBaseline(),
+            value.image_is_control,
+          )(),
+        );
+      }
+
+      const post: NamedLicensingFact[] = [];
+      for (const processor of value.post_processing) {
+        if (
+          !UPSCALERS.includes(processor) &&
+          !FACE_FIXERS.includes(processor)
+        ) {
+          continue;
+        }
+        const fact = this.licensing.commercialUse(
+          postProcessorCategory(processor),
+          processor,
+        )();
+        if (fact !== null) {
+          post.push({ name: processor, fact });
+        }
+      }
+      // The go-to points at whichever of the two controls carries the first
+      // refusal, so a reader sent to it lands on a select they can change.
+      const firstProhibited = prohibitedFacts(post)[0];
+      pushProhibited(
+        'licensing_post',
+        'finishing',
+        firstProhibited !== undefined &&
+          (FACE_FIXERS as readonly string[]).includes(firstProhibited.name)
+          ? 'facefixer'
+          : 'upscaler',
+        post,
+      );
+
+      return warnings;
+    },
+  );
 
   /**
    * What the estimate is made of. The estimate is priced from the styled
@@ -747,6 +853,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     });
 
     if (this.isBrowser) {
+      // Anything already running under this key belongs in the results grid,
+      // including what another device started.
+      this.activeGenerations.start();
       this.fetchModels();
       this.fetchStyles();
       this.modelReference.load();

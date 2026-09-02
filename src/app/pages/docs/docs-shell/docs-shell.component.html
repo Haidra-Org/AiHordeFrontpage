@@ -7,9 +7,19 @@
        which is where it gets its own `top` from and how the page under it
        knows how much is standing over it. -->
   <div class="gs-docs-chrome" [appStickyHeader]="chromeOrder()">
-    <div class="gs-docs-bridge" [attr.data-area]="current.id">
-      <nav
+    <!-- One row of wayfinding: which area is being read, the pages of that
+         area, and the way back to its studio. One scrolling row rather than a
+         wrapping one, so it costs one line of every page it sits on at any
+         width, and a phone keeps the area switch instead of losing it. -->
+    <nav
+      class="gs-hub-nav"
+      [class.gs-hub-nav--image]="current.id === 'image'"
+      [class.gs-hub-nav--alchemy]="current.id === 'alchemy'"
+      [attr.aria-label]="'generate.learn.nav_label' | transloco"
+    >
+      <div
         class="gs-docs-areas"
+        role="group"
         [attr.aria-label]="'docs.area_switcher_label' | transloco"
       >
         @for (entry of areaBridgeEntries; track entry.id) {
@@ -24,39 +34,8 @@
             <span>{{ entry.labelKey | transloco }}</span>
           </a>
         }
-      </nav>
-
-      <nav
-        class="gs-docs-studio-jumps"
-        [attr.aria-label]="'docs.studio_jump_label' | transloco"
-      >
-        <a
-          class="gs-docs-studio-link gs-docs-studio-link--image"
-          [routerLink]="studioImage"
-        >
-          <app-icon name="photo" class="gs-docs-studio-icon" />
-          <span>{{ "docs.studio_jump_image" | transloco }}</span>
-          <app-icon name="arrow-right" class="gs-docs-studio-arrow" />
-        </a>
-        <a
-          class="gs-docs-studio-link gs-docs-studio-link--alchemy"
-          [routerLink]="studioAlchemy"
-        >
-          <app-icon name="beaker" class="gs-docs-studio-icon" />
-          <span>{{ "docs.studio_jump_alchemy" | transloco }}</span>
-          <app-icon name="arrow-right" class="gs-docs-studio-arrow" />
-        </a>
-      </nav>
-    </div>
-
-    <!-- One scrolling row rather than a wrapping one: an area is a short list of
-       pages and it should cost one line of every page it sits on. -->
-    <nav
-      class="gs-hub-nav"
-      [class.gs-hub-nav--image]="current.id === 'image'"
-      [class.gs-hub-nav--alchemy]="current.id === 'alchemy'"
-      [attr.aria-label]="'generate.learn.nav_label' | transloco"
-    >
+      </div>
+      <span class="gs-hub-nav-divider" aria-hidden="true"></span>
       @for (entry of entries(); track entry.activePath) {
         <!-- The entry the reader is on is said once, by `aria-current`, and the
            underline is drawn from it: a second class saying the same thing is a
@@ -70,6 +49,19 @@
           <span class="gs-hub-nav-label">{{ entry.labelKey | transloco }}</span>
         </a>
       }
+      <!-- The way back to the studio this area documents, at the end of the
+           row so it reads as the exit rather than as one more page. -->
+      <a
+        class="gs-docs-studio-link"
+        [class.gs-docs-studio-link--image]="current.id === 'image'"
+        [class.gs-docs-studio-link--alchemy]="current.id === 'alchemy'"
+        [routerLink]="studioLinkFor(current.id)"
+        [attr.aria-label]="'docs.studio_jump_label' | transloco"
+      >
+        <app-icon [name]="current.icon" class="gs-docs-studio-icon" />
+        <span>{{ "docs.studio_jump" | transloco }}</span>
+        <app-icon name="arrow-right" class="gs-docs-studio-arrow" />
+      </a>
     </nav>
   </div>
 }

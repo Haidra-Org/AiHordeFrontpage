@@ -21,7 +21,72 @@ import { GsProseComponent } from '../gs-prose/gs-prose.component';
   selector: 'app-page-intro',
   imports: [TranslocoPipe, RouterLink, IconComponent, GsProseComponent],
   template: `
-    @if (!isDismissed()) {
+    <!-- The lead form: one sentence under a page title with a ? that opens
+         the body below it. It is the head of a page rather than a card in
+         it, so it is never dismissed; a reader who does not want the body
+         simply never opens it. -->
+    @if (lead()) {
+      <div #container class="page-intro page-intro--lead">
+        <p class="page-intro-lead-line">
+          <span class="page-intro-lead-text">{{
+            subtitleKey() | transloco
+          }}</span>
+          <span class="hd-help">
+            <button
+              type="button"
+              class="hd-help-btn"
+              [attr.aria-controls]="contentId()"
+              [attr.aria-expanded]="isExpanded()"
+              (click)="toggleExpanded()"
+            >
+              <span aria-hidden="true">?</span>
+              <span class="sr-only">{{ 'help.about_page' | transloco }}</span>
+            </button>
+          </span>
+        </p>
+        @if (isExpanded()) {
+          <div [id]="contentId()" class="page-intro-lead-body">
+            @if (prose()) {
+              <div class="page-intro-body">
+                <app-gs-prose [key]="bodyKey()" [paragraphs]="true" />
+              </div>
+            } @else {
+              <div
+                class="page-intro-body"
+                [innerHTML]="bodyKey() | transloco"
+              ></div>
+            }
+            <div class="page-intro-actions">
+              <button
+                type="button"
+                class="hd-btn hd-btn--dense"
+                (click)="toggleExpanded()"
+              >
+                <app-icon name="chevron-up" />
+                {{ 'help.collapse' | transloco }}
+              </button>
+              @if (glossaryLink() && !readMoreLink()) {
+                <button
+                  type="button"
+                  class="hd-btn hd-btn--tonal hd-btn--dense"
+                  (click)="openGlossary()"
+                >
+                  {{ 'help.open_glossary' | transloco }}
+                </button>
+              }
+              @if (readMoreLink(); as link) {
+                <a
+                  [routerLink]="link"
+                  class="hd-btn hd-btn--tonal hd-btn--dense page-intro-link"
+                >
+                  {{ 'help.learn_more' | transloco }}
+                </a>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (!isDismissed()) {
       <div
         #container
         class="hd-disclosure page-intro"
@@ -133,6 +198,11 @@ export class PageIntroComponent {
    * body says which it is.
    */
   public readonly prose = input(false);
+  /**
+   * Draw the intro as a page's lead line rather than as a disclosure card:
+   * the subtitle sentence with a ? that opens the body under it.
+   */
+  public readonly lead = input(false);
 
   public readonly titleKey = computed(() => `help.${this.pageKey()}.title`);
   public readonly subtitleKey = computed(

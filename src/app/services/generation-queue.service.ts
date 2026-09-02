@@ -197,6 +197,44 @@ export class GenerationQueueService {
   }
 
   /**
+   * Take over image generations the account reports as running that this
+   * browser holds no record of: one submitted from another device, or one whose
+   * submit landed after a reload took the page away. The horde answers for them
+   * under the same key, so an adopted job joins the poll loop as a `queued` job
+   * with an id and is driven to done and downloaded like any other. Ids already
+   * held are skipped, so this is safe to run on every read of the account
+   * record.
+   */
+  public async adoptActive(ids: readonly string[]): Promise<void> {
+    const known = new Set(
+      this._jobs()
+        .map((job) => job.hordeId)
+        .filter((hordeId): hordeId is string => hordeId !== undefined),
+    );
+    for (const hordeId of ids) {
+      if (known.has(hordeId)) {
+        continue;
+      }
+      known.add(hordeId);
+      const now = this.now();
+      const job: LocalGenerationJob = {
+        localId: randomUuid(),
+        status: 'queued',
+        createdAt: now,
+        updatedAt: now,
+        // The check and status endpoints answer by id alone, so the poll loop
+        // needs nothing of the request the job was actually made with.
+        request: { prompt: '' },
+        adopted: true,
+        hordeId,
+        resultImageIds: [],
+      };
+      await this.db.putJob(job);
+      this.addToState(job);
+    }
+  }
+
+  /**
    * Cancel a job. Waiting jobs are marked cancelled locally; in-flight jobs are
    * also cancelled on the horde. Terminal jobs are left untouched.
    */
@@ -242,6 +280,11 @@ export class GenerationQueueService {
     const job = this.findJob(localId);
     if (!job) {
       throw new Error(`Cannot retry unknown job ${localId}`);
+    }
+    if (job.adopted) {
+      // An adopted job's request was never here, so there is nothing to send
+      // again; the surfaces that offer Retry withhold it for these.
+      throw new Error(`Cannot retry adopted job ${localId}`);
     }
     const images = await this.db.getImagesForJob(localId);
     const sourceImages: EnqueueSourceImage[] = images

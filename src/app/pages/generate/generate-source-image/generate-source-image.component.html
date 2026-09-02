@@ -230,6 +230,14 @@
             </a>
           </p>
         }
+        <!-- A control type asks the worker for two published models: the
+             ControlNet itself, and the detector that draws the map. Each is
+             named, because their licences differ. -->
+        @for (entry of controlLicensing(); track entry.name) {
+          <p class="gs-sublabel mt-1">
+            {{ licensingLine(entry.fact, entry.name) }}
+          </p>
+        }
         @if (rejectionFor("control_type"); as message) {
           <p
             id="generate-rejection-control_type"

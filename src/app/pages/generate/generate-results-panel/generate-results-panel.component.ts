@@ -188,6 +188,12 @@ interface ResultTile {
   provenance?: ImageMetaProvenance;
   /** The positive prompt, shown (expandable) atop every tile. */
   prompt?: string;
+  /**
+   * The generation was taken over from the account's active list rather than
+   * submitted here, so there are no settings behind it: the tile says where it
+   * came from and withholds everything that would read a request back.
+   */
+  adopted?: boolean;
   /** The job's stored request, for viewing/loading its settings. */
   request?: ImageGenerationRequest;
   /**
@@ -613,11 +619,20 @@ export class GenerateResultsPanelComponent {
       }
       const { dims, aspect } = this.geometryOf(job);
       const prompt = positivePrompt(job.request.prompt);
-      const requirement = workerRequirementForRequest(job.request);
+      // An adopted job's request stands in for settings this browser never
+      // held, so nothing may be concluded from it about which workers could
+      // serve the generation or why it is waiting.
+      const requirement = job.adopted
+        ? null
+        : workerRequirementForRequest(job.request);
       // Asked once per job rather than once per placeholder tile: a batch of
       // eight shares one request and therefore one answer.
-      const feasibility = evaluateWorkerFeasibility(workers, requirement);
-      const insight = this.waitInsights.forJob(job, requirement, feasibility);
+      const feasibility = requirement
+        ? evaluateWorkerFeasibility(workers, requirement)
+        : null;
+      const insight = requirement
+        ? this.waitInsights.forJob(job, requirement, feasibility)
+        : undefined;
       const kinds = pendingTileKinds(job);
       for (let i = 0; i < kinds.length; i++) {
         tiles.push({
@@ -635,8 +650,10 @@ export class GenerateResultsPanelComponent {
           insight,
           feasibility,
           prompt,
-          request: job.request,
-          applyRequest: job.request,
+          adopted: job.adopted,
+          ...(job.adopted
+            ? {}
+            : { request: job.request, applyRequest: job.request }),
           retryCount: job.retryCount,
           styleName: job.styleName,
           styleKey: styleKeyOf(job),
@@ -673,7 +690,9 @@ export class GenerateResultsPanelComponent {
             metaExport: buildImageMetadataExport(
               thumb.imageId,
               thumb.metadata,
-              job.request,
+              // The export carries the request verbatim, and an adopted job's
+              // is a placeholder rather than what was asked for.
+              job.adopted ? undefined : job.request,
               derived,
             ),
             provenance: buildImageProvenance(
@@ -683,8 +702,16 @@ export class GenerateResultsPanelComponent {
               { quoted: job.quotedKudos ?? null, charged: job.kudos ?? null },
             ),
             prompt,
-            request: job.request,
-            applyRequest: requestForApply(job.request, thumb.metadata?.seed),
+            adopted: job.adopted,
+            ...(job.adopted
+              ? {}
+              : {
+                  request: job.request,
+                  applyRequest: requestForApply(
+                    job.request,
+                    thumb.metadata?.seed,
+                  ),
+                }),
             retryCount: job.retryCount,
             styleName: job.styleName,
             styleKey: styleKeyOf(job),
@@ -698,8 +725,10 @@ export class GenerateResultsPanelComponent {
             aspect,
             dims,
             prompt,
-            request: job.request,
-            applyRequest: job.request,
+            adopted: job.adopted,
+            ...(job.adopted
+              ? {}
+              : { request: job.request, applyRequest: job.request }),
             retryCount: job.retryCount,
             styleName: job.styleName,
             styleKey: styleKeyOf(job),
@@ -714,10 +743,12 @@ export class GenerateResultsPanelComponent {
           dims,
           errorMessage: job.errorMessage,
           errorKey: job.errorKey,
-          metaExport: { request: job.request },
+          metaExport: { request: job.adopted ? null : job.request },
           prompt,
-          request: job.request,
-          applyRequest: job.request,
+          adopted: job.adopted,
+          ...(job.adopted
+            ? {}
+            : { request: job.request, applyRequest: job.request }),
           retryCount: job.retryCount,
           styleName: job.styleName,
           styleKey: styleKeyOf(job),
@@ -729,10 +760,12 @@ export class GenerateResultsPanelComponent {
           jobLocalId: job.localId,
           aspect,
           dims,
-          metaExport: { request: job.request },
+          metaExport: { request: job.adopted ? null : job.request },
           prompt,
-          request: job.request,
-          applyRequest: job.request,
+          adopted: job.adopted,
+          ...(job.adopted
+            ? {}
+            : { request: job.request, applyRequest: job.request }),
           retryCount: job.retryCount,
           styleName: job.styleName,
           styleKey: styleKeyOf(job),
@@ -2107,6 +2140,13 @@ export class GenerateResultsPanelComponent {
     this.showQuickActions.set(next);
     this.db.store(SHOW_QUICK_ACTIONS_KEY, next);
   }
+
+  /**
+   * What the metadata panel says instead of the settings rows for a generation
+   * taken over from the account. Held here rather than written into the binding
+   * so the key sits in one place.
+   */
+  public readonly adoptedNoteKey = 'generate.results.adopted_note';
 
   public openMeta(tile: ResultTile): void {
     this.metaKey.set(tile.key);

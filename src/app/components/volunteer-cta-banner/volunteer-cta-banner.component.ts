@@ -22,13 +22,13 @@ import { IconComponent } from '../icon/icon.component';
       <div class="details-cta-actions">
         <a
           routerLink="/contribute/workers"
-          class="hd-btn hd-btn--primary hd-btn--dense details-cta-action"
+          class="hd-btn hd-btn--ghost hd-btn--dense details-cta-action"
         >
           {{ 'volunteer_cta.become_worker' | transloco }}
         </a>
         <a
           routerLink="/contribute/donate"
-          class="hd-btn hd-btn--tonal hd-btn--dense details-cta-action"
+          class="hd-btn hd-btn--ghost hd-btn--dense details-cta-action"
         >
           {{ 'volunteer_cta.donate' | transloco }}
         </a>

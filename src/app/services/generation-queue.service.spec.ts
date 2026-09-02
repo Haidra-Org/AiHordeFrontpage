@@ -570,6 +570,63 @@ describe('GenerationQueueService', () => {
     warn.mockRestore();
   });
 
+  it('adopts an active id the queue does not already hold', async () => {
+    const queue = await createQueue();
+
+    await queue.adoptActive(['elsewhere-1']);
+
+    const job = queue.jobs()[0];
+    expect(job.hordeId).toBe('elsewhere-1');
+    expect(job.adopted).toBe(true);
+    expect(job.status).toBe('queued');
+    expect(job.request).toEqual({ prompt: '' });
+    expect(fakeDb.jobs.get(job.localId)?.adopted).toBe(true);
+  });
+
+  it('ignores an active id it is already tracking', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h1')),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+    await queue.adoptActive(['h1']);
+    await queue.adoptActive(['h1']);
+
+    expect(queue.jobs()).toHaveLength(1);
+    expect(queue.jobs()[0].adopted).toBeUndefined();
+  });
+
+  it('polls an adopted job to done through the existing path', async () => {
+    aiHorde.checkImageGenerationResult.mockReturnValue(
+      of(checkResult({ check: { done: true, processing: 0 } })),
+    );
+    aiHorde.getImageGenerationStatus.mockReturnValue(of(doneStatus()));
+    const queue = await createQueue();
+    await queue.adoptActive(['elsewhere-1']);
+
+    await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+    const job = queue.jobs()[0];
+    expect(aiHorde.checkImageGenerationResult).toHaveBeenCalledWith(
+      'elsewhere-1',
+    );
+    expect(job.status).toBe('done');
+    expect(job.resultImageIds).toEqual(['out-1']);
+    const images = await queue.getJobImages(job.localId);
+    // The tile has no request to name the model, so the per-image record is
+    // where it has to come from.
+    expect(images[0].metadata?.model).toBe('sd');
+  });
+
+  it('refuses to retry an adopted job', async () => {
+    const queue = await createQueue();
+    await queue.adoptActive(['elsewhere-1']);
+
+    await expect(queue.retry(queue.jobs()[0].localId)).rejects.toThrow();
+  });
+
   it('produces a well-formed id when crypto.randomUUID is unavailable', async () => {
     const cryptoRef = crypto as { randomUUID?: () => string };
     const original = cryptoRef.randomUUID;

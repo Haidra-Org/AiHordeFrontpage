@@ -72,6 +72,8 @@ export type FieldAnchorId =
   | 'control_strength'
   | 'qr'
   | 'transparent'
+  | 'upscaler'
+  | 'facefixer'
   | 'facefixer_strength'
   | 'workers'
   | 'generate'

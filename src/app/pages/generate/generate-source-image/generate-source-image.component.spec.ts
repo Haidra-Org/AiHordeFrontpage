@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { PLATFORM_ID } from '@angular/core';
+import { PLATFORM_ID, computed } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import en from '../../../../assets/i18n/en.json';
@@ -13,6 +13,11 @@ import {
   createGenerateForm,
 } from '../generate-form.model';
 import { SourceImage } from '../../../helper/source-image';
+import { provideRouter } from '@angular/router';
+import {
+  LicensingService,
+  type NamedLicensingFact,
+} from '../../../services/licensing.service';
 
 /** The folded card's line, split back into the values it was joined from. */
 function summaryParts(summary: string): string[] {
@@ -620,5 +625,96 @@ describe('GenerateSourceImageComponent folding', () => {
     );
     expect(en['generate.groups.source_map_supplied']).toBe('map supplied');
     expect(en['generate.groups.source_map_back']).toBe('map back');
+  });
+});
+
+describe('GenerateSourceImageComponent licence lines', () => {
+  /**
+   * The card drawn with its real template and the licensing answers a test
+   * wants, so the claim is about what a reader sees rather than what the
+   * component returns.
+   */
+  async function renderCard(facts: readonly NamedLicensingFact[]): Promise<{
+    host: HTMLElement;
+    detect: () => void;
+    form: GenerateFormGroup;
+  }> {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateSourceImageComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        provideRouter([]),
+        {
+          provide: LicensingService,
+          useValue: { controlTypeFacts: () => computed(() => facts) },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateSourceImageComponent);
+    const form = createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE });
+    fixture.componentRef.setInput('form', form);
+    fixture.detectChanges();
+    return {
+      host: fixture.nativeElement as HTMLElement,
+      detect: () => fixture.detectChanges(),
+      form,
+    };
+  }
+
+  function lines(host: HTMLElement): string[] {
+    return Array.from(host.querySelectorAll('.gs-sublabel'))
+      .map((line) => line.textContent?.replace(/\s+/g, ' ').trim() ?? '')
+      .filter((line) => line.startsWith('Commercial use'));
+  }
+
+  it('names the ControlNet model and the detector under the control type', async () => {
+    const { host, detect, form } = await renderCard([
+      {
+        name: 'control_openpose',
+        fact: {
+          status: 'allowed_with_conditions',
+          licenseId: 'OpenRAIL-M',
+          licenseName: null,
+          licenseUrl: null,
+          obligations: [],
+        },
+      },
+      {
+        name: 'annotator_openpose',
+        fact: {
+          status: 'prohibited',
+          licenseId: 'LicenseRef-OpenPose-NonCommercial',
+          licenseName: null,
+          licenseUrl: null,
+          obligations: [],
+        },
+      },
+    ]);
+
+    expect(lines(host)).toEqual([]);
+
+    form.patchValue({ sourceMode: 'controlnet', control_type: 'openpose' });
+    detect();
+
+    expect(lines(host)).toEqual([
+      'Commercial use: allowed with conditions (OpenRAIL-M) for control_openpose',
+      'Commercial use: not allowed (LicenseRef-OpenPose-NonCommercial) for annotator_openpose',
+    ]);
+  });
+
+  it('says nothing while the reference has no answer', async () => {
+    const { host, detect, form } = await renderCard([]);
+    form.patchValue({ sourceMode: 'controlnet', control_type: 'openpose' });
+    detect();
+
+    expect(lines(host)).toEqual([]);
   });
 });

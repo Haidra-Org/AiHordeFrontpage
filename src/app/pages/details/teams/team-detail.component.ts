@@ -7,6 +7,7 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+import { formatUptime } from '../../../helper/account-age';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -84,26 +85,7 @@ export class TeamDetailComponent implements OnInit {
   }
 
   public formatUptime(seconds: number): string {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const daysUnit = this.transloco.translate(
-      'details.teams.uptime_days_short',
-    );
-    const hoursUnit = this.transloco.translate(
-      'details.teams.uptime_hours_short',
-    );
-    const minutesUnit = this.transloco.translate(
-      'details.teams.uptime_minutes_short',
-    );
-
-    if (days > 0) {
-      return `${days}${daysUnit} ${hours}${hoursUnit}`;
-    }
-    if (hours > 0) {
-      return `${hours}${hoursUnit} ${minutes}${minutesUnit}`;
-    }
-    return `${minutes}${minutesUnit}`;
+    return formatUptime(this.transloco, seconds);
   }
 
   /**

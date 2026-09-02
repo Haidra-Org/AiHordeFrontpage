@@ -20,6 +20,13 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { GsGroupComponent } from '../generate-form/gs-group/gs-group.component';
 import { DatabaseService } from '../../../services/database.service';
+import { ModelReferenceService } from '../../../services/model-reference.service';
+import {
+  LicensingService,
+  licensingLineText,
+  type LicensingFact,
+  type NamedLicensingFact,
+} from '../../../services/licensing.service';
 import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.directive';
 import {
   AnnotationControlType,
@@ -155,6 +162,8 @@ export class GenerateSourceImageComponent implements OnInit {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly db = inject(DatabaseService);
   private readonly transloco = inject(TranslocoService);
+  private readonly modelReference = inject(ModelReferenceService);
+  private readonly licensing = inject(LicensingService);
 
   public readonly form = input.required<GenerateFormGroup>();
   /** When true, show a validation hint for whatever the current mode lacks. */
@@ -264,6 +273,48 @@ export class GenerateSourceImageComponent implements OnInit {
   public readonly denoise = signal(1);
   public readonly imageIsControl = signal(false);
   public readonly returnControlMap = signal(false);
+  /**
+   * Mirror of the picked model's name, kept in sync the same way. The licensing
+   * lines read it because a ControlNet trained for Stable Diffusion 2 is a
+   * different model, published under a different licence, from the one every
+   * other family runs.
+   */
+  private readonly modelName = signal('');
+
+  /** The picked model's normalised baseline, or null while nothing answers for it. */
+  private readonly modelBaseline = computed(() => {
+    const name = this.modelName().trim();
+    // Read the signal unconditionally so this recomputes when the reference
+    // lands after the model has already been picked.
+    const baselines = this.modelReference.baselines();
+    return baselines === null || name === ''
+      ? null
+      : this.modelReference.baselineFor(name);
+  });
+
+  /**
+   * What the chosen control type brings with it: the ControlNet model the
+   * worker runs, and the detector that draws the map when the worker is the one
+   * making it from the picture.
+   */
+  public readonly controlLicensing = computed<readonly NamedLicensingFact[]>(
+    () => {
+      const controlType = this.controlType();
+      if (this.mode() !== 'controlnet' || controlType === '') {
+        return [];
+      }
+      return this.licensing.controlTypeFacts(
+        controlType,
+        this.modelBaseline(),
+        this.imageIsControl(),
+      )();
+    },
+  );
+
+  /** One licensing fact as the line shown under the control type. */
+  public licensingLine(fact: LicensingFact, name: string): string {
+    return licensingLineText(this.transloco, fact, name, true);
+  }
 
   /** The ways of starting from a picture the card offers. */
   public readonly modes = SOURCE_MODES;
@@ -549,6 +600,7 @@ export class GenerateSourceImageComponent implements OnInit {
     this.denoise.set(controls.denoising_strength.value);
     this.imageIsControl.set(controls.image_is_control.value);
     this.returnControlMap.set(controls.return_control_map.value);
+    this.modelName.set(controls.model.value);
     const storedOpen = this.db.get(SOURCE_OPEN_KEY);
     if (typeof storedOpen === 'boolean') {
       this.foldOpen.set(storedOpen);
@@ -562,6 +614,9 @@ export class GenerateSourceImageComponent implements OnInit {
     controls.return_control_map.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((value) => this.returnControlMap.set(value));
+    controls.model.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => this.modelName.set(value));
     controls.sourceMode.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((mode) => this.onModeChanged(mode));

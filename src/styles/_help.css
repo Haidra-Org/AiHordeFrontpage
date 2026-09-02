@@ -182,6 +182,28 @@
     text-decoration: none;
   }
 
+  /* The lead form heads a page: the sentence and its ? on one line under
+     the title, the body opening beneath them in the reading measure. */
+  .page-intro--lead {
+    margin: 0;
+  }
+
+  .page-intro-lead-line {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    margin: var(--hd-space-2) 0 0;
+    font-size: var(--hd-text-lg);
+    line-height: 1.5;
+    color: var(--hd-muted);
+  }
+
+  .page-intro-lead-body {
+    max-width: 70ch;
+    margin-top: var(--hd-space-3);
+    text-align: left;
+  }
+
   /* Restore button — shown when the intro is dismissed */
   .page-intro-restore {
     margin-bottom: var(--hd-space-3);

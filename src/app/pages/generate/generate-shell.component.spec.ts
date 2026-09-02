@@ -133,7 +133,7 @@ describe('GenerateShellComponent', () => {
         'Image',
       ],
       [translations['generate.shell.tab_alchemy'], 'Alchemy'],
-      [translations['generate.shell.tab_docs'], 'Learn'],
+      [translations['generate.shell.tab_docs'], 'Docs'],
     ]);
   });
 

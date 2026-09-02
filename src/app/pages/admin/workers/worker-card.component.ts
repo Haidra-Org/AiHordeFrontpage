@@ -11,10 +11,15 @@ import {
   TemplateRef,
   viewChild,
 } from '@angular/core';
+import { formatUptime } from '../../../helper/account-age';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Dialog, DialogRef, DialogModule } from '@angular/cdk/dialog';
 import { RouterLink } from '@angular/router';
-import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import {
+  TranslocoPipe,
+  TranslocoModule,
+  TranslocoService,
+} from '@jsverse/transloco';
 import { HordeWorker } from '../../../types/horde-worker';
 import { Team } from '../../../types/team';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
@@ -71,6 +76,7 @@ export class WorkerCardComponent {
   private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly workerService = inject(AdminWorkerService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly transloco = inject(TranslocoService);
   public readonly auth = inject(AuthService);
   private readonly unitConversion = inject(UnitConversionService);
   private readonly cdkDialog = inject(Dialog);
@@ -370,17 +376,7 @@ export class WorkerCardComponent {
   }
 
   public formatUptime(seconds: number): string {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-
-    if (days > 0) {
-      return `${days}d ${hours}h`;
-    }
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
+    return formatUptime(this.transloco, seconds);
   }
 
   public truncateName(name: string, length = 30): string {

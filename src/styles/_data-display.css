@@ -201,6 +201,12 @@
     @apply text-green-700 dark:text-green-300;
   }
 
+  /* A figure that counts every domain at once takes the page ink: no one
+     hue is its own. */
+  .domain-label--combined {
+    @apply text-gray-800 dark:text-gray-100;
+  }
+
   /* Domain-tinted contexts: match the accent color for contrast */
   .domain-tint--image .data-value-xl {
     @apply text-purple-700 dark:text-purple-300;
@@ -1307,6 +1313,11 @@
 
   .dark .worker-btn:hover {
     @apply bg-gray-500 text-white;
+  }
+
+  /* The sort button whose order the list is in. */
+  .worker-btn-active {
+    @apply text-content-primary bg-edge-primary;
   }
 
   /* Models button - fits with overall theme */

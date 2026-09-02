@@ -133,11 +133,14 @@ describe('DocsShellComponent', () => {
     ).toEqual([null, 'page']);
   });
 
-  it('keeps direct return links into both studios in the docs chrome', async () => {
+  it('keeps a direct return link into the studio of the area being read', async () => {
     await go('/docs/image/control-types');
-
     expect(studioLinks().map((link) => link.getAttribute('href'))).toEqual([
       STUDIO_IMAGE,
+    ]);
+
+    await go('/docs/alchemy');
+    expect(studioLinks().map((link) => link.getAttribute('href'))).toEqual([
       STUDIO_ALCHEMY,
     ]);
   });
@@ -174,8 +177,7 @@ describe('DocsShellComponent', () => {
     expect(translations['generate.learn.nav_label']).toBeTruthy();
     expect(translations['docs.area_switcher_label']).toBeTruthy();
     expect(translations['docs.studio_jump_label']).toBeTruthy();
-    expect(translations['docs.studio_jump_image']).toBeTruthy();
-    expect(translations['docs.studio_jump_alchemy']).toBeTruthy();
+    expect(translations['docs.studio_jump']).toBeTruthy();
     for (const area of DOCS_AREAS) {
       expect(
         translations[area.labelKey],
@@ -200,7 +202,7 @@ describe('DocsShellComponent', () => {
     ).toBe(translations['docs.area_switcher_label']);
     expect(
       (fixture.nativeElement as HTMLElement)
-        .querySelector('.gs-docs-studio-jumps')
+        .querySelector('.gs-docs-studio-link')
         ?.getAttribute('aria-label'),
     ).toBe(translations['docs.studio_jump_label']);
   });

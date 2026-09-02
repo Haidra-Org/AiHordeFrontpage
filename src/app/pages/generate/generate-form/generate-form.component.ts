@@ -158,6 +158,14 @@ import {
 import type { SectionId } from '../../../content/sections';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import {
+  LicensingService,
+  licensingLineText,
+  postProcessorCategory,
+  worstLicensingFact,
+  type LicensingFact,
+  type NamedLicensingFact,
+} from '../../../services/licensing.service';
+import {
   pickableWorkers,
   type ModelWorkerFacts,
   type WorkerFeasibility,
@@ -585,6 +593,7 @@ export class GenerateFormComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly db = inject(DatabaseService);
   private readonly units = inject(UnitConversionService);
+  private readonly licensing = inject(LicensingService);
 
   public readonly form = input.required<GenerateFormGroup>();
   public readonly models = input<ActiveModel[]>([]);
@@ -1402,6 +1411,40 @@ export class GenerateFormComponent implements OnInit {
       return null;
     }
     return this.modelFacts()?.get(name) ?? null;
+  }
+
+  /**
+   * Every model the request would accept, primary first, with a style's pin
+   * standing over the reader's own pick. A style that pins a model replaces the
+   * whole list, so the further models are no part of what would be sent.
+   */
+  private licensingModelNames(): readonly string[] {
+    const pinned = this.isSectionLocked('model');
+    const primary = pinned
+      ? (this.forcedParams()?.model ?? '')
+      : this.form().controls.model.value;
+    return requestModelNames(primary, pinned ? [] : this.extraModelList());
+  }
+
+  /**
+   * What the model picker says about using the pictures commercially: the
+   * answer that leaves the reader with the most doubt across every model the
+   * request would accept. Null while the reference has not answered.
+   */
+  public modelLicensing(): NamedLicensingFact | null {
+    const entries: NamedLicensingFact[] = [];
+    for (const name of this.licensingModelNames()) {
+      const fact = this.licensing.commercialUse('image_generation', name)();
+      if (fact !== null) {
+        entries.push({ name, fact });
+      }
+    }
+    return worstLicensingFact(entries);
+  }
+
+  /** Whether the model line has to say which of the models it is about. */
+  public modelLicensingNamesAsset(): boolean {
+    return this.licensingModelNames().length > 1;
   }
 
   /** The family the picked model belongs to (SD1.5 512 vs SDXL 1024). */
@@ -2240,6 +2283,27 @@ export class GenerateFormComponent implements OnInit {
 
   public usesFaceFixer(): boolean {
     return this.selectedFaceFixer() !== '';
+  }
+
+  /**
+   * What the reference says about using one post-processor's output
+   * commercially, or null when none is selected or it has not answered.
+   */
+  public postProcessorLicensing(
+    name: ImagePostProcessor | '',
+  ): LicensingFact | null {
+    return name === ''
+      ? null
+      : this.licensing.commercialUse(postProcessorCategory(name), name)();
+  }
+
+  /** One licensing fact as the line shown under the control it belongs to. */
+  public licensingLine(
+    fact: LicensingFact,
+    name: string,
+    nameAsset: boolean,
+  ): string {
+    return licensingLineText(this.transloco, fact, name, nameAsset);
   }
 
   public stripBackground(): boolean {

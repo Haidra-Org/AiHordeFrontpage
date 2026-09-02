@@ -1,6 +1,7 @@
 import {
   Component,
   input,
+  signal,
   computed,
   inject,
   ChangeDetectionStrategy,
@@ -29,6 +30,13 @@ export class BeginnerHeaderComponent {
   public readonly isDismissed = computed(() =>
     this.guideService.isDismissed(STORAGE_KEY)(),
   );
+
+  /** Whether a phone has opened the folded part. Wide screens ignore it. */
+  public readonly open = signal(false);
+
+  public toggleOpen(): void {
+    this.open.update((value) => !value);
+  }
 
   public dismiss(): void {
     this.guideService.dismiss(STORAGE_KEY);

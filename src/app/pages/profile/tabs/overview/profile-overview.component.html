@@ -115,24 +115,8 @@
     }
   </div>
 
-  <!-- The account in four numbers -->
+  <!-- The account in three numbers; the balance has a card of its own below. -->
   <div class="hd-stats">
-    <div class="hd-stat">
-      <span class="hd-stat-label">{{ "profile.kudos" | transloco }}</span>
-      <span class="hd-stat-value">{{
-        auth.currentUser()!.kudos | formatNumber
-      }}</span>
-      @if (auth.currentUser()!.monthly_kudos?.amount) {
-        <span class="hd-stat-note">{{
-          "profile.monthly_kudos"
-            | transloco
-              : {
-                  amount:
-                    auth.currentUser()!.monthly_kudos!.amount! | formatNumber,
-                }
-        }}</span>
-      }
-    </div>
     @if (auth.currentUser()!.account_age) {
       <div class="hd-stat">
         <span class="hd-stat-label">{{

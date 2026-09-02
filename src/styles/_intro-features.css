@@ -345,6 +345,25 @@
     gap: var(--hd-space-2-5);
   }
 
+  /* Wide screens show the whole orientation; the fold toggle is a phone's. */
+  .beginner-banner-toggle {
+    display: none;
+    flex: none;
+    margin-left: auto;
+  }
+
+  @media (max-width: 639.98px) {
+    .beginner-banner-toggle {
+      display: inline-flex;
+    }
+
+    /* Folded, the banner is its title and its doors: the rest waits behind
+       the chevron so the page's own content starts on the first screen. */
+    .beginner-banner:not(.beginner-banner--open) .beginner-banner-fold {
+      display: none;
+    }
+  }
+
   .beginner-banner-icon {
     flex: none;
     color: var(--hd-sec);

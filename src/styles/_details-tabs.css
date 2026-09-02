@@ -1003,17 +1003,18 @@
     flex-direction: column;
   }
 
+  /* The volunteer line is a note addressed to the whole page, not a card:
+     it sits on the canvas at text weight, its two doors beside it. The doors
+     are never demoted below a visible button; the line around them is what
+     stands down. */
   .details-cta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--hd-space-2) var(--hd-space-4);
+    gap: var(--hd-space-1) var(--hd-space-4);
     margin-bottom: var(--hd-space-3);
-    padding: var(--hd-space-2-5) var(--hd-space-3);
-    border: 1px solid var(--hd-card-border);
-    border-radius: var(--hd-radius-md);
-    background: var(--hd-card);
+    padding: 0 var(--hd-space-1);
   }
 
   .details-cta-text {

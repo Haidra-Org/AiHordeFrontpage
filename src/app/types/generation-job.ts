@@ -97,6 +97,14 @@ export interface LocalGenerationJob {
   createdAt: number;
   updatedAt: number;
   request: ImageGenerationRequest;
+  /**
+   * The job was taken from the account's own list of active generations rather
+   * than submitted from this browser, so `request` is a placeholder standing in
+   * for settings nobody here ever held. Everything that would read those
+   * settings back (loading them, linking them, asking for the same picture
+   * again) has to be withheld for such a job.
+   */
+  adopted?: true;
   hordeId?: string;
   /**
    * The running kudos figure: what the horde quoted at submit while the job is

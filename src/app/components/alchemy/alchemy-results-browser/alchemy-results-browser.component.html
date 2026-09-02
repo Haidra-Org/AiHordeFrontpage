@@ -172,6 +172,20 @@
     </div>
   </div>
 
+  <!-- A request taken over from the account: its operations are only what the
+       horde has reported, and nothing here can run it again. -->
+  @if (job.adopted) {
+    <p class="gs-adopted-note">
+      <app-icon name="globe-alt" class="gs-ico-sm" aria-hidden="true" />
+      <span>
+        <strong class="gs-adopted-line">{{
+          "alchemy.results.adopted_line" | transloco
+        }}</strong>
+        {{ "alchemy.results.adopted_note" | transloco }}
+      </span>
+    </p>
+  }
+
   @if (job.notFound) {
     <p class="gs-warn">
       <app-icon name="warning-triangle" class="gs-ico-sm" />

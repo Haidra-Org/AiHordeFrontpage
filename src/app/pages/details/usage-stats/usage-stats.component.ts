@@ -28,7 +28,6 @@ import { setPageTitle } from '../../../helper/page-title';
 import { ImageModelStats } from '../../../types/image-model-stats';
 import { TextModelStats } from '../../../types/text-model-stats';
 import { UnitTooltipComponent } from '../../../components/unit-tooltip/unit-tooltip.component';
-import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 
@@ -73,7 +72,6 @@ interface ModelUsageEntry {
     TranslocoPipe,
     DecimalPipe,
     UnitTooltipComponent,
-    PageIntroComponent,
     InfoTooltipComponent,
     IconComponent,
   ],

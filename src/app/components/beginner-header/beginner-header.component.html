@@ -1,5 +1,8 @@
 @if (!dismissable() || !isDismissed()) {
-  <aside class="hd-callout hd-callout--accent beginner-banner">
+  <aside
+    class="hd-callout hd-callout--accent beginner-banner"
+    [class.beginner-banner--open]="open()"
+  >
     <div class="beginner-banner-main">
       <span class="hd-sec-chip hd-sec-chip--lg beginner-banner-icon">
         <app-icon name="info-circle" aria-hidden="true" />
@@ -8,14 +11,25 @@
         <h2 class="hd-callout-title">
           {{ "guis_and_tools_page.intro_title" | transloco }}
         </h2>
-        <p class="hd-callout-body">
+        <p class="hd-callout-body beginner-banner-fold">
           {{ "guis_and_tools_page.intro_paragraph_1" | transloco }}
         </p>
       </div>
+      <!-- A phone folds the orientation to its title and its doors; the
+           chevron opens the rest. Wide screens show everything and hide it. -->
+      <button
+        type="button"
+        class="hd-btn hd-btn--ghost hd-btn--dense beginner-banner-toggle"
+        (click)="toggleOpen()"
+        [attr.aria-expanded]="open()"
+        [attr.aria-label]="'help.about_page' | transloco"
+      >
+        <app-icon [name]="open() ? 'chevron-up' : 'chevron-down'" />
+      </button>
     </div>
 
     @if (disableLinks()) {
-      <dl class="beginner-banner-categories">
+      <dl class="beginner-banner-categories beginner-banner-fold">
         <div class="hd-card beginner-banner-category">
           <dt class="beginner-banner-dt">
             <span class="beginner-banner-dot beginner-banner-dot-purple"></span>
@@ -46,7 +60,7 @@
       </dl>
 
       <p
-        class="hd-callout-body beginner-banner-recommendation"
+        class="hd-callout-body beginner-banner-recommendation beginner-banner-fold"
         [innerHTML]="'guis_and_tools_page.intro_paragraph_2' | transloco"
       ></p>
     }
@@ -77,14 +91,14 @@
           {{ "guis_and_tools_page.worker_cta_donate" | transloco }}
         </a>
       }
-      <span class="beginner-banner-kudos-hint">
+      <span class="beginner-banner-kudos-hint beginner-banner-fold">
         <app-kudos-term />
         — {{ "guis_and_tools_page.kudos_hint" | transloco }}
       </span>
       @if (dismissable()) {
         <button
           type="button"
-          class="hd-btn hd-btn--ghost hd-btn--dense"
+          class="hd-btn hd-btn--ghost hd-btn--dense beginner-banner-fold"
           (click)="dismiss()"
         >
           {{ "help.dismiss" | transloco }}

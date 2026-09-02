@@ -1528,3 +1528,108 @@ describe('GenerateResultsPanelComponent empty pane', () => {
     }
   });
 });
+
+describe('GenerateResultsPanelComponent adopted generations', () => {
+  let fixture: ComponentFixture<GenerateResultsPanelComponent>;
+  let host: HTMLElement;
+
+  const adopted: LocalGenerationJob = {
+    localId: 'adopted-1',
+    status: 'done',
+    createdAt: 0,
+    updatedAt: 0,
+    request: { prompt: '' },
+    adopted: true,
+    hordeId: 'elsewhere-1',
+    resultImageIds: ['out-1'],
+  };
+
+  beforeEach(async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+
+    await TestBed.configureTestingModule({
+      // What the tile says and what it withholds are both claims about the
+      // rendered markup, so the real template and the real copy are loaded.
+      imports: [
+        GenerateResultsPanelComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            jobs: signal<LocalGenerationJob[]>([adopted]),
+            pendingJobs: signal<LocalGenerationJob[]>([]),
+            finishedJobs: signal<LocalGenerationJob[]>([adopted]),
+            cancel: vi.fn(),
+            retry: vi.fn(),
+            deleteJob: vi.fn(),
+            getJobImages: vi
+              .fn()
+              .mockResolvedValue([resultImage('adopted-1', 'out-1')]),
+          },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+        },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+    host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  it('marks the tile as coming from another session', () => {
+    expect(host.querySelector('.gs-tile-adopted')?.textContent).toContain(
+      TRANSLATIONS['generate.results.adopted_line'],
+    );
+    expect(fixture.componentInstance.tiles()[0].adopted).toBe(true);
+  });
+
+  it('withholds everything that would read a request back', () => {
+    const menu = host.querySelector('.gs-flip-menu');
+
+    expect(menu).not.toBeNull();
+    expect(menu!.textContent).not.toContain(
+      TRANSLATIONS['generate.results.make_variation'],
+    );
+    expect(menu!.textContent).not.toContain(
+      TRANSLATIONS['generate.results.menu_load'],
+    );
+    expect(menu!.textContent).not.toContain(
+      TRANSLATIONS['generate.results.copy_settings'],
+    );
+    expect(menu!.textContent).not.toContain(
+      TRANSLATIONS['generate.link.copy_settings'],
+    );
+    // What still works on a picture nobody here asked for.
+    expect(menu!.textContent).toContain(
+      TRANSLATIONS['generate.results.download'],
+    );
+    expect(menu!.textContent).toContain(TRANSLATIONS['generate.results.reuse']);
+    expect(menu!.textContent).toContain(
+      TRANSLATIONS['generate.results.delete'],
+    );
+  });
+});

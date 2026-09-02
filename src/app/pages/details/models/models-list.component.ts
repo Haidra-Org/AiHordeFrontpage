@@ -24,7 +24,6 @@ import {
   SynthesizedUnit,
   UnitConversionService,
 } from '../../../services/unit-conversion.service';
-import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import {
   allCapabilities,
@@ -71,13 +70,7 @@ export interface ModelRow {
 
 @Component({
   selector: 'app-models-list',
-  imports: [
-    RouterLink,
-    TranslocoPipe,
-    DecimalPipe,
-    PageIntroComponent,
-    IconComponent,
-  ],
+  imports: [RouterLink, TranslocoPipe, DecimalPipe, IconComponent],
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

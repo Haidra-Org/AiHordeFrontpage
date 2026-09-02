@@ -9,22 +9,14 @@ import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { EntityLookupComponent } from '../../../components/entity-lookup/entity-lookup.component';
-import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { TranslatorService } from '../../../services/translator.service';
 import { setPageTitle } from '../../../helper/page-title';
 import { extractUserId } from '../../../helper/user-parser';
 
 @Component({
   selector: 'app-users-list',
-  imports: [
-    TranslocoPipe,
-    EntityLookupComponent,
-    RouterLink,
-    PageIntroComponent,
-  ],
+  imports: [TranslocoPipe, EntityLookupComponent, RouterLink],
   template: `
-    <app-page-intro pageKey="users" />
-
     <div class="card card-bg-primary card-full">
       <h2 class="heading-card">
         {{ 'details.users.lookup.label' | transloco }}

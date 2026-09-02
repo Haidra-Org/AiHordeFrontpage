@@ -19,7 +19,6 @@ import { AiHordeService } from '../../../services/ai-horde.service';
 import { AuthService } from '../../../services/auth.service';
 import { LeaderboardUser } from '../../../types/leaderboard-user';
 import { setPageTitle } from '../../../helper/page-title';
-import { PageIntroComponent } from '../../../components/page-intro/page-intro.component';
 import { KudosTermComponent } from '../../../components/kudos-term/kudos-term.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 
@@ -29,7 +28,6 @@ import { IconComponent } from '../../../components/icon/icon.component';
     TranslocoPipe,
     DecimalPipe,
     RouterLink,
-    PageIntroComponent,
     KudosTermComponent,
     IconComponent,
   ],

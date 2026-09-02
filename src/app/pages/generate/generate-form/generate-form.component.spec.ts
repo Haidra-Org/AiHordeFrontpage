@@ -1,5 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Component, PLATFORM_ID, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  PLATFORM_ID,
+  computed,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FIELD_LABEL_KEY,
@@ -29,6 +35,10 @@ import {
 } from '../../../services/style-record';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import { evaluateRequestLint, type RequestWarning } from '../request-lint';
+import {
+  LicensingService,
+  type LicensingFact,
+} from '../../../services/licensing.service';
 import type { ActiveModel } from '../../../types/active-model';
 import type { HordeWorker } from '../../../types/horde-worker';
 import { ToastService } from '../../../services/toast.service';
@@ -3888,5 +3898,123 @@ describe('GenerateFormComponent first-visit prompt line', () => {
     const { host } = await render(2);
 
     expect(line(host)).toBeNull();
+  });
+});
+
+describe('GenerateFormComponent licence lines', () => {
+  /** A fact with only the fields a line reads. */
+  function fact(status: string, licenseId: string): LicensingFact {
+    return {
+      status,
+      licenseId,
+      licenseName: null,
+      licenseUrl: null,
+      obligations: [],
+    } as LicensingFact;
+  }
+
+  async function renderPanel(assets: Record<string, LicensingFact>): Promise<{
+    host: HTMLElement;
+    detect: () => void;
+    form: GenerateFormGroup;
+    component: GenerateFormComponent;
+  }> {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: LicensingService,
+          useValue: {
+            commercialUse: (category: string, name: string) =>
+              computed(() => assets[`${category}:${name}`] ?? null),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({ ...DEFAULT_GENERATE_FORM_VALUE });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+    return {
+      host: fixture.nativeElement as HTMLElement,
+      detect: () => fixture.detectChanges(),
+      form,
+      component: fixture.componentInstance,
+    };
+  }
+
+  function lines(host: HTMLElement): string[] {
+    // The model's fact rides among the worker facts as one span of their line;
+    // every other licence line is a sublabel of its own.
+    return Array.from(
+      host.querySelectorAll(
+        '.gs-model-facts span, p.gs-sublabel:not(.gs-model-facts)',
+      ),
+    )
+      .map((line) => line.textContent?.replace(/\s+/g, ' ').trim() ?? '')
+      .filter((line) => line.startsWith('Commercial use'));
+  }
+
+  it('carries the licence of the model the request would run on', async () => {
+    const { host, detect, form } = await renderPanel({
+      'image_generation:Deliberate': fact(
+        'allowed_with_conditions',
+        'OpenRAIL-M',
+      ),
+      'image_generation:Stable Cascade 1.0': fact(
+        'prohibited',
+        'LicenseRef-Stable-Cascade-NC-Community',
+      ),
+    });
+
+    expect(lines(host)).toEqual([]);
+
+    form.patchValue({ model: 'Deliberate' });
+    detect();
+    expect(lines(host)).toEqual([
+      'Commercial use: allowed with conditions (OpenRAIL-M)',
+    ]);
+
+    // With more than one model accepted the line has to say which of them the
+    // answer is about.
+    form.patchValue({ extraModels: ['Stable Cascade 1.0'] });
+    detect();
+    expect(lines(host)).toEqual([
+      'Commercial use: not allowed (LicenseRef-Stable-Cascade-NC-Community) for Stable Cascade 1.0',
+    ]);
+  });
+
+  it('carries the licence of the upscaler and of the face fixer', async () => {
+    const { host, detect, form, component } = await renderPanel({
+      'esrgan:4x_AnimeSharp': fact('prohibited', 'CC-BY-NC-SA-4.0'),
+      'gfpgan:GFPGANv1.3': fact('allowed', 'Apache-2.0'),
+    });
+    component.openGroup('post');
+    form.patchValue({ post_processing: ['4x_AnimeSharp', 'GFPGANv1.3'] });
+    detect();
+
+    expect(lines(host)).toEqual([
+      'Commercial use: not allowed (CC-BY-NC-SA-4.0)',
+      'Commercial use: allowed (Apache-2.0)',
+    ]);
+  });
+
+  it('says nothing about a post-processor the reference has no answer for', async () => {
+    const { host, detect, form, component } = await renderPanel({});
+    component.openGroup('post');
+    form.patchValue({ post_processing: ['4x_AnimeSharp'] });
+    detect();
+
+    expect(lines(host)).toEqual([]);
   });
 });

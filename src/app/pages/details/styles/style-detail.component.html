@@ -428,9 +428,9 @@
                         >
                       }
                       @if (imageStyleParams()?.hires_fix) {
-                        <span class="badge-base badge-success badge-sm"
-                          >Hires Fix</span
-                        >
+                        <span class="badge-base badge-success badge-sm">{{
+                          "details.style_detail.flag.hires_fix" | transloco
+                        }}</span>
                       }
                       @if (imageStyleParams()?.tiling) {
                         <span class="badge-base badge-success badge-sm"

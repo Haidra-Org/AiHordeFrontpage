@@ -4,9 +4,9 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { of } from 'rxjs';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import en from '../../../../assets/i18n/en.json';
 import {
   imageSettingRows,
@@ -19,6 +19,10 @@ import { AiHordeService } from '../../../services/ai-horde.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { ModelReferenceService } from '../../../services/model-reference.service';
 import { TranslatorService } from '../../../services/translator.service';
+import {
+  LicensingService,
+  type LicensingFact,
+} from '../../../services/licensing.service';
 import { parseStudioLink } from '../../generate/studio-link';
 import { detailsRoutes } from '../details.routes';
 
@@ -54,6 +58,12 @@ const WORKERS = [
   { id: 'w1', name: 'Alpha', type: 'image', models: ['Deliberate'] },
   { id: 'w2', name: 'Beta', type: 'image', models: ['Something Else'] },
 ];
+
+/**
+ * What the licensing export answers for this model on the next page opened.
+ * Null is the answer before it has been read, which draws no row at all.
+ */
+let licensingFact: LicensingFact | null = null;
 
 function configure(): void {
   TestBed.resetTestingModule();
@@ -109,6 +119,10 @@ function configure(): void {
         },
       },
       { provide: TranslatorService, useValue: { get: () => of('') } },
+      {
+        provide: LicensingService,
+        useValue: { commercialUse: () => computed(() => licensingFact) },
+      },
     ],
   });
 }
@@ -270,5 +284,45 @@ describe('ModelDetailComponent on an address that names only a model', () => {
     await open('/details/models/name/Deliberate');
 
     expect(TestBed.inject(Router).url).toBe('/details/models/image/Deliberate');
+  });
+});
+
+describe('ModelDetailComponent licence row', () => {
+  afterEach(() => {
+    licensingFact = null;
+  });
+
+  it('says what the licence allows, links it and lists its conditions', async () => {
+    licensingFact = {
+      status: 'allowed_with_conditions',
+      licenseId: 'OpenRAIL-M',
+      licenseName: 'CreativeML Open RAIL-M',
+      licenseUrl: 'https://example.invalid/rail',
+      obligations: ['attribution', 'include_license'],
+    };
+    const harness = await open('/details/models/image/Deliberate');
+    const host = harness.fixture.nativeElement as HTMLElement;
+    const row = [...host.querySelectorAll('.model-detail-fact')].find(
+      (entry) =>
+        entry.querySelector('dt')?.textContent?.trim() === 'Commercial use',
+    );
+
+    expect(row).toBeDefined();
+    const text = row!.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+    expect(text).toContain('Allowed with conditions.');
+    expect(text).toContain('CreativeML Open RAIL-M');
+    expect(text).toContain(
+      'Conditions: credit the authors, include the licence.',
+    );
+    const link = row!.querySelector('a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('https://example.invalid/rail');
+    expect(link.textContent?.trim()).toBe('OpenRAIL-M');
+  });
+
+  it('draws no row while the export has not answered', async () => {
+    const harness = await open('/details/models/image/Deliberate');
+    const host = harness.fixture.nativeElement as HTMLElement;
+
+    expect(host.textContent).not.toContain('Commercial use');
   });
 });

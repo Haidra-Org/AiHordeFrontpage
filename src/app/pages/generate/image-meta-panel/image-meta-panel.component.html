@@ -42,6 +42,9 @@
   </div>
 
   <div class="gs-meta-body">
+    @if (noteKey(); as note) {
+      <p class="gs-meta-empty-note">{{ note | transloco }}</p>
+    }
     @for (group of groups(); track group.id) {
       <div class="gs-meta-group">
         <label class="gs-meta-group-head">
@@ -112,6 +115,8 @@
     }
   </div>
 
+  <!-- Nothing to apply without settings rows, so the whole apply apparatus
+       stands down rather than offering a disabled button. -->
   <div class="gs-meta-foot">
     @if (quickActions()) {
       <!-- The three things people do with a finished picture, above the
@@ -144,52 +149,54 @@
         </button>
       </div>
     }
-    <div class="gs-meta-seg" role="group">
+    @if (groups().length > 0) {
+      <div class="gs-meta-seg" role="group">
+        <button
+          type="button"
+          class="gs-meta-seg-opt"
+          [class.gs-meta-seg-opt--on]="mode() === 'replace'"
+          [attr.aria-pressed]="mode() === 'replace'"
+          (click)="setMode('replace')"
+        >
+          {{ "generate.results.mode_replace" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-meta-seg-opt"
+          [class.gs-meta-seg-opt--on]="mode() === 'overlay'"
+          [attr.aria-pressed]="mode() === 'overlay'"
+          (click)="setMode('overlay')"
+        >
+          {{ "generate.results.mode_overlay" | transloco }}
+        </button>
+      </div>
       <button
         type="button"
-        class="gs-meta-seg-opt"
-        [class.gs-meta-seg-opt--on]="mode() === 'replace'"
-        [attr.aria-pressed]="mode() === 'replace'"
-        (click)="setMode('replace')"
+        class="gs-meta-apply"
+        [disabled]="selectedCount() === 0"
+        (click)="emitApply()"
       >
-        {{ "generate.results.mode_replace" | transloco }}
+        {{ "generate.results.apply_n" | transloco: { count: selectedCount() } }}
       </button>
-      <button
-        type="button"
-        class="gs-meta-seg-opt"
-        [class.gs-meta-seg-opt--on]="mode() === 'overlay'"
-        [attr.aria-pressed]="mode() === 'overlay'"
-        (click)="setMode('overlay')"
-      >
-        {{ "generate.results.mode_overlay" | transloco }}
-      </button>
-    </div>
-    <button
-      type="button"
-      class="gs-meta-apply"
-      [disabled]="selectedCount() === 0"
-      (click)="emitApply()"
-    >
-      {{ "generate.results.apply_n" | transloco: { count: selectedCount() } }}
-    </button>
-    <p class="gs-meta-note">
-      <span
-        class="gs-meta-mode-name"
-        [class.gs-meta-mode-name--active]="mode() === 'replace'"
-        >{{ "generate.results.mode_replace" | transloco }}:</span
-      >
-      {{ "generate.results.mode_replace_explain" | transloco }}
-      <span
-        class="gs-meta-mode-name"
-        [class.gs-meta-mode-name--active]="mode() === 'overlay'"
-        >{{ "generate.results.mode_overlay" | transloco }}:</span
-      >
-      {{ "generate.results.mode_overlay_explain" | transloco }}
-      @if (hasDifferences()) {
-        <span class="gs-meta-note-delta">
-          {{ "generate.results.meta_delta_legend" | transloco }}
-        </span>
-      }
-    </p>
+      <p class="gs-meta-note">
+        <span
+          class="gs-meta-mode-name"
+          [class.gs-meta-mode-name--active]="mode() === 'replace'"
+          >{{ "generate.results.mode_replace" | transloco }}:</span
+        >
+        {{ "generate.results.mode_replace_explain" | transloco }}
+        <span
+          class="gs-meta-mode-name"
+          [class.gs-meta-mode-name--active]="mode() === 'overlay'"
+          >{{ "generate.results.mode_overlay" | transloco }}:</span
+        >
+        {{ "generate.results.mode_overlay_explain" | transloco }}
+        @if (hasDifferences()) {
+          <span class="gs-meta-note-delta">
+            {{ "generate.results.meta_delta_legend" | transloco }}
+          </span>
+        }
+      </p>
+    }
   </div>
 </div>

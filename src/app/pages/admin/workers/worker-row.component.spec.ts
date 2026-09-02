@@ -1,3 +1,4 @@
+import { TranslocoService } from '@jsverse/transloco';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
@@ -106,6 +107,10 @@ describe('WorkerRowComponent', () => {
         { provide: ToastService, useValue: mockToast },
         { provide: AuthService, useValue: mockAuth },
         { provide: UnitConversionService, useValue: mockUnitConversion },
+        {
+          provide: TranslocoService,
+          useValue: { translate: (key: string) => key },
+        },
       ],
     })
       .overrideComponent(WorkerRowComponent, {

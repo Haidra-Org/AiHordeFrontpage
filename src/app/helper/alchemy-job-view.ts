@@ -23,6 +23,12 @@ export interface AlchemyJob {
    * glance which jobs have anything to resolve.
    */
   sourceMode: AlchemySourceMode;
+  /**
+   * The job was taken from the account's list of active requests rather than
+   * submitted here, so its operations are only what the horde has reported and
+   * there is nothing to run again.
+   */
+  adopted: boolean;
   forms: AlchemyFormName[];
   /** Detectors used when `forms` includes the control-map operation. */
   annotationControlTypes: readonly AnnotationControlType[];
@@ -82,6 +88,7 @@ export function toAlchemyJob(stored: StoredAlchemyJob): AlchemyJob {
     id: stored.jobId,
     localId: stored.localId,
     sourceMode: stored.sourceMode,
+    adopted: stored.adopted === true,
     forms: stored.forms,
     annotationControlTypes: storedAnnotationDetectors(stored),
     status: stored.status,

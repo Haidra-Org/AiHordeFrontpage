@@ -4,7 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WritableSignal, signal } from '@angular/core';
+import { WritableSignal, computed, signal } from '@angular/core';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { convertToParamMap, provideRouter } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -39,6 +39,11 @@ import {
 } from './generate-form.model';
 import { studioLinkFromText, studioLinkParams } from './studio-link';
 import { StudioControlHistoryService } from './studio-control-history.service';
+import {
+  LicensingService,
+  type LicensingFact,
+  type NamedLicensingFact,
+} from '../../services/licensing.service';
 
 describe('GenerateComponent', () => {
   let fixture: ComponentFixture<GenerateComponent>;
@@ -2260,5 +2265,170 @@ describe('GenerateComponent arrival with a tutorial armed', () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
     fixture.destroy();
+  });
+});
+
+/**
+ * A licence fact with only the fields the advisories read, so a test can say
+ * what the reference answered without standing a fetch up.
+ */
+function fact(status: string, licenseId: string): LicensingFact {
+  return {
+    status,
+    licenseId,
+    licenseName: null,
+    licenseUrl: null,
+    obligations: [],
+  } as LicensingFact;
+}
+
+/**
+ * Stand the studio up with the licensing answers a test wants, keyed the way
+ * the real service keys them.
+ */
+async function createStudioWithLicensing(
+  assets: Record<string, LicensingFact>,
+  controlFacts: readonly NamedLicensingFact[] = [],
+): Promise<GenerateComponent> {
+  await TestBed.configureTestingModule({
+    imports: [
+      GenerateComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
+    providers: [
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      provideRouter([]),
+      { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+      {
+        provide: GenerationQueueService,
+        useValue: {
+          estimateKudos: vi.fn().mockResolvedValue(1),
+          enqueue: vi.fn(),
+          jobs: signal([]),
+          pendingJobs: signal([]),
+          finishedJobs: signal([]),
+          getJobImages: vi.fn().mockResolvedValue([]),
+        },
+      },
+      { provide: StyleUsageService, useValue: { increment: vi.fn() } },
+      { provide: ToastService, useValue: { success: vi.fn(), error: vi.fn() } },
+      { provide: TranslatorService, useValue: { get: () => of('') } },
+      {
+        provide: HordeStylesService,
+        useValue: { getStyles: () => of([]), getCategoryGroups: () => of([]) },
+      },
+      {
+        provide: LicensingService,
+        useValue: {
+          commercialUse: (category: string, name: string) =>
+            computed(() => assets[`${category}:${name}`] ?? null),
+          controlTypeFacts: () => computed(() => controlFacts),
+        },
+      },
+    ],
+  })
+    .overrideComponent(GenerateComponent, { set: { template: '' } })
+    .compileComponents();
+
+  const fixture = TestBed.createComponent(GenerateComponent);
+  fixture.detectChanges();
+  return fixture.componentInstance;
+}
+
+describe('GenerateComponent licence advisories', () => {
+  /** The advisories only, so the compatibility rules a case also fires are out. */
+  function licences(component: GenerateComponent) {
+    return component
+      .lintWarnings()
+      .filter((warning) => warning.id.startsWith('licensing_'));
+  }
+
+  it('says nothing while the reference has no answer', async () => {
+    const component = await createStudioWithLicensing({});
+    component.form.patchValue({
+      model: 'Stable Cascade 1.0',
+      post_processing: ['4x_AnimeSharp'],
+    });
+
+    expect(licences(component)).toEqual([]);
+  });
+
+  it('warns about a model whose licence forbids commercial use', async () => {
+    const component = await createStudioWithLicensing({
+      'image_generation:Deliberate': fact(
+        'allowed_with_conditions',
+        'OpenRAIL-M',
+      ),
+      'image_generation:Stable Cascade 1.0': fact(
+        'prohibited',
+        'LicenseRef-Stable-Cascade-NC-Community',
+      ),
+    });
+    component.form.patchValue({
+      model: 'Stable Cascade 1.0',
+      extraModels: ['Deliberate'],
+    });
+
+    expect(licences(component)).toEqual([
+      {
+        id: 'licensing_model',
+        section: 'model',
+        anchor: 'model',
+        key: 'generate.lint.licensing_prohibited',
+        params: {
+          what: 'Stable Cascade 1.0',
+          licence: 'LicenseRef-Stable-Cascade-NC-Community',
+        },
+      },
+    ]);
+  });
+
+  it('warns about a post-processor, at the control that chose it', async () => {
+    const component = await createStudioWithLicensing({
+      'esrgan:4x_AnimeSharp': fact('prohibited', 'CC-BY-NC-SA-4.0'),
+      'codeformer:CodeFormers': fact('prohibited', 'LicenseRef-S-Lab-1.0'),
+    });
+    component.form.patchValue({ post_processing: ['CodeFormers'] });
+
+    expect(licences(component).map((warning) => warning.anchor)).toEqual([
+      'facefixer',
+    ]);
+
+    component.form.patchValue({
+      post_processing: ['4x_AnimeSharp', 'CodeFormers'],
+    });
+
+    const [warning] = licences(component);
+    expect(warning.anchor).toBe('upscaler');
+    expect(warning.params['what']).toBe('4x_AnimeSharp, CodeFormers');
+    expect(warning.params['licence']).toBe(
+      'CC-BY-NC-SA-4.0, LicenseRef-S-Lab-1.0',
+    );
+  });
+
+  it('warns about a detector the control type brings with it', async () => {
+    const component = await createStudioWithLicensing({}, [
+      {
+        name: 'control_openpose',
+        fact: fact('allowed_with_conditions', 'OpenRAIL-M'),
+      },
+      {
+        name: 'annotator_openpose',
+        fact: fact('prohibited', 'LicenseRef-OpenPose-NonCommercial'),
+      },
+    ]);
+    component.form.patchValue({
+      sourceMode: 'controlnet',
+      control_type: 'openpose',
+    });
+
+    const [warning] = licences(component);
+    expect(warning.id).toBe('licensing_control');
+    expect(warning.anchor).toBe('control_type');
+    expect(warning.params['what']).toBe('annotator_openpose');
   });
 });
