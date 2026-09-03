@@ -327,6 +327,8 @@
   "generate.editor.title": "Edit the source image",
   "generate.editor.apply": "Apply",
   "generate.editor.applying": "Applying…",
+  "generate.editor.applied": "Applied",
+  "generate.editor.apply_close": "Apply and close",
   "generate.editor.close": "Close",
   "generate.editor.loading": "Opening the picture…",
   "generate.editor.tools": "Drawing tools",

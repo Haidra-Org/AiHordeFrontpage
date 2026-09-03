@@ -35,17 +35,24 @@
       <span class="gs-sublabel gs-mono gs-se-readout">
         {{ docSize().width }}×{{ docSize().height }} · {{ zoomPercent() }}%
       </span>
+      <!-- Apply stands down once the card holds what the session shows, and
+           says so; the header has the width for a second door that applies and
+           leaves in one press, which the phone bar below does not. -->
+      <button
+        type="button"
+        class="gs-se-btn gs-se-header-action"
+        [disabled]="!ready() || busy() || !dirty()"
+        (click)="onApply()"
+      >
+        {{ applyLabelKey() | transloco }}
+      </button>
       <button
         type="button"
         class="gs-se-btn gs-se-btn--primary gs-se-header-action"
-        [disabled]="!ready() || busy()"
-        (click)="onApply()"
+        [disabled]="!ready() || busy() || !dirty()"
+        (click)="onApplyAndClose()"
       >
-        {{
-          busy()
-            ? ("generate.editor.applying" | transloco)
-            : ("generate.editor.apply" | transloco)
-        }}
+        {{ "generate.editor.apply_close" | transloco }}
       </button>
       <button
         type="button"
@@ -95,14 +102,10 @@
           <button
             type="button"
             class="gs-se-btn gs-se-btn--primary gs-se-btn--mobile"
-            [disabled]="!ready() || busy()"
+            [disabled]="!ready() || busy() || !dirty()"
             (click)="onApply()"
           >
-            {{
-              busy()
-                ? ("generate.editor.applying" | transloco)
-                : ("generate.editor.apply" | transloco)
-            }}
+            {{ applyLabelKey() | transloco }}
           </button>
           <button
             type="button"

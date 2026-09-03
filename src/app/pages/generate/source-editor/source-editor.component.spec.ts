@@ -53,6 +53,79 @@ function pushStep(editor: SourceEditorComponent): void {
   (editor as unknown as { push(op: unknown): void }).push(placeStep());
 }
 
+/** Let Apply run without a stage: the exports answer with what they were given. */
+function stubExports(
+  editor: SourceEditorComponent,
+  picture: unknown = { blob: new Blob(), width: 512, height: 512 },
+): void {
+  const reach = editor as unknown as {
+    exportPicture(): Promise<unknown>;
+    exportMask(): Promise<unknown>;
+  };
+  vi.spyOn(reach, 'exportPicture').mockResolvedValue(picture);
+  vi.spyOn(reach, 'exportMask').mockResolvedValue(null);
+}
+
+describe('what the Apply button says', () => {
+  it('has nothing to apply until something is drawn', async () => {
+    const editor = await createEditor();
+
+    expect(editor.dirty()).toBe(false);
+    expect(editor.applyLabelKey()).toBe('generate.editor.apply');
+  });
+
+  it('says Applied once the card holds the session, until the next step', async () => {
+    const editor = await createEditor();
+    stubExports(editor);
+    const applied = vi.fn();
+    editor.applied.subscribe(applied);
+
+    pushStep(editor);
+    expect(editor.applyLabelKey()).toBe('generate.editor.apply');
+    await editor.onApply();
+
+    expect(applied).toHaveBeenCalledTimes(1);
+    expect(editor.dirty()).toBe(false);
+    expect(editor.applyLabelKey()).toBe('generate.editor.applied');
+
+    pushStep(editor);
+    expect(editor.applyLabelKey()).toBe('generate.editor.apply');
+
+    editor.undo();
+    expect(editor.dirty()).toBe(false);
+    expect(editor.applyLabelKey()).toBe('generate.editor.apply');
+  });
+
+  it('applies and leaves in one press', async () => {
+    const editor = await createEditor();
+    stubExports(editor);
+    const applied = vi.fn();
+    const closed = vi.fn();
+    editor.applied.subscribe(applied);
+    editor.closed.subscribe(closed);
+
+    pushStep(editor);
+    await editor.onApplyAndClose();
+
+    expect(applied).toHaveBeenCalledTimes(1);
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(editor.confirmingClose()).toBe(false);
+  });
+
+  it('stays open when the apply did not go through', async () => {
+    const editor = await createEditor();
+    stubExports(editor, null);
+    const closed = vi.fn();
+    editor.closed.subscribe(closed);
+
+    pushStep(editor);
+    await editor.onApplyAndClose();
+
+    expect(editor.dirty()).toBe(true);
+    expect(closed).not.toHaveBeenCalled();
+  });
+});
+
 describe('what closing the editor asks about', () => {
   it('closes without asking while nothing has been drawn', async () => {
     const editor = await createEditor();

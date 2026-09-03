@@ -334,6 +334,23 @@ export class SourceEditorComponent {
   public readonly dirty = computed(() =>
     hasUnappliedWork(this.historyStep() === this.appliedStep()),
   );
+  /**
+   * Whether the last thing that happened to the history was an Apply, as
+   * opposed to the editor opening on a clean session. Cleared by the next step
+   * in either direction, so the button says Applied only while the picture on
+   * the card is the one the session is looking at.
+   */
+  private readonly justApplied = signal(false);
+  /** What the Apply button says: the session's state, read from the history. */
+  public readonly applyLabelKey = computed(() => {
+    if (this.busy()) {
+      return 'generate.editor.applying';
+    }
+    if (!this.dirty() && this.justApplied()) {
+      return 'generate.editor.applied';
+    }
+    return 'generate.editor.apply';
+  });
 
   public readonly minBrush = MIN_BRUSH;
   public readonly maxBrush = MAX_BRUSH;
@@ -1667,6 +1684,7 @@ export class SourceEditorComponent {
     this.canUndo.set(this.undoStack.length > 0);
     this.canRedo.set(this.redoStack.length > 0);
     this.historyStep.set(this.undoStack.at(-1) ?? null);
+    this.justApplied.set(false);
   }
 
   public undo(): void {
@@ -2094,10 +2112,19 @@ export class SourceEditorComponent {
       this.baseImage = image;
       this.touched.set(NOTHING_TOUCHED);
       this.appliedStep.set(this.historyStep());
+      this.justApplied.set(true);
     } finally {
       if (token === this.exportToken) {
         this.busy.set(false);
       }
+    }
+  }
+
+  /** Apply, then leave, unless the apply did not go through. */
+  public async onApplyAndClose(): Promise<void> {
+    await this.onApply();
+    if (!this.dirty()) {
+      this.closed.emit();
     }
   }
 
