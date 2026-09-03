@@ -152,6 +152,15 @@
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
+  /* The dot rests at the top of its own cycle rather than beating: it is beside
+     a line that already says what it marks, so it has nothing to add by moving. */
+  @media (prefers-reduced-motion: reduce) {
+    .network-status-needs-help-dot {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
   .network-status-needs-help--purple .network-status-needs-help-dot {
     @apply bg-purple-500 dark:bg-purple-400;
   }

@@ -30,6 +30,22 @@ export const DOCS_ALCHEMY = `${DOCS_ROOT}/alchemy`;
 export const STUDIO_IMAGE = '/generate/image';
 export const STUDIO_ALCHEMY = '/generate/alchemy';
 
+/**
+ * Where a URL naming nothing stows the name it named, so the index it is sent
+ * to can say what happened rather than appearing for no reason. Navigation
+ * state rather than the URL: the reader is being shown the index, and a query
+ * string would leave them holding a link to a page that no longer says this.
+ */
+export const DOCS_UNKNOWN_ID_STATE = 'docsUnknownId';
+
+/** The name a redirect stowed, on an arrival that came from one. */
+export function readUnknownId(
+  state: Record<string, unknown> | undefined,
+): string | null {
+  const named = state?.[DOCS_UNKNOWN_ID_STATE];
+  return typeof named === 'string' && named !== '' ? named : null;
+}
+
 /** One setting's page in the reference. */
 export function docsSettingLink(id: string): string {
   return `${DOCS_IMAGE_SETTINGS}/${id}`;

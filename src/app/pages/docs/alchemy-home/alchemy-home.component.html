@@ -9,6 +9,9 @@
     <p class="gs-ref-index-lead">
       {{ "alchemy.usecases.lead" | transloco }}
     </p>
+    @if (unknownId; as named) {
+      <app-gs-unknown-id-note [id]="named" />
+    }
   </header>
 
   <!-- Five pages of equal rank say nothing about where to begin, and a reader

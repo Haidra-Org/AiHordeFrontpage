@@ -12,12 +12,24 @@
         class="alchemy-result__chevron"
         [class.alchemy-result__chevron--open]="isOpen()"
       />
-      <h4 class="alchemy-result__title">
+      <!-- The level is the host's to give: the studio stacks these under its
+           own results heading, and a documentation page puts them under a band
+           head one step higher up. -->
+      @if (headingLevel() === 3) {
+        <h3 class="alchemy-result__title">
+          <ng-container [ngTemplateOutlet]="resultTitle" />
+        </h3>
+      } @else {
+        <h4 class="alchemy-result__title">
+          <ng-container [ngTemplateOutlet]="resultTitle" />
+        </h4>
+      }
+      <ng-template #resultTitle>
         {{ "alchemy.form_names." + form().form | transloco }}
         @if (detector()) {
           <span class="gs-mono">{{ detector() }}</span>
         }
-      </h4>
+      </ng-template>
       <span class="gs-op-badge">
         {{
           (returnsImage()

@@ -324,8 +324,9 @@ describe('DocsImageExampleComponent', () => {
 
   beforeEach(async () => {
     // The rail keeps the active chip in its window on every render, and jsdom
-    // has no implementation of its own to do it with.
+    // has no implementation of either scroll call to do it with.
     Element.prototype.scrollIntoView = vi.fn();
+    Element.prototype.scrollTo = vi.fn();
     harness = await createPage();
   });
 
@@ -577,7 +578,11 @@ describe('DocsImageExampleComponent', () => {
     flushAll(harness);
 
     expect(harness.component.activeFlow()).toBeNull();
-    expect(harness.navigate).toHaveBeenCalledWith('/docs/image');
+    // The name goes with it, so the landing page can say why it is the page in
+    // front of the reader rather than appearing for no reason.
+    expect(harness.navigate).toHaveBeenCalledWith('/docs/image', {
+      state: { docsUnknownId: 'no-such-flow' },
+    });
   });
 
   it('waits for the manifest before deciding a URL names nothing', async () => {
@@ -593,18 +598,22 @@ describe('DocsImageExampleComponent', () => {
 
   it('brings the line of a deep-linked flow into the rail', async () => {
     const scrollIntoView = vi.fn();
+    const scrollTo = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
+    Element.prototype.scrollTo = scrollTo;
     const late = CANONICAL[CANONICAL.length - 1];
 
     harness = await createPage(late.id);
     flushAll(harness);
 
     expect(harness.query('.gs-index-entry[aria-current]')).toHaveLength(1);
-    expect(scrollIntoView).toHaveBeenCalled();
-    // Only as far as it has to move, and along the rail rather than the page.
-    expect(scrollIntoView.mock.calls.at(-1)?.[0]).toMatchObject({
-      block: 'nearest',
-      inline: 'nearest',
+    // The rail is scrolled, not the line brought into view: bringing it into
+    // view would move the page and hand Chromium a new place to start tabbing.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).toHaveBeenCalled();
+    expect(scrollTo.mock.calls.at(-1)?.[0]).toMatchObject({
+      left: expect.any(Number),
+      top: expect.any(Number),
     });
   });
 

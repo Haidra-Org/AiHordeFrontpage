@@ -9,11 +9,12 @@ import {
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsFindFieldComponent } from '../../../components/gs-find-field/gs-find-field.component';
+import { GsUnknownIdNoteComponent } from '../../../components/gs-unknown-id-note/gs-unknown-id-note.component';
 import {
   GsIndexRailComponent,
   GsIndexRailEntry,
@@ -33,7 +34,7 @@ import {
   settingSweepStripControlType,
   settingTitleKey,
 } from '../../../content/settings';
-import { docsSettingLink } from '../../../content/docs-links';
+import { docsSettingLink, readUnknownId } from '../../../content/docs-links';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
@@ -95,6 +96,7 @@ interface IndexGroup {
     GsAnchorLinkComponent,
     GsIndexRailComponent,
     GsFindFieldComponent,
+    GsUnknownIdNoteComponent,
   ],
   templateUrl: './settings-index.component.html',
   host: {
@@ -103,6 +105,7 @@ interface IndexGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DocsSettingsIndexComponent {
+  private readonly router = inject(Router);
   private readonly sweeps = inject(SweepLibraryService);
   private readonly glossary = inject(GlossaryService);
   private readonly destroyRef = inject(DestroyRef);
@@ -186,10 +189,12 @@ export class DocsSettingsIndexComponent {
 
   /**
    * The bands as the contents rail names them: the same areas, in the same
-   * order, aimed at the ids the bands already carry for the glossary.
+   * order, aimed at the ids the bands already carry for the glossary. Built
+   * from the bands the page is drawing rather than from all of them, so a
+   * filtered page has no lines in its contents leading to areas it has dropped.
    */
   public readonly railEntries = computed<readonly GsIndexRailEntry[]>(() =>
-    this.allGroups().map((group) => ({
+    this.groups().map((group) => ({
       id: group.section,
       labelKey: group.labelKey,
       icon: group.icon,
@@ -199,6 +204,15 @@ export class DocsSettingsIndexComponent {
   );
 
   private readonly docsPage = inject(DocsPageContextService);
+
+  /**
+   * The setting a wrong URL named, when that is what sent the reader here. Read
+   * once from the navigation that mounted the page, so following any link off
+   * it and coming back leaves the notice behind.
+   */
+  public readonly unknownId: string | null = readUnknownId(
+    this.router.getCurrentNavigation()?.extras.state,
+  );
 
   constructor() {
     setPageMeta({

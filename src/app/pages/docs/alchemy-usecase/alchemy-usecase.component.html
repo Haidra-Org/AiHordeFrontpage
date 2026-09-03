@@ -39,6 +39,38 @@
               />
             </h2>
 
+            <!-- Where every form on this page read the same picture and none of
+                 them answered with one, the picture is the band's rather than
+                 any one row's, and what all of the notes end up saying is the
+                 band's too. -->
+            @if (bandSource(); as source) {
+              <figure class="gs-ref-shot gs-ref-shot--lead">
+                <span class="gs-ref-shot-frame gs-ref-shot-frame--lead">
+                  <span class="gs-ref-shot-pic">
+                    <img
+                      [src]="source.src"
+                      [alt]="'alchemy.usecases.evidence_source_alt' | transloco"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <app-gs-pixel-badge
+                      class="gs-pixels--stage gs-pixels--corner"
+                      [width]="source.width"
+                      [height]="source.height"
+                    />
+                  </span>
+                  <span class="gs-ref-shot-label">
+                    {{ "alchemy.usecases.evidence_source" | transloco }}
+                  </span>
+                </span>
+                @if (bandNote(); as note) {
+                  <figcaption class="gs-ref-shot-note">{{ note }}</figcaption>
+                }
+              </figure>
+            } @else if (bandNote(); as note) {
+              <p class="gs-ref-shot-note">{{ note }}</p>
+            }
+
             @for (shot of shots(); track shot.form) {
               <figure class="gs-ref-shot">
                 <figcaption class="gs-ref-shot-head">
@@ -51,29 +83,31 @@
                 </figcaption>
 
                 <div class="gs-ref-shot-pair">
-                  <span class="gs-ref-shot-frame">
-                    <!-- The two frames are drawn at one width, so the only place a
+                  @if (!bandSource()) {
+                    <span class="gs-ref-shot-frame">
+                      <!-- The two frames are drawn at one width, so the only place a
                      reader can learn that the result is four times the source
                      is the badge on each picture. -->
-                    <span class="gs-ref-shot-pic">
-                      <img
-                        [src]="shot.source"
-                        [alt]="
-                          'alchemy.usecases.evidence_source_alt' | transloco
-                        "
-                        loading="lazy"
-                        decoding="async"
-                      />
-                      <app-gs-pixel-badge
-                        class="gs-pixels--stage gs-pixels--corner"
-                        [width]="shot.sourceWidth"
-                        [height]="shot.sourceHeight"
-                      />
+                      <span class="gs-ref-shot-pic">
+                        <img
+                          [src]="shot.source"
+                          [alt]="
+                            'alchemy.usecases.evidence_source_alt' | transloco
+                          "
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <app-gs-pixel-badge
+                          class="gs-pixels--stage gs-pixels--corner"
+                          [width]="shot.sourceWidth"
+                          [height]="shot.sourceHeight"
+                        />
+                      </span>
+                      <span class="gs-ref-shot-label">
+                        {{ "alchemy.usecases.evidence_source" | transloco }}
+                      </span>
                     </span>
-                    <span class="gs-ref-shot-label">
-                      {{ "alchemy.usecases.evidence_source" | transloco }}
-                    </span>
-                  </span>
+                  }
 
                   @if (shot.result; as result) {
                     <span class="gs-ref-shot-frame">
@@ -106,6 +140,7 @@
                       <app-alchemy-result
                         [form]="answer"
                         [defaultOpen]="true"
+                        [headingLevel]="3"
                       />
                       <span class="gs-ref-shot-label">
                         {{ "alchemy.usecases.evidence_result" | transloco }}
@@ -123,7 +158,7 @@
                   }
                 </div>
 
-                @if (shot.notes; as notes) {
+                @if (shotNote(shot); as notes) {
                   <p class="gs-ref-shot-note">{{ notes }}</p>
                 }
               </figure>

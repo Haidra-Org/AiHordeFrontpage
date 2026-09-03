@@ -22,6 +22,7 @@ import { filter, map } from 'rxjs';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsToolTabsComponent } from '../../../components/gs-tool-tabs/gs-tool-tabs.component';
 import { StickyHeaderDirective } from '../../../helper/sticky-header.directive';
+import { scrollWithin } from '../../../helper/scroll-utils';
 import {
   DOCS_ALCHEMY,
   DOCS_IMAGE,
@@ -266,18 +267,18 @@ export class DocsShellComponent {
 
     // A reader who arrives on an inner page finds the row scrolled to its
     // start, with the page they are on off the end of it, so the entry the row
-    // marks is brought into the middle of the row on every page.
+    // marks is brought into the middle of the row on every page. The row is
+    // moved rather than the entry brought into view, which would hand Chromium
+    // a new place to start tabbing from and skip the page's header.
     afterRenderEffect(() => {
       this.path();
       const nav = this.hubNav()?.nativeElement;
       const current = nav?.querySelector<HTMLElement>(
         '.gs-hub-nav-link[aria-current]',
       );
-      current?.scrollIntoView({
-        behavior: this.scrollBehavior(),
-        block: 'nearest',
-        inline: 'center',
-      });
+      if (nav && current) {
+        scrollWithin(nav, current, 'center', this.scrollBehavior());
+      }
     });
 
     const mq = globalThis.matchMedia?.('(max-width: 1023.98px)');

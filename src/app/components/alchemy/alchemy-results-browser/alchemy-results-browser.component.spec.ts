@@ -185,6 +185,13 @@ describe('AlchemyResultsBrowserComponent', () => {
     expect(
       cards.map((card) => card.querySelector('.gs-mono')?.textContent?.trim()),
     ).toEqual(['depth', 'canny']);
+    // The studio stacks these under a heading of its own, which is the level
+    // the card keeps unless the host that embeds it asks for another.
+    expect(
+      cards.map(
+        (card) => card.querySelector('.alchemy-result__title')?.tagName,
+      ),
+    ).toEqual(['H4', 'H4']);
 
     const images = [
       ...fixture.nativeElement.querySelectorAll('.alchemy-result img'),

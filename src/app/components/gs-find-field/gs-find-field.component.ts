@@ -104,8 +104,11 @@ export function findHighlightParts(
     </div>
     <!-- The count rather than the list: a filtered page has already changed
          under a screen reader's cursor, and the number is what says by how
-         much. Silent while the page is unfiltered, which is its resting state. -->
-    <p class="gs-find-status sr-only" aria-live="polite">
+         much. Said in the open as well as announced, in one element: a reader
+         watching the page shrink is owed the number too, and two copies of it
+         would be read out twice. Silent while the page is unfiltered, which is
+         its resting state. -->
+    <p class="gs-find-status" aria-live="polite">
       @if (value().trim()) {
         {{ countKey() | transloco: { count: matches() } }}
       }

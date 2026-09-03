@@ -224,10 +224,11 @@ export class GsIndexRailComponent {
           }
           // The highest of the sections in view, so a short section framed
           // together with the one below it does not hand the mark downwards.
+          // Read from everything currently in view rather than from the
+          // records alone, so a jump that leaves nothing in the band lands on
+          // no entry rather than on whichever one was last stepped over.
           const current = entries.find((entry) => visible.has(entry.id));
-          if (current) {
-            this.seen.set(current.id);
-          }
+          this.seen.set(current?.id ?? null);
         },
         { rootMargin: SPY_ROOT_MARGIN },
       );

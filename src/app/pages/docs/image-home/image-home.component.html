@@ -38,6 +38,10 @@
     </div>
   </section>
 
+  @if (unknownId; as named) {
+    <app-gs-unknown-id-note [id]="named" />
+  }
+
   <section class="gs-learn-band" id="gs-learn-band-understand">
     <h2 class="gs-guide-head">
       {{ "generate.learn.understand_head" | transloco }}

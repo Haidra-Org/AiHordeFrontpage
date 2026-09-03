@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
@@ -156,6 +156,7 @@ function sanitizeSvgMarkup(svg: string): string {
   imports: [
     TranslocoPipe,
     DecimalPipe,
+    NgTemplateOutlet,
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
     IconComponent,
@@ -182,6 +183,14 @@ export class AlchemyResultComponent {
    * is only knowable from the request the studio stored.
    */
   public readonly detector = input<string | null>(null);
+
+  /**
+   * Which heading the form's name is. The studio's results sit under a heading
+   * of their own, which is where the default comes from; a documentation page
+   * embeds the same card directly under a band head and says so, rather than
+   * leaving a step in the page's outline.
+   */
+  public readonly headingLevel = input<3 | 4>(4);
 
   /** Whether the shown image is the local copy rather than the horde's link. */
   public readonly usingStoredImage = computed(

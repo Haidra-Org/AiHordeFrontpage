@@ -86,6 +86,10 @@ describe('GsFindFieldComponent', () => {
     expect(status().textContent?.trim()).toBe(
       translations['docs.find.count_one'],
     );
+    // Said in the open as well as announced: a reader watching the page shrink
+    // is owed the number too, and one element says it once to both.
+    expect(status().classList).not.toContain('sr-only');
+    expect(status().classList).toContain('gs-find-status');
   });
 
   it('clears on Escape and leaves the caret in the field', () => {

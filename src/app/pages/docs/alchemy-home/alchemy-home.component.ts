@@ -9,6 +9,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anchor-link.component';
 import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { GsUnknownIdNoteComponent } from '../../../components/gs-unknown-id-note/gs-unknown-id-note.component';
 import { SECTION_IDENTITIES } from '../../../content/sections';
 import {
   ALCHEMY_USE_CASES,
@@ -18,6 +19,7 @@ import {
 import {
   STUDIO_ALCHEMY,
   docsAlchemyUseCaseLink,
+  readUnknownId,
 } from '../../../content/docs-links';
 import { AlchemyEvidenceService } from '../../../services/alchemy-evidence.service';
 import { setPageMeta } from '../../../helper/page-meta';
@@ -54,6 +56,7 @@ interface UseCaseCard {
     GsAnchorLinkComponent,
     GsDoorComponent,
     IconComponent,
+    GsUnknownIdNoteComponent,
   ],
   templateUrl: './alchemy-home.component.html',
   host: {
@@ -66,6 +69,15 @@ export class DocsAlchemyHomeComponent {
   private readonly router = inject(Router);
 
   public readonly identity = SECTION_IDENTITIES.alchemy;
+
+  /**
+   * The use case a wrong URL named, when that is what sent the reader here.
+   * Read once from the navigation that mounted the page, so following any link
+   * off it and coming back leaves the notice behind.
+   */
+  public readonly unknownId: string | null = readUnknownId(
+    this.router.getCurrentNavigation()?.extras.state,
+  );
 
   /**
    * The page the landing sends a reader to first. Enlarging is what most people

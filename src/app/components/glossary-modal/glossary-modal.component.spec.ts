@@ -228,4 +228,51 @@ describe('GlossaryModalComponent', () => {
       expect(fixture.componentInstance.pageQuery()).toBe('');
     });
   });
+
+  describe('the page behind it', () => {
+    const ENTRIES: PageGlossaryEntry[] = [
+      {
+        id: 'sampling',
+        titleKey: 'help.glossary.page.generate_image',
+        descriptionKey: 'help.glossary.controls_note',
+      },
+    ];
+
+    /** A page for the glossary to cover, standing where the app's own does. */
+    function pageBehind(): HTMLElement {
+      const page = document.createElement('div');
+      page.innerHTML = '<button type="button">open the glossary</button>';
+      el().parentElement?.insertBefore(page, el());
+      return page;
+    }
+
+    it('is switched off while the glossary is over it', () => {
+      const page = pageBehind();
+      expect(page.hasAttribute('inert')).toBe(false);
+
+      open(ENTRIES);
+      expect(page.hasAttribute('inert')).toBe(true);
+
+      glossary.close();
+      fixture.detectChanges();
+
+      expect(page.hasAttribute('inert')).toBe(false);
+    });
+
+    it('has the reader back on the control that opened the glossary', () => {
+      const page = pageBehind();
+      const trigger = page.querySelector('button') as HTMLButtonElement;
+      trigger.focus();
+      expect(document.activeElement).toBe(trigger);
+
+      open(ENTRIES);
+      (find('.modal-close') as HTMLButtonElement).focus();
+      expect(document.activeElement).not.toBe(trigger);
+
+      glossary.close();
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
 });

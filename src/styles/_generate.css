@@ -14484,6 +14484,15 @@ app-gs-compare-wipe {
   color: var(--gs-ink-2);
   max-width: 68ch;
 }
+/* Why the index is the page in front of a reader who asked for something else.
+   The sublabel register, quietly under the lead: nothing has gone wrong, and a
+   warning plate would say something had. */
+.gen-studio .gs-unknown-id-note {
+  margin: 0;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+  max-width: 68ch;
+}
 
 /* ------- find on this page ------------------------------------------- */
 /* The docs pages are long by design: the reference is eight bands of cards and
@@ -14590,6 +14599,15 @@ app-gs-compare-wipe {
 .gen-studio .gs-find-clear:focus-visible {
   outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
+}
+/* How many things the page kept, in the sublabel register under the field. The
+   line holds its row while the page is unfiltered so that typing does not push
+   the page down by one line. */
+.gen-studio .gs-find-status {
+  margin: 0;
+  min-height: 1lh;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
 }
 .gen-studio .gs-find-empty {
   font-size: var(--gs-text-md-docs, var(--gs-text-md));
@@ -14852,10 +14870,12 @@ app-gs-compare-wipe {
   color: var(--gs-muted);
 }
 
-/* ------- the control map gallery: one source, read many ways ---------- */
-/* The source is shown once, beside the line that says what the maps under it
-   were read from. Repeating it under every detector would spend the width the
-   maps need and say the same thing thirty-three times. */
+/* ------- one source, read many ways ----------------------------------- */
+/* The source is shown once, beside the line that says what the readings under
+   it were made from: the control map gallery's thirty-three detectors, and any
+   band whose forms all read the same picture without answering with one.
+   Repeating it under every row would spend the width the answers need and say
+   the same thing once per row. */
 .gen-studio .gs-ref-shot--lead {
   display: flex;
   flex-wrap: wrap;

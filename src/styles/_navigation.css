@@ -506,6 +506,14 @@
     }
   }
 
+  /* The tint below is what the pulse was drawing attention to, and it stays,
+     so the item is still marked without anything moving. */
+  @media (prefers-reduced-motion: reduce) {
+    .nav-needs-attention {
+      animation: none;
+    }
+  }
+
   /* Steady amber tint so the item stands out even after pulses end */
   .nav-needs-attention,
   .nav-dropdown-item-needs-attention {

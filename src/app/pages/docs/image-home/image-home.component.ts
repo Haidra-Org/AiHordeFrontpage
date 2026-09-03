@@ -13,6 +13,7 @@ import { GsAnchorLinkComponent } from '../../../components/gs-anchor-link/gs-anc
 import { IconComponent } from '../../../components/icon/icon.component';
 import { GsDoorComponent } from '../../../components/gs-door/gs-door.component';
 import { GsWorldPickerComponent } from '../../../components/gs-world-picker/gs-world-picker.component';
+import { GsUnknownIdNoteComponent } from '../../../components/gs-unknown-id-note/gs-unknown-id-note.component';
 import {
   TutorialEngineService,
   hasWorldVariants,
@@ -24,7 +25,11 @@ import {
   exampleManifestUrl,
   exampleResultUrl,
 } from '../../../content/examples';
-import { STUDIO_IMAGE, docsExampleLink } from '../../../content/docs-links';
+import {
+  STUDIO_IMAGE,
+  docsExampleLink,
+  readUnknownId,
+} from '../../../content/docs-links';
 import { FLOWS, isConceptFlow } from '../../../content/flows';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
@@ -99,6 +104,7 @@ interface LearnDoor {
     GsAnchorLinkComponent,
     GsDoorComponent,
     GsWorldPickerComponent,
+    GsUnknownIdNoteComponent,
   ],
   templateUrl: './image-home.component.html',
   host: {
@@ -111,6 +117,15 @@ export class DocsImageHomeComponent {
   private readonly router = inject(Router);
   private readonly transloco = inject(TranslocoService);
   private readonly tutorial = inject(TutorialEngineService);
+
+  /**
+   * The technique a wrong URL named, when that is what sent the reader here.
+   * Read once from the navigation that mounted the page, so following any link
+   * off it and coming back leaves the notice behind.
+   */
+  public readonly unknownId: string | null = readUnknownId(
+    this.router.getCurrentNavigation()?.extras.state,
+  );
 
   private readonly manifest = signal<ExampleManifest | null>(null);
   public readonly loadFailed = signal(false);

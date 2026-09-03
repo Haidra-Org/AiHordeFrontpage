@@ -13,6 +13,7 @@ import { isPlatformBrowser, DOCUMENT } from '@angular/common';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../icon/icon.component';
+import { useScrollLock } from '../../helper/scroll-lock';
 import {
   GlossaryService,
   GlossaryCategory,
@@ -351,6 +352,12 @@ export class GlossaryModalComponent {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
   private readonly transloco = inject(TranslocoService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** The page underneath stops moving while the glossary covers it. */
+  private readonly scrollLock = useScrollLock();
+
+  /** Whatever the reader was on when the glossary opened, to hand focus back. */
+  private opener: HTMLElement | null = null;
 
   public readonly categories = GLOSSARY_CATEGORIES;
 
@@ -498,6 +505,52 @@ export class GlossaryModalComponent {
         this.showRelevantOnly.set(false);
       }
     });
+
+    // The glossary covers the whole page, so the page behaves as though it were
+    // not there: nothing behind it takes focus or is read out, nothing behind
+    // it scrolls, and the control that opened it has the reader back the moment
+    // it shuts.
+    effect(() => {
+      const isOpen = this.glossary.isOpen();
+      if (!isPlatformBrowser(this.platformId)) {
+        return;
+      }
+      if (isOpen) {
+        this.opener =
+          this.document.activeElement instanceof HTMLElement
+            ? this.document.activeElement
+            : null;
+        this.setPageInert(true);
+        this.scrollLock.enable();
+        return;
+      }
+      this.setPageInert(false);
+      this.scrollLock.disable();
+      const opener = this.opener;
+      this.opener = null;
+      opener?.focus();
+    });
+  }
+
+  /**
+   * Everything the app draws that the glossary is not inside. Read from the
+   * modal's own place in the page rather than from a class name, so the dialog's
+   * own ancestors are never among what is switched off.
+   */
+  private setPageInert(inert: boolean): void {
+    const root = this.host.nativeElement.parentElement;
+    for (const sibling of Array.from(root?.children ?? [])) {
+      if (
+        sibling instanceof HTMLElement &&
+        !sibling.contains(this.host.nativeElement)
+      ) {
+        if (inert) {
+          sibling.setAttribute('inert', '');
+        } else {
+          sibling.removeAttribute('inert');
+        }
+      }
+    }
   }
 
   public close(): void {

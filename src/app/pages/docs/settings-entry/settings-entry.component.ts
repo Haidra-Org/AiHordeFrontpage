@@ -18,6 +18,7 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { sectionIdentity } from '../../../content/sections';
 import {
   DOCS_IMAGE_SETTINGS,
+  DOCS_UNKNOWN_ID_STATE,
   docsSettingLink,
 } from '../../../content/docs-links';
 import { settingCardUrl } from '../../../content/share-cards';
@@ -157,9 +158,14 @@ export class DocsSettingsEntryComponent {
         return id ? settingCardUrl(id) : null;
       },
     });
+    // A URL naming no setting lands on the index, carrying the name it named so
+    // the index can say why it is the page in front of the reader.
     effect(() => {
-      if (this.param() !== '' && this.topic() === null) {
-        void this.router.navigateByUrl(DOCS_IMAGE_SETTINGS);
+      const named = this.param();
+      if (named !== '' && this.topic() === null) {
+        void this.router.navigateByUrl(DOCS_IMAGE_SETTINGS, {
+          state: { [DOCS_UNKNOWN_ID_STATE]: named },
+        });
       }
     });
   }

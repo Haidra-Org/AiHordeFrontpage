@@ -105,9 +105,10 @@ describe('DocsShellComponent', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    // The row brings the entry it marks into view, which the test DOM has no
-    // implementation of.
+    // The row moves to keep the entry it marks in view, which the test DOM has
+    // no implementation of either call for.
     Element.prototype.scrollIntoView = vi.fn();
+    Element.prototype.scrollTo = vi.fn();
     fixture = TestBed.createComponent(DocsShellComponent);
     fixture.detectChanges();
   });
@@ -400,7 +401,9 @@ describe('DocsShellComponent', () => {
 
   it('brings the entry it marks into the middle of the row', async () => {
     const scrollIntoView = vi.fn();
+    const scrollTo = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
+    Element.prototype.scrollTo = scrollTo;
 
     await go('/docs/image/settings');
 
@@ -408,10 +411,15 @@ describe('DocsShellComponent', () => {
       (link) => link.getAttribute('aria-current') === 'page',
     );
     expect(marked).toBeDefined();
-    expect(scrollIntoView.mock.instances.at(-1)).toBe(marked);
-    expect(scrollIntoView.mock.calls.at(-1)?.[0]).toMatchObject({
-      block: 'nearest',
-      inline: 'center',
+    // The row is scrolled, not the entry brought into view: bringing it into
+    // view would move the page and hand Chromium a new place to start tabbing.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo.mock.instances.at(-1)).toBe(
+      (fixture.nativeElement as HTMLElement).querySelector('.gs-hub-nav'),
+    );
+    expect(scrollTo.mock.calls.at(-1)?.[0]).toMatchObject({
+      left: expect.any(Number),
+      top: expect.any(Number),
     });
   });
 

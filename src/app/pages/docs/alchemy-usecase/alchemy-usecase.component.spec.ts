@@ -71,6 +71,63 @@ const STRUCTURED: AlchemyEvidenceManifest = {
   ],
 };
 
+/** The sentence the describe band's notes all end with, said once by the band. */
+const SHARED_NOTE = 'The workers serve this form, not anything local.';
+
+/**
+ * A describe band as it is really published: several forms reading the one
+ * picture, none of them answering with a picture, and every note ending in the
+ * same sentence about where the answers came from.
+ */
+const DESCRIBE_BAND: AlchemyEvidenceManifest = {
+  generated_against: 'https://aihorde.net/api/v2',
+  entries: [
+    {
+      use_case: 'describe',
+      form: 'caption',
+      title: 'One line about the picture',
+      files: {
+        source: 'sources/anchor.webp',
+        result_text: 'describe/caption.txt',
+      },
+      source_width: 1024,
+      source_height: 1024,
+      notes: `A short sentence about the picture. ${SHARED_NOTE}`,
+    },
+    {
+      use_case: 'describe',
+      form: 'nsfw',
+      title: 'Safety check',
+      files: {
+        source: 'sources/anchor.webp',
+        result_text: 'describe/nsfw.txt',
+      },
+      source_width: 1024,
+      source_height: 1024,
+      notes: `A judgement rather than a description. ${SHARED_NOTE}`,
+    },
+  ],
+};
+
+/** Two upscalers on one source: the pair on each row is the comparison. */
+const ENLARGE_BAND: AlchemyEvidenceManifest = {
+  generated_against: 'https://aihorde.net/api/v2',
+  entries: ['RealESRGAN_x4plus', 'RealESRGAN_x2plus'].map((form) => ({
+    use_case: 'enlarge',
+    form,
+    title: form,
+    files: {
+      source: 'sources/anchor.webp',
+      result: `enlarge/${form}/result.webp`,
+    },
+    source_width: 512,
+    source_height: 512,
+    result_width: 2048,
+    result_height: 2048,
+    notes: `What ${form} is for.`,
+  })),
+};
+
 /** Every detector the picker offers, in the order the gallery reads them. */
 const DETECTORS = ANNOTATION_DETECTOR_GROUPS.flatMap((group) => group.types);
 
@@ -263,6 +320,61 @@ describe('DocsAlchemyUseCaseComponent', () => {
     expect(find('.alchemy-result')?.textContent).toContain(
       'a black dog sitting on the ground',
     );
+    // The card is embedded straight under the band's own h2, so it says which
+    // level it is rather than leaving a step out of the page's outline.
+    expect(find('.alchemy-result__title')?.tagName).toBe('H3');
+  });
+
+  it('shows the one picture a whole band read once, above the rows', async () => {
+    await setUp('describe', DESCRIBE_BAND);
+    http
+      .expectOne(`${ALCHEMY_EVIDENCE_ROOT}/describe/caption.txt`)
+      .flush('a black dog');
+    http.expectOne(`${ALCHEMY_EVIDENCE_ROOT}/describe/nsfw.txt`).flush('safe');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    // One copy of the source on the page, above the rows rather than in them.
+    const pictures = all<HTMLImageElement>('.gs-ref-shot img');
+    expect(pictures.map((picture) => picture.getAttribute('src'))).toEqual([
+      `${ALCHEMY_EVIDENCE_ROOT}/sources/anchor.webp`,
+    ]);
+    expect(find('.gs-ref-shot-frame--lead')).not.toBeNull();
+    expect(all('.gs-ref-shot-pair img')).toHaveLength(0);
+  });
+
+  it('says the sentence every note in the band ends with once', async () => {
+    await setUp('describe', DESCRIBE_BAND);
+    http
+      .expectOne(`${ALCHEMY_EVIDENCE_ROOT}/describe/caption.txt`)
+      .flush('a black dog');
+    http.expectOne(`${ALCHEMY_EVIDENCE_ROOT}/describe/nsfw.txt`).flush('safe');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const notes = all('.gs-ref-shot-note').map((note) =>
+      note.textContent?.trim(),
+    );
+    expect(notes).toEqual([
+      SHARED_NOTE,
+      'A short sentence about the picture.',
+      'A judgement rather than a description.',
+    ]);
+  });
+
+  it('leaves a band of pairs with its source on every row', async () => {
+    await setUp('enlarge', ENLARGE_BAND);
+
+    // What went in beside what came out is the comparison, so neither half of
+    // a row is lifted out of it.
+    expect(find('.gs-ref-shot-frame--lead')).toBeNull();
+    expect(all('.gs-ref-shot-pair img')).toHaveLength(4);
+    expect(
+      all('.gs-ref-shot-note').map((note) => note.textContent?.trim()),
+    ).toEqual([
+      'What RealESRGAN_x4plus is for.',
+      'What RealESRGAN_x2plus is for.',
+    ]);
   });
 
   it('shows the shared source once, and every detector under its group', async () => {

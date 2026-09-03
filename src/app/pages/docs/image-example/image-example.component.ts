@@ -66,11 +66,13 @@ import { requestToFormValue } from '../../generate/generate-form.model';
 import { ImageGenerationRequest } from '../../../types/generation';
 import {
   DOCS_IMAGE,
+  DOCS_UNKNOWN_ID_STATE,
   STUDIO_IMAGE,
   docsExampleLink,
 } from '../../../content/docs-links';
 import { tutorialCardUrl } from '../../../content/share-cards';
 import { setPageMeta } from '../../../helper/page-meta';
+import { scrollWithin } from '../../../helper/scroll-utils';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 import {
   ExampleFlow,
@@ -682,30 +684,46 @@ export class DocsImageExampleComponent {
     // Waits for the manifest: until it has arrived there is nothing to say a
     // URL is wrong with, and a reader who deep-linked a real flow would be
     // thrown off it. A short read has no manifest entry by design, so it is
-    // never measured against one.
+    // never measured against one. The name goes with the redirect, so the
+    // landing page can say why it is the page in front of the reader.
     effect(() => {
       if (this.manifest() && !this.isConcept() && !this.activeFlow()) {
-        void this.router.navigateByUrl(DOCS_IMAGE);
+        const named = this.routeFlowId();
+        void (named
+          ? this.router.navigateByUrl(DOCS_IMAGE, {
+              state: { [DOCS_UNKNOWN_ID_STATE]: named },
+            })
+          : this.router.navigateByUrl(DOCS_IMAGE));
       }
     });
 
     // The rail scrolls, so a flow late in the manifest is reached by a deep
     // link with its line outside the scrolled window or clipped by its edge.
     // Runs after render so the line carrying the mark is the one that exists,
-    // and only ever moves the rail as far as it has to.
+    // and only ever moves the rail as far as it has to. The rail is moved
+    // rather than the line brought into view, which would hand Chromium a new
+    // place to start tabbing from and skip the page's header.
     afterRenderEffect(() => {
       this.activeFlow();
-      const line = this.rail()?.nativeElement.querySelector<HTMLElement>(
+      const rail = this.rail()?.nativeElement;
+      const line = rail?.querySelector<HTMLElement>(
         '.gs-index-entry[aria-current]',
       );
-      line?.scrollIntoView({
-        behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')
-          .matches
-          ? 'auto'
-          : 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
+      if (!rail || !line) {
+        return;
+      }
+      const behavior: ScrollBehavior = globalThis.matchMedia?.(
+        '(prefers-reduced-motion: reduce)',
+      ).matches
+        ? 'auto'
+        : 'smooth';
+      // The column form scrolls on the rail itself, the row form on the strip
+      // of names inside it; whichever cannot move stays where it is.
+      scrollWithin(rail, line, 'nearest', behavior);
+      const row = rail.querySelector<HTMLElement>('.gs-index-rail-nav');
+      if (row) {
+        scrollWithin(row, line, 'nearest', behavior);
+      }
     });
   }
 

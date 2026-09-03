@@ -42,6 +42,7 @@
   "docs.area_alchemy": "Alchemy",
   "docs.area_alchemy_hint": "Describe, enlarge and repair pictures you already have, or cut their backgrounds away.",
   "docs.area_read": "Read",
+  "docs.unknown_id": "There is no page called {{ id }} here; this is the index.",
   "docs.find.label": "Find on this page",
   "docs.find.placeholder": "Type a word",
   "docs.find.clear": "Clear the search",

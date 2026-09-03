@@ -90,3 +90,69 @@ export function scrollToAnchorWhenReady(
     clearTimeout(timer);
   }
 }
+
+/** How a strip places the line it has been asked to bring into view. */
+export type ScrollWithinAlign = 'center' | 'nearest';
+
+/**
+ * Bring a line into view by moving the strip it sits in, and nothing else.
+ *
+ * `scrollIntoView` scrolls every ancestor that can move, and in Chromium it
+ * also carries the sequential focus start point onto its target: a rail that
+ * marked its current entry that way sent the reader's first Tab into the middle
+ * of the rail, past the page header and everything above it. Moving the strip
+ * by a measured offset leaves the page and the focus order where the reader
+ * left them.
+ *
+ * Both axes are answered at once. A strip that cannot move on one of them
+ * clamps that target back to where it was, so one call serves a rail's row form
+ * and its column form without being told which it is looking at.
+ */
+export function scrollWithin(
+  container: HTMLElement,
+  target: HTMLElement,
+  align: ScrollWithinAlign,
+  behavior: ScrollBehavior,
+): void {
+  const box = target.getBoundingClientRect();
+  const frame = container.getBoundingClientRect();
+  container.scrollTo({
+    left:
+      container.scrollLeft +
+      scrollOffset(
+        box.left - frame.left,
+        box.width,
+        container.clientWidth,
+        align,
+      ),
+    top:
+      container.scrollTop +
+      scrollOffset(
+        box.top - frame.top,
+        box.height,
+        container.clientHeight,
+        align,
+      ),
+    behavior,
+  });
+}
+
+/**
+ * How far one axis has to move: to the middle of the strip for `center`, and
+ * for `nearest` as far as the edge it is over, or not at all while it is inside.
+ */
+function scrollOffset(
+  start: number,
+  size: number,
+  frameSize: number,
+  align: ScrollWithinAlign,
+): number {
+  if (align === 'center') {
+    return start - (frameSize - size) / 2;
+  }
+  if (start < 0) {
+    return start;
+  }
+  const past = start + size - frameSize;
+  return past > 0 ? past : 0;
+}

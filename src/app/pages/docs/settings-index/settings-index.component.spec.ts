@@ -4,7 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
 import { DocsSettingsIndexComponent } from './settings-index.component';
@@ -29,7 +29,10 @@ describe('DocsSettingsIndexComponent', () => {
   const all = <T extends Element>(selector: string): T[] =>
     Array.from(el().querySelectorAll<T>(selector));
 
-  async function setUp(options?: { empty?: boolean }): Promise<void> {
+  async function setUp(options?: {
+    empty?: boolean;
+    unknownId?: string;
+  }): Promise<void> {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -47,6 +50,13 @@ describe('DocsSettingsIndexComponent', () => {
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
+    if (options?.unknownId) {
+      // The redirect off a setting page that does not exist stows the name it
+      // named in the navigation that mounts this page.
+      vi.spyOn(TestBed.inject(Router), 'getCurrentNavigation').mockReturnValue({
+        extras: { state: { docsUnknownId: options.unknownId } },
+      } as unknown as ReturnType<Router['getCurrentNavigation']>);
+    }
     fixture = TestBed.createComponent(DocsSettingsIndexComponent);
     fixture.detectChanges();
 
@@ -227,12 +237,31 @@ describe('DocsSettingsIndexComponent', () => {
       );
     });
 
-    it('leaves the contents rail whole, since the areas have not moved', async () => {
+    it('leaves the contents rail naming only the areas still on the page', async () => {
       await setUp();
+      expect(all('.gs-index-entry')).toHaveLength(SETTINGS_INDEX.length);
+
       type('cfg_scale');
 
-      expect(all('.gs-index-entry')).toHaveLength(SETTINGS_INDEX.length);
+      // One band survives the filter, so a rail still listing eight would send
+      // a reader to seven places the page no longer has.
+      expect(all('.gs-ref-group')).toHaveLength(1);
+      expect(all('.gs-index-entry')).toHaveLength(1);
     });
+  });
+
+  it('says which setting was asked for when a wrong URL sent the reader here', async () => {
+    await setUp({ unknownId: 'not_a_param' });
+
+    expect(el().querySelector('.gs-unknown-id-note')?.textContent?.trim()).toBe(
+      translations['docs.unknown_id'].replace('{{ id }}', 'not_a_param'),
+    );
+  });
+
+  it('says nothing when the reader came here on purpose', async () => {
+    await setUp();
+
+    expect(el().querySelector('.gs-unknown-id-note')).toBeNull();
   });
 
   it('has an English heading and lead of its own', async () => {

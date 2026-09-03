@@ -196,7 +196,7 @@ describe('GsIndexRailComponent', () => {
     expect(entries()[0].getAttribute('aria-current')).toBe('true');
   });
 
-  it('keeps the last section marked when none is in view', () => {
+  it('falls back to the first entry when nothing is in view', () => {
     observer().emit([
       { target: { id: 'spec-target-horde' }, isIntersecting: true },
     ]);
@@ -205,7 +205,30 @@ describe('GsIndexRailComponent', () => {
     ]);
     fixture.detectChanges();
 
+    // A reader who has gone back to the top of the page is at the top of it,
+    // and a mark left on the section they were last over says otherwise.
+    expect(entries()[0].getAttribute('aria-current')).toBe('true');
+    expect(entries()[1].getAttribute('aria-current')).toBeNull();
+  });
+
+  it('follows a jump that changes both sections at once', () => {
+    // An instant jump reports the section left and the section reached in one
+    // batch, so the mark is read off everything in view rather than off the
+    // records that happened to say "now intersecting".
+    observer().emit([
+      { target: { id: 'spec-target-sampling' }, isIntersecting: true },
+    ]);
+    fixture.detectChanges();
+    expect(entries()[0].getAttribute('aria-current')).toBe('true');
+
+    observer().emit([
+      { target: { id: 'spec-target-sampling' }, isIntersecting: false },
+      { target: { id: 'spec-target-horde' }, isIntersecting: true },
+    ]);
+    fixture.detectChanges();
+
     expect(entries()[1].getAttribute('aria-current')).toBe('true');
+    expect(entries()[0].getAttribute('aria-current')).toBeNull();
   });
 
   it('carries the bar form only where the caller asks for it', () => {

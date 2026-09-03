@@ -34,6 +34,7 @@ import {
 import { alchemyTopic } from '../../../content/reference-topics';
 import {
   DOCS_ALCHEMY,
+  DOCS_UNKNOWN_ID_STATE,
   STUDIO_ALCHEMY,
   docsAlchemyUseCaseLink,
 } from '../../../content/docs-links';
@@ -66,6 +67,27 @@ interface EvidenceShot {
   sourceHeight: number | null;
   resultWidth: number | null;
   resultHeight: number | null;
+}
+
+/** The one picture a whole band was read out of, drawn once above it. */
+interface BandSource {
+  src: string;
+  width: number | null;
+  height: number | null;
+}
+
+/**
+ * The last full sentence of a published note, or null where it has none. Notes
+ * are written in whole sentences ending in a full stop, so the last one can be
+ * lifted off the end of several of them and compared.
+ */
+function lastSentence(note: string): string | null {
+  const text = note.trim();
+  if (!text.endsWith('.')) {
+    return null;
+  }
+  const boundary = text.lastIndexOf('. ');
+  return boundary === -1 ? text : text.slice(boundary + 2);
 }
 
 /** One detector's map in the control map gallery. */
@@ -201,6 +223,59 @@ export class DocsAlchemyUseCaseComponent {
       };
     });
   });
+
+  /**
+   * The one picture the whole band was read out of, where there is one worth
+   * drawing once instead of once per row.
+   *
+   * A form that answers with a picture is read as a pair: what went in beside
+   * what came out is the comparison, and half of it says nothing on its own.
+   * A form that answers with words or with data has nothing to compare, so the
+   * same photograph beside every row is that photograph several times over, and
+   * it goes above the rows as the one thing they all started from.
+   */
+  public readonly bandSource = computed<BandSource | null>(() => {
+    const shots = this.shots();
+    if (shots.length < 2 || shots.some((shot) => shot.result !== null)) {
+      return null;
+    }
+    const [first, ...rest] = shots;
+    return rest.every((shot) => shot.source === first.source)
+      ? {
+          src: first.source,
+          width: first.sourceWidth,
+          height: first.sourceHeight,
+        }
+      : null;
+  });
+
+  /**
+   * The sentence every note in the band ends with, where they all end with the
+   * same one. Said once under the head it is a fact about the band; said once
+   * per row it is the same paragraph of small print several times.
+   */
+  public readonly bandNote = computed<string | null>(() => {
+    const notes = this.shots().map((shot) => shot.notes);
+    if (notes.length < 2 || notes.some((note) => !note)) {
+      return null;
+    }
+    const shared = lastSentence(notes[0] ?? '');
+    return shared !== null &&
+      notes.every((note) => lastSentence(note ?? '') === shared)
+      ? shared
+      : null;
+  });
+
+  /** One row's note, without the sentence the band has already said. */
+  public shotNote(shot: EvidenceShot): string | null {
+    const shared = this.bandNote();
+    if (shared === null || shot.notes === null) {
+      return shot.notes;
+    }
+    const text = shot.notes.trim();
+    const rest = text.slice(0, text.length - shared.length).trim();
+    return rest === '' ? null : rest;
+  }
 
   /**
    * Whether this use case is read as a gallery rather than as a pair per form.
@@ -355,10 +430,14 @@ export class DocsAlchemyUseCaseComponent {
 
     // A URL naming nothing lands on the list rather than on an empty page:
     // these are URLs worth typing at, so getting one slightly wrong should show
-    // a reader what there is.
+    // a reader what there is. The name goes with it, so the list can say why it
+    // is the page in front of them.
     effect(() => {
-      if (this.param() !== '' && this.useCase() === null) {
-        void this.router.navigateByUrl(DOCS_ALCHEMY);
+      const named = this.param();
+      if (named !== '' && this.useCase() === null) {
+        void this.router.navigateByUrl(DOCS_ALCHEMY, {
+          state: { [DOCS_UNKNOWN_ID_STATE]: named },
+        });
       }
     });
   }
