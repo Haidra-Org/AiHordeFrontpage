@@ -42,7 +42,7 @@ describe('section identities', () => {
 
   it('leaves the steps that belong to no card unmarked', () => {
     // Pressing Generate and reading what came back are steps about the page.
-    for (const id of ['generate', 'generate_before', 'regenerate', 'results']) {
+    for (const id of ['generate', 'results']) {
       expect(sectionFor(id)).toBeUndefined();
     }
   });

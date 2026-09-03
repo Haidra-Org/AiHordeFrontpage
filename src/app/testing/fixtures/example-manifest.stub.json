@@ -99,25 +99,6 @@
       "request": "request.json"
     },
     {
-      "id": "facefix",
-      "directory": "facefix",
-      "title": "Face fixing with GFPGAN",
-      "summary": "The same seed with and without the GFPGAN post-processor, side by side.",
-      "status": "available",
-      "files": [
-        "before.webp",
-        "meta.json",
-        "request-before.json",
-        "request.json",
-        "result.webp"
-      ],
-      "model": "ICBINP - I Can't Believe It's Not Photography",
-      "seed": "1234567890",
-      "result": "result.webp",
-      "before": "before.webp",
-      "request": "request.json"
-    },
-    {
       "id": "txt2img--w2",
       "directory": "txt2img--w2",
       "title": "Text to image, fox shrine",

@@ -94,7 +94,6 @@ export const SECTION_BY_STEP_ID: Record<string, SectionId> = {
   cfg: 'sampling',
   sampler: 'sampling',
   seed: 'sampling',
-  facefixer: 'finishing',
   transparent: 'workflows',
   qr: 'workflows',
 };

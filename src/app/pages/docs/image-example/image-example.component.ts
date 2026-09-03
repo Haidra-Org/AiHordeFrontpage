@@ -104,7 +104,10 @@ interface ExampleDetail {
    * re-serialised so what a reader copies is the file, byte for byte.
    */
   request: string;
-  /** facefix only: the same request without the post-processor. */
+  /**
+   * The same request without the step being demonstrated, where the example
+   * published one, so the page can show the pair. Null everywhere else.
+   */
   requestBefore: string | null;
 }
 

@@ -2,7 +2,6 @@ import {
   GenerateFormValue,
   GenerateSourceMode,
 } from '../pages/generate/generate-form.model';
-import { docsAlchemyUseCaseLink } from './docs-links';
 import { SectionId } from './sections';
 import { settingIdFor } from './settings';
 
@@ -102,7 +101,7 @@ export interface FlowDef {
    * teaches what to ask for while the picture is still being made, which is no
    * use to a reader holding a finished one; a flow whose subject is also an
    * alchemy operation says where that reader should go instead. Optional, and
-   * carried by the one flow that needs it: a flow naming none renders nothing.
+   * carried by no technique at present: a flow naming none renders nothing.
    */
   related?: {
     /** The sentence that says why the reader is being sent away. */
@@ -117,7 +116,7 @@ export interface FlowDef {
 /**
  * Every flow, in the order the Learn area meets them.
  *
- * The eight techniques carry the step spine their worked example is read down.
+ * The seven techniques carry the step spine their worked example is read down.
  * A technique whose steps name no control yet is still a complete page: the
  * reader can see what it is made of and in what order, and the walkthrough
  * lights up on its own the moment those steps are wired to the panel.
@@ -258,7 +257,7 @@ export const FLOWS: readonly FlowDef[] = [
   },
   {
     id: 'controlnet',
-    next: 'facefix',
+    next: 'transparent',
     section: 'source',
     steps: [
       {
@@ -386,42 +385,6 @@ export const FLOWS: readonly FlowDef[] = [
         applyFields: ['cfg_scale', 'steps', 'sampler_name', 'scheduler'],
       },
       { id: 'generate', anchorId: 'generate' },
-    ],
-  },
-  {
-    id: 'facefix',
-    next: 'transparent',
-    section: 'finishing',
-    // The repair pass this flow teaches is asked for before the picture is
-    // made. A reader who already has the picture cannot use it, and rerunning
-    // the request would cost them the image they came with; alchemy repairs the
-    // one they have, so the flow says so rather than letting them regenerate.
-    related: {
-      bodyKey: 'generate.learn.flows.facefix.related.body',
-      linkKey: 'generate.learn.flows.facefix.related.link',
-      link: docsAlchemyUseCaseLink('fix_faces'),
-    },
-    steps: [
-      {
-        id: 'prompt',
-        anchorId: 'prompt',
-        applyFields: ['prompt', 'negativePrompt'],
-      },
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
-      { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
-      // The first of two runs, which is the same request without the fixer:
-      // there is nothing to write, and pressing Generate is the step.
-      { id: 'generate_before', anchorId: 'generate' },
-      {
-        // The fixer and its strength are one choice: the strength row does not
-        // exist until a fixer is picked, so a step that wrote only the fixer
-        // would leave the reader to find a slider that had just appeared.
-        id: 'facefixer',
-        anchorId: 'facefixer',
-        helpTopic: 'facefixer',
-        applyFields: ['post_processing', 'facefixer_strength'],
-      },
-      { id: 'regenerate', anchorId: 'generate' },
     ],
   },
 

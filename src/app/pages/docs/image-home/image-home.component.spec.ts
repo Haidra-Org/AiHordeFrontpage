@@ -301,7 +301,6 @@ describe('DocsImageHomeComponent', () => {
       'img2img',
       'inpainting',
       'transparent',
-      'facefix',
       'qr_code',
       'controlnet',
       'remix',

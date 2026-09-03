@@ -10,7 +10,6 @@ import {
   flowsUsingSetting,
   isConceptFlow,
 } from './flows';
-import { docsAlchemyUseCaseLink } from './docs-links';
 import { SECTION_IDENTITIES } from './sections';
 import { SETTING_FALLBACK_LABEL_KEY, settingLabelKey } from './settings';
 import { DEFAULT_GENERATE_FORM_VALUE } from '../pages/generate/generate-form.model';
@@ -288,7 +287,7 @@ describe('the techniques that work from a source image', () => {
   });
 });
 
-describe('the techniques that live in the workflow and finishing cards', () => {
+describe('the techniques that live in the workflow cards', () => {
   it('runs the transparent flow off the one switch that makes it', () => {
     expect(flowSteps('transparent').map((step) => step.id)).toEqual([
       'prompt',
@@ -328,45 +327,6 @@ describe('the techniques that live in the workflow and finishing cards', () => {
       'sampler_name',
       'scheduler',
     ]);
-  });
-
-  it('turns the face fixer and its strength on together', () => {
-    expect(flowSteps('facefix').map((step) => step.id)).toEqual([
-      'prompt',
-      'model',
-      'size',
-      'generate_before',
-      'facefixer',
-      'regenerate',
-    ]);
-    const fixer = flowSteps('facefix').find((step) => step.id === 'facefixer');
-    expect(fixer?.anchorId).toBe('facefixer');
-    // The strength row does not exist until a fixer is picked, so one without
-    // the other would send the reader after a slider that had just appeared.
-    expect(fixer?.applyFields).toEqual([
-      'post_processing',
-      'facefixer_strength',
-    ]);
-    // Both runs of the pair press the same button, and neither writes anything.
-    for (const id of ['generate_before', 'regenerate']) {
-      const step = flowSteps('facefix').find((entry) => entry.id === id);
-      expect(step?.anchorId).toBe('generate');
-      expect(step?.applyFields).toBeUndefined();
-    }
-  });
-
-  it('sends a reader holding a finished picture to alchemy instead', () => {
-    const related = flowDef('facefix')?.related;
-    expect(related?.link).toBe(docsAlchemyUseCaseLink('fix_faces'));
-    expect(related?.bodyKey).toBe('generate.learn.flows.facefix.related.body');
-    expect(related?.linkKey).toBe('generate.learn.flows.facefix.related.link');
-    // The affordance is carried by the one flow whose subject is also an
-    // operation on a picture that already exists. Any other flow offering one
-    // would be sending readers out of a lesson that can still help them.
-    const carriers = FLOWS.filter((flow) => flow.related !== undefined).map(
-      (flow) => flow.id,
-    );
-    expect(carriers).toEqual(['facefix']);
   });
 
   it('reads remix down the same spine as the other sourced flows', () => {

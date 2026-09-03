@@ -462,27 +462,7 @@ describe('DocsImageExampleComponent', () => {
     );
   });
 
-  it('points a reader holding a finished picture at the alchemy page', async () => {
-    harness = await createPage('facefix');
-    flushAll(harness);
-
-    const translations = en as Record<string, string>;
-    const aside = harness.query<HTMLElement>('.gs-tut-related');
-    expect(aside).toHaveLength(1);
-    expect(aside[0].textContent).toContain(
-      translations['generate.learn.flows.facefix.related.body'],
-    );
-
-    const link = aside[0].querySelector<HTMLAnchorElement>(
-      '.gs-tut-related-link',
-    );
-    expect(link?.textContent?.trim()).toBe(
-      translations['generate.learn.flows.facefix.related.link'],
-    );
-    expect(link?.getAttribute('href')).toBe('/docs/alchemy/fix_faces');
-  });
-
-  it('offers the finished-picture aside on no other technique', async () => {
+  it('renders no finished-picture aside for a technique that names none', async () => {
     harness = await createPage('txt2img');
     flushAll(harness);
 
@@ -833,15 +813,6 @@ describe('DocsImageExampleComponent', () => {
     expect(harness.query('.gs-tut-img').length).toBeGreaterThan(0);
   });
 
-  it('shows both payloads for the flow that is a pair', async () => {
-    harness = await createPage('facefix');
-    flushAll(harness);
-    harness.component.setMode('developer');
-    harness.fixture.detectChanges();
-
-    expect(harness.query('.gs-tut-code')).toHaveLength(2);
-  });
-
   it('renders a skipped flow as an unavailable card, not a 404', async () => {
     harness = await createPage(SKIPPED_ID);
     flushAll(harness, SKIPPED_MANIFEST);
@@ -1041,9 +1012,9 @@ describe('DocsImageExampleComponent', () => {
     // A page whose steps are written but name no control yet: it reads, and its
     // start button lights up on its own the moment those steps are wired. No
     // published technique is in that state now, so it is staged for one test.
-    followability.unrunnable.add('facefix');
+    followability.unrunnable.add('transparent');
     try {
-      const other = await createPage('facefix');
+      const other = await createPage('transparent');
       flushAll(other);
 
       const start = other.query<HTMLButtonElement>('.gs-tut-start-btn')[0];

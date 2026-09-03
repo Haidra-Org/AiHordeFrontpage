@@ -1262,21 +1262,7 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.tutorialCompleted()).toBe(false);
   });
 
-  it('closes the face fix walkthrough with the way to repair a finished picture', () => {
-    const engine = TestBed.inject(TutorialEngineService);
-    void engine.start('facefix');
-    engine.goTo(engine.total() - 1);
-    engine.notifySubmitted();
-
-    // The reader is holding the picture at this point, which is the moment the
-    // other area becomes the right answer rather than a distraction.
-    const related = component.finishedTutorialRelated();
-    expect(related?.link).toBe('/docs/alchemy/fix_faces');
-    expect(TRANSLATIONS[related?.bodyKey ?? '']).toBeTruthy();
-    expect(TRANSLATIONS[related?.linkKey ?? '']).toBeTruthy();
-  });
-
-  it('closes a walkthrough that repairs nothing with no such offer', () => {
+  it('closes a walkthrough with no offer of somewhere else', () => {
     const engine = TestBed.inject(TutorialEngineService);
     void engine.start('txt2img');
     engine.goTo(engine.total() - 1);

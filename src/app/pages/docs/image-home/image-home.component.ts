@@ -54,7 +54,6 @@ const SHELF_FLOWS: readonly string[] = [
   'img2img',
   'inpainting',
   'transparent',
-  'facefix',
   'qr_code',
   'controlnet',
   'remix',

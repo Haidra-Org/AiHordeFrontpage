@@ -212,7 +212,6 @@ describe('TutorialEngineService', () => {
       'remix',
       'transparent',
       'qr_code',
-      'facefix',
     ]) {
       expect(flowFollowable(flow), `${flow}`).toBe(true);
       expect(isConceptFlow(flow)).toBe(false);
