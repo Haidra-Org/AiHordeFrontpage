@@ -120,7 +120,7 @@ describe('AlchemyResultsBrowserComponent', () => {
       '.gs-gallery .gs-tile-grid',
     ) as HTMLElement;
     expect(grid).not.toBeNull();
-    expect(grid.style.gridTemplateColumns).toContain('repeat(3');
+    expect(grid.style.getPropertyValue('--gs-cols')).toBe('3');
     expect(fixture.nativeElement.querySelectorAll('.gs-gtile').length).toBe(2);
   });
 

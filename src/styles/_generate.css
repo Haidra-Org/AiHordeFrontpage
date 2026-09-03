@@ -3606,10 +3606,28 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* Justified rows, so mixed shapes do not leave dead space: a row is as tall as
+   its tiles, never as tall as its tallest one. Each tile's basis and its growth
+   are both proportional to its aspect ratio, so whatever width a row has left
+   over is shared in that same proportion and every tile in the row resolves to
+   one height while the row spans the full width. `--gs-cols` is how many square
+   tiles a row holds, which is what the per-row control sets. */
 .gen-studio .gs-tile-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  --gs-cols: 4;
+  --gs-tile-gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--gs-tile-gap);
+}
+/* A part-filled last row is left alone at basis size rather than stretched
+   across the pane: this zero-height filler outgrows the tiles and takes the
+   slack. It has no room on a row that is already full, so it wraps away and
+   that row still justifies. */
+.gen-studio .gs-tile-grid::after {
+  content: "";
+  flex: 1000000 0 0;
+  height: 0;
 }
 .gen-studio .gs-retention {
   margin-top: var(--gs-space-4);
@@ -3659,12 +3677,26 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 
 /* result tiles (chrome only; per-tile state logic is a later slice) */
 .gen-studio .gs-tile {
+  --gs-tile-ar: 1;
   position: relative;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid var(--gs-border);
   background: #f3f4f6;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: var(--gs-tile-ar);
+  /* The ratio arrives as `width/height`, which calc reads as a division, so a
+     square tile claims one share of the row and a wide one proportionally more.
+     Growth is that same share scaled up, because a row whose growth factors add
+     up to less than one keeps part of its free space: a row holding nothing but
+     tall tiles would stop short of the edge. The pixel taken off the row keeps a
+     full row of square tiles from wrapping on a subpixel rounding; growth hands
+     it straight back. */
+  flex: calc(var(--gs-tile-ar) * 100) 1
+    calc(
+      var(--gs-tile-ar) *
+        (100% - (var(--gs-cols, 4) - 1) * var(--gs-tile-gap, 16px) - 1px) /
+        var(--gs-cols, 4)
+    );
 }
 .dark .gen-studio .gs-tile {
   background: #1b1e24;

@@ -111,7 +111,7 @@ const META_PINNED_KEY = 'aihorde.generate.meta_pinned';
 const MIN_TILE_PX = 140;
 /** Tile width below which the tile chrome drops to its most compact form. */
 const COMPACT_TILE_PX = 168;
-/** Must track the `gap` on `.gs-tile-grid`, for the tile-width arithmetic. */
+/** Must track `--gs-tile-gap` on `.gs-tile-grid`, for the tile-width arithmetic. */
 const GRID_GAP_PX = 16;
 
 /** How far a finger has to travel across the viewer before it counts as a swipe. */
@@ -556,10 +556,11 @@ export class GenerateResultsPanelComponent {
     );
     return Math.min(preferred, Math.max(1, fits));
   });
-  public readonly gridColumns = computed(
-    () => `repeat(${this.effectiveColumns()}, minmax(0, 1fr))`,
-  );
-  /** Rendered width of one tile, or 0 while the grid is unmeasured. */
+  /**
+   * Width of a square tile, or 0 while the grid is unmeasured. Rows are
+   * justified, so a tile's own width follows its aspect; this is the share the
+   * column count gives it, which is what the tile chrome is sized against.
+   */
   public readonly tileWidth = computed(() => {
     const width = this.gridWidth();
     if (width <= 0) {
@@ -569,7 +570,7 @@ export class GenerateResultsPanelComponent {
     return (width - GRID_GAP_PX * (columns - 1)) / columns;
   });
   /**
-   * The rendered tile width as a CSS length for `--gs-tile-w`, or null while the
+   * The square-tile width as a CSS length for `--gs-tile-w`, or null while the
    * grid is unmeasured so the stylesheet's own fallback applies.
    */
   public readonly tileWidthVar = computed<string | null>(() => {

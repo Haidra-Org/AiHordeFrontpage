@@ -1,10 +1,7 @@
 @if (viewMode() === "gallery") {
   <!-- ============ TILED GALLERY: one tile per request ============ -->
   <div class="gs-gallery">
-    <div
-      class="gs-tile-grid"
-      [style.gridTemplateColumns]="galleryGridColumns()"
-    >
+    <div class="gs-tile-grid" [style.--gs-cols]="galleryColumns()">
       @for (job of jobs(); track job.id) {
         <button
           type="button"

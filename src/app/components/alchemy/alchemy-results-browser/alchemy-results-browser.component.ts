@@ -90,10 +90,6 @@ export class AlchemyResultsBrowserComponent {
     () => this.jobs().find((j) => j.id === this.selectedJobId()) ?? null,
   );
 
-  protected readonly galleryGridColumns = computed(
-    () => `repeat(${this.galleryColumns()}, minmax(0, 1fr))`,
-  );
-
   /**
    * The largest image available for a big surface (gallery tile): the session's
    * full source when it is still in memory, else the small persisted thumbnail,

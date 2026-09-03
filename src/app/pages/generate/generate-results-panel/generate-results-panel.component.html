@@ -520,7 +520,7 @@
         #tileGrid
         class="gs-tile-grid"
         [class.gs-tile-grid--compact]="compactTiles()"
-        [style.gridTemplateColumns]="gridColumns()"
+        [style.--gs-cols]="effectiveColumns()"
         [style.--gs-tile-w]="tileWidthVar()"
       >
         @for (tile of visibleTiles(); track tile.key) {
@@ -537,7 +537,7 @@
                 [class.gs-tile--selected]="
                   selectMode() && isSelected(tile.jobLocalId)
                 "
-                [style.aspectRatio]="tile.aspect"
+                [style.--gs-tile-ar]="tile.aspect"
               >
                 <div class="gs-flip-inner">
                   <div class="gs-flip-face gs-flip-face--front">
@@ -924,7 +924,7 @@
               </div>
             }
             @case ("finished-pending") {
-              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+              <div class="gs-tile" [style.--gs-tile-ar]="tile.aspect">
                 <ng-container
                   [ngTemplateOutlet]="tileTop"
                   [ngTemplateOutletContext]="{ $implicit: tile }"
@@ -964,7 +964,7 @@
               <div
                 class="gs-tile gs-wait-card"
                 [class.gs-wait-card--flipped]="waitWhyFor() === tile.key"
-                [style.aspectRatio]="tile.aspect"
+                [style.--gs-tile-ar]="tile.aspect"
               >
                 <div
                   class="gs-wait-card-inner"
@@ -1059,7 +1059,7 @@
               <div
                 class="gs-tile gs-wait-card"
                 [class.gs-wait-card--flipped]="waitWhyFor() === tile.key"
-                [style.aspectRatio]="tile.aspect"
+                [style.--gs-tile-ar]="tile.aspect"
               >
                 <div
                   class="gs-wait-card-inner"
@@ -1307,7 +1307,7 @@
               </div>
             }
             @case ("error") {
-              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+              <div class="gs-tile" [style.--gs-tile-ar]="tile.aspect">
                 <ng-container
                   [ngTemplateOutlet]="tileTop"
                   [ngTemplateOutletContext]="{ $implicit: tile }"
@@ -1363,7 +1363,7 @@
               </div>
             }
             @case ("censored") {
-              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+              <div class="gs-tile" [style.--gs-tile-ar]="tile.aspect">
                 <ng-container
                   [ngTemplateOutlet]="tileTop"
                   [ngTemplateOutletContext]="{ $implicit: tile }"
@@ -1414,7 +1414,7 @@
               </div>
             }
             @default {
-              <div class="gs-tile" [style.aspectRatio]="tile.aspect">
+              <div class="gs-tile" [style.--gs-tile-ar]="tile.aspect">
                 <ng-container
                   [ngTemplateOutlet]="tileTop"
                   [ngTemplateOutletContext]="{ $implicit: tile }"

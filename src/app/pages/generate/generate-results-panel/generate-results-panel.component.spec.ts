@@ -477,7 +477,6 @@ describe('GenerateResultsPanelComponent', () => {
 
       expect(component.effectiveColumns()).toBe(2);
       expect(component.tileWidth()).toBe(202);
-      expect(component.gridColumns()).toBe('repeat(2, minmax(0, 1fr))');
     });
 
     it('keeps the preference when the grid is wide enough', () => {
@@ -1653,5 +1652,113 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
     expect(menu!.textContent).toContain(
       TRANSLATIONS['generate.results.delete'],
     );
+  });
+});
+
+describe('GenerateResultsPanelComponent justified rows', () => {
+  let fixture: ComponentFixture<GenerateResultsPanelComponent>;
+  let host: HTMLElement;
+  let component: GenerateResultsPanelComponent;
+
+  /** A waiting job at a given size, so its tile carries that shape. */
+  function sizedJob(
+    localId: string,
+    width: number,
+    height: number,
+  ): LocalGenerationJob {
+    return {
+      localId,
+      status: 'queued',
+      createdAt: 0,
+      updatedAt: 0,
+      request: { prompt: 'a prompt', params: { width, height } },
+      resultImageIds: [],
+    };
+  }
+
+  function grid(): HTMLElement {
+    return host.querySelector('.gs-tile-grid') as HTMLElement;
+  }
+
+  function tileRatios(): string[] {
+    return Array.from(host.querySelectorAll<HTMLElement>('.gs-tile')).map(
+      (tile) => tile.style.getPropertyValue('--gs-tile-ar'),
+    );
+  }
+
+  beforeEach(async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+
+    await TestBed.configureTestingModule({
+      // How a row of mixed shapes is laid out is a claim about the rendered
+      // markup, so the real template is loaded.
+      imports: [
+        GenerateResultsPanelComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            pendingJobs: signal<LocalGenerationJob[]>([
+              sizedJob('square', 512, 512),
+              sizedJob('wide', 1024, 512),
+              sizedJob('tall', 512, 1024),
+            ]),
+            finishedJobs: signal<LocalGenerationJob[]>([]),
+            cancel: vi.fn(),
+            retry: vi.fn(),
+            deleteJob: vi.fn(),
+            getJobImages: vi.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+        },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+    host = fixture.nativeElement as HTMLElement;
+    component = fixture.componentInstance;
+    component.imagesPerRow.set(4);
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  it('hands each tile its own shape, which sets both its basis and its growth', () => {
+    expect(tileRatios()).toEqual(['512/512', '1024/512', '512/1024']);
+  });
+
+  it('gives the row the divisor the per-row control asks for', () => {
+    expect(grid().style.getPropertyValue('--gs-cols')).toBe('4');
+
+    component.imagesPerRow.set(2);
+    fixture.detectChanges();
+
+    expect(grid().style.getPropertyValue('--gs-cols')).toBe('2');
+  });
+
+  it('narrows the divisor when the pane cannot hold the preference', () => {
+    component.gridWidth.set(420);
+    fixture.detectChanges();
+
+    expect(grid().style.getPropertyValue('--gs-cols')).toBe('2');
   });
 });
