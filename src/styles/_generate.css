@@ -2064,10 +2064,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   padding: 0 10px;
   border: 1px solid var(--gs-field-border);
   border-radius: var(--gs-radius-pill);
-  background: color-mix(in srgb, var(--gs-panel) 92%, transparent);
+  /* Opaque: a chip rides over the body while there is body left to read, and a
+     line half visible under it reads as a rendering fault rather than as
+     something the reader has scrolled past. */
+  background: var(--gs-panel);
   color: var(--gs-ink);
   box-shadow: var(--gs-elev-2);
-  backdrop-filter: blur(4px);
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -2093,6 +2095,39 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 @media (forced-colors: active) {
   .gen-studio .gs-dock-chip {
     border-color: ButtonText;
+  }
+}
+/* The room the chips stand in, measured from the foot of whatever is scrolling:
+   the pane's own end padding, the gap the chips float above, their height, and
+   one more gap. Anything scrolled into view stops above that, so a control the
+   reader is sent to never comes to rest behind a chip.
+
+   It is the scroll padding that reserves the room, not padding: the chips are
+   sticky and clamped by the box they sit in, so end padding on the pane simply
+   carries them up with it and leaves a band of nothing underneath. */
+.gen-studio {
+  --gs-dock-reserve: calc(
+    34px + var(--gs-space-2) + var(--gs-space-3) + var(--gs-space-2)
+  );
+}
+@media (pointer: coarse) {
+  .gen-studio {
+    --gs-dock-reserve: calc(
+      44px + var(--gs-space-2) + var(--gs-space-3) + var(--gs-space-2)
+    );
+  }
+}
+.gen-studio .gs-body:has(.gs-dock) {
+  scroll-padding-bottom: var(--gs-dock-reserve);
+}
+/* Below the width where the body is its own scroll pane the page is the
+   scroller and the chips ride above the tab bar, so the page is what has to
+   hold its scrolling short of them. */
+@media (max-width: 1023.98px) {
+  html:has(.gen-studio .gs-dock) {
+    scroll-padding-bottom: calc(
+      var(--gs-tabbar-height) + env(safe-area-inset-bottom) + 8px + 44px + 8px
+    );
   }
 }
 
@@ -5236,14 +5271,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   width: 10px;
   height: 10px;
 }
+/* The name is the control's label, so it wraps rather than truncates: the rows
+   sit two to a line in the panel, where several operation names are longer than
+   half the panel is wide. */
 .gen-studio .gs-op-name {
   flex: 1;
   min-width: 0;
   font-size: var(--gs-text-sm);
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .gen-studio .gs-op-badge {
   flex: none;
@@ -5257,8 +5292,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 
 /* Factor badge + info button, grouped and right-justified so both stay aligned
-   across rows no matter how long the operation name is (the name truncates,
-   this group holds its place at the right edge). */
+   across rows no matter how long the operation name is: the name wraps under
+   itself and this group holds its place at the right edge. */
 .gen-studio .gs-op-meta {
   flex: none;
   margin-left: auto;
@@ -5290,9 +5325,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-radius: 5px;
 }
 /* Mobile: touch-first sizing. The operation rows double as the selection
-   control, so they get a comfortable ≥48px hit height, the names get room to
-   wrap rather than truncate, and the (i) becomes a proper ~40px circular target
-   instead of a hairline icon. The hover/focus description dock (useless without
+   control, so they get a comfortable ≥48px hit height and the (i) becomes a
+   proper ~40px circular target instead of a hairline icon. The hover/focus description dock (useless without
    hover and off-screen once the list scrolls) is dropped in favour of the (i)
    modal. */
 @media (max-width: 1023.98px) {
@@ -5312,9 +5346,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
   .gen-studio .gs-op-name {
     font-size: 13.5px;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
   }
   .gen-studio .gs-op-info {
     display: inline-flex;
@@ -5374,13 +5405,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   text-transform: uppercase;
   color: var(--gs-muted);
 }
-/* full-width upscaler rows: don't truncate the long names */
-.gen-studio .gs-op--wide .gs-op-name {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
 /* reflow the operation groups into columns when the panel is expanded */
 @media (min-width: 1024px) {
   .gen-studio.gs-workspace--wide .gs-op-groups,
@@ -17523,8 +17547,11 @@ html:has(app-gs-sheet) {
   color: var(--gs-label);
   cursor: pointer;
 }
-/* Beside the negative prompt the button is part of the row, next to the help
-   glyph, because that field has no box corner to spare. */
+/* In a row rather than in a corner: beside the negative prompt because that
+   field has no box corner to spare, and on the prompt's own heading row because
+   a corner button covers the last lines of a prompt that fills the box. A
+   textarea clips its overflow at the padding box, so bottom padding only clears
+   the button while the box is scrolled to its end. */
 .gen-studio .gs-prompt-expand--inline {
   position: static;
   flex: none;
@@ -17542,11 +17569,10 @@ html:has(app-gs-sheet) {
     display: none;
   }
 }
-/* Below that width the grip is decoration: the button is the way to size the
-   field, and the box's bottom corner is free for it. The history button shares
-   the corner column: same size, same inset, so the two read as one control
-   strip rather than two afterthoughts. */
-@media (max-width: 1023px) {
+/* Below that width the grip is decoration: the button on the heading row is the
+   way to open the field. The box's corner is the history button's alone, at a
+   thumb's size, and the text is inset from it on that side only. */
+@media (max-width: 1023.98px) {
   .gen-studio .gs-prompt-hist-btn {
     top: 8px;
     right: 8px;
@@ -17560,9 +17586,6 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-textarea--resize,
   .gen-studio textarea.gs-neg-input {
     resize: none;
-  }
-  .gen-studio .gs-textarea--resize {
-    padding-bottom: 44px;
   }
 }
 

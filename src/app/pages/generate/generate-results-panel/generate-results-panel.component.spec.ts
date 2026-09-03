@@ -559,6 +559,37 @@ describe('GenerateResultsPanelComponent', () => {
     });
   });
 
+  describe('the Back gesture over the viewer', () => {
+    beforeEach(async () => {
+      getJobImages.mockResolvedValue([resultImage('f', 'img-1')]);
+      finishedJobs.set([job('f', 'done')]);
+      await loadThumbnails();
+    });
+
+    it('opens on an entry of its own, so Back has something to close', () => {
+      component.openViewer(component.viewerTiles()[0]);
+
+      expect(history.state?.aihordeLayer).toEqual(expect.any(String));
+    });
+
+    it('closes the viewer rather than leaving the studio', () => {
+      component.openViewer(component.viewerTiles()[0]);
+
+      window.dispatchEvent(new PopStateEvent('popstate'));
+
+      expect(component.viewerKey()).toBeNull();
+    });
+
+    it('answers nothing once the viewer has been closed another way', () => {
+      component.openViewer(component.viewerTiles()[0]);
+      component.closeViewer();
+
+      window.dispatchEvent(new PopStateEvent('popstate'));
+
+      expect(component.viewerKey()).toBeNull();
+    });
+  });
+
   describe('deleting from the viewer', () => {
     beforeEach(async () => {
       // The thumbnail effect reads the finished jobs in order, so one queued

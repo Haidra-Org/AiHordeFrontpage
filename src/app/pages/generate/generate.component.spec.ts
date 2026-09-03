@@ -1648,6 +1648,28 @@ describe('GenerateComponent', () => {
 
       expect(component.panelSize()).toBe('double');
     });
+
+    it('is put away by the Back gesture where it is a sheet over the studio', () => {
+      const dock = TestBed.inject(GsHelpDockService);
+      component.isNarrow.set(true);
+
+      dock.open('cfg');
+      TestBed.tick();
+      window.dispatchEvent(new PopStateEvent('popstate'));
+
+      expect(dock.topic()).toBeNull();
+    });
+
+    it('leaves Back alone where the entry is docked beside the panel', () => {
+      const dock = TestBed.inject(GsHelpDockService);
+      component.isNarrow.set(false);
+
+      dock.open('cfg');
+      TestBed.tick();
+      window.dispatchEvent(new PopStateEvent('popstate'));
+
+      expect(dock.topic()).toBe('cfg');
+    });
   });
 
   describe('the first-visit offer', () => {
@@ -1669,6 +1691,30 @@ describe('GenerateComponent', () => {
       const returning = TestBed.createComponent(GenerateComponent);
 
       expect(returning.componentInstance.showWelcome()).toBe(false);
+      returning.destroy();
+    });
+
+    it('leaves a reader who declined it alone for the week they bought', () => {
+      localStorage.setItem(
+        'aihorde.generate.learn.welcomed_until',
+        String(Date.now() + 60_000),
+      );
+
+      const declined = TestBed.createComponent(GenerateComponent);
+
+      expect(declined.componentInstance.showWelcome()).toBe(false);
+      declined.destroy();
+    });
+
+    it('asks again once that week has run out', () => {
+      localStorage.setItem(
+        'aihorde.generate.learn.welcomed_until',
+        String(Date.now() - 60_000),
+      );
+
+      const returning = TestBed.createComponent(GenerateComponent);
+
+      expect(returning.componentInstance.showWelcome()).toBe(true);
       returning.destroy();
     });
 

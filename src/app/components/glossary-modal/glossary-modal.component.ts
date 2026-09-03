@@ -48,6 +48,7 @@ import {
           <div class="modal-header">
             <h2 class="modal-title">{{ 'help.glossary.title' | transloco }}</h2>
             <button
+              #closeBtn
               type="button"
               class="modal-close"
               (click)="close()"
@@ -203,6 +204,7 @@ import {
                    list of glyphs is read by looking for one of them. -->
               <div class="glossary-search">
                 <input
+                  #searchInput
                   type="text"
                   class="form-input w-full"
                   [placeholder]="
@@ -367,8 +369,11 @@ export class GlossaryModalComponent {
   /** The this-page tab's filter, over that page's controls, entries and words. */
   public readonly pageQuery = signal('');
 
+  /** Whichever tab is showing has one filter field, and this is it. */
   private readonly searchInput =
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private readonly closeBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('closeBtn');
 
   /** All registered page contexts as an array (for @for in template). */
   public readonly pageContextList = computed<PageGlossaryContext[]>(() =>
@@ -488,14 +493,15 @@ export class GlossaryModalComponent {
       }
     });
 
-    // Focus search input when modal opens on dictionary tab
+    // The dialog takes the reader when it opens, whichever tab it opens on: its
+    // filter field where that tab has one, its close button otherwise. The page
+    // behind is inert by then, so a dialog that took nobody leaves the reader on
+    // the document itself, where neither Escape nor Tab reaches the dialog.
     effect(() => {
-      if (
-        this.glossary.isOpen() &&
-        this.glossary.activeTab() === 'dictionary'
-      ) {
+      if (this.glossary.isOpen()) {
         setTimeout(() => {
-          this.searchInput()?.nativeElement.focus();
+          const field = this.searchInput()?.nativeElement;
+          (field ?? this.closeBtn()?.nativeElement)?.focus();
         }, 100);
       }
       if (!this.glossary.isOpen()) {

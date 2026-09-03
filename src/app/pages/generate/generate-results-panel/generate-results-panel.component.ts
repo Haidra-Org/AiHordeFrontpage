@@ -35,6 +35,7 @@ import {
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { buildJobImageArchive, extensionFor } from '../generate-archive';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
+import { useBackClose } from '../../../helper/back-close';
 import { requestWithoutSeed, studioLinkAddress } from '../studio-link';
 import { embedWebpExifInBlob } from '../../../helper/webp-exif';
 import {
@@ -968,6 +969,11 @@ export class GenerateResultsPanelComponent {
   public readonly viewerDeletePending = signal<string | null>(null);
   /** The element focus returns to when the viewer closes. */
   private previousActiveElement: HTMLElement | null = null;
+  /**
+   * The viewer covers the studio, so the Back gesture puts it away rather than
+   * leaving the page the reader's work is on.
+   */
+  private readonly viewerBack = useBackClose(() => this.closeViewer());
   /** The viewer control focus returns to when its delete dialog is cancelled. */
   private viewerDeleteReturnFocus: HTMLElement | null = null;
   private viewerKeydown: ((event: KeyboardEvent) => void) | null = null;
@@ -1442,6 +1448,7 @@ export class GenerateResultsPanelComponent {
         this.metaJsonOpen.set(false);
       }
       this.attachViewerKeys();
+      this.viewerBack.hold();
     }
   }
 
@@ -1449,6 +1456,7 @@ export class GenerateResultsPanelComponent {
     if (this.viewerKey() === null) {
       return;
     }
+    this.viewerBack.release();
     this.viewerDeletePending.set(null);
     this.viewerDeleteReturnFocus = null;
     this.viewerKey.set(null);

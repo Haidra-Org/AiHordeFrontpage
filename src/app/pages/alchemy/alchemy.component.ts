@@ -19,7 +19,6 @@ import {
   isPlatformBrowser,
 } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthService } from '../../services/auth.service';
 import { DatabaseService } from '../../services/database.service';
@@ -27,8 +26,7 @@ import { NetworkStatusService } from '../../services/network-status.service';
 import { AlchemyQueueService } from '../../services/alchemy-queue.service';
 import { ActiveGenerationsService } from '../../services/active-generations.service';
 import { ToastService } from '../../services/toast.service';
-import { TranslatorService } from '../../services/translator.service';
-import { setPageTitle } from '../../helper/page-title';
+import { useStudioTitle } from '../../helper/page-title';
 import {
   markRetentionNoticeSeen,
   retentionNoticeSeen,
@@ -173,8 +171,6 @@ export class AlchemyComponent {
   private readonly activeGenerations = inject(ActiveGenerationsService);
   private readonly toast = inject(ToastService);
   private readonly injector = inject(Injector);
-  private readonly translator = inject(TranslatorService);
-  private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
   private readonly ngZone = inject(NgZone);
   private readonly platformId = inject(PLATFORM_ID);
@@ -613,6 +609,7 @@ export class AlchemyComponent {
   );
 
   constructor() {
+    useStudioTitle('alchemy.title', this.pendingJobsCount);
     markRetentionNoticeSeen();
     // Thumbnails for every uploaded source, so the rail and gallery are
     // populated as soon as the queue hands over a restored history. A job's
@@ -656,12 +653,6 @@ export class AlchemyComponent {
     this.destroyRef.onDestroy(() => this.helpDock.close());
 
     afterNextRender(() => {
-      setPageTitle(
-        this.translator,
-        this.title,
-        this.destroyRef,
-        'alchemy.title',
-      );
       // Anything already running under this key belongs in the request list,
       // including what another device started.
       this.activeGenerations.start();

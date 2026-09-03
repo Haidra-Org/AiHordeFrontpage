@@ -8,7 +8,10 @@ import en from '../../../../assets/i18n/en.json';
 import { DatabaseService } from '../../../services/database.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { isConceptFlow } from '../../../content/flows';
-import { GenerateWelcomeComponent } from './generate-welcome.component';
+import {
+  GenerateWelcomeComponent,
+  WELCOME_SNOOZE_MS,
+} from './generate-welcome.component';
 
 const TRANSLATIONS = en as Record<string, string>;
 
@@ -149,7 +152,7 @@ describe('GenerateWelcomeComponent', () => {
     expect(engine.active()).toBe(false);
   });
 
-  it('lets the offer be skipped without settling on a level or storing anything', () => {
+  it('lets the offer be skipped without settling on a level', () => {
     const engine = TestBed.inject(TutorialEngineService);
     const before = engine.level();
 
@@ -157,7 +160,21 @@ describe('GenerateWelcomeComponent', () => {
 
     expect(closed).toHaveBeenCalledTimes(1);
     expect(engine.level()).toBe(before);
-    expect(dbStore).not.toHaveBeenCalled();
+    expect(dbStore).not.toHaveBeenCalledWith(
+      'aihorde.generate.learn.welcomed',
+      true,
+    );
+  });
+
+  it('buys a week of quiet when the offer is declined', () => {
+    const now = Date.now();
+
+    el.querySelector<HTMLButtonElement>('.gs-welcome-skip')!.click();
+
+    const [key, value] = dbStore.mock.calls[0] as [string, number];
+    expect(key).toBe('aihorde.generate.learn.welcomed_until');
+    expect(value).toBeGreaterThanOrEqual(now + WELCOME_SNOOZE_MS);
+    expect(value).toBeLessThan(now + WELCOME_SNOOZE_MS + 5000);
   });
 
   it('keeps the offer away for good only when the reader asks it to', () => {
@@ -174,6 +191,11 @@ describe('GenerateWelcomeComponent', () => {
       'aihorde.generate.learn.welcomed',
       true,
     );
+    // The permanent answer stands on its own; nothing dates it.
+    expect(dbStore).not.toHaveBeenCalledWith(
+      'aihorde.generate.learn.welcomed_until',
+      expect.anything(),
+    );
   });
 
   it('closes on Escape and on the backdrop', () => {
@@ -181,6 +203,9 @@ describe('GenerateWelcomeComponent', () => {
     el.querySelector<HTMLElement>('.gs-modal-overlay')!.click();
 
     expect(closed).toHaveBeenCalledTimes(2);
-    expect(dbStore).not.toHaveBeenCalled();
+    expect(dbStore).not.toHaveBeenCalledWith(
+      'aihorde.generate.learn.welcomed',
+      true,
+    );
   });
 });

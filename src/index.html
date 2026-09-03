@@ -64,6 +64,54 @@
       })();
     </script>
 
+    <!-- The ground the page is painted on until the app's own stylesheet is
+         ready. Routes drawn in the browser show this shell for as long as the
+         bundle takes, and a light rectangle is the wrong answer for a reader who
+         asked for the dark theme: the class the script above just set picks the
+         colour here exactly as it does in the stylesheet. The mark is the site
+         saying which site it is while there is nothing else to say. -->
+    <style>
+      html {
+        --boot-ground: #f9fafb;
+        color-scheme: light;
+      }
+      html.dark {
+        --boot-ground: #1f2937;
+        color-scheme: dark;
+      }
+      html,
+      body {
+        min-height: 100%;
+        background: var(--boot-ground);
+      }
+      body {
+        margin: 0;
+      }
+      .boot-mark {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+      .boot-mark img {
+        width: 88px;
+        max-width: 30vw;
+        height: auto;
+        opacity: 0.14;
+      }
+    </style>
+
+    <!-- The shell's mark is the only thing on screen until the bundle lands, so
+         it is asked for ahead of the bundle rather than behind it. -->
+    <link
+      rel="preload"
+      as="image"
+      href="assets/img/logo.png"
+      fetchpriority="high"
+    />
+
     <!-- favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
@@ -91,6 +139,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
   <body>
-    <app-root></app-root>
+    <app-root>
+      <!-- The shell, and only the shell: the app replaces everything in here
+           when it mounts, and a drawing of the page that is coming would be a
+           guess at a layout that depends on what the reader chose last. -->
+      <div class="boot-mark" aria-hidden="true">
+        <img src="assets/img/logo.png" alt="" width="393" height="455" />
+      </div>
+    </app-root>
   </body>
 </html>

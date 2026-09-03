@@ -229,6 +229,48 @@ describe('GlossaryModalComponent', () => {
     });
   });
 
+  describe('where the reader stands when it opens', () => {
+    const ENTRIES: PageGlossaryEntry[] = [
+      {
+        id: 'sampling',
+        titleKey: 'generate.sections.sampling',
+        descriptionKey: 'generate.reference.section_hint.sampling',
+      },
+    ];
+
+    /** Open, and let the dialog's own hand-over run. */
+    function openAndSettle(): void {
+      vi.useFakeTimers();
+      try {
+        open(ENTRIES);
+        vi.advanceTimersByTime(200);
+      } finally {
+        vi.useRealTimers();
+      }
+      fixture.detectChanges();
+    }
+
+    it('takes the filter field of the tab it opens on', () => {
+      openAndSettle();
+
+      // A page with a context of its own opens on that tab, which is the tab
+      // that used to hand the reader nowhere.
+      expect(glossary.activeTab()).toBe('this-page');
+      expect(document.activeElement).toBe(find('.glossary-search input'));
+    });
+
+    it('closes on Escape from that tab', () => {
+      openAndSettle();
+
+      find('.glossary-search input')!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+      fixture.detectChanges();
+
+      expect(glossary.isOpen()).toBe(false);
+    });
+  });
+
   describe('the page behind it', () => {
     const ENTRIES: PageGlossaryEntry[] = [
       {

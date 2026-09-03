@@ -257,6 +257,20 @@
               {{ "generate.form.prompt_section" | transloco }}
             </h2>
             <app-gs-help topic="prompt" />
+            <!-- Phones only: the grip has nothing to drag there, so the box
+                 opens over the screen instead. It sits on the heading row
+                 rather than in the box's corner, where it would cover the last
+                 lines of a prompt that fills the box; the corner is the history
+                 button's. -->
+            <button
+              type="button"
+              class="gs-prompt-expand gs-prompt-expand--inline"
+              (click)="openPromptEditor('prompt')"
+              [attr.aria-label]="'generate.form.prompt_expand' | transloco"
+              [title]="'generate.form.prompt_expand' | transloco"
+            >
+              <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+            </button>
           </div>
           <div class="gs-prompt-wrap" #historyContainer>
             <textarea
@@ -271,17 +285,6 @@
               (keydown.control.enter)="onSubmitShortcut()"
               (keydown.meta.enter)="onSubmitShortcut()"
             ></textarea>
-            <!-- Phones only: the grip has nothing to drag there, so the box opens
-               over the screen instead. -->
-            <button
-              type="button"
-              class="gs-prompt-expand"
-              (click)="openPromptEditor('prompt')"
-              [attr.aria-label]="'generate.form.prompt_expand' | transloco"
-              [title]="'generate.form.prompt_expand' | transloco"
-            >
-              <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-            </button>
             @if (promptHistory().length > 0) {
               <button
                 #historyBtn
@@ -2632,9 +2635,14 @@
               "generate.form.kudos_unit" | transloco
             }}</span>
             @if (!afford.short) {
-              <span class="gs-bal-sep" aria-hidden="true">/</span>
+              <!-- The second figure is a count of further requests, not a second
+                   sum of kudos, so it is worded rather than left to a slash. -->
+              <span class="gs-bal-sep" aria-hidden="true">·</span>
               <span class="gs-mono" aria-hidden="true">{{
                 abbreviateKudos(afford.more)
+              }}</span>
+              <span class="gs-bal-unit" aria-hidden="true">{{
+                "generate.form.balance_more_short" | transloco
               }}</span>
             }
           </button>

@@ -26,6 +26,16 @@ import { isConceptFlow } from '../../../content/flows';
 /** Set once the reader has asked not to be welcomed again. */
 export const WELCOMED_KEY = 'aihorde.generate.learn.welcomed';
 
+/** When the offer may be made again after being put away for now. */
+export const WELCOMED_UNTIL_KEY = 'aihorde.generate.learn.welcomed_until';
+
+/**
+ * How long skipping the offer buys. Declining is not the same answer as never
+ * again: a reader who is busy today may want the ways in next week, and asking
+ * on the next visit reads as not having listened.
+ */
+export const WELCOME_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
+
 /** What a focus trap counts as somewhere to land. */
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -139,8 +149,14 @@ export class GenerateWelcomeComponent {
     this.close();
   }
 
-  /** Put the offer away for this visit, leaving the level as it was. */
+  /**
+   * Put the offer away, leaving the level as it was: for the week a decline
+   * buys, or for good where the reader ticked the box.
+   */
   public skip(): void {
+    if (!this.dontShow()) {
+      this.db.store(WELCOMED_UNTIL_KEY, Date.now() + WELCOME_SNOOZE_MS);
+    }
     this.close();
   }
 

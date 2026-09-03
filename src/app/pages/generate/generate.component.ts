@@ -15,7 +15,6 @@ import {
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { debounceTime, zip } from 'rxjs';
@@ -25,7 +24,6 @@ import { GenerationQueueService } from '../../services/generation-queue.service'
 import { ToastService } from '../../services/toast.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { DatabaseService } from '../../services/database.service';
-import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
 import {
   AppliedStyle,
@@ -37,7 +35,7 @@ import {
   parseStyleRecordKey,
 } from '../../services/style-record';
 import { StyleService } from '../../services/style.service';
-import { setPageTitle } from '../../helper/page-title';
+import { useStudioTitle } from '../../helper/page-title';
 import { ActiveModel, mergeModelList } from '../../types/active-model';
 import {
   EnqueueSourceImage,
@@ -92,6 +90,7 @@ import { GenerateBlockersModalComponent } from './generate-blockers-modal/genera
 import {
   GenerateWelcomeComponent,
   WELCOMED_KEY,
+  WELCOMED_UNTIL_KEY,
 } from './generate-welcome/generate-welcome.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { NetworkStatusComponent } from '../../components/network-status/network-status.component';
@@ -167,6 +166,7 @@ import {
   studioPayloadFromImage,
 } from './studio-link';
 import { copyToClipboard } from '../../helper/copy-to-clipboard';
+import { useBackClose } from '../../helper/back-close';
 import { ResultActionConfirmComponent } from './result-action-confirm/result-action-confirm.component';
 import {
   ResultControlAction,
@@ -312,11 +312,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly queue = inject(GenerationQueueService);
   private readonly toast = inject(ToastService);
   private readonly db = inject(DatabaseService);
-  private readonly translator = inject(TranslatorService);
   private readonly transloco = inject(TranslocoService);
   private readonly styles = inject(HordeStylesService);
   private readonly styleApi = inject(StyleService);
-  private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
   private readonly presets = inject(GeneratePresetsService);
   private readonly styleUsage = inject(StyleUsageService);
@@ -450,10 +448,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    */
   public readonly pendingBlockers = signal<SubmitBlocker[] | null>(null);
 
-  /** Whether the first-visit offer has been answered for good, here or before. */
-  private readonly welcomeStored = signal(this.db.get(WELCOMED_KEY) === true);
+  /** Whether the first-visit offer is put away, for good or for the week. */
+  private readonly welcomeStored = signal(this.welcomeWaived());
   /** Whether the reader has put the first-visit offer away for this visit. */
   private readonly welcomeClosed = signal(false);
+
+  /** Generations still to come back, which the tab counts while it is hidden. */
+  private readonly pendingCount = computed(
+    () => this.queue.pendingJobs().length,
+  );
 
   /** Generations that have come back, which retires the first-visit copy. */
   public readonly finishedCount = computed(
@@ -851,6 +854,24 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     });
   });
 
+  /**
+   * Where the reference entry is a sheet over the studio rather than a panel
+   * beside it, Back puts the sheet away. Only that presentation takes the
+   * gesture: beside the panel the entry covers nothing, and a Back that closed
+   * it would spend the reader's way out of the page on tidying a pane.
+   */
+  private readonly helpBack = useBackClose(() => this.helpDock.close());
+  private readonly helpBackSync = effect(() => {
+    const asSheet = this.isNarrow() && this.helpDock.isOpen();
+    untracked(() => {
+      if (asSheet) {
+        this.helpBack.hold();
+      } else {
+        this.helpBack.release();
+      }
+    });
+  });
+
   private readonly rejectionSync = effect(() => {
     const value = this.formValue();
     const refused = this.queue
@@ -921,13 +942,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private stylesLoaded = false;
 
   constructor() {
+    useStudioTitle('generate.title', this.pendingCount);
+
     afterNextRender(() => {
-      setPageTitle(
-        this.translator,
-        this.title,
-        this.destroyRef,
-        'generate.title',
-      );
       void this.loadControlUndoHistory();
       void this.consumeHandoff();
     });
@@ -1986,6 +2003,18 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** The reader answered the first-visit offer; whether it comes back is its own. */
   public closeWelcome(): void {
     this.welcomeClosed.set(true);
+  }
+
+  /**
+   * Whether the offer has been answered in a way that keeps it away now: the
+   * box the reader ticked, or the week a decline buys.
+   */
+  private welcomeWaived(): boolean {
+    if (this.db.get(WELCOMED_KEY) === true) {
+      return true;
+    }
+    const until = this.db.get(WELCOMED_UNTIL_KEY);
+    return typeof until === 'number' && until > Date.now();
   }
 
   /** Put the first-visit offer away for every later visit as well. */

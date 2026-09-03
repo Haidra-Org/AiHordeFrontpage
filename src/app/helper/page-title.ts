@@ -1,4 +1,12 @@
-import { DestroyRef } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import {
+  DestroyRef,
+  PLATFORM_ID,
+  Signal,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { combineLatest, map } from 'rxjs';
@@ -21,6 +29,102 @@ export function setPageTitle(
       takeUntilDestroyed(destroyRef),
     )
     .subscribe((t) => title.setTitle(t));
+}
+
+/**
+ * A studio's tab: what the page is called, and what it is doing. A generation
+ * runs for minutes and the reader spends them in another tab, so the count of
+ * jobs still to come back is on the tab itself, and what arrived while they
+ * were away is waiting there when they look at the tab strip. Looking at the
+ * page is the answer to that note, so it goes as soon as the tab is the one on
+ * screen, and the studio's own name comes back.
+ *
+ * Call from a constructor or field initializer, where injection is available.
+ * The whole title is set here, so a page using this does not set one elsewhere.
+ */
+export function useStudioTitle(pageKey: string, pending: Signal<number>): void {
+  const translator = inject(TranslatorService);
+  const title = inject(Title);
+  const destroyRef = inject(DestroyRef);
+  const document = inject(DOCUMENT);
+  const isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  let names: { page: string; app: string } | null = null;
+  /** How many came back while the reader was looking at something else. */
+  let awayDone = 0;
+  let lastPending = 0;
+  /** Which reading is the current one, so a slow one cannot overwrite it. */
+  let reading = 0;
+
+  const show = (key: string, params: Record<string, number>): void => {
+    const mine = ++reading;
+    translator
+      .get(key, params)
+      .pipe(takeUntilDestroyed(destroyRef))
+      .subscribe((lead) => {
+        if (names && mine === reading) {
+          title.setTitle(`${lead} | ${names.app}`);
+        }
+      });
+  };
+  const render = (): void => {
+    if (!names) {
+      return;
+    }
+    const running = untracked(pending);
+    if (running > 0) {
+      show('studio.tab_generating', { count: running });
+      return;
+    }
+    if (awayDone > 0) {
+      show('studio.tab_done', { count: awayDone });
+      return;
+    }
+    reading++;
+    title.setTitle(`${names.page} | ${names.app}`);
+  };
+
+  combineLatest([translator.get(pageKey), translator.get('app_title')])
+    .pipe(
+      map(([page, app]) => ({ page, app })),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe((read) => {
+      names = read;
+      render();
+    });
+
+  effect(() => {
+    const running = pending();
+    untracked(() => {
+      if (isBrowser && document.hidden && running < lastPending) {
+        awayDone += lastPending - running;
+      }
+      lastPending = running;
+      render();
+    });
+  });
+
+  if (isBrowser) {
+    const onVisible = (): void => {
+      if (document.hidden) {
+        return;
+      }
+      awayDone = 0;
+      render();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    destroyRef.onDestroy(() => {
+      document.removeEventListener('visibilitychange', onVisible);
+      // Whatever the studio was doing stops being this tab's business the
+      // moment the reader leaves it, and the page they land on sets its own.
+      awayDone = 0;
+      lastPending = 0;
+      if (names) {
+        title.setTitle(`${names.page} | ${names.app}`);
+      }
+    });
+  }
 }
 
 /**
