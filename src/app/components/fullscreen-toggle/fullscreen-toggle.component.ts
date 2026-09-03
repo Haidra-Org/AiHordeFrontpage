@@ -14,6 +14,8 @@ import {
 
 /**
  * The studio's way onto the whole screen, drawn with the other header tools.
+ * It carries its word like the rest of them: a glyph alone in that row is a
+ * guess, and on touch there is no tooltip to resolve the guess with.
  *
  * It is the same button both ways round: pressed means the studio has the
  * screen, and pressing it again gives it back. On a browser that only ever
@@ -45,6 +47,7 @@ import {
           "
           class="gs-ico-sm"
         />
+        <span class="gs-mini-btn-label">{{ labelKey() | transloco }}</span>
       </button>
     }
   `,

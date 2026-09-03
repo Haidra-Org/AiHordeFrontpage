@@ -113,7 +113,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'alchemy.api.response_heading',
   'alchemy.intro',
   'alchemy.request.heading',
-  'alchemy.steps.submit',
   'alchemy.operations.hint',
   'alchemy.forms.analyze',
   'alchemy.forms.enhance',

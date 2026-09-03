@@ -72,15 +72,23 @@
               [name]="panelSize() === 'full' ? 'panel-narrow' : 'panel-widen'"
               class="gs-ico-sm"
             />
+            <span class="gs-mini-btn-label">{{
+              (panelSize() === "full"
+                ? "generate.panel.narrow_short"
+                : "generate.panel.widen_short"
+              ) | transloco
+            }}</span>
           </button>
           <button
             #apiButton
             type="button"
-            class="gs-btn gs-btn--dense"
+            class="gs-mini-btn"
             (click)="openApi()"
           >
-            <span class="gs-mono">&#123;&#125;</span>
-            {{ "alchemy.api.button" | transloco }}
+            <app-icon name="code-bracket" class="gs-ico-sm" />
+            <span class="gs-mini-btn-label">{{
+              "alchemy.api.button" | transloco
+            }}</span>
           </button>
           <!-- The request without the trip to the documentation, for a caller
                who only came for the body. -->
@@ -93,6 +101,9 @@
             [title]="'alchemy.api.copy_payload' | transloco"
           >
             <app-icon name="clipboard-document" class="gs-ico-sm" />
+            <span class="gs-mini-btn-label">{{
+              "alchemy.api.copy_payload_short" | transloco
+            }}</span>
           </button>
         </div>
       </header>
@@ -472,7 +483,12 @@
             } @else if (missingDetector()) {
               {{ "alchemy.annotation.need_detector" | transloco }}
             } @else {
-              {{ "alchemy.submit.button" | transloco }}
+              {{
+                (selectedCount() === 1
+                  ? "alchemy.submit.button_one"
+                  : "alchemy.submit.button_other"
+                ) | transloco: { count: selectedCount() }
+              }}
             }
           </button>
         </div>
@@ -538,13 +554,29 @@
           }
         </div>
         <div class="flex items-center gap-3">
+          <!-- How many workers could take the request, counted and worded as
+               the image studio counts its own. The number reads as a figure
+               and a unit; which kind of worker it counts is the whole sentence
+               behind it, which is also what a screen reader is given. -->
           @if (ns.performance(); as perf) {
-            <span class="gs-online">
+            @let workersOnline = perf.interrogator_count;
+            @let workersNote =
+              (workersOnline === 1
+                ? "alchemy.workers.available_one"
+                : "alchemy.workers.available_other"
+              ) | transloco: { count: workersOnline };
+            <span class="gs-online" [title]="workersNote">
               <span class="gs-online-dot gs-pulse" aria-hidden="true"></span>
-              <b class="gs-mono gs-ink">{{
-                perf.interrogator_count | number
+              <b class="gs-mono gs-ink" aria-hidden="true">{{
+                workersOnline | number
               }}</b>
-              {{ "alchemy.crowd.online" | transloco }}
+              <span class="gs-fit-unit" aria-hidden="true">{{
+                (workersOnline === 1
+                  ? "generate.form.workers_unit_one"
+                  : "generate.form.workers_unit_other"
+                ) | transloco
+              }}</span>
+              <span class="sr-only">{{ workersNote }}</span>
             </span>
           }
           @if (hasAnyJobs()) {
@@ -557,7 +589,7 @@
               >
                 <app-icon name="trash-modern" class="gs-ico-sm" />
                 {{
-                  "alchemy.jobs.delete_selected"
+                  "generate.results.delete_selected"
                     | transloco: { count: selectedJobCount() }
                 }}
               </button>
@@ -569,62 +601,6 @@
                 {{ "alchemy.jobs.select_done" | transloco }}
               </button>
             } @else {
-              @if (viewMode() === "gallery") {
-                <div
-                  class="gs-density"
-                  role="group"
-                  [attr.aria-label]="'alchemy.jobs.gallery_density' | transloco"
-                >
-                  <button
-                    type="button"
-                    class="gs-density-btn"
-                    (click)="setGalleryColumns(galleryColumns() - 1)"
-                    [disabled]="galleryColumns() <= galleryPerRowOptions[0]"
-                    [attr.aria-label]="'alchemy.jobs.density_fewer' | transloco"
-                  >
-                    <app-icon name="minus" class="gs-ico-sm" />
-                  </button>
-                  <span class="gs-density-val gs-mono">
-                    {{ galleryColumns() }}
-                  </span>
-                  <button
-                    type="button"
-                    class="gs-density-btn"
-                    (click)="setGalleryColumns(galleryColumns() + 1)"
-                    [disabled]="
-                      galleryColumns() >=
-                      galleryPerRowOptions[galleryPerRowOptions.length - 1]
-                    "
-                    [attr.aria-label]="'alchemy.jobs.density_more' | transloco"
-                  >
-                    <app-icon name="plus" class="gs-ico-sm" />
-                  </button>
-                </div>
-              }
-              <div
-                class="gs-seg"
-                role="group"
-                [attr.aria-label]="'alchemy.jobs.view_label' | transloco"
-              >
-                <button
-                  type="button"
-                  class="gs-seg-btn"
-                  [class.gs-seg-btn--on]="viewMode() === 'detail'"
-                  [attr.aria-pressed]="viewMode() === 'detail'"
-                  (click)="setViewMode('detail')"
-                >
-                  {{ "alchemy.jobs.view_detail" | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="gs-seg-btn"
-                  [class.gs-seg-btn--on]="viewMode() === 'gallery'"
-                  [attr.aria-pressed]="viewMode() === 'gallery'"
-                  (click)="setViewMode('gallery')"
-                >
-                  {{ "alchemy.jobs.view_gallery" | transloco }}
-                </button>
-              </div>
               <button
                 type="button"
                 class="gs-download-all"
@@ -638,6 +614,40 @@
         </div>
       </header>
 
+      <!-- How the results are arranged, behind one button, as in the image
+           studio. Select mode takes the bar away: while the reader is picking
+           cards to delete, rearranging them is not the question. -->
+      @if (hasAnyJobs() && !selectMode()) {
+        <div class="gs-view-bar">
+          <div class="gs-options gs-view-menu" #viewMenuHost>
+            <button
+              type="button"
+              class="gs-view-toggle"
+              [class.gs-view-toggle--on]="viewMenuOpen()"
+              (click)="toggleViewMenu()"
+              [attr.aria-expanded]="viewMenuOpen()"
+              aria-haspopup="dialog"
+            >
+              <app-icon
+                name="adjustments-horizontal"
+                class="gs-ico-sm"
+                aria-hidden="true"
+              />
+              {{ "generate.results.view_menu" | transloco }}
+            </button>
+            @if (viewMenuOpen() && !isNarrow()) {
+              <div
+                class="gs-options-pop gs-view-pop"
+                role="dialog"
+                [attr.aria-label]="'generate.results.view_menu' | transloco"
+              >
+                <ng-container *ngTemplateOutlet="viewRows" />
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <div
         id="alchemy-results"
         tabindex="-1"
@@ -645,13 +655,6 @@
         [class.gs-results-body--browser]="hasAnyJobs()"
       >
         @if (!hasAnyJobs()) {
-          <div class="gs-retention gs-retention--amber">
-            <app-icon name="clock" class="gs-ico-sm" />
-            <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
-            <a class="gs-retention-link" routerLink="/generate/storage">
-              {{ "studio.storage.manage_link" | transloco }}
-            </a>
-          </div>
           <div class="gs-empty">
             <app-icon name="beaker" />
             <div>
@@ -664,23 +667,6 @@
             </div>
           </div>
         } @else {
-          @if (retentionFull()) {
-            <div class="gs-retention gs-retention--amber gs-retention--flush">
-              <app-icon name="clock" class="gs-ico-sm" />
-              <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
-              <a class="gs-retention-link" routerLink="/generate/storage">
-                {{ "studio.storage.manage_link" | transloco }}
-              </a>
-            </div>
-          } @else {
-            <p class="gs-retention gs-retention--quiet gs-retention--flush">
-              <span>{{ "studio.storage.kept_note" | transloco }}</span>
-              <a class="gs-retention-link" routerLink="/generate/storage">
-                {{ "studio.storage.manage_link" | transloco }}
-              </a>
-            </p>
-          }
-
           <app-alchemy-results-browser
             [jobs]="jobs()"
             [selectedJobId]="selectedJobId()"
@@ -698,6 +684,26 @@
             (cancelRequest)="cancelJob($event)"
             (useResultInStudio)="useResultInStudio($event)"
           />
+
+          <!-- Where the results are kept, read after them as in the image
+               studio: it is a note about what the reader now has, so it comes
+               once there is something to keep. -->
+          @if (retentionFull()) {
+            <div class="gs-retention gs-retention--amber gs-retention--flush">
+              <app-icon name="clock" class="gs-ico-sm" />
+              <span>{{ "alchemy.jobs.retention_warning" | transloco }}</span>
+              <a class="gs-retention-link" routerLink="/generate/storage">
+                {{ "studio.storage.manage_link" | transloco }}
+              </a>
+            </div>
+          } @else {
+            <p class="gs-retention gs-retention--quiet gs-retention--flush">
+              <span>{{ "studio.storage.kept_note" | transloco }}</span>
+              <a class="gs-retention-link" routerLink="/generate/storage">
+                {{ "studio.storage.manage_link" | transloco }}
+              </a>
+            </p>
+          }
 
           <!-- volunteer strip -->
           <aside
@@ -1168,4 +1174,66 @@
       </div>
     </div>
   }
+
+  @if (viewMenuOpen() && isNarrow()) {
+    <app-gs-sheet
+      [startExpanded]="true"
+      [label]="'generate.results.view_menu' | transloco"
+      (closed)="closeViewMenu()"
+    >
+      <span sheet-bar class="gs-sheet-title">{{
+        "generate.results.view_menu" | transloco
+      }}</span>
+      <div class="gs-options-rows">
+        <ng-container *ngTemplateOutlet="viewRows" />
+      </div>
+    </app-gs-sheet>
+  }
 </div>
+
+<!-- The view preferences, one list drawn two ways so the presentations cannot
+     drift: the popover beside the View button, and the bottom sheet on a
+     phone. -->
+<ng-template #viewRows>
+  <label class="gs-opt-row gs-opt-row--field">
+    <app-icon name="bars-4" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "alchemy.jobs.view_label" | transloco
+      }}</span>
+    </span>
+    <select
+      class="gs-view-select"
+      (change)="setViewMode($any($event.target).value)"
+      [attr.aria-label]="'alchemy.jobs.view_label' | transloco"
+    >
+      <option value="detail" [selected]="viewMode() === 'detail'">
+        {{ "alchemy.jobs.view_detail" | transloco }}
+      </option>
+      <option value="gallery" [selected]="viewMode() === 'gallery'">
+        {{ "alchemy.jobs.view_gallery" | transloco }}
+      </option>
+    </select>
+  </label>
+  @if (viewMode() === "gallery") {
+    <label class="gs-opt-row gs-opt-row--field">
+      <app-icon name="squares-2x2" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.results.per_row" | transloco
+        }}</span>
+      </span>
+      <select
+        class="gs-view-select"
+        (change)="setGalleryColumns(+$any($event.target).value)"
+        [attr.aria-label]="'generate.results.per_row' | transloco"
+      >
+        @for (n of galleryPerRowOptions; track n) {
+          <option [value]="n" [selected]="n === galleryColumns()">
+            {{ n }}
+          </option>
+        }
+      </select>
+    </label>
+  }
+</ng-template>

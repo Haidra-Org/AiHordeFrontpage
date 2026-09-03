@@ -59,12 +59,12 @@
       @if (encoding()) {
         <app-icon name="spinner" class="gs-ico-sm gs-spin" />
         <span class="gs-add-tile-title">{{
-          "alchemy.image_input.encoding" | transloco
+          "generate.source.encoding" | transloco
         }}</span>
       } @else {
         <app-icon name="photo" class="gs-ico-sm" />
         <span class="gs-add-tile-title">{{
-          "alchemy.image_input.upload_prompt" | transloco
+          "generate.source.upload_prompt" | transloco
         }}</span>
         <span class="gs-add-tile-sub">{{
           "alchemy.image_input.upload_hint" | transloco
@@ -103,7 +103,7 @@
           [disabled]="disabled()"
           (click)="clear()"
         >
-          {{ "alchemy.image_input.clear" | transloco }}
+          {{ "generate.source.clear_image" | transloco }}
         </button>
       </div>
     </div>

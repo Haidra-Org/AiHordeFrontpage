@@ -160,6 +160,10 @@ interface AlchemyOperationGroup {
     NetworkStatusComponent,
   ],
   templateUrl: './alchemy.component.html',
+  host: {
+    '(document:pointerdown)': 'onDocumentPointerDown($event)',
+    '(document:keydown.escape)': 'onDocumentEscape()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlchemyComponent {
@@ -509,6 +513,14 @@ export class AlchemyComponent {
    * across sessions.
    */
   public readonly viewMode = signal<AlchemyViewMode>(this.loadViewMode());
+
+  /**
+   * The view preferences behind one button: a popover beside it where there is
+   * room, the studio's bottom sheet on a phone.
+   */
+  public readonly viewMenuOpen = signal(false);
+  private readonly viewMenuHost =
+    viewChild<ElementRef<HTMLElement>>('viewMenuHost');
 
   /** Gallery density (columns per row), persisted across sessions. */
   public readonly galleryPerRowOptions = GALLERY_PER_ROW_OPTIONS;
@@ -988,6 +1000,34 @@ export class AlchemyComponent {
   public setViewMode(mode: AlchemyViewMode): void {
     this.viewMode.set(mode);
     this.db.store(VIEW_MODE_KEY, mode);
+  }
+
+  public toggleViewMenu(): void {
+    this.viewMenuOpen.update((open) => !open);
+  }
+
+  public closeViewMenu(): void {
+    this.viewMenuOpen.set(false);
+  }
+
+  /**
+   * Only the popover is dismissed by a press beside it. The sheet is not a
+   * descendant of its trigger, and a list the reader is reading through is not
+   * something to take away on the first tap inside it.
+   */
+  public onDocumentPointerDown(event: PointerEvent): void {
+    if (!this.viewMenuOpen() || this.isNarrow()) return;
+    const host = this.viewMenuHost()?.nativeElement;
+    const target = event.target as Element | null;
+    if (host && target && !host.contains(target)) {
+      this.closeViewMenu();
+    }
+  }
+
+  public onDocumentEscape(): void {
+    if (this.viewMenuOpen()) {
+      this.closeViewMenu();
+    }
   }
 
   private loadViewMode(): AlchemyViewMode {
