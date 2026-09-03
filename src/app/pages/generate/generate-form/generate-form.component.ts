@@ -1501,6 +1501,22 @@ export class GenerateFormComponent implements OnInit {
   private snappingSize = false;
 
   /**
+   * Set while the panel writes a size it chose from the shapes it offers, so
+   * that write is told apart from one made on the dimensions controls. Form
+   * writes emit synchronously, so a plain flag covers the whole window.
+   */
+  private offeringSize = false;
+
+  /**
+   * Whether the size in the controls is one the panel offered rather than one
+   * entered on the dimensions controls. Only an offered size may be carried
+   * onto the matching shape in another family: the panel decided what that
+   * shape's size was, so it may decide again, while entered numbers mean
+   * themselves even when they happen to match a shape the panel offers.
+   */
+  private sizeOffered = true;
+
+  /**
    * The hires state the size was last snapped for, so that turning the pass on
    * or off is told apart from the panel merely being rendered again.
    */
@@ -1512,11 +1528,12 @@ export class GenerateFormComponent implements OnInit {
    * there onto the matching one in it.
    *
    * Two kinds of size may be moved, and nothing else. Turning the hires pass on
-   * or off moves a size that is one of the offered shapes onto the same shape
-   * in the family now in force, because it was the panel that decided what that
-   * shape's size was. A model change moves a still-pristine square onto the new
-   * baseline's native square. A size typed on the sliders is the reader's own
-   * and is left alone in both cases.
+   * or off moves a size the panel offered onto the same shape in the family now
+   * in force, because it was the panel that decided what that shape's size was.
+   * A model change moves a still-pristine square onto the new baseline's native
+   * square. A size entered on the dimensions controls is the reader's own and is
+   * left alone in both cases, including when its numbers match a shape the panel
+   * offers.
    */
   private readonly baselineSizeSync = effect(() => {
     const baseline = this.modelBaseline();
@@ -1528,6 +1545,9 @@ export class GenerateFormComponent implements OnInit {
       return;
     }
     if (hiresChanged) {
+      if (!this.sizeOffered) {
+        return;
+      }
       const moved = rescalePresetToBase(
         controls.width.value,
         controls.height.value,
@@ -1606,9 +1626,11 @@ export class GenerateFormComponent implements OnInit {
     merge(controls.width.valueChanges, controls.height.valueChanges)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
-        if (!this.snappingSize) {
-          this.sizeTouched.set(true);
+        if (this.snappingSize) {
+          return;
         }
+        this.sizeTouched.set(true);
+        this.sizeOffered = this.offeringSize;
       });
   }
 
@@ -2080,11 +2102,13 @@ export class GenerateFormComponent implements OnInit {
   public applyPreset(width: number, height: number): void {
     const controls = this.form().controls;
     const portrait = controls.height.value > controls.width.value;
+    this.offeringSize = true;
     this.form().patchValue(
       portrait && width !== height
         ? { width: height, height: width }
         : { width, height },
     );
+    this.offeringSize = false;
     controls.width.markAsDirty();
     controls.height.markAsDirty();
   }
@@ -2106,10 +2130,14 @@ export class GenerateFormComponent implements OnInit {
   /** Turn the current size on its side, whether it came from a chip or not. */
   public swapDimensions(): void {
     const controls = this.form().controls;
+    // A swap turns the shape over without changing where its size came from, so
+    // a shape the panel offered stays one it may carry to another family.
+    this.offeringSize = this.sizeOffered;
     this.form().patchValue({
       width: controls.height.value,
       height: controls.width.value,
     });
+    this.offeringSize = false;
     controls.width.markAsDirty();
     controls.height.markAsDirty();
   }
@@ -2632,9 +2660,13 @@ export class GenerateFormComponent implements OnInit {
         prompt: '',
         forcedParams: forced,
       });
+      // A size the style pins is the style's shape rather than one entered on
+      // the controls, so the hires pass may still carry it between families.
+      this.offeringSize = true;
       for (const field of pinned) {
         this.writeField(field, styled[field]);
       }
+      this.offeringSize = false;
     }
 
     if (snapshotChanged) {

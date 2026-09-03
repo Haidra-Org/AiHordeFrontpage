@@ -1017,6 +1017,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-group-head:has(.gs-group-actions) {
   padding-right: var(--gs-space-2);
 }
+/* An open head shares its row with the group's actions, and the style lock among
+   them is wide enough to squeeze the press below its own name. The press keeps
+   its mark and that name whole; the lock gives way on the value it truncates
+   anyway. Only an open head qualifies: a folded one carries its line of values
+   here instead, and that line has to stay free to shrink. */
+.gen-studio .gs-group-head:has(.gs-group-actions) .gs-group-toggle {
+  min-width: min-content;
+}
 /* The note and the capsule under it take the row below the head and stand in
    from the card's edge the way the body's own contents do. Ordered last so the
    full-width note wraps under every action rather than between them: the note

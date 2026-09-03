@@ -1586,6 +1586,38 @@ describe('GenerateFormComponent settings groups', () => {
     expect(component.form().controls.height.value).toBe(512);
   });
 
+  it('lifts a size nobody has touched when the hires pass goes on', async () => {
+    const { component, fixture } = await render({ hires_fix: false });
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+    // The panel snapped the pristine square to the baseline's native one.
+    expect(component.form().controls.width.value).toBe(512);
+
+    component.form().controls.hires_fix.setValue(true);
+    fixture.detectChanges();
+
+    expect(component.form().controls.width.value).toBe(1024);
+    expect(component.form().controls.height.value).toBe(1024);
+  });
+
+  it('leaves a size entered by hand where it is when the hires pass goes on', async () => {
+    // The numbers happen to match a shape the panel offers, but the reader
+    // entered them and means them at that size.
+    const { component, fixture } = await render({ hires_fix: false });
+    fixture.componentRef.setInput('modelBaseline', 'stable_diffusion_1');
+    fixture.detectChanges();
+
+    component.form().controls.width.setValue(768);
+    component.form().controls.height.setValue(512);
+    fixture.detectChanges();
+
+    component.form().controls.hires_fix.setValue(true);
+    fixture.detectChanges();
+
+    expect(component.form().controls.width.value).toBe(768);
+    expect(component.form().controls.height.value).toBe(512);
+  });
+
   it('leaves a size nobody chose from the shapes where it is', async () => {
     const { component, fixture } = await render({
       width: 960,
