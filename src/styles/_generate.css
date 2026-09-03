@@ -192,6 +192,7 @@
   --gs-pop-shadow: var(--hd-pop-shadow);
   --gs-blue: var(--hd-accent);
   --gs-blue-text: var(--hd-accent-text);
+  --gs-focus-ring: var(--hd-focus-ring);
   --gs-on-accent: var(--hd-on-accent);
   --gs-blue-hover: var(--hd-accent-hover);
   --gs-blue-tint: var(--hd-accent-tint);
@@ -682,7 +683,7 @@
   border-bottom-color: var(--gs-green);
 }
 .gen-studio .gs-subtab:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 /* The studio's only door into the glossary: the site's floating "?" is hidden
@@ -706,7 +707,7 @@
   background: var(--gs-field-soft);
 }
 .gen-studio .gs-subtab-glossary:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 @media (pointer: coarse) {
@@ -873,7 +874,7 @@
   opacity: 1;
 }
 .gen-studio .gs-fs-exit:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   opacity: 1;
 }
@@ -1215,7 +1216,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field);
 }
 .gen-studio .gs-control-undo button:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -1259,7 +1260,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field-soft);
 }
 .gen-studio .gs-title-link:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -1311,7 +1312,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   cursor: not-allowed;
 }
 .gen-studio .gs-seg-opt:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 /* 38px inside a track with a 3px inset is a 44px control under a thumb. */
@@ -1516,7 +1517,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-textarea:focus,
 .gen-studio .gs-input:focus,
 .gen-studio .gs-neg-input:focus {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-color: var(--gs-blue);
 }
@@ -1660,7 +1661,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-zone-tint, var(--gs-blue-tint));
 }
 .gen-studio .gs-help-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -1759,7 +1760,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field);
 }
 .gen-studio .autocomplete-input-row:focus-within {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-color: var(--gs-blue);
 }
@@ -1798,7 +1799,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-native-select:focus-visible,
 .gen-studio .gs-select-row:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-color: var(--gs-blue);
 }
@@ -1817,7 +1818,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-seed-input:focus {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-color: var(--gs-blue);
 }
@@ -1843,7 +1844,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   transition: border-color var(--gs-dur-fast) var(--gs-ease);
 }
 .gen-studio .gs-numfield:focus {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-color: var(--gs-blue);
 }
@@ -1899,7 +1900,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-mini-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 /* A header tool that is a standing choice rather than a one-off press wears
@@ -2067,7 +2068,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-blue-text);
 }
 .gen-studio .gs-dock-chip:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-dock-chip-label {
@@ -2186,7 +2187,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   text-decoration: underline;
 }
 .gen-studio .gs-ledger-reset:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 
@@ -2248,7 +2249,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field-soft);
 }
 .gen-studio .gs-opt-row:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 /* A preference that is on wears the lit state its header button used to. */
@@ -2360,7 +2361,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-reset-go:focus-visible,
 .gen-studio .gs-reset-keep:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -2529,7 +2530,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-tut-viewer-x:focus-visible,
 .gen-studio .gs-sweep-viewer-x:focus-visible,
 .gen-studio .gs-sweep-cell-step:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -2612,7 +2613,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   cursor: not-allowed;
 }
 .gen-studio .gs-chip:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -2712,7 +2713,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-size-aspect:focus-visible,
 .gen-studio .gs-size-swap:focus-visible,
 .gen-studio .gs-size-number:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-size-scale-opt:disabled,
@@ -3128,7 +3129,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 /* The tile is the control, so its own focus is the file input's. */
 .gen-studio .gs-add-tile:focus-within {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-add-tile-title {
@@ -3213,7 +3214,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   transform: translateX(12px);
 }
 .gen-studio .gs-switch input:focus-visible ~ .gs-switch-track {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-switch input:disabled ~ .gs-switch-track {
@@ -3300,13 +3301,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   cursor: not-allowed;
 }
 .gen-studio .gs-range:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
-}
-/* --gs-blue is the same #1d4ed8 in both themes and sinks into the dark card at
-   2.15:1, so the ring takes the lighter blue the dark theme uses elsewhere. */
-.dark .gen-studio .gs-range:focus-visible {
-  outline-color: #93c5fd;
 }
 /* A 24px thumb under a thumb is a 24px target. The input grows to the 44px the
    studio holds every touch control to while the rail and the thumb keep their
@@ -3368,7 +3364,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-seg-track);
 }
 .gen-studio .gs-textlink:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -3819,7 +3815,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink);
 }
 .gen-studio .gs-tile-menu-close:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
 }
 .gen-studio .gs-tile-menu-close app-icon,
@@ -3926,7 +3922,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   display: none;
 }
 .gen-studio .gs-tile--selected {
-  outline: 3px solid var(--gs-blue);
+  outline: 3px solid var(--gs-focus-ring);
   outline-offset: -3px;
 }
 .gen-studio .gs-tile-check {
@@ -4591,7 +4587,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-status-explain:focus-visible,
 .gen-studio .gs-wait-card-close:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -5171,7 +5167,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-blue-tint);
 }
 .gen-studio .gs-op:focus-within {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
 }
 .gen-studio .gs-op-check {
@@ -5249,7 +5245,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-blue-text);
 }
 .gen-studio .gs-op-info:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
   border-radius: 5px;
 }
@@ -5769,7 +5765,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   box-shadow: 0 0 0 2px var(--gs-blue-tint-border);
 }
 .gen-studio .gs-rail-thumb:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-rail-thumb-img {
@@ -5925,7 +5921,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   box-shadow: 0 0 0 2px var(--gs-blue-tint-border);
 }
 .gen-studio .gs-gtile:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-gtile .gs-tile-badge {
@@ -6142,7 +6138,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-blockers-goto:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -6476,7 +6472,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    so keyboard focus has to be obvious on both. */
 .gen-studio .gs-flip-zone:focus-visible,
 .gen-studio .gs-flip-item:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio .gs-flip-hint {
@@ -6833,7 +6829,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink);
 }
 .gen-studio .gs-quick-act:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-quick-act:disabled {
@@ -6936,7 +6932,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field);
 }
 .gen-studio .gs-result-action-checkbox:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-result-action-check {
@@ -7645,7 +7641,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-results:focus-visible,
 .gen-studio .gs-results-body:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -3px;
 }
 
@@ -7726,7 +7722,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-prompt-hist-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-hist-menu {
@@ -7772,7 +7768,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink);
 }
 .gen-studio .gs-hist-item:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 /* Two lines is enough to recognise a prompt by. */
@@ -8024,7 +8020,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: rgba(37, 99, 235, 0.18);
 }
 .gen-studio .gs-kudos-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .dark .gen-studio .gs-kudos-btn {
@@ -8150,7 +8146,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-fit-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-fit-btn--warn {
@@ -8227,7 +8223,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-bal-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-bal-btn--warn {
@@ -8304,7 +8300,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: rgba(251, 191, 36, 0.22);
 }
 .gen-studio .gs-group-lint:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .dark .gen-studio .gs-group-lint {
@@ -8340,7 +8336,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: rgba(251, 191, 36, 0.22);
 }
 .gen-studio .gs-lint-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .dark .gen-studio .gs-lint-btn {
@@ -8432,7 +8428,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-lint-goto:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -8460,7 +8456,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 /* The ring belongs on the row, since the row is what the pointer and the
    keyboard both act on; the track's own ring would sit inside it. */
 .gen-studio .gs-switch:has(input:focus-visible) {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-switch:has(input:focus-visible) .gs-switch-track {
@@ -8599,7 +8595,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-blue-text);
 }
 .gen-studio .gs-hist-expand:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio .gs-hist-row--open .gs-hist-expand app-icon {
@@ -8774,7 +8770,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-field-border);
 }
 .gen-studio .gs-worker-remove:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
 }
 /* The name over the ID: the name is what the row is recognised by, the ID is
@@ -8827,7 +8823,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field-soft);
 }
 .gen-studio .gs-worker-opt:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio .gs-worker-opt-name {
@@ -9703,6 +9699,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-zone-text, var(--gs-blue-text));
   background: var(--gs-sec-tint, var(--gs-zone-tint, transparent));
 }
+/* The tint the hover state adds is a graphic step, not an indicator: without a
+   ring of its own the anchor would fall back to the browser's, which is drawn
+   in whatever the engine picks rather than in a colour measured against the
+   page. */
+.gs-anchor-link:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
 /* The press landed, and the glyph is a check until the line beside it clears. */
 .gs-anchor--said .gs-anchor-link {
   color: var(--gs-zone-text, var(--gs-blue-text));
@@ -9917,7 +9921,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   text-decoration: underline;
 }
 .gen-studio .gs-guide-term-link:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -10156,7 +10160,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink);
 }
 .gen-studio .gs-world:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-world-name {
@@ -10259,7 +10263,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   border-color: var(--gs-purple-tint-border);
 }
 .gen-studio .gs-devtab:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 
@@ -10447,7 +10451,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   cursor: zoom-in;
 }
 .gen-studio .gs-tut-stage:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 /* Contained rather than covered: what these pictures are evidence of is what
@@ -10561,7 +10565,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink);
 }
 .gs-tut-viewer-step:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gs-tut-viewer-count {
@@ -11032,7 +11036,7 @@ app-gs-sweep-scrub {
   z-index: 1;
 }
 .gen-studio .gs-sweep-card-door:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-radius: var(--gs-radius-sm);
 }
@@ -12461,12 +12465,15 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-tickrail:focus-visible,
 .gen-studio .gs-plate-x:focus-visible,
 .gen-studio .gs-plate-link:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
-.dark .gen-studio .gs-tickrail:focus-visible,
-.dark .gen-studio .gs-plate-x:focus-visible,
-.dark .gen-studio .gs-plate-link:focus-visible {
+/* These three sit on the plate, which is the same dark under either theme, so
+   the ring that flips with the page sinks into it under a light one: 2.70:1
+   there. The stage ink is the mark that does not flip, at 15:1. */
+.gen-studio .gs-tickrail:focus-visible,
+.gen-studio .gs-plate-x:focus-visible,
+.gen-studio .gs-plate-link:focus-visible {
   outline-color: var(--gs-stage-ink);
 }
 /* The evidence on a reference page is given a measure of its own rather than
@@ -13070,7 +13077,7 @@ app-gs-compare-wipe {
   outline: none;
 }
 .gen-studio .gs-wipe-divider:focus-visible .gs-wipe-grip {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 /* The wipe itself is the reader's hand, and never animates. Only the grip's own
@@ -13842,7 +13849,7 @@ app-gs-compare-wipe {
 }
 .gs-docs .gs-docs-area-link:focus-visible,
 .gs-docs .gs-docs-studio-link:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
 }
 .gs-docs .gs-docs-area-link[aria-current] {
@@ -14029,7 +14036,7 @@ app-gs-compare-wipe {
   text-decoration: none;
 }
 .gen-studio .gs-hub-nav-link:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio .gs-hub-nav-link[aria-current] {
@@ -14242,6 +14249,12 @@ app-gs-compare-wipe {
   max-width: none;
   height: 100%;
 }
+/* The hero keeps its dark picture under either theme, so the door standing on
+   it takes the plate's ring rather than the page's: the page ring reaches only
+   2.79:1 against the hero in the light theme. */
+.gen-studio .gs-learn-hero-door:focus-visible {
+  outline-color: var(--gs-stage-ink);
+}
 /* At this size the coloured strip is a mark rather than a panel: the full one
    costs a phone a third of the card and breaks the hint into two-word lines. */
 .gen-studio .gs-learn-hero-door .gs-door-panel {
@@ -14301,7 +14314,7 @@ app-gs-compare-wipe {
   opacity: 1;
 }
 .gen-studio .gs-learn-door:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio app-icon.gs-learn-door-mark {
@@ -14389,7 +14402,7 @@ app-gs-compare-wipe {
   text-decoration: none;
 }
 .gen-studio .gs-home-card:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-home-card-img {
@@ -14575,7 +14588,7 @@ app-gs-compare-wipe {
   color: var(--gs-ink);
 }
 .gen-studio .gs-find-clear:focus-visible {
-  outline: 2px solid var(--gs-zone, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 1px;
 }
 .gen-studio .gs-find-empty {
@@ -14626,7 +14639,7 @@ app-gs-compare-wipe {
   text-decoration: none;
 }
 .gen-studio .gs-ref-card:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-ref-card-img {
@@ -14909,7 +14922,7 @@ app-gs-compare-wipe {
   cursor: zoom-in;
 }
 .gen-studio .gs-ref-zoom:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 
@@ -15274,7 +15287,7 @@ app-gs-compare-wipe {
   box-shadow: var(--gs-elev-2);
 }
 .gen-studio .gs-ctl-shot:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-ctl-shot:hover .gs-ctl-zoom-glyph,
@@ -15530,7 +15543,7 @@ app-gs-compare-wipe {
   text-decoration: none;
 }
 .gen-studio .gs-ref-related-link:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 /* A link on to a tutorial stands in the same row as the neighbouring settings
@@ -15569,19 +15582,11 @@ app-gs-compare-wipe {
 .gen-studio .gs-ref-link:focus-visible,
 .gen-studio .gs-ref-full:focus-visible,
 .gen-studio .gs-ref-back:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-ref-back {
   align-self: flex-start;
-}
-/* The link ink flips with the theme through --gs-blue-text, but the ring is
-   drawn in --gs-blue, the same #1d4ed8 in both themes, which sinks into the
-   dark page at 2.8:1. Only the ring needs lifting here. */
-.dark .gen-studio .gs-ref-link:focus-visible,
-.dark .gen-studio .gs-ref-full:focus-visible,
-.dark .gen-studio .gs-ref-back:focus-visible {
-  outline-color: #93c5fd;
 }
 /* The ways back off a routed entry: the page the reader left, when a chip sent
    them, and always the index. */
@@ -15635,7 +15640,7 @@ app-gs-compare-wipe {
   text-decoration: none;
 }
 .gen-studio .gs-ref-onward:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-ref-onward-text {
@@ -15701,7 +15706,7 @@ app-gs-compare-wipe {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-help-see:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-help-see .gs-cap-peek {
@@ -15757,13 +15762,8 @@ app-gs-compare-wipe {
   text-decoration: underline;
 }
 .gen-studio .gs-help-link:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
-}
-/* --gs-blue sinks into the dark page at 2.8:1, so the note's focus ring takes
-   the lift the reference entries already have there. */
-.dark .gen-studio .gs-help-link:focus-visible {
-  outline-color: #93c5fd;
 }
 
 /* ------- the docked reference entry --------------------------------- */
@@ -15806,7 +15806,7 @@ app-gs-compare-wipe {
   border-color: var(--gs-sec, var(--gs-blue));
 }
 .gen-studio .gs-ref-chip--try:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -15941,7 +15941,7 @@ app-gs-compare-wipe {
   text-decoration: underline;
 }
 .gen-studio .gs-sheet-return:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -16038,7 +16038,7 @@ app-gs-compare-wipe {
   border-color: var(--gs-border);
 }
 .gen-studio .gs-sheet-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-sheet-chev {
@@ -16143,7 +16143,7 @@ html:has(app-gs-sheet) {
   box-shadow: var(--gs-elev-2);
 }
 .gen-studio .gs-learn-leave:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-parked {
@@ -16196,7 +16196,7 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-parked-return:focus-visible,
 .gen-studio .gs-parked-end:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-parked-end {
@@ -16398,7 +16398,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-bar-do:focus-visible,
 .gen-studio .gs-tut-bar-next:focus-visible,
 .gen-studio .gs-tut-sheet-exit:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -16441,7 +16441,7 @@ html:has(app-gs-sheet) {
   cursor: zoom-in;
 }
 .gen-studio .gs-learn-shot-stage:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-learn-shot-img {
@@ -16487,7 +16487,7 @@ html:has(app-gs-sheet) {
   margin-top: 10px;
 }
 .gen-studio .gs-learn-sheet-card .gs-guide-head:focus-visible {
-  outline: 2px solid var(--gs-sec, var(--gs-blue));
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 4px;
 }
 
@@ -16565,7 +16565,7 @@ html:has(app-gs-sheet) {
   border-color: var(--gs-blue-tint-border);
 }
 .gen-studio .gs-ref-term:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -16707,7 +16707,7 @@ html:has(app-gs-sheet) {
   text-underline-offset: 2px;
 }
 .gen-studio .gs-setting-chip-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 
@@ -16732,7 +16732,7 @@ html:has(app-gs-sheet) {
   outline: none;
 }
 .gen-studio .gs-setting-pop:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-setting-pop-title {
@@ -16762,7 +16762,7 @@ html:has(app-gs-sheet) {
   text-decoration: underline;
 }
 .gen-studio .gs-setting-pop-go:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-radius: var(--gs-radius-sm);
 }
@@ -16948,7 +16948,7 @@ html:has(app-gs-sheet) {
   opacity: 0.5;
 }
 .gen-studio .gs-index-entry:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio .gs-index-entry[aria-current] {
@@ -17474,7 +17474,7 @@ html:has(app-gs-sheet) {
   border-color: var(--gs-blue);
 }
 .gen-studio .gs-prompt-expand:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (min-width: 1024px) {
@@ -17541,7 +17541,7 @@ html:has(app-gs-sheet) {
   resize: none;
 }
 .gen-studio .gs-prompt-editor-area:focus {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -2px;
 }
 .gen-studio .gs-prompt-editor-area::placeholder {
@@ -17672,7 +17672,7 @@ html:has(app-gs-sheet) {
   object-fit: fill;
   background-color: var(--gs-panel);
   background-image: none;
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: -1px;
 }
 /* Says which half is which, for a picture whose own edges are ambiguous. */
@@ -17963,7 +17963,7 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-se-btn:focus-visible,
 .gen-studio .gs-se-colour:focus-visible,
 .gen-studio .gs-se-number:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 /* The request's own settings, sat between the picture and the drawing controls

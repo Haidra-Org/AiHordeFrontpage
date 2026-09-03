@@ -906,7 +906,7 @@
   cursor: not-allowed;
 }
 .gs-civit-scope .gs-seg-opt:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
@@ -1057,7 +1057,7 @@
   cursor: not-allowed;
 }
 .gs-civit-scope .gs-range:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 @media (pointer: coarse) {

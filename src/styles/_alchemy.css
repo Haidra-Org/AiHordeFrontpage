@@ -100,7 +100,7 @@
 }
 
 .gen-studio .alchemy-result__toggle:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-radius: var(--gs-radius-sm);
 }
@@ -497,7 +497,7 @@
 }
 
 .gen-studio .alchemy-tags__more:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
   border-radius: var(--gs-radius-sm);
 }
@@ -651,7 +651,7 @@
   border-color: var(--gs-border);
 }
 .gen-studio .gs-devdoc-back:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-devdoc-inner {
@@ -795,7 +795,7 @@
   cursor: default;
 }
 .gen-studio .gs-devdoc-code-btn:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 .gen-studio .gs-devdoc-code .gs-api-code {
@@ -858,7 +858,7 @@
   text-decoration: none;
 }
 .gen-studio .gs-devdoc-link:focus-visible {
-  outline: 2px solid var(--gs-blue);
+  outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
 

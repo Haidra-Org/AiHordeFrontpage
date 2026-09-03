@@ -102,7 +102,7 @@
   }
 
   .tools-search-clear:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -314,7 +314,7 @@
   }
 
   .tools-toc-link:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -432,7 +432,7 @@
   }
 
   .tools-section-toggle:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -581,7 +581,7 @@
 
   .tools-card-toggle:focus-visible,
   .tools-row-toggle:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 

@@ -22,7 +22,8 @@
   }
 
   a.data-item-box:focus-visible {
-    @apply outline-2 outline-offset-2 outline-brand-purple;
+    @apply outline-2 outline-offset-2;
+    outline-color: var(--hd-focus-ring);
   }
 
   .dark a.data-item-box:hover {
@@ -356,7 +357,8 @@
   }
 
   .kudos-api-badge:focus-visible {
-    @apply outline-2 outline-offset-2 outline-blue-400;
+    @apply outline-2 outline-offset-2;
+    outline-color: var(--hd-focus-ring);
   }
 
   /* Value: inline, right-aligned after dot leader */
@@ -717,7 +719,7 @@
   }
 
   .worker-row:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -811,7 +813,7 @@
   }
 
   .worker-row-copy-btn:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1455,7 +1457,7 @@
   }
 
   .worker-card-copy-btn:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1579,7 +1581,7 @@
   }
 
   .worker-inline-action:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1606,7 +1608,7 @@
   }
 
   .worker-status-trigger:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1669,7 +1671,7 @@
   }
 
   .worker-status-dropdown-help:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1695,7 +1697,7 @@
   }
 
   .worker-card-icon-btn:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1706,7 +1708,7 @@
   }
 
   .worker-models-count:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 
@@ -1734,7 +1736,7 @@
   }
 
   .worker-single-model-action:focus-visible {
-    outline: 2px solid var(--hd-accent);
+    outline: 2px solid var(--hd-focus-ring);
     outline-offset: 2px;
   }
 

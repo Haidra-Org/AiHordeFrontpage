@@ -348,10 +348,15 @@
   }
 
   /* Focus management for accessibility */
+  /* The fallback ring for every button that declares none of its own, so it is
+     drawn on whatever surface that button happens to sit on. The brand purple
+     is one value in both themes and lands at 2.67:1 on a dark card, under the
+     3:1 a focus indicator has to hold; the focus token flips instead. */
   .nav-link:focus-visible,
   .mobile-nav-link:focus-visible,
   button:focus-visible {
-    @apply outline-2 outline-brand-purple outline-offset-2;
+    @apply outline-2 outline-offset-2;
+    outline-color: var(--hd-focus-ring);
   }
 
   /* =================================================================
