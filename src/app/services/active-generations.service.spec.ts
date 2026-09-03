@@ -4,6 +4,7 @@ import { Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActiveGenerationsService } from './active-generations.service';
 import { AuthService } from './auth.service';
+import { HordeApiCacheService } from './horde-api-cache.service';
 import { GenerationQueueService } from './generation-queue.service';
 import { AlchemyQueueService } from './alchemy-queue.service';
 import { ActiveGenerations, HordeUser } from '../types/horde-user';
@@ -23,6 +24,7 @@ describe('ActiveGenerationsService', () => {
   let loggedIn: ReturnType<typeof signal<boolean>>;
   let current: ReturnType<typeof signal<HordeUser | null>>;
   let refreshUser: ReturnType<typeof vi.fn>;
+  let invalidate: ReturnType<typeof vi.fn>;
   let imageQueue: {
     adoptActive: ReturnType<typeof vi.fn>;
     pendingJobs: ReturnType<typeof signal<unknown[]>>;
@@ -37,6 +39,7 @@ describe('ActiveGenerationsService', () => {
     loggedIn = signal(true);
     current = signal<HordeUser | null>(user());
     refreshUser = vi.fn(() => of(user()));
+    invalidate = vi.fn();
     imageQueue = {
       adoptActive: vi.fn(() => Promise.resolve()),
       pendingJobs: signal<unknown[]>([]),
@@ -57,6 +60,7 @@ describe('ActiveGenerationsService', () => {
             refreshUser: () => refreshUser(),
           },
         },
+        { provide: HordeApiCacheService, useValue: { invalidate } },
         { provide: GenerationQueueService, useValue: imageQueue },
         { provide: AlchemyQueueService, useValue: alchemyQueue },
       ],
@@ -102,6 +106,15 @@ describe('ActiveGenerationsService', () => {
 
     expect(imageQueue.adoptActive).toHaveBeenCalledWith(['i1', 'i2']);
     expect(alchemyQueue.adoptActive).toHaveBeenCalledWith(['a1']);
+  });
+
+  it('drops the cached account record before every read', async () => {
+    start();
+    await vi.runOnlyPendingTimersAsync();
+    expect(invalidate).toHaveBeenCalledWith({ category: 'user' });
+    expect(invalidate.mock.invocationCallOrder[0]).toBeLessThan(
+      refreshUser.mock.invocationCallOrder[0],
+    );
   });
 
   it('passes empty lists when the record names nothing', async () => {

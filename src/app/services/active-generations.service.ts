@@ -8,6 +8,7 @@ import {
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
+import { HordeApiCacheService } from './horde-api-cache.service';
 import { GenerationQueueService } from './generation-queue.service';
 import {
   ALCHEMY_POLL_INTERVAL_MS,
@@ -44,6 +45,7 @@ const BACKOFF_MS = 15_000;
 @Injectable({ providedIn: 'root' })
 export class ActiveGenerationsService {
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(HordeApiCacheService);
   private readonly imageQueue = inject(GenerationQueueService);
   private readonly alchemyQueue = inject(AlchemyQueueService);
   private readonly ngZone = inject(NgZone);
@@ -121,6 +123,11 @@ export class ActiveGenerationsService {
     }
     this.reading = true;
     try {
+      // The account read is served from a cache that outlives the cadence by
+      // an order of magnitude, so a job started elsewhere would sit unseen
+      // until that copy aged out. Dropping the cached user first makes every
+      // tick a real read, and hands the fresh record to every other reader.
+      this.cache.invalidate({ category: 'user' });
       const user = await firstValueFrom(this.auth.refreshUser());
       if (!user) {
         this.backoffUntil = Date.now() + BACKOFF_MS;
