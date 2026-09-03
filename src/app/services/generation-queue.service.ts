@@ -1,4 +1,5 @@
 import {
+  DestroyRef,
   Injectable,
   NgZone,
   PLATFORM_ID,
@@ -6,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import { AuthService } from './auth.service';
@@ -16,6 +17,7 @@ import {
   GenerationOutput,
   ImageExtraSourceImage,
   ImageGenerationRequest,
+  hordeRejectionKey,
 } from '../types/generation';
 import {
   EnqueueSourceImage,
@@ -23,6 +25,7 @@ import {
   LocalGenerationJobStatus,
   MAX_EXTRA_SOURCE_IMAGES,
   StoredJobImage,
+  SubmitBlockReason,
   extraSourceImageId,
 } from '../types/generation-job';
 import { base64ToBlob, blobToBase64 } from '../helper/blob-base64';
@@ -36,6 +39,23 @@ const SUBMIT_WINDOW_MS = 60_000;
 const SUBMIT_WINDOW_LIMIT = 9;
 const SUBMIT_BACKOFF_MS = 15_000;
 const CHECK_BACKOFF_MS = 15_000;
+/**
+ * How long a job waits after the horde failed to answer its submit, doubling
+ * with each further failure up to {@link SUBMIT_RETRY_MAX_MS}. Without a delay
+ * of its own a job retries on every dispatch tick and spends the whole submit
+ * window in a few seconds, which is what a horde that is briefly down would
+ * cost every job at once.
+ */
+const SUBMIT_RETRY_BASE_MS = 5_000;
+const SUBMIT_RETRY_MAX_MS = 60_000;
+/**
+ * How many refused submits a job gets before it is turned into an error the
+ * reader can act on. With the backoff above, five attempts span more than a
+ * minute of the horde declining to take the request, which is long enough that
+ * it is no longer a blip and short enough that the page has not been left for
+ * dead.
+ */
+const MAX_SUBMIT_ATTEMPTS = 5;
 const POLL_MIN_INTERVAL_MS = 2_000;
 const DISPATCH_TICK_MS = 1_000;
 const POLL_TICK_MS = 2_000;
@@ -74,9 +94,16 @@ export class GenerationQueueService {
   private readonly auth = inject(AuthService);
   private readonly waitInsights = inject(GenerationWaitInsightsService);
   private readonly ngZone = inject(NgZone);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly _jobs = signal<LocalGenerationJob[]>([]);
+  private readonly _clock = signal(0);
+  private readonly _lastAccepted = signal<{
+    localId: string;
+    at: number;
+  } | null>(null);
 
   /** All jobs, newest first. */
   public readonly jobs = this._jobs.asReadonly();
@@ -88,6 +115,18 @@ export class GenerationQueueService {
   public readonly finishedJobs = computed(() =>
     this._jobs().filter((job) => FINISHED_STATUSES.has(job.status)),
   );
+  /**
+   * Wall clock, advanced by the dispatch loop while a job is waiting on a retry
+   * so a countdown drawn against it stays live. It stands still the rest of the
+   * time: nothing reads it then, and a signal ticking every second would redraw
+   * the results grid for nothing.
+   */
+  public readonly clock = this._clock.asReadonly();
+  /**
+   * The most recent submit the horde accepted. A fresh object every time, so a
+   * page watching it hears about each acceptance rather than only the first.
+   */
+  public readonly lastAccepted = this._lastAccepted.asReadonly();
 
   private submitTimestamps: number[] = [];
   private submitBackoffUntil = 0;
@@ -130,6 +169,15 @@ export class GenerationQueueService {
         DISPATCH_TICK_MS,
       );
       this.pollTimer = setInterval(() => void this.pollTick(), POLL_TICK_MS);
+      const onVisibility = (): void => {
+        if (this.document.visibilityState === 'visible') {
+          void this.pollTick();
+        }
+      };
+      this.document.addEventListener('visibilitychange', onVisibility);
+      this.destroyRef.onDestroy(() =>
+        this.document.removeEventListener('visibilitychange', onVisibility),
+      );
     });
   }
 
@@ -346,12 +394,16 @@ export class GenerationQueueService {
     }
     this.dispatchRunning = true;
     try {
+      this.advanceClock();
       if (this.submitBackoffUntil > this.now()) {
         return;
       }
       let active = this.countActive();
       const waiting = this._jobs()
-        .filter((job) => job.status === 'waiting')
+        .filter(
+          (job) =>
+            job.status === 'waiting' && (job.submitRetryAt ?? 0) <= this.now(),
+        )
         .sort((a, b) => a.createdAt - b.createdAt);
 
       for (const job of waiting) {
@@ -403,15 +455,29 @@ export class GenerationQueueService {
         errorMessage: undefined,
         errorKey: undefined,
         errorRc: undefined,
+        submitBlocked: undefined,
+        submitRetryAt: undefined,
       });
+      this.ngZone.run(() =>
+        this._lastAccepted.set({ localId: job.localId, at: this.now() }),
+      );
       return 'submitted';
     }
 
     const { status, message, rc } = result.error;
+    const attempts = (this.findJob(job.localId)?.submitAttempts ?? 0) + 1;
     if (status === 429) {
       // A 429 is a global submit-rate signal, so back off regardless of whether
       // this particular job is still waiting.
       this.submitBackoffUntil = this.now() + SUBMIT_BACKOFF_MS;
+      if (stillWaiting) {
+        await this.recordSubmitFailure(
+          job.localId,
+          'rate_limited',
+          attempts,
+          this.submitBackoffUntil,
+        );
+      }
       return 'backoff';
     }
     if (status >= 400 && status < 500) {
@@ -421,12 +487,78 @@ export class GenerationQueueService {
       await this.patchJob(job.localId, {
         status: 'error',
         errorMessage: message,
+        // The studio's own sentence where it has one for this code; the horde's
+        // is kept either way and is what shows when it has none.
+        errorKey: hordeRejectionKey(rc),
         errorRc: rc,
+        submitBlocked: undefined,
+        submitRetryAt: undefined,
       });
       return 'error';
     }
-    // 5xx / network: keep the job waiting and retry on a later tick.
+    // 5xx or no answer at all: the horde is not refusing the request, it is not
+    // taking it. The job stays waiting and says so until the bound runs out.
+    if (!stillWaiting) {
+      return 'transient';
+    }
+    await this.recordSubmitFailure(
+      job.localId,
+      'unanswered',
+      attempts,
+      this.now() + this.retryDelay(attempts),
+    );
     return 'transient';
+  }
+
+  /**
+   * Record a submit the horde would not take. Below the attempt bound the job
+   * keeps waiting and carries why, so the card can say what is happening and
+   * when the next attempt is; at the bound it becomes an error with the same
+   * Retry every other failure offers.
+   */
+  private async recordSubmitFailure(
+    localId: string,
+    reason: SubmitBlockReason,
+    attempts: number,
+    retryAt: number,
+  ): Promise<void> {
+    if (attempts >= MAX_SUBMIT_ATTEMPTS) {
+      await this.patchJob(localId, {
+        status: 'error',
+        errorKey:
+          reason === 'rate_limited'
+            ? 'generate.results.error_submit_rate_limited'
+            : 'generate.results.error_submit_unanswered',
+        submitAttempts: attempts,
+        submitBlocked: undefined,
+        submitRetryAt: undefined,
+      });
+      return;
+    }
+    await this.patchJob(localId, {
+      submitAttempts: attempts,
+      submitBlocked: reason,
+      submitRetryAt: retryAt,
+    });
+    this.ngZone.run(() => this._clock.set(this.now()));
+  }
+
+  /** Doubling wait, capped, so a long outage is not asked about every second. */
+  private retryDelay(attempts: number): number {
+    return Math.min(
+      SUBMIT_RETRY_BASE_MS * 2 ** (attempts - 1),
+      SUBMIT_RETRY_MAX_MS,
+    );
+  }
+
+  /** Keep the countdown moving while any job is waiting on a retry. */
+  private advanceClock(): void {
+    const blocked = this._jobs().some(
+      (job) => job.status === 'waiting' && job.submitRetryAt !== undefined,
+    );
+    if (blocked) {
+      this.ngZone.run(() => this._clock.set(this.now()));
+    }
   }
 
   /**
@@ -492,6 +624,13 @@ export class GenerationQueueService {
 
   private async pollTick(): Promise<void> {
     if (this.pollRunning) {
+      return;
+    }
+    // A tab nobody is looking at cannot act on what a check says, and the answer
+    // is the same when it comes back. Checks wait for the tab to return, where
+    // the visibility listener runs one straight away so a generation that
+    // finished meanwhile is picked up at once.
+    if (this.document.visibilityState === 'hidden') {
       return;
     }
     this.pollRunning = true;

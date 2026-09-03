@@ -24,6 +24,7 @@ import { LocalGenerationJob } from '../../../types/generation-job';
 import {
   StoredJobImage,
   StoredJobImageMetadata,
+  SubmitBlockReason,
   sessionStatsToday,
 } from '../../../types/generation-job';
 import { Router, RouterLink } from '@angular/router';
@@ -178,6 +179,14 @@ interface ResultTile {
   errorMessage?: string;
   /** Translation key for a failure the studio named itself. */
   errorKey?: string;
+  /**
+   * Why this job has not been sent yet, when something is holding it up. The
+   * card says which of the two it is rather than reading "Queued" at a request
+   * the horde has not seen.
+   */
+  submitBlocked?: SubmitBlockReason;
+  /** Epoch ms of the next submit attempt, which the card counts down to. */
+  submitRetryAt?: number;
   /** Worker censored/flagged the image (drives the NSFW marker + blur). */
   nsfw?: boolean;
   /** Why it was censored, when known ('nsfw' | 'csam'). */
@@ -463,6 +472,19 @@ export class GenerateResultsPanelComponent {
   public readonly pendingJobs = this.queue.pendingJobs;
   public readonly finishedJobs = this.queue.finishedJobs;
 
+  /**
+   * Whole seconds until a held-up job is tried again, or null once the moment
+   * has passed. Reads the engine's clock, which advances only while something
+   * is waiting, so the countdown is live without a timer of its own.
+   */
+  public retryCountdown(at: number | undefined): number | null {
+    if (at === undefined) {
+      return null;
+    }
+    const seconds = Math.ceil((at - this.queue.clock()) / 1000);
+    return seconds > 0 ? seconds : null;
+  }
+
   /** Jobs a worker is actively rendering (as opposed to queued/waiting). */
   public readonly generatingCount = computed(
     () =>
@@ -674,6 +696,8 @@ export class GenerateResultsPanelComponent {
           dims,
           queuePosition: job.queuePosition,
           waitTime: job.waitTime,
+          submitBlocked: job.submitBlocked,
+          submitRetryAt: job.submitRetryAt,
           isPossible: job.isPossible,
           eligibleWorkers: job.eligibleWorkers,
           eligibleWorkerThreads: job.eligibleWorkerThreads,

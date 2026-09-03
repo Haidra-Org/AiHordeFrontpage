@@ -1,8 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -11,7 +13,7 @@ import { NetworkStatusService } from '../../services/network-status.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { IconComponent } from '../icon/icon.component';
 
-export type NetworkStatusVariant = 'sidebar' | 'compact' | 'footer';
+export type NetworkStatusVariant = 'sidebar' | 'compact' | 'footer' | 'studio';
 
 @Component({
   selector: 'app-network-status',
@@ -21,8 +23,21 @@ export type NetworkStatusVariant = 'sidebar' | 'compact' | 'footer';
 })
 export class NetworkStatusComponent {
   public readonly variant = input<NetworkStatusVariant>('sidebar');
+  /**
+   * Whether the page's own list of models failed to load. The studio notice
+   * stands for that as well as for an unreachable API, because either one
+   * leaves the reader unable to send anything.
+   */
+  public readonly modelsFailed = input(false);
+  /** Ask the page to fetch again everything the notice is standing for. */
+  public readonly retry = output<void>();
   public readonly ns = inject(NetworkStatusService);
   private readonly units = inject(UnitConversionService);
+
+  /** Whether the studio notice has anything to say. */
+  public readonly outage = computed(
+    () => this.ns.reachable() === false || this.modelsFailed(),
+  );
 
   /** Formats a plain count as an integer for <1000 or with K/M suffix above. */
   fmtCount(n: number): string {

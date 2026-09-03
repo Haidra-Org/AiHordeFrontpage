@@ -602,6 +602,12 @@ export class GenerateFormComponent implements OnInit {
 
   public readonly form = input.required<GenerateFormGroup>();
   public readonly models = input<ActiveModel[]>([]);
+  /**
+   * Whether the list of models has yet to arrive. Nothing can be sent without
+   * it, so Generate stands down and says why rather than posting a request the
+   * horde has no chance of matching to a worker.
+   */
+  public readonly modelsUnavailable = input(false);
   public readonly kudos = input<number | null>(null);
   public readonly estimating = input(false);
   /** What the estimate is made of, for the popover behind the kudos chip. */
@@ -2948,7 +2954,7 @@ export class GenerateFormComponent implements OnInit {
    * as the Generate button so the shortcut can never bypass its disabled state.
    */
   public onSubmitShortcut(): void {
-    if (this.form().controls.prompt.invalid) {
+    if (this.form().controls.prompt.invalid || this.modelsUnavailable()) {
       return;
     }
     this.create.emit();
@@ -3323,10 +3329,19 @@ export class GenerateFormComponent implements OnInit {
 
   // --- Request warnings ----------------------------------------------------
 
-  /** The horde's refusal for one control, or null when it named another. */
+  /**
+   * What to say under one control about the last submit the horde refused, or
+   * null when it named another control. The studio's own line where it has one
+   * for the code that came back, and the horde's sentence where it does not.
+   */
   public rejectionFor(anchor: FieldAnchorId): string | null {
     const rejection = this.fieldRejection();
-    return rejection?.anchor === anchor ? rejection.message : null;
+    if (rejection?.anchor !== anchor) {
+      return null;
+    }
+    return rejection.key
+      ? this.transloco.translate(rejection.key)
+      : rejection.message;
   }
 
   /** The id the refused control is described by, so the two are announced together. */

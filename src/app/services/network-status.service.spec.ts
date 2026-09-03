@@ -45,6 +45,11 @@ class MockAiHordeService {
   emit(perf: HordePerformance): void {
     this._performance$.next(perf);
   }
+
+  /** Fail the read, as an unreachable API does. */
+  fail(): void {
+    this._performance$.error(new Error('unreachable'));
+  }
 }
 
 /**
@@ -88,6 +93,29 @@ describe('NetworkStatusService', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
   }
+
+  // ========================================================================
+  // Reachability
+  // ========================================================================
+
+  describe('reachability', () => {
+    it('starts unknown', () => {
+      expect(service.reachable()).toBeNull();
+    });
+
+    it('reports reachable once the numbers arrive', () => {
+      renderHost();
+      aiHordeMock.emit(makePerformance());
+      expect(service.reachable()).toBe(true);
+    });
+
+    it('reports unreachable when the read fails, without throwing', () => {
+      renderHost();
+      expect(() => aiHordeMock.fail()).not.toThrow();
+      expect(service.reachable()).toBe(false);
+      expect(service.performance()).toBeNull();
+    });
+  });
 
   // ========================================================================
   // Initial state

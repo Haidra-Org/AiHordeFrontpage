@@ -34,6 +34,7 @@ import {
   type RequirementHint,
 } from './generate-form.model';
 import { settingProseLabelKey } from '../../content/settings';
+import { hordeRejectionKey } from '../../types/generation';
 import type { SectionId } from '../../content/sections';
 import type { HordeWorker } from '../../types/horde-worker';
 import {
@@ -800,8 +801,14 @@ export function submitBlockers(input: {
 /** A horde rejection placed at the control it is about. */
 export interface FieldRejection {
   anchor: FieldAnchorId;
-  /** The horde's own sentence, shown as written. */
+  /** The horde's own sentence, shown when the studio has none of its own. */
   message: string;
+  /**
+   * The studio's line for this return code, where it has one. The horde writes
+   * for every client of the API at once; where the refusal is about a control
+   * this page offers, the page can name that control in its own words.
+   */
+  key?: string;
 }
 
 /** The knob words the horde uses in a rejection, and the controls they name. */
@@ -880,7 +887,11 @@ export function rejectionField(
     return { anchor: knobAnchor(message), message };
   }
   const anchor = REJECTION_ANCHORS.get(rc);
-  return anchor ? { anchor, message } : null;
+  if (!anchor) {
+    return null;
+  }
+  const key = hordeRejectionKey(rc);
+  return { anchor, message, ...(key ? { key } : {}) };
 }
 
 /**

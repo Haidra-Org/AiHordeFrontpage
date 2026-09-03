@@ -35,6 +35,7 @@ export class NetworkStatusService {
 
   private readonly _performance = signal<HordePerformance | null>(null);
   private readonly _lastUpdated = signal<Date | null>(null);
+  private readonly _reachable = signal<boolean | null>(null);
 
   // Ticks every STALE_THRESHOLD_MS so `isStale` recomputes reactively
   private readonly _now = signal<number>(Date.now());
@@ -44,6 +45,13 @@ export class NetworkStatusService {
     this._performance.asReadonly();
   public readonly lastUpdated: Signal<Date | null> =
     this._lastUpdated.asReadonly();
+  /**
+   * Whether the last read of the horde's own numbers came back. False is the
+   * one signal the site has that the API cannot be reached at all, which is
+   * what the studios put a notice up for; null while nothing has been tried.
+   */
+  public readonly reachable: Signal<boolean | null> =
+    this._reachable.asReadonly();
 
   public readonly isStale = computed(() => {
     const updated = this._lastUpdated();
@@ -91,10 +99,17 @@ export class NetworkStatusService {
 
     this.aiHorde.performance
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((perf) => {
-        this._performance.set(perf);
-        this._lastUpdated.set(new Date());
-        this._now.set(Date.now());
+      .subscribe({
+        next: (perf) => {
+          this._performance.set(perf);
+          this._lastUpdated.set(new Date());
+          this._now.set(Date.now());
+          this._reachable.set(true);
+        },
+        // Without a handler here the failure leaves the page as an uncaught
+        // rejection, and nothing on the site is any the wiser that the horde is
+        // unreachable. The numbers simply stay as they were.
+        error: () => this._reachable.set(false),
       });
   }
 

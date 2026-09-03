@@ -8,7 +8,7 @@ import { WritableSignal, computed, signal } from '@angular/core';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { convertToParamMap, provideRouter } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import en from '../../../assets/i18n/en.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateComponent } from './generate.component';
@@ -67,6 +67,8 @@ describe('GenerateComponent', () => {
   let navigate: ReturnType<typeof vi.fn>;
   let historyPush: ReturnType<typeof vi.fn>;
   let historyRemove: ReturnType<typeof vi.fn>;
+  let imageModels: () => ReturnType<typeof of>;
+  let lastAccepted: WritableSignal<{ localId: string; at: number } | null>;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
@@ -82,6 +84,8 @@ describe('GenerateComponent', () => {
     navigate = vi.fn().mockResolvedValue(true);
     historyPush = vi.fn().mockResolvedValue(undefined);
     historyRemove = vi.fn().mockResolvedValue(undefined);
+    imageModels = () => of([]);
+    lastAccepted = signal<{ localId: string; at: number } | null>(null);
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -128,7 +132,17 @@ describe('GenerateComponent', () => {
               ).toString()}`,
           },
         },
-        { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+        {
+          provide: AiHordeService,
+          useValue: {
+            getImageModels: () => imageModels(),
+            // The studio now carries the shared network-status notice, which
+            // reads the horde's own numbers as soon as the page renders.
+            get performance() {
+              return of({});
+            },
+          },
+        },
         {
           provide: GenerationQueueService,
           useValue: {
@@ -138,6 +152,8 @@ describe('GenerateComponent', () => {
             pendingJobs: signal([]),
             finishedJobs,
             getJobImages,
+            lastAccepted,
+            clock: signal(0),
           },
         },
         { provide: StyleUsageService, useValue: { increment: styleIncrement } },
@@ -199,6 +215,40 @@ describe('GenerateComponent', () => {
   afterEach(() => {
     fixture.destroy();
     vi.useRealTimers();
+  });
+
+  it('says so when the list of models will not load, and clears on a retry', () => {
+    fixture.detectChanges();
+
+    imageModels = () => throwError(() => new Error('unreachable'));
+    component.retryConnection();
+    expect(component.modelsFailed()).toBe(true);
+
+    imageModels = () => of([{ name: 'flux', count: 2 }]);
+    component.retryConnection();
+    expect(component.modelsFailed()).toBe(false);
+    expect(component.models()).toHaveLength(1);
+  });
+
+  it('holds the queued line until the horde has taken the request', async () => {
+    fixture.detectChanges();
+    toastSuccess.mockClear();
+    component.form.controls.prompt.setValue('a cat');
+
+    await component.onCreate();
+
+    expect(enqueue).toHaveBeenCalled();
+    expect(toastSuccess).not.toHaveBeenCalledWith(
+      'generate.form.enqueued',
+      expect.anything(),
+    );
+
+    lastAccepted.set({ localId: 'local-1', at: 1 });
+    fixture.detectChanges();
+
+    expect(toastSuccess).toHaveBeenCalledWith('generate.form.enqueued', {
+      transloco: true,
+    });
   });
 
   it('debounces kudos estimation to a single call for rapid changes', () => {
@@ -303,7 +353,7 @@ describe('GenerateComponent', () => {
     expect(component.kudos()).toBeNull();
   });
 
-  it('enqueues a request built from the form and toasts on success', async () => {
+  it('enqueues a request built from the form', async () => {
     component.form.patchValue({
       prompt: 'a castle on a hill',
       seed: '',
@@ -317,7 +367,6 @@ describe('GenerateComponent', () => {
     expect(request.prompt).toBe('a castle on a hill');
     expect(request.params?.post_processing).toEqual(['GFPGAN']);
     expect(request.params?.seed).toBeUndefined();
-    expect(toastSuccess).toHaveBeenCalled();
   });
 
   it('sends straight away while review before sending is off', async () => {
@@ -2122,7 +2171,15 @@ async function createPaneOnlyStudio(): Promise<void> {
     ],
     providers: [
       provideRouter([]),
-      { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+      {
+        provide: AiHordeService,
+        useValue: {
+          getImageModels: () => of([]),
+          get performance() {
+            return of({});
+          },
+        },
+      },
       {
         provide: GenerationQueueService,
         useValue: {
@@ -2132,6 +2189,8 @@ async function createPaneOnlyStudio(): Promise<void> {
           pendingJobs: signal([]),
           finishedJobs: signal([]),
           getJobImages: vi.fn().mockResolvedValue([]),
+          lastAccepted: signal(null),
+          clock: signal(0),
         },
       },
       { provide: StyleUsageService, useValue: { increment: vi.fn() } },
@@ -2176,7 +2235,20 @@ async function createWholeStudio(
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([]),
-      { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+      {
+        provide: AiHordeService,
+        useValue: {
+          // Whatever baselines the test named are models a worker serves, so
+          // the studio has something to send with and Generate stands up.
+          getImageModels: () =>
+            of(
+              Object.keys(baselines ?? {}).map((name) => ({ name, count: 1 })),
+            ),
+          get performance() {
+            return of({});
+          },
+        },
+      },
       {
         provide: GenerationQueueService,
         useValue: {
@@ -2186,6 +2258,8 @@ async function createWholeStudio(
           pendingJobs: signal([]),
           finishedJobs: signal([]),
           getJobImages: vi.fn().mockResolvedValue([]),
+          lastAccepted: signal(null),
+          clock: signal(0),
         },
       },
       { provide: StyleUsageService, useValue: { increment: vi.fn() } },
@@ -2516,7 +2590,15 @@ async function createStudioWithLicensing(
       provideHttpClient(),
       provideHttpClientTesting(),
       provideRouter([]),
-      { provide: AiHordeService, useValue: { getImageModels: () => of([]) } },
+      {
+        provide: AiHordeService,
+        useValue: {
+          getImageModels: () => of([]),
+          get performance() {
+            return of({});
+          },
+        },
+      },
       {
         provide: GenerationQueueService,
         useValue: {
@@ -2526,6 +2608,8 @@ async function createStudioWithLicensing(
           pendingJobs: signal([]),
           finishedJobs: signal([]),
           getJobImages: vi.fn().mockResolvedValue([]),
+          lastAccepted: signal(null),
+          clock: signal(0),
         },
       },
       { provide: StyleUsageService, useValue: { increment: vi.fn() } },

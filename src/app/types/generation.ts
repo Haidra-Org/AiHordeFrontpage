@@ -213,6 +213,84 @@ export interface HordeApiError {
   rc?: string;
 }
 
+/**
+ * The horde's return codes the studio has its own sentence for, and the line it
+ * says instead. The horde's own message is written for every client of the API
+ * at once; where the refusal is about a control the studio actually offers, the
+ * studio can name that control in the words the rest of the page uses.
+ *
+ * The map is deliberately partial. A code is listed only when a studio control
+ * can produce it and a plainer sentence loses nothing: codes whose message
+ * carries a number the studio does not know (the accepted range of a sampler
+ * knob, for instance) are left off so the horde's own wording, which has the
+ * number in it, is what the reader sees.
+ */
+const REJECTION_COPY_KEYS: ReadonlyMap<string, string> = new Map([
+  // Kudos and how much may be asked for at once
+  ['KudosUpfront', 'generate.reject.kudos_upfront'],
+  ['TooManyPrompts', 'generate.reject.too_many_prompts'],
+  ['SharedKeyEmpty', 'generate.reject.shared_key_empty'],
+  ['SharedKeyInsufficientKudos', 'generate.reject.shared_key_kudos'],
+  ['SharedKeyExpired', 'generate.reject.shared_key_expired'],
+  // The key the request was sent with, and what the horde is doing
+  ['InvalidAPIKey', 'generate.reject.invalid_api_key'],
+  ['AnonForbidden', 'generate.reject.anon_forbidden'],
+  ['MaintenanceMode', 'generate.reject.maintenance'],
+  // The prompt
+  ['MissingPrompt', 'generate.reject.missing_prompt'],
+  ['CorruptPrompt', 'generate.reject.corrupt_prompt'],
+  ['InvalidPromptSize', 'generate.reject.prompt_too_long'],
+  ['InvalidPromptEncoding', 'generate.reject.prompt_encoding'],
+  // Size and the sampling knobs
+  ['InvalidSize', 'generate.reject.invalid_size'],
+  ['TooManySteps', 'generate.reject.too_many_steps'],
+  ['MissingFullSamplerOrder', 'generate.reject.sampler_order_incomplete'],
+  // What the chosen model will and will not do
+  ['UnexpectedModelName', 'generate.reject.not_an_image_model'],
+  ['UnsupportedSampler', 'generate.reject.sampler_model_mismatch'],
+  ['SourceImageRequiredForModel', 'generate.reject.model_needs_source'],
+  ['Img2ImgMismatch', 'generate.reject.img2img_mismatch'],
+  ['TilingMismatch', 'generate.reject.tiling_mismatch'],
+  ['HiResMismatch', 'generate.reject.hires_mismatch'],
+  ['HiResFixMismatch', 'generate.reject.hires_mismatch'],
+  ['InvalidRemixModel', 'generate.reject.remix_mismatch'],
+  ['NoValidWorkers', 'generate.reject.no_valid_workers'],
+  // Guidance from a picture
+  ['ControlNetUnsupported', 'generate.reject.control_unsupported'],
+  ['ControlNetMismatch', 'generate.reject.control_unsupported'],
+  ['ControlNetSourceMissing', 'generate.reject.control_needs_source'],
+  ['ControlNetInpaintingMismatch', 'generate.reject.control_inpainting'],
+  ['InvalidControlType', 'generate.reject.control_type_unknown'],
+  [
+    'ControlStrengthWithoutControlType',
+    'generate.reject.control_strength_alone',
+  ],
+  // The picture the request was built on
+  ['SourceImageResolutionExceeded', 'generate.reject.source_too_large'],
+  ['SourceImageSizeExceeded', 'generate.reject.source_file_too_big'],
+  ['SourceImageUnreadable', 'generate.reject.source_unreadable'],
+  ['InpaintingMissingMask', 'generate.reject.inpainting_needs_mask'],
+  // Add-ons and extra pictures
+  ['TooManyLoras', 'generate.reject.too_many_loras'],
+  ['TooManyTIs', 'generate.reject.too_many_tis'],
+  ['BadLoraVersion', 'generate.reject.bad_lora_version'],
+  ['TooManyUpscalers', 'generate.reject.too_many_upscalers'],
+  ['TooManyExtraSourceImages', 'generate.reject.too_many_extras'],
+  ['MoreThanMinExtraSourceImage', 'generate.reject.extras_need_trust'],
+  // Transparent output
+  ['InvalidTransparencyModel', 'generate.reject.transparency_model'],
+  ['InvalidTransparencyCN', 'generate.reject.transparency_control'],
+  ['InvalidTransparencyImg2Img', 'generate.reject.transparency_img2img'],
+]);
+
+/**
+ * The studio's own line for a refusal, or undefined when it has none and the
+ * horde's sentence is what should be shown.
+ */
+export function hordeRejectionKey(rc: string | undefined): string | undefined {
+  return rc ? REJECTION_COPY_KEYS.get(rc) : undefined;
+}
+
 export type SubmitImageResult =
   | { kind: 'success'; response: ImageGenerationResponse }
   | { kind: 'error'; error: HordeApiError };

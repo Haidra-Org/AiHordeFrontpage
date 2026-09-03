@@ -67,6 +67,7 @@ import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy-results-browser/alchemy-results-browser.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { FullscreenToggleComponent } from '../../components/fullscreen-toggle/fullscreen-toggle.component';
+import { NetworkStatusComponent } from '../../components/network-status/network-status.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
 import { AlchemyJob, isJobSettled } from '../../helper/alchemy-job-view';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
@@ -156,6 +157,7 @@ interface AlchemyOperationGroup {
     GsParamEntryComponent,
     GsSheetComponent,
     FullscreenToggleComponent,
+    NetworkStatusComponent,
   ],
   templateUrl: './alchemy.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -857,6 +859,11 @@ export class AlchemyComponent {
       return;
     }
     await input.applyBlob(file, file.type);
+  }
+
+  /** Ask the horde again after an outage notice offered to. */
+  public retryConnection(): void {
+    this.ns.refresh();
   }
 
   /** A paste or drop carried files, but no image among them. */

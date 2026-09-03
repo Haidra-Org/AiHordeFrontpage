@@ -226,6 +226,28 @@ describe('AlchemyQueueService', () => {
       expect((await db.getJob(localId))?.notFound).toBe(true);
     });
 
+    it('asks about nothing while the tab is hidden', async () => {
+      await submit('job-hidden');
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+
+      await (service as unknown as { pollTick(): Promise<void> }).pollTick();
+      await settle();
+      http.expectNone(`${API_BASE}/interrogate/status/job-hidden`);
+
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      await poll('job-hidden', {
+        state: 'done',
+        forms: [{ form: 'caption', state: 'done', result: { caption: 'x' } }],
+      });
+      expect(service.jobs()[0].done).toBe(true);
+    });
+
     it('stops asking about a settled job with nothing outstanding', async () => {
       await submit('job-3');
       await poll('job-3', {

@@ -23,6 +23,12 @@ export type LocalGenerationJobStatus =
   | 'error'
   | 'cancelled';
 
+/**
+ * Why a submit has not gone through yet. Both are conditions that pass on their
+ * own, so the job stays `waiting` and is tried again rather than failing.
+ */
+export type SubmitBlockReason = 'rate_limited' | 'unanswered';
+
 /** Which role a stored blob plays for its job. */
 export type StoredImageKind =
   | 'result'
@@ -147,6 +153,20 @@ export interface LocalGenerationJob {
    * names; absent on jobs that failed for any other reason.
    */
   errorRc?: string;
+  /**
+   * Why a job that is still `waiting` has not been sent yet: the horde is
+   * limiting how fast requests arrive, or it is not answering at all. Absent
+   * while nothing has gone wrong, and cleared once a submit is accepted.
+   */
+  submitBlocked?: SubmitBlockReason;
+  /** Epoch ms of the next submit attempt, for the countdown the card shows. */
+  submitRetryAt?: number;
+  /**
+   * How many submit attempts this job has had refused. The engine gives up at a
+   * bound and turns the job into an error the reader can act on, rather than
+   * posting the same request for as long as the page stays open.
+   */
+  submitAttempts?: number;
   /** How many times this job has been re-submitted via Retry (0/undefined = original). */
   retryCount?: number;
   /**

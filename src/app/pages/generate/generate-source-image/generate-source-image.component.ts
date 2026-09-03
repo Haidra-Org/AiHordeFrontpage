@@ -216,10 +216,19 @@ export class GenerateSourceImageComponent implements OnInit {
    */
   public readonly settingsOffer = output<SourceSettingsOffer>();
 
-  /** The horde's refusal for one control, or null when it named another. */
+  /**
+   * What to say under one control about the last submit the horde refused, or
+   * null when it named another control. The studio's own line where it has one
+   * for the code that came back, and the horde's sentence where it does not.
+   */
   public rejectionFor(anchor: FieldAnchorId): string | null {
     const rejection = this.fieldRejection();
-    return rejection?.anchor === anchor ? rejection.message : null;
+    if (rejection?.anchor !== anchor) {
+      return null;
+    }
+    return rejection.key
+      ? this.transloco.translate(rejection.key)
+      : rejection.message;
   }
 
   /** Whether a named compatibility rule is currently firing for this section. */

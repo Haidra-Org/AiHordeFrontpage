@@ -317,4 +317,50 @@
   .network-status-footer-sep {
     @apply text-gray-300 dark:text-gray-600 select-none;
   }
+
+  /* =================================================================
+     STUDIO - the notice above a studio's controls during an outage
+     ================================================================= */
+
+  .network-status-outage {
+    @apply flex flex-wrap items-center gap-x-2 gap-y-1;
+    /* Inset to the same margin the panel's own cards keep, so the notice reads
+       as one of them rather than as a band across the studio. */
+    @apply mx-3 mt-3 mb-1;
+    @apply rounded-xl px-3 py-2 text-sm;
+    @apply bg-red-50 dark:bg-red-950/40;
+    @apply border border-red-200 dark:border-red-900;
+    @apply text-red-900 dark:text-red-100;
+  }
+
+  .network-status-outage-icon {
+    @apply w-4 h-4 shrink-0;
+    @apply text-red-700 dark:text-red-300;
+  }
+
+  /* Wide enough that the sentence keeps its own line where the panel is roomy,
+     and narrow enough that the two actions drop below it rather than squeezing
+     the sentence into a column. */
+  .network-status-outage-text {
+    @apply m-0 min-w-0 flex-[1_1_18rem];
+  }
+
+  /* Both actions read as words rather than filled buttons: the notice is one
+     line, and a pair of buttons would outweigh the sentence explaining them.
+     The tall target is for a coarse pointer, so the row keeps its height. */
+  .network-status-outage-retry,
+  .network-status-outage-door {
+    @apply inline-flex items-center justify-center;
+    @apply min-h-[44px] px-2 rounded-lg;
+    @apply font-medium underline underline-offset-2;
+    @apply text-red-900 dark:text-red-100;
+
+    &:hover {
+      @apply bg-red-100 dark:bg-red-900/50;
+    }
+
+    &:focus-visible {
+      @apply outline-none ring-2 ring-brand-purple ring-offset-1;
+    }
+  }
 }

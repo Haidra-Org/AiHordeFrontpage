@@ -97,6 +97,10 @@
         </div>
       </header>
 
+      <!-- Says so when the horde cannot be reached at all, rather than leaving
+           the reader to send an operation into nothing. -->
+      <app-network-status variant="studio" (retry)="retryConnection()" />
+
       <!-- Operation detail: docked at a fixed height directly under the header
            so it stays on-screen while the operation list scrolls below it, and
            a 1–2 line description can no longer grow and shove the layout. -->

@@ -25,10 +25,18 @@
 
   <!-- Left: control panel -->
   <section class="gs-panel">
+    <!-- Says so when there is nothing to send with, rather than leaving the
+         reader to press Generate into an unreachable horde. -->
+    <app-network-status
+      variant="studio"
+      [modelsFailed]="modelsFailed()"
+      (retry)="retryConnection()"
+    />
     <app-generate-form
       class="gs-fill"
       [form]="form"
       [models]="models()"
+      [modelsUnavailable]="models().length === 0"
       [kudos]="kudos()"
       [estimating]="estimating()"
       [kudosLines]="kudosLines()"

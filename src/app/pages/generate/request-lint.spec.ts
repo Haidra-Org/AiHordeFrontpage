@@ -833,6 +833,26 @@ describe('rejectionField', () => {
     }
   });
 
+  it('carries the studio own line for a code it has words for', () => {
+    expect(rejectionField('KudosUpfront', 'You need kudos upfront')).toEqual({
+      anchor: 'generate',
+      message: 'You need kudos upfront',
+      key: 'generate.reject.kudos_upfront',
+    });
+    expect(rejectionField('InvalidControlType', 'bad control_type')?.key).toBe(
+      'generate.reject.control_type_unknown',
+    );
+  });
+
+  it('leaves the horde sentence alone where it has no line of its own', () => {
+    const rejection = rejectionField(
+      'ControlStrengthOutOfRange',
+      'control_strength must be between 0 and 1',
+    );
+    expect(rejection?.key).toBeUndefined();
+    expect(rejection?.message).toBe('control_strength must be between 0 and 1');
+  });
+
   it('leaves a code it does not model, and an empty sentence, to the tile', () => {
     expect(rejectionField('SomethingElse', 'refused')).toBeNull();
     expect(rejectionField(undefined, 'refused')).toBeNull();

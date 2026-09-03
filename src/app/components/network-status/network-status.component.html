@@ -414,4 +414,33 @@
       </div>
     }
   }
+
+  <!-- ═══════════════════════════════════════════════════════
+       STUDIO variant: one line above a studio's controls when
+       there is nothing to send with
+       ═══════════════════════════════════════════════════════ -->
+  @case ("studio") {
+    @if (outage()) {
+      <div class="network-status-outage" role="status">
+        <app-icon name="warning-triangle" class="network-status-outage-icon" />
+        <p class="network-status-outage-text">
+          @if (ns.reachable() === false) {
+            {{ "studio.outage.api" | transloco }}
+          } @else {
+            {{ "studio.outage.models" | transloco }}
+          }
+        </p>
+        <button
+          type="button"
+          class="network-status-outage-retry"
+          (click)="retry.emit()"
+        >
+          {{ "studio.outage.retry" | transloco }}
+        </button>
+        <a routerLink="/status/" class="network-status-outage-door">
+          {{ "studio.outage.status_page" | transloco }}
+        </a>
+      </div>
+    }
+  }
 }

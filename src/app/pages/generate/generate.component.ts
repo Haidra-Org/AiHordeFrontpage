@@ -20,6 +20,7 @@ import { ActivatedRoute, Params, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
+import { NetworkStatusService } from '../../services/network-status.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
@@ -93,6 +94,7 @@ import {
   WELCOMED_KEY,
 } from './generate-welcome/generate-welcome.component';
 import { IconComponent } from '../../components/icon/icon.component';
+import { NetworkStatusComponent } from '../../components/network-status/network-status.component';
 import { GenerateResultsPanelComponent } from './generate-results-panel/generate-results-panel.component';
 import {
   GenerateSourceImageComponent,
@@ -298,6 +300,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     GenerateLearnSheetComponent,
     GsTutorialParkedComponent,
     IconComponent,
+    NetworkStatusComponent,
     TranslocoPipe,
   ],
   templateUrl: './generate.component.html',
@@ -305,6 +308,7 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
 })
 export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly aiHorde = inject(AiHordeService);
+  private readonly networkStatus = inject(NetworkStatusService);
   private readonly queue = inject(GenerationQueueService);
   private readonly toast = inject(ToastService);
   private readonly db = inject(DatabaseService);
@@ -351,6 +355,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   );
   /** What `/status/models` reports: the worker counts, not the model universe. */
   private readonly workerModels = signal<ActiveModel[]>([]);
+  /**
+   * Whether the last read of that list came back empty-handed. The reference on
+   * its own names no models the pickers can offer, so a failure here is the one
+   * that leaves the studio with nothing to send.
+   */
+  public readonly modelsFailed = signal(false);
   /** The models the pickers offer: the reference, with worker counts over it. */
   public readonly models = computed(() =>
     mergeModelList(this.modelReference.names(), this.workerModels()),
@@ -823,6 +833,20 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     untracked(() => {
       if (open && this.panelSize() === 'full') {
         this.panelSize.set('double');
+      }
+    });
+  });
+
+  /**
+   * The queued line waits for the horde to take the request. Saying it at the
+   * press would claim something the studio has not been told yet, and the whole
+   * point of the wait is that a submit can be refused or go unanswered.
+   */
+  private readonly acceptedToast = effect(() => {
+    const accepted = this.queue.lastAccepted();
+    untracked(() => {
+      if (accepted) {
+        this.toast.success('generate.form.enqueued', { transloco: true });
       }
     });
   });
@@ -2022,7 +2046,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       }
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());
-      this.toast.success('generate.form.enqueued', { transloco: true });
       // On a phone the panes stack, so a press that only raised a toast would
       // leave the reader looking at the button while the job runs below the
       // fold: the results pane comes up to meet them.
@@ -2148,7 +2171,22 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.aiHorde
       .getImageModels('all')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((models) => this.workerModels.set(models));
+      .subscribe({
+        next: (models) => {
+          this.workerModels.set(models);
+          this.modelsFailed.set(false);
+        },
+        // Without a handler the failure leaves the page as an uncaught
+        // rejection and the studio goes on offering a Generate button with no
+        // models behind it.
+        error: () => this.modelsFailed.set(true),
+      });
+  }
+
+  /** Ask again for everything the outage notice is standing for. */
+  public retryConnection(): void {
+    this.networkStatus.refresh();
+    this.fetchModels();
   }
 
   private fetchStyles(): void {

@@ -1092,13 +1092,34 @@
                       aria-hidden="true"
                     />
                     <span class="gs-tile-status-text">
-                      @if (tile.insight?.returnedToQueue) {
+                      @if (tile.submitBlocked === "rate_limited") {
+                        {{
+                          "generate.results.tile_submit_rate_limited"
+                            | transloco
+                        }}
+                      } @else if (tile.submitBlocked === "unanswered") {
+                        {{
+                          "generate.results.tile_submit_unanswered" | transloco
+                        }}
+                      } @else if (tile.insight?.returnedToQueue) {
                         {{ "generate.results.tile_returned" | transloco }}
                       } @else {
                         {{ "generate.results.tile_queued" | transloco }}
                       }
                     </span>
                     <span class="gs-status-summary">
+                      @if (tile.submitBlocked) {
+                        @if (retryCountdown(tile.submitRetryAt); as seconds) {
+                          {{
+                            "generate.results.tile_submit_retry_in"
+                              | transloco: { seconds: seconds }
+                          }}
+                        } @else {
+                          {{
+                            "generate.results.tile_submit_retry_now" | transloco
+                          }}
+                        }
+                      }
                       @if (tile.queuePosition !== undefined) {
                         {{
                           "generate.results.queue_position"
@@ -1136,15 +1157,19 @@
                         {{ "generate.results.view_settings" | transloco }}
                       </button>
                     }
-                    <button
-                      type="button"
-                      class="gs-status-explain"
-                      (click)="toggleWaitWhy(tile.key, $event.currentTarget)"
-                      [attr.aria-expanded]="waitWhyFor() === tile.key"
-                      [attr.aria-controls]="'wait-insight-' + tile.key"
-                    >
-                      {{ "generate.results.queue_why" | transloco }}
-                    </button>
+                    <!-- The wait this explains is the horde's queue, which a
+                         request it has not taken is not in yet. -->
+                    @if (!tile.submitBlocked) {
+                      <button
+                        type="button"
+                        class="gs-status-explain"
+                        (click)="toggleWaitWhy(tile.key, $event.currentTarget)"
+                        [attr.aria-expanded]="waitWhyFor() === tile.key"
+                        [attr.aria-controls]="'wait-insight-' + tile.key"
+                      >
+                        {{ "generate.results.queue_why" | transloco }}
+                      </button>
+                    }
                   </div>
                 </div>
                 <section

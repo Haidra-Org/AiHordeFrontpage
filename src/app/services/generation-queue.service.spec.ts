@@ -160,7 +160,16 @@ describe('GenerationQueueService', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    setVisibility('visible');
   });
+
+  /** jsdom has no page lifecycle, so the state the loops read is set directly. */
+  function setVisibility(state: DocumentVisibilityState): void {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
 
   async function createQueue(): Promise<GenerationQueueService> {
     const queue = TestBed.inject(GenerationQueueService);
@@ -420,6 +429,173 @@ describe('GenerationQueueService', () => {
     // Next tick is inside the 15s backoff window: no new attempt.
     await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
     expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(1);
+  });
+
+  it('says a 429 is holding a job back, with when it is tried again', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: { status: 429, message: 'Too Many Requests' },
+      }),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+    const job = queue.jobs()[0];
+    expect(job.status).toBe('waiting');
+    expect(job.submitBlocked).toBe('rate_limited');
+    expect(job.submitAttempts).toBe(1);
+    expect(job.submitRetryAt).toBeGreaterThan(queue.clock() - 1);
+  });
+
+  it('says so while the horde does not answer, and waits longer each time', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: { status: 500, message: 'Internal Server Error' },
+      }),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+    expect(queue.jobs()[0].submitBlocked).toBe('unanswered');
+    expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(1);
+
+    // The first wait is five seconds, so the ticks in between spend nothing.
+    await vi.advanceTimersByTimeAsync(4 * DISPATCH_TICK_MS);
+    expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(2 * DISPATCH_TICK_MS);
+    expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(2);
+    expect(queue.jobs()[0].submitAttempts).toBe(2);
+  });
+
+  it('gives up on a job the horde never answers for and offers Retry', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: { status: 0, message: 'network' },
+      }),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    // Five refusals, the last of which is the bound.
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+    const job = queue.jobs()[0];
+    expect(job.status).toBe('error');
+    expect(job.submitAttempts).toBe(5);
+    expect(job.errorKey).toBe('generate.results.error_submit_unanswered');
+    expect(job.submitBlocked).toBeUndefined();
+    expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(5);
+  });
+
+  it('gives up on a job the horde keeps rate-limiting', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: { status: 429, message: 'Too Many Requests' },
+      }),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+    const job = queue.jobs()[0];
+    expect(job.status).toBe('error');
+    expect(job.errorKey).toBe('generate.results.error_submit_rate_limited');
+  });
+
+  it('clears the held-up marks once a submit is accepted', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValueOnce(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: { status: 503, message: 'unavailable' },
+      }),
+    );
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h1')),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+    expect(queue.jobs()[0].submitBlocked).toBe('unanswered');
+
+    await vi.advanceTimersByTimeAsync(6 * DISPATCH_TICK_MS);
+
+    const job = queue.jobs()[0];
+    expect(job.hordeId).toBe('h1');
+    expect(job.submitBlocked).toBeUndefined();
+    expect(job.submitRetryAt).toBeUndefined();
+    expect(queue.lastAccepted()?.localId).toBe(job.localId);
+  });
+
+  it('puts the studio own words on a refusal whose code it knows', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: {
+          status: 400,
+          message: 'Image size must be a multiple of 64',
+          rc: 'InvalidSize',
+        },
+      }),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+    const job = queue.jobs()[0];
+    expect(job.errorKey).toBe('generate.reject.invalid_size');
+    expect(job.errorRc).toBe('InvalidSize');
+    expect(job.errorMessage).toBe('Image size must be a multiple of 64');
+  });
+
+  it('keeps the horde sentence for a code it has no words for', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of<SubmitImageResult>({
+        kind: 'error',
+        error: {
+          status: 400,
+          message: 'eta must be between 0 and 1',
+          rc: 'SamplerKnobOutOfRange',
+        },
+      }),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+    const job = queue.jobs()[0];
+    expect(job.errorKey).toBeUndefined();
+    expect(job.errorMessage).toBe('eta must be between 0 and 1');
+  });
+
+  it('leaves the check endpoint alone while the tab is hidden', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h1')),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+    aiHorde.checkImageGenerationResult.mockClear();
+
+    setVisibility('hidden');
+    await vi.advanceTimersByTimeAsync(8 * POLL_TICK_MS);
+    expect(aiHorde.checkImageGenerationResult).not.toHaveBeenCalled();
+
+    setVisibility('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(aiHorde.checkImageGenerationResult).toHaveBeenCalledTimes(1);
   });
 
   it('records a validation failure as an error with its message', async () => {

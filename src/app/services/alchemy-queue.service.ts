@@ -1,4 +1,5 @@
 import {
+  DestroyRef,
   Injectable,
   NgZone,
   PLATFORM_ID,
@@ -6,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import { AlchemyDbService } from './alchemy-db.service';
@@ -185,6 +186,8 @@ export class AlchemyQueueService {
   private readonly db = inject(AlchemyDbService);
   private readonly toast = inject(ToastService);
   private readonly ngZone = inject(NgZone);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly stored = signal<StoredAlchemyJob[]>([]);
@@ -412,6 +415,15 @@ export class AlchemyQueueService {
       this.pollTimer = setInterval(() => {
         void this.pollTick();
       }, ALCHEMY_POLL_INTERVAL_MS);
+      const onVisibility = (): void => {
+        if (this.document.visibilityState === 'visible') {
+          void this.pollTick();
+        }
+      };
+      this.document.addEventListener('visibilitychange', onVisibility);
+      this.destroyRef.onDestroy(() =>
+        this.document.removeEventListener('visibilitychange', onVisibility),
+      );
     });
   }
 
@@ -420,6 +432,12 @@ export class AlchemyQueueService {
 
   private async pollTick(): Promise<void> {
     if (this.pollRunning) {
+      return;
+    }
+    // A tab nobody is looking at cannot act on what a status answer says, and a
+    // phone that backgrounded the page may hold the timer for minutes before
+    // firing it. Visits wait for the tab to come back, where one runs at once.
+    if (this.document.visibilityState === 'hidden') {
       return;
     }
     this.pollRunning = true;

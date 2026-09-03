@@ -2821,10 +2821,13 @@
         type="submit"
         class="gs-genbtn"
         appTutAnchor="generate"
+        [disabled]="modelsUnavailable()"
         [title]="
-          (reviewBeforeSend()
-            ? 'generate.form.ctrl_enter_review_hint'
-            : 'generate.form.ctrl_enter_hint'
+          (modelsUnavailable()
+            ? 'generate.form.no_models_hint'
+            : reviewBeforeSend()
+              ? 'generate.form.ctrl_enter_review_hint'
+              : 'generate.form.ctrl_enter_hint'
           ) | transloco
         "
       >
