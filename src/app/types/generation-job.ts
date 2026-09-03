@@ -232,3 +232,26 @@ export interface EnqueueSourceImage {
   /** Blend weight of an `extra_source` blob; ignored for the other kinds. */
   strength?: number;
 }
+
+/** One remix extra kept with a stored source draft, in submission order. */
+export interface StoredSourceDraftExtra {
+  blob: Blob;
+  strength: number;
+}
+
+/**
+ * The picture attached to the studio, kept so leaving the page and coming back
+ * finds it still there, as the settings draft and the results already are.
+ *
+ * The bytes are the attachment as it came in, never a canvas composed around it
+ * for outpainting: the composition is redone from the settings on restore, and
+ * storing its result would grow the picture again every time.
+ */
+export interface StoredSourceDraft {
+  /** Which attachment this is: the one on the bench, or one put aside. */
+  id: string;
+  savedAt: number;
+  source: Blob;
+  mask: Blob | null;
+  extras: StoredSourceDraftExtra[];
+}

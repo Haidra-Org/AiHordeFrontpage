@@ -15,6 +15,8 @@ import {
   createGenerateForm,
 } from '../generate-form.model';
 import { SourceImage } from '../../../helper/source-image';
+import { GenerationDbService } from '../../../services/generation-db.service';
+import { StoredSourceDraft } from '../../../types/generation-job';
 import { provideRouter } from '@angular/router';
 import {
   LicensingService,
@@ -26,12 +28,33 @@ function summaryParts(summary: string): string[] {
   return summary.split(' · ');
 }
 
-async function createComponent(): Promise<{
+/** Stand-in for the studio's blob store, so a spec can say what it holds. */
+interface DraftStoreStub {
+  getSourceDraft: ReturnType<typeof vi.fn>;
+  putSourceDraft: ReturnType<typeof vi.fn>;
+  deleteSourceDraft: ReturnType<typeof vi.fn>;
+}
+
+/** Let every pending promise settle, the stored attachment's read included. */
+function flush(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+async function createComponent(
+  stored: Promise<StoredSourceDraft | undefined> | null = null,
+): Promise<{
   fixture: ComponentFixture<GenerateSourceImageComponent>;
   component: GenerateSourceImageComponent;
   form: GenerateFormGroup;
   states: GenerateSourceState[];
+  draftStore: DraftStoreStub;
 }> {
+  const draftStore: DraftStoreStub = {
+    getSourceDraft: vi.fn(() => stored ?? Promise.resolve(undefined)),
+    putSourceDraft: vi.fn(() => Promise.resolve()),
+    deleteSourceDraft: vi.fn(() => Promise.resolve()),
+  };
+
   // Transloco is needed even with the template thrown away: the card words its
   // own folded summary, so the component asks for translations directly.
   await TestBed.configureTestingModule({
@@ -42,7 +65,10 @@ async function createComponent(): Promise<{
         translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
       }),
     ],
-    providers: [{ provide: PLATFORM_ID, useValue: 'browser' }],
+    providers: [
+      { provide: PLATFORM_ID, useValue: 'browser' },
+      { provide: GenerationDbService, useValue: draftStore },
+    ],
   })
     .overrideComponent(GenerateSourceImageComponent, { set: { template: '' } })
     .compileComponents();
@@ -56,7 +82,27 @@ async function createComponent(): Promise<{
   component.stateChange.subscribe((s) => states.push(s));
 
   fixture.detectChanges();
-  return { fixture, component, form, states };
+  return { fixture, component, form, states, draftStore };
+}
+
+const storedDraft = (): StoredSourceDraft => ({
+  id: 'studio',
+  savedAt: Date.now(),
+  source: new Blob([new Uint8Array([2])], { type: 'image/webp' }),
+  mask: new Blob([new Uint8Array([3])], { type: 'image/png' }),
+  extras: [],
+});
+
+/** Stand in for the browser's decoder and object URLs, which jsdom lacks. */
+function stubDecoding(): void {
+  vi.stubGlobal(
+    'createImageBitmap',
+    vi.fn(() =>
+      Promise.resolve({ width: 640, height: 480, close: () => undefined }),
+    ),
+  );
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:restored');
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
 }
 
 const fakeImage = (): SourceImage => ({
@@ -68,6 +114,7 @@ const fakeImage = (): SourceImage => ({
 describe('GenerateSourceImageComponent', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('starts valid in txt2img mode with no source blob', async () => {
@@ -427,6 +474,55 @@ describe('GenerateSourceImageComponent', () => {
 
     expect(revokeSpy).toHaveBeenCalledWith('blob:mask-applied');
     expect(component.maskPreviewUrl()).toBeNull();
+  });
+
+  it('takes back the picture the studio was left with', async () => {
+    stubDecoding();
+    const draft = storedDraft();
+
+    const { component, draftStore } = await createComponent(
+      Promise.resolve(draft),
+    );
+    await flush();
+
+    expect(draftStore.getSourceDraft).toHaveBeenCalledWith('studio');
+    expect(component.sourceImage()?.blob).toBe(draft.source);
+    expect(component.maskBlob()).toBe(draft.mask);
+  });
+
+  it('leaves a picture that arrived first where it is', async () => {
+    stubDecoding();
+    let deliver: (draft: StoredSourceDraft) => void = () => undefined;
+    const { component } = await createComponent(
+      new Promise<StoredSourceDraft | undefined>((resolve) => {
+        deliver = resolve;
+      }),
+    );
+
+    const arrived = fakeImage();
+    component.sourceImage.set(arrived);
+    deliver(storedDraft());
+    await flush();
+
+    expect(component.sourceImage()).toBe(arrived);
+  });
+
+  it('keeps an attached picture and forgets it once it is detached', async () => {
+    stubDecoding();
+    const { component, draftStore } = await createComponent();
+    await flush();
+
+    const image = fakeImage();
+    component.sourceImage.set(image);
+    component.onEditorApplied({ image, mask: null, offset: null });
+
+    expect(draftStore.putSourceDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'studio', source: image.blob }),
+    );
+
+    component.clearImage();
+
+    expect(draftStore.deleteSourceDraft).toHaveBeenCalledWith('studio');
   });
 });
 

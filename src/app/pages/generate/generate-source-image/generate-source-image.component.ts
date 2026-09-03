@@ -41,7 +41,11 @@ import {
   DOCS_IMAGE_CONTROL_TYPES,
   docsControlTypeAnchor,
 } from '../../../content/docs-links';
-import { MAX_EXTRA_SOURCE_IMAGES } from '../../../types/generation-job';
+import {
+  MAX_EXTRA_SOURCE_IMAGES,
+  StoredSourceDraft,
+} from '../../../types/generation-job';
+import { GenerationDbService } from '../../../services/generation-db.service';
 import {
   CONTROL_STRENGTH_STEP,
   DEFAULT_CONTROL_STRENGTH,
@@ -84,6 +88,9 @@ import { type StudioLinkPayload, studioPayloadFromImage } from '../studio-link';
 
 /** Where the reader's choice to fold this card away is remembered. */
 const SOURCE_OPEN_KEY = 'aihorde.generate.source_open';
+
+/** Which stored attachment is the one on the bench. */
+export const STUDIO_SOURCE_DRAFT_ID = 'studio';
 
 /** The separator the folded card reads its values between. */
 const SUMMARY_SEPARATOR = ' · ';
@@ -169,6 +176,7 @@ export class GenerateSourceImageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly db = inject(DatabaseService);
+  private readonly generationDb = inject(GenerationDbService);
   private readonly transloco = inject(TranslocoService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly licensing = inject(LicensingService);
@@ -694,6 +702,9 @@ export class GenerateSourceImageComponent implements OnInit {
       .subscribe((anchor) => this.outpaintAnchor.set(anchor));
 
     this.emitState();
+    if (this.isBrowser) {
+      void this.restoreStoredDraft();
+    }
   }
 
   public setMode(mode: GenerateSourceMode): void {
@@ -853,31 +864,75 @@ export class GenerateSourceImageComponent implements OnInit {
   }
 
   /** Restore the complete attachment snapshot kept by the studio undo history. */
-  public async applyDraft(state: GenerateSourceState): Promise<void> {
+  public applyDraft(state: GenerateSourceState): Promise<void> {
+    return this.applyAttachment(
+      state.sourceBlob,
+      state.maskBlob,
+      state.extras ?? [],
+    );
+  }
+
+  /** Put back a picture, the mask painted on it and its remix extras. */
+  private async applyAttachment(
+    source: Blob | null,
+    mask: Blob | null,
+    extras: readonly GenerateSourceExtra[],
+  ): Promise<void> {
     this.clearExtras();
-    if (!state.sourceBlob) {
+    if (!source) {
       this.clearImage();
       return;
     }
-    await this.applySource(state.sourceBlob, state.maskBlob);
-    if (!this.isBrowser || !state.extras?.length) {
+    await this.applySource(source, mask);
+    if (!this.isBrowser || extras.length === 0) {
       return;
     }
     try {
-      const extras: RemixExtra[] = [];
-      for (const extra of state.extras) {
+      const restored: RemixExtra[] = [];
+      for (const extra of extras) {
         const image = await blobToSourceImage(extra.blob);
-        extras.push({
+        restored.push({
           image,
           strength: extra.strength,
           previewUrl: URL.createObjectURL(image.blob),
         });
       }
-      this.extras.set(extras);
+      this.extras.set(restored);
       this.emitState();
     } catch {
       this.error.set('generate.source.encode_failed');
     }
+  }
+
+  /**
+   * What is attached right now, ready to be stored, or null while nothing is.
+   * The picture is the one the reader brought rather than any canvas composed
+   * around it, so restoring it and growing it again is not growing it twice.
+   */
+  public draftSnapshot(id: string): StoredSourceDraft | null {
+    const image = this.sourceImage();
+    if (!image) {
+      return null;
+    }
+    return {
+      id,
+      savedAt: Date.now(),
+      source: image.blob,
+      mask: this.maskBlob(),
+      extras: this.extras().map((extra) => ({
+        blob: extra.image.blob,
+        strength: extra.strength,
+      })),
+    };
+  }
+
+  /** Take back a stored attachment, or clear the card when there is none. */
+  public applyStoredDraft(draft: StoredSourceDraft | null): Promise<void> {
+    return this.applyAttachment(
+      draft?.source ?? null,
+      draft?.mask ?? null,
+      draft?.extras ?? [],
+    );
   }
 
   public clearImage(): void {
@@ -1174,6 +1229,87 @@ export class GenerateSourceImageComponent implements OnInit {
     }
   }
 
+  /**
+   * The bytes the stored attachment was last written from, or null while none
+   * is stored. Held so a change that leaves the picture alone (a mode, a
+   * strength, a slider) writes nothing.
+   */
+  private stored: {
+    source: Blob;
+    mask: Blob | null;
+    extras: readonly Blob[];
+  } | null = null;
+
+  /** Nothing is written over the stored attachment before it has been read. */
+  private draftRead = false;
+
+  /**
+   * Take back the picture the studio was left with. A picture that arrived
+   * first, from a link or a result loaded back in, is left alone: the stored
+   * one fills an empty card and never replaces one already in use.
+   */
+  private async restoreStoredDraft(): Promise<void> {
+    try {
+      const draft = await this.generationDb.getSourceDraft(
+        STUDIO_SOURCE_DRAFT_ID,
+      );
+      if (draft) {
+        this.stored = {
+          source: draft.source,
+          mask: draft.mask,
+          extras: draft.extras.map((extra) => extra.blob),
+        };
+        if (this.sourceImage() === null) {
+          await this.applyStoredDraft(draft);
+        }
+      }
+    } catch {
+      // A browser that will not read the store leaves the card as it was; the
+      // reader attaches a picture again, which is what they did before.
+    } finally {
+      this.draftRead = true;
+      this.syncDraft();
+    }
+  }
+
+  /**
+   * Keep the stored attachment level with the card. Called wherever the card
+   * emits, so attaching, painting, clearing and detaching all reach it.
+   */
+  private syncDraft(): void {
+    if (!this.isBrowser || !this.draftRead) {
+      return;
+    }
+    const snapshot = this.draftSnapshot(STUDIO_SOURCE_DRAFT_ID);
+    if (snapshot === null) {
+      if (this.stored === null) {
+        return;
+      }
+      this.stored = null;
+      void this.generationDb
+        .deleteSourceDraft(STUDIO_SOURCE_DRAFT_ID)
+        .catch(() => undefined);
+      return;
+    }
+    const extras = snapshot.extras.map((extra) => extra.blob);
+    if (
+      this.stored !== null &&
+      this.stored.source === snapshot.source &&
+      this.stored.mask === snapshot.mask &&
+      this.stored.extras.length === extras.length &&
+      this.stored.extras.every((blob, index) => blob === extras[index])
+    ) {
+      return;
+    }
+    this.stored = { source: snapshot.source, mask: snapshot.mask, extras };
+    void this.generationDb.putSourceDraft(snapshot).catch(() => {
+      // A browser refusing the bytes (private mode, a full quota) still shows
+      // the picture; only finding it again later is lost. Forgetting what was
+      // written leaves the next change free to try again.
+      this.stored = null;
+    });
+  }
+
   private emitState(): void {
     const mode = this.mode();
     const image = this.sourceImage();
@@ -1206,6 +1342,7 @@ export class GenerateSourceImageComponent implements OnInit {
       valid: this.computeValid(),
       validationMessage: this.validationMessage(),
     });
+    this.syncDraft();
   }
 }
 

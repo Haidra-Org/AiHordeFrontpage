@@ -1,5 +1,11 @@
-import { Injectable, NgZone, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import {
+  DestroyRef,
+  Injectable,
+  NgZone,
+  PLATFORM_ID,
+  inject,
+} from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import { GenerationQueueService } from './generation-queue.service';
@@ -41,6 +47,8 @@ export class ActiveGenerationsService {
   private readonly imageQueue = inject(GenerationQueueService);
   private readonly alchemyQueue = inject(AlchemyQueueService);
   private readonly ngZone = inject(NgZone);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -59,11 +67,26 @@ export class ActiveGenerationsService {
     }
     this.ngZone.runOutsideAngular(() => {
       this.timer = setInterval(() => void this.tick(), READ_INTERVAL_MS);
+      const onVisibility = (): void => {
+        if (this.document.visibilityState === 'visible') {
+          void this.tick();
+        }
+      };
+      this.document.addEventListener('visibilitychange', onVisibility);
+      this.destroyRef.onDestroy(() =>
+        this.document.removeEventListener('visibilitychange', onVisibility),
+      );
     });
     void this.reconcile();
   }
 
   private async tick(): Promise<void> {
+    // A tab nobody is looking at cannot act on what the record says, and a
+    // phone that backgrounded the page may hold the timer for minutes before
+    // firing it. Reads wait for the tab to come back, where one runs at once.
+    if (this.document.visibilityState === 'hidden') {
+      return;
+    }
     if (!this.hasWorkOutstanding()) {
       return;
     }

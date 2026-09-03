@@ -38,7 +38,11 @@ import {
 import { StyleService } from '../../services/style.service';
 import { setPageTitle } from '../../helper/page-title';
 import { ActiveModel, mergeModelList } from '../../types/active-model';
-import { EnqueueSourceImage } from '../../types/generation-job';
+import {
+  EnqueueSourceImage,
+  StoredSourceDraft,
+} from '../../types/generation-job';
+import { GenerationDbService } from '../../services/generation-db.service';
 import {
   ImageExtraSourceImage,
   ImageGenerationRequest,
@@ -203,6 +207,13 @@ const SET_ASIDE_KEY = 'aihorde.generate.learn.set_aside';
  */
 const SET_ASIDE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Which stored attachment is the one a tutorial cleared away. It is kept beside
+ * the settings it was cleared with rather than in memory, so a reload during a
+ * tutorial still has a picture to bring back.
+ */
+const SET_ASIDE_SOURCE_ID = 'set-aside';
+
 /** The settings a tutorial cleared away, and which tutorial cleared them. */
 interface SetAsideDraft {
   form: GenerateFormValue;
@@ -309,6 +320,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly licensing = inject(LicensingService);
   private readonly workerPool = inject(WorkerPoolService);
   private readonly controlHistory = inject(StudioControlHistoryService);
+  private readonly generationDb = inject(GenerationDbService);
   private readonly auth = inject(AuthService);
   private readonly activeGenerations = inject(ActiveGenerationsService);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
@@ -1118,14 +1130,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.pendingLoad.set(example);
   }
 
-  /**
-   * The attached picture a tutorial cleared away, held for the length of the
-   * visit. A source image lives in memory anyway (nothing re-attaches one after
-   * a reload), so the picture is kept exactly as long as it would have been had
-   * the tutorial never run.
-   */
-  private setAsideSource: GenerateSourceState | null = null;
-
   /** See {@link TutorialStudioHost.setAside}. */
   public setAside(flowId: string, keepSource: boolean): void {
     if (this.readSetAside() !== null) {
@@ -1149,7 +1153,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const next = resetFormValue(current);
     if (!keepSource) {
       next.sourceMode = DEFAULT_GENERATE_FORM_VALUE.sourceMode;
-      this.setAsideSource = this.sourceState();
+      const picture = this.sourceImageRef()?.draftSnapshot(SET_ASIDE_SOURCE_ID);
+      if (picture) {
+        void this.keepSetAsideSource(picture);
+      }
       void this.sourceImageRef()?.applyDraft(DEFAULT_SOURCE_STATE);
       this.sourceState.set(DEFAULT_SOURCE_STATE);
       this.clearSourceEncodings();
@@ -1170,19 +1177,55 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       return false;
     }
     this.clearSetAside();
-    const source = this.setAsideSource;
-    this.setAsideSource = null;
     this.form.setValue(coerceFormValue(draft.form));
     this.form.markAsDirty();
-    if (source !== null) {
-      this.sourceState.set(DEFAULT_SOURCE_STATE);
-      this.clearSourceEncodings();
-      void this.sourceImageRef()?.applyDraft(source);
-    }
+    void this.restoreSetAsideSource();
     this.toast.success('generate.learn.set_aside_restored', {
       transloco: true,
     });
     return true;
+  }
+
+  /**
+   * Put back the picture a tutorial cleared away, where there was one. It is
+   * dropped from storage as it is handed back, so the offer to bring it back is
+   * made once and the bytes are only ever held in one place.
+   */
+  private async restoreSetAsideSource(): Promise<void> {
+    let picture: StoredSourceDraft | undefined;
+    try {
+      picture = await this.generationDb.getSourceDraft(SET_ASIDE_SOURCE_ID);
+    } catch {
+      return;
+    }
+    if (picture) {
+      this.sourceState.set(DEFAULT_SOURCE_STATE);
+      this.clearSourceEncodings();
+      await this.sourceImageRef()?.applyStoredDraft(picture);
+    }
+    void this.dropSetAsideSource();
+  }
+
+  /**
+   * Hold the picture until the reader asks for it back. A browser that will not
+   * keep the bytes costs them the picture and nothing else: the settings are
+   * still put away, and still come back on their own.
+   */
+  private async keepSetAsideSource(picture: StoredSourceDraft): Promise<void> {
+    try {
+      await this.generationDb.putSourceDraft(picture);
+    } catch {
+      // Nothing to say: the panel is cleared either way.
+    }
+  }
+
+  private async dropSetAsideSource(): Promise<void> {
+    try {
+      await this.generationDb.deleteSourceDraft(SET_ASIDE_SOURCE_ID);
+    } catch {
+      // A picture that cannot be dropped is read back at most once more, and
+      // only by the tutorial that put it there.
+    }
   }
 
   /**
@@ -1207,14 +1250,20 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       typeof draft.form !== 'object' ||
       draft.form === null
     ) {
-      this.clearSetAside();
+      this.forgetSetAside();
       return null;
     }
     if (Date.now() - draft.savedAt > SET_ASIDE_MAX_AGE_MS) {
-      this.clearSetAside();
+      this.forgetSetAside();
       return null;
     }
     return { form: draft.form, flowId: draft.flowId, savedAt: draft.savedAt };
+  }
+
+  /** Drop settings nobody is coming back for, and the picture kept with them. */
+  private forgetSetAside(): void {
+    this.clearSetAside();
+    void this.dropSetAsideSource();
   }
 
   private clearSetAside(): void {

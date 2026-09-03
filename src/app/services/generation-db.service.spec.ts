@@ -8,6 +8,7 @@ import {
   LocalGenerationJob,
   StoredImageKind,
   StoredJobImage,
+  StoredSourceDraft,
 } from '../types/generation-job';
 
 function makeJob(
@@ -161,7 +162,7 @@ describe('GenerationDbService', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     // Sits at the service's own version, so no upgrade fires: recovery must be
     // the delete-and-recreate path, not a migration.
-    await seedForeignDb(2);
+    await seedForeignDb(3);
 
     await service.putJob(makeJob({ localId: 'r1' }));
 
@@ -174,7 +175,7 @@ describe('GenerationDbService', () => {
   it('recovers from a database at an incompatible newer version', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     // Newer than the service requests, so the open fails with VersionError.
-    await seedForeignDb(3);
+    await seedForeignDb(4);
 
     await service.putJob(makeJob({ localId: 'v1' }));
 
@@ -214,8 +215,9 @@ describe('GenerationDbService', () => {
 
   it('adopts a newer database that still carries the required stores', async () => {
     // Rolling back to an older bundle must not cost the user their history:
-    // schema growth is additive, so a v3 database still has everything v2 needs.
-    await seedNewerCompatibleDb(3);
+    // schema growth is additive, so a later database still carries everything
+    // this build reads.
+    await seedNewerCompatibleDb(4);
 
     await service.putJob(makeJob({ localId: 'afterRollback' }));
 
@@ -243,6 +245,84 @@ describe('GenerationDbService', () => {
     expect(await service.listJobs()).toEqual([]);
     expect(await service.getImagesForJob('w1')).toEqual([]);
     expect(await service.countJobs()).toBe(0);
+  });
+
+  it('keeps the attached picture across a reload of the studio', async () => {
+    const draft: StoredSourceDraft = {
+      id: 'studio',
+      savedAt: Date.now(),
+      source: new Blob(['picture'], { type: 'image/webp' }),
+      mask: new Blob(['mask'], { type: 'image/png' }),
+      extras: [
+        { blob: new Blob(['extra'], { type: 'image/webp' }), strength: 0.5 },
+      ],
+    };
+
+    await service.putSourceDraft(draft);
+
+    // The backing store clones blobs opaquely, so the round trip is read off
+    // what travels with them rather than off the bytes.
+    const loaded = await service.getSourceDraft('studio');
+    expect(loaded?.savedAt).toBe(draft.savedAt);
+    expect(loaded?.source).toBeDefined();
+    expect(loaded?.mask).not.toBeNull();
+    expect(loaded?.extras).toHaveLength(1);
+    expect(loaded?.extras[0].strength).toBe(0.5);
+  });
+
+  it('keeps one picture per id, so putting again replaces it', async () => {
+    const base = { id: 'studio', savedAt: 1, mask: null, extras: [] };
+    const replacement = {
+      ...base,
+      savedAt: 2,
+      source: new Blob(['a longer second picture'], { type: 'image/webp' }),
+    };
+    await service.putSourceDraft({
+      ...base,
+      source: new Blob(['first'], { type: 'image/webp' }),
+    });
+    await service.putSourceDraft(replacement);
+
+    expect((await service.getSourceDraft('studio'))?.savedAt).toBe(2);
+  });
+
+  it('forgets an attached picture once it is detached', async () => {
+    await service.putSourceDraft({
+      id: 'studio',
+      savedAt: Date.now(),
+      source: new Blob(['picture'], { type: 'image/webp' }),
+      mask: null,
+      extras: [],
+    });
+
+    await service.deleteSourceDraft('studio');
+
+    expect(await service.getSourceDraft('studio')).toBeUndefined();
+  });
+
+  it('holds the picture put aside for a tutorial apart from the bench one', async () => {
+    const putAside: StoredSourceDraft = {
+      id: 'set-aside',
+      savedAt: 2,
+      source: new Blob(['put aside'], { type: 'image/webp' }),
+      mask: null,
+      extras: [],
+    };
+    await service.putSourceDraft({
+      id: 'studio',
+      savedAt: 1,
+      source: new Blob(['bench'], { type: 'image/webp' }),
+      mask: null,
+      extras: [],
+    });
+    await service.putSourceDraft(putAside);
+
+    await service.deleteSourceDraft('studio');
+
+    expect(await service.getSourceDraft('studio')).toBeUndefined();
+    expect((await service.getSourceDraft('set-aside'))?.savedAt).toBe(
+      putAside.savedAt,
+    );
   });
 
   it('migrates a pre-existing v1 database without losing schema access', async () => {

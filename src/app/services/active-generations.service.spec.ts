@@ -65,7 +65,16 @@ describe('ActiveGenerationsService', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    setVisibility('visible');
   });
+
+  /** Stand in for the tab being hidden, which jsdom has no other way to say. */
+  function setVisibility(state: DocumentVisibilityState): void {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => state,
+    });
+  }
 
   function start(): ActiveGenerationsService {
     const service = TestBed.inject(ActiveGenerationsService);
@@ -147,6 +156,34 @@ describe('ActiveGenerationsService', () => {
     await vi.advanceTimersByTimeAsync(0);
 
     expect(refreshUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops reading while the tab is hidden', async () => {
+    current.set(user({ image: ['i1'] }));
+
+    start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(refreshUser).toHaveBeenCalledTimes(1);
+
+    setVisibility('hidden');
+    await vi.advanceTimersByTimeAsync(READ_INTERVAL_MS * 3);
+
+    expect(refreshUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads at once when the tab comes back', async () => {
+    current.set(user({ image: ['i1'] }));
+    setVisibility('hidden');
+
+    start();
+    await vi.advanceTimersByTimeAsync(READ_INTERVAL_MS * 2);
+    expect(refreshUser).toHaveBeenCalledTimes(1);
+
+    setVisibility('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(refreshUser).toHaveBeenCalledTimes(2);
   });
 
   it('waits before reading again after a read the horde would not answer', async () => {

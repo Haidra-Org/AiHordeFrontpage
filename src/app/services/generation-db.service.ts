@@ -6,12 +6,14 @@ import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
   StoredJobImage,
+  StoredSourceDraft,
 } from '../types/generation-job';
 
 const DB_NAME = 'ai-horde-frontpage';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const JOBS_STORE = 'generationJobs';
 const IMAGES_STORE = 'generationImages';
+const SOURCE_DRAFTS_STORE = 'sourceDrafts';
 
 /** Statuses considered terminal for retention/pruning. */
 const TERMINAL_STATUSES: readonly LocalGenerationJobStatus[] = [
@@ -32,6 +34,10 @@ interface GenerationDbSchema extends DBSchema {
     key: [string, string];
     value: StoredJobImage;
     indexes: { localId: string };
+  };
+  [SOURCE_DRAFTS_STORE]: {
+    key: string;
+    value: StoredSourceDraft;
   };
 }
 
@@ -71,9 +77,18 @@ function ensureSchema(
       images.createIndex('localId', 'localId');
     }
   }
+
+  if (!db.objectStoreNames.contains(SOURCE_DRAFTS_STORE)) {
+    db.createObjectStore(SOURCE_DRAFTS_STORE, { keyPath: 'id' });
+  }
 }
 
-/** Whether an opened database carries both stores this service requires. */
+/**
+ * Whether an opened database carries the stores this service cannot work
+ * without. The source-draft store is deliberately not among them: a database
+ * adopted from another build can lack it, and an attachment the reader can put
+ * back by hand is not worth discarding their generation history for.
+ */
 function hasRequiredStores(db: IDBPDatabase<GenerationDbSchema>): boolean {
   return (
     db.objectStoreNames.contains(JOBS_STORE) &&
@@ -82,8 +97,9 @@ function hasRequiredStores(db: IDBPDatabase<GenerationDbSchema>): boolean {
 }
 
 /**
- * IndexedDB persistence for locally-tracked generation jobs and their image
- * blobs. Browser-only: on the server every method is a no-op returning an empty
+ * IndexedDB persistence for locally-tracked generation jobs, their image blobs,
+ * and the picture attached to the studio while nothing has been sent yet.
+ * Browser-only: on the server every method is a no-op returning an empty
  * result, so callers can invoke it unconditionally during SSR.
  */
 @Injectable({ providedIn: 'root' })
@@ -178,6 +194,41 @@ export class GenerationDbService {
     }
     const db = await this.db();
     return db.getAllFromIndex(IMAGES_STORE, 'localId', localId);
+  }
+
+  /**
+   * Keep the picture currently attached to the studio under `draft.id`, so the
+   * bench is found as it was left. One record per id, overwritten in place.
+   */
+  public async putSourceDraft(draft: StoredSourceDraft): Promise<void> {
+    const db = await this.draftDb();
+    await db?.put(SOURCE_DRAFTS_STORE, draft);
+  }
+
+  public async getSourceDraft(
+    id: string,
+  ): Promise<StoredSourceDraft | undefined> {
+    const db = await this.draftDb();
+    return db?.get(SOURCE_DRAFTS_STORE, id);
+  }
+
+  /** Forget a stored attachment. Called where the reader detaches one. */
+  public async deleteSourceDraft(id: string): Promise<void> {
+    const db = await this.draftDb();
+    await db?.delete(SOURCE_DRAFTS_STORE, id);
+  }
+
+  /**
+   * The database while it carries the draft store, else null. Also null where
+   * there is no IndexedDB at all, so a caller keeping a draft can call
+   * unconditionally.
+   */
+  private async draftDb(): Promise<IDBPDatabase<GenerationDbSchema> | null> {
+    if (!this.isBrowser || typeof indexedDB === 'undefined') {
+      return null;
+    }
+    const db = await this.db();
+    return db.objectStoreNames.contains(SOURCE_DRAFTS_STORE) ? db : null;
   }
 
   /** Delete a job and every image blob attached to it in one transaction. */
