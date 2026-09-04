@@ -15933,13 +15933,26 @@ app-gs-compare-wipe {
     display: none;
   }
 }
+/* The readable height leaves the page above it enough room for a whole field
+   row with its label, which is what a step points at. A sheet that takes more
+   than that covers the thing the reader is being asked to touch. */
 .gen-studio .gs-sheet-panel {
   display: flex;
   flex-direction: column;
-  max-height: min(56dvh, 560px);
+  max-height: min(40dvh, 400px);
   transition:
     transform var(--gs-dur) var(--gs-ease),
     max-height var(--gs-dur) var(--gs-ease);
+}
+/* A screen wider than it is tall has a third of the height, and the sheet's own
+   bar takes the same room there as anywhere. The readable height is measured
+   from what is left rather than from the screen, so the body is worth reading;
+   the reader who wants the form back has the bar, which is the working stop in
+   this orientation. */
+@media (min-aspect-ratio: 1/1) {
+  .gen-studio .gs-sheet-panel {
+    max-height: min(64dvh, 400px);
+  }
 }
 /* Full is the whole viewport, less the safe area: the sheet becomes the page
    until the reader shrinks it, which is what a reader who finds the half too
@@ -15984,8 +15997,8 @@ app-gs-compare-wipe {
   left: 50%;
   transform: translateX(-50%);
   flex: none;
-  width: 96px;
-  height: 18px;
+  width: 120px;
+  height: 24px;
   z-index: 1;
 }
 .gen-studio .gs-sheet-top:has(> [sheet-head]) .gs-sheet-stops {
@@ -16075,6 +16088,14 @@ app-gs-compare-wipe {
   gap: 6px;
   flex: none;
   padding: 0 10px 8px;
+  /* Both gestures the bar answers are its own: a drag moves the sheet and a
+     swipe moves the content, so the browser is told not to scroll from here
+     rather than left to guess between them. */
+  touch-action: none;
+}
+/* The body scrolls itself, so only the sideways axis is claimed. */
+.gen-studio .gs-sheet-body {
+  touch-action: pan-y;
 }
 .gen-studio .gs-sheet-slot {
   flex: 1 1 auto;
@@ -16116,6 +16137,11 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-sheet-btn-text {
   white-space: nowrap;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-sheet-btn--labelled {
+    height: 44px;
+  }
 }
 .gen-studio .gs-sheet-btn:hover {
   color: var(--gs-ink);
@@ -16190,8 +16216,9 @@ html:has(app-gs-sheet) {
   }
   /* The page also has to be able to scroll that far: a field near the foot of
      the form can only reach the band above the sheet if the page ends that
-     much below its last control. */
-  html:has(.gs-sheet--open) .gen-studio .gs-shell-outlet {
+     much below its last control. The bar covers the foot of the page as surely
+     as the open sheet does, so the room is kept at every stop. */
+  html:has(app-gs-sheet) .gen-studio .gs-shell-outlet {
     padding-bottom: calc(
       var(--gs-sheet-clearance, 96px) + var(--gs-tabbar-height) +
         env(safe-area-inset-bottom)

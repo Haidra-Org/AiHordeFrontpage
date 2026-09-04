@@ -1448,7 +1448,7 @@ export class GenerateResultsPanelComponent {
         this.metaJsonOpen.set(false);
       }
       this.attachViewerKeys();
-      this.viewerBack.hold();
+      this.viewerBack.arm();
     }
   }
 
@@ -1456,7 +1456,7 @@ export class GenerateResultsPanelComponent {
     if (this.viewerKey() === null) {
       return;
     }
-    this.viewerBack.release();
+    this.viewerBack.disarm();
     this.viewerDeletePending.set(null);
     this.viewerDeleteReturnFocus = null;
     this.viewerKey.set(null);

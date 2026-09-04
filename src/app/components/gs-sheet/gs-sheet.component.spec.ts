@@ -19,6 +19,7 @@ const CLEARANCE_VAR = '--gs-sheet-clearance';
         [startExpanded]="startExpanded"
         [rememberAs]="rememberAs"
         (closed)="closed = closed + 1"
+        (swiped)="swiped.push($event)"
       >
         <span sheet-bar>Bar</span>
         <h2>Body heading</h2>
@@ -33,11 +34,13 @@ class HostComponent {
   public startExpanded = false;
   public rememberAs: string | null = null;
   public closed = 0;
+  public readonly swiped: ('forward' | 'back')[] = [];
 }
 
-/** A pointer event jsdom can build, with the fields the drag maths reads. */
-function pointer(type: string, clientY: number): PointerEvent {
+/** A pointer event jsdom can build, with the fields the gesture maths reads. */
+function pointer(type: string, clientY: number, clientX = 0): PointerEvent {
   return new MouseEvent(type, {
+    clientX,
     clientY,
     bubbles: true,
   }) as unknown as PointerEvent;
@@ -132,15 +135,18 @@ describe('GsSheetComponent', () => {
     expect(body().hidden).toBe(true);
   });
 
-  it('remembers its stop under a key, and comes back to it', async () => {
-    localStorage.clear();
+  it('remembers its stop for the visit, and comes back to it', async () => {
+    sessionStorage.clear();
     await setUp(false, 'test.sheet.stop');
 
     stopButton('generate.sheet.show')!.click();
     await settle();
     stopButton('generate.sheet.fill')!.click();
     await settle();
-    expect(localStorage.getItem('test.sheet.stop')).toBe('full');
+    // The visit, not for ever: a reader who meets the sheet again months later
+    // should not find it already over the thing they came back for.
+    expect(sessionStorage.getItem('test.sheet.stop')).toBe('full');
+    expect(localStorage.getItem('test.sheet.stop')).toBeNull();
 
     // Remount: the sheet opens where it was left.
     fixture.componentInstance.mounted.set(false);
@@ -149,7 +155,7 @@ describe('GsSheetComponent', () => {
     fixture.detectChanges();
     await settle();
     expect(fixture.componentInstance.sheet().stop()).toBe('full');
-    localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('fills the viewport from half, and shrinks back to half', async () => {
@@ -274,6 +280,88 @@ describe('GsSheetComponent', () => {
       grab().dispatchEvent(pointer('pointermove', 40));
       fixture.detectChanges();
       expect(find<HTMLElement>('.gs-sheet-panel')?.style.transform).toBe('');
+    });
+  });
+
+  describe('the sideways gesture', () => {
+    const bar = (): HTMLElement => find<HTMLElement>('.gs-sheet-bar')!;
+    /** One gesture across a surface, from the middle of the screen. */
+    function across(surface: HTMLElement, dx: number, dy = 0): void {
+      surface.dispatchEvent(pointer('pointerdown', 400, 200));
+      surface.dispatchEvent(pointer('pointermove', 400 + dy, 200 + dx));
+      surface.dispatchEvent(pointer('pointerup', 400 + dy, 200 + dx));
+    }
+
+    it('reports a swipe across the bar in the direction it went', async () => {
+      await setUp();
+
+      across(bar(), -60);
+      expect(fixture.componentInstance.swiped).toEqual(['forward']);
+
+      across(bar(), 60);
+      expect(fixture.componentInstance.swiped).toEqual(['forward', 'back']);
+    });
+
+    it('reports a swipe across the body too', async () => {
+      await setUp(true);
+
+      across(body(), -60);
+
+      expect(fixture.componentInstance.swiped).toEqual(['forward']);
+    });
+
+    it('says nothing about a move too short to be meant', async () => {
+      await setUp();
+
+      across(bar(), -20);
+
+      expect(fixture.componentInstance.swiped).toEqual([]);
+    });
+
+    it('gives a steep gesture to the stops rather than to the content', async () => {
+      await setUp();
+      const host = find<HTMLElement>('app-gs-sheet')!;
+      vi.spyOn(host, 'offsetHeight', 'get').mockReturnValue(400);
+
+      // Far enough sideways to pass the distance on its own, and far enough up
+      // that the gesture is plainly a drag towards the stop above.
+      across(bar(), -40, -160);
+      await settle();
+
+      expect(fixture.componentInstance.swiped).toEqual([]);
+      expect(body().hidden).toBe(false);
+    });
+  });
+
+  it('puts the body back at its top when the caller asks', async () => {
+    await setUp(true);
+    const scrolled: ScrollToOptions[] = [];
+    body().scrollTo = ((options: ScrollToOptions) => {
+      scrolled.push(options);
+    }) as typeof body.prototype.scrollTo;
+
+    fixture.componentInstance.sheet().scrollBodyToTop();
+
+    expect(scrolled).toEqual([{ top: 0, behavior: 'auto' }]);
+  });
+
+  describe('the system Back gesture', () => {
+    it('takes the sheet down to its bar before it leaves the page', async () => {
+      await setUp(true);
+
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      await settle();
+
+      expect(body().hidden).toBe(true);
+    });
+
+    it('leaves a sheet that is already a bar alone', async () => {
+      await setUp();
+
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      await settle();
+
+      expect(fixture.componentInstance.sheet().stop()).toBe('peek');
     });
   });
 

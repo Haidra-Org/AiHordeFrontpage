@@ -865,9 +865,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const asSheet = this.isNarrow() && this.helpDock.isOpen();
     untracked(() => {
       if (asSheet) {
-        this.helpBack.hold();
+        this.helpBack.arm();
       } else {
-        this.helpBack.release();
+        this.helpBack.disarm();
       }
     });
   });

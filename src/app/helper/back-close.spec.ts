@@ -21,6 +21,10 @@ function fakeView(): {
     }
   };
   const view = {
+    scrollX: 0,
+    scrollY: 0,
+    scrollTo: () => undefined,
+    requestAnimationFrame: () => 0,
     history: {
       get state() {
         return entries[entries.length - 1];
@@ -42,7 +46,7 @@ describe('BackClose', () => {
     const close = vi.fn();
     const layer = new BackClose(view, close);
 
-    layer.hold();
+    layer.arm();
     fireBack();
     fireBack();
 
@@ -55,10 +59,10 @@ describe('BackClose', () => {
     const layer = new BackClose(view, close);
     const before = entries.length;
 
-    layer.hold();
+    layer.arm();
     expect(entries.length).toBe(before + 1);
 
-    layer.release();
+    layer.disarm();
 
     expect(entries.length).toBe(before);
     // Releasing is not going back: the layer is already closed.
@@ -70,8 +74,8 @@ describe('BackClose', () => {
     const layer = new BackClose(view, vi.fn());
     const before = entries.length;
 
-    layer.hold();
-    layer.hold();
+    layer.arm();
+    layer.arm();
 
     expect(entries.length).toBe(before + 1);
   });
@@ -80,9 +84,9 @@ describe('BackClose', () => {
     const { view, entries } = fakeView();
     const layer = new BackClose(view, vi.fn());
 
-    layer.hold();
+    layer.arm();
     view.history.pushState({ elsewhere: true }, '');
-    layer.release();
+    layer.disarm();
 
     // The layer's own entry is buried, and walking back from here would take
     // the reader off the page rather than tidy the history.
@@ -94,19 +98,47 @@ describe('BackClose', () => {
     const close = vi.fn();
     const layer = new BackClose(view, close);
 
-    layer.hold();
+    layer.arm();
     layer.detach();
     fireBack();
 
     expect(close).not.toHaveBeenCalled();
   });
 
+  it('lets Back go on out when the layer declines it', () => {
+    const { view, entries, fireBack } = fakeView();
+    const layer = new BackClose(view, () => false);
+    const before = entries.length;
+
+    layer.arm();
+    expect(entries.length).toBe(before + 1);
+    fireBack();
+
+    // The layer's own entry is gone and it asked for one more step back, so
+    // the reader's single press is not spent on tidying the history.
+    expect(entries.length).toBe(before);
+  });
+
+  it('answers the next Back too when it took the last one', () => {
+    const { view, entries, fireBack } = fakeView();
+    const close = vi.fn(() => true);
+    const layer = new BackClose(view, close);
+    const before = entries.length;
+
+    layer.arm();
+    fireBack();
+    expect(entries.length).toBe(before + 1);
+    fireBack();
+
+    expect(close).toHaveBeenCalledTimes(2);
+  });
+
   it('does nothing at all where there is no window', () => {
     const layer = new BackClose(null, vi.fn());
 
     expect(() => {
-      layer.hold();
-      layer.release();
+      layer.arm();
+      layer.disarm();
       layer.detach();
     }).not.toThrow();
   });

@@ -20,11 +20,20 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { A11yModule } from '@angular/cdk/a11y';
 import { IconComponent } from '../icon/icon.component';
 import { useScrollLock } from '../../helper/scroll-lock';
+import { useBackClose } from '../../helper/back-close';
 
 /** How far along its own height a drag has to travel before it snaps over. */
 const SNAP_FRACTION = 0.25;
 /** A drag past this share of the viewport height jumps two stops rather than one. */
 const LONG_DRAG_FRACTION = 0.45;
+/** How far a sideways gesture has to travel before it is a swipe rather than a tap. */
+const SWIPE_MIN_PX = 24;
+/**
+ * How much longer a gesture has to be sideways than up for it to be read as a
+ * swipe. A thumb travelling to a stop rarely leaves a straight line, so the
+ * angle is generous; anything steeper belongs to the stop it is heading for.
+ */
+const SWIPE_AXIS_RATIO = 1.7;
 
 /**
  * How much of the screen the sheet takes: a bar (peek), the step at a readable
@@ -58,7 +67,13 @@ let nextInstance = 0;
  * once. It moves from the labelled buttons, from a tap on the grabber and from a
  * drag on the grabber, because on a phone those are one intention and only the
  * last of them is discoverable without reading anything; the buttons carry
- * words as well as chevrons so the affordance is not a guess.
+ * words as well as chevrons so the affordance is not a guess. The bar and the
+ * body also report a sideways swipe, for content that has a next and a
+ * previous; the same rule holds there, and every caller that takes the swipe
+ * keeps its own buttons for both directions.
+ *
+ * The system Back gesture takes an open sheet down to its bar before it takes
+ * the reader off the page.
  *
  * Whether a sheet is the right presentation at all is a question for CSS: the
  * host is display:none from 1024px up, where the studio has a pane to dock
@@ -154,7 +169,18 @@ let nextInstance = 0;
           }
         </div>
       </div>
-      <div class="gs-sheet-bar">
+      <!-- The bar takes both gestures a phone reader will try on it: a drag up
+           or down moves the sheet, as it does on the grabber, and a swipe
+           across asks the content to move on. Which of the two a gesture is is
+           decided once, from its first few pixels, so neither can start in the
+           middle of the other. -->
+      <div
+        class="gs-sheet-bar"
+        (pointerdown)="onSurfaceDown($event, true)"
+        (pointermove)="onSurfaceMove($event)"
+        (pointerup)="onSurfaceUp($event)"
+        (pointercancel)="onSurfaceCancel()"
+      >
         <div class="gs-sheet-slot">
           <ng-content select="[sheet-bar]" />
         </div>
@@ -165,6 +191,10 @@ let nextInstance = 0;
         [id]="bodyId"
         tabindex="-1"
         [hidden]="!expanded()"
+        (pointerdown)="onSurfaceDown($event, false)"
+        (pointermove)="onSurfaceMove($event)"
+        (pointerup)="onSurfaceUp($event)"
+        (pointercancel)="onSurfaceCancel()"
       >
         <ng-content />
       </div>
@@ -215,11 +245,23 @@ export class GsSheetComponent {
    * A storage key under which the stop is remembered between mounts, for a
    * sheet the reader meets again and again: a reader who chose full for one
    * step should not have to choose it for the next.
+   *
+   * The memory lasts the visit and no longer. A stop chosen once and kept for
+   * ever means a reader meets a sheet already over the thing they came back
+   * for, with no memory of having asked for it.
    */
   public readonly rememberAs = input<string | null>(null);
 
   /** The reader dismissed the sheet; the caller decides what that means. */
   public readonly closed = output<void>();
+
+  /**
+   * A sideways swipe across the bar or the body, in the direction a reader
+   * reads: `forward` for a swipe to the left, `back` for one to the right. The
+   * chassis knows nothing about what the content does with it, and every
+   * caller that takes it keeps its own visible buttons for the same two moves.
+   */
+  public readonly swiped = output<'forward' | 'back'>();
 
   private readonly bodyRef = viewChild<ElementRef<HTMLElement>>('sheetBody');
 
@@ -234,6 +276,21 @@ export class GsSheetComponent {
    * lock the page the same way and restore it the same way.
    */
   private readonly scrollBlock = useScrollLock();
+
+  /**
+   * The system Back gesture takes the sheet down to its bar before it takes the
+   * reader off the page. On a phone Back is what a reader reaches for to get a
+   * cover off the screen, and a sheet that lets it through loses them the page
+   * and everything they had set up on it. A sheet already at its bar is not
+   * covering anything, so Back goes where it always went.
+   */
+  private readonly backClose = useBackClose(() => {
+    if (!this.expanded()) {
+      return false;
+    }
+    this.collapse();
+    return true;
+  });
 
   public readonly bodyId = `gs-sheet-body-${nextInstance++}`;
 
@@ -256,6 +313,23 @@ export class GsSheetComponent {
   /** Whether the pointer moved far enough that the click after it is no tap. */
   private moved = false;
 
+  /** Where a gesture on the bar or the body began, and what it turned out to be. */
+  private surfaceStartX = 0;
+  private surfaceStartY = 0;
+  private surfaceAxis: 'undecided' | 'across' | 'along' | 'given-up' =
+    'given-up';
+  /** Whether the surface the gesture started on can move the sheet as well. */
+  private surfaceDetents = false;
+
+  /**
+   * Whether the screen is wider than it is tall. A sheet takes the same share
+   * of a short screen as of a tall one, so in landscape it stops offering
+   * itself the whole viewport and lands at the readable height instead; a
+   * reader who wants the whole screen there still has the button that says so.
+   */
+  private readonly landscape = signal(false);
+  private orientation: MediaQueryList | null = null;
+
   private observer: ResizeObserver | null = null;
 
   constructor() {
@@ -266,7 +340,9 @@ export class GsSheetComponent {
       const asked = this.startAt();
       const remembered = this.rememberedStop();
       untracked(() =>
-        this.at.set(asked ?? remembered ?? (start ? 'half' : 'peek')),
+        this.at.set(
+          this.landed(asked ?? remembered ?? (start ? 'half' : 'peek')),
+        ),
       );
     });
     // The height is read after the browser has drawn the state it belongs to;
@@ -281,7 +357,24 @@ export class GsSheetComponent {
       });
     });
     if (this.isBrowser) {
-      afterNextRender(() => this.observeHeight(), { injector: this.injector });
+      // The shape of the screen is read after the first frame, so a server
+      // render and the frame that replaces it agree about what exists; the
+      // stop the sheet landed on without being told is checked against it
+      // once, there and nowhere else. A reader who rotates the phone keeps the
+      // stop they chose, as every other sheet on the platform does.
+      afterNextRender(
+        () => {
+          this.observeHeight();
+          this.watchOrientation();
+          this.at.set(this.landed(untracked(() => this.at())));
+          // Armed for as long as the sheet is on the page, at every stop: the
+          // entry is what makes the gesture reach this component at all, and
+          // what it does with the gesture depends on the stop it is at when
+          // the gesture arrives, not on the stop it was at when it armed.
+          this.backClose.arm();
+        },
+        { injector: this.injector },
+      );
     }
     effect(() => {
       const whole = this.at() === 'full';
@@ -296,6 +389,7 @@ export class GsSheetComponent {
     });
     this.destroyRef.onDestroy(() => {
       this.observer?.disconnect();
+      this.orientation?.removeEventListener('change', this.onOrientation);
       if (this.isBrowser) {
         document.documentElement.style.removeProperty(CLEARANCE_VAR);
       }
@@ -327,6 +421,40 @@ export class GsSheetComponent {
 
   public close(): void {
     this.closed.emit();
+  }
+
+  /**
+   * Put the body back at its start. Content that replaces itself in place (a
+   * tutorial moving to its next step) is otherwise read from wherever the last
+   * one was left, which lands the reader in the middle of a sentence they have
+   * not met.
+   */
+  public scrollBodyToTop(): void {
+    this.bodyRef()?.nativeElement.scrollTo?.({ top: 0, behavior: 'auto' });
+  }
+
+  /**
+   * Where a stop the sheet was not asked for by name actually lands. On a
+   * screen wider than it is tall the whole viewport is not a stop the sheet
+   * takes on its own: the readable height already leaves the body more lines
+   * than the full height does rows to spare, and the reader keeps the labelled
+   * button for the times they want everything.
+   */
+  private landed(stop: SheetStop): SheetStop {
+    return stop === 'full' && this.landscape() ? 'half' : stop;
+  }
+
+  private readonly onOrientation = (event: MediaQueryListEvent): void =>
+    this.landscape.set(event.matches);
+
+  private watchOrientation(): void {
+    const query = globalThis.matchMedia?.('(min-aspect-ratio: 1/1)');
+    if (!query) {
+      return;
+    }
+    this.orientation = query;
+    this.landscape.set(query.matches);
+    query.addEventListener('change', this.onOrientation);
   }
 
   /**
@@ -410,16 +538,148 @@ export class GsSheetComponent {
       viewport > 0 && Math.abs(offset) >= viewport * LONG_DRAG_FRACTION ? 2 : 1;
     const direction = offset < 0 ? 1 : -1;
     const index = STOPS.indexOf(this.startedAt) + direction * steps;
-    this.setStop(STOPS[Math.max(0, Math.min(STOPS.length - 1, index))]);
+    this.setStop(
+      this.landed(STOPS[Math.max(0, Math.min(STOPS.length - 1, index))]),
+    );
   }
 
-  /** The stop remembered under `rememberAs`, if it is one the sheet has. */
+  /**
+   * Where a gesture on the bar or the body starts. The pointer is not captured
+   * and nothing is decided yet: the surfaces carry buttons, and a press that
+   * turns out to be a press has to reach the button under it.
+   */
+  public onSurfaceDown(event: PointerEvent, detents: boolean): void {
+    if (event.button > 0 || this.crossesSideways(event)) {
+      this.surfaceAxis = 'given-up';
+      return;
+    }
+    this.surfaceStartX = event.clientX;
+    this.surfaceStartY = event.clientY;
+    this.surfaceAxis = 'undecided';
+    this.surfaceDetents = detents;
+  }
+
+  /**
+   * Which gesture this is, decided once and then held. A sideways swipe has to
+   * be both long enough to be deliberate and much more sideways than up, so a
+   * thumb reaching for a stop never moves the content instead; anything else on
+   * a surface that has stops is the drag the grabber does, and anything else on
+   * the body is the body being read.
+   */
+  public onSurfaceMove(event: PointerEvent): void {
+    if (this.surfaceAxis === 'given-up') {
+      return;
+    }
+    if (this.surfaceAxis === 'along') {
+      this.onPointerMove(event);
+      return;
+    }
+    const dx = event.clientX - this.surfaceStartX;
+    const dy = event.clientY - this.surfaceStartY;
+    if (this.surfaceAxis === 'across') {
+      return;
+    }
+    if (
+      Math.abs(dx) >= SWIPE_MIN_PX &&
+      Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_RATIO
+    ) {
+      this.surfaceAxis = 'across';
+      return;
+    }
+    if (Math.abs(dy) <= DRAG_SLOP_PX) {
+      return;
+    }
+    if (!this.surfaceDetents) {
+      this.surfaceAxis = 'given-up';
+      return;
+    }
+    // The drag is measured from where the finger went down rather than from
+    // where it was when the axis became clear, so the sheet does not jump the
+    // few pixels it took to decide.
+    this.surfaceAxis = 'along';
+    this.startY = this.surfaceStartY;
+    this.startedAt = this.at();
+    this.moved = true;
+    this.dragging.set(true);
+    // The surface itself takes the pointer, not whatever was under the finger:
+    // a drag that leaves the bar has to keep reporting to the bar, and by this
+    // point the gesture is a drag and no longer a press on a button. Capturing
+    // any earlier would take the press off the buttons the bar carries.
+    this.capture(event);
+    this.onPointerMove(event);
+  }
+
+  public onSurfaceUp(event: PointerEvent): void {
+    const axis = this.surfaceAxis;
+    this.surfaceAxis = 'given-up';
+    if (axis === 'along') {
+      this.onPointerUp(event);
+      return;
+    }
+    if (axis !== 'across') {
+      return;
+    }
+    const dx = event.clientX - this.surfaceStartX;
+    if (Math.abs(dx) < SWIPE_MIN_PX) {
+      return;
+    }
+    this.swiped.emit(dx < 0 ? 'forward' : 'back');
+  }
+
+  /**
+   * Hand the pointer to the element the handler is on. Where the element is
+   * gone (a surface that re-rendered mid-gesture) there is nothing to capture
+   * and the gesture ends with the events it has already had.
+   */
+  private capture(event: PointerEvent): void {
+    const surface = event.currentTarget as Element | null;
+    try {
+      surface?.setPointerCapture?.(event.pointerId);
+    } catch {
+      // A pointer the browser has already released cannot be captured, and a
+      // gesture that ends there is one the reader has already finished.
+    }
+  }
+
+  public onSurfaceCancel(): void {
+    if (this.surfaceAxis === 'along') {
+      this.dragging.set(false);
+      this.dragOffset.set(0);
+    }
+    this.surfaceAxis = 'given-up';
+  }
+
+  /**
+   * Whether the gesture started on something that scrolls sideways of its own
+   * accord (a strip of pictures inside the body). That content owns the
+   * sideways axis where it has one, and taking it would stop the strip moving.
+   */
+  private crossesSideways(event: PointerEvent): boolean {
+    let node = event.target as HTMLElement | null;
+    const panel = this.host.nativeElement;
+    while (node && node !== panel) {
+      const overflow = getComputedStyle(node).overflowX;
+      if (
+        (overflow === 'auto' || overflow === 'scroll') &&
+        node.scrollWidth - node.clientWidth > 1
+      ) {
+        return true;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  /**
+   * The stop remembered under `rememberAs`, if it is one the sheet has. Kept
+   * for the visit rather than for ever: see {@link rememberAs}.
+   */
   private rememberedStop(): SheetStop | null {
     const key = this.rememberAs();
     if (!key || !this.isBrowser) {
       return null;
     }
-    const stored = localStorage.getItem(key);
+    const stored = sessionStorage.getItem(key);
     return STOPS.includes(stored as SheetStop) ? (stored as SheetStop) : null;
   }
 
@@ -431,7 +691,7 @@ export class GsSheetComponent {
     this.at.set(next);
     const key = this.rememberAs();
     if (key && this.isBrowser) {
-      localStorage.setItem(key, next);
+      sessionStorage.setItem(key, next);
     }
     // Focus follows the body when it first appears; a change of size around a
     // body already being read leaves the reader where they were.
@@ -455,7 +715,10 @@ export class GsSheetComponent {
     if (!target.hasAttribute('tabindex')) {
       target.setAttribute('tabindex', '-1');
     }
-    target.focus();
+    // Focus without moving the body. A heading that is only there for assistive
+    // technology can sit below a picture or a lead, and letting the focus drag
+    // the body to it opens the sheet part-way down what it has to say.
+    target.focus({ preventScroll: true });
   }
 
   /**
