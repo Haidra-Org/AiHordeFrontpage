@@ -269,6 +269,7 @@ const REJECTION_COPY_KEYS: ReadonlyMap<string, string> = new Map([
   ['SourceImageResolutionExceeded', 'generate.reject.source_too_large'],
   ['SourceImageSizeExceeded', 'generate.reject.source_file_too_big'],
   ['SourceImageUnreadable', 'generate.reject.source_unreadable'],
+  ['SourceImageUrlInvalid', 'generate.reject.source_url_invalid'],
   ['InpaintingMissingMask', 'generate.reject.inpainting_needs_mask'],
   // Add-ons and extra pictures
   ['TooManyLoras', 'generate.reject.too_many_loras'],
@@ -293,6 +294,10 @@ export function hordeRejectionKey(rc: string | undefined): string | undefined {
 
 export type SubmitImageResult =
   | { kind: 'success'; response: ImageGenerationResponse }
+  | { kind: 'error'; error: HordeApiError };
+
+export type SubmitInterrogationResult =
+  | { kind: 'success'; response: InterrogationResponse }
   | { kind: 'error'; error: HordeApiError };
 
 export type CheckImageResult =

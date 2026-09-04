@@ -118,7 +118,7 @@ describe('AlchemyQueueService', () => {
       });
       req.flush({ id: 'job-1' });
 
-      expect(await pending).toBe('job-1');
+      expect(await pending).toEqual({ kind: 'submitted', id: 'job-1' });
       await settle();
       expect(service.jobs().map((job) => job.id)).toEqual(['job-1']);
       expect((await db.listJobs())[0].jobId).toBe('job-1');
@@ -140,7 +140,10 @@ describe('AlchemyQueueService', () => {
       });
       req.flush({ id: 'job-annotation' });
 
-      expect(await pending).toBe('job-annotation');
+      expect(await pending).toEqual({
+        kind: 'submitted',
+        id: 'job-annotation',
+      });
       await settle();
       expect(service.jobs()[0].annotationControlTypes).toEqual(['depth']);
     });
@@ -162,7 +165,7 @@ describe('AlchemyQueueService', () => {
       ]);
       req.flush({ id: 'job-detectors' });
 
-      expect(await pending).toBe('job-detectors');
+      expect(await pending).toEqual({ kind: 'submitted', id: 'job-detectors' });
       await settle();
       expect((await db.listJobs())[0].annotationControlTypes).toEqual([
         'canny',
@@ -180,7 +183,7 @@ describe('AlchemyQueueService', () => {
       expect(await db.getImagesForJob(localId)).toEqual([]);
     });
 
-    it('returns null and tracks nothing when the horde rejects it', async () => {
+    it('returns the refusal and tracks nothing when the horde rejects it', async () => {
       const pending = service.submit({
         forms: ['caption'],
         slowWorkers: true,
@@ -188,9 +191,19 @@ describe('AlchemyQueueService', () => {
       });
       http
         .expectOne(`${API_BASE}/interrogate/async`)
-        .flush('no', { status: 400, statusText: 'Bad Request' });
+        .flush(
+          { message: 'Too many prompts', rc: 'TooManyPrompts' },
+          { status: 429, statusText: 'Too Many Requests' },
+        );
 
-      expect(await pending).toBeNull();
+      expect(await pending).toEqual({
+        kind: 'refused',
+        error: {
+          status: 429,
+          message: 'Too many prompts',
+          rc: 'TooManyPrompts',
+        },
+      });
       expect(service.jobs()).toEqual([]);
     });
   });

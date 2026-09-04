@@ -28,6 +28,7 @@ import {
   InterrogationResponse,
   GENERATION_NOT_FOUND,
   SubmitImageResult,
+  SubmitInterrogationResult,
   CheckImageResult,
   HordeApiError,
 } from '../types/generation';
@@ -450,10 +451,15 @@ export class AiHordeService {
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
   }
 
+  /**
+   * Submit an alchemy request, surfacing the horde's refusal on failure. The
+   * refusal carries the return code and sentence the reader is shown, so a
+   * request the horde would not take is not reported as a connection problem.
+   */
   public submitInterrogation(
     apiKey: string,
     request: InterrogationRequest,
-  ): Observable<InterrogationResponse | null> {
+  ): Observable<SubmitInterrogationResult> {
     return this.httpClient
       .post<InterrogationResponse>(
         `${this.baseUrl}/interrogate/async`,
@@ -463,7 +469,12 @@ export class AiHordeService {
           context: this.generateContext,
         },
       )
-      .pipe(catchError(() => of(null)));
+      .pipe(
+        map((response) => ({ kind: 'success' as const, response })),
+        catchError((err: unknown) =>
+          of({ kind: 'error' as const, error: this.toHordeApiError(err) }),
+        ),
+      );
   }
 
   public getAlchemyStatus(

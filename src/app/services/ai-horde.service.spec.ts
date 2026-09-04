@@ -353,20 +353,33 @@ describe('AiHordeService', () => {
         .expectOne(`${API_BASE}/interrogate/async`)
         .flush({ id: 'alch-abc', kudos: 5 });
 
-      expect(await promise).toEqual({ id: 'alch-abc', kudos: 5 });
+      expect(await promise).toEqual({
+        kind: 'success',
+        response: { id: 'alch-abc', kudos: 5 },
+      });
     });
 
-    it('should return null on HTTP error', async () => {
+    it('surfaces the status, message and return code of a refusal', async () => {
       const promise = firstValueFrom(
         service.submitInterrogation(apiKey, request),
       );
 
-      http.expectOne(`${API_BASE}/interrogate/async`).flush('Bad request', {
-        status: 400,
-        statusText: 'Bad Request',
-      });
+      http.expectOne(`${API_BASE}/interrogate/async`).flush(
+        {
+          message: 'Source image url does not contain an image',
+          rc: 'SourceImageUrlInvalid',
+        },
+        { status: 400, statusText: 'Bad Request' },
+      );
 
-      expect(await promise).toBeNull();
+      expect(await promise).toEqual({
+        kind: 'error',
+        error: {
+          status: 400,
+          message: 'Source image url does not contain an image',
+          rc: 'SourceImageUrlInvalid',
+        },
+      });
     });
   });
 

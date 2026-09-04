@@ -21,6 +21,7 @@ import {
   AlchemyStatusResponse,
   AnnotationControlType,
   GENERATION_NOT_FOUND,
+  HordeApiError,
   InterrogationForm,
   InterrogationRequest,
 } from '../types/generation';
@@ -95,6 +96,14 @@ export interface AlchemySubmission {
   /** The picker's own mime type; sniffed from the payload when absent. */
   sourceMimeType?: string;
 }
+
+/**
+ * What came of a submission: the horde's job id, or the refusal as the horde
+ * worded it, with its return code where it sent one.
+ */
+export type AlchemySubmitOutcome =
+  | { kind: 'submitted'; id: string }
+  | { kind: 'refused'; error: HordeApiError };
 
 /** A result image the horde has published but that is not yet held locally. */
 interface UnresolvedImage {
@@ -273,8 +282,8 @@ export class AlchemyQueueService {
 
   // --- Submission ----------------------------------------------------------
 
-  /** Submit a request and begin tracking it. Returns the horde's job id. */
-  public async submit(input: AlchemySubmission): Promise<string | null> {
+  /** Submit a request and, when the horde takes it, begin tracking it. */
+  public async submit(input: AlchemySubmission): Promise<AlchemySubmitOutcome> {
     const apiKey = this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
     const detectors = input.annotationControlTypes ?? [];
     const request: InterrogationRequest = {
@@ -292,12 +301,13 @@ export class AlchemyQueueService {
       slow_workers: input.slowWorkers,
     };
 
-    const response = await firstValueFrom(
+    const result = await firstValueFrom(
       this.aiHorde.submitInterrogation(apiKey, request),
     );
-    if (!response) {
-      return null;
+    if (result.kind === 'error') {
+      return { kind: 'refused', error: result.error };
     }
+    const response = result.response;
 
     const now = Date.now();
     const sourceMode = isUrlSource(input.source);
@@ -328,7 +338,7 @@ export class AlchemyQueueService {
     // Off the submit path: a URL source needs no work, and a canvas encode of a
     // multi-megabyte upload should not hold up the job appearing on screen.
     void this.storeSourceImages(job, input);
-    return response.id;
+    return { kind: 'submitted', id: response.id };
   }
 
   /**

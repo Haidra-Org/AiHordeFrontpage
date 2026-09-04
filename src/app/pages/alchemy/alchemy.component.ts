@@ -36,8 +36,10 @@ import {
   ALCHEMY_POST_PROCESSOR_FORMS,
   AlchemyFormName,
   AnnotationControlType,
+  HordeApiError,
   InterrogationForm,
   InterrogationRequest,
+  hordeRejectionKey,
 } from '../../types/generation';
 import { AlchemyImageInputComponent } from '../../components/alchemy/alchemy-image-input/alchemy-image-input.component';
 import { GsHelpComponent } from '../../components/gs-help/gs-help.component';
@@ -967,15 +969,37 @@ export class AlchemyComponent {
         slowWorkers: this.slowWorkers(),
         source,
       })
-      .then((id) => {
+      .then((outcome) => {
         this.isSubmitting.set(false);
-        if (!id) {
-          this.toast.error('alchemy.submit.error', { transloco: true });
+        if (outcome.kind === 'refused') {
+          this.reportRefusal(outcome.error);
           return;
         }
-        this.announceNewJob(id);
+        this.announceNewJob(outcome.id);
         this.toast.success('alchemy.submit.success', { transloco: true });
       });
+  }
+
+  /**
+   * Say why the horde did not take the request. A refusal (4xx) is about the
+   * request itself, so the reader gets the studio's own sentence for that return
+   * code where it has one and the horde's own otherwise; anything else is the
+   * horde not answering, which the generic line already covers.
+   */
+  private reportRefusal(error: HordeApiError): void {
+    if (error.status < 400 || error.status >= 500) {
+      this.toast.error('alchemy.submit.error', { transloco: true });
+      return;
+    }
+    const key = hordeRejectionKey(error.rc);
+    if (key) {
+      this.toast.error(key, { transloco: true });
+      return;
+    }
+    this.toast.error('alchemy.submit.refused', {
+      transloco: true,
+      messageParams: { reason: error.message },
+    });
   }
 
   /** Rail/carousel/tile activation: show the picked job's results. */

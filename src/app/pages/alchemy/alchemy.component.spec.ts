@@ -16,6 +16,7 @@ import { TranslatorService } from '../../services/translator.service';
 import { clientAgentInterceptor } from '../../services/interceptors/client-agent.interceptor';
 import { API_BASE } from '../../testing/api-test-helpers';
 import { AlchemyFormName } from '../../types/generation';
+import { AlchemySubmitOutcome } from '../../services/alchemy-queue.service';
 import { AlchemyJob, toAlchemyJob } from '../../helper/alchemy-job-view';
 import { AlchemyQueueService } from '../../services/alchemy-queue.service';
 import { StoredAlchemyJob } from '../../types/alchemy-job';
@@ -41,7 +42,7 @@ class FakeAlchemyQueue {
   public readonly submit = vi.fn((input: { forms: string[] }) => {
     const id = `job-${this.stored().length + 1}`;
     this.add(id, input.forms as AlchemyFormName[]);
-    return Promise.resolve<string | null>(id);
+    return Promise.resolve<AlchemySubmitOutcome>({ kind: 'submitted', id });
   });
   public readonly cancel = vi.fn(() => Promise.resolve());
   public readonly deleteJobs = vi.fn((ids: readonly string[]) => {
@@ -468,17 +469,56 @@ describe('AlchemyComponent', () => {
       expect(component.isSubmitting()).toBe(false);
     });
 
-    it('shows an error toast when the submission is rejected', async () => {
-      queue.submit.mockResolvedValueOnce(null);
+    it('says why when the horde refuses the request', async () => {
+      queue.submit.mockResolvedValueOnce({
+        kind: 'refused',
+        error: { status: 429, message: 'Too many', rc: 'TooManyPrompts' },
+      });
       component.onSourceImage('https://example.com/i.png');
       select('caption');
 
       component.submit();
       await settle();
 
-      expect(toastError).toHaveBeenCalled();
+      expect(toastError).toHaveBeenCalledWith(
+        'generate.reject.too_many_prompts',
+        { transloco: true },
+      );
       expect(component.jobs().length).toBe(0);
       expect(component.isSubmitting()).toBe(false);
+    });
+
+    it("quotes the horde's own sentence for a refusal it has no line for", async () => {
+      queue.submit.mockResolvedValueOnce({
+        kind: 'refused',
+        error: { status: 403, message: 'Unsafe IP', rc: 'UntrustedUnsafeIP' },
+      });
+      component.onSourceImage('https://example.com/i.png');
+      select('caption');
+
+      component.submit();
+      await settle();
+
+      expect(toastError).toHaveBeenCalledWith('alchemy.submit.refused', {
+        transloco: true,
+        messageParams: { reason: 'Unsafe IP' },
+      });
+    });
+
+    it('keeps the generic line when the horde does not answer', async () => {
+      queue.submit.mockResolvedValueOnce({
+        kind: 'refused',
+        error: { status: 0, message: 'Request failed' },
+      });
+      component.onSourceImage('https://example.com/i.png');
+      select('caption');
+
+      component.submit();
+      await settle();
+
+      expect(toastError).toHaveBeenCalledWith('alchemy.submit.error', {
+        transloco: true,
+      });
     });
 
     it('does nothing when there is no image', async () => {
