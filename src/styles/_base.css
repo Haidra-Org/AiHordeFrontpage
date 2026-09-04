@@ -19,7 +19,6 @@
     scroll-padding-top: calc(var(--sticky-offset, 80px) + 1rem);
   }
 
-  .dark html,
   html.dark {
     @apply bg-gray-800;
   }

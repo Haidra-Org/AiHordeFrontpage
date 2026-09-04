@@ -31,11 +31,14 @@ import {
   template: `
     @if (glossary.isOpen()) {
       <div
+        #dialogEl
         class="modal-overlay"
         role="dialog"
         aria-modal="true"
         [attr.aria-label]="'help.glossary.title' | transloco"
         (keydown.escape)="close()"
+        (keydown.tab)="keepTabInside($event, false)"
+        (keydown.shift.tab)="keepTabInside($event, true)"
       >
         <button
           type="button"
@@ -350,6 +353,10 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GlossaryModalComponent {
+  /** What a Tab can land on inside the dialog, in document order. */
+  private static readonly FOCUSABLE =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
   public readonly glossary = inject(GlossaryService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly document = inject(DOCUMENT);
@@ -374,6 +381,7 @@ export class GlossaryModalComponent {
     viewChild<ElementRef<HTMLInputElement>>('searchInput');
   private readonly closeBtn =
     viewChild<ElementRef<HTMLButtonElement>>('closeBtn');
+  private readonly dialogEl = viewChild<ElementRef<HTMLElement>>('dialogEl');
 
   /** All registered page contexts as an array (for @for in template). */
   public readonly pageContextList = computed<PageGlossaryContext[]>(() =>
@@ -556,6 +564,37 @@ export class GlossaryModalComponent {
           sibling.removeAttribute('inert');
         }
       }
+    }
+  }
+
+  /**
+   * Keep Tab inside the dialog. The page behind is inert, so a Tab that left
+   * the dialog would walk into the browser's own chrome and come back to a
+   * document with nothing able to take it, stranding the reader outside a
+   * dialog they can no longer close from the keyboard.
+   */
+  public keepTabInside(event: Event, backwards: boolean): void {
+    const root = this.dialogEl()?.nativeElement;
+    if (!root) {
+      return;
+    }
+    const focusable = Array.from(
+      root.querySelectorAll<HTMLElement>(GlossaryModalComponent.FOCUSABLE),
+    );
+    if (focusable.length === 0) {
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = this.document.activeElement;
+    if (backwards && (active === first || !root.contains(active))) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!backwards && active === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 

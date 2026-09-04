@@ -271,6 +271,64 @@ describe('GlossaryModalComponent', () => {
     });
   });
 
+  describe('the Tab key inside it', () => {
+    const ENTRIES: PageGlossaryEntry[] = [
+      {
+        id: 'sampling',
+        titleKey: 'help.glossary.page.generate_image',
+        descriptionKey: 'help.glossary.controls_note',
+      },
+    ];
+
+    const FOCUSABLE =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    function tab(from: HTMLElement, shiftKey: boolean): KeyboardEvent {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      });
+      from.dispatchEvent(event);
+      return event;
+    }
+
+    it('comes back to the first control from the last one', () => {
+      open(ENTRIES);
+      const focusable = all<HTMLElement>(FOCUSABLE);
+      const last = focusable[focusable.length - 1];
+      last.focus();
+
+      const event = tab(last, false);
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(focusable[0]);
+    });
+
+    it('goes back to the last control from the first one', () => {
+      open(ENTRIES);
+      const focusable = all<HTMLElement>(FOCUSABLE);
+      focusable[0].focus();
+
+      const event = tab(focusable[0], true);
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(focusable[focusable.length - 1]);
+    });
+
+    it('leaves a Tab between two controls alone', () => {
+      open(ENTRIES);
+      const focusable = all<HTMLElement>(FOCUSABLE);
+      focusable[1].focus();
+
+      const event = tab(focusable[1], false);
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe(focusable[1]);
+    });
+  });
+
   describe('the page behind it', () => {
     const ENTRIES: PageGlossaryEntry[] = [
       {
