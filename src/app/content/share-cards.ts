@@ -25,6 +25,18 @@ export function siteCardUrl(): string {
   return `${cardsRoot()}/${SITE_CARD_FILE}`;
 }
 
+/** The pages that have a card of their own rather than the site's. */
+export type PageCard = 'generate' | 'alchemy' | 'contribute' | 'docs';
+
+/**
+ * The card for one of the site's own doors: the studio, alchemy, contribute
+ * and the docs landing each say what they are in their own words and picture,
+ * where the site card can only say what the horde is.
+ */
+export function pageCardUrl(page: PageCard): string {
+  return `${cardsRoot()}/pages/${page}.jpg`;
+}
+
 /** The card drawn from a library strip, by the strip's parameter name. */
 export function sweepCardUrl(parameter: string): string {
   return `${cardsRoot()}/sweeps/${parameter}.jpg`;

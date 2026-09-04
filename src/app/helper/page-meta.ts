@@ -24,6 +24,12 @@ export interface PageMeta {
    * picture of its own names it here; every other page shows the site's card.
    */
   image?: MetaKey;
+  /**
+   * Whether the document title is this call's to set. A page whose title says
+   * something live, such as a studio counting its running work, keeps its own
+   * title writer and asks only for the description, canonical and card here.
+   */
+  ownsTitle?: boolean;
 }
 
 function read(key: MetaKey): string | null {
@@ -70,7 +76,9 @@ export function setPageMeta(meta: PageMeta): void {
     ])
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe(([pageTitle, description, appTitle]) => {
-        title.setTitle(`${pageTitle} | ${appTitle}`);
+        if (meta.ownsTitle !== false) {
+          title.setTitle(`${pageTitle} | ${appTitle}`);
+        }
         tags.updateTag({ name: 'description', content: description });
         tags.updateTag({ property: 'og:title', content: pageTitle });
         tags.updateTag({ property: 'og:description', content: description });

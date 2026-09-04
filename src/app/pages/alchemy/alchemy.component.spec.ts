@@ -129,7 +129,7 @@ describe('AlchemyComponent', () => {
         { provide: TranslatorService, useValue: { get: () => of('') } },
         // The studio's routes are not loaded here, so the trip to the image
         // studio is watched rather than followed.
-        { provide: Router, useValue: { navigate } },
+        { provide: Router, useValue: { navigate, url: '/alchemy' } },
       ],
     })
       .overrideComponent(AlchemyComponent, { set: { template: '' } })

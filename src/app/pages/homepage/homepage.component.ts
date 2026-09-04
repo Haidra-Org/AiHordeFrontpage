@@ -20,6 +20,7 @@ import { TranslatorService } from '../../services/translator.service';
 import { HomepageQuickstartComponent } from './parts/quickstart/homepage-quickstart.component';
 import { HomepageGuisComponent } from './parts/guis/homepage-guis.component';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setPageMeta } from '../../helper/page-meta';
 import { setAppTitle } from '../../helper/page-title';
 
 @Component({
@@ -50,6 +51,13 @@ export class HomepageComponent implements OnInit {
   );
 
   constructor() {
+    // The tab keeps the bare site name; the link preview gets the site's own
+    // sentence and card, which the head's defaults cannot say per page.
+    setPageMeta({
+      titleKey: 'app_title',
+      descriptionKey: 'homepage.intro.tagline',
+      ownsTitle: false,
+    });
     if (!isPlatformBrowser(this.platformId)) {
       return;
     }

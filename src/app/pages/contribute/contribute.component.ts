@@ -13,7 +13,9 @@ import { ScrollFadeComponent } from '../../helper/scroll-fade.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
+import { setPageMeta } from '../../helper/page-meta';
 import { setPageTitle } from '../../helper/page-title';
+import { pageCardUrl } from '../../content/share-cards';
 
 @Component({
   selector: 'app-contribute',
@@ -35,6 +37,15 @@ export class ContributeComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
   private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    setPageMeta({
+      titleKey: 'contribute.title',
+      descriptionKey: 'contribute.subtitle',
+      image: pageCardUrl('contribute'),
+      ownsTitle: false,
+    });
+  }
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);

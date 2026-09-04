@@ -26,7 +26,9 @@ import { NetworkStatusService } from '../../services/network-status.service';
 import { AlchemyQueueService } from '../../services/alchemy-queue.service';
 import { ActiveGenerationsService } from '../../services/active-generations.service';
 import { ToastService } from '../../services/toast.service';
+import { setPageMeta } from '../../helper/page-meta';
 import { useStudioTitle } from '../../helper/page-title';
+import { pageCardUrl } from '../../content/share-cards';
 import {
   markRetentionNoticeSeen,
   retentionNoticeSeen,
@@ -636,6 +638,12 @@ export class AlchemyComponent {
 
   constructor() {
     useStudioTitle('alchemy.title', this.pendingJobsCount);
+    setPageMeta({
+      titleKey: 'alchemy.title',
+      descriptionKey: 'alchemy.intro',
+      image: pageCardUrl('alchemy'),
+      ownsTitle: false,
+    });
     markRetentionNoticeSeen();
     // Thumbnails for every uploaded source, so the rail and gallery are
     // populated as soon as the queue hands over a restored history. A job's

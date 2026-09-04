@@ -35,7 +35,9 @@ import {
   parseStyleRecordKey,
 } from '../../services/style-record';
 import { StyleService } from '../../services/style.service';
+import { setPageMeta } from '../../helper/page-meta';
 import { useStudioTitle } from '../../helper/page-title';
+import { pageCardUrl } from '../../content/share-cards';
 import { ActiveModel, mergeModelList } from '../../types/active-model';
 import {
   EnqueueSourceImage,
@@ -945,6 +947,12 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   constructor() {
     useStudioTitle('generate.title', this.pendingCount);
+    setPageMeta({
+      titleKey: 'generate.title',
+      descriptionKey: 'generate.intro',
+      image: pageCardUrl('generate'),
+      ownsTitle: false,
+    });
 
     afterNextRender(() => {
       void this.loadControlUndoHistory();

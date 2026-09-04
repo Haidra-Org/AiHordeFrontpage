@@ -31,6 +31,7 @@ import {
   readUnknownId,
 } from '../../../content/docs-links';
 import { FLOWS, isConceptFlow } from '../../../content/flows';
+import { pageCardUrl } from '../../../content/share-cards';
 import { setPageMeta } from '../../../helper/page-meta';
 import { DocsPageContextService } from '../../../services/docs-page-context.service';
 
@@ -240,6 +241,7 @@ export class DocsImageHomeComponent {
     setPageMeta({
       titleKey: 'docs.area_image',
       descriptionKey: 'docs.area_image_hint',
+      image: pageCardUrl('docs'),
     });
     this.docsPage.declare('docs.nav_overview');
     this.http

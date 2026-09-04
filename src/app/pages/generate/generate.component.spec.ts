@@ -120,6 +120,7 @@ describe('GenerateComponent', () => {
           provide: Router,
           useValue: {
             navigate,
+            url: '/generate',
             createUrlTree: (
               commands: string[],
               extras: { queryParams: Record<string, string> },

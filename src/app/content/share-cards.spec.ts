@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { environment } from '../../environments/environment';
 import { settingSweepStrip } from './settings';
 import {
+  pageCardUrl,
   settingCardUrl,
   siteCardUrl,
   sweepCardUrl,
@@ -18,6 +19,11 @@ describe('share cards', () => {
       expect(url).toMatch(/^https?:\/\//);
       expect(url.startsWith(environment.promoBaseUrl)).toBe(true);
     }
+  });
+
+  it('gives each of the site doors a card of its own under pages/', () => {
+    expect(pageCardUrl('generate')).toMatch(/\/pages\/generate\.jpg$/);
+    expect(pageCardUrl('docs').startsWith(environment.promoBaseUrl)).toBe(true);
   });
 
   it('names a card by its strip parameter or its flow', () => {
