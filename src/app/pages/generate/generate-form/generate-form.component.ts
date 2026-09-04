@@ -2729,6 +2729,16 @@ export class GenerateFormComponent implements OnInit {
     return record?.name ?? parseStyleRecordKey(key)?.value ?? key;
   }
 
+  /**
+   * Whether the horde applies the selected style rather than the studio. A
+   * community style is named on the request and applied there, which replaces
+   * the model and the settings this panel is showing.
+   */
+  public hordeAppliesStyle(): boolean {
+    const record = this.styleRecords().get(this.selectedStyleKey());
+    return record?.source === 'native';
+  }
+
   /** The key a preset is listed under, so the select can offer it. */
   public curatedKey(name: string): string {
     return styleRecordKey('curated', name);

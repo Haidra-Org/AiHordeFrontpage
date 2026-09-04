@@ -19,6 +19,7 @@ import {
   rangeFillPercent,
   STEPS_SLIDER_MAX,
   STEPS_SLIDER_MIN,
+  buildHordeStyleRequest,
   buildStyledImageRequest,
   styledFormValue,
   cfgRequirementHint,
@@ -63,7 +64,7 @@ import {
   suggestedSamplers,
 } from './generate-form.model';
 import { ANNOTATION_CONTROL_TYPES } from '../../types/generation';
-import { AppliedStyle } from '../../services/style-record';
+import { AppliedStyle, StyleRecord } from '../../services/style-record';
 import { LocalGenerationJob } from '../../types/generation-job';
 import {
   SamplerConstraintsDocument,
@@ -634,6 +635,84 @@ describe('buildImageRequest request-level toggles', () => {
     );
     expect(on.extra_slow_workers).toBe(true);
     expect(on.disable_batching).toBe(true);
+  });
+});
+
+describe('buildHordeStyleRequest', () => {
+  const style: StyleRecord = {
+    source: 'native',
+    key: 'native:2b0f5c1e-1111-4a4a-9999-3d3d3d3d3d3d',
+    id: '2b0f5c1e-1111-4a4a-9999-3d3d3d3d3d3d',
+    name: 'Inky',
+    prompt: '{p}, ink and vermilion ### {np}, blurry',
+    params: { steps: 8, cfg_scale: 2 },
+    models: ['SDXL 1.0'],
+  };
+
+  it('names the style and sends the prompt as it was typed', () => {
+    const form = value({ prompt: 'a fox', negativePrompt: 'blurry' });
+
+    const request = buildHordeStyleRequest(form, style);
+
+    // The horde fills the style's own template from what it is sent, so a
+    // prompt already run through the template would be run through it twice.
+    expect(request.style).toBe(style.id);
+    expect(request.prompt).toBe('a fox ### blurry');
+  });
+
+  it('carries only what the horde reads off the request beside the style', () => {
+    const form = value({
+      prompt: 'a fox',
+      model: 'user-model',
+      steps: 40,
+      cfg_scale: 9,
+      seed: '12345',
+      width: 768,
+      height: 512,
+      n: 3,
+      nsfw: true,
+    });
+
+    const request = buildHordeStyleRequest(form, style);
+
+    // The style replaces the parameters and the models, so a request spelling
+    // out a sampler or a model would promise a render that never happens.
+    expect(request.params).toEqual({ n: 3, width: 768, height: 512 });
+    expect(request.models).toBeUndefined();
+    expect(request.nsfw).toBeUndefined();
+    // The settings the horde still reads off the request stay on it.
+    expect(request.r2).toBe(true);
+    expect(request.trusted_workers).toBe(form.trusted_workers);
+  });
+
+  it('falls back to the name where the style has no id', () => {
+    const named: StyleRecord = { ...style, id: undefined };
+
+    expect(buildHordeStyleRequest(value({ prompt: 'a fox' }), named).style) //
+      .toBe('Inky');
+  });
+
+  it('keeps the source picture, which the horde reads beside the style', () => {
+    const request = buildHordeStyleRequest(
+      value({ prompt: 'a fox', sourceMode: 'img2img' }),
+      style,
+      { hasSourceImage: true },
+    );
+
+    expect(request.source_processing).toBe('img2img');
+  });
+
+  it('comes back as the same selection when the settings are read again', () => {
+    const request = buildHordeStyleRequest(
+      value({ prompt: 'a fox', negativePrompt: 'blurry' }),
+      style,
+    );
+
+    const recovered = requestToFormValue(request);
+
+    expect(recovered.styleName).toBe(style.key);
+    expect(recovered.prompt).toBe('a fox');
+    expect(recovered.negativePrompt).toBe('blurry');
   });
 });
 

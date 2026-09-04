@@ -13,7 +13,12 @@ import {
   StyleLoraConfig,
   StyleTextualInversionConfig,
 } from '../../types/style';
-import { storedStyleKey, type AppliedStyle } from '../../services/style-record';
+import {
+  storedStyleKey,
+  styleRecordKey,
+  type AppliedStyle,
+  type StyleRecord,
+} from '../../services/style-record';
 import type { ModelRequirements } from '../../services/model-reference.service';
 import type { WorkerRequirement } from '../../services/worker-pool.service';
 import type { LocalGenerationJob } from '../../types/generation-job';
@@ -2496,6 +2501,40 @@ export function buildStyledImageRequest(
 }
 
 /**
+ * Build a request the horde applies a style to itself, which is what a style
+ * from the horde's own list is for: naming it on the request is what counts the
+ * style's use, pays its creator and lets a shared key attached to it pay for the
+ * render.
+ *
+ * The horde replaces the request's parameters with the style's, keeping only
+ * the number of images and taking the size only where the style names none, and
+ * it fills the style's own prompt template from the prompt and the negative it
+ * is sent. So the request carries the prompt as written, the count, the size and
+ * the source picture, and nothing the horde would throw away: a request that
+ * spelled out a sampler or a model the style overrules would read as a promise
+ * the render does not keep.
+ */
+export function buildHordeStyleRequest(
+  value: GenerateFormValue,
+  record: StyleRecord,
+  options: BuildImageRequestOptions = {},
+): ImageGenerationRequest {
+  const request = buildImageRequest(value, options);
+  const built = request.params ?? {};
+  const params: ImageGenerationParams = { n: built.n ?? value.n };
+  if (built.width !== undefined) params.width = built.width;
+  if (built.height !== undefined) params.height = built.height;
+  request.params = params;
+  // The style names the models its settings were written for and whether it is
+  // adult, and the horde reads both off the style rather than off the request.
+  delete request.models;
+  delete request.nsfw;
+  // The uuid where there is one: a style can be renamed, and the id cannot.
+  request.style = record.id ?? record.name;
+  return request;
+}
+
+/**
  * The form's values with a selected style's pins written over them, section by
  * section under the same rules {@link buildStyledImageRequest} applies.
  *
@@ -2609,9 +2648,14 @@ function tiConfigToForm(ti: StyleTextualInversionConfig): FormTiEntry {
 /**
  * Reverse of {@link buildImageRequest}: recover a {@link GenerateFormValue} from
  * a stored request, so a past generation's settings can be loaded back into the
- * form. It is inherently lossy (a request carries no style name, and the base64
- * source image lives outside it), so `styleName` is cleared and the caller
+ * form. It is inherently lossy (a style the studio applied leaves no trace on
+ * the request, and the base64 source image lives outside it), so the caller
  * re-attaches any source blob separately.
+ *
+ * A style the horde applies is the exception: the request names it, and the
+ * prompt on it is the one that was typed rather than the style's template, so
+ * the selection comes back whole and reading these settings again sends the
+ * same request.
  */
 export function requestToFormValue(
   request: ImageGenerationRequest,
@@ -2622,7 +2666,9 @@ export function requestToFormValue(
   const [positive, negative] = splitCombinedPrompt(request.prompt);
   result.prompt = positive;
   result.negativePrompt = negative;
-  result.styleName = '';
+  result.styleName = request.style
+    ? styleRecordKey('native', request.style)
+    : '';
 
   if (request.models && request.models.length > 0) {
     // The horde's list is unordered as far as routing goes, but the first name

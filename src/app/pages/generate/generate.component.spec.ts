@@ -278,6 +278,85 @@ describe('GenerateComponent', () => {
     expect(request.prompt).toBe('_');
   });
 
+  it('hands a style from the horde own list back for the horde to apply', async () => {
+    fixture.detectChanges();
+    component.registerStyle({
+      source: 'native',
+      key: 'native:style-1',
+      id: 'style-1',
+      name: 'Inky',
+      prompt: '{p}, ink ### {np}, blurry',
+      params: { steps: 8 },
+      models: ['SDXL 1.0'],
+    });
+    component.form.patchValue({
+      prompt: 'a cat',
+      negativePrompt: 'blurry',
+      styleName: 'native:style-1',
+    });
+
+    await component.onCreate();
+
+    const request = enqueue.mock.calls.at(-1)?.[0] as ImageGenerationRequest;
+    // Naming the style is what counts its use, pays its creator and lets a key
+    // attached to it pay for the render; the horde fills its template itself.
+    expect(request.style).toBe('style-1');
+    expect(request.prompt).toBe('a cat ### blurry');
+    expect(request.params?.steps).toBeUndefined();
+    expect(request.models).toBeUndefined();
+  });
+
+  it('prices that style as the horde will run it', () => {
+    fixture.detectChanges();
+    vi.useFakeTimers();
+    estimateKudos.mockClear();
+    component.registerStyle({
+      source: 'native',
+      key: 'native:style-1',
+      id: 'style-1',
+      name: 'Inky',
+      prompt: '{p}, ink ### {np}',
+      params: { steps: 8 },
+      models: ['SDXL 1.0'],
+    });
+    component.form.patchValue({
+      prompt: 'a cat',
+      styleName: 'native:style-1',
+    });
+    vi.advanceTimersByTime(1000);
+
+    const request = estimateKudos.mock.calls.at(-1)?.[0] as
+      | ImageGenerationRequest
+      | undefined;
+    // The dry run has to be the same request, or the price is for settings
+    // nothing will run at.
+    expect(request?.style).toBe('style-1');
+    expect(request?.params?.steps).toBeUndefined();
+  });
+
+  it('goes on applying a preset here, where nothing on the horde knows it', async () => {
+    fixture.detectChanges();
+    component.registerStyle({
+      source: 'curated',
+      key: 'curated:Inky',
+      name: 'Inky',
+      prompt: '{p}, ink ### {np}',
+      params: { steps: 8 },
+      models: ['SDXL 1.0'],
+    });
+    component.form.patchValue({ prompt: 'a cat', styleName: 'curated:Inky' });
+
+    await component.onCreate();
+
+    const request = enqueue.mock.calls.at(-1)?.[0] as ImageGenerationRequest;
+    expect(request.style).toBeUndefined();
+    // The template's `###` stands whether or not a negative was typed, which
+    // is how the horde reads the two halves apart.
+    expect(request.prompt).toBe('a cat, ink ###');
+    expect(request.params?.steps).toBe(8);
+    expect(request.models).toEqual(['SDXL 1.0']);
+  });
+
   it('prices a remix by the pictures it blends, not the source alone', async () => {
     estimateKudos.mockClear();
     component.form.controls.sourceMode.setValue('remix');

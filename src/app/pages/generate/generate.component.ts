@@ -107,6 +107,7 @@ import {
 import {
   BOUNDED_FIELD_NAMES,
   BOUNDED_FIELD_RANGES,
+  BuildImageRequestOptions,
   DEFAULT_GENERATE_FORM_VALUE,
   FACE_FIXERS,
   GenerateFormValue,
@@ -115,6 +116,7 @@ import {
   PanelSize,
   WaitEstimate,
   buildImageRequest,
+  buildHordeStyleRequest,
   buildStyledImageRequest,
   styledFormValue,
   coerceFormValue,
@@ -1363,6 +1365,24 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
+   * The one request build. Which of the two style catalogues the selection came
+   * from decides who applies it: a style from the shared list is applied here,
+   * because nothing on the horde knows it, while a style the horde publishes is
+   * named on the request and applied there, which is what counts its use, pays
+   * its creator and lets a shared key attached to it pay for the render.
+   */
+  private buildRequest(
+    value: GenerateFormValue,
+    options: BuildImageRequestOptions,
+  ): ImageGenerationRequest {
+    const record = this.styleRecords().get(value.styleName);
+    if (record?.source === 'native') {
+      return buildHordeStyleRequest(value, record, options);
+    }
+    return buildStyledImageRequest(value, this.resolveApplied(value), options);
+  }
+
+  /**
    * The form value to actually submit/estimate: the form's own value, save for
    * the one field the panel disables without being able to clear.
    */
@@ -1389,9 +1409,8 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const usesSource = effective.sourceMode !== 'none';
     const state = this.sourceState();
     const hasSourceImage = usesSource && state.sourceBlob !== null;
-    const request = buildStyledImageRequest(
+    const request = this.buildRequest(
       effective,
-      this.resolveApplied(effective),
       this.buildOptions(hasSourceImage),
     );
     this.previewRequest.set(request);
@@ -2046,11 +2065,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     }
     const hasSourceImage = usesSource && state.sourceBlob !== null;
     return {
-      request: buildStyledImageRequest(
-        effective,
-        this.resolveApplied(effective),
-        this.buildOptions(hasSourceImage),
-      ),
+      request: this.buildRequest(effective, this.buildOptions(hasSourceImage)),
       sourceImages: usesSource ? this.buildEnqueueSources(state) : [],
       styleKey: effective.styleName,
       styleName: this.styleRecords().get(effective.styleName)?.name ?? '',
@@ -2389,7 +2404,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       ...effective,
       prompt: effective.prompt.trim() || '_',
     };
-    const request = buildStyledImageRequest(base, this.resolveApplied(base), {
+    const request = this.buildRequest(base, {
       ...this.buildOptions(hasSourceImage),
     });
     // Attach the source image (but never the mask) so controlnet/img2img cost

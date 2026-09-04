@@ -456,8 +456,12 @@
             </h2>
           </div>
           <div appTutAnchor="style">
-            <label class="gs-label" for="generate-style">
+            <label
+              class="gs-label flex flex-wrap items-center gap-2"
+              for="generate-style"
+            >
               {{ "generate.form.style_label" | transloco }}
+              <app-gs-help topic="style" />
             </label>
             <div class="mt-1.5 flex items-center gap-1.5">
               <select
@@ -530,6 +534,15 @@
                   }
                 </div>
               </div>
+            }
+            <!-- A style the horde applies leaves most of this panel out of
+                 the request, so the field it was chosen in says so: the
+                 settings below are still shown, and a reader who was not told
+                 would read them as what runs. -->
+            @if (hordeAppliesStyle()) {
+              <p class="gs-sublabel mt-1">
+                {{ "generate.form.style_horde_note" | transloco }}
+              </p>
             }
             <!-- The hint explains what a style is; once one is chosen the
                  select and the lit chip say it. -->

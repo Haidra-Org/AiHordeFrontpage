@@ -91,7 +91,7 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `HordeApiCacheService` | TTL-based HTTP cache with category invalidation. All API calls go through this. |
 | `AiHordeService`       | Domain methods for stats, performance, news, models, workers, teams, styles     |
 | `StyleService`         | CRUD over the horde's native `/v2/styles` user styles and collections           |
-| `HordeStylesService`   | Curated style-preset catalogue from the AI-Horde-Styles GitHub JSONs (with `applyStyle` `{p}`/`{np}` merge) |
+| `HordeStylesService`   | Curated style-preset catalogue from the AI-Horde-Styles GitHub JSONs (applied client-side, with `applyStyle` `{p}`/`{np}` merge) |
 | `StylePreviewsService` | Lazy, stale-while-revalidate style preview renders from the AI-Horde-Styles-Previews GitHub JSONs |
 | `StyleUsageService`    | Per-style generation counts, backing the style browser's "most used" ordering   |
 | `CivitaiService`       | Typed public CivitAI model search for LoRAs and textual inversions              |
@@ -317,14 +317,22 @@ The page is a two-pane workspace: a fixed-width control panel on the left
 (own scroll, sticky footer) and a results pane on the right (own scroll). Below
 `lg` the panes stack (controls first, results below). `GenerateComponent` owns a
 reactive form, drives a debounced `estimateKudos` dry run, persists the form to
-`localStorage` via `DatabaseService`, resolves the selected curated style via
-`HordeStylesService`, and hands `buildStyledImageRequest` output to `enqueue`.
+`localStorage` via `DatabaseService`, resolves the selected style via
+`HordeStylesService` or `StyleService`, and hands the built request to `enqueue`.
 A `mode` field (`simple`/`advanced`, persisted, never sent) drives a segmented
 toggle: simple mode exposes only prompt, negative prompt, model, size, style,
 and batch, and submits every advanced-only field at its default (see
-`simpleModeValue`) rather than at a persisted advanced value. Styles are applied
-at build time and may force model/dimensions/sampling params, which the panel
-flags with a "set by style" hint. `GenerateFormComponent` is the presentational
+`simpleModeValue`) rather than at a persisted advanced value. Which catalogue a
+style came from decides who applies it: a curated preset is merged into the
+request here by `buildStyledImageRequest` and may force
+model/dimensions/sampling params, which the panel flags with a "set by style"
+hint; a style from the horde's own `/v2/styles` is named on the request by
+`buildHordeStyleRequest` and applied by the horde, which replaces the params and
+the models with the style's and fills the style's `{p}`/`{np}` template from the
+prompt it is sent, counts the style's use, pays its creator two kudos and lets a
+shared key attached to the style pay for the render. Both the kudos dry run and
+the submit go through the same build, so the estimate is priced as the request
+will run. `GenerateFormComponent` is the presentational
 left control panel (segmented header, scrollable control cards, sticky footer
 with the batch stepper, dimensions/kudos readout, and Generate button); it
 exposes a `[generateSourceImage]` content slot shown only in advanced mode.
