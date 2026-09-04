@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { Subject, of } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Observable, Subject, of } from 'rxjs';
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ActiveGenerationsService } from './active-generations.service';
 import { AuthService } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
@@ -23,7 +23,7 @@ function user(active?: ActiveGenerations): HordeUser {
 describe('ActiveGenerationsService', () => {
   let loggedIn: ReturnType<typeof signal<boolean>>;
   let current: ReturnType<typeof signal<HordeUser | null>>;
-  let refreshUser: ReturnType<typeof vi.fn>;
+  let refreshUser: Mock<() => Observable<HordeUser | null>>;
   let invalidate: ReturnType<typeof vi.fn>;
   let imageQueue: {
     adoptActive: ReturnType<typeof vi.fn>;
@@ -38,7 +38,7 @@ describe('ActiveGenerationsService', () => {
     vi.useFakeTimers();
     loggedIn = signal(true);
     current = signal<HordeUser | null>(user());
-    refreshUser = vi.fn(() => of(user()));
+    refreshUser = vi.fn<() => Observable<HordeUser | null>>(() => of(user()));
     invalidate = vi.fn();
     imageQueue = {
       adoptActive: vi.fn(() => Promise.resolve()),

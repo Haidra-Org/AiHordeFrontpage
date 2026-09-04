@@ -8,7 +8,8 @@ import { WritableSignal, computed, signal } from '@angular/core';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { convertToParamMap, provideRouter } from '@angular/router';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, of, throwError } from 'rxjs';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
+import { ActiveModel } from '../../types/active-model';
 import en from '../../../assets/i18n/en.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateComponent } from './generate.component';
@@ -67,7 +68,7 @@ describe('GenerateComponent', () => {
   let navigate: ReturnType<typeof vi.fn>;
   let historyPush: ReturnType<typeof vi.fn>;
   let historyRemove: ReturnType<typeof vi.fn>;
-  let imageModels: () => ReturnType<typeof of>;
+  let imageModels: () => Observable<ActiveModel[]>;
   let lastAccepted: WritableSignal<{ localId: string; at: number } | null>;
 
   beforeEach(async () => {

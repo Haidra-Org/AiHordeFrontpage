@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../../assets/i18n/en.json';
 import { DatabaseService } from '../../../services/database.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
@@ -20,11 +20,11 @@ describe('GenerateWelcomeComponent', () => {
   let component: GenerateWelcomeComponent;
   let el: HTMLElement;
   let dbStore: ReturnType<typeof vi.fn>;
-  let closed: ReturnType<typeof vi.fn>;
+  let closed: Mock<() => void>;
 
   beforeEach(async () => {
     dbStore = vi.fn();
-    closed = vi.fn();
+    closed = vi.fn<() => void>();
 
     await TestBed.configureTestingModule({
       imports: [

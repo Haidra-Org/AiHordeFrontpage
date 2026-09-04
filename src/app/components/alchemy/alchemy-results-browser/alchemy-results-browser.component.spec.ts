@@ -20,6 +20,7 @@ const makeJob = (
   faulted: false,
   cancelled: false,
   notFound: false,
+  adopted: false,
   firstSeenAt: Date.now(),
   sourceThumb: thumb,
   sourceFull: full,
