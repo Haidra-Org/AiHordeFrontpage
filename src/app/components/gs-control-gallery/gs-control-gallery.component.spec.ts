@@ -7,7 +7,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   ControlWorldStrips,
   GsControlGalleryComponent,
@@ -214,6 +214,11 @@ describe('GsControlGalleryComponent', () => {
     el().querySelector<T>(selector);
 
   async function setUp(index: object = INDEX): Promise<void> {
+    // The switcher moves its row to keep the option the arrows reach in view,
+    // which the test DOM has no implementation of.
+    if (!Element.prototype.scrollTo) {
+      Element.prototype.scrollTo = vi.fn();
+    }
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [
@@ -516,6 +521,70 @@ describe('GsControlGalleryComponent', () => {
     expect(
       find('app-gs-shot-viewer .gs-tut-viewer-count')?.textContent,
     ).toContain('1 of 3');
+  });
+
+  it('fades the edge of the switcher an option is hidden behind', async () => {
+    await setUp();
+    openTile(0);
+
+    const row = find<HTMLElement>('.gs-ctl-switch--world')!;
+    // The test DOM lays nothing out, so the row is told how much of it is out
+    // of sight; the component reads that off the element either way.
+    Object.defineProperty(row, 'scrollWidth', {
+      value: 400,
+      configurable: true,
+    });
+    Object.defineProperty(row, 'clientWidth', {
+      value: 200,
+      configurable: true,
+    });
+    row.scrollLeft = 0;
+    row.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    expect(row.classList.contains('gs-ctl-switch--fade-end')).toBe(true);
+    expect(row.classList.contains('gs-ctl-switch--fade-start')).toBe(false);
+
+    row.scrollLeft = 200;
+    row.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    expect(row.classList.contains('gs-ctl-switch--fade-start')).toBe(true);
+    expect(row.classList.contains('gs-ctl-switch--fade-end')).toBe(false);
+  });
+
+  it('leaves both edges plain while every option is in view', async () => {
+    await setUp();
+    openTile(0);
+
+    const row = find<HTMLElement>('.gs-ctl-switch--world')!;
+    expect(row.classList.contains('gs-ctl-switch--fade-start')).toBe(false);
+    expect(row.classList.contains('gs-ctl-switch--fade-end')).toBe(false);
+  });
+
+  it('brings the option the arrows reach into the row it sits in', async () => {
+    const scrollTo = vi.fn();
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollTo = scrollTo;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    await setUp();
+    openTile(0);
+
+    all<HTMLButtonElement>(
+      '.gs-ctl-switch--world .gs-ctl-switch-opt',
+    )[0].dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowRight',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    fixture.detectChanges();
+
+    // The row is moved rather than the option brought into view, which would
+    // scroll the page under the layer as well.
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo.mock.instances.at(-1)).toBe(find('.gs-ctl-switch--world'));
   });
 
   it('moves between the examples on the arrows and wraps at both ends', async () => {

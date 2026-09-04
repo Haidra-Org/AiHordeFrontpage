@@ -15219,30 +15219,60 @@ app-gs-compare-wipe {
 }
 /* Three examples are one choice rather than three sections, so the switcher is
    a radio group: Tab passes it as a single stop and the arrows move inside it.
-   It holds one line wherever the row has room, because a control that reflows
-   into a block reads less clearly as one choice; below 600px the options wrap
-   rather than clip (see the phone rule under it). */
+   It holds one line at every width, because a control that reflows into a block
+   reads less clearly as one choice; where the options are wider than the room
+   the row scrolls sideways and the edge with an option behind it is faded (see
+   the fade rules under it). */
 .gen-studio .gs-ctl-switch {
   align-self: flex-start;
   max-width: 100%;
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
+  /* An option brought into view by the arrows lands clear of the faded edge. */
+  scroll-padding-inline: 28px;
   /* The shared track is a shade off the panel it sits on, which is enough
      where the reader already knows a control is there and not enough here. */
   border: 1px solid var(--gs-field-border);
 }
-/* On a phone the three named options do not fit one row, and a hidden
-   scrollbar would leave the third clipped with nothing to say so; the
-   options wrap instead, and each label sits over its control. */
+/* The edge that has an option behind it is faded out: with the scrollbar
+   hidden, an edge that stops mid-word reads as the end of the choice rather
+   than as there being another option after it. The classes are set from the
+   measured element, so nothing fades where nothing is hidden. */
+.gen-studio .gs-ctl-switch--fade-start {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28px);
+  mask-image: linear-gradient(to right, transparent 0, #000 28px);
+}
+.gen-studio .gs-ctl-switch--fade-end {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 28px);
+  mask-image: linear-gradient(to left, transparent 0, #000 28px);
+}
+.gen-studio .gs-ctl-switch--fade-start.gs-ctl-switch--fade-end {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+}
+/* On a phone the named options do not fit one row. Each label sits over its
+   control there, and the switcher takes the width that gives it so the row it
+   scrolls in is as long as the screen allows. */
 @media (max-width: 599.98px) {
   .gen-studio .gs-ctl-picker {
     flex-direction: column;
     align-items: flex-start;
   }
   .gen-studio .gs-ctl-switch {
-    flex-wrap: wrap;
-    overflow-x: visible;
+    align-self: stretch;
   }
 }
 .gen-studio .gs-ctl-switch::-webkit-scrollbar {

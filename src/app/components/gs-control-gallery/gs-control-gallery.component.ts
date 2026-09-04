@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Signal,
+  WritableSignal,
   afterRenderEffect,
   computed,
   inject,
@@ -26,6 +28,7 @@ import {
   SweepSubject,
 } from '../../services/sweep-library.service';
 import { docsControlTypeAnchor } from '../../content/docs-links';
+import { scrollWithin } from '../../helper/scroll-utils';
 
 /**
  * The kinds of source picture an example is published on, in the order the
@@ -369,7 +372,10 @@ interface ControlShot {
                     {{ 'generate.control_types.worlds_pick' | transloco }}
                   </span>
                   <div
+                    #worldSwitch
                     class="gs-seg gs-ctl-switch gs-ctl-switch--world"
+                    [class.gs-ctl-switch--fade-start]="worldFadeStart()"
+                    [class.gs-ctl-switch--fade-end]="worldFadeEnd()"
                     role="radiogroup"
                     [attr.aria-label]="
                       'generate.control_types.worlds_label' | transloco
@@ -403,7 +409,10 @@ interface ControlShot {
                     {{ 'generate.control_types.subjects_pick' | transloco }}
                   </span>
                   <div
+                    #subjectSwitch
                     class="gs-seg gs-ctl-switch gs-ctl-switch--subject"
+                    [class.gs-ctl-switch--fade-start]="subjectFadeStart()"
+                    [class.gs-ctl-switch--fade-end]="subjectFadeEnd()"
                     role="radiogroup"
                     [attr.aria-label]="
                       'generate.control_types.subjects_label' | transloco
@@ -547,6 +556,21 @@ export class GsControlGalleryComponent {
     viewChildren<ElementRef<HTMLButtonElement>>('worldOption');
   private readonly subjectOptionButtons =
     viewChildren<ElementRef<HTMLButtonElement>>('subjectOption');
+  private readonly worldSwitch =
+    viewChild<ElementRef<HTMLElement>>('worldSwitch');
+  private readonly subjectSwitch =
+    viewChild<ElementRef<HTMLElement>>('subjectSwitch');
+
+  /**
+   * Whether a switcher has an option out of sight to one side, which is what
+   * the faded edge is drawn from. Read from the element: whether the options
+   * fit depends on the width the layer was given and on how long the words came
+   * out, neither of which the component is told.
+   */
+  public readonly worldFadeStart = signal(false);
+  public readonly worldFadeEnd = signal(false);
+  public readonly subjectFadeStart = signal(false);
+  public readonly subjectFadeEnd = signal(false);
 
   /** The one example on show, or null while the layer is shut. */
   public readonly shownWorld = computed<ControlWorld | null>(() => {
@@ -745,6 +769,73 @@ export class GsControlGalleryComponent {
       }
       this.focusedPanel = panel;
     });
+
+    this.watchEdges(this.worldSwitch, this.worldFadeStart, this.worldFadeEnd);
+    this.watchEdges(
+      this.subjectSwitch,
+      this.subjectFadeStart,
+      this.subjectFadeEnd,
+    );
+  }
+
+  /**
+   * Keep a switcher's faded edges answering to what is actually hidden, as the
+   * layer opens on another mode, as the words change and as the reader scrolls
+   * the row or resizes the window.
+   */
+  private watchEdges(
+    element: Signal<ElementRef<HTMLElement> | undefined>,
+    start: WritableSignal<boolean>,
+    end: WritableSignal<boolean>,
+  ): void {
+    afterRenderEffect((onCleanup) => {
+      const row = element()?.nativeElement;
+      if (!row) {
+        start.set(false);
+        end.set(false);
+        return;
+      }
+      const measure = (): void => {
+        const slack = row.scrollWidth - row.clientWidth;
+        // A sub-pixel remainder is rounding, not an option out of sight.
+        const overflows = slack > 1;
+        start.set(overflows && row.scrollLeft > 1);
+        end.set(overflows && row.scrollLeft < slack - 1);
+      };
+
+      measure();
+      row.addEventListener('scroll', measure, { passive: true });
+      const resize =
+        typeof ResizeObserver === 'undefined'
+          ? null
+          : new ResizeObserver(measure);
+      resize?.observe(row);
+      onCleanup(() => {
+        row.removeEventListener('scroll', measure);
+        resize?.disconnect();
+      });
+    });
+  }
+
+  /**
+   * Bring the option the arrows moved to into the row it sits in, and move
+   * nothing else: the row scrolls sideways where the options are wider than the
+   * layer, so the option taking focus can be the one behind the faded edge.
+   */
+  private revealOption(
+    row: ElementRef<HTMLElement> | undefined,
+    option: HTMLElement,
+  ): void {
+    if (row) {
+      scrollWithin(row.nativeElement, option, 'center', this.scrollBehavior());
+    }
+  }
+
+  private scrollBehavior(): ScrollBehavior {
+    const reduced = globalThis.matchMedia?.(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    return reduced ? 'auto' : 'smooth';
   }
 
   /** The layer opens on the example and the picture the tile was cut from. */
@@ -833,7 +924,11 @@ export class GsControlGalleryComponent {
     event.preventDefault();
     event.stopPropagation();
     this.chosenSubject.set(options[next].subject);
-    this.subjectOptionButtons()[next]?.nativeElement.focus();
+    const option = this.subjectOptionButtons()[next]?.nativeElement;
+    if (option) {
+      option.focus();
+      this.revealOption(this.subjectSwitch(), option);
+    }
   }
 
   /**
@@ -848,7 +943,11 @@ export class GsControlGalleryComponent {
     event.preventDefault();
     event.stopPropagation();
     this.chosen.set(next);
-    this.worldOptions()[next]?.nativeElement.focus();
+    const option = this.worldOptions()[next]?.nativeElement;
+    if (option) {
+      option.focus();
+      this.revealOption(this.worldSwitch(), option);
+    }
   }
 
   /**
