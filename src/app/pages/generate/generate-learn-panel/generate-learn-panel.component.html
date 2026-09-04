@@ -276,11 +276,13 @@
 
     @if (exampleImage()) {
       <figure class="gs-learn-example">
+        <!-- Never lazy: one small file, at the top of the panel the tutorial
+             is read in, and a lazy picture inside a panel that is hidden when
+             it mounts is one the browser may never ask for. -->
         <img
           class="gs-learn-thumb"
           [src]="exampleImage()"
           [alt]="'generate.learn.example_alt' | transloco"
-          loading="lazy"
         />
         <figcaption class="gs-learn-example-cap">
           {{ "generate.learn.example_caption" | transloco }}

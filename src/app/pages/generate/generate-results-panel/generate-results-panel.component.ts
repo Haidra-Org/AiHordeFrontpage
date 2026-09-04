@@ -373,6 +373,15 @@ export class GenerateResultsPanelComponent {
    */
   public readonly formValue = input<GenerateFormValue | null>(null);
 
+  /**
+   * Whether the studio is drawing its narrow layout. The follow-along tutorial
+   * has a sheet over the form there and this pane's copy of it is hidden, so
+   * the copy is not built at all: it would put a second set of every step
+   * control, and a second copy of the example picture, in a page that can never
+   * show them.
+   */
+  public readonly narrow = input(false);
+
   /** Ask the parent to guard and perform an action that changes the controls. */
   public readonly controlAction = output<ResultControlActionRequest>();
 

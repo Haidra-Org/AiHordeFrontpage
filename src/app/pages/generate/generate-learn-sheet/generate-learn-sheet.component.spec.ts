@@ -158,10 +158,13 @@ describe('GenerateLearnSheetComponent', () => {
     expect(barTitle()).toBe(
       TRANSLATIONS['generate.learn.flows.txt2img.steps.prompt.title'],
     );
-    // The step count is said, not shown: the progress line shows it.
-    expect(
-      first<HTMLElement>('.gs-tut-bar-title .sr-only').textContent,
-    ).toContain('Step 1 of');
+    // Which step of how many is on the bar in words a sighted reader can see,
+    // not only in the strip along the edge and not only to a screen reader.
+    expect(first<HTMLElement>('.gs-tut-bar-count').textContent?.trim()).toBe(
+      TRANSLATIONS['generate.learn.sheet_progress']
+        .replace('{{ current }}', '1')
+        .replace('{{ total }}', String(engine.total())),
+    );
     const bar = first<HTMLElement>('.gs-tut-progress');
     expect(bar.getAttribute('role')).toBe('progressbar');
     expect(bar.getAttribute('aria-valuenow')).toBe('1');
@@ -223,34 +226,84 @@ describe('GenerateLearnSheetComponent', () => {
     expect(engine.stepIndex()).toBe(0);
   });
 
-  it('promotes Next where the step has nothing to write', async () => {
-    // The finale writes nothing and has nowhere to go: what it offers is the
-    // button it is asking to be pressed.
+  it('asks for nothing in the bar on a step that writes nothing', async () => {
+    // The finale writes nothing and has nowhere to go: what it asks for is a
+    // press on Generate, which is in the panel and not in the sheet. Pointing
+    // at that button is offered once, at the head of the step.
     engine.goTo(engine.total() - 1);
     await settle();
 
     expect(query('.gs-tut-bar-next')).toHaveLength(0);
-    expect(first<HTMLElement>('.gs-tut-bar-do').textContent?.trim()).toBe(
+    expect(query('.gs-tut-bar-btn')).toHaveLength(0);
+    expect(query('.gs-learn-show')).toHaveLength(1);
+    expect(first<HTMLElement>('.gs-learn-show').textContent?.trim()).toBe(
       TRANSLATIONS['generate.learn.show_me'],
     );
   });
 
-  it('opens on the step, named as a tutorial, the first time', async () => {
-    // Half from the start: what a reader meets is the step, not a bar with a
-    // title on it. Only after they shrink it does the sheet sit at its bar.
+  it('opens as a bar, so the step never covers the control it is about', async () => {
     await settle();
-    expect(body().hidden).toBe(false);
-    expect(first<HTMLElement>('.gs-tut-bar-eyebrow')?.textContent).toContain(
-      TRANSLATIONS['generate.learn.badge'],
+
+    expect(body().hidden).toBe(true);
+    expect(first<HTMLElement>('app-gs-sheet').classList).not.toContain(
+      'gs-sheet--open',
     );
+    // The tutorial's name is on the bar only once the sheet is open: at the
+    // bar the row belongs to the step.
     expect(first<HTMLElement>('.gs-tut-bar-name')?.textContent).toContain(
       TRANSLATIONS['generate.tutorials.flows.txt2img.task_name'],
     );
-    expect(body().textContent).toContain(
-      TRANSLATIONS['generate.learn.sheet_progress']
-        .replace('{{ current }}', '1')
-        .replace('{{ total }}', String(engine.total())),
-    );
+  });
+
+  it('comes back to the bar on every step, at the top of the new step', async () => {
+    first<HTMLButtonElement>('.gs-sheet-btn').click();
+    await settle();
+    expect(body().hidden).toBe(false);
+    const scrolled: ScrollToOptions[] = [];
+    body().scrollTo = ((options: ScrollToOptions) => {
+      scrolled.push(options);
+    }) as typeof body.prototype.scrollTo;
+
+    engine.next();
+    await settle();
+
+    expect(body().hidden).toBe(true);
+    expect(scrolled).toContainEqual({ top: 0, behavior: 'auto' });
+  });
+
+  it('moves a step on a swipe, in the direction the reader swiped', async () => {
+    const bar = first<HTMLElement>('.gs-sheet-bar');
+    const swipe = (dx: number): void => {
+      const at = (x: number): PointerEvent =>
+        new MouseEvent('pointerdown', {
+          clientX: x,
+          clientY: 400,
+          bubbles: true,
+        }) as unknown as PointerEvent;
+      bar.dispatchEvent(at(200));
+      for (const type of ['pointermove', 'pointerup']) {
+        bar.dispatchEvent(
+          new MouseEvent(type, {
+            clientX: 200 + dx,
+            clientY: 400,
+            bubbles: true,
+          }) as unknown as PointerEvent,
+        );
+      }
+    };
+
+    swipe(-80);
+    await settle();
+    expect(engine.stepIndex()).toBe(1);
+
+    swipe(80);
+    await settle();
+    expect(engine.stepIndex()).toBe(0);
+
+    // Too short to be meant: the step stays where it is.
+    swipe(-20);
+    await settle();
+    expect(engine.stepIndex()).toBe(0);
   });
 
   it('breathes with the field its step is pointing at, and only then', async () => {
@@ -273,8 +326,8 @@ describe('GenerateLearnSheetComponent', () => {
 
   it('offers no dismissal of its own: Escape unwinds but never exits', async () => {
     // A tutorial part-way through is expensive to lose, so the chassis's close
-    // button is suppressed and its second Escape does nothing. The sheet is
-    // already at half when it opens.
+    // button is suppressed and its second Escape does nothing.
+    first<HTMLButtonElement>('.gs-sheet-btn').click();
     await settle();
     // Two stop buttons at half (up and down) and no close button among them.
     expect(query('.gs-sheet-btn')).toHaveLength(2);
@@ -392,8 +445,29 @@ describe('GenerateLearnSheetComponent', () => {
   describe('the example behind the walkthrough', () => {
     const stage = (): HTMLButtonElement =>
       first<HTMLButtonElement>('.gs-learn-shot-stage');
+    const stageImage = (): HTMLImageElement =>
+      first<HTMLImageElement>('.gs-learn-shot-img');
+    const barShot = (): HTMLButtonElement =>
+      first<HTMLButtonElement>('.gs-tut-bar-shot');
+    /** The file lands; jsdom fetches nothing, so the event is what says so. */
+    async function pictureArrives(): Promise<void> {
+      for (const image of query<HTMLImageElement>(
+        '.gs-learn-shot-img, .gs-tut-bar-shot-img',
+      )) {
+        image.dispatchEvent(new Event('load'));
+      }
+      await settle();
+    }
+    async function pictureFails(): Promise<void> {
+      for (const image of query<HTMLImageElement>(
+        '.gs-learn-shot-img, .gs-tut-bar-shot-img',
+      )) {
+        image.dispatchEvent(new Event('error'));
+      }
+      await settle();
+    }
 
-    it('keeps what the run produced under the bar while there is work to do', () => {
+    it('keeps what the run produced with the step, on a stage of its own', async () => {
       expect(query('.gs-learn-shot')).toHaveLength(1);
       expect(first<HTMLElement>('.gs-learn-shot-cap').textContent?.trim()).toBe(
         TRANSLATIONS['generate.tutorials.example_result'],
@@ -401,23 +475,62 @@ describe('GenerateLearnSheetComponent', () => {
       expect(stage().getAttribute('aria-label')).toBe(
         TRANSLATIONS['generate.tutorials.example_result_enlarge'],
       );
-      // A strip on the way through: no height and no cost line until the step
-      // that is about the picture.
-      expect(query('.gs-learn-shots--open')).toHaveLength(0);
-      expect(query('.gs-learn-shot-cost')).toHaveLength(0);
+      // The box is held at the shape the example was made at, so nothing under
+      // it moves when the file lands.
+      const example = engine.example()!;
+      expect(stage().style.aspectRatio).toBe(
+        `${example.width} / ${example.height}`,
+      );
+      // Never lazy: the body is display:none at the bar, and a lazy picture
+      // there is one that is never asked for.
+      expect(stageImage().getAttribute('loading')).toBeNull();
+      // Nothing offers to enlarge a stage that has nothing in it yet.
+      expect(stage().disabled).toBe(true);
+      expect(barShot().hidden).toBe(true);
+
+      await pictureArrives();
+
+      expect(stage().disabled).toBe(false);
+      expect(barShot().hidden).toBe(false);
+      expect(stageImage().classList).toContain('gs-learn-shot-img--here');
     });
 
-    it('opens the row out on the step that asks for the button', async () => {
+    it('says so when the picture will not load, and asks for it again', async () => {
+      await pictureFails();
+
+      const gone = first<HTMLElement>('.gs-learn-shot-gone');
+      expect(gone.textContent).toContain(
+        TRANSLATIONS['generate.learn.picture_failed'],
+      );
+      expect(stage().disabled).toBe(true);
+      expect(barShot().hidden).toBe(true);
+      expect(query('.gs-learn-shot-cap')).toHaveLength(0);
+
+      const before = stageImage().getAttribute('src');
+      first<HTMLButtonElement>('.gs-learn-shot-again').click();
+      await settle();
+
+      // The same file at an address the browser has not already failed on.
+      expect(query('.gs-learn-shot-gone')).toHaveLength(0);
+      expect(stageImage().getAttribute('src')).not.toBe(before);
+      expect(stageImage().getAttribute('src')).toContain(
+        '/txt2img/result.webp',
+      );
+    });
+
+    it('says what the run cost on the step that asks for the button', async () => {
+      expect(query('.gs-learn-shot-cost')).toHaveLength(0);
+
       engine.goTo(engine.total() - 1);
       await settle();
 
-      expect(query('.gs-learn-shots--open')).toHaveLength(1);
       expect(first<HTMLElement>('.gs-learn-shot-cost').textContent).toContain(
         '12.5',
       );
     });
 
     it('shows the picture whole, with what the run cost, and hands focus back', async () => {
+      await pictureArrives();
       stage().click();
       await settle();
 
@@ -434,6 +547,19 @@ describe('GenerateLearnSheetComponent', () => {
 
       expect(query('app-gs-shot-viewer')).toHaveLength(0);
       expect(document.activeElement).toBe(stage());
+    });
+
+    it('hands focus back to the bar picture when the bar opened the view', async () => {
+      await pictureArrives();
+      barShot().click();
+      await settle();
+
+      expect(query('app-gs-shot-viewer')).toHaveLength(1);
+
+      first<HTMLButtonElement>('.gs-tut-viewer-x').click();
+      await settle();
+
+      expect(document.activeElement).toBe(barShot());
     });
   });
 

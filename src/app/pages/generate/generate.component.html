@@ -101,6 +101,7 @@
     <app-generate-results-panel
       class="gs-fill"
       [formValue]="formValue()"
+      [narrow]="isNarrow()"
       (applyMeta)="onApplyMeta($event)"
       (controlAction)="onResultControlAction($event)"
       (usePrompt)="onUsePrompt($event)"

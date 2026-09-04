@@ -311,7 +311,7 @@
     </div>
   }
 
-  @if (tutorialOpen()) {
+  @if (tutorialOpen() && !narrow()) {
     <!-- Yields to the dock where the dock is on screen, and is untouched where
          it is not: on a phone the sheet covers neither the steps nor the form. -->
     <app-generate-learn-panel

@@ -1188,6 +1188,7 @@
   "generate.learn.loading": "Fetching the example this tutorial follows.",
   "generate.learn.load_error": "The example this tutorial follows would not load, so it cannot show you the values it used.",
   "generate.learn.load_retry": "Try again",
+  "generate.learn.picture_failed": "The picture would not load.",
   "generate.learn.load_read_steps": "Read the steps instead",
   "generate.learn.apply": "Set this for me",
   "generate.learn.apply_again": "Set again",

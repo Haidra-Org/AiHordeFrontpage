@@ -1,15 +1,16 @@
 <!-- Not dismissible: an accidental Escape or a mistaken tap on a close button
      would end a tutorial the reader is part-way through, and getting back costs
      them the whole flow. Leaving is the Exit button inside, and nothing else. -->
-<!-- Opens at half the first time, so what the reader meets is the step and
-     not a bar with a title on it; the stop they choose after that is kept. A
-     read (a concept track) has nothing to show behind it, so it opens full. -->
+<!-- Opens as a bar, on every step. A tutorial exists to get the reader's hands
+     on a control, and a step that covers the control cannot do that; the bar
+     already carries everything a step needs to be read and answered. A read (a
+     concept track) has no form behind it, so it opens whole. -->
 <app-gs-sheet
   [label]="'generate.learn.sheet_label' | transloco"
   [dismissible]="false"
-  [startExpanded]="true"
-  [startAt]="conceptTrack() ? 'full' : null"
+  [startAt]="conceptTrack() ? 'full' : 'peek'"
   rememberAs="aihorde.generate.learn.sheet_stop"
+  (swiped)="onSwipe($event)"
 >
   <!-- Progress along the sheet's very top edge, in the tutorials' hue: a
        segment per step, the ones read so far filled. Information rather than
@@ -37,9 +38,9 @@
     </div>
   }
 
-  <!-- What this is, on the same row as the sheet's own controls: the tutorials'
-       mark and the tutorial's name, so a reader landing here knows they are in
-       one and which. -->
+  <!-- What this is, and which tutorial it is. The bar has no room for the name
+       beside the step it is showing, so this line is drawn once the sheet is
+       open and the step has been given its own space. -->
   <p sheet-head class="gs-tut-bar-eyebrow gs-tut-eyebrow">
     <span class="gs-tut-mark" aria-hidden="true">
       <app-icon name="academic-cap" />
@@ -60,15 +61,39 @@
       </div>
     } @else if (step(); as current) {
       <div class="gs-tut-bar-row">
-        <span class="gs-tut-bar-title">
-          <span class="sr-only">{{
+        <!-- The picture the tutorial is working towards, at the size a phone
+             draws a thumbnail. It is not offered until its own file is on the
+             screen: a box with nothing in it opens a view with nothing in it. -->
+        @if (barShot(); as shot) {
+          <button
+            #barTrigger
+            type="button"
+            class="gs-tut-bar-shot"
+            [hidden]="!shotArrived(shot.src)"
+            [attr.aria-label]="shot.enlargeKey | transloco"
+            (click)="openShot(shots().length - 1, barTrigger)"
+          >
+            <img
+              class="gs-tut-bar-shot-img"
+              [src]="shot.src"
+              alt=""
+              draggable="false"
+              (load)="onShotLoad(shot.src)"
+              (error)="onShotError(shot.src)"
+            />
+          </button>
+        }
+        <span class="gs-tut-bar-lines">
+          <span class="gs-tut-bar-count">{{
             "generate.learn.sheet_progress" | transloco: progressParams()
           }}</span>
-          {{ titleKey(current) | transloco }}
+          <span class="gs-tut-bar-title">{{
+            titleKey(current) | transloco
+          }}</span>
         </span>
         <!-- One press-worthy thing per step, and never a disabled one: a step
-             that writes something offers that, the finale offers the button it
-             is asking to be pressed, and everything else moves on. -->
+             that writes something offers that, the finale offers the tutorial
+             it hands on to, and everything else moves on. -->
         @if (canApply()) {
           <button
             type="button"
@@ -101,14 +126,6 @@
             (click)="startOffered(current)"
           >
             {{ ctaKey(current) | transloco }}
-          </button>
-        } @else if (current.anchorId) {
-          <button
-            type="button"
-            class="gs-tut-bar-btn gs-tut-bar-do"
-            (click)="showMe()"
-          >
-            {{ "generate.learn.show_me" | transloco }}
           </button>
         }
       </div>
@@ -152,8 +169,8 @@
             />
           </div>
           <!-- The offer opens the full-size layer here as it does on a step:
-               the plate cannot hold a frame, its controls and its lane in the
-               room a sheet leaves, whichever half of the sheet asks for it. -->
+               the card cannot hold a picture, its controls and its strip in the
+               room a sheet leaves, whichever height the sheet is at. -->
           @for (parameter of entry.sweepParameters ?? []; track parameter) {
             <app-gs-sweep-scrub [parameter]="parameter" [viewerFirst]="true" />
           }
@@ -177,35 +194,175 @@
       {{ "generate.learn.sheet_progress" | transloco: progressParams() }}
     </p>
 
-    <!-- What the walkthrough is working towards, kept under the bar on every
-         step: on a phone the pane's standing thumbnail has nowhere to live, and
-         a reader who cannot see the picture is following instructions rather
-         than making something. A strip while there is work to do, opened out on
-         the step that asks for the button, where the picture is the point. -->
+    <!-- The one thing the step asks of the studio rather than of the reader,
+         and the only place it is offered. -->
+    @if (current.anchorId) {
+      <div class="gs-learn-actions gs-learn-actions--head">
+        <button type="button" class="gs-learn-show" (click)="showMe()">
+          {{ "generate.learn.show_me" | transloco }}
+        </button>
+      </div>
+    }
+
+    <!-- Keyed by the step so each one is a new element and comes in from the
+         side the reader moved towards; the picture above stays put, because it
+         is the same picture on every step. -->
+    @for (marker of stepMarker(); track marker) {
+      <div
+        class="gs-tut-step"
+        [class.gs-tut-step--back]="steppedBack()"
+        [class.gs-tut-step--first]="marker === 0 && !steppedBack()"
+      >
+        <!-- The card wears the hue of the area its step is about and breathes in
+             step with the field it points at, so the pair reads as one thing on a
+             phone as it does beside the panel. The bar above already carries the
+             step's title, so the card's heading is for assistive technology and the
+             eyebrow (the field, in the area's hue) is what shows. -->
+        <section
+          class="gs-card gs-learn-sheet-card"
+          [class]="identityFor(current)?.className"
+          [class.gs-tut-breathe]="breathes(current)"
+        >
+          @if (fieldLabelKey(current); as fieldKey) {
+            <p class="gs-learn-eyebrow">
+              @if (identityFor(current); as identity) {
+                <span class="gs-sec-chip" aria-hidden="true"
+                  ><app-icon [name]="identity.icon"
+                /></span>
+              }
+              {{ fieldKey | transloco }}
+            </p>
+          }
+          <h2 class="gs-guide-head sr-only">
+            {{
+              "generate.learn.step_heading"
+                | transloco
+                  : { n: stepIndex() + 1, title: titleKey(current) | transloco }
+            }}
+          </h2>
+          <div class="gs-guide-step-body">
+            <app-gs-prose
+              [key]="bodyKey(current)"
+              [params]="copyParams()"
+              [paragraphs]="true"
+            />
+          </div>
+
+          @if (showsSweep()) {
+            @for (parameter of current.sweepParameters ?? []; track parameter) {
+              <!-- On a phone the enlarged view is the only one with room for the
+                   pictures and the controls together, so the offer opens it. -->
+              <app-gs-sweep-scrub
+                [parameter]="parameter"
+                [viewerFirst]="true"
+              />
+            }
+            @if (current.evidenceNote) {
+              <p class="gs-sublabel mt-1">
+                {{ evidenceNoteKey(current) | transloco }}
+              </p>
+            }
+          }
+
+          @if (revealNote()) {
+            <p class="gs-learn-reveal">
+              <app-icon name="star" class="gs-ico-sm" />
+              {{ revealKey() | transloco }}
+            </p>
+          }
+
+          @if (modelNoteKey(); as noteKey) {
+            <!-- The example was committed a long time before this reader arrived,
+                 and the horde's models come and go. The value is still written; the
+                 note says what will happen because of it. -->
+            <p class="gs-sublabel gs-sublabel--warn mt-1">
+              {{ noteKey | transloco }}
+            </p>
+          }
+
+          @if (setAsideNote()) {
+            <!-- The panel under the sheet is empty because this tutorial emptied
+                 it. Saying so once, on the step where the reader first looks at it,
+                 is the difference between a clean start and lost work. -->
+            <p class="gs-sublabel mt-1">
+              {{ "generate.learn.set_aside_note" | transloco }}
+            </p>
+          }
+
+          @if (onFinale() && hasExample()) {
+            <p class="gs-info-note gs-learn-finale">
+              {{ "generate.learn.finale_hint" | transloco }}
+            </p>
+          }
+        </section>
+
+        @if (current.startsFlow) {
+          <div class="gs-learn-actions">
+            <button
+              type="button"
+              class="gs-learn-apply gs-learn-cta"
+              (click)="startOffered(current)"
+            >
+              {{ ctaKey(current) | transloco }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- What the walkthrough is working towards, under every step: on a phone
+         the pane's standing picture has nowhere else to live, and a reader who
+         cannot see it is following instructions rather than making something.
+         It sits after the step because the step is what the reader opened the
+         sheet to read, and the bar above carries the same picture as a thumb.
+         The box is held open at the shape the example was made at, so nothing
+         moves when the file lands. -->
     @if (shots().length) {
-      <div class="gs-learn-shots" [class.gs-learn-shots--open]="shotsOpen()">
+      <div class="gs-learn-shots">
         @for (shot of shots(); track shot.src; let i = $index) {
           <figure class="gs-learn-shot">
             <button
               #shotTrigger
               type="button"
               class="gs-learn-shot-stage"
+              [class.gs-learn-shot-stage--gone]="shotAbsent(shot.src)"
+              [style.aspect-ratio]="shot.aspect"
               [attr.aria-label]="shot.enlargeKey | transloco"
-              (click)="openShot(i)"
+              [disabled]="!shotArrived(shot.src)"
+              (click)="openShot(i, shotTrigger)"
             >
               <img
                 class="gs-learn-shot-img"
+                [class.gs-learn-shot-img--here]="shotArrived(shot.src)"
                 [src]="shot.src"
                 alt=""
-                loading="lazy"
+                draggable="false"
+                (load)="onShotLoad(shot.src)"
+                (error)="onShotError(shot.src)"
               />
             </button>
-            <figcaption class="gs-learn-shot-cap">
-              {{ shot.captionKey | transloco }}
-            </figcaption>
+            @if (shotAbsent(shot.src)) {
+              <!-- A picture that never arrived reads as a picture that is not
+                   there unless something says otherwise, and the reader can do
+                   something about it. -->
+              <figcaption class="gs-learn-shot-gone">
+                {{ "generate.learn.picture_failed" | transloco }}
+                <button
+                  type="button"
+                  class="gs-learn-shot-again"
+                  (click)="retryPicture()"
+                >
+                  {{ "generate.learn.load_retry" | transloco }}
+                </button>
+              </figcaption>
+            } @else {
+              <figcaption class="gs-learn-shot-cap">
+                {{ shot.captionKey | transloco }}
+              </figcaption>
+            }
           </figure>
         }
-        @if (shotsOpen() && runCost(); as cost) {
+        @if (onFinale() && runCost(); as cost) {
           <p class="gs-learn-shot-cost">
             {{
               (cost.kudos === null
@@ -217,120 +374,6 @@
         }
       </div>
     }
-
-    <!-- The card wears the hue of the area its step is about and breathes in
-         step with the field it points at, so the pair reads as one thing on a
-         phone as it does beside the panel. The bar above already carries the
-         step's title, so the card's heading is for assistive technology and the
-         eyebrow (the field, in the area's hue) is what shows. -->
-    <section
-      class="gs-card gs-learn-sheet-card"
-      [class]="identityFor(current)?.className"
-      [class.gs-tut-breathe]="breathes(current)"
-    >
-      @if (fieldLabelKey(current); as fieldKey) {
-        <p class="gs-learn-eyebrow">
-          @if (identityFor(current); as identity) {
-            <span class="gs-sec-chip" aria-hidden="true"
-              ><app-icon [name]="identity.icon"
-            /></span>
-          }
-          {{ fieldKey | transloco }}
-        </p>
-      }
-      <h2 class="gs-guide-head sr-only">
-        {{
-          "generate.learn.step_heading"
-            | transloco
-              : { n: stepIndex() + 1, title: titleKey(current) | transloco }
-        }}
-      </h2>
-      <div class="gs-guide-step-body">
-        <app-gs-prose
-          [key]="bodyKey(current)"
-          [params]="copyParams()"
-          [paragraphs]="true"
-        />
-      </div>
-
-      @if (showsSweep()) {
-        @for (parameter of current.sweepParameters ?? []; track parameter) {
-          <!-- On a phone the enlarged view is the only one with room for the
-               pictures and the controls together, so the offer opens it. -->
-          <app-gs-sweep-scrub [parameter]="parameter" [viewerFirst]="true" />
-        }
-        @if (current.evidenceNote) {
-          <p class="gs-sublabel mt-1">
-            {{ evidenceNoteKey(current) | transloco }}
-          </p>
-        }
-      }
-
-      @if (revealNote()) {
-        <p class="gs-learn-reveal">
-          <app-icon name="star" class="gs-ico-sm" />
-          {{ revealKey() | transloco }}
-        </p>
-      }
-
-      @if (modelNoteKey(); as noteKey) {
-        <!-- The example was committed a long time before this reader arrived,
-             and the horde's models come and go. The value is still written; the
-             note says what will happen because of it. -->
-        <p class="gs-sublabel gs-sublabel--warn mt-1">
-          {{ noteKey | transloco }}
-        </p>
-      }
-
-      @if (setAsideNote()) {
-        <!-- The panel under the sheet is empty because this tutorial emptied
-             it. Saying so once, on the step where the reader first looks at it,
-             is the difference between a clean start and lost work. -->
-        <p class="gs-sublabel mt-1">
-          {{ "generate.learn.set_aside_note" | transloco }}
-        </p>
-      }
-
-      @if (onFinale() && hasExample()) {
-        <p class="gs-info-note gs-learn-finale">
-          {{ "generate.learn.finale_hint" | transloco }}
-        </p>
-      }
-    </section>
-
-    <!-- The bar row above already carries the step's one action, so the body
-         offers only what the bar has no room for: pointing at the field, and
-         the way back a step. -->
-    <div class="gs-learn-actions">
-      @if (current.anchorId) {
-        <button type="button" class="gs-learn-show" (click)="showMe()">
-          {{ "generate.learn.show_me" | transloco }}
-        </button>
-      }
-      @if (current.startsFlow) {
-        <button
-          type="button"
-          class="gs-learn-apply gs-learn-cta"
-          (click)="startOffered(current)"
-        >
-          {{ ctaKey(current) | transloco }}
-        </button>
-      }
-    </div>
-
-    <div class="gs-tut-sheet-nav">
-      <button
-        type="button"
-        class="gs-guide-close"
-        [disabled]="stepIndex() === 0"
-        (click)="back()"
-      >
-        {{ "generate.learn.back" | transloco }}
-      </button>
-      <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
-        {{ "generate.learn.sheet_exit" | transloco }}
-      </button>
-    </div>
 
     <!-- Named on the sheet as it is on the panel: the control is the same one
          and has to be recognisable as it. -->
@@ -363,6 +406,22 @@
         "generate.learn.world_label" | transloco
       }}</span>
       <app-gs-world-picker [compact]="true" />
+    </div>
+
+    <!-- The way back a step and the way out, last and together: neither is
+         something the step is asking to be done. -->
+    <div class="gs-tut-sheet-nav">
+      <button
+        type="button"
+        class="gs-guide-close"
+        [disabled]="stepIndex() === 0"
+        (click)="back()"
+      >
+        {{ "generate.learn.back" | transloco }}
+      </button>
+      <button type="button" class="gs-tut-sheet-exit" (click)="exit()">
+        {{ "generate.learn.sheet_exit" | transloco }}
+      </button>
     </div>
   }
 

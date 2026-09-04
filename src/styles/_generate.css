@@ -16403,6 +16403,33 @@ html:has(app-gs-sheet) {
 /* The tutorial's sheet is edged in the tutorials' hue, as the pane header is. */
 .gen-studio .gs-learn-sheet .gs-sheet {
   border-top: 2px solid var(--gs-tut-tint-border);
+  /* A step is read on a phone, at arm's length, often outdoors. Nothing in it
+     goes below 13px, so the studio's small-type tokens are lifted here rather
+     than restated on every rule inside. */
+  --gs-text-2xs: 13px;
+  --gs-text-xs: 13px;
+  --gs-text-sm: 14px;
+}
+
+/* The tutorial's name belongs to the step being read, not to the bar: at the
+   bar the whole row goes to the step, and the name comes back the moment the
+   reader opens the sheet. */
+.gen-studio .gs-learn-sheet .gs-sheet:not(.gs-sheet--open) .gs-tut-bar-eyebrow {
+  display: none;
+}
+
+/* The small labels the studio draws at ten and eleven pixels beside a panel
+   are unreadable on a phone held at arm's length. Inside the step they are
+   raised to the sheet's floor, and only inside it: the panel keeps its own. */
+.gen-studio .gs-learn-sheet .gs-learn-eyebrow,
+.gen-studio .gs-learn-sheet .gs-learn-levels-label,
+.gen-studio .gs-learn-sheet .gs-setting-chip-label {
+  font-size: 13px;
+}
+/* An entry point inside a sentence, so it keeps the line's rhythm rather than
+   taking a control's height; it is never the thing the step is asking for. */
+.gen-studio .gs-learn-sheet .gs-setting-chip-btn {
+  min-height: 32px;
 }
 
 /* The tutorial's progress along the sheet's top edge: a segment per step, the
@@ -16455,21 +16482,61 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-progress-seg--done {
   background: var(--gs-tut);
 }
+/* The step, on one row: the picture it is working towards, which step of how
+   many and what it is called, and the two things the step asks for. */
 .gen-studio .gs-tut-bar-row {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  min-height: 72px;
 }
-.gen-studio .gs-tut-bar-title {
+/* The picture at the size a phone draws a thumbnail, and never a box with
+   nothing in it: the button is not on the row until its own file has arrived. */
+.gen-studio .gs-tut-bar-shot {
+  flex: none;
+  display: block;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--gs-card-border);
+  border-radius: 10px;
+  background: var(--gs-field-soft);
+  cursor: zoom-in;
+}
+.gen-studio .gs-tut-bar-shot:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-tut-bar-shot-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gen-studio .gs-tut-bar-lines {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+/* Which step of how many, in words the reader can see. The strip along the top
+   edge shows the shape of the tutorial; this says where in it they are. */
+.gen-studio .gs-tut-bar-count {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--gs-tut-ink);
+}
+.gen-studio .gs-tut-bar-title {
+  min-width: 0;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-height: 1.25;
-  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+  font-size: 14px;
   font-weight: 800;
   color: var(--gs-ink);
 }
@@ -16486,7 +16553,7 @@ html:has(app-gs-sheet) {
   border-radius: 8px;
   background: var(--gs-field);
   color: var(--gs-ink-2);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -16513,43 +16580,65 @@ html:has(app-gs-sheet) {
   outline-offset: 2px;
 }
 @media (pointer: coarse) {
+  .gen-studio .gs-tut-bar-btn,
   .gen-studio .gs-tut-bar-do,
   .gen-studio .gs-tut-bar-next,
-  .gen-studio .gs-tut-sheet-exit {
+  .gen-studio .gs-tut-sheet-exit,
+  .gen-studio .gs-learn-sheet .gs-guide-close,
+  .gen-studio .gs-learn-sheet .gs-learn-show,
+  .gen-studio .gs-learn-sheet .gs-learn-cta,
+  .gen-studio .gs-learn-sheet .gs-seg-opt {
     min-height: 44px;
   }
 }
 
-/* What the example produced, and what it started from, kept under the sheet's
-   bar. A strip while there is work to do: thumb-tall pictures with their name
-   beside them, so the row costs one line and still says which is which. */
+/* What the example produced, and what it started from, above every step. The
+   picture is what the reader is working towards, so it gets a real stage rather
+   than a chip, with its name under it. */
 .gen-studio .gs-learn-shots {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
+  align-items: flex-start;
+  gap: 10px 14px;
+  margin-top: 10px;
 }
 .gen-studio .gs-learn-shot {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   margin: 0;
   min-width: 0;
+  width: min(40vw, 180px);
+}
+.gen-studio .gs-sheet--full .gs-learn-shot {
+  width: min(62vw, 280px);
 }
 /* The picture is the affordance, so the button around it adds the pointer and
-   the focus ring it cannot carry itself. Never narrower than a thumb, whatever
-   shape the example is. */
+   the focus ring it cannot carry itself. The box is held at the shape the
+   example was made at before the file arrives, so nothing under it moves when
+   it does; a stage with nothing in it is not offered as a picture. */
 .gen-studio .gs-learn-shot-stage {
   flex: none;
   display: block;
-  height: 44px;
-  min-width: 44px;
+  width: 100%;
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--gs-card-border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--gs-field-soft);
   cursor: zoom-in;
+}
+.gen-studio .gs-learn-shot-stage:disabled {
+  cursor: default;
+}
+/* A picture that is not coming keeps no room open for itself: the box drops to
+   a marker and the line under it says what happened. A full-height blank reads
+   as a picture still on its way. */
+.gen-studio .gs-learn-shot-stage--gone {
+  aspect-ratio: auto;
+  height: 64px;
+  border-style: dashed;
+  background: none;
 }
 .gen-studio .gs-learn-shot-stage:focus-visible {
   outline: 2px solid var(--gs-focus-ring);
@@ -16560,35 +16649,93 @@ html:has(app-gs-sheet) {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  opacity: 0;
+  transition: opacity var(--gs-dur) var(--gs-ease);
+}
+.gen-studio .gs-learn-shot-img--here {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-learn-shot-img {
+    transition: none;
+  }
 }
 .gen-studio .gs-learn-shot-cap {
   min-width: 0;
-  font-size: 11px;
-  line-height: 1.3;
+  font-size: 13px;
+  line-height: 1.35;
   color: var(--gs-muted);
+}
+/* A picture that would not arrive says so where it would have been, and the
+   way to ask for it again is on its own line under it, at a size a thumb can
+   land on without the sentence above it opening up to make room. */
+.gen-studio .gs-learn-shot-gone {
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-learn-shot-again {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gs-blue-text);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.gen-studio .gs-learn-shot-again:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
 }
 .gen-studio .gs-learn-shot-cost {
   flex: 1 0 100%;
   margin: 0;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.4;
   color: var(--gs-ink-2);
 }
-/* On the step that asks for the button to be pressed, the picture is what the
-   press is for: it takes the height, its name goes under it, and what the run
-   cost is said without being asked for. */
-.gen-studio .gs-learn-shots--open {
-  align-items: flex-start;
+
+/* Each step comes in from the side the reader moved towards, so a swipe reads
+   as turning a page rather than as the text changing under the finger. */
+.gen-studio .gs-tut-step {
+  animation: gs-tut-step-in var(--gs-dur) var(--gs-ease) both;
 }
-.gen-studio .gs-learn-shots--open .gs-learn-shot {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
+.gen-studio .gs-tut-step--back {
+  animation-name: gs-tut-step-in-back;
 }
-.gen-studio .gs-learn-shots--open .gs-learn-shot-stage {
-  height: 128px;
-  width: 100%;
-  min-width: 96px;
+.gen-studio .gs-tut-step--first {
+  animation: none;
+}
+@keyframes gs-tut-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes gs-tut-step-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-tut-step,
+  .gen-studio .gs-tut-step--back {
+    animation: none;
+  }
 }
 
 /* Its own card rather than the pane panel's, so the breathing ring has an edge
@@ -16619,14 +16766,14 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-sheet-exit {
   display: block;
   width: 100%;
-  min-height: 36px;
+  min-height: 44px;
   margin-top: 16px;
   padding: 9px 12px;
   border: 1px solid var(--gs-border);
   border-radius: 8px;
   background: transparent;
   color: var(--gs-ink-2);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;

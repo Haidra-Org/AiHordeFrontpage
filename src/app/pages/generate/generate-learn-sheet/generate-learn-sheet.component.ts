@@ -3,8 +3,10 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   viewChild,
   viewChildren,
 } from '@angular/core';
@@ -40,6 +42,23 @@ export interface LearnShot {
   captionKey: string;
   /** The offer to see it whole, which names the picture rather than a number. */
   enlargeKey: string;
+  /**
+   * The shape to hold open while the file is on its way, as a CSS ratio. Taken
+   * from the size the example was actually generated at where the request says
+   * one, so the stage does not resize under the reader when the picture lands.
+   */
+  aspect: string;
+}
+
+/**
+ * The same address, asked for again. A browser that has already failed on a
+ * URL will answer from that failure, so a retry has to differ somewhere.
+ */
+function askAgain(url: string, attempt: number): string {
+  if (attempt === 0) {
+    return url;
+  }
+  return `${url}${url.includes('?') ? '&' : '?'}again=${attempt}`;
 }
 
 /**
@@ -140,30 +159,90 @@ export class GenerateLearnSheetComponent {
     if (!result) {
       return [];
     }
+    const again = this.attempt();
     const source = this.engine.exampleSource();
     const shots: LearnShot[] = [];
     if (source) {
       shots.push({
-        src: source,
+        src: askAgain(source, again),
         captionKey: 'generate.tutorials.example_source',
         enlargeKey: 'generate.tutorials.example_source_enlarge',
+        // The example says what it produced, not what it was given, so the
+        // starting picture holds a square until its own file says otherwise.
+        aspect: '1 / 1',
       });
     }
     shots.push({
-      src: result,
+      src: askAgain(result, again),
       captionKey: 'generate.tutorials.example_result',
       enlargeKey: 'generate.tutorials.example_result_enlarge',
+      aspect: this.resultAspect(),
     });
     return shots;
   });
 
+  /** The shape the example was generated at, or a square where it says nothing. */
+  private resultAspect(): string {
+    const example = this.engine.example();
+    return example && example.width > 0 && example.height > 0
+      ? `${example.width} / ${example.height}`
+      : '1 / 1';
+  }
+
   /**
-   * Whether the row is opened out. On the step that asks for the button to be
-   * pressed the picture is the point, so it is given the height and the cost
-   * line without the reader having to ask; everywhere else it is a reminder of
-   * what they are working towards and stays a strip.
+   * The picture the bar carries beside the step. The result rather than the
+   * starting picture: it is what the reader is working towards, and the bar has
+   * room for one.
    */
-  public readonly shotsOpen = computed(() => this.onFinale());
+  public readonly barShot = computed<LearnShot | null>(
+    () => this.shots().at(-1) ?? null,
+  );
+
+  /**
+   * Which pictures have arrived. A stage that has nothing in it is not a
+   * picture, so nothing offers to enlarge one until its file is on the screen:
+   * an empty box that opens an empty view is how a picture that never came
+   * reads as a picture that is not there.
+   */
+  private readonly arrived = signal<ReadonlySet<string>>(new Set());
+  /** Which would not arrive, so the stage says so instead of staying blank. */
+  private readonly absent = signal<ReadonlySet<string>>(new Set());
+  /** Bumped to ask for the files again after one of them would not load. */
+  private readonly attempt = signal(0);
+
+  public shotArrived(src: string): boolean {
+    return this.arrived().has(src);
+  }
+
+  public shotAbsent(src: string): boolean {
+    return this.absent().has(src);
+  }
+
+  public onShotLoad(src: string): void {
+    this.arrived.update((seen) => new Set(seen).add(src));
+    this.absent.update((gone) => {
+      if (!gone.has(src)) {
+        return gone;
+      }
+      const next = new Set(gone);
+      next.delete(src);
+      return next;
+    });
+  }
+
+  public onShotError(src: string): void {
+    this.absent.update((gone) => new Set(gone).add(src));
+  }
+
+  /**
+   * Ask for the pictures again. A file that would not load is usually a moment
+   * of network, and the browser has already recorded the failure against that
+   * address, so the request carries a different one.
+   */
+  public retryPicture(): void {
+    this.absent.set(new Set());
+    this.attempt.update((n) => n + 1);
+  }
 
   /** Which picture the enlarged view is showing, or null while it is shut. */
   private readonly enlargedAt = signal<number | null>(null);
@@ -175,14 +254,28 @@ export class GenerateLearnSheetComponent {
   private readonly shotTriggers =
     viewChildren<ElementRef<HTMLButtonElement>>('shotTrigger');
 
-  public openShot(index: number): void {
+  /**
+   * The picture that opened the view, so focus goes back to it. The same
+   * picture is offered from the bar and from the step, and the two are
+   * different buttons on the screen.
+   */
+  private shotOpener: HTMLElement | null = null;
+
+  public openShot(index: number, opener?: HTMLElement): void {
+    this.shotOpener = opener ?? null;
     this.enlargedAt.set(index);
   }
 
   /** Closing hands focus back to the picture that opened the view. */
   public closeShot(): void {
     const at = this.enlargedAt();
+    const opener = this.shotOpener;
     this.enlargedAt.set(null);
+    this.shotOpener = null;
+    if (opener?.isConnected) {
+      opener.focus();
+      return;
+    }
     if (at !== null) {
       this.shotTriggers()[at]?.nativeElement.focus();
     }
@@ -282,6 +375,56 @@ export class GenerateLearnSheetComponent {
   }
 
   private readonly sheet = viewChild(GsSheetComponent);
+
+  /**
+   * A one-entry list keyed by the step, so the step card is a new element every
+   * time the reader moves and the slide that introduces it runs again. An
+   * element whose bindings merely change is reused, and an animation on a
+   * reused element plays once and never again.
+   */
+  public readonly stepMarker = computed(() => [this.stepIndex()]);
+
+  /** Which way the last move went, so the card comes in from the side it left. */
+  public readonly steppedBack = signal(false);
+  private previousIndex = 0;
+
+  constructor() {
+    effect(() => {
+      const index = this.stepIndex();
+      untracked(() => this.arriveAtStep(index));
+    });
+  }
+
+  /**
+   * Meet every step the same way: the bar, at the top of the step, with the
+   * form behind it. A step is about a control, and a reader cannot work a
+   * control the step is covering; the reader who wants the whole step still has
+   * the grabber and the labelled button, and what they open stays open until
+   * they move on.
+   */
+  private arriveAtStep(index: number): void {
+    this.steppedBack.set(index < this.previousIndex);
+    this.previousIndex = index;
+    const sheet = this.sheet();
+    sheet?.collapse();
+    sheet?.scrollBodyToTop();
+  }
+
+  /**
+   * A swipe across the bar or the step moves between steps, in the direction a
+   * reader turns a page. Back and Next carry the same two moves in words, so
+   * nothing depends on knowing the gesture.
+   */
+  public onSwipe(direction: 'forward' | 'back'): void {
+    if (this.conceptTrack()) {
+      return;
+    }
+    if (direction === 'forward') {
+      this.next();
+    } else {
+      this.back();
+    }
+  }
 
   /**
    * Write the step's fields and stay where we are. The panel does not advance
