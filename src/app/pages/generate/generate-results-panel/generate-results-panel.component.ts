@@ -500,9 +500,23 @@ export class GenerateResultsPanelComponent {
     () =>
       this.pendingJobs().filter((job) => job.status === 'processing').length,
   );
-  /** Jobs submitted or waiting but not yet being rendered. */
+  /**
+   * Jobs still on this side of the horde: enqueued here and not yet accepted,
+   * whether they are held back by a rate limit, an unanswered horde or the cap
+   * on how many run at once. The card words these as waiting to submit, so the
+   * header cannot count them among the horde's queue.
+   */
+  public readonly waitingCount = computed(
+    () => this.pendingJobs().filter((job) => job.status === 'waiting').length,
+  );
+  /** Jobs the horde has taken but no worker has picked up yet. */
   public readonly queuedCount = computed(
-    () => this.pendingJobs().length - this.generatingCount(),
+    () =>
+      this.pendingJobs().length - this.generatingCount() - this.waitingCount(),
+  );
+  /** Whether anything of the reader's is with the horde right now. */
+  public readonly onHordeCount = computed(
+    () => this.generatingCount() + this.queuedCount(),
   );
   public readonly doneCount = computed(
     () => this.finishedJobs().filter((job) => job.status === 'done').length,

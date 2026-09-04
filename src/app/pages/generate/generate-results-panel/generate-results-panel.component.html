@@ -26,11 +26,22 @@
         @if (isBusy()) {
           <span class="gs-status gs-status--busy">
             <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
-            {{
-              "generate.results.status_generating"
-                | transloco
-                  : { generating: generatingCount(), queued: queuedCount() }
-            }}
+            @if (onHordeCount() > 0) {
+              {{
+                "generate.results.status_generating"
+                  | transloco
+                    : { generating: generatingCount(), queued: queuedCount() }
+              }}
+            }
+            @if (waitingCount() > 0) {
+              @if (onHordeCount() > 0) {
+                ·
+              }
+              {{
+                "generate.results.status_waiting"
+                  | transloco: { count: waitingCount() }
+              }}
+            }
           </span>
         }
       </div>
@@ -54,11 +65,22 @@
         @if (isBusy()) {
           <span class="gs-status gs-status--busy">
             <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
-            {{
-              "generate.results.status_generating"
-                | transloco
-                  : { generating: generatingCount(), queued: queuedCount() }
-            }}
+            @if (onHordeCount() > 0) {
+              {{
+                "generate.results.status_generating"
+                  | transloco
+                    : { generating: generatingCount(), queued: queuedCount() }
+              }}
+            }
+            @if (waitingCount() > 0) {
+              @if (onHordeCount() > 0) {
+                ·
+              }
+              {{
+                "generate.results.status_waiting"
+                  | transloco: { count: waitingCount() }
+              }}
+            }
           </span>
         } @else if (doneCount() > 0) {
           <span class="gs-status gs-status--done">

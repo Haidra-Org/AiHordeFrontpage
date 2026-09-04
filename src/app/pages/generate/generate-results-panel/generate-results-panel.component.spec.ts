@@ -22,6 +22,7 @@ import {
 import en from '../../../../assets/i18n/en.json';
 import { studioLinkFromText } from '../studio-link';
 import { DOCS_IMAGE } from '../../../content/docs-links';
+import { ResultControlActionRequest } from '../result-control-action';
 
 const TRANSLATIONS = en as Record<string, string>;
 
@@ -184,6 +185,19 @@ describe('GenerateResultsPanelComponent', () => {
 
     expect(component.pendingJobs().map((j) => j.localId)).toEqual(['p']);
     expect(component.finishedJobs().map((j) => j.localId)).toEqual(['f']);
+  });
+
+  it('counts a request the horde has not taken apart from its queue', () => {
+    pendingJobs.set([
+      job('w', 'waiting'),
+      job('q', 'queued'),
+      job('p', 'processing'),
+    ]);
+
+    expect(component.waitingCount()).toBe(1);
+    expect(component.queuedCount()).toBe(1);
+    expect(component.generatingCount()).toBe(1);
+    expect(component.onHordeCount()).toBe(2);
   });
 
   it('cancels a pending job through the queue', async () => {
@@ -856,7 +870,10 @@ describe('GenerateResultsPanelComponent', () => {
     });
 
     it('pins the seed the worker returned when a variation is asked for', () => {
-      const emitted: { seed: string | null; localId: string }[] = [];
+      const emitted: {
+        seed: ResultControlActionRequest['seed'];
+        localId: string;
+      }[] = [];
       component.controlAction.subscribe((event) =>
         emitted.push({ seed: event.seed, localId: event.localId }),
       );
@@ -877,7 +894,7 @@ describe('GenerateResultsPanelComponent', () => {
     });
 
     it('lets the seed go when only the settings are copied', () => {
-      const emitted: (string | null)[] = [];
+      const emitted: ResultControlActionRequest['seed'][] = [];
       component.controlAction.subscribe((event) => emitted.push(event.seed));
 
       component.copySettings(component.viewerTiles()[0]);
@@ -1258,6 +1275,7 @@ describe('GenerateResultsPanelComponent', () => {
     let held = true;
     engine.registerHost({
       applyFields: () => undefined,
+      modelAvailability: () => 'unknown',
       currentSourceMode: () => 'none',
       setSourceMode: () => undefined,
       openFieldGroup: () => false,
@@ -1578,6 +1596,87 @@ describe('GenerateResultsPanelComponent empty pane', () => {
         TRANSLATIONS[`generate.results.starters.${starter}.label`],
       );
     }
+  });
+});
+
+describe('GenerateResultsPanelComponent status chip', () => {
+  let fixture: ComponentFixture<GenerateResultsPanelComponent>;
+  let host: HTMLElement;
+  let pendingJobs: ReturnType<typeof signal<LocalGenerationJob[]>>;
+
+  beforeEach(async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+    pendingJobs = signal<LocalGenerationJob[]>([]);
+
+    await TestBed.configureTestingModule({
+      // The chip's wording is the claim, so the real template and copy load.
+      imports: [
+        GenerateResultsPanelComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            pendingJobs,
+            finishedJobs: signal<LocalGenerationJob[]>([]),
+            cancel: vi.fn(),
+            retry: vi.fn(),
+            deleteJob: vi.fn(),
+            getJobImages: vi.fn().mockResolvedValue([]),
+          },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+        },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+    host = fixture.nativeElement as HTMLElement;
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  function chipText(): string {
+    return host.querySelector('.gs-status--busy')?.textContent ?? '';
+  }
+
+  it('names the horde queue and the unsent requests separately', () => {
+    pendingJobs.set([
+      job('w', 'waiting'),
+      job('q', 'queued'),
+      job('p', 'processing'),
+    ]);
+    fixture.detectChanges();
+
+    expect(chipText()).toContain('1 generating');
+    expect(chipText()).toContain('1 queued');
+    expect(chipText()).toContain('1 waiting to submit');
+  });
+
+  it('says only that a lone unsent request is waiting', () => {
+    pendingJobs.set([job('w', 'waiting')]);
+    fixture.detectChanges();
+
+    expect(chipText()).toContain('1 waiting to submit');
+    expect(chipText()).not.toContain('queued');
+    expect(chipText()).not.toContain('generating');
   });
 });
 
