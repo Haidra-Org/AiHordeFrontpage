@@ -16,6 +16,7 @@ import {
   HIGHLIGHT_CLASS,
   TutorialAnchorService,
 } from './tutorial-anchor.service';
+import { scrollIntoBand } from '../helper/scroll-utils';
 import { GsHelpDockService } from './gs-help-dock.service';
 import {
   GenerateFormValue,
@@ -262,6 +263,19 @@ const BREATHE_ANIMATION = 'gs-breathe';
  */
 const PING_CLASS = 'gs-tut-ping';
 const PING_MS = 800;
+
+/** Where the studio's bottom sheet publishes how much of the foot it is taking. */
+const SHEET_CLEARANCE_VAR = '--gs-sheet-clearance';
+/** The tool bar the sheet stands on, which covers the page under the sheet. */
+const TAB_BAR_VAR = '--gs-tabbar-height';
+/** The site header, which covers the page above whatever the reader scrolls to. */
+const HEADER_VAR = '--nav-height-mobile';
+
+/** A CSS length in pixels, or 0 for anything that is not one. */
+function cssPixels(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 /**
  * Which anchor a written form field lives on, so an apply can flash the
@@ -723,17 +737,14 @@ export class TutorialEngineService {
     );
     let brought = false;
     for (const id of anchors) {
-      const element = this.anchors.element(id);
+      const element = this.pointedElement(id);
       if (element) {
         this.flash(element);
         // The first written control is brought into view as a pointed one is:
         // a ring the reader cannot see says nothing happened.
         if (!brought) {
           brought = true;
-          element.scrollIntoView({
-            behavior: this.scrollBehavior(),
-            block: 'center',
-          });
+          this.bringIntoBand(element);
         }
       }
     }
@@ -976,7 +987,7 @@ export class TutorialEngineService {
     if (!step?.anchorId) {
       return;
     }
-    const element = this.anchors.element(step.anchorId);
+    const element = this.pointedElement(step.anchorId);
     if (!element) {
       return;
     }
@@ -989,11 +1000,12 @@ export class TutorialEngineService {
       element.classList.add(this.highlightSection);
     }
     this.highlighted = element;
-    element.scrollIntoView({
-      behavior: this.scrollBehavior(),
-      block: 'center',
-    });
-    if (step.helpTopic) {
+    this.bringIntoBand(element);
+    // Beside the panel the field's own note is opened with the step, because
+    // there is room for both. Under a sheet it is not: the note doubles the
+    // height of the row and pushes the control the step is about out of the
+    // strip of page the sheet leaves. The `?` beside the label still opens it.
+    if (step.helpTopic && !this.underSheet()) {
       this.help.requestTopic(step.helpTopic);
     }
     if (ping) {
@@ -1060,6 +1072,79 @@ export class TutorialEngineService {
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     return reduced ? 'auto' : 'smooth';
+  }
+
+  /**
+   * The strip of page the reader can actually see, from under the site header
+   * to the top edge of whatever is covering the foot of the screen.
+   *
+   * The studio's bottom sheet publishes its own height as
+   * `--gs-sheet-clearance` and stands on the tool bar, so both come off the
+   * foot. Where nothing is covering the page the band is the whole viewport and
+   * a pointed control is centred in it, which is what happens beside the panel.
+   */
+  private visibleBand(): { top: number; bottom: number } {
+    if (!this.isBrowser) {
+      return { top: 0, bottom: 0 };
+    }
+    const root = getComputedStyle(document.documentElement);
+    const clearance = cssPixels(root.getPropertyValue(SHEET_CLEARANCE_VAR));
+    if (clearance <= 0) {
+      return { top: 0, bottom: window.innerHeight };
+    }
+    const studio = document.querySelector('.gen-studio');
+    const tabBar = studio
+      ? cssPixels(getComputedStyle(studio).getPropertyValue(TAB_BAR_VAR))
+      : 0;
+    return {
+      top: cssPixels(root.getPropertyValue(HEADER_VAR)),
+      bottom: window.innerHeight - clearance - tabBar,
+    };
+  }
+
+  /**
+   * Whether a sheet is covering the foot of the screen. The studio only draws
+   * one below the width where it has a pane, so this is the same question as
+   * whether the step is being read over the form rather than beside it.
+   */
+  private underSheet(): boolean {
+    if (!this.isBrowser) {
+      return false;
+    }
+    return (
+      cssPixels(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          SHEET_CLEARANCE_VAR,
+        ),
+      ) > 0
+    );
+  }
+
+  /**
+   * The element to point at for an anchor: the anchor itself, or the row inside
+   * it the step is about where the anchor is a whole settings group and the
+   * band has no room for one. A group is what the ring wants beside the panel,
+   * where the whole group is on the screen anyway.
+   */
+  private pointedElement(anchorId: string): HTMLElement | null {
+    const element = this.anchors.element(anchorId);
+    if (!element) {
+      return null;
+    }
+    const band = this.visibleBand();
+    if (element.getBoundingClientRect().height <= band.bottom - band.top) {
+      return element;
+    }
+    return this.anchors.rowElement(anchorId) ?? element;
+  }
+
+  /** Bring an element into the band, in the register the reader asked for. */
+  private bringIntoBand(element: HTMLElement): void {
+    if (!this.isBrowser) {
+      return;
+    }
+    const band = this.visibleBand();
+    scrollIntoBand(element, band.top, band.bottom, this.scrollBehavior());
   }
 
   private async load(flowId: string): Promise<void> {

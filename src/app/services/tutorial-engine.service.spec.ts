@@ -187,6 +187,32 @@ describe('TutorialEngineService', () => {
     await started;
   }
 
+  /** Every page scroll the engine asked for, in order. */
+  let scrolled: ScrollToOptions[];
+  const scrolls = (): ScrollToOptions[] => scrolled;
+
+  /**
+   * A control at a known place on a page of a known height. The engine puts a
+   * control in the strip of page a sheet leaves, so the maths needs a box to
+   * read and jsdom lays nothing out.
+   */
+  function placed(top: number, height: number): HTMLElement {
+    const element = document.createElement('div');
+    element.getBoundingClientRect = (): DOMRect =>
+      ({
+        top,
+        bottom: top + height,
+        height,
+        left: 0,
+        right: 0,
+        width: 0,
+        x: 0,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    return element;
+  }
+
   beforeEach(() => {
     localStorage.clear();
     TestBed.resetTestingModule();
@@ -197,10 +223,16 @@ describe('TutorialEngineService', () => {
     http = TestBed.inject(HttpTestingController);
     host = new HostSpy();
     engine.registerHost(host);
+    scrolled = [];
+    vi.stubGlobal('scrollTo', (options: ScrollToOptions) => {
+      scrolled.push(options);
+    });
   });
 
   afterEach(() => {
     http.verify();
+    vi.unstubAllGlobals();
+    document.documentElement.style.removeProperty('--gs-sheet-clearance');
   });
 
   it('offers steps for every technique and for the concept tracks', () => {
@@ -392,9 +424,9 @@ describe('TutorialEngineService', () => {
 
       expect(size.classList.contains('gs-tut-ping')).toBe(true);
       expect(model.classList.contains('gs-tut-ping')).toBe(false);
-      // The written control is brought into view as a pointed one is.
-      expect(size.scrollIntoView).toHaveBeenCalledTimes(1);
-      expect(model.scrollIntoView).not.toHaveBeenCalled();
+      // The written control is brought into view as a pointed one is, and only
+      // the first of them: two scrolls would leave the reader at the second.
+      expect(scrolls()).toHaveLength(1);
     });
 
     it('answers the keyboard while it has the pane, and not from inside a field', () => {
@@ -435,8 +467,90 @@ describe('TutorialEngineService', () => {
       engine.focusStep();
 
       expect(element.classList.contains('gs-tut-target')).toBe(true);
-      expect(element.scrollIntoView).toHaveBeenCalled();
+      expect(scrolls()).toHaveLength(1);
       expect(help.requestedTopic()).toBe('steps');
+    });
+
+    it('centres the field in the page a sheet leaves, not in the viewport', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      // A sheet 300 tall leaves 468 of a 768 screen.
+      document.documentElement.style.setProperty(
+        '--gs-sheet-clearance',
+        '300px',
+      );
+      anchors.register('steps', placed(500, 100));
+
+      engine.goTo(3);
+      engine.focusStep();
+
+      // Centred in what is left: (468 - 100) / 2 = 184 above the control, and
+      // not the 334 that centring in the whole screen would put above it.
+      expect(scrolls()[0].top).toBe(316);
+    });
+
+    it('puts a control taller than that page at the top of it', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      document.documentElement.style.setProperty(
+        '--gs-sheet-clearance',
+        '300px',
+      );
+      // Taller than the 412 the sheet leaves, and with no row registered under
+      // it: the head of the control is what has to be on the screen.
+      anchors.register('steps', placed(500, 600));
+
+      engine.goTo(3);
+      engine.focusStep();
+
+      expect(scrolls()[0].top).toBe(484);
+    });
+
+    it('points at the row inside a group the page has no room for', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      document.documentElement.style.setProperty(
+        '--gs-sheet-clearance',
+        '300px',
+      );
+      const group = placed(200, 600);
+      const row = placed(400, 100);
+      anchors.register('size', group);
+      anchors.register('size.row', row);
+
+      engine.goTo(2);
+      engine.focusStep();
+
+      expect(row.classList.contains('gs-tut-target')).toBe(true);
+      expect(group.classList.contains('gs-tut-target')).toBe(false);
+    });
+
+    it('keeps the group where the page has room for the whole of it', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const group = placed(200, 300);
+      const row = placed(400, 100);
+      anchors.register('size', group);
+      anchors.register('size.row', row);
+
+      engine.goTo(2);
+      engine.focusStep();
+
+      expect(group.classList.contains('gs-tut-target')).toBe(true);
+      expect(row.classList.contains('gs-tut-target')).toBe(false);
+    });
+
+    it('leaves the field note shut while a sheet is over the form', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      const help = TestBed.inject(GsHelpService);
+      document.documentElement.style.setProperty(
+        '--gs-sheet-clearance',
+        '300px',
+      );
+      anchors.register('steps', placed(500, 100));
+
+      engine.goTo(3);
+      engine.focusStep();
+
+      // The note would double the height of the row and push the control it
+      // describes off the page the sheet leaves. The `?` still opens it.
+      expect(help.requestedTopic()).toBeNull();
     });
 
     it('asks the panel to unfold the field before pointing at it', () => {

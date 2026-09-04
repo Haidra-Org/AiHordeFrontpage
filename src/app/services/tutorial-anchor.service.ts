@@ -14,6 +14,12 @@ export const HIGHLIGHT_CLASS = 'gs-tut-target';
 export const FLASH_MS = 2500;
 
 /**
+ * The suffix a narrower registration of the same anchor carries. See
+ * {@link TutorialAnchorService.rowElement}.
+ */
+export const ANCHOR_ROW_SUFFIX = '.row';
+
+/**
  * Where the studio's tutorial-addressable controls are on the page.
  *
  * The follow-along tutorial has to point at a field the control panel owns, and
@@ -70,6 +76,20 @@ export class TutorialAnchorService {
 
   public element(id: string): HTMLElement | null {
     return this.elements().get(id) ?? null;
+  }
+
+  /**
+   * The row inside an anchor that a step is really about, where the panel has
+   * registered one, or null.
+   *
+   * Some anchors are a whole settings group, which is the right thing to ring
+   * beside a wide panel and taller than the strip of page a bottom sheet
+   * leaves. A form may register the row under the same id with
+   * {@link ANCHOR_ROW_SUFFIX}, and a caller that has no room for the group
+   * points at the row instead.
+   */
+  public rowElement(id: string): HTMLElement | null {
+    return this.element(`${id}${ANCHOR_ROW_SUFFIX}`);
   }
 
   public has(id: string): boolean {

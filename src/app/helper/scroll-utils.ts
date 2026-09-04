@@ -40,6 +40,31 @@ export function scrollToElementCentered(
 }
 
 /**
+ * Scroll the page so `element` sits inside the band between `top` and `bottom`,
+ * both measured down from the top of the viewport.
+ *
+ * A page with a bottom sheet over it has two edges the reader cannot see past,
+ * so the middle of the viewport is the wrong place to put a control a step is
+ * about: centring there lands it half under the sheet. The band is centred
+ * instead. An element taller than the band is put at the band's top, because a
+ * control says more from its label down than from its middle out.
+ */
+export function scrollIntoBand(
+  element: HTMLElement,
+  top: number,
+  bottom: number,
+  behavior: ScrollBehavior = 'smooth',
+): void {
+  const rect = element.getBoundingClientRect();
+  const spare = Math.max(0, bottom - top) - rect.height;
+  const inset = spare > 0 ? spare / 2 : SCROLL_PADDING;
+  window.scrollTo({
+    top: Math.max(0, rect.top + window.scrollY - top - inset),
+    behavior,
+  });
+}
+
+/**
  * Wait for an element with the given `id` to appear in the DOM, then scroll
  * to it.
  *

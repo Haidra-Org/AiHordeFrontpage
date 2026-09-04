@@ -778,7 +778,11 @@
               </div>
             </div>
 
-            <div class="gs-size-dimensions">
+            <!-- The width and height rows, registered again on their own: the
+                 size card is taller than the strip of page a bottom sheet
+                 leaves, and a step about the size has to be able to point at
+                 the two numbers rather than at the card around them. -->
+            <div class="gs-size-dimensions" appTutAnchor="size.row">
               <div class="gs-size-axis">
                 <label for="generate-width">{{
                   "generate.form.width_short" | transloco
