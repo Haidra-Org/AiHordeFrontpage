@@ -759,7 +759,7 @@
   "generate.help.dock_close": "Back to results",
   "generate.help.dock_close_tutorial": "Back to the tutorial",
   "generate.help.sheet_label": "Setting reference",
-  "generate.sheet.show": "Show",
+  "generate.sheet.show": "Open",
   "generate.sheet.fill": "Expand",
   "generate.sheet.shrink": "Shrink",
   "generate.sheet.hide": "Hide",

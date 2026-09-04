@@ -16003,6 +16003,10 @@ app-gs-compare-wipe {
 }
 .gen-studio .gs-sheet-top:has(> [sheet-head]) .gs-sheet-stops {
   align-self: flex-end;
+  /* The buttons keep the row's end whether or not the head line is drawn, so
+     the one way up from the bar sits where the way down sits once open rather
+     than alone at the far side of the grabber. */
+  margin-left: auto;
 }
 /* A bar line that is a way back to the tutorial the entry was opened from. */
 .gen-studio .gs-sheet-return {
@@ -16466,8 +16470,12 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-tut-bar-name {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* The name shares its row with the two stop buttons and is the one thing on
+     it a reader may not know; a second line costs less than its first words. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
   letter-spacing: 0.06em;
   text-transform: none;
   font-size: var(--gs-text-xs);
