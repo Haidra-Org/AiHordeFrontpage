@@ -121,7 +121,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'alchemy.flow.hint',
   'alchemy.flow.jump',
   'alchemy.flow.view_results',
-  'alchemy.submit.summary_empty',
   'alchemy.jobs.empty',
   'alchemy.crowd.queued',
   'alchemy.crowd.donate',

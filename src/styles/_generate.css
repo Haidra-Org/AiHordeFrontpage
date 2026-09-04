@@ -5998,8 +5998,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   inset: 0;
 }
 
-/* View toggle + gallery density controls (results header). The track itself is
-   the shared segmented control; only its options differ. */
+/* View toggle (results header). The track itself is the shared segmented
+   control; only its options differ. */
 .gen-studio .gs-seg-btn {
   border: 0;
   background: none;
@@ -6015,33 +6015,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-panel);
   color: var(--gs-ink);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-}
-.gen-studio .gs-density {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.gen-studio .gs-density-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--gs-border);
-  border-radius: 6px;
-  background: var(--gs-panel);
-  color: var(--gs-label);
-  cursor: pointer;
-}
-.gen-studio .gs-density-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.gen-studio .gs-density-val {
-  min-width: 16px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--gs-ink);
 }
 
 @keyframes gs-pulse-ring {
@@ -8546,7 +8519,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   .gen-studio .gs-mini-btn,
   .gen-studio .gs-view-toggle,
   .gen-studio .gs-view-select,
-  .gen-studio .gs-density-btn,
   .gen-studio .gs-presets-del,
   .gen-studio .gs-prompt-hist-btn,
   .gen-studio .gs-seg--xs .gs-seg-opt,

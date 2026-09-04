@@ -69,7 +69,11 @@ import { IconComponent } from '../../components/icon/icon.component';
 import { FullscreenToggleComponent } from '../../components/fullscreen-toggle/fullscreen-toggle.component';
 import { NetworkStatusComponent } from '../../components/network-status/network-status.component';
 import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
-import { AlchemyJob, isJobSettled } from '../../helper/alchemy-job-view';
+import {
+  AlchemyJob,
+  isJobSettled,
+  jobStateView,
+} from '../../helper/alchemy-job-view';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import { PanelSize, cyclePanelSize } from '../generate/generate-form.model';
 
@@ -554,6 +558,26 @@ export class AlchemyComponent {
   /** Jobs still in flight, for the flow connector's live status line. */
   public readonly pendingJobsCount = computed(
     () => this.jobs().filter((j) => !isJobSettled(j)).length,
+  );
+
+  /**
+   * The header counts what the horde is doing the way the image studio's does:
+   * a request a worker has started apart from one still waiting its turn, and
+   * the finished ones counted rather than called all done.
+   */
+  public readonly runningJobsCount = computed(
+    () =>
+      this.jobs().filter(
+        (job) =>
+          !isJobSettled(job) && jobStateView(job).modifier === 'processing',
+      ).length,
+  );
+  public readonly queuedJobsCount = computed(
+    () => this.pendingJobsCount() - this.runningJobsCount(),
+  );
+  public readonly settledJobsCount = computed(
+    () =>
+      this.jobs().filter((job) => jobStateView(job).modifier === 'done').length,
   );
 
   public readonly hasAnyJobs = computed(() => this.jobs().length > 0);

@@ -463,7 +463,7 @@
             <span class="gs-switch-track"
               ><span class="gs-switch-knob"></span
             ></span>
-            {{ "alchemy.slow_workers" | transloco }}
+            {{ "generate.form.slow_workers_label" | transloco }}
           </label>
           <button
             type="button"
@@ -476,12 +476,8 @@
             } @else {
               <app-icon name="beaker" class="gs-ico-sm" />
             }
-            @if (!hasSource()) {
-              {{ "alchemy.submit.need_source" | transloco }}
-            } @else if (selectedCount() === 0) {
-              {{ "alchemy.submit.need_operation" | transloco }}
-            } @else if (missingDetector()) {
-              {{ "alchemy.annotation.need_detector" | transloco }}
+            @if (selectedCount() === 0) {
+              {{ "alchemy.submit.button_none" | transloco }}
             } @else {
               {{
                 (selectedCount() === 1
@@ -492,11 +488,17 @@
             }
           </button>
         </div>
+        <!-- What the request still needs is said here, once: the button keeps
+             the name of what it does. -->
         <div class="gs-submit-hint">
-          @if (canSubmit()) {
-            {{ "alchemy.submit.hint_ready" | transloco }}
+          @if (!hasSource()) {
+            {{ "alchemy.submit.need_source" | transloco }}
+          } @else if (selectedCount() === 0) {
+            {{ "alchemy.submit.need_operation" | transloco }}
+          } @else if (missingDetector()) {
+            {{ "alchemy.annotation.need_detector" | transloco }}
           } @else {
-            {{ "alchemy.submit.hint_incomplete" | transloco }}
+            {{ "alchemy.submit.hint_ready" | transloco }}
           }
         </div>
         @if (!isLoggedIn()) {
@@ -540,12 +542,16 @@
               <span class="gs-spin-dot gs-spin" aria-hidden="true"></span>
               {{
                 "alchemy.jobs.status_running"
-                  | transloco: { count: pendingJobsCount() }
+                  | transloco
+                    : { running: runningJobsCount(), queued: queuedJobsCount() }
               }}
             </span>
-          } @else if (hasAnyJobs()) {
+          } @else if (settledJobsCount() > 0) {
             <span class="gs-status gs-status--done">
-              {{ "alchemy.jobs.status_done" | transloco }}
+              {{
+                "alchemy.jobs.status_done"
+                  | transloco: { count: settledJobsCount() }
+              }}
             </span>
           } @else {
             <span class="gs-status gs-status--ready">
@@ -598,7 +604,7 @@
                 class="gs-download-all"
                 (click)="toggleSelectMode()"
               >
-                {{ "alchemy.jobs.select_done" | transloco }}
+                {{ "generate.results.select_done" | transloco }}
               </button>
             } @else {
               <button
@@ -607,7 +613,7 @@
                 (click)="toggleSelectMode()"
               >
                 <app-icon name="check-circle" class="gs-ico-sm" />
-                {{ "alchemy.jobs.select" | transloco }}
+                {{ "generate.results.select" | transloco }}
               </button>
             }
           }
