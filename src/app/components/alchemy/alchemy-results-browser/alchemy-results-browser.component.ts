@@ -1,25 +1,33 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  TemplateRef,
   computed,
   input,
   output,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AlchemyResultComponent } from '../alchemy-result/alchemy-result.component';
 import { IconComponent } from '../../icon/icon.component';
+import { GsSheetComponent } from '../../gs-sheet/gs-sheet.component';
 import {
   AlchemyJob,
+  AlchemyJobProgress,
+  AlchemyLeadPreview,
   formStatusView,
-  formsProgressLabel,
   isJobSettled,
   jobAge,
-  jobDoneResults,
-  jobFormRows,
+  jobFormCards,
   jobHasResults,
+  jobLeadPreview,
+  jobProgress,
   jobStateView,
 } from '../../../helper/alchemy-job-view';
+
+/** Jobs with this many forms or fewer open every result at once. */
+const OPEN_ALL_UP_TO = 3;
 
 /**
  * Presentational results browser for the alchemy studio. Renders every tracked
@@ -35,6 +43,8 @@ import {
     TranslocoPipe,
     AlchemyResultComponent,
     IconComponent,
+    GsSheetComponent,
+    A11yModule,
   ],
   templateUrl: './alchemy-results-browser.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +59,18 @@ export class AlchemyResultsBrowserComponent {
   public readonly isNarrow = input<boolean>(false);
   public readonly justAddedJobId = input<string | null>(null);
   public readonly downloadingJobId = input<string | null>(null);
+  /**
+   * Whether the gallery is showing the selected job over its tiles. Owned by
+   * the page with the selection, so a tile pick and a close are one state.
+   */
+  public readonly paneOpen = input<boolean>(false);
+  /**
+   * What the page wants read after the results, wherever they scroll: the
+   * retention note and the volunteer door. A template rather than projected
+   * content because the detail pane and the gallery are two scroll regions
+   * and only one is on screen at a time.
+   */
+  public readonly foot = input<TemplateRef<unknown> | null>(null);
   /**
    * Object URLs for stored result images, keyed `${localId}::${resultKey}`,
    * where the result key carries the detector for a control map. Composite so
@@ -70,6 +92,8 @@ export class AlchemyResultsBrowserComponent {
   public readonly toggleSelected = output<string>();
   public readonly download = output<AlchemyJob>();
   public readonly cancelRequest = output<string>();
+  /** The gallery's job panel or sheet was dismissed. */
+  public readonly closePane = output<void>();
   /** Carry one result image over to the image studio as its source. */
   public readonly useResultInStudio = output<{
     job: AlchemyJob;
@@ -79,23 +103,64 @@ export class AlchemyResultsBrowserComponent {
   /** Pure view helpers exposed for the template (see `alchemy-job-view`). */
   protected readonly stateView = jobStateView;
   protected readonly age = jobAge;
-  protected readonly progress = formsProgressLabel;
-  protected readonly formRows = jobFormRows;
+  protected readonly progress = jobProgress;
+  protected readonly formCards = jobFormCards;
   protected readonly statusView = formStatusView;
   protected readonly settled = isJobSettled;
   protected readonly hasResults = jobHasResults;
-  protected readonly doneResults = jobDoneResults;
+  protected readonly leadPreview = jobLeadPreview;
+
+  /** The done share of a request as a CSS percentage, for its ring and bar. */
+  protected ringShare(p: AlchemyJobProgress): string {
+    const share = p.total === 0 ? 0 : Math.round((p.done / p.total) * 100);
+    return `${share}%`;
+  }
+
+  /**
+   * A small request reads whole; a large one opens its short results and
+   * folds the tall ones, which the card decides for itself when given no
+   * preset.
+   */
+  protected openPreset(formCount: number): boolean | null {
+    return formCount <= OPEN_ALL_UP_TO ? true : null;
+  }
+
+  protected leadText(lead: AlchemyLeadPreview): string {
+    if (lead?.kind === 'text') return lead.text;
+    if (lead?.kind === 'score') return lead.score.toFixed(1);
+    return '';
+  }
+
+  protected leadCount(lead: AlchemyLeadPreview): number {
+    return lead?.kind === 'tags' ? lead.count : 0;
+  }
+
+  protected leadFlag(lead: AlchemyLeadPreview): boolean {
+    return lead?.kind === 'nsfw' ? lead.nsfw : false;
+  }
+
+  protected leadColors(lead: AlchemyLeadPreview): string[] {
+    return lead?.kind === 'palette' ? lead.colors.slice(0, 6) : [];
+  }
 
   protected readonly selectedJob = computed(
     () => this.jobs().find((j) => j.id === this.selectedJobId()) ?? null,
   );
 
   /**
-   * The largest image available for a big surface (gallery tile): the session's
-   * full source when it is still in memory, else the small persisted thumbnail,
+   * What a gallery tile shows: a processed image held locally when that is
+   * the job's lead result, else the largest source available (the session's
+   * full source while it is in memory, then the small persisted thumbnail),
    * else nothing (the caller renders a placeholder).
    */
-  protected tileImage(job: AlchemyJob): string | null {
+  protected tileImage(
+    job: AlchemyJob,
+    lead: AlchemyLeadPreview,
+  ): string | null {
+    if (lead?.kind === 'image') {
+      const stored = this.storedImageUrl(job, lead.key);
+      if (stored) return stored;
+    }
     return job.sourceFull ?? job.sourceThumb;
   }
 

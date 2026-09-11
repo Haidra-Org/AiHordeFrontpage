@@ -165,14 +165,65 @@
   gap: var(--gs-space-2);
 }
 
+/* The processed picture stands on the plate pictures are judged on here, and
+   the plate is the press that opens it larger. */
+.gen-studio .alchemy-result__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: var(--gs-space-2);
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-stage);
+  cursor: zoom-in;
+}
+.gen-studio .alchemy-result__stage:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
 .gen-studio .alchemy-result__image {
+  display: block;
   max-width: 100%;
   max-height: 28rem;
-  border: 1px solid var(--gs-border);
-  border-radius: var(--gs-radius-md);
-  box-shadow: var(--gs-elev-1);
   object-fit: contain;
-  align-self: flex-start;
+}
+.gen-studio .alchemy-result__zoom-glyph {
+  position: absolute;
+  right: var(--gs-space-2);
+  bottom: var(--gs-space-2);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-stage-scrim);
+  color: var(--gs-stage-ink);
+}
+/* The picture as large as the window allows, over everything, on the dark
+   backdrop every viewer here uses. */
+.gen-studio .alchemy-result__lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: var(--gs-space-4);
+  background: rgb(0 0 0 / 82%);
+  cursor: zoom-out;
+}
+.gen-studio .alchemy-result__lightbox-img {
+  max-width: min(92vw, 1600px);
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: var(--gs-radius-sm);
+  box-shadow: var(--gs-elev-3);
+}
+.gen-studio .alchemy-result__lightbox-x {
+  position: absolute;
+  top: var(--gs-space-3);
+  right: var(--gs-space-3);
 }
 
 /* Caption: a distinct quoted passage rather than a bare paragraph, marked by

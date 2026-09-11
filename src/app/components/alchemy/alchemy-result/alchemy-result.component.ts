@@ -40,6 +40,46 @@ type ResultKind =
   | 'image'
   | 'unknown';
 
+/** How much of the job body a result of a kind asks for. */
+type ResultSize = 'short' | 'medium' | 'tall';
+
+/**
+ * Kinds that run long enough to fold to their summary line by default. The
+ * palette and the describe grid are medium: they open, but share a row.
+ */
+const TALL_KINDS: ReadonlySet<ResultKind> = new Set<ResultKind>([
+  'interrogation',
+  'vectorize',
+  'text',
+]);
+
+const KIND_OPEN_KEY = 'aihorde.alchemy.result-open';
+
+/**
+ * The open/closed choice last made for each tall kind, kept in this browser.
+ * Read on every use rather than cached, so two cards on one page agree.
+ */
+function kindOpenMemory(): Partial<Record<ResultKind, boolean>> {
+  try {
+    const raw = globalThis.localStorage?.getItem(KIND_OPEN_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return isRecord(parsed)
+      ? (parsed as Partial<Record<ResultKind, boolean>>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function rememberKindOpen(kind: ResultKind, open: boolean): void {
+  try {
+    const next = { ...kindOpenMemory(), [kind]: open };
+    globalThis.localStorage?.setItem(KIND_OPEN_KEY, JSON.stringify(next));
+  } catch {
+    // Storage may be unavailable; the choice then lasts for this card only.
+  }
+}
+
 /** Display order for interrogation sections: subject first, provenance last. */
 const SECTION_ORDER = [
   'tags',
@@ -163,6 +203,9 @@ function sanitizeSvgMarkup(svg: string): string {
   ],
   templateUrl: './alchemy-result.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[attr.data-size]': 'size()',
+  },
 })
 export class AlchemyResultComponent {
   private readonly destroyRef = inject(DestroyRef);
@@ -229,9 +272,11 @@ export class AlchemyResultComponent {
 
   /**
    * Per-result open state. `null` means "follow the default for this kind":
-   * compact results (caption, image, nsfw) open on their own, but an
-   * interrogation, which is by far the tallest, stays folded to its summary
-   * until asked for. A manual toggle pins an explicit value.
+   * short results (caption, nsfw, aesthetic, image) open on their own, and
+   * the tall kinds stay folded to their summary line until asked for. The
+   * choice made for a tall kind is kept per kind, so a reader who opens the
+   * palette on one request has it open on the next. A manual toggle pins an
+   * explicit value for this card.
    */
   private readonly openOverride = signal<boolean | null>(null);
 
@@ -240,11 +285,39 @@ export class AlchemyResultComponent {
     if (override !== null) return override;
     const preset = this.defaultOpen();
     if (preset !== null) return preset;
-    return this.kind() !== 'interrogation';
+    const kind = this.kind();
+    const remembered = kindOpenMemory()[kind];
+    if (remembered !== undefined) return remembered;
+    return !TALL_KINDS.has(kind);
   });
 
   public toggleOpen(): void {
-    this.openOverride.set(!this.isOpen());
+    const next = !this.isOpen();
+    this.openOverride.set(next);
+    if (TALL_KINDS.has(this.kind())) {
+      rememberKindOpen(this.kind(), next);
+    }
+  }
+
+  /**
+   * How much room the result wants in the job's flow, read by the host's
+   * layout: short results share a row, tall ones take the width.
+   */
+  public readonly size = computed<ResultSize>(() => {
+    const kind = this.kind();
+    if (TALL_KINDS.has(kind) || kind === 'image') return 'tall';
+    if (kind === 'palette' || kind === 'describe') return 'medium';
+    return 'short';
+  });
+
+  public readonly zoomOpen = signal(false);
+
+  public openZoom(): void {
+    if (this.imageUrl()) this.zoomOpen.set(true);
+  }
+
+  public closeZoom(): void {
+    this.zoomOpen.set(false);
   }
 
   /** Facets whose full tag list has been revealed past the preview cap. */

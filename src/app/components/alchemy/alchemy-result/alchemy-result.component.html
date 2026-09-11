@@ -180,12 +180,49 @@
           </div>
         }
         @case ("image") {
-          <img
-            class="alchemy-result__image"
-            [src]="imageUrl()!"
-            crossorigin="anonymous"
-            alt="{{ 'alchemy.result.image_alt' | transloco }}"
-          />
+          <!-- The processed picture on the plate every picture on this site
+               is judged on; a press opens it at the size the window allows. -->
+          <button
+            type="button"
+            class="alchemy-result__stage"
+            [attr.aria-label]="'alchemy.result.zoom' | transloco"
+            (click)="openZoom()"
+          >
+            <img
+              class="alchemy-result__image"
+              [src]="imageUrl()!"
+              crossorigin="anonymous"
+              alt="{{ 'alchemy.result.image_alt' | transloco }}"
+            />
+            <span class="alchemy-result__zoom-glyph" aria-hidden="true">
+              <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+            </span>
+          </button>
+          @if (zoomOpen()) {
+            <div
+              class="alchemy-result__lightbox"
+              role="dialog"
+              aria-modal="true"
+              [attr.aria-label]="'alchemy.result.zoom' | transloco"
+              (click)="closeZoom()"
+              (keydown.escape)="closeZoom()"
+              tabindex="-1"
+            >
+              <img
+                class="alchemy-result__lightbox-img"
+                [src]="imageUrl()!"
+                alt="{{ 'alchemy.result.image_alt' | transloco }}"
+              />
+              <button
+                type="button"
+                class="gs-plate-x alchemy-result__lightbox-x"
+                (click)="closeZoom()"
+              >
+                {{ "alchemy.result.zoom_close" | transloco }}
+                <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
+              </button>
+            </div>
+          }
           <a
             class="gs-btn gs-btn--dense"
             [href]="imageUrl()!"

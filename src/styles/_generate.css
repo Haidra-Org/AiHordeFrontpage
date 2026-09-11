@@ -5626,14 +5626,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 
 /* per-form checklist */
-.gen-studio .gs-checklist {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 .gen-studio .gs-checkrow {
   display: flex;
   align-items: center;
@@ -5758,14 +5750,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     flex: 1;
     min-height: 0;
   }
-}
-.gen-studio .gs-retention--flush {
-  flex: none;
-  margin: 14px 16px 0;
-}
-.gen-studio .gs-volunteer--flush {
-  flex: none;
-  margin: 14px 16px;
 }
 
 .gen-studio .gs-browser {
@@ -5961,11 +5945,182 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-weight: 600;
 }
 
-/* Results card grid: multi-column when wide, one column when narrow. */
-.gen-studio .gs-result-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+/* The job body: every requested form in one wrapping flow, in the order it
+   was asked for. Each entry says how much room it wants; short ones share a
+   row, medium ones take about half, tall ones take the width. Wrapping in
+   request order rather than a grid, so a tall result beside a one-line one
+   leaves no hole under the short one. */
+.gen-studio .gs-result-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--gs-space-3);
+}
+.gen-studio .gs-result-flow > app-alchemy-result {
+  display: block;
+  min-width: 0;
+}
+.gen-studio .gs-result-flow > [data-size="short"] {
+  /* Wide enough for a card head to keep its title, type badge and the two
+     glyphs on one line. */
+  flex: 1 1 280px;
+}
+.gen-studio .gs-result-flow > [data-size="medium"] {
+  flex: 1 1 320px;
+}
+.gen-studio .gs-result-flow > [data-size="tall"] {
+  flex: 1 1 100%;
+}
+/* In the flow a result is its own card, since its neighbours are beside it
+   as often as under it and a top rule would not separate them. */
+.gen-studio .gs-result-flow .alchemy-result {
+  padding: var(--gs-space-2-5) var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-card);
+}
+.gen-studio .gs-result-flow .alchemy-result:first-of-type {
+  padding-top: var(--gs-space-2-5);
+  border-top: 1px solid var(--gs-border);
+}
+/* A form the horde still has: one line in the same flow the result will take,
+   so the request reads as one list from sent to done. */
+.gen-studio .gs-form-wait {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 40px;
+  padding: 0 var(--gs-space-3);
+  border: 1px dashed var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-form-wait--processing {
+  border-style: solid;
+  border-color: var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-form-wait--faulted,
+.gen-studio .gs-form-wait--cancelled {
+  border-style: solid;
+  color: var(--gs-muted);
+}
+/* How far the request has got, as one bar under its head. */
+.gen-studio .gs-job-bar {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--gs-seg-track);
+}
+.gen-studio .gs-job-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gs-blue);
+  transition: width var(--gs-dur) var(--gs-ease);
+}
+/* The same share as a ring on a thumb or tile, drawn where the spinner was. */
+.gen-studio .gs-rail-ring {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background:
+    conic-gradient(var(--gs-blue) var(--gs-ring, 0%), transparent 0) border-box,
+    rgba(17, 24, 39, 0.55) border-box;
+  box-shadow: inset 0 0 0 2px rgba(17, 24, 39, 0.55);
+}
+.gen-studio .gs-rail-ring::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--gs-panel);
+}
+/* What a tile says of its results: one line of the lead result at the foot,
+   or a strip of swatches when the lead result is a palette. */
+.gen-studio .gs-tile-lead {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The age keeps its width beside the lead line; the line is what gives way. */
+.gen-studio .gs-tile-lead + .gs-tile-seed {
+  flex: none;
+  margin-left: 8px;
+}
+.gen-studio .gs-tile-swatches {
+  display: inline-flex;
+  gap: 3px;
+  vertical-align: middle;
+}
+.gen-studio .gs-tile-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+/* The picked job over the gallery: a panel at the pane's edge on a wide
+   layout (the phone gets the bottom sheet). The grid stays where it was. */
+.gen-studio .gs-jobpane {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  width: min(560px, 70%);
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--gs-border);
+  background: var(--gs-panel);
+  box-shadow: var(--gs-elev-3);
+}
+.gen-studio .gs-jobpane-top {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-2) var(--gs-space-2)
+    var(--gs-space-4);
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-jobpane-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-jobpane-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: var(--gs-space-3) var(--gs-space-4) var(--gs-space-4);
+}
+/* What is read after the results: in the scroll with them, not pinned under
+   them, so the pane's height is the results' when the reader is reading. */
+.gen-studio .gs-results-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-4);
+}
+.gen-studio .gs-results-foot .gs-volunteer {
+  margin-top: 0;
+}
+.gen-studio .gs-retention-sep {
+  color: var(--gs-muted);
 }
 
 /* Full-pane tiled gallery (one tile per request). */

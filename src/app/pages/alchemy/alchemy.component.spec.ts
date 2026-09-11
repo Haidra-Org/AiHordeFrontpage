@@ -562,18 +562,32 @@ describe('AlchemyComponent', () => {
     });
 
     it.each([true, false])(
-      'leaves the gallery for the detail view on a tile pick (narrow: %s)',
+      'stays in the gallery and opens the job over it on a tile pick (narrow: %s)',
       (narrow) => {
         track('job-a');
         component.isNarrow.set(narrow);
         component.setViewMode('gallery');
+        expect(component.jobPaneOpen()).toBe(false);
 
         component.selectJob('job-a');
 
-        expect(component.viewMode()).toBe('detail');
+        expect(component.viewMode()).toBe('gallery');
         expect(component.selectedJobId()).toBe('job-a');
+        expect(component.jobPaneOpen()).toBe(true);
+
+        component.closeJobPane();
+        expect(component.jobPaneOpen()).toBe(false);
+        expect(component.viewMode()).toBe('gallery');
       },
     );
+
+    it('closes the job pane when the view changes', () => {
+      track('job-a');
+      component.setViewMode('gallery');
+      component.selectJob('job-a');
+      component.setViewMode('detail');
+      expect(component.jobPaneOpen()).toBe(false);
+    });
 
     it('toggles between detail and gallery view', () => {
       expect(component.viewMode()).toBe('detail');

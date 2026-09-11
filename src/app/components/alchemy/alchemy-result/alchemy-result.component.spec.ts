@@ -200,6 +200,8 @@ describe('AlchemyResultComponent', () => {
   });
 
   describe('disclosure defaults', () => {
+    beforeEach(() => localStorage.clear());
+
     it('opens compact results by default but folds interrogation', () => {
       const caption = withForm({
         form: 'caption',
@@ -226,6 +228,49 @@ describe('AlchemyResultComponent', () => {
       expect(interrogation.isOpen()).toBe(true);
       interrogation.toggleOpen();
       expect(interrogation.isOpen()).toBe(false);
+    });
+
+    it('remembers the choice made for a tall kind on the next card of that kind', () => {
+      const form: AlchemyForm = {
+        form: 'interrogation',
+        state: 'done',
+        result: { interrogation: { tags: [{ text: 't', confidence: 1 }] } },
+      };
+      withForm(form).toggleOpen();
+      expect(withForm(form).isOpen()).toBe(true);
+    });
+
+    it('lets a preset win over the remembered choice', () => {
+      const form: AlchemyForm = {
+        form: 'interrogation',
+        state: 'done',
+        result: { interrogation: { tags: [{ text: 't', confidence: 1 }] } },
+      };
+      withForm(form).toggleOpen();
+      const fixture = TestBed.createComponent(AlchemyResultComponent);
+      fixture.componentRef.setInput('form', form);
+      fixture.componentRef.setInput('defaultOpen', false);
+      expect(fixture.componentInstance.isOpen()).toBe(false);
+    });
+  });
+
+  describe('size', () => {
+    it.each([
+      ['caption', { caption: 'x' }, 'short'],
+      ['nsfw', { nsfw: false }, 'short'],
+      [
+        'palette',
+        { palette: { colors: [{ hex: '#000000', proportion: 1 }] } },
+        'medium',
+      ],
+      ['interrogation', { interrogation: { tags: [] } }, 'tall'],
+      [
+        'RealESRGAN_x4plus',
+        { RealESRGAN_x4plus: 'https://r2.example/a.webp' },
+        'tall',
+      ],
+    ])('%s takes %s room in the flow', (form, result, size) => {
+      expect(withForm({ form, state: 'done', result }).size()).toBe(size);
     });
   });
 

@@ -3,6 +3,8 @@
   <div class="gs-gallery">
     <div class="gs-tile-grid" [style.--gs-cols]="galleryColumns()">
       @for (job of jobs(); track job.id) {
+        @let lead = leadPreview(job);
+        @let p = progress(job);
         <button
           type="button"
           class="gs-tile gs-gtile"
@@ -17,25 +19,71 @@
           "
           (click)="activate(job)"
         >
-          @if (tileImage(job); as tileSrc) {
+          @if (tileImage(job, lead); as tileSrc) {
             <img class="gs-tile-img" [src]="tileSrc" alt="" />
           } @else {
             <span class="gs-rail-thumb-ph gs-gtile-ph">
               <app-icon name="beaker" />
             </span>
           }
-          @if (!settled(job)) {
-            <span class="gs-rail-spin" aria-hidden="true">
-              <span class="gs-spin-dot gs-spin"></span>
-            </span>
-          }
           <span class="gs-tile-badge">
-            {{
-              "alchemy.jobs.forms_badge"
-                | transloco: { count: job.forms.length }
-            }}
+            @if (settled(job)) {
+              {{
+                "alchemy.jobs.forms_badge"
+                  | transloco: { count: job.forms.length }
+              }}
+            } @else {
+              {{
+                "alchemy.jobs.progress_badge"
+                  | transloco: { done: p.done, total: p.total }
+              }}
+            }
           </span>
+          @if (!settled(job)) {
+            <span
+              class="gs-rail-ring"
+              [style.--gs-ring]="ringShare(p)"
+              aria-hidden="true"
+            ></span>
+          }
           <span class="gs-tile-bar">
+            <span class="gs-tile-lead">
+              @switch (lead?.kind) {
+                @case ("text") {
+                  {{ leadText(lead) }}
+                }
+                @case ("tags") {
+                  {{
+                    "alchemy.jobs.lead_tags"
+                      | transloco: { count: leadCount(lead) }
+                  }}
+                }
+                @case ("score") {
+                  {{
+                    "alchemy.jobs.lead_score"
+                      | transloco: { score: leadText(lead) }
+                  }}
+                }
+                @case ("nsfw") {
+                  {{
+                    (leadFlag(lead)
+                      ? "alchemy.result.nsfw_true"
+                      : "alchemy.result.nsfw_false"
+                    ) | transloco
+                  }}
+                }
+                @case ("palette") {
+                  <span class="gs-tile-swatches">
+                    @for (hex of leadColors(lead); track $index) {
+                      <span
+                        class="gs-tile-swatch"
+                        [style.background-color]="hex"
+                      ></span>
+                    }
+                  </span>
+                }
+              }
+            </span>
             <span class="gs-tile-seed">
               {{ age(job).key | transloco: { count: age(job).count } }}
             </span>
@@ -52,7 +100,67 @@
         </button>
       }
     </div>
+    <ng-container *ngTemplateOutlet="foot()" />
   </div>
+
+  <!-- The picked job, over the grid rather than instead of it: a panel beside
+       the tiles where there is room, the bottom sheet on a phone. The grid and
+       the reader's place in it stay where they were. -->
+  @if (paneOpen() && selectedJob(); as job) {
+    @if (isNarrow()) {
+      <app-gs-sheet
+        [startExpanded]="true"
+        [label]="'alchemy.jobs.pane_label' | transloco"
+        (closed)="closePane.emit()"
+      >
+        <span sheet-bar class="gs-sheet-title">
+          {{
+            "alchemy.jobs.thumb_label" | transloco: { count: job.forms.length }
+          }}
+        </span>
+        <div class="gs-jobpane-body">
+          <ng-container
+            *ngTemplateOutlet="detailBody; context: { $implicit: job }"
+          />
+        </div>
+      </app-gs-sheet>
+    } @else {
+      <!-- Focus goes to the panel as it opens and back to the tile as it
+           closes, so a keyboard reader is never left on a grid behind a
+           panel. -->
+      <aside
+        class="gs-jobpane"
+        role="dialog"
+        [attr.aria-label]="'alchemy.jobs.pane_label' | transloco"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
+        (keydown.escape)="closePane.emit()"
+      >
+        <div class="gs-jobpane-top">
+          <span class="gs-jobpane-title">
+            {{
+              "alchemy.jobs.thumb_label"
+                | transloco: { count: job.forms.length }
+            }}
+          </span>
+          <button
+            #paneClose
+            type="button"
+            class="gs-plate-x"
+            (click)="closePane.emit()"
+          >
+            {{ "alchemy.jobs.pane_close" | transloco }}
+            <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
+          </button>
+        </div>
+        <div class="gs-jobpane-body">
+          <ng-container
+            *ngTemplateOutlet="detailBody; context: { $implicit: job }"
+          />
+        </div>
+      </aside>
+    }
+  }
 } @else {
   <!-- ============ RAIL / CAROUSEL + DETAIL ============ -->
   <div class="gs-browser">
@@ -93,9 +201,11 @@
             </span>
           }
           @if (!settled(job)) {
-            <span class="gs-rail-spin" aria-hidden="true">
-              <span class="gs-spin-dot gs-spin"></span>
-            </span>
+            <span
+              class="gs-rail-ring"
+              [style.--gs-ring]="ringShare(progress(job))"
+              aria-hidden="true"
+            ></span>
           }
           <span class="gs-rail-badge">{{ job.forms.length }}</span>
           <span class="gs-rail-time">
@@ -127,17 +237,20 @@
           {{ "alchemy.jobs.detail_empty" | transloco }}
         </p>
       }
+      <ng-container *ngTemplateOutlet="foot()" />
     </div>
   </div>
 }
 
-<!-- ============ SHARED DETAIL BODY (desktop pane + mobile inline) ============ -->
+<!-- ============ SHARED JOB BODY (detail pane, panel, sheet) ============ -->
 <ng-template #detailBody let-job>
+  @let p = progress(job);
+  @let cards = formCards(job);
   <div class="gs-detail-head">
     <span class="gs-job-state gs-job-state--{{ stateView(job).modifier }}">
       {{ stateView(job).key | transloco }}
     </span>
-    <span class="gs-job-count gs-mono">{{ progress(job) }}</span>
+    <span class="gs-job-count gs-mono">{{ p.done }}/{{ p.total }}</span>
     <span class="gs-job-age">
       {{ age(job).key | transloco: { count: age(job).count } }}
     </span>
@@ -169,6 +282,24 @@
     </div>
   </div>
 
+  <!-- One bar says how far the request has got; the forms still to come are
+       the short rows in the flow below, so nothing here is said twice. -->
+  @if (!settled(job)) {
+    <div
+      class="gs-job-bar"
+      role="progressbar"
+      [attr.aria-valuemin]="0"
+      [attr.aria-valuemax]="p.total"
+      [attr.aria-valuenow]="p.done"
+      [attr.aria-label]="
+        'alchemy.jobs.progress_label'
+          | transloco: { done: p.done, total: p.total }
+      "
+    >
+      <span class="gs-job-bar-fill" [style.width]="ringShare(p)"></span>
+    </div>
+  }
+
   <!-- A request taken over from the account: its operations are only what the
        horde has reported, and nothing here can run it again. -->
   @if (job.adopted) {
@@ -196,38 +327,41 @@
     </p>
   }
 
-  <ul class="gs-checklist">
-    @for (row of formRows(job); track row.key) {
-      @let view = statusView(row.state);
-      <li class="gs-checkrow gs-checkrow--{{ view.modifier }}">
-        <app-icon
-          [name]="view.icon"
-          [class.gs-spin]="view.spin"
-          class="gs-checkrow-ico gs-ico-sm"
-        />
-        <span class="gs-checkrow-name">
-          {{ "alchemy.form_names." + row.form | transloco }}
-          @if (row.detector) {
-            <span class="gs-mono">{{ row.detector }}</span>
-          }
-        </span>
-        <span class="gs-checkrow-state">
-          {{ "alchemy.state." + row.state | transloco }}
-        </span>
-      </li>
-    }
-  </ul>
-
-  @if (doneResults(job).length > 0) {
-    <div class="gs-result-cards">
-      @for (result of doneResults(job); track result.key) {
+  <!-- Every requested form is one entry from the moment the request is sent:
+       a short row while the horde has it, the result in its place once it is
+       back. Short results share a row, tall ones take the width. -->
+  <div class="gs-result-flow">
+    @for (card of cards; track card.key) {
+      @if (card.view; as view) {
         <app-alchemy-result
-          [form]="result.form"
-          [storedImageUrl]="storedImageUrl(job, result.key)"
-          [detector]="result.detector"
-          (useInStudio)="useResultInStudio.emit({ job: job, key: result.key })"
+          [form]="view.form"
+          [storedImageUrl]="storedImageUrl(job, view.key)"
+          [detector]="view.detector"
+          [defaultOpen]="openPreset(cards.length)"
+          (useInStudio)="useResultInStudio.emit({ job: job, key: view.key })"
         />
+      } @else {
+        @let view = statusView(card.state);
+        <div
+          class="gs-form-wait gs-form-wait--{{ view.modifier }}"
+          data-size="short"
+        >
+          <app-icon
+            [name]="view.icon"
+            [class.gs-spin]="view.spin"
+            class="gs-checkrow-ico gs-ico-sm"
+          />
+          <span class="gs-checkrow-name">
+            {{ "alchemy.form_names." + card.form | transloco }}
+            @if (card.detector) {
+              <span class="gs-mono">{{ card.detector }}</span>
+            }
+          </span>
+          <span class="gs-checkrow-state">
+            {{ "alchemy.state." + card.state | transloco }}
+          </span>
+        </div>
       }
-    </div>
-  }
+    }
+  </div>
 </ng-template>

@@ -296,6 +296,121 @@ export function jobFormRows(job: AlchemyJob): AlchemyFormRow[] {
   }));
 }
 
+/**
+ * A requested form as one entry of the job body: its state, and its result
+ * once the horde has handed one over. The body is one list from submission to
+ * completion, so a form is never listed once as a status row and again as a
+ * result card.
+ */
+export interface AlchemyFormCard extends AlchemyFormRow {
+  /** The done form with its result; null while there is nothing to show. */
+  view: AlchemyFormView | null;
+}
+
+export function jobFormCards(job: AlchemyJob): AlchemyFormCard[] {
+  const views = new Map(statusFormViews(job).map((view) => [view.key, view]));
+  return requestedFormEntries(job).map((entry) => {
+    const view = views.get(entry.key) ?? null;
+    const state = view?.form.state ?? 'waiting';
+    const hasResult = view !== null && state === 'done' && !!view.form.result;
+    return { ...entry, state, view: hasResult ? view : null };
+  });
+}
+
+/** How far a job has got, for its head: counts plus the forms still running. */
+export interface AlchemyJobProgress {
+  done: number;
+  total: number;
+  /** i18n form-name keys of the forms the horde is working on right now. */
+  running: string[];
+}
+
+export function jobProgress(job: AlchemyJob): AlchemyJobProgress {
+  const cards = jobFormCards(job);
+  return {
+    done: cards.filter((card) => card.state === 'done').length,
+    total: cards.length,
+    running: cards
+      .filter((card) => card.state === 'processing')
+      .map((card) => card.form),
+  };
+}
+
+/**
+ * What a gallery tile shows of a job's results: the first finished form that
+ * can be said in a line or a strip of swatches, or the key of a processed
+ * image the tile can show whole. Text forms are preferred over images because
+ * an image tile already shows the source, and the words are what is new.
+ */
+export type AlchemyLeadPreview =
+  | { kind: 'text'; text: string }
+  | { kind: 'tags'; count: number }
+  | { kind: 'score'; score: number }
+  | { kind: 'nsfw'; nsfw: boolean }
+  | { kind: 'palette'; colors: string[] }
+  | { kind: 'image'; key: string }
+  | null;
+
+export function jobLeadPreview(job: AlchemyJob): AlchemyLeadPreview {
+  const done = jobDoneResults(job);
+  let image: AlchemyLeadPreview = null;
+  for (const { form, key } of done) {
+    const result = form.result ?? {};
+    switch (form.form) {
+      case 'caption':
+        if (typeof result.caption === 'string' && result.caption.trim()) {
+          return { kind: 'text', text: result.caption.trim() };
+        }
+        break;
+      case 'interrogation': {
+        const details = result.interrogation;
+        if (details && typeof details === 'object') {
+          const count = Object.values(details).reduce(
+            (sum, entries) =>
+              sum + (Array.isArray(entries) ? entries.length : 0),
+            0,
+          );
+          return { kind: 'tags', count };
+        }
+        break;
+      }
+      case 'aesthetic':
+        if (typeof result['aesthetic'] === 'number') {
+          return { kind: 'score', score: result['aesthetic'] };
+        }
+        break;
+      case 'nsfw':
+        if (typeof result.nsfw === 'boolean') {
+          return { kind: 'nsfw', nsfw: result.nsfw };
+        }
+        break;
+      case 'palette': {
+        const palette = result.palette;
+        const colors =
+          palette && typeof palette === 'object' && !Array.isArray(palette)
+            ? (palette as { colors?: unknown }).colors
+            : null;
+        if (Array.isArray(colors)) {
+          const hexes = colors
+            .map((entry) =>
+              entry && typeof entry === 'object'
+                ? (entry as { hex?: unknown }).hex
+                : null,
+            )
+            .filter((hex): hex is string => typeof hex === 'string');
+          if (hexes.length) return { kind: 'palette', colors: hexes };
+        }
+        break;
+      }
+      default:
+        if (image === null && typeof result[form.form] === 'string') {
+          image = { kind: 'image', key };
+        }
+    }
+  }
+  return image;
+}
+
 /** A job is worth archiving/showing once any form has produced a result. */
 export function jobHasResults(job: AlchemyJob): boolean {
   return (job.status?.forms ?? []).some(

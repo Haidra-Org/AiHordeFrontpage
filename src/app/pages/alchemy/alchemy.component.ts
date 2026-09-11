@@ -1034,18 +1034,31 @@ export class AlchemyComponent {
     });
   }
 
-  /** Rail/carousel/tile activation: show the picked job's results. */
+  /**
+   * Whether the gallery is showing the selected job over its tiles. Only the
+   * gallery reads it; the detail view always shows the selection.
+   */
+  public readonly jobPaneOpen = signal(false);
+
+  /**
+   * Rail/carousel/tile activation: show the picked job's results. In the
+   * gallery that means opening the job over the tiles; the view itself does
+   * not change, so the reader's place in the grid is kept.
+   */
   public selectJob(id: string): void {
     this.selectedJobId.set(id);
     if (this.viewMode() === 'gallery') {
-      // The gallery has no results area of its own, so a tile tap has to drop
-      // back to the detail view or the pick would appear to do nothing.
-      this.setViewMode('detail');
+      this.jobPaneOpen.set(true);
     }
+  }
+
+  public closeJobPane(): void {
+    this.jobPaneOpen.set(false);
   }
 
   public setViewMode(mode: AlchemyViewMode): void {
     this.viewMode.set(mode);
+    this.jobPaneOpen.set(false);
     this.db.store(VIEW_MODE_KEY, mode);
   }
 

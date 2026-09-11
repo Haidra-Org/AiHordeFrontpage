@@ -31,17 +31,21 @@ const makeJob = (
 @Component({
   imports: [AlchemyResultsBrowserComponent],
   template: `<app-alchemy-results-browser
-    [jobs]="jobs()"
-    [selectedJobId]="selectedJobId()"
-    [viewMode]="viewMode()"
-    [galleryColumns]="galleryColumns()"
-    [selectMode]="selectMode()"
-    [selectedJobIds]="selectedJobIds()"
-    [isNarrow]="isNarrow()"
-    [resultImageUrls]="resultImageUrls()"
-    (activateJob)="selected = $event"
-    (toggleSelected)="toggled = $event"
-  />`,
+      [jobs]="jobs()"
+      [selectedJobId]="selectedJobId()"
+      [viewMode]="viewMode()"
+      [galleryColumns]="galleryColumns()"
+      [selectMode]="selectMode()"
+      [selectedJobIds]="selectedJobIds()"
+      [isNarrow]="isNarrow()"
+      [resultImageUrls]="resultImageUrls()"
+      [paneOpen]="paneOpen()"
+      [foot]="foot"
+      (activateJob)="selected = $event"
+      (toggleSelected)="toggled = $event"
+      (closePane)="paneClosed = paneClosed + 1"
+    />
+    <ng-template #foot><p class="test-foot">foot</p></ng-template>`,
 })
 class HostComponent {
   jobs = signal<AlchemyJob[]>([
@@ -55,8 +59,10 @@ class HostComponent {
   selectedJobIds = signal<ReadonlySet<string>>(new Set());
   isNarrow = signal(false);
   resultImageUrls = signal<ReadonlyMap<string, string>>(new Map());
+  paneOpen = signal(false);
   selected: string | null = null;
   toggled: string | null = null;
+  paneClosed = 0;
 }
 
 describe('AlchemyResultsBrowserComponent', () => {
@@ -183,9 +189,11 @@ describe('AlchemyResultsBrowserComponent', () => {
       ...fixture.nativeElement.querySelectorAll('.alchemy-result'),
     ] as HTMLElement[];
     expect(cards.length).toBe(2);
+    // The body lists forms in the order they were asked for, whatever order
+    // the horde returns them in, so a card keeps its place as others finish.
     expect(
       cards.map((card) => card.querySelector('.gs-mono')?.textContent?.trim()),
-    ).toEqual(['depth', 'canny']);
+    ).toEqual(['canny', 'depth']);
     // The studio stacks these under a heading of its own, which is the level
     // the card keeps unless the host that embeds it asks for another.
     expect(
@@ -198,8 +206,8 @@ describe('AlchemyResultsBrowserComponent', () => {
       ...fixture.nativeElement.querySelectorAll('.alchemy-result img'),
     ] as HTMLImageElement[];
     expect(images.map((img) => img.getAttribute('src'))).toEqual([
-      'blob:depth',
       'blob:canny',
+      'blob:depth',
     ]);
   });
 
@@ -230,5 +238,93 @@ describe('AlchemyResultsBrowserComponent', () => {
     const label = railThumbs()[0].getAttribute('aria-label') ?? '';
     expect(label).toContain('alchemy.jobs.thumb_label');
     expect(label).toContain('alchemy.jobs.time_now');
+  });
+
+  const runningJob = (): AlchemyJob => ({
+    ...makeJob('job-run', null),
+    forms: ['caption', 'nsfw', 'palette'],
+    status: {
+      state: 'processing',
+      forms: [
+        { form: 'caption', state: 'done', result: { caption: 'a dog' } },
+        { form: 'nsfw', state: 'processing' },
+      ],
+    },
+  });
+
+  it('shows each requested form once: a result card when done, a row while not', () => {
+    host.jobs.set([runningJob()]);
+    host.selectedJobId.set('job-run');
+    fixture.detectChanges();
+
+    const flow = fixture.nativeElement.querySelector(
+      '.gs-result-flow',
+    ) as HTMLElement;
+    expect(flow.querySelectorAll('.alchemy-result').length).toBe(1);
+    const waits = [...flow.querySelectorAll('.gs-form-wait')] as HTMLElement[];
+    expect(waits.map((w) => w.className)).toEqual([
+      'gs-form-wait gs-form-wait--processing',
+      'gs-form-wait gs-form-wait--waiting',
+    ]);
+    expect(fixture.nativeElement.querySelector('.gs-checklist')).toBeNull();
+    const bar = fixture.nativeElement.querySelector(
+      '.gs-job-bar',
+    ) as HTMLElement;
+    expect(bar.getAttribute('aria-valuenow')).toBe('1');
+    expect(bar.getAttribute('aria-valuemax')).toBe('3');
+  });
+
+  it('opens every result of a small request', () => {
+    host.jobs.set([runningJob()]);
+    host.selectedJobId.set('job-run');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('.alchemy-result--open'),
+    ).not.toBeNull();
+  });
+
+  it('previews the lead result on a gallery tile and shows progress in the badge', () => {
+    host.jobs.set([runningJob()]);
+    host.viewMode.set('gallery');
+    fixture.detectChanges();
+
+    const tile = fixture.nativeElement.querySelector(
+      '.gs-gtile',
+    ) as HTMLElement;
+    expect(tile.querySelector('.gs-tile-lead')?.textContent?.trim()).toBe(
+      'a dog',
+    );
+    expect(tile.querySelector('.gs-tile-badge')?.textContent).toContain(
+      'alchemy.jobs.progress_badge',
+    );
+    expect(tile.querySelector('.gs-rail-ring')).not.toBeNull();
+  });
+
+  it('shows the picked job over the gallery and closes on request', () => {
+    host.jobs.set([runningJob()]);
+    host.selectedJobId.set('job-run');
+    host.viewMode.set('gallery');
+    host.paneOpen.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.gs-gallery')).not.toBeNull();
+    const pane = fixture.nativeElement.querySelector(
+      '.gs-jobpane',
+    ) as HTMLElement;
+    expect(pane.querySelector('.gs-detail-head')).not.toBeNull();
+    (pane.querySelector('.gs-plate-x') as HTMLButtonElement).click();
+    expect(host.paneClosed).toBe(1);
+  });
+
+  it('reads the foot after the results in both views', () => {
+    expect(
+      fixture.nativeElement.querySelector('.gs-detail .test-foot'),
+    ).not.toBeNull();
+    host.viewMode.set('gallery');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('.gs-gallery .test-foot'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('.test-foot').length).toBe(1);
   });
 });
