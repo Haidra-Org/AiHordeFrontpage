@@ -11,7 +11,10 @@
    4. utilities - single-purpose utility classes
    ================================================================= */
 
-@import "tailwindcss";
+/* The scan for class names is rooted at the repository rather than at the
+   process's working directory, so a build started from a subfolder still finds
+   every template and generates the same utilities. */
+@import "tailwindcss" source("../");
 
 /* =================================================================
    SHARED DESIGN SYSTEM - Tokens and all primitives
