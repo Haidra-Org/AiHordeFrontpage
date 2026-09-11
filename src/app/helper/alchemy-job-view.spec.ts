@@ -8,6 +8,11 @@ import {
   jobFormRows,
   jobLeadPreview,
   jobProgress,
+  seriesCell,
+  seriesColumns,
+  sharesOperations,
+  sortSeries,
+  toCsv,
   requestedFormEntries,
   resultFormKey,
   storedAnnotationDetectors,
@@ -326,5 +331,173 @@ describe('jobLeadPreview', () => {
 
   it('is null while nothing has finished', () => {
     expect(jobLeadPreview(job({ forms: ['caption'] }))).toBeNull();
+  });
+});
+
+describe('series table', () => {
+  const captioned = (id: string, caption: string, score?: number): AlchemyJob =>
+    job({
+      id,
+      localId: id,
+      forms: score === undefined ? ['caption'] : ['caption', 'aesthetic'],
+      status: {
+        state: 'done',
+        forms: [
+          { form: 'caption', state: 'done', result: { caption } },
+          ...(score === undefined
+            ? []
+            : [
+                {
+                  form: 'aesthetic',
+                  state: 'done',
+                  result: { aesthetic: score },
+                },
+              ]),
+        ],
+      },
+    });
+
+  it('lists the operations run across the history once each, oldest request first', () => {
+    const newest = job({
+      forms: ['nsfw', 'annotation'],
+      annotationControlTypes: ['depth'],
+    });
+    const oldest = job({
+      forms: ['caption', 'annotation'],
+      annotationControlTypes: ['canny'],
+    });
+    expect(seriesColumns([newest, oldest]).map((c) => c.key)).toEqual([
+      'caption',
+      'annotation-canny',
+      'nsfw',
+      'annotation-depth',
+    ]);
+  });
+
+  it('says a cell as a line, a number, a flag, swatches or an image', () => {
+    const j = job({
+      forms: [
+        'caption',
+        'aesthetic',
+        'nsfw',
+        'palette',
+        'RealESRGAN_x4plus',
+        'describe',
+      ],
+      status: {
+        state: 'done',
+        forms: [
+          { form: 'caption', state: 'done', result: { caption: ' a dog ' } },
+          { form: 'aesthetic', state: 'done', result: { aesthetic: 6.456 } },
+          { form: 'nsfw', state: 'done', result: { nsfw: true } },
+          {
+            form: 'palette',
+            state: 'done',
+            result: {
+              palette: { colors: [{ hex: '#123456', proportion: 1 }] },
+            },
+          },
+          {
+            form: 'RealESRGAN_x4plus',
+            state: 'done',
+            result: {
+              RealESRGAN_x4plus: 'https://r2.example/x/big.webp?sig=1',
+            },
+          },
+          {
+            form: 'describe',
+            state: 'done',
+            result: { describe: { format: 'PNG', width: 512, height: 768 } },
+          },
+        ],
+      },
+    });
+    expect(seriesCell(j, 'caption')).toEqual({
+      kind: 'text',
+      text: 'a dog',
+      sortValue: 'a dog',
+    });
+    expect(seriesCell(j, 'aesthetic')).toEqual({
+      kind: 'number',
+      text: '6.46',
+      sortValue: 6.456,
+    });
+    expect(seriesCell(j, 'nsfw')).toMatchObject({ kind: 'flag', sortValue: 1 });
+    expect(seriesCell(j, 'palette')).toMatchObject({
+      kind: 'palette',
+      colors: ['#123456'],
+    });
+    expect(seriesCell(j, 'RealESRGAN_x4plus')).toMatchObject({
+      kind: 'image',
+      imageKey: 'RealESRGAN_x4plus',
+    });
+    expect(seriesCell(j, 'describe')).toMatchObject({
+      kind: 'text',
+      text: 'PNG · 512 x 768',
+    });
+    expect(seriesCell(j, 'interrogation')).toEqual({
+      kind: 'none',
+      text: '',
+      sortValue: null,
+    });
+  });
+
+  it('marks a form the horde still has as pending, with its state', () => {
+    const j = job({
+      forms: ['caption'],
+      status: {
+        state: 'processing',
+        forms: [{ form: 'caption', state: 'processing' }],
+      },
+    });
+    expect(seriesCell(j, 'caption')).toMatchObject({
+      kind: 'pending',
+      state: 'processing',
+    });
+  });
+
+  it('orders by a column both ways and keeps requests without that result last', () => {
+    const jobs = [
+      captioned('a', 'zebra', 3),
+      captioned('b', 'apple'),
+      captioned('c', 'mango', 9),
+    ];
+    const ids = (sorted: AlchemyJob[]) => sorted.map((j) => j.id);
+    expect(
+      ids(sortSeries(jobs, { key: 'aesthetic', direction: 'asc' })),
+    ).toEqual(['a', 'c', 'b']);
+    expect(
+      ids(sortSeries(jobs, { key: 'aesthetic', direction: 'desc' })),
+    ).toEqual(['c', 'a', 'b']);
+    expect(ids(sortSeries(jobs, { key: 'caption', direction: 'asc' }))).toEqual(
+      ['b', 'c', 'a'],
+    );
+    expect(ids(sortSeries(jobs, null))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('tells requests that ran the same operations from the rest', () => {
+    const a = job({
+      forms: ['caption', 'annotation'],
+      annotationControlTypes: ['canny'],
+    });
+    const b = job({
+      forms: ['annotation', 'caption'],
+      annotationControlTypes: ['canny'],
+    });
+    const c = job({
+      forms: ['caption', 'annotation'],
+      annotationControlTypes: ['depth'],
+    });
+    expect(sharesOperations(a, b)).toBe(true);
+    expect(sharesOperations(a, c)).toBe(false);
+  });
+
+  it('writes CSV with every field quoted and quotes doubled', () => {
+    expect(
+      toCsv([
+        ['a', 'b "c" d'],
+        ['1', 'x,y'],
+      ]),
+    ).toBe('"a","b ""c"" d"\r\n"1","x,y"');
   });
 });

@@ -87,8 +87,11 @@ const GALLERY_PER_ROW_OPTIONS = [2, 3, 4, 5, 6] as const;
 const GALLERY_PER_ROW_KEY = 'aihorde.alchemy.gallery.perRow';
 const GALLERY_DEFAULT_PER_ROW = 4;
 
-/** Results presentation (thumb rail + detail, or tiled gallery), persisted. */
-const VIEW_MODE_OPTIONS = ['detail', 'gallery'] as const;
+/**
+ * Results presentation, persisted: thumb rail + detail, tiled gallery, or the
+ * series table with a row per request.
+ */
+const VIEW_MODE_OPTIONS = ['detail', 'gallery', 'table'] as const;
 const VIEW_MODE_KEY = 'aihorde.alchemy.view';
 const VIEW_MODE_DEFAULT: AlchemyViewMode = 'detail';
 
@@ -1047,7 +1050,7 @@ export class AlchemyComponent {
    */
   public selectJob(id: string): void {
     this.selectedJobId.set(id);
-    if (this.viewMode() === 'gallery') {
+    if (this.viewMode() !== 'detail') {
       this.jobPaneOpen.set(true);
     }
   }
@@ -1170,7 +1173,21 @@ export class AlchemyComponent {
   }
 
   private triggerZipDownload(bytes: Uint8Array, fileName: string): void {
-    const blob = new Blob([bytes as BlobPart], { type: 'application/zip' });
+    this.triggerFileDownload(
+      new Blob([bytes as BlobPart], { type: 'application/zip' }),
+      fileName,
+    );
+  }
+
+  /** The series table as the browser rendered it, saved as a CSV file. */
+  public downloadSeriesCsv(file: { fileName: string; text: string }): void {
+    this.triggerFileDownload(
+      new Blob([file.text], { type: 'text/csv;charset=utf-8' }),
+      file.fileName,
+    );
+  }
+
+  private triggerFileDownload(blob: Blob, fileName: string): void {
     const url = URL.createObjectURL(blob);
     const link = globalThis.document.createElement('a');
     link.href = url;

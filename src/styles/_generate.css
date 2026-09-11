@@ -6119,7 +6119,160 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-results-foot .gs-volunteer {
   margin-top: 0;
 }
+/* The quiet line carries two doors now, so on a phone it folds to two lines
+   rather than squeezing its first clause into three. */
+.gen-studio .gs-results-foot .gs-retention {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  max-width: none;
+  margin-top: 0;
+}
 .gen-studio .gs-retention-sep {
+  color: var(--gs-muted);
+}
+
+/* ------- the series table ------------------------------------------- */
+
+/* One row per request, one column per operation: the batch read at once,
+   ordered by whichever column the reader presses. The table scrolls sideways
+   inside its own box when the operations outrun the pane, so the pane never
+   does. */
+.gen-studio .gs-series {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--gs-space-3);
+}
+@media (min-width: 1024px) {
+  .gen-studio .gs-series {
+    overflow-y: auto;
+    padding: var(--gs-space-4);
+  }
+}
+.gen-studio .gs-series-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin-bottom: var(--gs-space-3);
+}
+.gen-studio .gs-series-count {
+  flex: 1 1 auto;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+}
+.gen-studio .gs-series-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-panel);
+}
+.gen-studio .gs-series-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--gs-text-sm);
+}
+.gen-studio .gs-series-th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--gs-space-2) var(--gs-space-3);
+  text-align: left;
+  font-size: var(--gs-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+  background: var(--gs-card);
+  border-bottom: 1px solid var(--gs-border);
+  white-space: nowrap;
+}
+.gen-studio .gs-series-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.gen-studio .gs-series-sort.is-on {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-series-sort-glyph {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-series-sort.is-on .gs-series-sort-glyph {
+  color: var(--gs-blue-text);
+}
+.gen-studio .gs-series-sort:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--gs-radius-sm);
+}
+.gen-studio .gs-series-td {
+  padding: var(--gs-space-2) var(--gs-space-3);
+  vertical-align: middle;
+  border-bottom: 1px solid var(--gs-border-soft);
+  max-width: 320px;
+}
+.gen-studio .gs-series-row:last-child .gs-series-td {
+  border-bottom: 0;
+}
+.gen-studio .gs-series-row--active .gs-series-td {
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-series-td--request {
+  font-weight: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+.gen-studio .gs-series-open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: 2px;
+  border: 0;
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  font: inherit;
+  color: var(--gs-ink);
+  cursor: pointer;
+}
+.gen-studio .gs-series-open:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-series-thumb {
+  display: block;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-stage);
+}
+.gen-studio .gs-series-age {
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+}
+.gen-studio .gs-series-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .gs-series-muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--gs-text-xs);
   color: var(--gs-muted);
 }
 

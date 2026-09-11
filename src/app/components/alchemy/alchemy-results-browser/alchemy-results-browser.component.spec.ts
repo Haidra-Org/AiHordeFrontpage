@@ -44,6 +44,7 @@ const makeJob = (
       (activateJob)="selected = $event"
       (toggleSelected)="toggled = $event"
       (closePane)="paneClosed = paneClosed + 1"
+      (exportCsv)="exported = $event"
     />
     <ng-template #foot><p class="test-foot">foot</p></ng-template>`,
 })
@@ -53,7 +54,7 @@ class HostComponent {
     makeJob('job-b', null),
   ]);
   selectedJobId = signal<string | null>('job-a');
-  viewMode = signal<'detail' | 'gallery'>('detail');
+  viewMode = signal<'detail' | 'gallery' | 'table'>('detail');
   galleryColumns = signal(4);
   selectMode = signal(false);
   selectedJobIds = signal<ReadonlySet<string>>(new Set());
@@ -63,6 +64,7 @@ class HostComponent {
   selected: string | null = null;
   toggled: string | null = null;
   paneClosed = 0;
+  exported: { fileName: string; text: string } | null = null;
 }
 
 describe('AlchemyResultsBrowserComponent', () => {
@@ -326,5 +328,123 @@ describe('AlchemyResultsBrowserComponent', () => {
       fixture.nativeElement.querySelector('.gs-gallery .test-foot'),
     ).not.toBeNull();
     expect(fixture.nativeElement.querySelectorAll('.test-foot').length).toBe(1);
+  });
+
+  describe('series table', () => {
+    const scored = (
+      id: string,
+      caption: string,
+      score: number,
+    ): AlchemyJob => ({
+      ...makeJob(id, null),
+      forms: ['caption', 'aesthetic'],
+      status: {
+        state: 'done',
+        forms: [
+          { form: 'caption', state: 'done', result: { caption } },
+          { form: 'aesthetic', state: 'done', result: { aesthetic: score } },
+        ],
+      },
+    });
+
+    beforeEach(() => {
+      host.jobs.set([scored('job-a', 'zebra', 3), scored('job-b', 'apple', 9)]);
+      host.viewMode.set('table');
+      fixture.detectChanges();
+    });
+
+    const rowIds = (): string[] =>
+      [...fixture.nativeElement.querySelectorAll('tbody .gs-series-row')].map(
+        (row) =>
+          (row as HTMLElement)
+            .querySelector('.gs-series-open')
+            ?.getAttribute('aria-label') ?? '',
+      );
+
+    it('renders a row per request and a column per operation', () => {
+      const heads = [
+        ...fixture.nativeElement.querySelectorAll('thead .gs-series-th'),
+      ];
+      expect(heads.length).toBe(3);
+      expect(
+        fixture.nativeElement.querySelectorAll('tbody .gs-series-row').length,
+      ).toBe(2);
+      expect(
+        [
+          ...fixture.nativeElement.querySelectorAll(
+            '.gs-series-td--number .gs-mono',
+          ),
+        ].map((el) => (el as HTMLElement).textContent?.trim()),
+      ).toEqual(['3.00', '9.00']);
+    });
+
+    it('sorts by a column on press, flips on the second, clears on the third', () => {
+      const sortButtons = () =>
+        [
+          ...fixture.nativeElement.querySelectorAll('.gs-series-sort'),
+        ] as HTMLButtonElement[];
+      const scores = () =>
+        [
+          ...fixture.nativeElement.querySelectorAll(
+            '.gs-series-td--number .gs-mono',
+          ),
+        ].map((el) => (el as HTMLElement).textContent?.trim());
+      sortButtons()[1].click();
+      fixture.detectChanges();
+      expect(scores()).toEqual(['3.00', '9.00']);
+      expect(
+        fixture.nativeElement
+          .querySelectorAll('thead .gs-series-th')[2]
+          .getAttribute('aria-sort'),
+      ).toBe('ascending');
+      sortButtons()[1].click();
+      fixture.detectChanges();
+      expect(scores()).toEqual(['9.00', '3.00']);
+      sortButtons()[1].click();
+      fixture.detectChanges();
+      expect(scores()).toEqual(['3.00', '9.00']);
+      expect(
+        fixture.nativeElement
+          .querySelectorAll('thead .gs-series-th')[2]
+          .getAttribute('aria-sort'),
+      ).toBe('none');
+    });
+
+    it('opens a request from its row', () => {
+      (
+        fixture.nativeElement.querySelector(
+          '.gs-series-open',
+        ) as HTMLButtonElement
+      ).click();
+      expect(host.selected).toBe('job-a');
+      expect(rowIds().length).toBe(2);
+    });
+
+    it('exports the table as shown', () => {
+      (
+        fixture.nativeElement.querySelector(
+          '.gs-series-bar .gs-download-all',
+        ) as HTMLButtonElement
+      ).click();
+      expect(host.exported?.fileName).toMatch(
+        /^alchemy-series-\d{4}-\d{2}-\d{2}\.csv$/,
+      );
+      const lines = host.exported?.text.split('\r\n') ?? [];
+      expect(lines.length).toBe(3);
+      expect(lines[0]).toContain('"request","age_minutes"');
+      expect(lines[1]).toContain('"job-a"');
+      expect(lines[1]).toContain('"zebra"');
+      expect(lines[1]).toContain('"3.00"');
+    });
+
+    it('shows the picked job over the table', () => {
+      host.selectedJobId.set('job-b');
+      host.paneOpen.set(true);
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.gs-series')).not.toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('.gs-jobpane .gs-detail-head'),
+      ).not.toBeNull();
+    });
   });
 });

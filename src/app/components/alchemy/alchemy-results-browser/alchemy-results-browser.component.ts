@@ -3,12 +3,14 @@ import {
   Component,
   TemplateRef,
   computed,
+  inject,
   input,
   output,
+  signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AlchemyResultComponent } from '../alchemy-result/alchemy-result.component';
 import { IconComponent } from '../../icon/icon.component';
 import { GsSheetComponent } from '../../gs-sheet/gs-sheet.component';
@@ -16,6 +18,9 @@ import {
   AlchemyJob,
   AlchemyJobProgress,
   AlchemyLeadPreview,
+  AlchemySeriesCell,
+  AlchemySeriesColumn,
+  AlchemySeriesSort,
   formStatusView,
   isJobSettled,
   jobAge,
@@ -24,10 +29,21 @@ import {
   jobLeadPreview,
   jobProgress,
   jobStateView,
+  seriesCell,
+  seriesColumns,
+  sharesOperations,
+  sortSeries,
+  toCsv,
 } from '../../../helper/alchemy-job-view';
 
 /** Jobs with this many forms or fewer open every result at once. */
 const OPEN_ALL_UP_TO = 3;
+
+/** The last path segment of a result link, without its query. */
+function imageFileName(url: string): string {
+  const path = url.split('?')[0];
+  return path.slice(path.lastIndexOf('/') + 1) || url;
+}
 
 /**
  * Presentational results browser for the alchemy studio. Renders every tracked
@@ -52,7 +68,7 @@ const OPEN_ALL_UP_TO = 3;
 export class AlchemyResultsBrowserComponent {
   public readonly jobs = input.required<AlchemyJob[]>();
   public readonly selectedJobId = input<string | null>(null);
-  public readonly viewMode = input<'detail' | 'gallery'>('detail');
+  public readonly viewMode = input<'detail' | 'gallery' | 'table'>('detail');
   public readonly galleryColumns = input<number>(4);
   public readonly selectMode = input<boolean>(false);
   public readonly selectedJobIds = input<ReadonlySet<string>>(new Set());
@@ -94,6 +110,84 @@ export class AlchemyResultsBrowserComponent {
   public readonly cancelRequest = output<string>();
   /** The gallery's job panel or sheet was dismissed. */
   public readonly closePane = output<void>();
+  /** The series table as shown, as a CSV document to save. */
+  public readonly exportCsv = output<{ fileName: string; text: string }>();
+
+  // --- the series table ----------------------------------------------------
+
+  private readonly transloco = inject(TranslocoService);
+
+  /** Which column orders the table; null is age order. Not persisted. */
+  protected readonly seriesSort = signal<AlchemySeriesSort | null>(null);
+  /** Only requests that ran the selected request's operations. */
+  protected readonly sameOpsOnly = signal(false);
+
+  protected readonly columns = computed(() => seriesColumns(this.jobs()));
+
+  protected readonly seriesJobs = computed(() => {
+    const selected = this.selectedJob();
+    const pool =
+      this.sameOpsOnly() && selected
+        ? this.jobs().filter((job) => sharesOperations(job, selected))
+        : this.jobs();
+    return sortSeries(pool, this.seriesSort());
+  });
+
+  protected readonly cell = seriesCell;
+
+  protected sortBy(key: string): void {
+    this.seriesSort.update((current) => {
+      if (current?.key !== key) return { key, direction: 'asc' };
+      if (current.direction === 'asc') return { key, direction: 'desc' };
+      return null;
+    });
+  }
+
+  protected sortState(key: string): 'ascending' | 'descending' | 'none' {
+    const sort = this.seriesSort();
+    if (sort?.key !== key) return 'none';
+    return sort.direction === 'asc' ? 'ascending' : 'descending';
+  }
+
+  protected toggleSameOps(): void {
+    this.sameOpsOnly.update((on) => !on);
+  }
+
+  /** A processed image the table can show: the local copy, or nothing. */
+  protected cellImage(job: AlchemyJob, cell: AlchemySeriesCell): string | null {
+    return cell.imageKey ? this.storedImageUrl(job, cell.imageKey) : null;
+  }
+
+  /**
+   * The table as shown, under the column names the reader sees. Images are
+   * carried as the file name of the horde's link, since the bytes stay in
+   * the per-request zip.
+   */
+  protected requestExport(): void {
+    const columns = this.columns();
+    const labels = columns.map((column) =>
+      [this.transloco.translate(this.columnLabelKey(column)), column.detector]
+        .filter(Boolean)
+        .join(' '),
+    );
+    const header = ['request', 'age_minutes', ...labels];
+    const rows = this.seriesJobs().map((job) => [
+      job.id,
+      `${Math.floor((Date.now() - job.firstSeenAt) / 60_000)}`,
+      ...columns.map((column) => {
+        const cell = this.cell(job, column.key);
+        return cell.kind === 'image' ? imageFileName(cell.text) : cell.text;
+      }),
+    ]);
+    this.exportCsv.emit({
+      fileName: `alchemy-series-${new Date().toISOString().slice(0, 10)}.csv`,
+      text: toCsv([header, ...rows]),
+    });
+  }
+
+  protected columnLabelKey(column: AlchemySeriesColumn): string {
+    return `alchemy.form_names.${column.form}`;
+  }
   /** Carry one result image over to the image studio as its source. */
   public readonly useResultInStudio = output<{
     job: AlchemyJob;

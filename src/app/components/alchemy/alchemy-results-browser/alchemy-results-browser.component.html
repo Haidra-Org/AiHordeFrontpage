@@ -102,65 +102,184 @@
     </div>
     <ng-container *ngTemplateOutlet="foot()" />
   </div>
-
-  <!-- The picked job, over the grid rather than instead of it: a panel beside
-       the tiles where there is room, the bottom sheet on a phone. The grid and
-       the reader's place in it stay where they were. -->
-  @if (paneOpen() && selectedJob(); as job) {
-    @if (isNarrow()) {
-      <app-gs-sheet
-        [startExpanded]="true"
-        [label]="'alchemy.jobs.pane_label' | transloco"
-        (closed)="closePane.emit()"
+} @else if (viewMode() === "table") {
+  <!-- ============ SERIES TABLE: one row per request, one column per operation ============ -->
+  @let cols = columns();
+  <div class="gs-series">
+    <div class="gs-series-bar">
+      <button
+        type="button"
+        class="gs-view-toggle"
+        [class.gs-view-toggle--on]="sameOpsOnly()"
+        [attr.aria-pressed]="sameOpsOnly()"
+        [disabled]="!selectedJob()"
+        (click)="toggleSameOps()"
       >
-        <span sheet-bar class="gs-sheet-title">
-          {{
-            "alchemy.jobs.thumb_label" | transloco: { count: job.forms.length }
-          }}
-        </span>
-        <div class="gs-jobpane-body">
-          <ng-container
-            *ngTemplateOutlet="detailBody; context: { $implicit: job }"
-          />
-        </div>
-      </app-gs-sheet>
-    } @else {
-      <!-- Focus goes to the panel as it opens and back to the tile as it
-           closes, so a keyboard reader is never left on a grid behind a
-           panel. -->
-      <aside
-        class="gs-jobpane"
-        role="dialog"
-        [attr.aria-label]="'alchemy.jobs.pane_label' | transloco"
-        cdkTrapFocus
-        [cdkTrapFocusAutoCapture]="true"
-        (keydown.escape)="closePane.emit()"
+        {{ "alchemy.series.same_ops" | transloco }}
+      </button>
+      <span class="gs-series-count">
+        {{
+          "alchemy.series.count"
+            | transloco: { shown: seriesJobs().length, total: jobs().length }
+        }}
+      </span>
+      <button
+        type="button"
+        class="gs-download-all"
+        [disabled]="seriesJobs().length === 0"
+        (click)="requestExport()"
       >
-        <div class="gs-jobpane-top">
-          <span class="gs-jobpane-title">
-            {{
-              "alchemy.jobs.thumb_label"
-                | transloco: { count: job.forms.length }
-            }}
-          </span>
-          <button
-            #paneClose
-            type="button"
-            class="gs-plate-x"
-            (click)="closePane.emit()"
-          >
-            {{ "alchemy.jobs.pane_close" | transloco }}
-            <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
-          </button>
-        </div>
-        <div class="gs-jobpane-body">
-          <ng-container
-            *ngTemplateOutlet="detailBody; context: { $implicit: job }"
-          />
-        </div>
-      </aside>
-    }
-  }
+        <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+        {{ "alchemy.series.export" | transloco }}
+      </button>
+    </div>
+    <div class="gs-series-scroll">
+      <table class="gs-series-table">
+        <thead>
+          <tr>
+            <th scope="col" class="gs-series-th gs-series-th--request">
+              {{ "alchemy.series.request" | transloco }}
+            </th>
+            @for (column of cols; track column.key) {
+              <th
+                scope="col"
+                class="gs-series-th"
+                [attr.aria-sort]="sortState(column.key)"
+              >
+                <button
+                  type="button"
+                  class="gs-series-sort"
+                  [class.is-on]="sortState(column.key) !== 'none'"
+                  (click)="sortBy(column.key)"
+                >
+                  {{ columnLabelKey(column) | transloco }}
+                  @if (column.detector) {
+                    <span class="gs-mono">{{ column.detector }}</span>
+                  }
+                  <span class="gs-series-sort-glyph" aria-hidden="true">
+                    @switch (sortState(column.key)) {
+                      @case ("ascending") {
+                        ↑
+                      }
+                      @case ("descending") {
+                        ↓
+                      }
+                      @default {
+                        ↕
+                      }
+                    }
+                  </span>
+                </button>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (job of seriesJobs(); track job.id) {
+            <tr
+              class="gs-series-row"
+              [class.gs-series-row--active]="job.id === selectedJobId()"
+            >
+              <th scope="row" class="gs-series-td gs-series-td--request">
+                <button
+                  type="button"
+                  class="gs-series-open"
+                  [attr.aria-label]="
+                    ('alchemy.jobs.thumb_label'
+                      | transloco: { count: job.forms.length }) +
+                    ', ' +
+                    (age(job).key | transloco: { count: age(job).count })
+                  "
+                  (click)="activate(job)"
+                >
+                  @if (job.sourceThumb) {
+                    <img
+                      class="gs-series-thumb"
+                      [src]="job.sourceThumb"
+                      alt=""
+                    />
+                  } @else {
+                    <span class="gs-series-thumb gs-rail-thumb-ph">
+                      <app-icon name="beaker" />
+                    </span>
+                  }
+                  <span class="gs-series-age">
+                    {{ age(job).key | transloco: { count: age(job).count } }}
+                  </span>
+                </button>
+              </th>
+              @for (column of cols; track column.key) {
+                @let c = cell(job, column.key);
+                <td class="gs-series-td gs-series-td--{{ c.kind }}">
+                  @switch (c.kind) {
+                    @case ("text") {
+                      <span class="gs-series-text" [title]="c.text">{{
+                        c.text
+                      }}</span>
+                    }
+                    @case ("number") {
+                      <span class="gs-mono">{{ c.text }}</span>
+                    }
+                    @case ("flag") {
+                      <span
+                        class="gs-status"
+                        [class.gs-status--danger]="c.sortValue === 1"
+                        [class.gs-status--done]="c.sortValue === 0"
+                      >
+                        {{
+                          (c.sortValue === 1
+                            ? "alchemy.result.nsfw_true"
+                            : "alchemy.result.nsfw_false"
+                          ) | transloco
+                        }}
+                      </span>
+                    }
+                    @case ("palette") {
+                      <span class="gs-tile-swatches">
+                        @for (hex of c.colors; track $index) {
+                          <span
+                            class="gs-tile-swatch"
+                            [style.background-color]="hex"
+                            [title]="hex"
+                          ></span>
+                        }
+                      </span>
+                    }
+                    @case ("image") {
+                      @if (cellImage(job, c); as src) {
+                        <img class="gs-series-thumb" [src]="src" alt="" />
+                      } @else {
+                        <span class="gs-series-muted">{{
+                          "alchemy.result.output_image" | transloco
+                        }}</span>
+                      }
+                    }
+                    @case ("pending") {
+                      @let view = statusView(c.state ?? "waiting");
+                      <span class="gs-series-muted">
+                        <app-icon
+                          [name]="view.icon"
+                          [class.gs-spin]="view.spin"
+                          class="gs-ico-sm"
+                        />
+                        {{
+                          "alchemy.state." + (c.state ?? "waiting") | transloco
+                        }}
+                      </span>
+                    }
+                    @default {
+                      <span class="gs-series-muted" aria-hidden="true">–</span>
+                    }
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <ng-container *ngTemplateOutlet="foot()" />
+  </div>
 } @else {
   <!-- ============ RAIL / CAROUSEL + DETAIL ============ -->
   <div class="gs-browser">
@@ -240,6 +359,64 @@
       <ng-container *ngTemplateOutlet="foot()" />
     </div>
   </div>
+}
+
+<!-- The picked job, over the grid or the table rather than instead of it: a
+   panel beside them where there is room, the bottom sheet on a phone. The
+   reader's place in the list stays where it was. -->
+@if (viewMode() !== "detail" && paneOpen() && selectedJob(); as job) {
+  @if (isNarrow()) {
+    <app-gs-sheet
+      [startExpanded]="true"
+      [label]="'alchemy.jobs.pane_label' | transloco"
+      (closed)="closePane.emit()"
+    >
+      <span sheet-bar class="gs-sheet-title">
+        {{
+          "alchemy.jobs.thumb_label" | transloco: { count: job.forms.length }
+        }}
+      </span>
+      <div class="gs-jobpane-body">
+        <ng-container
+          *ngTemplateOutlet="detailBody; context: { $implicit: job }"
+        />
+      </div>
+    </app-gs-sheet>
+  } @else {
+    <!-- Focus goes to the panel as it opens and back to the tile as it
+         closes, so a keyboard reader is never left on a grid behind a
+         panel. -->
+    <aside
+      class="gs-jobpane"
+      role="dialog"
+      [attr.aria-label]="'alchemy.jobs.pane_label' | transloco"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="closePane.emit()"
+    >
+      <div class="gs-jobpane-top">
+        <span class="gs-jobpane-title">
+          {{
+            "alchemy.jobs.thumb_label" | transloco: { count: job.forms.length }
+          }}
+        </span>
+        <button
+          #paneClose
+          type="button"
+          class="gs-plate-x"
+          (click)="closePane.emit()"
+        >
+          {{ "alchemy.jobs.pane_close" | transloco }}
+          <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
+        </button>
+      </div>
+      <div class="gs-jobpane-body">
+        <ng-container
+          *ngTemplateOutlet="detailBody; context: { $implicit: job }"
+        />
+      </div>
+    </aside>
+  }
 }
 
 <!-- ============ SHARED JOB BODY (detail pane, panel, sheet) ============ -->

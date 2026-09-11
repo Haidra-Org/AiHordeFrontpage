@@ -655,6 +655,20 @@
               />
               {{ "alchemy.jobs.view_gallery" | transloco }}
             </button>
+            <button
+              type="button"
+              class="gs-seg-btn"
+              [class.gs-seg-btn--on]="viewMode() === 'table'"
+              [attr.aria-pressed]="viewMode() === 'table'"
+              (click)="setViewMode('table')"
+            >
+              <app-icon
+                name="table-cells"
+                class="gs-ico-sm"
+                aria-hidden="true"
+              />
+              {{ "alchemy.jobs.view_table" | transloco }}
+            </button>
           </div>
           @if (viewMode() === "gallery") {
             <div class="gs-options gs-view-menu" #viewMenuHost>
@@ -725,6 +739,7 @@
             (cancelRequest)="cancelJob($event)"
             (useResultInStudio)="useResultInStudio($event)"
             (closePane)="closeJobPane()"
+            (exportCsv)="downloadSeriesCsv($event)"
           />
         }
       </div>

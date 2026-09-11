@@ -352,7 +352,12 @@ export type AlchemyLeadPreview =
   | null;
 
 export function jobLeadPreview(job: AlchemyJob): AlchemyLeadPreview {
-  const done = jobDoneResults(job);
+  return leadPreviewOfViews(jobDoneResults(job));
+}
+
+function leadPreviewOfViews(
+  done: readonly AlchemyFormView[],
+): AlchemyLeadPreview {
   let image: AlchemyLeadPreview = null;
   for (const { form, key } of done) {
     const result = form.result ?? {};
@@ -409,6 +414,206 @@ export function jobLeadPreview(job: AlchemyJob): AlchemyLeadPreview {
     }
   }
   return image;
+}
+
+/**
+ * One column of the series table: an operation some request in the history
+ * ran, with a control map split by detector as everywhere else.
+ */
+export type AlchemySeriesColumn = AlchemyFormEntry;
+
+/**
+ * The operations run across a set of requests, each once, in the order they
+ * were first asked for. Newest requests come first in the history, so the
+ * order is read from the oldest request forward and a column keeps its place
+ * as requests are added.
+ */
+export function seriesColumns(
+  jobs: readonly AlchemyJob[],
+): AlchemySeriesColumn[] {
+  const seen = new Map<string, AlchemySeriesColumn>();
+  for (const job of [...jobs].reverse()) {
+    for (const entry of requestedFormEntries(job)) {
+      if (!seen.has(entry.key)) seen.set(entry.key, entry);
+    }
+  }
+  return [...seen.values()];
+}
+
+/**
+ * What one request shows for one operation in the series table: the result
+ * said in a line, or why there is no line yet. `sortValue` is what the column
+ * orders by; text sorts as text and a score as a number.
+ */
+export interface AlchemySeriesCell {
+  kind: 'text' | 'number' | 'flag' | 'palette' | 'image' | 'pending' | 'none';
+  /** The line, and what the CSV carries for this cell. */
+  text: string;
+  sortValue: string | number | null;
+  colors?: string[];
+  /** The result key of a processed image, for the stored copy lookup. */
+  imageKey?: string;
+  /** The form state while pending, for its glyph. */
+  state?: string;
+}
+
+const NO_CELL: AlchemySeriesCell = { kind: 'none', text: '', sortValue: null };
+
+function textCell(text: string): AlchemySeriesCell {
+  return { kind: 'text', text, sortValue: text.toLowerCase() };
+}
+
+export function seriesCell(job: AlchemyJob, key: string): AlchemySeriesCell {
+  const card = jobFormCards(job).find((entry) => entry.key === key);
+  if (!card) return NO_CELL;
+  if (!card.view) {
+    return { kind: 'pending', text: '', sortValue: null, state: card.state };
+  }
+  const { form } = card.view;
+  const result = form.result ?? {};
+  switch (form.form) {
+    case 'caption':
+      return typeof result.caption === 'string'
+        ? textCell(result.caption.trim())
+        : NO_CELL;
+    case 'nsfw':
+      return typeof result.nsfw === 'boolean'
+        ? {
+            kind: 'flag',
+            text: result.nsfw ? 'nsfw' : 'clean',
+            sortValue: result.nsfw ? 1 : 0,
+          }
+        : NO_CELL;
+    case 'aesthetic': {
+      const score = result['aesthetic'];
+      return typeof score === 'number'
+        ? { kind: 'number', text: score.toFixed(2), sortValue: score }
+        : NO_CELL;
+    }
+    case 'interrogation': {
+      const lead = jobLeadPreviewOf(form);
+      if (lead?.kind !== 'tags') return NO_CELL;
+      const top = topTags(result.interrogation, 3);
+      return {
+        kind: 'text',
+        text: top.length ? top.join(', ') : `${lead.count}`,
+        sortValue: lead.count,
+      };
+    }
+    case 'palette': {
+      const lead = jobLeadPreviewOf(form);
+      return lead?.kind === 'palette'
+        ? {
+            kind: 'palette',
+            text: lead.colors.join(' '),
+            sortValue: lead.colors[0] ?? '',
+            colors: lead.colors,
+          }
+        : NO_CELL;
+    }
+    case 'describe': {
+      const value = result.describe;
+      if (!value || typeof value !== 'object') return NO_CELL;
+      const parts = [value['format'], value['width'], value['height']];
+      const [format, width, height] = parts.map((part) =>
+        typeof part === 'string' || typeof part === 'number' ? `${part}` : '',
+      );
+      const text = [format, width && height ? `${width} x ${height}` : '']
+        .filter(Boolean)
+        .join(' · ');
+      return text ? textCell(text) : NO_CELL;
+    }
+    case 'vectorize':
+      return typeof result.vectorize === 'string' ? textCell('SVG') : NO_CELL;
+    default: {
+      const value = result[form.form];
+      if (typeof value !== 'string') return NO_CELL;
+      return {
+        kind: 'image',
+        text: value,
+        sortValue: 1,
+        imageKey: card.view.key,
+      };
+    }
+  }
+}
+
+/** {@link jobLeadPreview} for one form, so a cell and a tile agree. */
+function jobLeadPreviewOf(form: AlchemyForm): AlchemyLeadPreview {
+  return leadPreviewOfViews([{ form, detector: null, key: form.form }]);
+}
+
+function topTags(details: unknown, count: number): string[] {
+  if (!details || typeof details !== 'object') return [];
+  const tags = (details as { tags?: unknown }).tags;
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .filter(
+      (tag): tag is { text: string; confidence: number } =>
+        !!tag &&
+        typeof tag === 'object' &&
+        typeof (tag as { text?: unknown }).text === 'string' &&
+        typeof (tag as { confidence?: unknown }).confidence === 'number',
+    )
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, count)
+    .map((tag) => tag.text);
+}
+
+/** How the series table is ordered: by one column, or by age when null. */
+export interface AlchemySeriesSort {
+  key: string;
+  direction: 'asc' | 'desc';
+}
+
+/**
+ * The requests in table order. Ordering by a column puts the requests that
+ * have that result first, in the order asked, and the rest after them in
+ * their age order, so a sort never scatters the empty cells through the list.
+ */
+export function sortSeries(
+  jobs: readonly AlchemyJob[],
+  sort: AlchemySeriesSort | null,
+): AlchemyJob[] {
+  if (!sort) return [...jobs];
+  const keyed = jobs.map((job, index) => ({
+    job,
+    index,
+    value: seriesCell(job, sort.key).sortValue,
+  }));
+  const sign = sort.direction === 'asc' ? 1 : -1;
+  keyed.sort((a, b) => {
+    if (a.value === null && b.value === null) return a.index - b.index;
+    if (a.value === null) return 1;
+    if (b.value === null) return -1;
+    if (typeof a.value === 'number' && typeof b.value === 'number') {
+      return (a.value - b.value) * sign || a.index - b.index;
+    }
+    return `${a.value}`.localeCompare(`${b.value}`) * sign || a.index - b.index;
+  });
+  return keyed.map((entry) => entry.job);
+}
+
+/** Whether two requests asked for the same operations, whatever the order. */
+export function sharesOperations(a: AlchemyJob, b: AlchemyJob): boolean {
+  const keysOf = (job: AlchemyJob) =>
+    requestedFormEntries(job)
+      .map((entry) => entry.key)
+      .sort()
+      .join('|');
+  return keysOf(a) === keysOf(b);
+}
+
+/**
+ * Rows of text as a CSV document: every field quoted, quotes doubled, CRLF
+ * line ends, so any spreadsheet opens it as it is shown.
+ */
+export function toCsv(rows: readonly (readonly string[])[]): string {
+  return rows
+    .map((row) =>
+      row.map((field) => `"${field.replace(/"/g, '""')}"`).join(','),
+    )
+    .join('\r\n');
 }
 
 /** A job is worth archiving/showing once any form has produced a result. */

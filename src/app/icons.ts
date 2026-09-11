@@ -219,6 +219,8 @@ export const APP_ICONS: Record<string, string> = {
     '<path fill="currentColor" d="M12 5a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2Zm0 5.4a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2Zm0 5.4a1.6 1.6 0 100 3.2 1.6 1.6 0 000-3.2Z"/>',
   'squares-2x2':
     '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>',
+  'table-cells':
+    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2zM3 9.5h18M3 14.5h18M9.5 4v16M15.5 4v16"/>',
   home: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>',
 
   // ── Stats & Data ─────────────────────────────────────────────────────

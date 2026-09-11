@@ -581,6 +581,14 @@ describe('AlchemyComponent', () => {
       },
     );
 
+    it('opens the job over the table on a row pick', () => {
+      track('job-a');
+      component.setViewMode('table');
+      component.selectJob('job-a');
+      expect(component.viewMode()).toBe('table');
+      expect(component.jobPaneOpen()).toBe(true);
+    });
+
     it('closes the job pane when the view changes', () => {
       track('job-a');
       component.setViewMode('gallery');
