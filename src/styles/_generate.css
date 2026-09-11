@@ -17233,12 +17233,17 @@ html:has(app-gs-sheet) {
   outline-offset: 2px;
 }
 
-/* The note a pressed chip opens. Fixed to the viewport and placed by the chip,
-   because the chip sits inside scroll containers that would clip anything
-   positioned within them; sized by its own prose. Above the studio's sticky
-   chrome and below the modal layer. */
+/* The note a pressed chip opens. A top-layer popover placed by the chip in
+   viewport coordinates: the chip sits inside scroll containers that would clip
+   anything positioned within them, and under ancestors (an animated tutorial
+   step) whose transform would otherwise capture a fixed card and its z-index.
+   The inset, margin and overflow undo the popover UA sheet; sized by its own
+   prose. */
 .gen-studio .gs-setting-pop {
   position: fixed;
+  inset: auto;
+  margin: 0;
+  overflow: visible;
   z-index: 55;
   padding: var(--gs-space-3) var(--gs-space-3);
   border: 1px solid var(--gs-card-border);

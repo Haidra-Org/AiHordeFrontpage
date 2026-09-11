@@ -55,9 +55,6 @@ export const REFERENCE_ORIGIN_STATE = 'referenceOrigin';
 const POP_MARGIN = 12;
 const POP_GAP = 6;
 const POP_WIDTH = 320;
-/* Only used to pick the side of the chip the card opens on; the card itself is
-   content-sized. */
-const POP_ESTIMATED_HEIGHT = 160;
 const SCROLL_SETTLE_MS = 400;
 
 let popInstance = 0;
@@ -90,7 +87,10 @@ let popInstance = 0;
  * carrying where the reader came from so that page can offer the way back. The
  * note is drawn inside the chip's own tree rather than in an overlay container,
  * because the studio's colour tokens are scoped to the studio root and a
- * body-level container would not see them.
+ * body-level container would not see them. It is shown as a native popover so
+ * that it sits in the top layer: the chip's ancestors (an animated tutorial
+ * step, a sweep card with content-visibility) would otherwise become the
+ * containing block of a fixed card and pin it, and its z-index, to themselves.
  */
 @Component({
   selector: 'app-gs-setting-chip',
@@ -136,6 +136,7 @@ let popInstance = 0;
           class="gs-setting-pop"
           role="dialog"
           tabindex="-1"
+          popover="manual"
           [id]="popId"
           [attr.aria-labelledby]="popId + '-title'"
           [style.top.px]="popTop()"
@@ -247,7 +248,21 @@ export class GsSettingChipComponent {
     this.open.set(true);
     this.openedAt = Date.now();
     // The dialog is rendered from the signal above, so it exists next turn.
-    setTimeout(() => this.popEl()?.nativeElement.focus());
+    setTimeout(() => {
+      const el = this.popEl()?.nativeElement;
+      if (!el) {
+        return;
+      }
+      if ('showPopover' in el) {
+        try {
+          el.showPopover();
+        } catch {
+          /* already open */
+        }
+      }
+      this.settle(el);
+      el.focus();
+    });
   }
 
   public close(): void {
@@ -310,11 +325,15 @@ export class GsSettingChipComponent {
     });
   }
 
+  /** Where the chip was when the card opened, in viewport coordinates. */
+  private anchor: DOMRect | null = null;
+
   /**
-   * Fixed to the viewport, under the chip where there is room and over it
-   * otherwise, and kept inside the viewport's side margins. Fixed rather than
-   * absolute because the chip sits in prose inside scroll containers, and an
-   * absolutely positioned card would be clipped by the first of them.
+   * The card's column: flush with the chip's left edge and kept inside the
+   * viewport's side margins. The card is a top-layer popover, so these are
+   * viewport coordinates whatever the chip's ancestors do; an in-flow card
+   * would be clipped by the first scroll container above it. The row is
+   * provisional until the card has a height to be placed by.
    */
   private place(): void {
     const button = this.trigger()?.nativeElement;
@@ -322,23 +341,39 @@ export class GsSettingChipComponent {
       return;
     }
     const rect = button.getBoundingClientRect();
+    this.anchor = rect;
     const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
     const width = Math.min(POP_WIDTH, viewportWidth - POP_MARGIN * 2);
     const left = Math.min(
       Math.max(POP_MARGIN, rect.left),
       viewportWidth - POP_MARGIN - width,
     );
-    const roomBelow = viewportHeight - rect.bottom;
-    const opensBelow =
-      roomBelow >= POP_ESTIMATED_HEIGHT + POP_MARGIN ||
-      rect.top < POP_ESTIMATED_HEIGHT;
-    const top = opensBelow
-      ? rect.bottom + POP_GAP
-      : rect.top - POP_GAP - POP_ESTIMATED_HEIGHT;
     this.popWidth.set(width);
     this.popLeft.set(left);
-    this.popTop.set(Math.max(POP_MARGIN, top));
+    this.popTop.set(rect.bottom + POP_GAP);
+  }
+
+  /**
+   * The card's row, once it is shown and has a height: under the chip where
+   * that fits, otherwise over it with its bottom edge a gap above the chip's
+   * top, so the chip stays in view either way. Written straight onto the
+   * element as well as into the signal, so the card is never painted at the
+   * provisional row.
+   */
+  private settle(el: HTMLElement): void {
+    const rect = this.anchor;
+    if (!rect) {
+      return;
+    }
+    const height = el.getBoundingClientRect().height;
+    const roomBelow = window.innerHeight - rect.bottom - POP_GAP - POP_MARGIN;
+    const roomAbove = rect.top - POP_GAP - POP_MARGIN;
+    const opensBelow = height <= roomBelow || roomBelow >= roomAbove;
+    const top = opensBelow
+      ? rect.bottom + POP_GAP
+      : Math.max(POP_MARGIN, rect.top - POP_GAP - height);
+    el.style.top = `${top}px`;
+    this.popTop.set(top);
   }
   /** What it was set to. Null renders the name alone. */
   public readonly value = input<SettingValue | null>(null);
