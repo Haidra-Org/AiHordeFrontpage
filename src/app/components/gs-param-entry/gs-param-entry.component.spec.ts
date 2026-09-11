@@ -321,6 +321,22 @@ describe('GsParamEntryComponent', () => {
     expect(folded[0].querySelector('.gs-sweep-card-door')).not.toBeNull();
   });
 
+  it('scopes the examples once per page, and only where there are some', async () => {
+    // Steps carries a strip, a timeline and a grid; the scope note is still one
+    // element, after all of them, and no caption repeats it.
+    await setUp({ topic: 'steps' });
+
+    const notes = all('.gs-ref-scope');
+    expect(notes.length).toBe(1);
+    expect(notes[0].textContent?.trim()).toBe(
+      translations['generate.reference.examples_scope'],
+    );
+
+    await setUp({ topic: 'webhook' });
+
+    expect(find('.gs-ref-scope')).toBeNull();
+  });
+
   it('says what a timeline is before showing one, and only there', async () => {
     await setUp({ topic: 'steps' });
 

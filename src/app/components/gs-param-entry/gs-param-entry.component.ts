@@ -293,6 +293,14 @@ const TRADEOFF_ICONS = {
     @if (sweepGridParameter(); as parameter) {
       <app-gs-sweep-grid [parameter]="parameter" [startExpanded]="onPage()" />
     }
+    <!-- That every strip above shows one prompt, model and seed is a fact
+         about the page, so it is said once here rather than under each
+         caption; the captions are left to say what is visible in a frame. -->
+    @if (sweepParameter() || alsoStrips().length > 0 || sweepGridParameter()) {
+      <p class="gs-ref-scope">
+        {{ 'generate.reference.examples_scope' | transloco }}
+      </p>
+    }
 
     <!-- Where the difference actually is. A finishing pass moves a few hundred
          pixels of a frame that is two thousand across, so the strip above it

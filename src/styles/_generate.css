@@ -15530,7 +15530,8 @@ app-gs-compare-wipe {
    class so that an entry with no body written yet still says what the figure
    under it is. */
 .gen-studio .gs-ref-body,
-.gen-studio .gs-ref-strip-lead {
+.gen-studio .gs-ref-strip-lead,
+.gen-studio .gs-ref-scope {
   margin: var(--gs-space-4) 0 0;
   font-size: var(--gs-text-md-docs, var(--gs-text-md));
   line-height: 1.75;

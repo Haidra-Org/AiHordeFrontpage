@@ -81,8 +81,8 @@ describe('DocsAlchemyHomeComponent', () => {
     http.expectOne(manifestUrl).flush({ generated_against: '', entries: [] });
     fixture.detectChanges();
 
-    expect(text()).toContain('Enlarge a picture');
-    expect(text()).toContain('Cut out the background');
+    expect(text()).toContain('Image enlargement');
+    expect(text()).toContain('Background removal');
     expect(text()).not.toContain('alchemy.usecases.');
   });
 

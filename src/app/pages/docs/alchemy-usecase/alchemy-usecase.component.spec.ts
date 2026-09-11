@@ -237,7 +237,7 @@ describe('DocsAlchemyUseCaseComponent', () => {
   it('writes the use case out, and every form it is made of', async () => {
     await setUp('enlarge');
 
-    expect(el().textContent).toContain('Enlarge a picture');
+    expect(el().textContent).toContain('Image enlargement');
     expect(all('.gs-ref-variant-name')).toHaveLength(
       alchemyUseCase('enlarge')!.forms.length,
     );

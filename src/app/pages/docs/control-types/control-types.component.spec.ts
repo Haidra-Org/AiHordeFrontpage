@@ -95,7 +95,7 @@ describe('DocsControlTypesComponent', () => {
   it('keeps the rest of the introduction behind a fold that opens', () => {
     const toggle = el().querySelector<HTMLButtonElement>('.gs-tut-raw-toggle');
 
-    expect(toggle?.textContent).toContain('How to read this page');
+    expect(toggle?.textContent).toContain('Examples');
     expect(toggle?.getAttribute('aria-expanded')).toBe('false');
     expect(el().querySelector('#gs-ref-how-body')).toBeNull();
 
@@ -106,12 +106,12 @@ describe('DocsControlTypesComponent', () => {
 
     expect(toggle?.getAttribute('aria-expanded')).toBe('true');
     expect(body).toContain('three pictures');
-    expect(body).toContain('as you raise the control strength');
+    expect(body).toContain('The strength examples show');
     // Each of those examples comes on more than one kind of picture, which is
     // the second choice a tile's layer offers.
     expect(body).toContain('a character, a building and a flat colour drawing');
     // What a control map is at all, which the lead no longer has room for.
-    expect(body).toContain('A detector reads your picture first');
+    expect(body).toContain('A detector creates a control map');
   });
 
   it('offers the groups as contents aimed at the sections they name', () => {

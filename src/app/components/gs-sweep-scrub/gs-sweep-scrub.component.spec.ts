@@ -1166,9 +1166,7 @@ describe('GsSweepScrubComponent', () => {
       why.click();
       fixture.detectChanges();
 
-      expect(text()).toContain(
-        'The samplers that add fresh noise, the ancestral and SDE ones',
-      );
+      expect(text()).toContain('Other samplers that can add noise include');
       expect(find('.gs-sweep-why-link')).not.toBeNull();
     });
   });

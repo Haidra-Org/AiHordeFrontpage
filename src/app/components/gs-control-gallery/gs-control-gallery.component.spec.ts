@@ -366,9 +366,7 @@ describe('GsControlGalleryComponent', () => {
     await setUp();
     openTile(0);
 
-    expect(find('.gs-ctl-head')!.textContent).toContain(
-      'What control strength does',
-    );
+    expect(find('.gs-ctl-head')!.textContent).toContain('Control strength');
     expect(find('.gs-ctl-dial app-gs-sweep-scrub')).not.toBeNull();
   });
 

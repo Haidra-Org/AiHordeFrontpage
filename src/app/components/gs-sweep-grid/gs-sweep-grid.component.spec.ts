@@ -114,7 +114,7 @@ describe('GsSweepGridComponent', () => {
       'Open the Steps × Guidance (CFG) grid',
     );
     expect(door.querySelector('.gs-cap-eyebrow')?.textContent?.trim()).toBe(
-      'Sampling · Evidence grid',
+      'Sampling · Comparison grid',
     );
     expect(door.querySelector('.gs-cap-meta')?.textContent?.trim()).toBe(
       '4 frames · 2 × 2',

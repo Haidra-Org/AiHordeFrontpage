@@ -2216,7 +2216,7 @@ describe('GenerateFormComponent cost and size advice', () => {
     const { host } = await render({ sampler_name: 'k_heun', steps: 30 });
 
     expect(lines(host, 'steps')).toContain(
-      'k_heun does about \u00d72 the work per step, so 20 steps already cost what 40 do on a plain sampler. More rarely helps.',
+      'k_heun does about ×2 the work per step, so 20 steps cost about what 40 steps cost with a sampler that runs the model once per step.',
     );
   });
 
@@ -3918,7 +3918,7 @@ describe('GenerateFormComponent first-visit prompt line', () => {
     const { host } = await render();
 
     expect(host.textContent).toContain(
-      'Only the prompt is required. Say what you want to see, then press Generate.',
+      'Write a description of the image you want, then press Generate. The studio uses defaults for the other settings.',
     );
     expect(line(host)?.textContent?.trim()).toBe('Got it');
   });
