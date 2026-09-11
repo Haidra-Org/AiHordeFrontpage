@@ -114,15 +114,21 @@
   --gs-sec-alchemy: var(--hd-green);
 }
 
-/* The lightbox the evidence capsules are drawn on, under the studio's own
-   names: the plate does not flip with the theme, only its rim does, and both
-   halves are the design system's. */
+/* The plate the evidence capsules are drawn on, under the studio's own names;
+   the values and the theme flip are the design system's. The shade is the one
+   name the family has no counterpart for: the tone a picture's edge is
+   vignetted with and a sheet over the plate casts, which has to be a dark cast
+   on the light plate and near-black on the dark one. */
 :root {
   --gs-stage: var(--hd-stage);
   --gs-stage-rim: var(--hd-stage-rim);
   --gs-stage-ink: var(--hd-stage-ink);
   --gs-stage-label: var(--hd-stage-label);
   --gs-stage-scrim: var(--hd-stage-scrim);
+  --gs-stage-shade: rgb(17 24 39 / 22%);
+}
+.dark {
+  --gs-stage-shade: rgb(0 0 0 / 95%);
 }
 
 /* The dark half, lightened to clear 3:1 on the dark panel and card. */
@@ -11269,8 +11275,8 @@ app-gs-sweep-scrub {
   background: var(--gs-stage);
   box-shadow:
     inset 0 0 0 1px var(--gs-stage-rim),
-    inset 0 14px 32px -22px rgb(0 0 0 / 95%),
-    inset 0 -14px 32px -22px rgb(0 0 0 / 95%);
+    inset 0 14px 32px -22px var(--gs-stage-shade),
+    inset 0 -14px 32px -22px var(--gs-stage-shade);
   touch-action: pan-y;
   cursor: pointer;
 }
@@ -11728,7 +11734,7 @@ app-gs-sweep-scrub {
   border-top: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-md) var(--gs-radius-md) 0 0;
   background: var(--gs-stage);
-  box-shadow: 0 -18px 44px -14px rgb(0 0 0 / 85%);
+  box-shadow: 0 -18px 44px -14px var(--gs-stage-shade);
   overscroll-behavior: contain;
 }
 .gen-studio .gs-plate-details:focus-visible {
@@ -11943,7 +11949,9 @@ app-gs-sweep-scrub {
   padding: 0 var(--gs-space-2);
   border: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-pill);
-  background: none;
+  /* On the plate these ride the picture, so they take the same pane as the
+     glyphs beside them rather than trusting the picture to carry the ink. */
+  background: var(--gs-stage-scrim);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: var(--gs-text-xs);
   font-weight: 600;
@@ -12463,9 +12471,8 @@ app-gs-sweep-scrub {
   color: var(--gs-stage-label);
 }
 /* The controls that were quiet blue links on the page are quiet plate ink here:
-   an accent picked for contrast on a white card is not the accent that reads on
-   a lightbox, and every one of these is a second look at the frame rather than
-   a way off it. */
+   every one of these is a second look at the frame rather than a way off it,
+   and the plate's own ink says so where the page accent would say "leave". */
 .gen-studio .gs-plate .gs-sweep-why,
 .gen-studio .gs-plate .gs-sweep-why-link,
 .gen-studio .gs-plate .gs-sweep-pair-mode,
@@ -12483,7 +12490,9 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate .gs-sweep-why-body {
   border-color: var(--gs-stage-rim);
-  background: rgba(255, 255, 255, 0.04);
+  /* A wash of the plate's ink rather than of white, so the tint lifts the
+     dark plate and deepens the light one instead of vanishing on it. */
+  background: color-mix(in srgb, var(--gs-stage-ink) 4%, transparent);
   color: var(--gs-stage-label);
 }
 .gen-studio .gs-plate .gs-sweep-why-list {
@@ -12520,7 +12529,7 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-plate .gs-sweep-variant.is-on {
   border-color: var(--gs-stage-label);
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--gs-stage-ink) 8%, transparent);
   color: var(--gs-stage-ink);
 }
 
