@@ -8841,6 +8841,9 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-worker-opt {
   display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: none;
   flex-direction: column;
   gap: 2px;
   min-height: 36px;

@@ -3686,6 +3686,26 @@ describe('GenerateFormComponent worker picker keyboard', () => {
     ).toBe(true);
     expect(options.filter((option) => option.tabIndex === 0).length).toBe(1);
   });
+
+  it('opens and filters the worker list when typing starts', async () => {
+    const { host, fixture } = await renderPicker();
+    fixture.componentInstance.closeWorkerPick();
+    fixture.detectChanges();
+
+    const input = host.querySelector<HTMLInputElement>('.gs-worker-pick input');
+    expect(input).not.toBeNull();
+    input!.value = 'bet';
+    input!.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    const options = Array.from(
+      host.querySelectorAll<HTMLButtonElement>('.gs-worker-opt'),
+    );
+    expect(input!.getAttribute('aria-expanded')).toBe('true');
+    expect(options.map((option) => option.textContent)).toEqual([
+      expect.stringContaining('Beta'),
+    ]);
+  });
 });
 
 /**

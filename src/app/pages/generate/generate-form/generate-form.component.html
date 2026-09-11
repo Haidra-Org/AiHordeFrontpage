@@ -2044,16 +2044,22 @@
                         <input
                           class="gs-seed-input"
                           type="text"
+                          role="combobox"
                           autocomplete="off"
                           spellcheck="false"
                           [value]="workerDraft()"
+                          [attr.aria-expanded]="workerPickOpen()"
+                          aria-controls="generate-worker-options"
+                          aria-autocomplete="list"
                           [attr.aria-label]="
                             'generate.form.worker_add_label' | transloco
                           "
                           [placeholder]="
                             'generate.form.worker_add_placeholder' | transloco
                           "
-                          (input)="workerDraft.set($any($event.target).value)"
+                          (input)="
+                            onWorkerDraftInput($any($event.target).value)
+                          "
                           (keydown.enter)="$event.preventDefault(); addWorker()"
                         />
                         <button
@@ -2085,6 +2091,7 @@
                       </div>
                       @if (workerPickOpen()) {
                         <div
+                          id="generate-worker-options"
                           class="gs-worker-pop"
                           role="listbox"
                           [attr.aria-label]="

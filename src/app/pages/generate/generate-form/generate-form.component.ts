@@ -1222,6 +1222,15 @@ export class GenerateFormComponent implements OnInit {
     );
   });
 
+  /** Filter and reveal the worker list as soon as a search is entered. */
+  public onWorkerDraftInput(value: string): void {
+    this.workerDraft.set(value);
+    this.workerPickActive.set(0);
+    if (value.trim() !== '') {
+      this.workerPickOpen.set(true);
+    }
+  }
+
   public toggleWorkerPick(): void {
     this.workerPickOpen.set(!this.workerPickOpen());
     this.workerPickActive.set(0);
