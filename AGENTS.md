@@ -21,6 +21,10 @@ require; when a rule here and the code disagree, fix one of them rather than wor
   in STYLING.md.
 - Every reader-facing string goes through transloco (`src/assets/i18n/en.json`) and is covered by
   `src/app/i18n-coverage.spec.ts`; no hardcoded English in templates or TypeScript, including pluralisation.
+- Reader-facing copy makes only claims it can stand behind: general facts, named limits and published suggestions,
+  or observations labelled as being about the example shown (copy.md, Claims). The scope of an example is stated
+  once per page or strip in its own element, never repeated in captions. Sweep captions in the haidra-assets
+  `param_sweeps` specs are reader-facing copy and are held to the same standard.
 - Documentation content (tutorial flows, settings reference, sections, examples) lives in `src/app/content/` as data.
   Pages take their identity from those registries; components render them. Do not author copy or step logic in
   components.
