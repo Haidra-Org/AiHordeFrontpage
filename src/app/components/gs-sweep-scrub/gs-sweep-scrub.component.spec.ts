@@ -457,22 +457,18 @@ describe('GsSweepScrubComponent', () => {
       expect(find('.gs-sweep-expand')).not.toBeNull();
     });
 
-    it('carries the stop caption and folds the strip caption under a disclosure', async () => {
+    it('carries the stop caption with the strip caption standing under it', async () => {
       await setUp({ startExpanded: true });
 
       expect(find('.gs-sweep-caption-text')?.textContent?.trim()).toBe(
         'The face and the light have settled.',
       );
-      // The strip's own caption is the same sentence at every stop, so it is
-      // one step quieter than the caption of the frame on show.
-      expect(text()).not.toContain('How far the sampler gets to run');
-
-      find<HTMLButtonElement>('.gs-plate-col > .gs-sweep-why')!.click();
-      fixture.detectChanges();
-
-      expect(text()).toContain(
+      // The strip's own caption is the one line that says what all the
+      // pictures are, so it is in view rather than behind a fold.
+      expect(find('.gs-plate-lead')?.textContent?.trim()).toBe(
         'How far the sampler gets to run before the picture is handed back.',
       );
+      expect(find('.gs-plate-read .gs-sweep-caption')).not.toBeNull();
     });
 
     it('discloses a frame picked from a batch', async () => {
@@ -557,6 +553,53 @@ describe('GsSweepScrubComponent', () => {
       expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
       expect(cells[2].getAttribute('aria-current')).toBe('true');
       expect(all('.gs-sweep-film-img')[2].getAttribute('loading')).toBe('lazy');
+    });
+
+    it('offers carets only where the filmstrip hides frames, and they move the row without choosing', async () => {
+      await setUp({ startExpanded: true });
+
+      // A row that fits its lane has nothing to scroll to.
+      expect(find('.gs-sweep-film-caret')).toBeNull();
+
+      const strip = find<HTMLElement>('.gs-sweep-film')!;
+      Object.defineProperty(strip, 'scrollWidth', { value: 600 });
+      Object.defineProperty(strip, 'clientWidth', { value: 300 });
+      Object.defineProperty(strip, 'scrollLeft', { value: 0, writable: true });
+      const scrollBy = vi.fn();
+      strip.scrollBy = scrollBy;
+      strip.dispatchEvent(new Event('scroll'));
+      fixture.detectChanges();
+
+      const start = find<HTMLButtonElement>('.gs-sweep-film-caret--start')!;
+      const end = find<HTMLButtonElement>('.gs-sweep-film-caret--end')!;
+      expect(start.disabled).toBe(true);
+      expect(end.disabled).toBe(false);
+      expect(end.getAttribute('aria-label')).toBe(
+        'Scroll the row to later frames',
+      );
+
+      end.click();
+      fixture.detectChanges();
+
+      expect(scrollBy).toHaveBeenCalledWith(
+        expect.objectContaining({ left: 240 }),
+      );
+      expect(
+        all<HTMLButtonElement>('.gs-sweep-film-go')[1].getAttribute(
+          'aria-current',
+        ),
+      ).toBe('true');
+
+      strip.scrollLeft = 300;
+      strip.dispatchEvent(new Event('scroll'));
+      fixture.detectChanges();
+
+      expect(
+        find<HTMLButtonElement>('.gs-sweep-film-caret--start')!.disabled,
+      ).toBe(false);
+      expect(
+        find<HTMLButtonElement>('.gs-sweep-film-caret--end')!.disabled,
+      ).toBe(true);
     });
 
     it('carries slider semantics on the rail and moves with the keyboard', async () => {
@@ -680,7 +723,10 @@ describe('GsSweepScrubComponent', () => {
       reportWidth(900);
 
       const chips = all<HTMLButtonElement>('.gs-sweep-chip');
-      expect(find('.gs-sweep-chips--overlay')).not.toBeNull();
+      // With room beside the picture the chips read in the column next to
+      // it rather than over the subject.
+      expect(find('.gs-plate-read .gs-sweep-chips--read')).not.toBeNull();
+      expect(find('.gs-sweep-stage .gs-sweep-chips')).toBeNull();
       expect(find('.gs-sweep-chips--dock')).toBeNull();
       expect(chips.map((chip) => chip.textContent?.trim())).toEqual([
         en['generate.sweeps.source_label'],
@@ -1876,6 +1922,103 @@ describe('GsSweepScrubComponent', () => {
     });
   });
 
+  describe('the plate demonstrating itself', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('is offered as a word in the head and not opened unasked', async () => {
+      await setUp({ startExpanded: true });
+
+      expect(find('.gs-plate-tour-go')?.textContent?.trim()).toBe(
+        'What is this?',
+      );
+      expect(find('.gs-plate-tour')).toBeNull();
+    });
+
+    it('walks the slider through every value, then visits each region, and ends where the reader was', async () => {
+      await setUp({ startExpanded: true });
+      vi.useFakeTimers({
+        toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'],
+      });
+      // The reader is on the middle stop; the tour must give it back.
+      expect(
+        all<HTMLButtonElement>('.gs-sweep-film-go')[1].getAttribute(
+          'aria-current',
+        ),
+      ).toBe('true');
+
+      find<HTMLButtonElement>('.gs-plate-tour-go')!.click();
+      fixture.detectChanges();
+
+      const bubble = find<HTMLElement>('.gs-plate-tour')!;
+      expect(bubble).not.toBeNull();
+      expect(bubble.textContent).toContain(
+        'Every picture here was made from the same prompt, model and seed. Only Steps changed',
+      );
+      expect(bubble.textContent).toContain('1 of 4');
+      // The scrub starts from the first stop.
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 4');
+
+      // Three stops at the slowest pace: the slider reaches the last one.
+      vi.advanceTimersByTime(1500);
+      fixture.detectChanges();
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 30');
+      expect(find('.gs-tour-target')).not.toBeNull();
+
+      // The hold ends and the next step is the caption.
+      vi.advanceTimersByTime(1600);
+      fixture.detectChanges();
+      expect(find('.gs-plate-tour')?.textContent).toContain(
+        'This line says what changed',
+      );
+      expect(find('.gs-plate-tour')?.textContent).toContain('2 of 4');
+
+      // Next by hand, twice, then Done.
+      find<HTMLButtonElement>('.gs-plate-tour-btn--go')!.click();
+      fixture.detectChanges();
+      expect(find('.gs-plate-tour')?.textContent).toContain(
+        'Each small picture is one value',
+      );
+      find<HTMLButtonElement>('.gs-plate-tour-btn--go')!.click();
+      fixture.detectChanges();
+      expect(find('.gs-plate-tour')?.textContent).toContain(
+        'Open the picture full size',
+      );
+      expect(
+        find<HTMLButtonElement>('.gs-plate-tour-btn--go')?.textContent?.trim(),
+      ).toBe('Done');
+      find<HTMLButtonElement>('.gs-plate-tour-btn--go')!.click();
+      fixture.detectChanges();
+
+      expect(find('.gs-plate-tour')).toBeNull();
+      expect(find('.gs-tour-target')).toBeNull();
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 12');
+      expect(document.activeElement).toBe(find('.gs-plate-tour-go'));
+    });
+
+    it('stands aside the moment the reader presses the plate', async () => {
+      await setUp({ startExpanded: true });
+      vi.useFakeTimers({
+        toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'],
+      });
+      find<HTMLButtonElement>('.gs-plate-tour-go')!.click();
+      fixture.detectChanges();
+      expect(find('.gs-plate-tour')).not.toBeNull();
+
+      find<HTMLElement>('.gs-sweep-stage')!.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true }),
+      );
+      fixture.detectChanges();
+
+      expect(find('.gs-plate-tour')).toBeNull();
+      // Nothing left ticking: the clock can run on without moving the slider.
+      vi.advanceTimersByTime(10000);
+      fixture.detectChanges();
+      expect(find('.gs-sweep-pill')?.textContent?.trim()).toBe('Steps 12');
+    });
+  });
+
   describe('the copy it asks the ledger for', () => {
     it('reads every line it names out of the translation file', () => {
       const wanted = [
@@ -1883,7 +2026,6 @@ describe('GsSweepScrubComponent', () => {
         'generate.sweeps.card_door_pair',
         'generate.sweeps.stage_role',
         'generate.sweeps.compare_group',
-        'generate.sweeps.why',
         'generate.sweeps.details',
         'generate.sweeps.details_close',
         'generate.sweeps.layout_grid',

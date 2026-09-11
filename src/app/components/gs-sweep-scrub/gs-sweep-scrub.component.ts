@@ -4,6 +4,8 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
+  afterNextRender,
   afterRenderEffect,
   computed,
   effect,
@@ -160,6 +162,25 @@ export const LAUNCHER_HOST_PX = 480;
 type StopLayout = 'grid' | 'strip';
 
 /**
+ * The regions the tour visits, in order. The scrub comes first because it is
+ * the idea; the rest are the parts of the plate a reader meets after it.
+ */
+type TourStep = 'scrub' | 'caption' | 'compare' | 'strip' | 'enlarge';
+
+/** How long a tour step that only points stays up before moving on. */
+const TOUR_STEP_MS = 4500;
+/** How long the scrub step holds on the last value before moving on. */
+const TOUR_SCRUB_HOLD_MS = 1500;
+/** The pace of the self-driven scrub, bounded so few or many stops both read. */
+const TOUR_SCRUB_MIN_MS = 260;
+const TOUR_SCRUB_MAX_MS = 700;
+const TOUR_SCRUB_TOTAL_MS = 4000;
+/** The gap between a tour bubble and the region it is about, in px. */
+const TOUR_BUBBLE_GAP_PX = 10;
+/** How wide a tour bubble is, bounded by the plate it sits in. */
+const TOUR_BUBBLE_PX = 320;
+
+/**
  * Where the reader's answer about that is kept, one slot per host shape. The
  * answer on a documentation page and the answer in a phone sheet are different
  * answers, and a single slot would have the last surface visited overwrite the
@@ -177,6 +198,13 @@ const LAYOUT_KEYS: Readonly<Record<'wide' | 'narrow', string>> = {
  * actually left the box keeps it still until it has to move.
  */
 const FILM_EDGE_PX = 8;
+
+/**
+ * How much of the filmstrip's lane one caret press scrolls by. Less than the
+ * whole lane, so a frame that was at the edge is still in view after the move
+ * and the reader can tell how far the row went.
+ */
+const FILM_PAGE_FRACTION = 0.8;
 
 /**
  * A parameter sweep the reader can explore: the same scene rendered across a
@@ -456,6 +484,7 @@ const FILM_EDGE_PX = 8;
           class="gs-sweep-chips"
           [class.gs-sweep-chips--overlay]="placement === 'overlay'"
           [class.gs-sweep-chips--dock]="placement === 'dock'"
+          [class.gs-sweep-chips--read]="placement === 'read'"
           role="group"
           [attr.aria-label]="'generate.sweeps.compare_group' | transloco"
         >
@@ -494,7 +523,7 @@ const FILM_EDGE_PX = 8;
             />
           }
         </span>
-        @if (wide()) {
+        @if (inViewer && wide()) {
           <ng-container
             [ngTemplateOutlet]="compareControls"
             [ngTemplateOutletContext]="{ placement: 'overlay' }"
@@ -668,12 +697,29 @@ const FILM_EDGE_PX = 8;
             </span>
           </div>
         } @else if (expanded()) {
-          <div class="gs-plate" [class.is-wide]="wide()">
+          <div
+            #plate
+            class="gs-plate"
+            [class.is-wide]="wide()"
+            [class.is-touring]="tourStep() !== null"
+          >
             <div class="gs-plate-head">
               <ng-container [ngTemplateOutlet]="badge" />
               <span class="gs-plate-title">
                 {{ parameterLabelKey() | transloco }}
               </span>
+              <!-- The way in for a reader who does not know what they are
+                   looking at: a quiet word, never a prompt. The plate has to
+                   read on its own; this is for the reader it did not reach. -->
+              <button
+                #tourOpener
+                type="button"
+                class="gs-plate-tour-go"
+                [attr.aria-expanded]="tourStep() !== null"
+                (click)="startTour()"
+              >
+                {{ 'generate.sweeps.tour_open' | transloco }}
+              </button>
               <button type="button" class="gs-plate-x" (click)="collapse()">
                 {{ 'generate.sweeps.collapse' | transloco }}
                 <app-icon name="x-mark" class="gs-ico-sm" />
@@ -733,7 +779,80 @@ const FILM_EDGE_PX = 8;
                     [ngTemplateOutletContext]="{ placement: 'dock' }"
                   />
                 }
+              </div>
 
+              <!-- What the picture is and what it shows, read beside it where
+                   there is room and under the controls where there is not.
+                   The value and the frame's caption come first because they
+                   are about the picture on show; the strip's sentence follows
+                   because it is the same at every stop; the comparisons close
+                   the column because they are something to do rather than
+                   something to read. -->
+              @if (!(wide() && detailsOpen())) {
+                <div class="gs-plate-read">
+                  @if (wide()) {
+                    <span class="gs-plate-read-head">
+                      <span class="gs-plate-read-value">{{ pillText() }}</span>
+                      @if (viewSize(); as size) {
+                        <app-gs-pixel-badge
+                          class="gs-pixels--read"
+                          [width]="size.width"
+                          [height]="size.height"
+                          [shown]="zoomedIn() ? shownPercent() : null"
+                        />
+                      }
+                    </span>
+                  }
+                  <!-- What this value did to the picture. The caption is the
+                       live region, so a scrub announces the frame it landed on
+                       rather than a bare number. Under a contact sheet on a
+                       narrow host every stop already carries its own caption,
+                       and this one stays in the page for the announcement
+                       alone. -->
+                  <p
+                    class="gs-sweep-caption"
+                    [class.is-quiet]="gridOn() && !wide()"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    @if (showsPair()) {
+                      @for (side of pairSides()!; track side.file) {
+                        <span class="gs-sweep-pair-cap">{{
+                          side.caption
+                        }}</span>
+                      }
+                    } @else {
+                      <span class="gs-sweep-caption-text">{{
+                        stop().caption
+                      }}</span>
+                      <!-- Curation is disclosed rather than hidden: a frame
+                           picked from a batch says so, because generation is
+                           stochastic and pretending the first roll looked like
+                           this would teach the wrong lesson. -->
+                      @if ((stop().batch_size ?? 1) > 1) {
+                        <span class="gs-sweep-caption-batch">{{
+                          'generate.sweeps.batch_note'
+                            | transloco: { n: stop().batch_size }
+                        }}</span>
+                      }
+                    }
+                  </p>
+                  <!-- What the whole strip is about. It is the same sentence
+                       however far along the reader has scrubbed, and it is the
+                       one line that says what all these pictures are, so it
+                       stands where the reader can find it rather than behind a
+                       fold. -->
+                  <p class="gs-plate-lead">{{ strip()!.caption }}</p>
+                  @if (wide()) {
+                    <ng-container
+                      [ngTemplateOutlet]="compareControls"
+                      [ngTemplateOutletContext]="{ placement: 'read' }"
+                    />
+                  }
+                </div>
+              }
+
+              <div class="gs-plate-under">
                 @if (scrubbable()) {
                   <!-- One slit per frame rather than a track with a knob on
                        it. A range input can only say "somewhere between two
@@ -883,82 +1002,92 @@ const FILM_EDGE_PX = 8;
                   } @else {
                     <!-- Every stop in a row that snaps, the one on show
                          enlarged: a filmstrip says how far through the set the
-                         reader is in a way a number cannot. -->
-                    <ul
-                      class="gs-sweep-film"
-                      [class.is-dragging]="dragging()"
-                      role="list"
+                         reader is in a way a number cannot. A row longer than
+                         its lane hides frames past either edge, and a pointer
+                         has no flick to reach them with, so the lane carries a
+                         caret at each edge that has frames behind it. The
+                         carets move the row and nothing else: the stop on show
+                         is the rail's and the cells' to change. -->
+                    <div
+                      class="gs-sweep-film-lane"
+                      [class.has-earlier]="filmEarlier()"
+                      [class.has-later]="filmLater()"
                     >
-                      @for (
-                        option of stops();
-                        track option.file;
-                        let i = $index
-                      ) {
-                        <li class="gs-sweep-film-cell">
-                          <button
-                            #filmCell
-                            type="button"
-                            class="gs-sweep-film-go"
-                            [class.is-at]="index() === i"
-                            [attr.aria-current]="index() === i ? 'true' : null"
-                            [attr.aria-label]="
-                              'generate.sweeps.stop_go'
-                                | transloco: { value: namedValue(option) }
-                            "
-                            (click)="goToStop(i)"
-                          >
-                            <img
-                              class="gs-sweep-film-img"
-                              [src]="thumbUrl(option)"
-                              alt=""
-                              loading="lazy"
-                              decoding="async"
-                              fetchpriority="low"
-                            />
-                            @if (option.crop) {
-                              <span class="gs-sweep-crop-tag">{{
-                                'generate.sweeps.crop_tag' | transloco
-                              }}</span>
-                            }
-                            <span class="gs-sweep-film-value">{{
-                              valueTextOf(option)
-                            }}</span>
-                          </button>
-                        </li>
+                      @if (filmEarlier() || filmLater()) {
+                        <button
+                          type="button"
+                          class="gs-sweep-film-caret gs-sweep-film-caret--start"
+                          [disabled]="!filmEarlier()"
+                          [attr.aria-label]="
+                            'generate.sweeps.film_earlier' | transloco
+                          "
+                          (click)="scrollFilm(-1)"
+                        >
+                          <app-icon name="chevron-left" class="gs-ico-sm" />
+                        </button>
                       }
-                    </ul>
+                      <ul
+                        #filmStrip
+                        class="gs-sweep-film"
+                        [class.is-dragging]="dragging()"
+                        role="list"
+                      >
+                        @for (
+                          option of stops();
+                          track option.file;
+                          let i = $index
+                        ) {
+                          <li class="gs-sweep-film-cell">
+                            <button
+                              #filmCell
+                              type="button"
+                              class="gs-sweep-film-go"
+                              [class.is-at]="index() === i"
+                              [attr.aria-current]="
+                                index() === i ? 'true' : null
+                              "
+                              [attr.aria-label]="
+                                'generate.sweeps.stop_go'
+                                  | transloco: { value: namedValue(option) }
+                              "
+                              (click)="goToStop(i)"
+                            >
+                              <img
+                                class="gs-sweep-film-img"
+                                [src]="thumbUrl(option)"
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                fetchpriority="low"
+                              />
+                              @if (option.crop) {
+                                <span class="gs-sweep-crop-tag">{{
+                                  'generate.sweeps.crop_tag' | transloco
+                                }}</span>
+                              }
+                              <span class="gs-sweep-film-value">{{
+                                valueTextOf(option)
+                              }}</span>
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                      @if (filmEarlier() || filmLater()) {
+                        <button
+                          type="button"
+                          class="gs-sweep-film-caret gs-sweep-film-caret--end"
+                          [disabled]="!filmLater()"
+                          [attr.aria-label]="
+                            'generate.sweeps.film_later' | transloco
+                          "
+                          (click)="scrollFilm(1)"
+                        >
+                          <app-icon name="chevron-right" class="gs-ico-sm" />
+                        </button>
+                      }
+                    </div>
                   }
                 }
-
-                <!-- What this value did to the picture. The caption is the live
-                     region, so a scrub announces the frame it landed on rather
-                     than a bare number. -->
-                <p
-                  class="gs-sweep-caption"
-                  [class.is-quiet]="gridOn()"
-                  role="status"
-                  aria-live="polite"
-                >
-                  @if (showsPair()) {
-                    @for (side of pairSides()!; track side.file) {
-                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
-                    }
-                  } @else {
-                    <span class="gs-sweep-caption-text">{{
-                      stop().caption
-                    }}</span>
-                    <!-- Curation is disclosed rather than hidden: a frame
-                         picked from a batch says so, because generation is
-                         stochastic and pretending the first roll looked like
-                         this would teach the wrong lesson. -->
-                    @if ((stop().batch_size ?? 1) > 1) {
-                      <span class="gs-sweep-caption-batch">{{
-                        'generate.sweeps.batch_note'
-                          | transloco: { n: stop().batch_size }
-                      }}</span>
-                    }
-                  }
-                </p>
 
                 @if (tiled() && pairSides(); as sides) {
                   <div class="gs-sweep-solos">
@@ -976,70 +1105,52 @@ const FILM_EDGE_PX = 8;
                     {{ 'generate.sweeps.loading' | transloco }}
                   </p>
                 }
+              </div>
 
-                <!-- What the whole strip is about, folded: it is the same
-                     sentence however far along the reader has scrubbed, and
-                     over the stop's own caption it reads as the louder of the
-                     two. -->
+              <div class="gs-plate-foot">
                 <button
+                  #detailsHandle
                   type="button"
-                  class="gs-sweep-why"
-                  [attr.aria-expanded]="whyOpen()"
-                  (click)="toggleWhy()"
+                  class="gs-plate-details-go"
+                  [attr.aria-expanded]="detailsOpen()"
+                  (click)="toggleDetails()"
                 >
-                  {{ 'generate.sweeps.why' | transloco }}
+                  <app-icon
+                    [name]="detailsOpen() ? 'chevron-up' : 'chevron-down'"
+                    class="gs-ico-sm"
+                  />
+                  {{ 'generate.sweeps.details' | transloco }}
                 </button>
-                @if (whyOpen()) {
-                  <div class="gs-sweep-why-body">
-                    <p>{{ strip()!.caption }}</p>
-                  </div>
-                }
-
-                <div class="gs-plate-foot">
+                <span class="gs-plate-grow"></span>
+                @if (offersWipeToggle() && showsPair()) {
                   <button
-                    #detailsHandle
                     type="button"
-                    class="gs-plate-details-go"
-                    [attr.aria-expanded]="detailsOpen()"
-                    (click)="toggleDetails()"
+                    class="gs-sweep-pair-mode"
+                    (click)="toggleWipe()"
                   >
-                    <app-icon
-                      [name]="detailsOpen() ? 'chevron-up' : 'chevron-down'"
-                      class="gs-ico-sm"
-                    />
-                    {{ 'generate.sweeps.details' | transloco }}
+                    {{
+                      (wiped()
+                        ? 'generate.sweeps.pair_show_apart'
+                        : 'generate.sweeps.pair_show_wiped'
+                      ) | transloco
+                    }}
                   </button>
-                  <span class="gs-plate-grow"></span>
-                  @if (offersWipeToggle() && showsPair()) {
-                    <button
-                      type="button"
-                      class="gs-sweep-pair-mode"
-                      (click)="toggleWipe()"
-                    >
-                      {{
-                        (wiped()
-                          ? 'generate.sweeps.pair_show_apart'
-                          : 'generate.sweeps.pair_show_wiped'
-                        ) | transloco
-                      }}
-                    </button>
-                  }
-                  @if (offersLayoutChoice()) {
-                    <button
-                      type="button"
-                      class="gs-plate-sheet-go"
-                      [attr.aria-pressed]="gridOn()"
-                      (click)="toggleLayout()"
-                    >
-                      {{
-                        (gridOn()
-                          ? 'generate.sweeps.layout_strip'
-                          : 'generate.sweeps.layout_grid'
-                        ) | transloco
-                      }}
-                    </button>
-                  }
-                </div>
+                }
+                @if (offersLayoutChoice()) {
+                  <button
+                    type="button"
+                    class="gs-plate-sheet-go"
+                    [attr.aria-pressed]="gridOn()"
+                    (click)="toggleLayout()"
+                  >
+                    {{
+                      (gridOn()
+                        ? 'generate.sweeps.layout_strip'
+                        : 'generate.sweeps.layout_grid'
+                      ) | transloco
+                    }}
+                  </button>
+                }
               </div>
 
               @if (detailsOpen()) {
@@ -1127,6 +1238,64 @@ const FILM_EDGE_PX = 8;
                 </aside>
               }
             </div>
+
+            <!-- The tour: the plate demonstrating itself. Each step rings one
+                 region and says what it is for in a bubble beside it; the
+                 first step drives the slider through every value so the idea
+                 of the whole thing, one setting changing under one picture,
+                 is seen rather than described. It moves on by itself and also
+                 on a press, and any press on the plate outside it ends it,
+                 because a reader who has started exploring no longer needs a
+                 demonstration. -->
+            @if (tourStep(); as step) {
+              <div
+                #tourBubble
+                class="gs-plate-tour"
+                role="dialog"
+                tabindex="-1"
+                [attr.aria-label]="'generate.sweeps.tour_title' | transloco"
+                [style.top.px]="tourPlace().top"
+                [style.left.px]="tourPlace().left"
+                [style.width.px]="tourPlace().width"
+                (keydown.escape)="endTour()"
+              >
+                <p class="gs-plate-tour-text" aria-live="polite">
+                  {{
+                    tourTextKey()
+                      | transloco: { setting: parameterLabelKey() | transloco }
+                  }}
+                </p>
+                <span class="gs-plate-tour-foot">
+                  <span class="gs-plate-tour-pos">
+                    {{
+                      'generate.sweeps.tour_position'
+                        | transloco: { at: tourAt() + 1, n: tourSteps().length }
+                    }}
+                  </span>
+                  @if (tourAt() < tourSteps().length - 1) {
+                    <button
+                      type="button"
+                      class="gs-plate-tour-btn"
+                      (click)="endTour()"
+                    >
+                      {{ 'generate.sweeps.tour_skip' | transloco }}
+                    </button>
+                  }
+                  <button
+                    type="button"
+                    class="gs-plate-tour-btn gs-plate-tour-btn--go"
+                    (click)="advanceTour()"
+                  >
+                    {{
+                      (tourAt() < tourSteps().length - 1
+                        ? 'generate.sweeps.tour_next'
+                        : 'generate.sweeps.tour_done'
+                      ) | transloco
+                    }}
+                  </button>
+                </span>
+              </div>
+            }
           </div>
         } @else {
           <!-- The offer: the difference itself, with the divider already in the
@@ -1355,6 +1524,7 @@ export class GsSweepScrubComponent {
   private readonly transloco = inject(TranslocoService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly scrollLock = useScrollLock();
 
   /** API field name the sweep varies, e.g. `steps`. */
@@ -1407,7 +1577,6 @@ export class GsSweepScrubComponent {
   private readonly viewer = signal(false);
   private readonly variant = signal(false);
   private readonly variantWhy = signal(false);
-  private readonly why = signal(false);
   private readonly details = signal(false);
   private readonly holding = signal(false);
   private readonly against = signal<'source' | 'map' | null>(null);
@@ -1486,8 +1655,6 @@ export class GsSweepScrubComponent {
   public readonly onVariant = this.variant.asReadonly();
   /** Whether the note under the variant toggle is unfolded. */
   public readonly variantWhyOpen = this.variantWhy.asReadonly();
-  /** Whether the strip's own caption is unfolded under the stop's. */
-  public readonly whyOpen = this.why.asReadonly();
   public readonly detailsOpen = this.details.asReadonly();
   /** Whether a finger is resting on the stage, holding the comparison up. */
   public readonly held = this.holding.asReadonly();
@@ -1510,6 +1677,69 @@ export class GsSweepScrubComponent {
   private readonly openerRefs = viewChildren<ElementRef<HTMLElement>>('opener');
   private readonly filmCells =
     viewChildren<ElementRef<HTMLElement>>('filmCell');
+  private readonly filmStrip = viewChild<ElementRef<HTMLElement>>('filmStrip');
+  private readonly plateRef = viewChild<ElementRef<HTMLElement>>('plate');
+  private readonly tourOpenerRef =
+    viewChild<ElementRef<HTMLElement>>('tourOpener');
+  private readonly tourBubbleRef =
+    viewChild<ElementRef<HTMLElement>>('tourBubble');
+
+  /** Which step of the tour is up, or null while the plate is its own. */
+  private readonly tour = signal<TourStep | null>(null);
+  public readonly tourStep = this.tour.asReadonly();
+  /** Where the bubble sits, in the plate's own coordinates. */
+  public readonly tourPlace = signal({
+    top: 0,
+    left: 0,
+    width: TOUR_BUBBLE_PX,
+  });
+  /** The stop the reader was on when the tour began, given back when it ends. */
+  private tourReturnTo = 0;
+  private tourTimer: ReturnType<typeof setTimeout> | null = null;
+  private tourScrubTimer: ReturnType<typeof setInterval> | null = null;
+  /** The element the current step rings, to take the ring off again. */
+  private tourTarget: HTMLElement | null = null;
+  private tourEndOnPress: ((event: Event) => void) | null = null;
+
+  /** The steps this plate has regions for: no compare step without a chip. */
+  public readonly tourSteps = computed<TourStep[]>(() => {
+    const steps: TourStep[] = ['scrub'];
+    // A strip whose frames carry no caption of their own has no line to
+    // point at; the strip's sentence stands in for it.
+    if (this.strip()?.stops.some((stop) => stop.caption)) {
+      steps.push('caption');
+    }
+    if (this.comparisons().length > 0) {
+      steps.push('compare');
+    }
+    if (this.scrubbable()) {
+      steps.push('strip');
+    }
+    steps.push('enlarge');
+    return steps;
+  });
+  public readonly tourAt = computed(() => {
+    const step = this.tour();
+    return step === null ? -1 : this.tourSteps().indexOf(step);
+  });
+  /** The sentence for the step, the strip's when the frames are a row, the sheet's when a grid. */
+  public readonly tourTextKey = computed(() => {
+    const step = this.tour();
+    if (step === 'strip') {
+      return this.gridOn()
+        ? 'generate.sweeps.tour_grid'
+        : 'generate.sweeps.tour_strip';
+    }
+    return `generate.sweeps.tour_${step ?? 'scrub'}`;
+  });
+
+  /**
+   * Whether the filmstrip has frames out of sight past its start or its end.
+   * Measured from the element rather than counted from the stops: nothing here
+   * knows how wide the lane came out or how many cells fit in it.
+   */
+  public readonly filmEarlier = signal(false);
+  public readonly filmLater = signal(false);
 
   /** Where focus goes when the full-size view closes. */
   private returnFocusTo: HTMLElement | null = null;
@@ -2146,6 +2376,10 @@ export class GsSweepScrubComponent {
   });
 
   constructor() {
+    // A tour still running when the plate leaves the page has timers that
+    // would fire into nothing.
+    this.destroyRef.onDestroy(() => this.clearTourTimers());
+
     void this.sweeps.ensureLoaded();
     this.observeHostWidth();
     this.observeViewBox();
@@ -2264,20 +2498,51 @@ export class GsSweepScrubComponent {
       }
       const box = cell.getBoundingClientRect();
       const lane = strip.getBoundingClientRect();
-      // A lane nothing has laid out yet has no edges to be outside of.
-      if (
-        lane.width > 0 &&
-        box.left >= lane.left - FILM_EDGE_PX &&
-        box.right <= lane.right + FILM_EDGE_PX
-      ) {
+      // A lane nothing has laid out yet has nowhere to move to, and a frame
+      // already at the centre needs no move.
+      if (lane.width === 0) {
+        return;
+      }
+      const offset = box.left + box.width / 2 - (lane.left + lane.width / 2);
+      if (Math.abs(offset) <= FILM_EDGE_PX) {
         return;
       }
       // The lane alone moves: scrollIntoView would also scroll every ancestor
       // to reach a filmstrip below the fold, which on a phone drops the reader
       // onto the strip the moment a layer holding one opens.
       strip.scrollBy({
-        left: box.left + box.width / 2 - (lane.left + lane.width / 2),
+        left: offset,
         behavior: dragging || this.reducedMotion() ? 'auto' : 'smooth',
+      });
+    });
+
+    // Which edges of the filmstrip have frames behind them, re-measured as the
+    // row scrolls and as the lane is resized. The carets are drawn from these,
+    // so nothing offers a move where there is nowhere to move to.
+    afterRenderEffect((onCleanup) => {
+      const strip = this.filmStrip()?.nativeElement;
+      if (!strip) {
+        this.filmEarlier.set(false);
+        this.filmLater.set(false);
+        return;
+      }
+      const measure = (): void => {
+        const slack = strip.scrollWidth - strip.clientWidth;
+        // A sub-pixel remainder is rounding, not a frame out of sight.
+        const overflows = slack > 1;
+        this.filmEarlier.set(overflows && strip.scrollLeft > 1);
+        this.filmLater.set(overflows && strip.scrollLeft < slack - 1);
+      };
+      measure();
+      strip.addEventListener('scroll', measure, { passive: true });
+      const resize =
+        typeof ResizeObserver === 'undefined'
+          ? null
+          : new ResizeObserver(measure);
+      resize?.observe(strip);
+      onCleanup(() => {
+        strip.removeEventListener('scroll', measure);
+        resize?.disconnect();
       });
     });
   }
@@ -2370,6 +2635,24 @@ export class GsSweepScrubComponent {
       this.openViewer();
     } else {
       this.open.set(true);
+      // The plate unfolds downward from the card the reader pressed, so its
+      // lower half lands below the fold; the page follows it up so the whole
+      // instrument is on screen, or its top edge is where the plate is taller
+      // than the window. The plate's scroll margin keeps it clear of the
+      // sticky header.
+      afterNextRender(
+        () => {
+          const plate = this.plateRef()?.nativeElement;
+          if (typeof plate?.scrollIntoView !== 'function') {
+            return;
+          }
+          plate.scrollIntoView({
+            block: 'nearest',
+            behavior: this.reducedMotion() ? 'auto' : 'smooth',
+          });
+        },
+        { injector: this.injector },
+      );
     }
     this.prefetchNeighbours();
   }
@@ -2390,10 +2673,6 @@ export class GsSweepScrubComponent {
     const next: StopLayout = this.gridOn() ? 'strip' : 'grid';
     this.layoutAsked.set(next);
     this.rememberLayout(next);
-  }
-
-  public toggleWhy(): void {
-    this.why.update((open) => !open);
   }
 
   public toggleVariantWhy(): void {
@@ -2489,6 +2768,188 @@ export class GsSweepScrubComponent {
 
   public stepStop(delta: number): void {
     this.goToStop(this.index() + delta);
+  }
+
+  /**
+   * Start the plate demonstrating itself from the first step. The stop the
+   * reader was on is remembered so the demonstration ends where they were.
+   */
+  public startTour(): void {
+    if (this.tour() !== null) {
+      return;
+    }
+    this.tourReturnTo = this.index();
+    this.showTourStep(this.tourSteps()[0]);
+    const plate = this.plateRef()?.nativeElement;
+    if (plate) {
+      // A press anywhere on the plate that is not the bubble is the reader
+      // taking over, and the demonstration stands aside for them.
+      this.tourEndOnPress = (event: Event) => {
+        const bubble = this.tourBubbleRef()?.nativeElement;
+        if (
+          bubble &&
+          event.target instanceof Node &&
+          bubble.contains(event.target)
+        ) {
+          return;
+        }
+        this.endTour();
+      };
+      plate.addEventListener('pointerdown', this.tourEndOnPress, true);
+      plate.addEventListener('wheel', this.tourEndOnPress, {
+        capture: true,
+        passive: true,
+      });
+    }
+  }
+
+  /** Move to the next step, or finish after the last. */
+  public advanceTour(): void {
+    const at = this.tourAt();
+    const next = this.tourSteps()[at + 1];
+    if (next === undefined) {
+      this.endTour();
+      return;
+    }
+    this.showTourStep(next);
+  }
+
+  /** Take the tour down and hand the plate, and focus, back to the reader. */
+  public endTour(): void {
+    if (this.tour() === null) {
+      return;
+    }
+    this.clearTourTimers();
+    this.tourTarget?.classList.remove('gs-tour-target');
+    this.tourTarget = null;
+    const plate = this.plateRef()?.nativeElement;
+    if (plate && this.tourEndOnPress) {
+      plate.removeEventListener('pointerdown', this.tourEndOnPress, true);
+      plate.removeEventListener('wheel', this.tourEndOnPress, true);
+    }
+    this.tourEndOnPress = null;
+    this.tour.set(null);
+    this.goToStop(this.tourReturnTo);
+    this.tourOpenerRef()?.nativeElement.focus();
+  }
+
+  private showTourStep(step: TourStep): void {
+    this.clearTourTimers();
+    this.tour.set(step);
+    // The bubble is placed once the step's markup is on the page; the scrub
+    // step also starts the slider walking.
+    afterNextRender(
+      () => {
+        this.placeTourBubble(step);
+        this.tourBubbleRef()?.nativeElement.focus();
+      },
+      { injector: this.injector },
+    );
+    if (step === 'scrub' && !this.reducedMotion()) {
+      const last = this.lastIndex();
+      const pace = Math.min(
+        TOUR_SCRUB_MAX_MS,
+        Math.max(TOUR_SCRUB_MIN_MS, TOUR_SCRUB_TOTAL_MS / Math.max(1, last)),
+      );
+      let at = 0;
+      this.goToStop(at);
+      this.tourScrubTimer = setInterval(() => {
+        at += 1;
+        this.goToStop(at);
+        if (at >= last) {
+          this.clearTourScrub();
+          this.tourTimer = setTimeout(
+            () => this.advanceTour(),
+            TOUR_SCRUB_HOLD_MS,
+          );
+        }
+      }, pace);
+      return;
+    }
+    this.tourTimer = setTimeout(() => this.advanceTour(), TOUR_STEP_MS);
+  }
+
+  /**
+   * Put the bubble under the region the step is about, or over it where the
+   * region is at the plate's foot, and ring that region. Coordinates are the
+   * plate's own, so the page scrolling under it changes nothing.
+   */
+  private placeTourBubble(step: TourStep): void {
+    const plate = this.plateRef()?.nativeElement;
+    if (!plate) {
+      return;
+    }
+    const wideRead = this.wide();
+    const selectors: Record<TourStep, string[]> = {
+      scrub: ['.gs-tickrail-box', '.gs-plate-col .gs-sweep-stage'],
+      caption: ['.gs-plate-read .gs-sweep-caption', '.gs-sweep-caption'],
+      compare: wideRead
+        ? ['.gs-plate-read .gs-sweep-chips', '.gs-sweep-chips']
+        : ['.gs-sweep-chips--dock', '.gs-sweep-chips'],
+      strip: ['.gs-sweep-film-lane', '.gs-sweep-options'],
+      enlarge: ['.gs-plate-col .gs-sweep-expand[aria-label]:last-of-type'],
+    };
+    let target: HTMLElement | null = null;
+    for (const selector of selectors[step]) {
+      target = plate.querySelector<HTMLElement>(selector);
+      if (target) {
+        break;
+      }
+    }
+    this.tourTarget?.classList.remove('gs-tour-target');
+    this.tourTarget = target;
+    target?.classList.add('gs-tour-target');
+    const plateBox = plate.getBoundingClientRect();
+    const box = (target ?? plate).getBoundingClientRect();
+    const width = Math.min(
+      TOUR_BUBBLE_PX,
+      plateBox.width - 2 * TOUR_BUBBLE_GAP_PX,
+    );
+    const bubbleHeight =
+      this.tourBubbleRef()?.nativeElement.offsetHeight ?? 120;
+    const below = box.bottom - plateBox.top + TOUR_BUBBLE_GAP_PX;
+    const fitsBelow = below + bubbleHeight <= plateBox.height;
+    const top = fitsBelow
+      ? below
+      : Math.max(0, box.top - plateBox.top - bubbleHeight - TOUR_BUBBLE_GAP_PX);
+    const centred = box.left - plateBox.left + box.width / 2 - width / 2;
+    const left = Math.min(
+      Math.max(TOUR_BUBBLE_GAP_PX, centred),
+      plateBox.width - width - TOUR_BUBBLE_GAP_PX,
+    );
+    this.tourPlace.set({ top, left, width });
+  }
+
+  private clearTourScrub(): void {
+    if (this.tourScrubTimer !== null) {
+      clearInterval(this.tourScrubTimer);
+      this.tourScrubTimer = null;
+    }
+  }
+
+  private clearTourTimers(): void {
+    this.clearTourScrub();
+    if (this.tourTimer !== null) {
+      clearTimeout(this.tourTimer);
+      this.tourTimer = null;
+    }
+  }
+
+  /**
+   * Bring the filmstrip's hidden frames into the lane, most of a lane's width
+   * at a time so the last frame that was visible is still there as a
+   * landmark. The stop on show does not change: this is a look along the row,
+   * and choosing is a press on a cell.
+   */
+  public scrollFilm(direction: -1 | 1): void {
+    const strip = this.filmStrip()?.nativeElement;
+    if (!strip) {
+      return;
+    }
+    strip.scrollBy({
+      left: direction * strip.clientWidth * FILM_PAGE_FRACTION,
+      behavior: this.reducedMotion() ? 'auto' : 'smooth',
+    });
   }
 
   /**

@@ -11132,22 +11132,109 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate {
   position: relative;
   overflow: hidden;
+  /* Room for the sticky header and a breath below, for the scroll that
+     follows the plate as it unfolds. */
+  scroll-margin-top: 96px;
+  scroll-margin-bottom: var(--gs-space-4);
   border: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-md);
   background: var(--gs-stage);
   color: var(--gs-stage-ink);
 }
+/* The open plate is five regions on one grid: the stage, what is read about
+   the picture, the controls under it, the foot, and the provenance panel. In
+   one column they stack with the reading under the controls, as a caption sits
+   under a figure; with room beside the picture the reading takes that room,
+   so the value, the caption and the sentence the strip is about are level
+   with the picture they describe, and the whole plate is short enough to sit
+   on one screen. Areas rather than DOM order, because the reading column is
+   one element wherever it lands. */
 .gen-studio .gs-plate-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--gs-space-3);
+  grid-template-areas:
+    "stage"
+    "under"
+    "read"
+    "foot";
+  gap: var(--gs-space-2);
   padding: 0 var(--gs-space-3) var(--gs-space-3);
 }
 .gen-studio .gs-plate-col {
+  grid-area: stage;
   display: flex;
   flex-direction: column;
   gap: var(--gs-space-2);
   min-width: 0;
+}
+.gen-studio .gs-plate-under {
+  grid-area: under;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  min-width: 0;
+}
+.gen-studio .gs-plate-read {
+  grid-area: read;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  min-width: 0;
+}
+.gen-studio .gs-plate-main > .gs-plate-foot {
+  grid-area: foot;
+  padding-right: 0;
+  padding-left: 0;
+}
+.gen-studio .gs-plate-details {
+  grid-area: read;
+}
+/* The value and the size, said beside the picture where the reading column
+   has the room; the stage keeps its own pill only where nothing sits beside
+   it. */
+.gen-studio .gs-plate-read-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-plate-read-value {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-pixels--read {
+  color: var(--gs-stage-label);
+}
+/* What the whole strip is about: one register down from the frame's caption,
+   because it is the same sentence at every stop. */
+.gen-studio .gs-plate-lead {
+  margin: 0;
+  font-size: var(--gs-text-sm);
+  line-height: 1.5;
+  color: var(--gs-stage-label);
+}
+.gen-studio .gs-plate-read .gs-sweep-chips {
+  justify-content: flex-start;
+  margin: 0;
+}
+.gen-studio .gs-plate-read .gs-sweep-chip {
+  background: none;
+}
+/* A short window gets a shorter plate: the picture gives up a little height
+   and the strip's thumbnails go back to the small size, so the stage, the
+   rail and the strip still share one screen at 768 tall. */
+@media (max-height: 820px) {
+  .gen-studio .gs-plate-col .gs-sweep-stage,
+  .gen-studio .gs-plate-col .gs-sweep-stage .gs-sweep-frame,
+  .gen-studio .gs-plate-col .gs-sweep-stage .gs-wipe-img {
+    max-height: min(42vh, 440px);
+  }
+  .gen-studio .gs-plate .gs-sweep-film-img {
+    width: 60px;
+    height: 60px;
+  }
 }
 
 /* ------- the stage --------------------------------------------------- */
@@ -11439,6 +11526,46 @@ app-gs-sweep-scrub {
 }
 .gen-studio .gs-sweep-film::-webkit-scrollbar {
   display: none;
+}
+/* The lane the strip scrolls in, with a caret at each edge that has frames
+   behind it. The strip keeps the scrolling; the carets only drive it, and they
+   are drawn small so the row stays the thing the reader looks at. An edge with
+   nothing behind it keeps its caret in place but dimmed, so the row does not
+   shift under the pointer as the reader reaches the end. */
+.gen-studio .gs-sweep-film-lane {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  min-width: 0;
+}
+.gen-studio .gs-sweep-film-lane .gs-sweep-film {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.gen-studio .gs-sweep-film-caret {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-stage-label);
+  cursor: pointer;
+  transition: color var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-sweep-film-caret:hover:not(:disabled) {
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-sweep-film-caret:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+.gen-studio .gs-sweep-film-caret:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
 }
 .gen-studio .gs-sweep-film-cell {
   flex: 0 0 auto;
@@ -11895,14 +12022,38 @@ app-gs-sweep-scrub {
   }
 }
 @container gs-sweep (min-width: 860px) {
-  /* The panel takes its column only when it is open. Reserving it while the
-     details are folded away narrows the stage and the grid by 300px for
-     nothing, which is exactly what the reader is not looking at. */
-  .gen-studio .gs-plate-main.is-detailed {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  /* The stage takes a square of the height it is allowed and the reading
+     column takes the rest; the controls run under both. The stage column is
+     sized by the same cap as the picture's height, so a square frame fills it
+     and a portrait one leaves stage on either side rather than pushing the
+     column wider. */
+  .gen-studio .gs-plate-main {
+    grid-template-columns: minmax(0, min(48vh, 440px)) minmax(0, 1fr);
+    grid-template-areas:
+      "stage read"
+      "under under"
+      "foot foot";
+    column-gap: var(--gs-space-4);
+  }
+  .gen-studio .gs-plate-col {
+    align-self: start;
+  }
+  .gen-studio .gs-plate-read {
+    align-self: start;
+    padding-top: var(--gs-space-1);
+  }
+  .gen-studio .gs-plate-read .gs-sweep-caption {
+    margin-top: 0;
+    color: var(--gs-stage-ink);
+  }
+  /* The reading column says the value; the pill over the picture would say it
+     twice, side by side. */
+  .gen-studio .gs-plate-col .gs-sweep-titles {
+    display: none;
   }
   /* With room beside the stage the details are a panel rather than a sheet:
-     provenance read next to the picture it is about, instead of over it. */
+     provenance read next to the picture it is about, in the reading column's
+     place, instead of over it. */
   .gen-studio .gs-plate-details {
     position: static;
     max-height: none;
@@ -11910,11 +12061,6 @@ app-gs-sweep-scrub {
     border-left: 1px solid var(--gs-stage-rim);
     border-radius: 0;
     box-shadow: none;
-  }
-  .gen-studio .gs-plate-col .gs-sweep-stage,
-  .gen-studio .gs-plate-col .gs-sweep-stage .gs-sweep-frame,
-  .gen-studio .gs-plate-col .gs-sweep-stage .gs-wipe-img {
-    max-height: 440px;
   }
 }
 
@@ -12110,6 +12256,110 @@ app-gs-sweep-scrub {
   font-size: var(--gs-text-2xs);
   color: var(--gs-stage-label);
 }
+/* The way into the tour: a word in the head's own quiet register, sitting
+   after the title where a reader who has just read the title is looking. */
+.gen-studio .gs-plate-tour-go {
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0 var(--gs-space-2);
+  border: 0;
+  background: none;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-stage-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.gen-studio .gs-plate-tour-go:hover {
+  color: var(--gs-stage-ink);
+}
+.gen-studio .gs-plate-tour-go:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--gs-radius-sm);
+}
+.gen-studio .gs-plate-tour-go + .gs-plate-x {
+  margin-left: 0;
+}
+/* The bubble: a small card in the page's own colours over the dark plate, so
+   it reads as a note laid on the instrument rather than part of it. */
+.gen-studio .gs-plate-tour {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-panel);
+  color: var(--gs-ink);
+  box-shadow: 0 12px 32px -12px rgb(0 0 0 / 70%);
+}
+.gen-studio .gs-plate-tour:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-plate-tour-text {
+  margin: 0;
+  font-size: var(--gs-text-sm);
+  line-height: 1.5;
+}
+.gen-studio .gs-plate-tour-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-plate-tour-pos {
+  margin-right: auto;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: var(--gs-text-2xs);
+  color: var(--gs-muted);
+}
+.gen-studio .gs-plate-tour-btn {
+  min-height: 32px;
+  padding: 0 var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-pill);
+  background: none;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-ink-2);
+  cursor: pointer;
+}
+.gen-studio .gs-plate-tour-btn--go {
+  border-color: var(--hd-accent);
+  background: var(--hd-accent);
+  color: #fff;
+}
+.gen-studio .gs-plate-tour-btn:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+/* The region the current step is about, ringed in the focus colour so the
+   bubble and the thing it points at read as one. */
+.gen-studio .gs-plate .gs-tour-target {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 4px;
+  border-radius: var(--gs-radius-sm);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .gen-studio .gs-plate-tour {
+    animation: gs-tour-in var(--gs-dur) var(--gs-ease);
+  }
+  @keyframes gs-tour-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
 .gen-studio .gs-plate-title {
   font-size: var(--gs-text-md);
   font-weight: 600;
