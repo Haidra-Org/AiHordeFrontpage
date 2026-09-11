@@ -237,9 +237,9 @@ describe('the techniques that work from a source image', () => {
     // is painted onto a canvas rather than set, and for remix's references,
     // whose blobs and weights live on the request alone.
     for (const id of SOURCED) {
-      const first = flowSteps(id)[0];
-      expect(first.id).toBe('source');
-      expect(first.applyFields).toBeUndefined();
+      const source = flowSteps(id).find((step) => step.id === 'source');
+      expect(source).toBeDefined();
+      expect(source?.applyFields).toBeUndefined();
     }
     const mask = flowSteps('inpainting').find((step) => step.id === 'mask');
     expect(mask?.anchorId).toBe('mask');
@@ -285,14 +285,34 @@ describe('the techniques that work from a source image', () => {
       expect(mode?.applyFields).toEqual(['sourceMode']);
     }
   });
+
+  it('selects the mode before asking the reader to upload an image', () => {
+    for (const id of SOURCED) {
+      const ids = flowSteps(id).map((step) => step.id);
+      expect(ids.indexOf('mode')).toBeLessThan(ids.indexOf('source'));
+    }
+  });
+
+  it('selects a compatible model before a gated mode or workflow', () => {
+    for (const [id, gatedStep] of [
+      ['inpainting', 'mode'],
+      ['controlnet', 'mode'],
+      ['remix', 'mode'],
+      ['transparent', 'transparent'],
+      ['qr_code', 'qr'],
+    ]) {
+      const ids = flowSteps(id).map((step) => step.id);
+      expect(ids.indexOf('model')).toBeLessThan(ids.indexOf(gatedStep));
+    }
+  });
 });
 
 describe('the techniques that live in the workflow cards', () => {
   it('runs the transparent flow off the one switch that makes it', () => {
     expect(flowSteps('transparent').map((step) => step.id)).toEqual([
+      'model',
       'prompt',
       'transparent',
-      'model',
       'size',
       'generate',
     ]);
@@ -308,9 +328,9 @@ describe('the techniques that live in the workflow cards', () => {
 
   it('writes the QR payload, and the sampling recipe as one set', () => {
     expect(flowSteps('qr_code').map((step) => step.id)).toEqual([
+      'model',
       'prompt',
       'qr',
-      'model',
       'size',
       'cfg',
       'generate',
@@ -331,11 +351,11 @@ describe('the techniques that live in the workflow cards', () => {
 
   it('reads remix down the same spine as the other sourced flows', () => {
     expect(flowSteps('remix').map((step) => step.id)).toEqual([
-      'source',
+      'model',
       'mode',
+      'source',
       'extras',
       'prompt',
-      'model',
       'generate',
     ]);
     const model = flowSteps('remix').find((step) => step.id === 'model');

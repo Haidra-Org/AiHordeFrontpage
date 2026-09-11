@@ -803,8 +803,8 @@ describe('TutorialEngineService', () => {
       }
 
       expect(visited).toEqual([
-        'source',
         'mode',
+        'source',
         'denoise',
         'prompt',
         'model',
@@ -844,7 +844,7 @@ describe('TutorialEngineService', () => {
     });
 
     it('says nothing about a source mode the reader has already set', () => {
-      engine.goTo(1);
+      engine.goTo(0);
       engine.applyStep();
 
       engine.goTo(2);
@@ -900,25 +900,24 @@ describe('TutorialEngineService', () => {
       }
 
       expect(visited).toEqual([
+        'model',
         'prompt',
         'qr',
-        'model',
         'size',
         'cfg',
         'generate',
       ]);
       expect(written).toEqual([
+        ['model', { model: request.models[0] }],
         ['prompt', { prompt: PROMPT, negativePrompt: NEGATIVE }],
         // Typing the text is what selects the workflow, so it is the whole of
         // what this step writes.
         ['qr', { qrText: QR_TEXT }],
-        ['model', { model: request.models[0] }],
         [
           'size',
           { width: request.params.width, height: request.params.height },
         ],
-        // One recipe rather than four choices: a code made with three of them
-        // does not scan.
+        // The comparison uses the recorded settings together.
         [
           'cfg',
           {
@@ -938,11 +937,10 @@ describe('TutorialEngineService', () => {
     });
 
     it('unfolds the group holding the field the workflow is chosen by', () => {
-      // The prompt is an always-open card, so the first step narrates nothing;
-      // the workflow field is the one that has to be unfolded.
+      // Model selection needs no disclosure; the QR field does.
       expect(engine.revealNote()).toBeNull();
 
-      engine.goTo(1);
+      engine.goTo(2);
 
       expect(engine.revealNote()).toBe('group');
       expect(host.openedGroupsFor).toContain('qr');

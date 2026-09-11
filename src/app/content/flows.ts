@@ -180,6 +180,11 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'inpainting',
     section: 'source',
     steps: [
+      {
+        id: 'mode',
+        anchorId: 'source_mode',
+        applyFields: ['sourceMode'],
+      },
       // The picture itself is the one thing a step cannot write: the form holds
       // a blob the reader attached, and the committed request carries only the
       // base64 the generator sent. So the source steps of all three sourced
@@ -188,11 +193,6 @@ export const FLOWS: readonly FlowDef[] = [
         id: 'source',
         anchorId: 'source',
         helpTopic: 'source',
-      },
-      {
-        id: 'mode',
-        anchorId: 'source_mode',
-        applyFields: ['sourceMode'],
       },
       {
         // The number is the whole technique, so the strip is offered here
@@ -210,9 +210,7 @@ export const FLOWS: readonly FlowDef[] = [
         applyFields: ['prompt', 'negativePrompt'],
       },
       {
-        // This flow has no size step of its own: the size is not a choice here
-        // but a consequence of the source, so it is set with the model that
-        // wants it and the step's prose names both.
+        // Apply the example's model and dimensions together for comparison.
         id: 'model',
         anchorId: 'model',
         applyFields: ['model', 'width', 'height'],
@@ -226,14 +224,19 @@ export const FLOWS: readonly FlowDef[] = [
     section: 'source',
     steps: [
       {
-        id: 'source',
-        anchorId: 'source',
-        helpTopic: 'source',
+        id: 'model',
+        anchorId: 'model',
+        applyFields: ['model', 'width', 'height'],
       },
       {
         id: 'mode',
         anchorId: 'source_mode',
         applyFields: ['sourceMode'],
+      },
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
       },
       {
         // Painted rather than set: the mask is a canvas the reader draws on,
@@ -247,11 +250,6 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'prompt',
         applyFields: ['prompt', 'negativePrompt'],
       },
-      {
-        id: 'model',
-        anchorId: 'model',
-        applyFields: ['model', 'width', 'height'],
-      },
       { id: 'generate', anchorId: 'generate' },
     ],
   },
@@ -260,15 +258,16 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'transparent',
     section: 'source',
     steps: [
-      {
-        id: 'source',
-        anchorId: 'source',
-        helpTopic: 'source',
-      },
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
       {
         id: 'mode',
         anchorId: 'source_mode',
         applyFields: ['sourceMode'],
+      },
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
       },
       {
         id: 'control_type',
@@ -288,7 +287,6 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'prompt',
         applyFields: ['prompt', 'negativePrompt'],
       },
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
       { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
       { id: 'generate', anchorId: 'generate' },
     ],
@@ -298,14 +296,20 @@ export const FLOWS: readonly FlowDef[] = [
     section: 'source',
     steps: [
       {
-        id: 'source',
-        anchorId: 'source',
-        helpTopic: 'source',
+        // Remix is unavailable until a compatible model is selected.
+        id: 'model',
+        anchorId: 'model',
+        applyFields: ['model', 'width', 'height'],
       },
       {
         id: 'mode',
         anchorId: 'source_mode',
         applyFields: ['sourceMode'],
+      },
+      {
+        id: 'source',
+        anchorId: 'source',
+        helpTopic: 'source',
       },
       {
         // The references are blobs with a weight each, and neither half of that
@@ -321,13 +325,6 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'prompt',
         applyFields: ['prompt', 'negativePrompt'],
       },
-      {
-        // As in img2img, the size follows the pictures rather than being a
-        // choice, so it is written with the model the step names.
-        id: 'model',
-        anchorId: 'model',
-        applyFields: ['model', 'width', 'height'],
-      },
       { id: 'generate', anchorId: 'generate' },
     ],
   },
@@ -336,6 +333,7 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'qr_code',
     section: 'workflows',
     steps: [
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
       {
         id: 'prompt',
         anchorId: 'prompt',
@@ -347,7 +345,6 @@ export const FLOWS: readonly FlowDef[] = [
         helpTopic: 'transparent',
         applyFields: ['transparent'],
       },
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
       { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
       { id: 'generate', anchorId: 'generate' },
     ],
@@ -357,6 +354,7 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'remix',
     section: 'workflows',
     steps: [
+      { id: 'model', anchorId: 'model', applyFields: ['model'] },
       {
         id: 'prompt',
         anchorId: 'prompt',
@@ -370,13 +368,9 @@ export const FLOWS: readonly FlowDef[] = [
         helpTopic: 'qr',
         applyFields: ['qrText'],
       },
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
       { id: 'size', anchorId: 'size', applyFields: ['width', 'height'] },
       {
-        // The four sampling values are one recipe here rather than four
-        // choices: they were scan-tested together, and a code generated with
-        // three of them does not read. They all live in the card this step
-        // opens, and the prose names every one of them.
+        // Apply the recorded combination so comparisons start from the same settings.
         id: 'cfg',
         anchorId: 'cfg',
         helpTopic: 'cfg',
