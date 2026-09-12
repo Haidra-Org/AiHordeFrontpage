@@ -331,9 +331,9 @@
   align-items: flex-end;
   gap: var(--gs-space-2);
 }
-.gen-studio .alchemy-draft__field--model {
-  flex: 1 1 260px;
-}
+/* The settings fold is a column, so the select takes the width it is given
+   and no flex basis: a basis here would be read as a height and leave the
+   control floating in a box of empty space. */
 .gen-studio .alchemy-draft__field--model .gs-view-select {
   width: 100%;
   max-width: 100%;
@@ -342,12 +342,9 @@
   flex: none;
 }
 .gen-studio .alchemy-draft__preview-trigger {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
+  align-self: flex-start;
 }
 .gen-studio .alchemy-draft__from-style {
-  flex: 1 1 260px;
   margin: 0;
 }
 .gen-studio .alchemy-draft__chips {
@@ -355,8 +352,13 @@
   flex-wrap: wrap;
   gap: var(--gs-space-2);
 }
+/* Name and field side by side: the number is two characters wide and a column
+   would leave the label stranded above it. */
 .gen-studio .alchemy-draft__takes {
+  flex-direction: row;
+  align-items: center;
   align-self: flex-start;
+  gap: var(--gs-space-2);
 }
 .gen-studio .alchemy-draft__takes-note {
   margin: 0;
@@ -387,6 +389,42 @@
 }
 .gen-studio .alchemy-draft__cost {
   margin: 0;
+}
+/* The two ways into a prompt lead the body, because which one is showing
+   decides what the rest of the card is for. */
+.gen-studio .alchemy-draft__tabs {
+  align-self: flex-start;
+}
+/* Second badge in the head, so a reading already taken is visible on a folded
+   card and the reader knows the other tab has something in it. */
+.gen-studio .alchemy-draft__found {
+  background: var(--gs-sec-alchemy-tint, var(--gs-field));
+  border-color: var(--gs-sec-alchemy-tint-border, var(--gs-border));
+}
+.gen-studio .alchemy-draft__with-findings {
+  margin: 0;
+}
+/* Everything that steers the request, folded away from the field and the
+   button that are the whole card for most readers. */
+.gen-studio .alchemy-draft__options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-draft__options-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gs-label);
+  font: inherit;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  cursor: pointer;
 }
 /* The past drafts sit below a rule so the card reads as the draft first and
    the archive second. */
@@ -445,6 +483,94 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--gs-space-1);
+}
+
+/* --- words read out of a picture ---------------------------------- */
+/* The picture tab of the draft card. It wears alchemy's hue so it is not
+   mistaken for the studio's source card, which is the other place a picture
+   is handed over, and its dashed edge says a picture may be let go on it.
+   Idle it is one row of presses and a line of explanation; a reading adds
+   its lines under them. */
+.gen-studio .gs-describe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-3);
+  border: 1px dashed var(--gs-sec-alchemy-tint-border, var(--gs-border));
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-sec-alchemy-tint, transparent);
+}
+/* A picture over the card: the dashed edge goes solid and takes the hue, so
+   the drop target is read without relying on colour alone. */
+.gen-studio .gs-describe--drop {
+  border-style: solid;
+  border-color: var(--gs-sec-alchemy, var(--gs-blue));
+}
+.gen-studio .gs-describe-open {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-describe-pending,
+.gen-studio .gs-describe-origin {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+}
+/* Label, words, and the way to take them away, on one row. The words take the
+   room that is left and wrap, because a caption is a sentence. */
+.gen-studio .gs-describe-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
+  color: var(--gs-ink);
+}
+.gen-studio .gs-describe-label {
+  flex: 0 0 auto;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.gen-studio .gs-describe-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-describe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-describe-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .gs-describe-glyph:hover {
+  color: var(--gs-ink);
+  background: var(--gs-field);
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-describe-glyph {
+    width: 44px;
+    height: 44px;
+  }
 }
 /* The stage clips what the zoom pushes past its edges; the pair inside keeps
    its fitted box, so the card's height does not move as the zoom does. */

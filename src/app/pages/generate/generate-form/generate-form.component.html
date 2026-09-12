@@ -382,143 +382,16 @@
               </button>
             </p>
           }
-          <!-- A picture read for words to write a prompt from. The picture is
-               read and forgotten: it is never attached as the source, so this
-               door sits with the prompt rather than with the source card. The
-               two forms land separately, so the caption shows without waiting
-               on the tags. -->
-          <div
-            class="gs-describe"
-            [class.gs-describe--drop]="describeDragging()"
-            (dragover)="onDescribeDragOver($event)"
-            (dragleave)="onDescribeDragLeave()"
-            (drop)="onDescribeDrop($event)"
-          >
-            <div class="gs-describe-open">
-              <button
-                type="button"
-                class="gs-chip gap-1.5"
-                [disabled]="describe.pending()"
-                (click)="describeFile.click()"
-              >
-                <app-icon name="beaker" class="gs-ico-sm" />
-                {{ "generate.describe.open" | transloco }}
-              </button>
-              @if (describe.sourcePicture()) {
-                <button
-                  type="button"
-                  class="gs-chip"
-                  [disabled]="describe.pending()"
-                  (click)="describeSourcePicture()"
-                >
-                  {{ "generate.describe.use_source" | transloco }}
-                </button>
-              }
-              <input
-                #describeFile
-                type="file"
-                accept="image/*"
-                class="sr-only"
-                (change)="onDescribeFilePicked($event)"
-              />
-            </div>
-            <p class="gs-sublabel">
-              {{
-                (describeDragging()
-                  ? "generate.describe.drop_hint"
-                  : "generate.describe.lead"
-                ) | transloco
-              }}
-            </p>
-            @if (describe.pending() || describe.hasFindings()) {
-              @if (describe.pending()) {
-                <p class="gs-describe-pending">
-                  <app-icon name="spinner" class="gs-ico-sm gs-spin" />
-                  {{ "generate.describe.pending" | transloco }}
-                </p>
-              }
-              @if (describe.hasFindings()) {
-                <p class="gs-describe-origin">
-                  @switch (describe.origin()) {
-                    @case ("source") {
-                      {{ "generate.describe.from_source" | transloco }}
-                    }
-                    @case ("result") {
-                      {{ "generate.describe.from_result" | transloco }}
-                    }
-                    @default {
-                      {{ "generate.describe.from_picked" | transloco }}
-                    }
-                  }
-                </p>
-              }
-              @if (describe.findings().caption; as caption) {
-                <p class="gs-describe-line">
-                  <span class="gs-describe-label">
-                    {{ "generate.describe.caption_label" | transloco }}
-                  </span>
-                  <span class="gs-describe-text">{{ caption }}</span>
-                  <button
-                    type="button"
-                    class="gs-describe-glyph"
-                    [attr.aria-label]="
-                      'generate.describe.copy_caption' | transloco
-                    "
-                    (click)="copyDescribeLine(caption)"
-                  >
-                    <app-icon name="copy" class="gs-ico-sm" />
-                  </button>
-                </p>
-              }
-              @if (describe.findings().tags; as tags) {
-                <p class="gs-describe-line">
-                  <span class="gs-describe-label">
-                    {{ "generate.describe.tags_label" | transloco }}
-                  </span>
-                  <span class="gs-describe-text">{{ tags }}</span>
-                  <button
-                    type="button"
-                    class="gs-describe-glyph"
-                    [attr.aria-label]="
-                      'generate.describe.copy_tags' | transloco
-                    "
-                    (click)="copyDescribeLine(tags)"
-                  >
-                    <app-icon name="copy" class="gs-ico-sm" />
-                  </button>
-                </p>
-              }
-              <div class="gs-describe-actions">
-                @if (describe.findings().caption) {
-                  <button
-                    type="button"
-                    class="gs-chip"
-                    (click)="useDescribeCaption()"
-                  >
-                    {{ "generate.describe.use_as_prompt" | transloco }}
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="gs-describe-glyph ml-auto"
-                  [attr.aria-label]="'generate.describe.dismiss' | transloco"
-                  (click)="describe.clear()"
-                >
-                  <app-icon name="x-mark" class="gs-ico-sm" />
-                </button>
-              </div>
-            }
-          </div>
-          <!-- A text model on the horde rewrites what is in the box, on
-               request. Folded until asked, so the prompt card costs nothing
-               to a reader who writes their own. It writes with alchemy's
-               findings as material when there are any. -->
+          <!-- The two ways a prompt gets written for you: a text model on the
+               horde rewrites what is in the box, or a picture is read for a
+               caption and tags to start from. Folded until asked, so the
+               prompt card costs nothing to a reader who writes their own. -->
           <app-prompt-draft-card
             class="gs-prompt-improve"
+            [picture]="true"
             [seed]="form().controls.prompt.value"
-            [caption]="describe.findings().caption"
-            [tags]="describe.findings().tags"
             [styleWords]="appliedStyleWords()"
+            origin="studio"
             (apply)="fillPrompt($event)"
           />
         </section>

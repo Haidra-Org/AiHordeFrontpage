@@ -28,6 +28,8 @@ import {
   StoredPromptDraft,
 } from '../../services/prompt-draft-db.service';
 import { AuthService } from '../../services/auth.service';
+import { StudioDescribeService } from '../../services/studio-describe.service';
+import { ToastService } from '../../services/toast.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { API_BASE_URL } from '../../services/api-config';
 import { ActiveModel } from '../../types/active-model';
@@ -36,14 +38,23 @@ import { copyToClipboard } from '../../helper/copy-to-clipboard';
 import { stringifyAsJson } from '../../helper/json-formatter';
 import { JsonInspectorComponent } from '../json-inspector/json-inspector.component';
 import type { JsonInspectorSection } from '../json-inspector/json-inspector.component';
-import { JsonInspectorTriggerComponent } from '../json-inspector-trigger/json-inspector-trigger.component';
 import type { AlchemyFoldPin } from '../alchemy/alchemy-pictures/alchemy-pictures.component';
 
 /** How the override select names its choice. */
 type PickValue = 'auto' | 'any' | `model:${string}`;
 
+/**
+ * Which of the two ways into a prompt the card is showing. Only the studio
+ * offers both; under an alchemy job the card improves nothing and the tabs
+ * are not drawn.
+ */
+export type PromptHelpTab = 'improve' | 'picture';
+
 /** Where the anonymous choice is remembered between visits. */
 const ANONYMOUS_STORAGE_KEY = 'aihorde.prompt-draft.anonymous';
+
+/** Where the settings fold's state is remembered between visits. */
+const OPTIONS_STORAGE_KEY = 'aihorde.prompt-draft.options';
 
 /** Long enough that a typed note is priced once, not on every keystroke. */
 const ESTIMATE_DEBOUNCE_MS = 600;
@@ -51,8 +62,9 @@ const ESTIMATE_DEBOUNCE_MS = 600;
 /** How many past drafts the strip offers. */
 const HISTORY_LIMIT = 10;
 
-/** How many answers the three-takes switch asks for. */
-const TAKES_WHEN_ON = 3;
+/** The range of answers one request may ask for. */
+const MIN_TAKES = 1;
+const MAX_TAKES = 5;
 
 /** The key stands in for the reader's own, which is never put on a page. */
 const KEY_PLACEHOLDER = '<your key>';
@@ -64,8 +76,14 @@ const ANONYMOUS_API_KEY = '0000000000';
  * A prompt written by one of the horde's text models. Under an alchemy job it
  * writes from what alchemy found in a picture: the caption, the strongest
  * tags, and a note from the reader. Under the image studio's prompt box it
- * improves what is already written. Either way the draft is shown, not
- * applied: it goes to the prompt box or the clipboard on a press.
+ * improves what is already written, and offers the other way in as a second
+ * tab: a picture handed over to be read for its caption and tags. Either way
+ * the draft is shown, not applied: it goes to the prompt box or the clipboard
+ * on a press.
+ *
+ * Only the note, the button and the price are on show. Everything that steers
+ * the request sits behind a fold, so a reader who wants one better prompt
+ * meets one field and one button.
  *
  * The model is picked from a curated list by default, and the pick can be
  * overridden with any model online, or no preference at all, for a reader
@@ -77,13 +95,7 @@ const ANONYMOUS_API_KEY = '0000000000';
  */
 @Component({
   selector: 'app-prompt-draft-card',
-  imports: [
-    TranslocoPipe,
-    IconComponent,
-    DatePipe,
-    JsonInspectorComponent,
-    JsonInspectorTriggerComponent,
-  ],
+  imports: [TranslocoPipe, IconComponent, DatePipe, JsonInspectorComponent],
   templateUrl: './prompt-draft-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -94,7 +106,14 @@ export class PromptDraftCardComponent {
   private readonly drafts = inject(PromptDraftService);
   private readonly store = inject(PromptDraftDbService);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
   private readonly units = inject(UnitConversionService);
+  /**
+   * What the studio has read out of a picture. Held by a root service because
+   * the reading is asked for from the source card and from a result tile as
+   * well as from here, and shown wherever the words are used.
+   */
+  public readonly describe = inject(StudioDescribeService);
   private readonly apiBase = inject(API_BASE_URL);
   private readonly transloco = inject(TranslocoService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
@@ -115,6 +134,13 @@ export class PromptDraftCardComponent {
    * job the card has, so a caller that has nothing to add need say nothing.
    */
   public readonly origin = input<PromptDraftOrigin | null>(null);
+  /**
+   * Whether this card can also read a picture. The studio can, because it has
+   * a prompt box to put the words in and a source picture to offer; under an
+   * alchemy job the picture has already been read and the findings arrive as
+   * the caption and tags.
+   */
+  public readonly picture = input(false);
   /** The draft, for the prompt box it was written for. */
   public readonly apply = output<string>();
 
@@ -135,9 +161,20 @@ export class PromptDraftCardComponent {
   public readonly styles = signal<ImagePromptStyle[] | null>(null);
   /** The chosen style's id; null is the built-in instruction. */
   public readonly styleId = signal<string | null>(null);
-  /** Ask for three answers at once rather than one. */
-  public readonly threeTakes = signal(false);
+  /** How many answers one request asks for. */
+  public readonly takes = signal(MIN_TAKES);
   public readonly previewOpen = signal(false);
+  /** Which way into a prompt is showing, where both are offered. */
+  private readonly chosenTab = signal<PromptHelpTab>('improve');
+  /** Whether the settings fold is showing. */
+  public readonly optionsOpen = signal(false);
+  /** The fold is opened for the reader once, not on every price. */
+  private optionsForcedOpen = false;
+  /** Whether a picture is being dragged over the card. */
+  public readonly describeDragging = signal(false);
+
+  public readonly minTakes = MIN_TAKES;
+  public readonly maxTakes = MAX_TAKES;
 
   /** The reader's own choice, remembered; the auto flip does not overwrite it. */
   private readonly chosenAnonymous = signal(false);
@@ -157,6 +194,7 @@ export class PromptDraftCardComponent {
 
   constructor() {
     this.chosenAnonymous.set(this.storedAnonymous());
+    this.optionsOpen.set(this.storedOptions());
     inject(DestroyRef).onDestroy(() => this.cancelEstimate());
 
     effect(() => {
@@ -190,11 +228,11 @@ export class PromptDraftCardComponent {
       this.note();
       this.pick();
       this.seed();
-      this.caption();
-      this.tags();
+      this.foundCaption();
+      this.foundTags();
       this.styleWords();
       this.styleId();
-      this.threeTakes();
+      this.takes();
       this.anonymous();
       untracked(() => this.scheduleEstimate(ready));
     });
@@ -208,6 +246,63 @@ export class PromptDraftCardComponent {
 
   public toggleOpen(): void {
     this.openOverride.set(!this.isOpen());
+  }
+
+  /** Which tab is showing; without the picture tab there is only the one. */
+  public readonly activeTab = computed<PromptHelpTab>(() =>
+    this.picture() ? this.chosenTab() : 'improve',
+  );
+
+  public chooseTab(tab: PromptHelpTab): void {
+    this.chosenTab.set(tab);
+  }
+
+  /**
+   * The words read out of a picture. Under an alchemy job they are handed in
+   * with the job; in the studio the card asks for the reading itself.
+   */
+  public readonly foundCaption = computed(() =>
+    this.picture() ? this.describe.findings().caption : this.caption(),
+  );
+
+  public readonly foundTags = computed(() =>
+    this.picture() ? this.describe.findings().tags : this.tags(),
+  );
+
+  /** Whether there is a prompt in the box worth rewriting. */
+  public readonly improving = computed(() => !!this.seed()?.trim());
+
+  public toggleOptions(): void {
+    const open = !this.optionsOpen();
+    this.optionsOpen.set(open);
+    // Only a deliberate press is worth remembering; the fold the card opens
+    // by itself must not overwrite what the reader last chose.
+    this.rememberOptions(open);
+  }
+
+  private storedOptions(): boolean {
+    if (!this.isBrowser) return false;
+    try {
+      return localStorage.getItem(OPTIONS_STORAGE_KEY) === 'true';
+    } catch {
+      // Private modes refuse storage; folded is a fine answer.
+      return false;
+    }
+  }
+
+  private rememberOptions(value: boolean): void {
+    if (!this.isBrowser) return;
+    try {
+      localStorage.setItem(OPTIONS_STORAGE_KEY, String(value));
+    } catch {
+      // Nothing here is worth failing a fold over.
+    }
+  }
+
+  public onTakesInput(value: string): void {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed)) return;
+    this.takes.set(Math.min(MAX_TAKES, Math.max(MIN_TAKES, parsed)));
   }
 
   /** Logged out, every request is anonymous already; the switch says so. */
@@ -290,8 +385,55 @@ export class PromptDraftCardComponent {
     this.styleId.set(id);
   }
 
-  public onThreeTakesChange(value: boolean): void {
-    this.threeTakes.set(value);
+  /** Take a picture from the file picker and read it, without attaching it. */
+  public onDescribeFilePicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Cleared so picking the same picture again still counts as a change.
+    input.value = '';
+    if (file) void this.describe.describe(file, 'picked');
+  }
+
+  /** The card takes a drop anywhere on its body while the picture tab shows. */
+  private get droppable(): boolean {
+    return this.picture() && this.activeTab() === 'picture';
+  }
+
+  public onDescribeDragOver(event: DragEvent): void {
+    if (!this.droppable) return;
+    event.preventDefault();
+    this.describeDragging.set(true);
+  }
+
+  public onDescribeDragLeave(): void {
+    this.describeDragging.set(false);
+  }
+
+  public onDescribeDrop(event: DragEvent): void {
+    if (!this.droppable) return;
+    event.preventDefault();
+    this.describeDragging.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) void this.describe.describe(file, 'picked');
+  }
+
+  /** Read the picture already attached as the source, leaving it attached. */
+  public describeSourcePicture(): void {
+    const blob = this.describe.sourcePicture();
+    if (blob) void this.describe.describe(blob, 'source');
+  }
+
+  /** Put alchemy's caption in the prompt box, as the reading worded it. */
+  public useDescribeCaption(): void {
+    const caption = this.describe.findings().caption;
+    if (caption) this.apply.emit(caption);
+  }
+
+  /** Take one of the findings away for use elsewhere. */
+  public async copyDescribeLine(text: string): Promise<void> {
+    if (await copyToClipboard(text)) {
+      this.toast.success('generate.describe.copied', { transloco: true });
+    }
   }
 
   /** Every answer the last request came back with. */
@@ -302,10 +444,19 @@ export class PromptDraftCardComponent {
 
   public readonly draftText = computed(() => this.draftTexts()[0] ?? null);
 
-  public readonly hasMaterial = computed(() =>
-    this.mode() === 'improve'
-      ? !!this.seed()?.trim()
-      : !!(this.caption() || this.tags() || this.note().trim()),
+  /**
+   * Anything at all to write from. A studio card improving a prompt can also
+   * have a picture's words behind it, so the two sources are one test rather
+   * than one per job.
+   */
+  public readonly hasMaterial = computed(
+    () =>
+      !!(
+        this.seed()?.trim() ||
+        this.foundCaption() ||
+        this.foundTags() ||
+        this.note().trim()
+      ),
   );
 
   public isCurated(model: ActiveModel): boolean {
@@ -329,21 +480,19 @@ export class PromptDraftCardComponent {
   private material(): PromptDraftInput {
     const words = this.styleWords()?.trim();
     const styled = words ? { styleWords: words } : {};
+    const caption = this.foundCaption();
+    const tags = this.foundTags();
+    // A prompt being improved keeps the picture's words when there are any:
+    // the reader asked for both, and the model writes better with the scene
+    // in front of it.
+    const found = caption || tags ? { caption, tags } : {};
     return this.mode() === 'improve'
-      ? { prompt: this.seed(), note: this.note(), ...styled }
-      : {
-          caption: this.caption(),
-          tags: this.tags(),
-          note: this.note(),
-          ...styled,
-        };
+      ? { prompt: this.seed(), note: this.note(), ...found, ...styled }
+      : { caption, tags, note: this.note(), ...styled };
   }
 
   private shape(): PromptDraftShape {
-    return {
-      style: this.chosenStyle(),
-      takes: this.threeTakes() ? TAKES_WHEN_ON : 1,
-    };
+    return { style: this.chosenStyle(), takes: this.takes() };
   }
 
   /** The body the button would send, and the call that would send it. */
@@ -447,6 +596,12 @@ export class PromptDraftCardComponent {
     this.flipSpent = true;
     this.chosenAnonymous.set(true);
     this.flippedForCost.set(true);
+    // The card has just changed a setting on the reader's behalf, so the fold
+    // holding that setting opens, once, where they can see and undo it.
+    if (!this.optionsForcedOpen) {
+      this.optionsForcedOpen = true;
+      this.optionsOpen.set(true);
+    }
   }
 
   public async draft(): Promise<void> {

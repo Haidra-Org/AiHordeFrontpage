@@ -17,21 +17,32 @@
       />
       <h4 class="alchemy-result__title">
         {{
-          (mode() === "improve"
-            ? "prompt_draft.title_improve"
-            : "prompt_draft.title"
+          (picture()
+            ? "prompt_draft.title_help"
+            : mode() === "improve"
+              ? "prompt_draft.title_improve"
+              : "prompt_draft.title"
           ) | transloco
         }}
       </h4>
       <span class="gs-op-badge">{{ "prompt_draft.badge" | transloco }}</span>
+      <!-- A reading already taken is the reason to open the other tab, so the
+           head says there is one without the card having to be open. -->
+      @if (picture() && describe.hasFindings()) {
+        <span class="gs-op-badge alchemy-draft__found">
+          {{ "prompt_draft.findings_badge" | transloco }}
+        </span>
+      }
       @if (!isOpen()) {
         <span class="alchemy-result__summary">
           <span class="alchemy-result__summary-text">
             {{
               draftText() ??
-                ((mode() === "improve"
-                  ? "prompt_draft.summary_improve"
-                  : "prompt_draft.summary"
+                ((picture()
+                  ? "prompt_draft.summary_help"
+                  : mode() === "improve"
+                    ? "prompt_draft.summary_improve"
+                    : "prompt_draft.summary"
                 ) | transloco)
             }}
           </span>
@@ -41,51 +52,173 @@
   </header>
 
   @if (isOpen()) {
-    <div class="alchemy-result__body alchemy-draft__body">
-      <p class="gs-sublabel alchemy-draft__lead">
-        {{
-          (mode() === "improve"
-            ? "prompt_draft.lead_improve"
-            : "prompt_draft.lead"
-          ) | transloco
-        }}
-      </p>
-
-      @if (roleStyles().length > 0) {
-        <div class="alchemy-draft__field alchemy-draft__directions">
-          <span class="alchemy-draft__label">
-            {{ "prompt_draft.direction_label" | transloco }}
-          </span>
-          <div
-            class="alchemy-draft__chips"
-            role="group"
-            [attr.aria-label]="'prompt_draft.direction_label' | transloco"
+    <!-- A picture may be let go anywhere over the body while the picture tab
+         is showing; the highlight stays on the picker, which is where the
+         reader is being told the drop lands. -->
+    <div
+      class="alchemy-result__body alchemy-draft__body"
+      (dragover)="onDescribeDragOver($event)"
+      (dragleave)="onDescribeDragLeave()"
+      (drop)="onDescribeDrop($event)"
+    >
+      @if (picture()) {
+        <div
+          class="gs-seg alchemy-draft__tabs"
+          role="group"
+          [attr.aria-label]="'prompt_draft.tab_label' | transloco"
+        >
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="activeTab() === 'improve'"
+            (click)="chooseTab('improve')"
           >
+            {{ "prompt_draft.tab_improve" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="activeTab() === 'picture'"
+            (click)="chooseTab('picture')"
+          >
+            {{ "prompt_draft.tab_picture" | transloco }}
+          </button>
+        </div>
+      }
+
+      @if (activeTab() === "picture") {
+        <!-- A picture read for words to write a prompt from. The picture is
+             read and forgotten: it is never attached as the source, and
+             nothing about the image request changes. The two forms land
+             separately, so the caption shows without waiting on the tags. -->
+        <div class="gs-describe" [class.gs-describe--drop]="describeDragging()">
+          <div class="gs-describe-open">
             <button
               type="button"
-              class="gs-chip"
-              [class.gs-chip--active]="chosenStyle() === null"
-              [attr.aria-pressed]="chosenStyle() === null"
-              [disabled]="busy()"
-              (click)="chooseStyle(null)"
+              class="gs-chip gap-1.5"
+              [disabled]="describe.pending()"
+              (click)="describeFile.click()"
             >
-              {{ "prompt_draft.direction_builtin" | transloco }}
+              <app-icon name="beaker" class="gs-ico-sm" />
+              {{ "generate.describe.open" | transloco }}
             </button>
-            @for (style of roleStyles(); track style.id) {
+            @if (describe.sourcePicture()) {
               <button
                 type="button"
                 class="gs-chip"
-                [class.gs-chip--active]="chosenStyle()?.id === style.id"
-                [attr.aria-pressed]="chosenStyle()?.id === style.id"
-                [attr.title]="style.info ?? style.name"
-                [disabled]="busy()"
-                (click)="chooseStyle(style.id)"
+                [disabled]="describe.pending()"
+                (click)="describeSourcePicture()"
               >
-                {{ styleLabel(style) }}
+                {{ "generate.describe.use_source" | transloco }}
               </button>
             }
+            <input
+              #describeFile
+              type="file"
+              accept="image/*"
+              class="sr-only"
+              (change)="onDescribeFilePicked($event)"
+            />
           </div>
+          <p class="gs-sublabel">
+            {{
+              (describeDragging()
+                ? "generate.describe.drop_hint"
+                : "generate.describe.lead"
+              ) | transloco
+            }}
+          </p>
+          @if (describe.pending() || describe.hasFindings()) {
+            @if (describe.pending()) {
+              <p class="gs-describe-pending">
+                <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+                {{ "generate.describe.pending" | transloco }}
+              </p>
+            }
+            @if (describe.hasFindings()) {
+              <p class="gs-describe-origin">
+                @switch (describe.origin()) {
+                  @case ("source") {
+                    {{ "generate.describe.from_source" | transloco }}
+                  }
+                  @case ("result") {
+                    {{ "generate.describe.from_result" | transloco }}
+                  }
+                  @default {
+                    {{ "generate.describe.from_picked" | transloco }}
+                  }
+                }
+              </p>
+            }
+            @if (describe.findings().caption; as caption) {
+              <p class="gs-describe-line">
+                <span class="gs-describe-label">
+                  {{ "generate.describe.caption_label" | transloco }}
+                </span>
+                <span class="gs-describe-text">{{ caption }}</span>
+                <button
+                  type="button"
+                  class="gs-describe-glyph"
+                  [attr.aria-label]="
+                    'generate.describe.copy_caption' | transloco
+                  "
+                  (click)="copyDescribeLine(caption)"
+                >
+                  <app-icon name="copy" class="gs-ico-sm" />
+                </button>
+              </p>
+            }
+            @if (describe.findings().tags; as tags) {
+              <p class="gs-describe-line">
+                <span class="gs-describe-label">
+                  {{ "generate.describe.tags_label" | transloco }}
+                </span>
+                <span class="gs-describe-text">{{ tags }}</span>
+                <button
+                  type="button"
+                  class="gs-describe-glyph"
+                  [attr.aria-label]="'generate.describe.copy_tags' | transloco"
+                  (click)="copyDescribeLine(tags)"
+                >
+                  <app-icon name="copy" class="gs-ico-sm" />
+                </button>
+              </p>
+            }
+            <div class="gs-describe-actions">
+              @if (describe.findings().caption) {
+                <button
+                  type="button"
+                  class="gs-chip"
+                  (click)="useDescribeCaption()"
+                >
+                  {{ "generate.describe.use_as_prompt" | transloco }}
+                </button>
+              }
+              <button
+                type="button"
+                class="gs-describe-glyph ml-auto"
+                [attr.aria-label]="'generate.describe.dismiss' | transloco"
+                (click)="describe.clear()"
+              >
+                <app-icon name="x-mark" class="gs-ico-sm" />
+              </button>
+            </div>
+          }
         </div>
+      } @else {
+        <p class="gs-sublabel alchemy-draft__lead">
+          {{
+            (mode() === "improve"
+              ? "prompt_draft.lead_improve"
+              : "prompt_draft.lead"
+            ) | transloco
+          }}
+        </p>
+        @if (picture() && describe.hasFindings()) {
+          <p class="gs-sublabel alchemy-draft__with-findings">
+            {{ "prompt_draft.with_findings" | transloco }}
+          </p>
+        }
       }
 
       <label class="alchemy-draft__field">
@@ -104,38 +237,6 @@
       </label>
 
       <div class="alchemy-draft__row">
-        @if (chosenStyle()) {
-          <p class="gs-sublabel alchemy-draft__from-style">
-            {{ "prompt_draft.model_from_style" | transloco }}
-          </p>
-        } @else {
-          <label class="alchemy-draft__field alchemy-draft__field--model">
-            <span class="alchemy-draft__label">
-              {{ "prompt_draft.model_label" | transloco }}
-            </span>
-            <select
-              class="gs-view-select"
-              [value]="pick()"
-              [disabled]="busy()"
-              (change)="onPickChange($any($event.target).value)"
-            >
-              <option value="auto">
-                {{ "prompt_draft.model_auto" | transloco }}
-              </option>
-              <option value="any">
-                {{ "prompt_draft.model_any" | transloco }}
-              </option>
-              @for (model of onlineModels(); track model.name) {
-                <option [value]="'model:' + model.name">
-                  {{ model.name }} ({{ model.count }})
-                  @if (isCurated(model)) {
-                    ★
-                  }
-                </option>
-              }
-            </select>
-          </label>
-        }
         <button
           type="button"
           class="gs-btn gs-btn--dense alchemy-draft__go"
@@ -148,55 +249,12 @@
           } @else {
             <app-icon name="pencil-square" class="gs-ico-sm" />
             {{
-              (mode() === "improve"
-                ? "prompt_draft.go_improve"
-                : "prompt_draft.go"
-              ) | transloco
+              (improving() ? "prompt_draft.go_improve" : "prompt_draft.go")
+                | transloco
             }}
           }
         </button>
-        <app-json-inspector-trigger
-          class="alchemy-draft__preview-trigger"
-          [label]="'prompt_draft.preview_trigger' | transloco"
-          (triggered)="openPreview()"
-        />
       </div>
-
-      <label class="gs-switch gs-switch-row alchemy-draft__takes">
-        <span>{{ "prompt_draft.takes_label" | transloco }}</span>
-        <input
-          type="checkbox"
-          [checked]="threeTakes()"
-          [disabled]="busy()"
-          (change)="onThreeTakesChange($any($event.target).checked)"
-        />
-        <span class="gs-switch-track"
-          ><span class="gs-switch-knob"></span
-        ></span>
-      </label>
-      <p class="gs-sublabel alchemy-draft__takes-note">
-        {{ "prompt_draft.takes_note" | transloco }}
-      </p>
-
-      <label
-        class="gs-switch gs-switch-row alchemy-draft__anon"
-        [attr.title]="
-          anonymousLocked()
-            ? ('prompt_draft.anonymous_locked' | transloco)
-            : null
-        "
-      >
-        <span>{{ "prompt_draft.anonymous_label" | transloco }}</span>
-        <input
-          type="checkbox"
-          [checked]="anonymous()"
-          [disabled]="anonymousLocked() || busy()"
-          (change)="onAnonymousChange($any($event.target).checked)"
-        />
-        <span class="gs-switch-track"
-          ><span class="gs-switch-knob"></span
-        ></span>
-      </label>
 
       @let price = estimatedKudos();
       @let held = balance();
@@ -221,6 +279,149 @@
           {{ "prompt_draft.waiting" | transloco }}
         </p>
       }
+
+      <!-- Everything that steers the request rather than starting it. Folded
+           by default so the card is a field and a button; the fold remembers
+           the reader's answer, and opens itself when the card has changed one
+           of these settings on their behalf. -->
+      <div class="alchemy-draft__options">
+        <button
+          type="button"
+          class="alchemy-draft__options-toggle"
+          [attr.aria-expanded]="optionsOpen()"
+          (click)="toggleOptions()"
+        >
+          <app-icon
+            name="chevron-right"
+            class="alchemy-result__chevron"
+            [class.alchemy-result__chevron--open]="optionsOpen()"
+          />
+          {{ "prompt_draft.options" | transloco }}
+        </button>
+        @if (optionsOpen()) {
+          @if (roleStyles().length > 0) {
+            <div class="alchemy-draft__field alchemy-draft__directions">
+              <span class="alchemy-draft__label">
+                {{ "prompt_draft.direction_label" | transloco }}
+              </span>
+              <div
+                class="alchemy-draft__chips"
+                role="group"
+                [attr.aria-label]="'prompt_draft.direction_label' | transloco"
+              >
+                <button
+                  type="button"
+                  class="gs-chip"
+                  [class.gs-chip--active]="chosenStyle() === null"
+                  [attr.aria-pressed]="chosenStyle() === null"
+                  [disabled]="busy()"
+                  (click)="chooseStyle(null)"
+                >
+                  {{ "prompt_draft.direction_builtin" | transloco }}
+                </button>
+                @for (style of roleStyles(); track style.id) {
+                  <button
+                    type="button"
+                    class="gs-chip"
+                    [class.gs-chip--active]="chosenStyle()?.id === style.id"
+                    [attr.aria-pressed]="chosenStyle()?.id === style.id"
+                    [attr.title]="style.info ?? style.name"
+                    [disabled]="busy()"
+                    (click)="chooseStyle(style.id)"
+                  >
+                    {{ styleLabel(style) }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (chosenStyle()) {
+            <p class="gs-sublabel alchemy-draft__from-style">
+              {{ "prompt_draft.model_from_style" | transloco }}
+            </p>
+          } @else {
+            <label class="alchemy-draft__field alchemy-draft__field--model">
+              <span class="alchemy-draft__label">
+                {{ "prompt_draft.model_label" | transloco }}
+              </span>
+              <select
+                class="gs-view-select"
+                [value]="pick()"
+                [disabled]="busy()"
+                (change)="onPickChange($any($event.target).value)"
+              >
+                <option value="auto">
+                  {{ "prompt_draft.model_auto" | transloco }}
+                </option>
+                <option value="any">
+                  {{ "prompt_draft.model_any" | transloco }}
+                </option>
+                @for (model of onlineModels(); track model.name) {
+                  <option [value]="'model:' + model.name">
+                    {{ model.name }} ({{ model.count }})
+                    @if (isCurated(model)) {
+                      ★
+                    }
+                  </option>
+                }
+              </select>
+            </label>
+          }
+
+          <label class="alchemy-draft__field alchemy-draft__takes">
+            <span class="alchemy-draft__label">
+              {{ "prompt_draft.takes_label" | transloco }}
+            </span>
+            <input
+              type="number"
+              class="gs-numfield gs-mono"
+              [min]="minTakes"
+              [max]="maxTakes"
+              step="1"
+              [value]="takes()"
+              [disabled]="busy()"
+              (input)="onTakesInput($any($event.target).value)"
+            />
+          </label>
+          <p class="gs-sublabel alchemy-draft__takes-note">
+            {{ "prompt_draft.takes_note" | transloco }}
+          </p>
+
+          <label
+            class="gs-switch gs-switch-row alchemy-draft__anon"
+            [attr.title]="
+              anonymousLocked()
+                ? ('prompt_draft.anonymous_locked' | transloco)
+                : null
+            "
+          >
+            <span>{{ "prompt_draft.anonymous_label" | transloco }}</span>
+            <input
+              type="checkbox"
+              [checked]="anonymous()"
+              [disabled]="anonymousLocked() || busy()"
+              (change)="onAnonymousChange($any($event.target).checked)"
+            />
+            <span class="gs-switch-track"
+              ><span class="gs-switch-knob"></span
+            ></span>
+          </label>
+
+          <!-- On a line of its own at the foot of the fold, named rather than
+               drawn as a glyph: in a header a glyph sits among other glyphs,
+               but in a column of labelled settings a bare one reads as a
+               control that lost its label. -->
+          <button
+            type="button"
+            class="gs-btn gs-btn--dense alchemy-draft__preview-trigger"
+            (click)="openPreview()"
+          >
+            <app-icon name="code-bracket" class="gs-ico-sm" />
+            {{ "prompt_draft.preview_trigger" | transloco }}
+          </button>
+        }
+      </div>
 
       @let result = outcome();
       @if (result) {

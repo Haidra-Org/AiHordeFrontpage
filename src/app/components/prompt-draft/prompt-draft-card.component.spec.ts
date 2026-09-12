@@ -12,6 +12,11 @@ import {
   StoredPromptDraft,
 } from '../../services/prompt-draft-db.service';
 import { AuthService } from '../../services/auth.service';
+import {
+  DescribeFindings,
+  DescribeOrigin,
+  StudioDescribeService,
+} from '../../services/studio-describe.service';
 
 /** Comfortably past the card's own debounce, so a price has been asked for. */
 const ESTIMATE_WAIT_MS = 750;
@@ -42,6 +47,8 @@ describe('PromptDraftCardComponent', () => {
   let loggedIn: ReturnType<typeof signal<boolean>>;
   let kudos: ReturnType<typeof signal<number | null>>;
   let sent: string | null;
+  let findings: ReturnType<typeof signal<DescribeFindings>>;
+  let describePicture: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     localStorage.clear();
@@ -55,6 +62,8 @@ describe('PromptDraftCardComponent', () => {
       .mockReturnValue({ prompt: 'the body', slow_workers: true });
     loggedIn = signal(false);
     kudos = signal<number | null>(null);
+    findings = signal<DescribeFindings>({ caption: null, tags: null });
+    describePicture = vi.fn().mockResolvedValue(undefined);
     TestBed.configureTestingModule({
       imports: [
         PromptDraftCardComponent,
@@ -89,6 +98,21 @@ describe('PromptDraftCardComponent', () => {
             getStoredApiKey: () => null,
           },
         },
+        {
+          provide: StudioDescribeService,
+          useValue: {
+            findings,
+            hasFindings: () => {
+              const { caption, tags } = findings();
+              return caption !== null || tags !== null;
+            },
+            pending: () => false,
+            origin: (): DescribeOrigin => 'picked',
+            sourcePicture: () => null,
+            describe: describePicture,
+            clear: () => findings.set({ caption: null, tags: null }),
+          },
+        },
       ],
     });
   });
@@ -114,10 +138,17 @@ describe('PromptDraftCardComponent', () => {
   };
   const anonInput = (): HTMLInputElement =>
     el().querySelector('.alchemy-draft__anon input') as HTMLInputElement;
+  /** Everything that steers the request is folded away until this is pressed. */
+  const openOptions = async (): Promise<void> => {
+    fixture.componentInstance.toggleOptions();
+    fixture.detectChanges();
+    await settle();
+  };
 
-  it('lists the models online once open, curated ones first', async () => {
+  it('lists the models online under Options, curated ones first', async () => {
     build();
     await settle();
+    await openOptions();
     const options = [...el().querySelectorAll('select option')].map(
       (o) => (o as HTMLOptionElement).value,
     );
@@ -239,6 +270,7 @@ describe('PromptDraftCardComponent', () => {
   it('locks the switch on when there is nobody signed in', async () => {
     build();
     await settle();
+    await openOptions();
     expect(anonInput().checked).toBe(true);
     expect(anonInput().disabled).toBe(true);
     expect(fixture.componentInstance.anonymous()).toBe(true);
@@ -249,6 +281,7 @@ describe('PromptDraftCardComponent', () => {
     kudos.set(400);
     build();
     await settle();
+    await openOptions();
     expect(anonInput().checked).toBe(false);
     expect(anonInput().disabled).toBe(false);
   });
@@ -259,6 +292,7 @@ describe('PromptDraftCardComponent', () => {
     kudos.set(400);
     build();
     await settle();
+    await openOptions();
     expect(anonInput().checked).toBe(true);
 
     fixture.componentInstance.onAnonymousChange(false);
@@ -283,6 +317,7 @@ describe('PromptDraftCardComponent', () => {
   it('offers no directions while the horde carries no styles for the job', async () => {
     build();
     await settle();
+    await openOptions();
     expect(el().querySelector('.alchemy-draft__chips')).toBeNull();
     expect(el().querySelector('select')).not.toBeNull();
   });
@@ -328,6 +363,7 @@ describe('PromptDraftCardComponent', () => {
     });
     build();
     await settle();
+    await openOptions();
 
     const chips = [...el().querySelectorAll('.alchemy-draft__chips button')];
     // A style that names no direction is the plain one of its role, so the
@@ -379,7 +415,7 @@ describe('PromptDraftCardComponent', () => {
     });
   });
 
-  it('asks for three takes and shows each of them', async () => {
+  it('asks for as many takes as the number says, and shows each of them', async () => {
     draft.mockResolvedValue({
       kind: 'done',
       texts: ['one dog', 'two dogs', 'three dogs'],
@@ -390,7 +426,7 @@ describe('PromptDraftCardComponent', () => {
     });
     build();
     await settle();
-    fixture.componentInstance.onThreeTakesChange(true);
+    fixture.componentInstance.onTakesInput('3');
     await fixture.componentInstance.draft();
     fixture.detectChanges();
 
@@ -467,5 +503,137 @@ describe('PromptDraftCardComponent', () => {
     await settle();
     expect(remove).toHaveBeenCalledWith('p1');
     expect(el().querySelector('.alchemy-draft__history-row')).toBeNull();
+  });
+  it('shows only the note, the button and the price until Options is opened', async () => {
+    build();
+    await settle();
+    expect(el().querySelector('.alchemy-draft__options-toggle')).not.toBeNull();
+    expect(el().querySelector('select')).toBeNull();
+    expect(el().querySelector('.alchemy-draft__anon')).toBeNull();
+    expect(el().querySelector('.alchemy-draft__takes')).toBeNull();
+    expect(el().querySelector('.alchemy-draft__preview-trigger')).toBeNull();
+    expect(el().querySelector('.alchemy-draft__go')).not.toBeNull();
+
+    await openOptions();
+    expect(el().querySelector('select')).not.toBeNull();
+    expect(el().querySelector('.alchemy-draft__anon')).not.toBeNull();
+    expect(el().querySelector('.alchemy-draft__takes')).not.toBeNull();
+    expect(
+      el().querySelector('.alchemy-draft__preview-trigger'),
+    ).not.toBeNull();
+    expect(localStorage.getItem('aihorde.prompt-draft.options')).toBe('true');
+  });
+
+  it('opens the fold on a visit where the reader last left it open', async () => {
+    localStorage.setItem('aihorde.prompt-draft.options', 'true');
+    build();
+    await settle();
+    expect(fixture.componentInstance.optionsOpen()).toBe(true);
+    expect(el().querySelector('select')).not.toBeNull();
+  });
+
+  it('keeps the takes number inside the range the card offers', async () => {
+    build();
+    await settle();
+    fixture.componentInstance.onTakesInput('9');
+    expect(fixture.componentInstance.takes()).toBe(5);
+    fixture.componentInstance.onTakesInput('0');
+    expect(fixture.componentInstance.takes()).toBe(1);
+    fixture.componentInstance.onTakesInput('');
+    expect(fixture.componentInstance.takes()).toBe(1);
+  });
+
+  it('opens the fold when it moves a draft onto the anonymous key by itself', async () => {
+    loggedIn.set(true);
+    kudos.set(5);
+    estimate.mockResolvedValue(50);
+    build();
+    await settlePrice();
+    expect(fixture.componentInstance.optionsOpen()).toBe(true);
+    expect(anonInput().checked).toBe(true);
+    // The card's own fold is not the reader's answer, so it is not remembered.
+    expect(localStorage.getItem('aihorde.prompt-draft.options')).toBeNull();
+  });
+
+  it('offers both ways into a prompt in the studio, and neither under a job', async () => {
+    build();
+    await settle();
+    expect(el().querySelector('.alchemy-draft__tabs')).toBeNull();
+
+    fixture.componentRef.setInput('picture', true);
+    fixture.componentRef.setInput('seed', 'a dog on a couch');
+    fixture.detectChanges();
+    await settle();
+    const tabs = [
+      ...el().querySelectorAll('.alchemy-draft__tabs button'),
+    ] as HTMLButtonElement[];
+    expect(tabs).toHaveLength(2);
+    expect(el().querySelector('.gs-describe')).toBeNull();
+
+    tabs[1].click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.activeTab()).toBe('picture');
+    expect(el().querySelector('.gs-describe')).not.toBeNull();
+    expect(el().querySelector('.alchemy-draft__lead')).toBeNull();
+  });
+
+  it('says in the head that a picture was read, and writes from it as well', async () => {
+    draft.mockResolvedValue({
+      kind: 'done',
+      texts: ['a dog on a couch, warm light'],
+      model: 'm',
+      kudos: 1,
+      seed: null,
+      ids: ['d1'],
+    });
+    build();
+    fixture.componentRef.setInput('caption', null);
+    fixture.componentRef.setInput('tags', null);
+    fixture.componentRef.setInput('picture', true);
+    fixture.componentRef.setInput('seed', 'a dog');
+    fixture.detectChanges();
+    await settle();
+    expect(el().querySelector('.alchemy-draft__found')).toBeNull();
+
+    findings.set({ caption: 'a dog on a couch', tags: 'dog, couch' });
+    fixture.detectChanges();
+    expect(el().querySelector('.alchemy-draft__found')?.textContent).toContain(
+      'prompt_draft.findings_badge',
+    );
+    expect(
+      el().querySelector('.alchemy-draft__with-findings')?.textContent,
+    ).toContain('prompt_draft.with_findings');
+
+    await fixture.componentInstance.draft();
+    expect(draft.mock.calls.at(-1)?.[0]).toEqual({
+      prompt: 'a dog',
+      note: '',
+      caption: 'a dog on a couch',
+      tags: 'dog, couch',
+    });
+  });
+
+  it('reads a picture let go anywhere on the body of the picture tab', async () => {
+    build();
+    fixture.componentRef.setInput('picture', true);
+    fixture.componentRef.setInput('seed', 'a dog');
+    fixture.detectChanges();
+    await settle();
+    const body = el().querySelector('.alchemy-draft__body') as HTMLElement;
+    const file = new File(['x'], 'p.png', { type: 'image/png' });
+    const transfer = { files: [file] } as unknown as DataTransfer;
+
+    // The improve tab is showing, so the body is not a drop target.
+    const ignored = new Event('drop', { bubbles: true });
+    Object.defineProperty(ignored, 'dataTransfer', { value: transfer });
+    body.dispatchEvent(ignored);
+    expect(describePicture).not.toHaveBeenCalled();
+
+    fixture.componentInstance.chooseTab('picture');
+    fixture.detectChanges();
+    const dropped = new Event('drop', { bubbles: true });
+    Object.defineProperty(dropped, 'dataTransfer', { value: transfer });
+    body.dispatchEvent(dropped);
+    expect(describePicture).toHaveBeenCalledWith(file, 'picked');
   });
 });
