@@ -2030,9 +2030,11 @@ export class GsSweepScrubComponent {
   /** What the two ends were rendered at, under the ends of the rail. */
   public readonly endValues = computed(() => {
     const stops = this.stops();
+    const first = stops.at(0);
+    const last = stops.at(-1);
     return {
-      first: stops.length > 0 ? this.valueTextOf(stops[0]) : '',
-      last: stops.length > 0 ? this.valueTextOf(stops[stops.length - 1]) : '',
+      first: first ? this.valueTextOf(first) : '',
+      last: last ? this.valueTextOf(last) : '',
     };
   });
 
@@ -2052,9 +2054,9 @@ export class GsSweepScrubComponent {
     const named = this.strip()?.preview;
     const left = this.clampStop(named?.left_index ?? this.defaultStop());
     const right = this.clampStop(named?.right_index ?? last);
-    return left === right
-      ? [stops[0], stops[last]]
-      : [stops[left], stops[right]];
+    const leftStop = stops.at(left === right ? 0 : left);
+    const rightStop = stops.at(left === right ? last : right);
+    return leftStop && rightStop ? [leftStop, rightStop] : null;
   });
 
   /**
@@ -2124,9 +2126,13 @@ export class GsSweepScrubComponent {
       : Math.floor(Math.max(this.lastIndex(), 0) / 2);
   });
 
-  public readonly stop = computed<SweepStop>(
-    () => this.strip()!.stops[this.index()],
-  );
+  public readonly stop = computed<SweepStop>(() => {
+    const stop = this.strip()?.stops.at(this.index());
+    if (!stop) {
+      throw new Error('Sweep has no stop at the active index');
+    }
+    return stop;
+  });
 
   /** The setting and its value as one mono token, on the stage. */
   public readonly pillText = computed(() => {
@@ -2778,8 +2784,12 @@ export class GsSweepScrubComponent {
     if (this.tour() !== null) {
       return;
     }
+    const first = this.tourSteps().at(0);
+    if (!first) {
+      return;
+    }
     this.tourReturnTo = this.index();
-    this.showTourStep(this.tourSteps()[0]);
+    this.showTourStep(first);
     const plate = this.plateRef()?.nativeElement;
     if (plate) {
       // A press anywhere on the plate that is not the bubble is the reader

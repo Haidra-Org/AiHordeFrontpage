@@ -464,7 +464,7 @@ export class GsSweepGridComponent {
       this.closeButton()?.nativeElement.focus();
       return;
     }
-    const step = MOVES[event.key];
+    const step = (MOVES as Readonly<Record<string, CellMove>>)[event.key];
     if (step === undefined) {
       return;
     }
@@ -517,12 +517,12 @@ interface CellMove {
 }
 
 /** Which way each arrow key moves the cell cursor. */
-const MOVES: Readonly<Record<string, CellMove>> = {
+const MOVES = {
   ArrowLeft: { row: 0, column: -1 },
   ArrowRight: { row: 0, column: 1 },
   ArrowUp: { row: -1, column: 0 },
   ArrowDown: { row: 1, column: 0 },
-};
+} as const satisfies Readonly<Record<string, CellMove>>;
 
 /** The same four moves as buttons in the cell view, in reading order. */
 const CELL_MOVES: readonly (CellMove & {
