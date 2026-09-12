@@ -5297,6 +5297,59 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
+/* ------- one press for a whole intent, over the operation groups ----- */
+/* A reader who came to turn a picture into a prompt should not have to know
+   that this is two operations inside a group. The press sits above the groups
+   where a collapsed group cannot hide it, and reads as an entry point rather
+   than a control: it wears the studio's alchemy hue, and takes a check when
+   both of its operations are already asked for, so the state is never colour
+   alone. */
+.gen-studio .gs-op-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin-bottom: var(--gs-space-3);
+}
+.gen-studio .gs-op-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  min-height: 40px;
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border: 1px solid var(--gs-sec-alchemy-tint-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-sec-alchemy-tint);
+  color: var(--gs-ink);
+  font-family: inherit;
+  font-size: var(--gs-text-sm);
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.gen-studio .gs-op-quick-btn:hover {
+  border-color: var(--gs-sec-alchemy);
+}
+.gen-studio .gs-op-quick-btn:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-op-quick-btn--on {
+  border-color: var(--gs-sec-alchemy);
+}
+.gen-studio .gs-op-quick-note {
+  flex: 1;
+  min-width: 12rem;
+  color: var(--gs-muted);
+  font-size: var(--gs-text-xs);
+  line-height: 1.35;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-op-quick-btn {
+    min-height: 44px;
+  }
+}
+
 /* Factor badge + info button, grouped and right-justified so both stay aligned
    across rows no matter how long the operation name is: the name wraps under
    itself and this group holds its place at the right edge. */

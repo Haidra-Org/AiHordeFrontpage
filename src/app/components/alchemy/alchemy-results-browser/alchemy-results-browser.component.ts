@@ -97,6 +97,12 @@ export class AlchemyResultsBrowserComponent {
    */
   public readonly paneOpen = input<boolean>(false);
   /**
+   * The request whose prompt draft the reader asked for before running it.
+   * Its card unfolds as soon as there is a caption or tags to write from,
+   * instead of being one more thing to go looking for.
+   */
+  public readonly openDraftForJobId = input<string | null>(null);
+  /**
    * What the page wants read after the results, wherever they scroll: the
    * retention note and the volunteer door. A template rather than projected
    * content because the detail pane and the gallery are two scroll regions
@@ -180,16 +186,25 @@ export class AlchemyResultsBrowserComponent {
    * drops the columns none of them fill, and a lone request's table is that
    * request's operations and no more.
    */
-  protected readonly columns = computed(() => seriesColumns(this.seriesJobs()));
+  protected readonly columns = computed(() => seriesColumns(this.seriesPool()));
 
-  protected readonly seriesJobs = computed(() => {
+  /**
+   * The rows the table is about, in the age order the history keeps them in.
+   * The columns are read from here rather than from the sorted rows, since
+   * their order is the order the requests first asked for each operation: a
+   * sort is about the rows, and must not move a column out from under the
+   * reader.
+   */
+  private readonly seriesPool = computed(() => {
     const selected = this.selectedJob();
-    const pool =
-      this.sameOpsOnly() && selected
-        ? this.jobs().filter((job) => sharesOperations(job, selected))
-        : this.jobs();
-    return sortSeries(pool, this.seriesSort());
+    return this.sameOpsOnly() && selected
+      ? this.jobs().filter((job) => sharesOperations(job, selected))
+      : this.jobs();
   });
+
+  protected readonly seriesJobs = computed(() =>
+    sortSeries(this.seriesPool(), this.seriesSort()),
+  );
 
   protected readonly cell = seriesCell;
 
@@ -359,6 +374,29 @@ export class AlchemyResultsBrowserComponent {
 
   protected foldPinFor(jobId: string): AlchemyFoldPin | null {
     return this.foldPins().get(jobId) ?? null;
+  }
+
+  /**
+   * The pin that unfolds a named request's draft card. Stamped as the name
+   * changes, since a card only reacts to a stamp it has not seen: another
+   * request asked for from the quick pick opens its own card again.
+   */
+  private readonly draftPin = computed<{
+    jobId: string;
+    pin: AlchemyFoldPin;
+  } | null>(() => {
+    const jobId = this.openDraftForJobId();
+    return jobId === null
+      ? null
+      : { jobId, pin: { open: true, stamp: Date.now() } };
+  });
+
+  /** The draft card follows the later of the fold-all press and that pin. */
+  protected draftPinFor(jobId: string): AlchemyFoldPin | null {
+    const folded = this.foldPinFor(jobId);
+    const asked = this.draftPin();
+    if (asked?.jobId !== jobId) return folded;
+    return folded && folded.stamp > asked.pin.stamp ? folded : asked.pin;
   }
 
   /** The head button folds everything unless the last press folded already. */

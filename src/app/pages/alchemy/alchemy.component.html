@@ -229,6 +229,27 @@
             </span>
           </div>
 
+          <!-- The pair of operations a prompt is written from, over the groups
+               rather than inside one: a reader who came to turn a picture into
+               a prompt should not have to know which operations that takes. -->
+          <div class="gs-op-quick">
+            <button
+              type="button"
+              class="gs-op-quick-btn"
+              [class.gs-op-quick-btn--on]="promptFormsPicked()"
+              (click)="pickImageToPrompt()"
+            >
+              <app-icon
+                [name]="promptFormsPicked() ? 'check' : 'sec-prompt'"
+                class="gs-ico-sm"
+              />
+              {{ "alchemy.quick.image_to_prompt" | transloco }}
+            </button>
+            <span class="gs-op-quick-note">
+              {{ "alchemy.quick.image_to_prompt_note" | transloco }}
+            </span>
+          </div>
+
           <!-- operation groups (collapsible; upscalers split by use case) -->
           <div class="gs-op-groups flex flex-col gap-4">
             @for (group of operationGroups; track group.id) {
@@ -717,6 +738,9 @@
               <div class="gs-empty-sub">
                 {{ "alchemy.jobs.empty_hint" | transloco }}
               </div>
+              <div class="gs-empty-sub">
+                {{ "alchemy.jobs.empty_prompt_path" | transloco }}
+              </div>
             </div>
           </div>
         } @else {
@@ -733,6 +757,7 @@
             [resultImageUrls]="resultImageUrls()"
             [resultThumbUrls]="resultThumbUrls()"
             [paneOpen]="jobPaneOpen()"
+            [openDraftForJobId]="openDraftForJobId()"
             [foot]="resultsFoot"
             (activateJob)="selectJob($event)"
             (toggleSelected)="toggleJobSelected($event)"

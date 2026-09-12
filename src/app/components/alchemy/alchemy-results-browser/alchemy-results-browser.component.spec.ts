@@ -41,6 +41,7 @@ const makeJob = (
       [resultImageUrls]="resultImageUrls()"
       [resultThumbUrls]="resultThumbUrls()"
       [paneOpen]="paneOpen()"
+      [openDraftForJobId]="openDraftForJobId()"
       [foot]="foot"
       (activateJob)="selected = $event"
       (toggleSelected)="toggled = $event"
@@ -67,6 +68,7 @@ class HostComponent {
   resultImageUrls = signal<ReadonlyMap<string, string>>(new Map());
   resultThumbUrls = signal<ReadonlyMap<string, string>>(new Map());
   paneOpen = signal(false);
+  openDraftForJobId = signal<string | null>(null);
   selected: string | null = null;
   toggled: string | null = null;
   paneClosed = 0;
@@ -299,6 +301,37 @@ describe('AlchemyResultsBrowserComponent', () => {
     ).not.toBeNull();
   });
 
+  it('leads the flow with the prompt draft, folded, once there is a caption', () => {
+    host.jobs.set([runningJob()]);
+    host.selectedJobId.set('job-run');
+    fixture.detectChanges();
+
+    const flow = fixture.nativeElement.querySelector(
+      '.gs-result-flow',
+    ) as HTMLElement;
+    expect(flow.firstElementChild?.tagName.toLowerCase()).toBe(
+      'app-prompt-draft-card',
+    );
+    expect(
+      flow.querySelector('.alchemy-draft.alchemy-result--open'),
+    ).toBeNull();
+  });
+
+  it('opens the draft of the request the page names', () => {
+    host.jobs.set([runningJob()]);
+    host.selectedJobId.set('job-run');
+    fixture.detectChanges();
+
+    host.openDraftForJobId.set('job-run');
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector(
+        '.alchemy-draft.alchemy-result--open',
+      ),
+    ).not.toBeNull();
+  });
+
   it('previews the lead result on a gallery tile and shows progress in the badge', () => {
     host.jobs.set([runningJob()]);
     host.viewMode.set('gallery');
@@ -422,6 +455,53 @@ describe('AlchemyResultsBrowserComponent', () => {
           .querySelectorAll('thead .gs-series-th')[2]
           .getAttribute('aria-sort'),
       ).toBe('none');
+    });
+
+    it('keeps the columns where they are while the rows are sorted', () => {
+      // Two requests with different operations, so the column order is the
+      // order the requests asked for them and a reordering of the rows would
+      // show up as a reordering of the heads.
+      const withForms = (
+        id: string,
+        form: 'nsfw' | 'aesthetic',
+        caption: string,
+      ): AlchemyJob => ({
+        ...makeJob(id, null),
+        forms: ['caption', form],
+        status: {
+          state: 'done',
+          forms: [
+            { form: 'caption', state: 'done', result: { caption } },
+            {
+              form,
+              state: 'done',
+              result: form === 'nsfw' ? { nsfw: false } : { aesthetic: 5 },
+            },
+          ],
+        },
+      });
+      host.jobs.set([
+        withForms('job-new', 'nsfw', 'zebra'),
+        withForms('job-old', 'aesthetic', 'apple'),
+      ]);
+      fixture.detectChanges();
+
+      const heads = (): string[] =>
+        [...fixture.nativeElement.querySelectorAll('thead .gs-series-th')].map(
+          (th) => (th as HTMLElement).textContent?.trim() ?? '',
+        );
+      const before = heads();
+      const captionSort = () =>
+        fixture.nativeElement.querySelector(
+          '.gs-series-sort',
+        ) as HTMLButtonElement;
+
+      captionSort().click();
+      fixture.detectChanges();
+      expect(heads()).toEqual(before);
+      captionSort().click();
+      fixture.detectChanges();
+      expect(heads()).toEqual(before);
     });
 
     it('opens a request from its row', () => {

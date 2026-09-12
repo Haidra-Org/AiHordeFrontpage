@@ -452,6 +452,38 @@ describe('AlchemyComponent', () => {
     });
   });
 
+  describe('image to prompt', () => {
+    it('takes the pair it needs and leaves other picks alone', () => {
+      select('nsfw');
+      component.pickImageToPrompt();
+
+      expect(component.isFormSelected('caption')).toBe(true);
+      expect(component.isFormSelected('interrogation')).toBe(true);
+      expect(component.isFormSelected('nsfw')).toBe(true);
+      expect(component.promptFormsPicked()).toBe(true);
+    });
+
+    it('carries the request it asked for to the results pane', async () => {
+      component.onSourceImage('https://example.com/i.png');
+      component.pickImageToPrompt();
+
+      component.submit();
+      await settle();
+
+      expect(component.openDraftForJobId()).toBe('job-1');
+    });
+
+    it('leaves the next request alone', async () => {
+      component.onSourceImage('https://example.com/i.png');
+      select('caption');
+
+      component.submit();
+      await settle();
+
+      expect(component.openDraftForJobId()).toBeNull();
+    });
+  });
+
   describe('submit', () => {
     it('hands the request to the queue and shows the new job', async () => {
       component.onSourceImage('https://example.com/i.png');

@@ -551,6 +551,18 @@
        back. Short results share a row, tall ones take the width. -->
   <div class="gs-result-flow">
     @let pictures = jobPictures(job, cards);
+    <!-- Writing a prompt from what the request found is something to do with
+         the whole request, not one more of its results, so it leads the flow
+         once there is a caption or tags to write from. Folded until asked:
+         its head says in a line what it would write. -->
+    @if (promptMaterial(cards); as material) {
+      <app-prompt-draft-card
+        [caption]="material.caption"
+        [tags]="material.tags"
+        [foldPin]="draftPinFor(job.id)"
+        (apply)="sendToPrompt.emit($event)"
+      />
+    }
     @for (card of cards; track card.key) {
       @if (isPictureCard(card)) {
         <!-- Every processed picture of the request shares one stage, drawn
@@ -597,17 +609,6 @@
           </span>
         </div>
       }
-    }
-    <!-- The words the results offer, drafted into a prompt by a text model:
-         the last card of the flow, once there is a caption or tags to write
-         from, folded until asked. -->
-    @if (promptMaterial(cards); as material) {
-      <app-prompt-draft-card
-        [caption]="material.caption"
-        [tags]="material.tags"
-        [foldPin]="foldPinFor(job.id)"
-        (apply)="sendToPrompt.emit($event)"
-      />
     }
   </div>
 </ng-template>

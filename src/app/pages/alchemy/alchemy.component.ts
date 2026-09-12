@@ -457,6 +457,22 @@ export class AlchemyComponent {
   public readonly sourceImage = signal<string | null>(null);
   public readonly selectedForms = signal<Set<AlchemyFormName>>(new Set());
   /**
+   * Reading a picture into a prompt takes a sentence and a set of tags, which
+   * are two operations in the same group and nothing says they belong
+   * together. The panel offers the pair as one press.
+   */
+  public readonly promptForms: readonly AlchemyFormName[] = [
+    'caption',
+    'interrogation',
+  ];
+  /**
+   * Set by that press and spent on the next request, so the draft card of the
+   * request it asked for opens by itself rather than waiting to be found.
+   */
+  private readonly promptIntent = signal(false);
+  /** The request whose prompt-draft card the results pane should unfold. */
+  public readonly openDraftForJobId = signal<string | null>(null);
+  /**
    * The detectors a control-map request asks for, in the order they were
    * picked. Each one is submitted as its own form and returns its own map.
    */
@@ -1006,6 +1022,26 @@ export class AlchemyComponent {
     });
   }
 
+  /** Whether both halves of the picture-to-prompt pair are already asked for. */
+  public readonly promptFormsPicked = computed(() =>
+    this.promptForms.every((form) => this.selectedForms().has(form)),
+  );
+
+  /**
+   * Take the pair the draft is written from, leaving every other pick alone,
+   * and remember that this is what the reader came for.
+   */
+  public pickImageToPrompt(): void {
+    this.activeDetector.set(null);
+    this.activeOperation.set(this.promptForms[0]);
+    this.selectedForms.update((current) => {
+      const next = new Set(current);
+      for (const form of this.promptForms) next.add(form);
+      return next;
+    });
+    this.promptIntent.set(true);
+  }
+
   public previewForm(form: AlchemyFormName): void {
     this.activeDetector.set(null);
     this.activeOperation.set(form);
@@ -1072,6 +1108,10 @@ export class AlchemyComponent {
     }
 
     this.isSubmitting.set(true);
+    // The intent belongs to this request only: a later one that was not asked
+    // for from the quick pick leaves its draft folded.
+    const wantsDraft = this.promptIntent();
+    this.promptIntent.set(false);
     void this.queue
       .submit({
         ...(forms.includes('annotation')
@@ -1087,6 +1127,7 @@ export class AlchemyComponent {
           this.reportRefusal(outcome.error);
           return;
         }
+        if (wantsDraft) this.openDraftForJobId.set(outcome.id);
         this.announceNewJob(outcome.id);
         this.toast.success('alchemy.submit.success', { transloco: true });
       });
