@@ -2,6 +2,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -20,6 +21,7 @@ import {
   showcaseImageUrl,
 } from '../../../../content/home-showcase';
 import { StudioHandoffService } from '../../../../services/studio-handoff.service';
+import { GsPictureDialogComponent } from '../../../../components/gs-picture-dialog/gs-picture-dialog.component';
 
 /** How long a picture holds a tile before the next one takes it. */
 const ROTATE_MS = 6000;
@@ -102,7 +104,7 @@ export interface MosaicTile {
  */
 @Component({
   selector: 'app-homepage-hero',
-  imports: [RouterLink, TranslocoPipe],
+  imports: [RouterLink, TranslocoPipe, GsPictureDialogComponent],
   templateUrl: './homepage-hero.component.html',
   styleUrl: './homepage-hero.component.css',
   host: {
@@ -122,6 +124,8 @@ export class HomepageHeroComponent {
     viewChildren<ElementRef<HTMLButtonElement>>('tileButton');
   private readonly tryButtons =
     viewChildren<ElementRef<HTMLButtonElement>>('tryButton');
+  private readonly viewButtons =
+    viewChildren<ElementRef<HTMLButtonElement>>('viewButton');
 
   /**
    * Which tiles span more than one cell. A mosaic of nine equal squares reads as
@@ -171,6 +175,24 @@ export class HomepageHeroComponent {
   public readonly going = signal<number | null>(null);
 
   /**
+   * The picture being seen whole, as its place in the pool, or null. The dialog
+   * pages through the whole pool rather than the nine on the grid: a reader who
+   * opened one picture is looking at pictures, not at the mosaic.
+   */
+  public readonly viewing = signal<number | null>(null);
+
+  public readonly viewingPicture = computed(() => {
+    const at = this.viewing();
+    return at === null ? null : (HOME_SHOWCASE[at] ?? null);
+  });
+
+  /** Where the open picture sits in the pool, for the dialog's own counter. */
+  public readonly viewingSet = computed(() => {
+    const at = this.viewing();
+    return at === null ? null : { count: HOME_SHOWCASE.length, at: at + 1 };
+  });
+
+  /**
    * The tile showing its back face, or null. One at a time: a wall of pictures
    * that had turned into a wall of text would have stopped being a wall of
    * pictures, and the reader asked about one of them.
@@ -215,6 +237,32 @@ export class HomepageHeroComponent {
   public unflipCurrent(): void {
     const open = this.flipped();
     if (open !== null) this.unflip(open);
+  }
+
+  /** Open the picture whole. The tile stays turned over behind it. */
+  public view(picture: ShowcasePicture): void {
+    const at = HOME_SHOWCASE.findIndex((entry) => entry.id === picture.id);
+    if (at >= 0) this.viewing.set(at);
+  }
+
+  /** Step through the pool from inside the dialog, wrapping at either end. */
+  public step(by: number): void {
+    const at = this.viewing();
+    if (at === null) return;
+    this.viewing.set((at + by + HOME_SHOWCASE.length) % HOME_SHOWCASE.length);
+  }
+
+  /**
+   * Close the picture and put the reader back on the tile they opened it from,
+   * which is still turned over: closing a picture is not closing the prompt.
+   */
+  public closeView(): void {
+    this.viewing.set(null);
+    const open = this.flipped();
+    if (open === null) return;
+    afterNextRender(() => this.viewButtons()[open]?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   /** Turn the tile back, and give the press that turned it its focus back. */
@@ -302,6 +350,9 @@ export class HomepageHeroComponent {
    * caption and the link with it.
    */
   private rotate(): void {
+    // A picture open over the page is the one thing being looked at.
+    if (this.viewing() !== null) return;
+
     // A phone hides the last three tiles, so they are not places a picture can
     // be moved to: the rotation is over what is on the screen.
     if (this.pointerQuiet) return;

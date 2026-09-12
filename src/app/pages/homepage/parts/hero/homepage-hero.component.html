@@ -21,6 +21,9 @@
       </div>
       <p class="home-hero-note">
         {{ "homepage.hero.made_here" | transloco }}
+        <a routerLink="/gallery" class="home-hero-note-link">
+          {{ "homepage.hero.gallery_link" | transloco }}
+        </a>
       </p>
     </div>
 
@@ -113,6 +116,15 @@
                     }
                   </button>
                   <button
+                    #viewButton
+                    type="button"
+                    class="hd-btn home-back-btn"
+                    [disabled]="going"
+                    (click)="view(shown)"
+                  >
+                    {{ "homepage.hero.view_larger" | transloco }}
+                  </button>
+                  <button
                     type="button"
                     class="hd-btn home-back-btn"
                     [disabled]="going"
@@ -129,3 +141,18 @@
     </ul>
   </div>
 </section>
+
+<!-- The picture seen whole, with the request that made it, in the same dialog
+     the gallery opens: a reader meets one surface for a picture wherever they
+     press one. -->
+@if (viewingPicture(); as picture) {
+  <app-gs-picture-dialog
+    [picture]="picture"
+    [pictureUrl]="imageUrl(picture)"
+    [title]="picture.title"
+    [set]="viewingSet()"
+    (closed)="closeView()"
+    (prev)="step(-1)"
+    (next)="step(1)"
+  />
+}

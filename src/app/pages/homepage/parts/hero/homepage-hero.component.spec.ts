@@ -114,14 +114,17 @@ describe('HomepageHeroComponent', () => {
     fixture.nativeElement.querySelectorAll('.home-tile-front')[
       index
     ] as HTMLButtonElement;
-  const tryButton = (index: number): HTMLButtonElement =>
-    fixture.nativeElement.querySelectorAll('.home-back-btn')[
-      index * 2
-    ] as HTMLButtonElement;
+  /** The three presses of one tile's back face, in the order they are read. */
+  const backButtons = (index: number): HTMLButtonElement[] =>
+    Array.from(fixture.nativeElement.querySelectorAll('.home-back-btn')).slice(
+      index * 3,
+      index * 3 + 3,
+    ) as HTMLButtonElement[];
+  const tryButton = (index: number): HTMLButtonElement => backButtons(index)[0];
+  const viewButton = (index: number): HTMLButtonElement =>
+    backButtons(index)[1];
   const backButton = (index: number): HTMLButtonElement =>
-    fixture.nativeElement.querySelectorAll('.home-back-btn')[
-      index * 2 + 1
-    ] as HTMLButtonElement;
+    backButtons(index)[2];
 
   /** Press a tile's picture, and let the focus move that follows it happen. */
   function press(index: number): void {
@@ -400,6 +403,61 @@ describe('HomepageHeroComponent', () => {
 
     expect(fixture.componentInstance.going()).toBeNull();
     expect(tryButton(0).disabled).toBe(false);
+  });
+
+  it('opens the picture whole, and holds the mosaic while it is open', () => {
+    setup(false);
+
+    press(0);
+    viewButton(0).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.viewing()).toBe(0);
+    expect(fixture.componentInstance.viewingPicture()?.id).toBe(
+      HOME_SHOWCASE_FIRST[0].id,
+    );
+    // The dialog pages through the whole pool, not the nine on the grid.
+    expect(fixture.componentInstance.viewingSet()).toEqual({
+      count: HOME_SHOWCASE.length,
+      at: 1,
+    });
+
+    const before = fixture.componentInstance.tiles();
+    vi.advanceTimersByTime(60000);
+    expect(fixture.componentInstance.tiles()).toEqual(before);
+  });
+
+  it('walks the whole pool from inside the dialog, wrapping at either end', () => {
+    setup(false);
+
+    press(0);
+    viewButton(0).click();
+    fixture.componentInstance.step(-1);
+
+    expect(fixture.componentInstance.viewingPicture()?.id).toBe(
+      HOME_SHOWCASE[HOME_SHOWCASE.length - 1].id,
+    );
+
+    fixture.componentInstance.step(1);
+    expect(fixture.componentInstance.viewingPicture()?.id).toBe(
+      HOME_SHOWCASE[0].id,
+    );
+  });
+
+  it('closes the picture onto the press that opened it, still turned over', () => {
+    setup(false);
+
+    press(2);
+    viewButton(2).click();
+    fixture.detectChanges();
+    fixture.componentInstance.closeView();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(fixture.componentInstance.viewing()).toBeNull();
+    // Closing a picture is not closing the prompt, so the tile stays turned.
+    expect(fixture.componentInstance.flipped()).toBe(2);
+    expect(document.activeElement).toBe(viewButton(2));
   });
 
   it('leaves a tile bare when its picture cannot be loaded', () => {

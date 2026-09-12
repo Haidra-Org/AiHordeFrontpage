@@ -58,6 +58,21 @@ describe('home showcase pool', () => {
     }
   });
 
+  it('carries the request each picture was made with', () => {
+    for (const picture of HOME_SHOWCASE) {
+      // The dialog reads the request out and offers it to the studio, so a
+      // picture without one would open on a panel that says nothing.
+      expect(picture.request).toBeDefined();
+      expect(picture.request!.params).toBeDefined();
+      expect(picture.request!.prompt).toBe(picture.prompt);
+      expect(picture.request!.params!.seed).toBe(picture.seed);
+      expect(picture.width).toBe(1024);
+      expect(picture.height).toBe(1024);
+      expect(picture.file).toBe(`gallery/${picture.id}/result.webp`);
+      expect(Array.isArray(picture.tags)).toBe(true);
+    }
+  });
+
   it('addresses the published gallery', () => {
     const picture = HOME_SHOWCASE.find((p) => p.id === 'whale-library')!;
 

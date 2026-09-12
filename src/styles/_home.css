@@ -90,6 +90,14 @@
     text-decoration: none;
   }
 
+  /* The gallery sits in the sentence rather than beside it, so the link takes
+     the note's own size and only its colour says it is one. */
+  .home-hero-note-link {
+    color: var(--hd-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
   .home-hero-note {
     max-width: 46ch;
     margin: var(--hd-space-4) 0 0;
