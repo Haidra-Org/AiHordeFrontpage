@@ -532,14 +532,27 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   );
 
   /**
+   * The name of the style the horde applies to the request, or null when the
+   * studio applies the selection itself or nothing is selected. The horde reads
+   * such a style over the whole request, which is what the panel's locks and
+   * the source card's warning are about.
+   */
+  public readonly hordeStyleName = computed<string | null>(() => {
+    const record = this.styleRecords().get(this.formValue().styleName);
+    return record?.source === 'native' ? record.name : null;
+  });
+
+  /**
    * Whether the selected style pins a model over the form's own pick, with the
-   * reader not having taken the model back from it.
+   * reader not having taken the model back from it. Nothing is taken back from
+   * a style the horde applies: it names the model the render runs on.
    */
   private readonly stylePinsModel = computed(() => {
     const forced = this.forcedParams();
     return (
       forced?.model !== undefined &&
-      !detachedStyleSections(this.formValue()).includes('model')
+      (this.hordeStyleName() !== null ||
+        !detachedStyleSections(this.formValue()).includes('model'))
     );
   });
 
@@ -633,6 +646,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       selectedModels: this.selectedModels(),
       requirements: this.modelRequirements(),
       hasSourceImage: state.sourceBlob !== null,
+      hordeStyleName: this.hordeStyleName(),
       sourceWidth: state.sourceWidth ?? null,
       sourceHeight: state.sourceHeight ?? null,
       contract: this.samplerContract(),

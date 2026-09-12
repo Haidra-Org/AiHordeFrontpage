@@ -22,6 +22,7 @@ import {
   SAMPLERS,
   STEPS_SLIDER_MAX,
   UPSCALERS,
+  StyleLockSection,
   StylePickerGroup,
   buildStyledImageRequest,
   coerceFormValue,
@@ -32,6 +33,9 @@ import {
 import {
   AppliedStyle,
   StyleForcedParams,
+  StyleRecord,
+  applyStyle,
+  styleRecordKey,
 } from '../../../services/style-record';
 import type { ModelRequirements } from '../../../services/model-reference.service';
 import { evaluateRequestLint, type RequestWarning } from '../request-lint';
@@ -266,6 +270,155 @@ describe('GenerateFormComponent style locks', () => {
 
     expect(component.detachedSections()).toEqual([]);
     expect(form.controls.styleDetach.value.sections).toEqual([]);
+  });
+});
+
+/** A style from the horde's own list, carrying whatever `params` says. */
+function hordeRecord(
+  params: StyleRecord['params'],
+  models: string[] = [],
+): StyleRecord {
+  return {
+    source: 'native',
+    key: styleRecordKey('native', 'abc'),
+    id: 'abc',
+    name: 'Painterly',
+    prompt: '{p}, painterly ### {np}',
+    params,
+    models,
+  };
+}
+
+/**
+ * The panel under a style the horde applies: the record is registered under the
+ * key the form selects, and the forced view is the one `applyStyle` hands the
+ * parent for that record.
+ */
+async function createHordeStyleComponent(
+  record: StyleRecord,
+  detached: StyleLockSection[] = [],
+): Promise<{
+  fixture: ComponentFixture<GenerateFormComponent>;
+  component: GenerateFormComponent;
+  form: GenerateFormGroup;
+}> {
+  await TestBed.configureTestingModule({
+    imports: [
+      GenerateFormComponent,
+      TranslocoTestingModule.forRoot({
+        langs: { en },
+        translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+      }),
+    ],
+  })
+    .overrideComponent(GenerateFormComponent, { set: { template: '' } })
+    .compileComponents();
+
+  const fixture = TestBed.createComponent(GenerateFormComponent);
+  const form = createGenerateForm({
+    ...DEFAULT_GENERATE_FORM_VALUE,
+    prompt: 'a fox',
+    model: 'my model',
+    width: 512,
+    height: 512,
+    steps: 30,
+    styleName: record.key,
+    styleDetach: { style: record.key, sections: detached },
+  });
+  fixture.componentRef.setInput('form', form);
+  fixture.componentRef.setInput(
+    'styleRecords',
+    new Map<string, StyleRecord>([[record.key, record]]),
+  );
+  fixture.componentRef.setInput(
+    'forcedParams',
+    applyStyle(record, 'a fox', '').forcedParams,
+  );
+  fixture.detectChanges();
+  return { fixture, component: fixture.componentInstance, form };
+}
+
+describe('GenerateFormComponent horde-applied style locks', () => {
+  it('locks the sampling and finishing controls a style names nothing for', async () => {
+    const { component, form } = await createHordeStyleComponent(
+      hordeRecord({ steps: 8 }),
+    );
+    expect(component.hordeAppliesStyle()).toBe(true);
+    expect(component.isSectionLocked('sampling')).toBe(true);
+    expect(component.isSectionLocked('finishing')).toBe(true);
+    for (const control of [
+      form.controls.steps,
+      form.controls.cfg_scale,
+      form.controls.sampler_name,
+      form.controls.clip_skip,
+      form.controls.scheduler,
+      form.controls.hires_fix,
+      form.controls.tiling,
+      form.controls.transparent,
+      form.controls.facefixer_strength,
+      form.controls.post_processing,
+    ]) {
+      expect(control.disabled).toBe(true);
+    }
+    // The style names one value, and that control holds it.
+    expect(form.controls.steps.value).toBe(8);
+  });
+
+  it('leaves the size and the model alone where the style names neither', async () => {
+    const { component, form } = await createHordeStyleComponent(
+      hordeRecord({ steps: 8 }),
+    );
+    expect(component.stylePins('dimensions')).toBe(false);
+    expect(component.stylePins('model')).toBe(false);
+    expect(form.controls.width.disabled).toBe(false);
+    expect(form.controls.height.disabled).toBe(false);
+    expect(form.controls.model.disabled).toBe(false);
+    expect(form.controls.width.value).toBe(512);
+  });
+
+  it('locks the size and the model where the style names them', async () => {
+    const { component, form } = await createHordeStyleComponent(
+      hordeRecord({ width: 1024, height: 1024 }, ['Flux.1-Schnell fp8']),
+    );
+    expect(component.isSectionLocked('dimensions')).toBe(true);
+    expect(component.isSectionLocked('model')).toBe(true);
+    expect(form.controls.width.value).toBe(1024);
+    expect(form.controls.model.value).toBe('Flux.1-Schnell fp8');
+    expect(form.controls.extraModels.value).toEqual([]);
+  });
+
+  it('offers no way to take a section back', async () => {
+    const { fixture, component, form } = await createHordeStyleComponent(
+      hordeRecord({ steps: 8 }),
+    );
+    component.detachSection('sampling');
+    fixture.detectChanges();
+
+    expect(component.isSectionDetached('sampling')).toBe(false);
+    expect(component.isSectionLocked('sampling')).toBe(true);
+    expect(form.controls.steps.disabled).toBe(true);
+    expect(form.controls.steps.value).toBe(8);
+  });
+
+  it('ignores a detachment stored against such a style', async () => {
+    const { component, form } = await createHordeStyleComponent(
+      hordeRecord({ steps: 8 }),
+      ['sampling', 'finishing'],
+    );
+    expect(component.isSectionDetached('sampling')).toBe(false);
+    expect(component.isSectionDetached('finishing')).toBe(false);
+    expect(form.controls.steps.disabled).toBe(true);
+    expect(form.controls.tiling.disabled).toBe(true);
+  });
+
+  it('names the style in the badge line the locks are drawn with', async () => {
+    const { component } = await createHordeStyleComponent(
+      hordeRecord({ steps: 8 }),
+    );
+    // The template draws the badge from these two, and offers no press beside
+    // it while the horde is the one applying the style.
+    expect(component.selectedStyleName()).toBe('Painterly');
+    expect(component.hordeAppliesStyle()).toBe(true);
   });
 });
 

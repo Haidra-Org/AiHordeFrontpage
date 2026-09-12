@@ -64,7 +64,12 @@ import {
   suggestedSamplers,
 } from './generate-form.model';
 import { ANNOTATION_CONTROL_TYPES } from '../../types/generation';
-import { AppliedStyle, StyleRecord } from '../../services/style-record';
+import {
+  AppliedStyle,
+  StyleRecord,
+  applyStyle,
+} from '../../services/style-record';
+import { evaluateRequestLint } from './request-lint';
 import { LocalGenerationJob } from '../../types/generation-job';
 import {
   SamplerConstraintsDocument,
@@ -909,6 +914,79 @@ describe('styledFormValue', () => {
       denoising_strength: 0.6,
     });
     expect(styledFormValue(withSource, applied).denoising_strength).toBe(0.2);
+  });
+
+  it('ignores a detachment stored under a style the horde applies', () => {
+    const record: StyleRecord = {
+      source: 'native',
+      key: 'native:abc',
+      id: 'abc',
+      name: 'Inky',
+      prompt: '{p}{np}',
+      params: { steps: 8, cfg_scale: 2 },
+      models: ['SDXL 1.0'],
+    };
+    const form = value({
+      prompt: 'a fox',
+      steps: 25,
+      styleName: record.key,
+      styleDetach: { style: record.key, sections: ['sampling', 'model'] },
+    });
+
+    const styled = styledFormValue(form, applyStyle(record, 'a fox', ''));
+
+    // Everything the panel's advice, its price and its preview read is the
+    // style's, because that is what the horde will run.
+    expect(styled.steps).toBe(8);
+    expect(styled.cfg_scale).toBe(2);
+    expect(styled.model).toBe('SDXL 1.0');
+  });
+
+  it('feeds the price, the advice and the preview the same style values', () => {
+    const record: StyleRecord = {
+      source: 'native',
+      key: 'native:abc',
+      id: 'abc',
+      name: 'Inky',
+      prompt: '{p}{np}',
+      params: { steps: 8, width: 1024, height: 1024 },
+      models: ['SDXL 1.0'],
+    };
+    const form = value({
+      prompt: 'a fox',
+      steps: 25,
+      width: 512,
+      height: 512,
+      nsfw: true,
+      styleName: record.key,
+    });
+    const styled = styledFormValue(form, applyStyle(record, 'a fox', ''));
+
+    // The price breakdown is quoted for the steps the render will run.
+    expect(
+      kudosBreakdown(styled, null).find((line) => line.id === 'steps')?.params[
+        'steps'
+      ],
+    ).toBe(8);
+
+    // The advice speaks about the size the style asks for rather than the one
+    // the reader's controls were holding when it was chosen.
+    const advice = (subject: GenerateFormValue): string[] =>
+      evaluateRequestLint({
+        value: subject,
+        baseline: 'stable_diffusion_1',
+        requirements: null,
+        hasSourceImage: false,
+        contract: null,
+      }).map((warning) => warning.id);
+    expect(advice(styled)).not.toEqual(advice(form));
+
+    // The preview is the request itself, which carries none of what the style
+    // replaces: the horde reads the models and the rest off the style.
+    const request = buildHordeStyleRequest(styled, record);
+    expect(request.params).toEqual({ n: form.n, width: 1024, height: 1024 });
+    expect(request.models).toBeUndefined();
+    expect(request.nsfw).toBeUndefined();
   });
 });
 

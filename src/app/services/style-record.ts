@@ -205,6 +205,12 @@ export interface AppliedStyle {
   /** Final prompt string, negative folded in via the horde `###` separator. */
   prompt: string;
   forcedParams: StyleForcedParams;
+  /**
+   * Whether the horde applies this style rather than the studio. It replaces
+   * the request's parameters with the style's own, so anything describing what
+   * will be sent has to stop offering the reader a way around them.
+   */
+  hordeApplied?: boolean;
 }
 
 /**
@@ -292,8 +298,12 @@ export function applyStyle(
     forcedParams.transparent = params.transparent;
   }
 
-  return {
+  const applied: AppliedStyle = {
     prompt: applyStylePrompt(record.prompt, positive, negative),
     forcedParams,
   };
+  if (record.source === 'native') {
+    applied.hordeApplied = true;
+  }
+  return applied;
 }

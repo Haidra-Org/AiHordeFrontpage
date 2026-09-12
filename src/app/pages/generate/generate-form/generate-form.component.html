@@ -3133,7 +3133,27 @@
 
 <ng-template #styleLock let-section="section" let-value="value">
   <span class="gs-lock">
-    @if (isSectionDetached(section)) {
+    <!-- A style the horde applies is read over the request rather than merged
+         into it, so there is nothing here to take back and no press offering
+         it: the badge says who set the values and stands alone. -->
+    @if (hordeAppliesStyle()) {
+      <span
+        class="gs-lock-badge"
+        [title]="
+          'generate.form.locked_by_horde_style'
+            | transloco: { style: selectedStyleName() }
+        "
+        [attr.aria-label]="
+          'generate.form.locked_by_horde_style'
+            | transloco: { style: selectedStyleName() }
+        "
+      >
+        <app-icon name="lock-closed" class="gs-ico-sm" />
+        @if (value) {
+          <span class="gs-lock-val">{{ value }}</span>
+        }
+      </span>
+    } @else if (isSectionDetached(section)) {
       <span class="gs-lock-own">
         {{ "generate.form.following_your_values" | transloco }}
       </span>

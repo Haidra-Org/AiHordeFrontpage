@@ -2608,11 +2608,38 @@ export class GenerateFormComponent implements OnInit {
    */
   public isFieldLocked(field: LockedField): boolean {
     const forced = this.forcedParams();
+    if (forced === null) {
+      return false;
+    }
+    const section = STYLE_PINNED_FIELD_SECTION[field];
+    if (this.activeDetachedSections().includes(section)) {
+      return false;
+    }
+    return stylePinsField(forced, field) || this.hordeOverrules(section);
+  }
+
+  /**
+   * Whether the horde's own reading of the selected style overrules `section`
+   * whole. It replaces the request's parameters with the style's, so every
+   * sampling and finishing control is overruled whether or not the style names
+   * a value for it. The size is the exception, because the horde keeps the
+   * reader's wherever the style names none, and the model is overruled only
+   * where the style names one: both are answered by what the style carries.
+   */
+  private hordeOverrules(section: StyleLockSection): boolean {
     return (
-      forced !== null &&
-      stylePinsField(forced, field) &&
-      !this.detachedSections().includes(STYLE_PINNED_FIELD_SECTION[field])
+      this.hordeAppliesStyle() &&
+      (section === 'sampling' || section === 'finishing')
     );
+  }
+
+  /**
+   * The sections taken back from the style, which is none of them while the
+   * horde applies it: there is nothing to take back, so a detachment recorded
+   * against such a style is ignored rather than shown or acted on.
+   */
+  private activeDetachedSections(): readonly StyleLockSection[] {
+    return this.hordeAppliesStyle() ? [] : this.detachedSections();
   }
 
   /** The fields the selected style is pinning over right now. */
@@ -2621,7 +2648,7 @@ export class GenerateFormComponent implements OnInit {
     if (forced === null) {
       return [];
     }
-    const detached = this.detachedSections();
+    const detached = this.activeDetachedSections();
     return STYLE_PINNED_FIELDS.filter(
       (field) =>
         stylePinsField(forced, field) &&
@@ -2827,6 +2854,9 @@ export class GenerateFormComponent implements OnInit {
     if (!forced) {
       return false;
     }
+    if (this.hordeOverrules(section)) {
+      return true;
+    }
     switch (section) {
       case 'model':
         return forced.model !== undefined;
@@ -2840,7 +2870,7 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public isSectionDetached(section: StyleLockSection): boolean {
-    return this.detachedSections().includes(section);
+    return this.activeDetachedSections().includes(section);
   }
 
   /** A pinned section the user has not detached: its controls are frozen. */

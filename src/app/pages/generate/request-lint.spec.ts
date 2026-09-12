@@ -569,6 +569,56 @@ describe('evaluateRequestLint', () => {
   });
 });
 
+describe('a style the horde applies beside a source picture', () => {
+  const withStyle = (
+    sourceMode: 'img2img' | 'controlnet' | 'inpainting' | 'remix' | 'none',
+    hordeStyleName: string | null,
+  ): RequestLintInput =>
+    lintInput({
+      value: { ...DEFAULT_GENERATE_FORM_VALUE, sourceMode },
+      hasSourceImage: sourceMode !== 'none',
+      hordeStyleName,
+    });
+
+  it('names the style and the two settings it takes over', () => {
+    for (const mode of ['img2img', 'controlnet'] as const) {
+      const warning = evaluateRequestLint(withStyle(mode, 'Dreamy')).find(
+        (entry) => entry.id === 'horde_style_source',
+      );
+      expect(warning?.key).toBe('generate.source.warn_horde_style_source');
+      expect(warning?.section).toBe('source');
+      expect(warning?.params).toEqual({ style: 'Dreamy' });
+    }
+  });
+
+  it('lands on the source card, so the count beside Generate agrees', () => {
+    const warnings = evaluateRequestLint(withStyle('img2img', 'Dreamy'));
+    expect(
+      warningsInSection(warnings, 'source').map((entry) => entry.id),
+    ).toContain('horde_style_source');
+    expect(
+      warningsAtAnchor(warnings, 'source_mode').map((e) => e.id),
+    ).toContain('horde_style_source');
+  });
+
+  it('says nothing where the studio applies the style or no picture is sent', () => {
+    const ids = (input: RequestLintInput): string[] =>
+      evaluateRequestLint(input).map((warning) => warning.id);
+    expect(ids(withStyle('img2img', null))).not.toContain('horde_style_source');
+    expect(ids(withStyle('none', 'Dreamy'))).not.toContain(
+      'horde_style_source',
+    );
+    // Remix weights its inputs rather than denoising, and the masked pipelines
+    // set their own strength, so neither is carrying the reader's numbers.
+    expect(ids(withStyle('remix', 'Dreamy'))).not.toContain(
+      'horde_style_source',
+    );
+    expect(ids(withStyle('inpainting', 'Dreamy'))).not.toContain(
+      'horde_style_source',
+    );
+  });
+});
+
 describe('namedWorkerWarning', () => {
   function poolWorker(overrides: Partial<HordeWorker> = {}): HordeWorker {
     return {

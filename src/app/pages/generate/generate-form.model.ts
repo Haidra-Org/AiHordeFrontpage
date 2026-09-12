@@ -2556,7 +2556,12 @@ export function styledFormValue(
     return value;
   }
   const forced = applied.forcedParams;
-  const detached = detachedStyleSections(value);
+  // A style the horde applies leaves nothing to take back: it reads the style
+  // over whatever the request carries, so a detachment recorded against one
+  // would describe settings the render never sees.
+  const detached: readonly StyleLockSection[] = applied.hordeApplied
+    ? []
+    : detachedStyleSections(value);
   const pinned = (section: StyleLockSection): boolean =>
     !detached.includes(section);
   const styled: GenerateFormValue = { ...value };

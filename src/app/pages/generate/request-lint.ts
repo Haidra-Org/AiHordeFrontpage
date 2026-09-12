@@ -163,6 +163,13 @@ export interface RequestLintInput {
   /** Whether a source image blob is genuinely attached. */
   hasSourceImage: boolean;
   /**
+   * The name of the style the horde applies to the request, absent or null
+   * where the studio applies the selection itself or none is selected. The
+   * horde reads its own strength and control type off the style, so a request
+   * describing either is describing something it will not carry.
+   */
+  hordeStyleName?: string | null;
+  /**
    * The attached picture's own size, before anything the panel composes around
    * it. Absent while nothing is attached, and while a caller has no answer.
    */
@@ -567,6 +574,33 @@ export function staleSamplerWarning(
 }
 
 /**
+ * The source picture still goes to the horde under a style the horde applies,
+ * but the two settings that ride beside it under `params` do not: the style
+ * carries its own strength and control type and the horde reads those instead.
+ * Advisory, because the picture is sent either way and the render is still the
+ * one asked for; it is the two numbers beside it that will not be the reader's.
+ */
+export function hordeStyleSourceWarning(
+  input: RequestLintInput,
+): RequestWarning | null {
+  const style = input.hordeStyleName;
+  if (!style || !input.hasSourceImage) {
+    return null;
+  }
+  const mode = input.value.sourceMode;
+  if (mode !== 'img2img' && mode !== 'controlnet') {
+    return null;
+  }
+  return {
+    id: 'horde_style_source',
+    section: 'source',
+    anchor: 'source_mode',
+    key: 'generate.source.warn_horde_style_source',
+    params: { style },
+  };
+}
+
+/**
  * Turn a field's one advisory line into a warning, or null where the field has
  * no line or its line does not contradict the form. Every card's inline line
  * comes from the same per-field resolvers, so the count beside Generate is
@@ -674,6 +708,7 @@ export function evaluateRequestLint(
   );
   push(mixedBaselineWarning(input));
   push(namedWorkerWarning(input));
+  push(hordeStyleSourceWarning(input));
 
   for (const rule of violatedCompatRules(input)) {
     warnings.push({
