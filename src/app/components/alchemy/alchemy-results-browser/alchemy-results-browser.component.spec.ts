@@ -153,7 +153,7 @@ describe('AlchemyResultsBrowserComponent', () => {
     );
   });
 
-  it('renders a card per control map, each with its own detector and image', () => {
+  it('puts two control maps on one stage, each under its own detector, in request order', () => {
     const job: AlchemyJob = {
       ...makeJob('job-maps', null),
       forms: ['annotation'],
@@ -187,30 +187,31 @@ describe('AlchemyResultsBrowserComponent', () => {
     );
     fixture.detectChanges();
 
-    const cards = [
-      ...fixture.nativeElement.querySelectorAll('.alchemy-result'),
+    const stages = [
+      ...fixture.nativeElement.querySelectorAll('app-alchemy-pictures'),
     ] as HTMLElement[];
-    expect(cards.length).toBe(2);
-    // The body lists forms in the order they were asked for, whatever order
-    // the horde returns them in, so a card keeps its place as others finish.
+    expect(stages.length).toBe(1);
     expect(
-      cards.map((card) => card.querySelector('.gs-mono')?.textContent?.trim()),
+      fixture.nativeElement.querySelectorAll('app-alchemy-result').length,
+    ).toBe(0);
+    // The strip lists the maps in the order they were asked for, whatever
+    // order the horde returns them in, each showing the local copy.
+    const thumbs = [
+      ...stages[0].querySelectorAll('.alchemy-pictures__thumb'),
+    ] as HTMLElement[];
+    expect(
+      thumbs.map((t) => t.querySelector('.gs-mono')?.textContent?.trim()),
     ).toEqual(['canny', 'depth']);
-    // The studio stacks these under a heading of its own, which is the level
-    // the card keeps unless the host that embeds it asks for another.
     expect(
-      cards.map(
-        (card) => card.querySelector('.alchemy-result__title')?.tagName,
+      thumbs.map((t) =>
+        t.querySelector('.alchemy-pictures__thumb-img')?.getAttribute('src'),
       ),
-    ).toEqual(['H4', 'H4']);
-
-    const images = [
-      ...fixture.nativeElement.querySelectorAll('.alchemy-result img'),
-    ] as HTMLImageElement[];
-    expect(images.map((img) => img.getAttribute('src'))).toEqual([
-      'blob:canny',
-      'blob:depth',
-    ]);
+    ).toEqual(['blob:canny', 'blob:depth']);
+    // The first map is on the stage; with no source there is nothing to wipe
+    // against, so it stands alone.
+    expect(
+      stages[0].querySelector('.alchemy-pictures__lone')?.getAttribute('src'),
+    ).toBe('blob:canny');
   });
 
   it('renders the selected job inline on narrow viewports', () => {
@@ -445,6 +446,106 @@ describe('AlchemyResultsBrowserComponent', () => {
       expect(
         fixture.nativeElement.querySelector('.gs-jobpane .gs-detail-head'),
       ).not.toBeNull();
+    });
+  });
+
+  describe('pictures and folding', () => {
+    const mapsJob = (): AlchemyJob => ({
+      ...makeJob('job-maps', 'blob:source'),
+      forms: ['caption', 'annotation', 'RealESRGAN_x4plus'],
+      annotationControlTypes: ['canny', 'depth'],
+      done: true,
+      status: {
+        state: 'done',
+        forms: [
+          { form: 'caption', state: 'done', result: { caption: 'a dog' } },
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: 'https://r2.example/c.webp' },
+            payload: { control_type: 'canny' },
+          },
+          {
+            form: 'annotation',
+            state: 'done',
+            result: { annotation: 'https://r2.example/d.webp' },
+            payload: { control_type: 'depth' },
+          },
+          {
+            form: 'RealESRGAN_x4plus',
+            state: 'done',
+            result: { RealESRGAN_x4plus: 'https://r2.example/up.webp' },
+          },
+        ],
+      },
+    });
+
+    beforeEach(() => {
+      host.jobs.set([mapsJob()]);
+      host.selectedJobId.set('job-maps');
+      host.resultImageUrls.set(
+        new Map([['job-maps::annotation-canny', 'blob:canny']]),
+      );
+      fixture.detectChanges();
+    });
+
+    it('puts every picture of a request on one stage, in request order', () => {
+      const stages = fixture.nativeElement.querySelectorAll(
+        'app-alchemy-pictures',
+      );
+      expect(stages.length).toBe(1);
+      expect(
+        fixture.nativeElement.querySelectorAll('app-alchemy-result').length,
+      ).toBe(1);
+      const thumbs = [
+        ...fixture.nativeElement.querySelectorAll('.alchemy-pictures__thumb'),
+      ] as HTMLElement[];
+      expect(
+        thumbs.map((t) =>
+          t
+            .querySelector('.alchemy-pictures__thumb-name')
+            ?.textContent?.replace(/\s+/g, ' ')
+            .replace(/^\s*en\./, '')
+            .trim(),
+        ),
+      ).toEqual([
+        'alchemy.form_names.annotation canny',
+        'alchemy.form_names.annotation depth',
+        'alchemy.form_names.RealESRGAN_x4plus',
+      ]);
+      // The local copy is drawn where this browser holds one, the horde's link
+      // where it does not.
+      const images = [
+        ...fixture.nativeElement.querySelectorAll(
+          '.alchemy-pictures__thumb-img',
+        ),
+      ] as HTMLImageElement[];
+      expect(images.map((img) => img.getAttribute('src'))).toEqual([
+        'blob:canny',
+        'https://r2.example/d.webp',
+        'https://r2.example/up.webp',
+      ]);
+      expect(
+        fixture.nativeElement.querySelector('app-gs-compare-wipe'),
+      ).not.toBeNull();
+    });
+
+    it('folds and opens every card from the head', () => {
+      const fold = () =>
+        fixture.nativeElement.querySelector(
+          '.gs-fold-all',
+        ) as HTMLButtonElement;
+      const openCount = () =>
+        fixture.nativeElement.querySelectorAll('.alchemy-result--open').length;
+      expect(openCount()).toBe(2);
+      expect(fold().textContent).toContain('alchemy.jobs.fold_all');
+      fold().click();
+      fixture.detectChanges();
+      expect(openCount()).toBe(0);
+      expect(fold().textContent).toContain('alchemy.jobs.open_all');
+      fold().click();
+      fixture.detectChanges();
+      expect(openCount()).toBe(2);
     });
   });
 });

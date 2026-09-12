@@ -3,10 +3,12 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   input,
   inject,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -25,6 +27,7 @@ import { JsonInspectorComponent } from '../../json-inspector/json-inspector.comp
 import type { JsonInspectorSection } from '../../json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../icon/icon.component';
+import type { AlchemyFoldPin } from '../alchemy-pictures/alchemy-pictures.component';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { stringifyAsJson } from '../../../helper/json-formatter';
 
@@ -254,6 +257,12 @@ export class AlchemyResultComponent {
    */
   public readonly defaultOpen = input<boolean | null>(null);
 
+  /**
+   * A "Fold all" or "Open all" press from the job head, which overrides
+   * whatever this card had decided or been toggled to.
+   */
+  public readonly foldPin = input<AlchemyFoldPin | null>(null);
+
   public readonly rawJsonOpen = signal(false);
   public readonly copiedRaw = signal(false);
 
@@ -263,6 +272,10 @@ export class AlchemyResultComponent {
   private static readonly SECTION_PREVIEW = 10;
 
   constructor() {
+    effect(() => {
+      const pin = this.foldPin();
+      if (pin) untracked(() => this.openOverride.set(pin.open));
+    });
     this.destroyRef.onDestroy(() => {
       if (this.copyResetTimer != null) {
         clearTimeout(this.copyResetTimer);

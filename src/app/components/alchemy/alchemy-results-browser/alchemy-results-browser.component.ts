@@ -12,9 +12,20 @@ import { NgTemplateOutlet } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AlchemyResultComponent } from '../alchemy-result/alchemy-result.component';
+import {
+  AlchemyFoldPin,
+  AlchemyPicture,
+  AlchemyPicturesComponent,
+} from '../alchemy-pictures/alchemy-pictures.component';
+import { ALCHEMY_DATA_FORMS } from '../../../types/generation';
+import {
+  isLikelyImageFileLink,
+  toRenderableImageSource,
+} from '../../../helper/generation-image';
 import { IconComponent } from '../../icon/icon.component';
 import { GsSheetComponent } from '../../gs-sheet/gs-sheet.component';
 import {
+  AlchemyFormCard,
   AlchemyJob,
   AlchemyJobProgress,
   AlchemyLeadPreview,
@@ -58,6 +69,7 @@ function imageFileName(url: string): string {
     NgTemplateOutlet,
     TranslocoPipe,
     AlchemyResultComponent,
+    AlchemyPicturesComponent,
     IconComponent,
     GsSheetComponent,
     A11yModule,
@@ -203,6 +215,80 @@ export class AlchemyResultsBrowserComponent {
   protected readonly settled = isJobSettled;
   protected readonly hasResults = jobHasResults;
   protected readonly leadPreview = jobLeadPreview;
+
+  // --- pictures and folding -------------------------------------------------
+
+  /** Whether a form's result is a processed picture rather than text or data. */
+  protected isPictureCard(card: AlchemyFormCard): boolean {
+    return (
+      card.view !== null &&
+      !(ALCHEMY_DATA_FORMS as readonly string[]).includes(card.form)
+    );
+  }
+
+  /**
+   * The request's processed pictures, in request order, each with the local
+   * copy when this browser holds one and the horde's link while it does not.
+   * A form whose link is not a picture is left out rather than drawn broken.
+   */
+  protected jobPictures(
+    job: AlchemyJob,
+    cards: AlchemyFormCard[],
+  ): AlchemyPicture[] {
+    const pictures: AlchemyPicture[] = [];
+    for (const card of cards) {
+      if (!this.isPictureCard(card) || !card.view) continue;
+      const link = card.view.form.result?.[card.form];
+      const stored = this.storedImageUrl(job, card.key);
+      const remote =
+        typeof link === 'string' && isLikelyImageFileLink(link)
+          ? toRenderableImageSource(link)
+          : null;
+      const url = stored ?? remote;
+      if (!url) continue;
+      const extension =
+        typeof link === 'string'
+          ? /\.([a-z0-9]{3,4})(?:\?|$)/i.exec(link)?.[1]
+          : null;
+      pictures.push({
+        key: card.key,
+        form: card.form,
+        detector: card.detector,
+        url,
+        stored: stored !== null,
+        downloadName: `${card.key}.${extension ?? 'webp'}`,
+      });
+    }
+    return pictures;
+  }
+
+  /** The largest source the page has resolved for a request, for the wipe. */
+  protected sourceFor(job: AlchemyJob): string | null {
+    return job.sourceFull ?? job.sourceThumb;
+  }
+
+  /** The last "Fold all" / "Open all" press per request. */
+  private readonly foldPins = signal<ReadonlyMap<string, AlchemyFoldPin>>(
+    new Map(),
+  );
+
+  protected foldPinFor(jobId: string): AlchemyFoldPin | null {
+    return this.foldPins().get(jobId) ?? null;
+  }
+
+  /** The head button folds everything unless the last press folded already. */
+  protected foldAllOpens(jobId: string): boolean {
+    return this.foldPinFor(jobId)?.open === false;
+  }
+
+  protected toggleFoldAll(jobId: string): void {
+    const open = this.foldAllOpens(jobId);
+    this.foldPins.update((pins) => {
+      const next = new Map(pins);
+      next.set(jobId, { open, stamp: Date.now() });
+      return next;
+    });
+  }
 
   /** The done share of a request as a CSS percentage, for its ring and bar. */
   protected ringShare(p: AlchemyJobProgress): string {

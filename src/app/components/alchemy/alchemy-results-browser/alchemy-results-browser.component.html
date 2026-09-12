@@ -431,6 +431,25 @@
     <span class="gs-job-age">
       {{ age(job).key | transloco: { count: age(job).count } }}
     </span>
+    @if (cards.length > 1 && hasResults(job)) {
+      <button
+        type="button"
+        class="gs-tile-btn gs-fold-all"
+        (click)="toggleFoldAll(job.id)"
+      >
+        <app-icon
+          [name]="foldAllOpens(job.id) ? 'chevron-down' : 'chevron-up'"
+          class="gs-ico-sm"
+          aria-hidden="true"
+        />
+        {{
+          (foldAllOpens(job.id)
+            ? "alchemy.jobs.open_all"
+            : "alchemy.jobs.fold_all"
+          ) | transloco
+        }}
+      </button>
+    }
     <div class="gs-detail-actions">
       @if (!settled(job)) {
         <button
@@ -508,13 +527,27 @@
        a short row while the horde has it, the result in its place once it is
        back. Short results share a row, tall ones take the width. -->
   <div class="gs-result-flow">
+    @let pictures = jobPictures(job, cards);
     @for (card of cards; track card.key) {
-      @if (card.view; as view) {
+      @if (isPictureCard(card)) {
+        <!-- Every processed picture of the request shares one stage, drawn
+             where the first of them falls in the request order. -->
+        @if (pictures.length > 0 && card.key === pictures[0].key) {
+          <app-alchemy-pictures
+            [pictures]="pictures"
+            [source]="sourceFor(job)"
+            [defaultOpen]="openPreset(cards.length)"
+            [foldPin]="foldPinFor(job.id)"
+            (useInStudio)="useResultInStudio.emit({ job: job, key: $event })"
+          />
+        }
+      } @else if (card.view; as view) {
         <app-alchemy-result
           [form]="view.form"
           [storedImageUrl]="storedImageUrl(job, view.key)"
           [detector]="view.detector"
           [defaultOpen]="openPreset(cards.length)"
+          [foldPin]="foldPinFor(job.id)"
           (useInStudio)="useResultInStudio.emit({ job: job, key: view.key })"
         />
       } @else {

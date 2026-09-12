@@ -226,6 +226,125 @@
   right: var(--gs-space-3);
 }
 
+/* --- Every picture of a request on one stage ----------------------
+   The strip picks, the stage shows the pick wiped against the source, and
+   the glyph opens it large. One height however many pictures came back. */
+.gen-studio .alchemy-pictures__stage {
+  position: relative;
+  /* The card body starts its children at the left edge; the stage and the
+     strip under it take the whole width instead. */
+  align-self: stretch;
+  padding: var(--gs-space-2);
+  border: 1px solid var(--gs-stage-rim);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-stage);
+}
+/* The wipe host is a custom element, inline by default, which would let the
+   pair shrink to the picture's own width; the stage is the width it has. */
+.gen-studio .alchemy-pictures__stage app-gs-compare-wipe {
+  display: block;
+  width: 100%;
+}
+.gen-studio .alchemy-pictures__stage .gs-wipe-img,
+.gen-studio .alchemy-pictures__lone {
+  max-height: min(48vh, 520px);
+  background: transparent;
+}
+.gen-studio .alchemy-pictures__lone {
+  display: block;
+  max-width: 100%;
+  margin: 0 auto;
+  object-fit: contain;
+}
+/* The wipe's own tags hold the bottom corners, so the glyph takes the top. */
+.gen-studio .alchemy-pictures__zoom {
+  top: var(--gs-space-2);
+  bottom: auto;
+  border: 1px solid var(--gs-stage-rim);
+  cursor: zoom-in;
+}
+.gen-studio .alchemy-pictures__zoom:focus-visible {
+  outline: 2px solid var(--gs-stage-ink);
+  outline-offset: 2px;
+}
+.gen-studio .alchemy-pictures__film {
+  align-self: stretch;
+  display: flex;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-1) 0;
+  overflow-x: auto;
+}
+.gen-studio .alchemy-pictures__thumb {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 84px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--gs-muted);
+  cursor: pointer;
+}
+.gen-studio .alchemy-pictures__thumb-img {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--gs-radius-sm);
+  outline: 1px solid var(--gs-border);
+  outline-offset: -1px;
+  object-fit: cover;
+  opacity: 0.6;
+  transition: opacity var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .alchemy-pictures__thumb.is-picked .alchemy-pictures__thumb-img,
+.gen-studio .alchemy-pictures__thumb:hover .alchemy-pictures__thumb-img {
+  opacity: 1;
+}
+.gen-studio .alchemy-pictures__thumb.is-picked .alchemy-pictures__thumb-img {
+  outline: 2px solid var(--gs-blue);
+}
+.gen-studio .alchemy-pictures__thumb.is-picked {
+  color: var(--gs-ink);
+}
+.gen-studio .alchemy-pictures__thumb:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--gs-radius-sm);
+}
+.gen-studio .alchemy-pictures__thumb-name {
+  max-width: 100%;
+  font-size: var(--gs-text-2xs);
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .alchemy-pictures__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-pictures__actions .alchemy-result__save-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+/* Folded, the pictures are their own summary. */
+.gen-studio .alchemy-pictures__summary {
+  display: inline-flex;
+  gap: 4px;
+}
+.gen-studio .alchemy-pictures__mini {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
 /* Caption: a distinct quoted passage rather than a bare paragraph, marked by
    an actual quotation glyph instead of a colour bar, since this is literally
    the model's quoted reading of the image. */

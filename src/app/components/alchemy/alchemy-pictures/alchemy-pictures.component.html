@@ -1,0 +1,162 @@
+<section
+  class="alchemy-result alchemy-pictures"
+  [class.alchemy-result--open]="isOpen()"
+>
+  <header class="alchemy-result__head">
+    <button
+      type="button"
+      class="alchemy-result__toggle"
+      [attr.aria-expanded]="isOpen()"
+      [attr.aria-label]="'alchemy.result.toggle_label' | transloco"
+      (click)="toggleOpen()"
+    >
+      <app-icon
+        name="chevron-right"
+        class="alchemy-result__chevron"
+        [class.alchemy-result__chevron--open]="isOpen()"
+      />
+      <h4 class="alchemy-result__title">
+        {{ "alchemy.pictures.title" | transloco }}
+      </h4>
+      <span class="gs-op-badge">
+        {{ "alchemy.pictures.count" | transloco: { count: pictures().length } }}
+      </span>
+      @if (!isOpen()) {
+        <!-- Folded, the strip is the summary: one small frame per picture. -->
+        <span class="alchemy-result__summary alchemy-pictures__summary">
+          @for (picture of pictures(); track picture.key) {
+            <img
+              class="alchemy-pictures__mini"
+              [src]="picture.url"
+              [alt]="nameKey(picture) | transloco"
+            />
+          }
+        </span>
+      }
+    </button>
+  </header>
+
+  @if (isOpen()) {
+    @let current = picked();
+    <div class="alchemy-result__body">
+      @if (current) {
+        <!-- The picked picture wiped against the source when the page has one;
+             a map or an upscale is read by what it changed. -->
+        <div class="alchemy-pictures__stage">
+          @if (source(); as src) {
+            <app-gs-compare-wipe
+              [beforeSrc]="src"
+              [afterSrc]="current.url"
+              [beforeLabel]="'alchemy.pictures.source' | transloco"
+              [afterLabel]="nameKey(current) | transloco"
+              [beforeAlt]="'alchemy.pictures.source' | transloco"
+              [afterAlt]="'alchemy.result.image_alt' | transloco"
+              [handleOnly]="true"
+            />
+          } @else {
+            <img
+              class="alchemy-pictures__lone"
+              [src]="current.url"
+              crossorigin="anonymous"
+              alt="{{ 'alchemy.result.image_alt' | transloco }}"
+            />
+          }
+          <button
+            type="button"
+            class="alchemy-result__zoom-glyph alchemy-pictures__zoom"
+            [attr.aria-label]="'alchemy.result.zoom' | transloco"
+            (click)="openZoom()"
+          >
+            <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+          </button>
+        </div>
+
+        @if (pictures().length > 1) {
+          <div
+            class="alchemy-pictures__film"
+            role="group"
+            [attr.aria-label]="'alchemy.pictures.film_label' | transloco"
+          >
+            @for (picture of pictures(); track picture.key) {
+              <button
+                type="button"
+                class="alchemy-pictures__thumb"
+                [class.is-picked]="isPicked(picture)"
+                [attr.aria-pressed]="isPicked(picture)"
+                (click)="pick(picture.key)"
+              >
+                <img
+                  class="alchemy-pictures__thumb-img"
+                  [src]="picture.url"
+                  alt=""
+                />
+                <span class="alchemy-pictures__thumb-name">
+                  {{ nameKey(picture) | transloco }}
+                  @if (picture.detector) {
+                    <span class="gs-mono">{{ picture.detector }}</span>
+                  }
+                </span>
+              </button>
+            }
+          </div>
+        }
+
+        <div class="alchemy-pictures__actions">
+          <a
+            class="gs-btn gs-btn--dense"
+            [href]="current.url"
+            [attr.download]="current.stored ? current.downloadName : null"
+            [attr.target]="current.stored ? null : '_blank'"
+            [attr.rel]="current.stored ? null : 'noopener noreferrer'"
+          >
+            {{ "alchemy.result.open_image" | transloco }}
+          </a>
+          @if (current.stored) {
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense"
+              (click)="useInStudio.emit(current.key)"
+            >
+              <app-icon name="photo" class="gs-ico-sm" />
+              {{ "alchemy.result.use_in_studio" | transloco }}
+            </button>
+          }
+          <p class="gs-sublabel alchemy-result__save-hint">
+            {{
+              (current.stored
+                ? "alchemy.result.save_hint"
+                : "alchemy.result.save_hint_remote"
+              ) | transloco
+            }}
+          </p>
+        </div>
+
+        @if (zoomOpen()) {
+          <div
+            class="alchemy-result__lightbox"
+            role="dialog"
+            aria-modal="true"
+            [attr.aria-label]="'alchemy.result.zoom' | transloco"
+            (click)="closeZoom()"
+            (keydown.escape)="closeZoom()"
+            tabindex="-1"
+          >
+            <img
+              class="alchemy-result__lightbox-img"
+              [src]="current.url"
+              alt="{{ 'alchemy.result.image_alt' | transloco }}"
+            />
+            <button
+              type="button"
+              class="gs-plate-x alchemy-result__lightbox-x"
+              (click)="closeZoom()"
+            >
+              {{ "alchemy.result.zoom_close" | transloco }}
+              <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
+            </button>
+          </div>
+        }
+      }
+    </div>
+  }
+</section>
