@@ -81,6 +81,9 @@
                 {{ item.labelKey | transloco }}
                 @if (item.notificationNavItem && hasNotification(item)) {
                   <span class="nav-notification-dot" aria-hidden="true"></span>
+                  <span class="sr-only">{{
+                    "notification.need_workers.short" | transloco
+                  }}</span>
                 }
               </span>
               <ng-container panel>
@@ -158,6 +161,12 @@
           [dropdownId]="overflowDropdownId"
           [isRouteActive]="isOverflowRouteActive()"
           [needsAttention]="overflowNeedsAttention()"
+          [triggerTitle]="
+            overflowNeedsAttention()
+              ? ('notification.need_workers.tooltip'
+                | transloco: { types: contributeTooltip() })
+              : null
+          "
           data-nav-overflow
           [class.nav-entry-overflowed]="!hasOverflow()"
           (opened)="onDropdownOpened($event)"
@@ -166,6 +175,9 @@
             {{ "nav.more" | transloco }}
             @if (overflowNeedsAttention()) {
               <span class="nav-notification-dot" aria-hidden="true"></span>
+              <span class="sr-only">{{
+                "notification.need_workers.short" | transloco
+              }}</span>
             }
           </span>
           <ng-container panel>
@@ -251,6 +263,9 @@
         >
           @if (hasMobileIndicator()) {
             <span class="mobile-menu-badge" aria-hidden="true"></span>
+            <span class="sr-only">{{
+              "notification.need_workers.short" | transloco
+            }}</span>
           }
           <span class="sr-only">{{
             (showMobileMenu() ? "close_main_menu" : "open_main_menu")
@@ -314,6 +329,9 @@
                         class="nav-notification-dot"
                         aria-hidden="true"
                       ></span>
+                      <span class="sr-only">{{
+                        "notification.need_workers.short" | transloco
+                      }}</span>
                     }
                   </span>
                   <app-icon

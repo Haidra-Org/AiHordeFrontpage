@@ -4908,6 +4908,7 @@
   "mission.cta.donate": "Support Us",
 
   "notification.need_workers.message": "We need {{types}} workers",
+  "notification.need_workers.short": "Workers needed",
   "notification.need_workers.tooltip": "The network needs volunteer {{types}} workers. Consider contributing!",
 
   "rate": "Rate",
