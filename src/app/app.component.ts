@@ -82,7 +82,8 @@ export class AppComponent implements OnInit {
    * floating controls would make it a page with a start menu on top.
    */
   private readonly onAppLanding = computed(
-    () => this.currentUrl().split('?')[0].replace(/\/$/, '') === '/app',
+    () =>
+      (this.currentUrl().split('?').at(0) ?? '').replace(/\/$/, '') === '/app',
   );
   public readonly hideFooter = computed(
     () => this.onStudioRoute() || this.onAppLanding(),

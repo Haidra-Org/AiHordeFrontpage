@@ -239,7 +239,11 @@ export class DocsAlchemyUseCaseComponent {
     if (shots.length < 2 || shots.some((shot) => shot.result !== null)) {
       return null;
     }
-    const [first, ...rest] = shots;
+    const first = shots.at(0);
+    if (!first) {
+      return null;
+    }
+    const rest = shots.slice(1);
     return rest.every((shot) => shot.source === first.source)
       ? {
           src: first.source,

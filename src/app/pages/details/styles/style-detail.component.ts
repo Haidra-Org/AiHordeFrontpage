@@ -66,8 +66,9 @@ export class StyleDetailComponent implements OnInit {
     if (!style || !user) return false;
     // The creator field format is "username#id" - extract id and compare
     const creatorParts = style.creator.split('#');
-    if (creatorParts.length >= 2) {
-      const creatorId = parseInt(creatorParts[creatorParts.length - 1], 10);
+    const creatorIdText = creatorParts.length >= 2 ? creatorParts.at(-1) : null;
+    if (creatorIdText) {
+      const creatorId = parseInt(creatorIdText, 10);
       return creatorId === user.id;
     }
     // Fallback: compare username
@@ -274,8 +275,8 @@ export class StyleDetailComponent implements OnInit {
     if (!style?.creator) return ['/details/users'];
 
     const creatorParts = style.creator.split('#');
-    if (creatorParts.length >= 2) {
-      const creatorId = creatorParts[creatorParts.length - 1];
+    const creatorId = creatorParts.length >= 2 ? creatorParts.at(-1) : null;
+    if (creatorId) {
       return ['/details/users', creatorId];
     }
     return ['/details/users'];

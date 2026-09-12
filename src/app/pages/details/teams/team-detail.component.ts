@@ -97,8 +97,8 @@ export class TeamDetailComponent implements OnInit {
     if (!team?.creator) return ['/details/users'];
 
     const creatorParts = team.creator.split('#');
-    if (creatorParts.length >= 2) {
-      const creatorId = creatorParts[creatorParts.length - 1];
+    const creatorId = creatorParts.length >= 2 ? creatorParts.at(-1) : null;
+    if (creatorId) {
       return ['/details/users', creatorId];
     }
     return ['/details/users'];

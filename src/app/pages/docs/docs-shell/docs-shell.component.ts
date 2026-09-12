@@ -356,7 +356,7 @@ export class DocsShellComponent {
   }
 
   private pathOf(url: string): string {
-    return url.split('?')[0].split('#')[0];
+    return url.split(/[?#]/).at(0) ?? '';
   }
 
   private scrollBehavior(): ScrollBehavior {

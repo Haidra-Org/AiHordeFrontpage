@@ -207,7 +207,7 @@ export interface FormStatusView {
   modifier: string;
 }
 
-export const FORM_STATUS_VIEWS: Record<string, FormStatusView> = {
+export const FORM_STATUS_VIEWS = {
   waiting: { icon: 'clock', spin: false, modifier: 'waiting' },
   processing: { icon: 'spinner', spin: true, modifier: 'processing' },
   done: { icon: 'check-circle-filled', spin: false, modifier: 'done' },
@@ -217,12 +217,15 @@ export const FORM_STATUS_VIEWS: Record<string, FormStatusView> = {
     spin: false,
     modifier: 'faulted',
   },
-};
+} as const satisfies Record<string, FormStatusView>;
 
 const TERMINAL_FORM_STATES = new Set(['done', 'cancelled', 'faulted']);
 
 export function formStatusView(state: string): FormStatusView {
-  return FORM_STATUS_VIEWS[state] ?? FORM_STATUS_VIEWS['waiting'];
+  return (
+    (FORM_STATUS_VIEWS as Readonly<Record<string, FormStatusView>>)[state] ??
+    FORM_STATUS_VIEWS.waiting
+  );
 }
 
 export function isJobSettled(job: AlchemyJob): boolean {
