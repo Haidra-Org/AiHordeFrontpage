@@ -5344,6 +5344,11 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   font-size: var(--gs-text-xs);
   line-height: 1.35;
 }
+/* The `?` follows the button so the two stay on one line when the row wraps;
+   its opened note still belongs under the whole row, after the short note. */
+.gen-studio .gs-op-quick .gs-help-note {
+  order: 1;
+}
 @media (pointer: coarse) {
   .gen-studio .gs-op-quick-btn {
     min-height: 44px;

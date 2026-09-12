@@ -337,6 +337,8 @@ export class AlchemyComponent {
    * anything else hands the dock back to the operation.
    */
   public readonly activeDetector = signal<AnnotationControlType | null>(null);
+  /** Whether the dock is describing the image-to-prompt press. */
+  public readonly imageToPromptFocused = signal(false);
 
   /**
    * The operation whose info modal is open, or null. On mobile there is no
@@ -1010,6 +1012,7 @@ export class AlchemyComponent {
 
   public toggleForm(form: AlchemyFormName): void {
     this.activeDetector.set(null);
+    this.imageToPromptFocused.set(false);
     this.activeOperation.set(form);
     this.selectedForms.update((current) => {
       const next = new Set(current);
@@ -1032,10 +1035,7 @@ export class AlchemyComponent {
    * and remember that this is what the reader came for.
    */
   public pickImageToPrompt(): void {
-    this.activeDetector.set(null);
-    const firstPromptForm = this.promptForms.at(0);
-    if (!firstPromptForm) return;
-    this.activeOperation.set(firstPromptForm);
+    this.previewImageToPrompt();
     this.selectedForms.update((current) => {
       const next = new Set(current);
       for (const form of this.promptForms) next.add(form);
@@ -1044,12 +1044,23 @@ export class AlchemyComponent {
     this.promptIntent.set(true);
   }
 
+  /**
+   * The dock describes the pair as the one press it is, rather than as the
+   * caption operation that happens to be its first half.
+   */
+  public previewImageToPrompt(): void {
+    this.activeDetector.set(null);
+    this.imageToPromptFocused.set(true);
+  }
+
   public previewForm(form: AlchemyFormName): void {
     this.activeDetector.set(null);
+    this.imageToPromptFocused.set(false);
     this.activeOperation.set(form);
   }
 
   public previewDetector(type: AnnotationControlType): void {
+    this.imageToPromptFocused.set(false);
     this.activeDetector.set(type);
   }
 

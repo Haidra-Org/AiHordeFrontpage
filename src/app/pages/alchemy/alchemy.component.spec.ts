@@ -463,6 +463,21 @@ describe('AlchemyComponent', () => {
       expect(component.promptFormsPicked()).toBe(true);
     });
 
+    it('holds the dock on the press until another operation or detector takes it', () => {
+      component.pickImageToPrompt();
+      expect(component.imageToPromptFocused()).toBe(true);
+
+      component.previewDetector('depth');
+      expect(component.imageToPromptFocused()).toBe(false);
+
+      component.previewImageToPrompt();
+      expect(component.imageToPromptFocused()).toBe(true);
+      expect(component.activeDetector()).toBeNull();
+
+      select('nsfw');
+      expect(component.imageToPromptFocused()).toBe(false);
+    });
+
     it('carries the request it asked for to the results pane', async () => {
       component.onSourceImage('https://example.com/i.png');
       component.pickImageToPrompt();
@@ -1000,6 +1015,32 @@ describe('AlchemyComponent developer surface (rendered)', () => {
     component.previewForm('annotation');
     fixture.detectChanges();
     expect(dock().textContent).toContain('alchemy.form_meta.annotation.desc');
+  });
+
+  it('describes image to prompt in the dock like an operation, and explains it behind a ?', () => {
+    const quick = fixture.nativeElement.querySelector(
+      '.gs-op-quick',
+    ) as HTMLElement;
+    const dock = () =>
+      fixture.nativeElement.querySelector('.gs-focus--fixed') as HTMLElement;
+    expect(quick.querySelector('app-gs-help')).not.toBeNull();
+
+    (quick.querySelector('.gs-op-quick-btn') as HTMLElement).dispatchEvent(
+      new MouseEvent('mouseenter'),
+    );
+    fixture.detectChanges();
+    expect(dock().textContent).toContain('alchemy.quick.image_to_prompt_desc');
+    expect(dock().textContent).toContain(
+      'alchemy.quick.image_to_prompt_example',
+    );
+    expect(dock().textContent).not.toContain('alchemy.form_meta.caption.desc');
+
+    component.previewForm('caption');
+    fixture.detectChanges();
+    expect(dock().textContent).toContain('alchemy.form_meta.caption.desc');
+    expect(dock().textContent).not.toContain(
+      'alchemy.quick.image_to_prompt_desc',
+    );
   });
 
   it('offers a chip per detector once a control map is asked for', () => {

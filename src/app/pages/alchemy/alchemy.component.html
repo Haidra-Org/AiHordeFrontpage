@@ -128,6 +128,18 @@
             <div class="gs-focus-desc">
               {{ detectorDescriptionKey(detector) | transloco }}
             </div>
+          } @else if (imageToPromptFocused()) {
+            <div class="mb-1 flex items-center gap-2">
+              <span class="gs-focus-name">
+                {{ "alchemy.quick.image_to_prompt" | transloco }}
+              </span>
+            </div>
+            <div class="gs-focus-desc">
+              {{ "alchemy.quick.image_to_prompt_desc" | transloco }}
+            </div>
+            <div class="gs-focus-example">
+              {{ "alchemy.quick.image_to_prompt_example" | transloco }}
+            </div>
           } @else {
             <div class="mb-1 flex items-center gap-2">
               <span class="gs-focus-name">
@@ -238,6 +250,8 @@
               class="gs-op-quick-btn"
               [class.gs-op-quick-btn--on]="promptFormsPicked()"
               (click)="pickImageToPrompt()"
+              (mouseenter)="previewImageToPrompt()"
+              (focusin)="previewImageToPrompt()"
             >
               <app-icon
                 [name]="promptFormsPicked() ? 'check' : 'sec-prompt'"
@@ -245,6 +259,7 @@
               />
               {{ "alchemy.quick.image_to_prompt" | transloco }}
             </button>
+            <app-gs-help topic="image_to_prompt" />
             <span class="gs-op-quick-note">
               {{ "alchemy.quick.image_to_prompt_note" | transloco }}
             </span>
