@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "generated_against": "https://aihorde.net/api/v2",
+  "images": [
+    {
+      "id": "snail-cathedral",
+      "file": "gallery/snail-cathedral/result.webp",
+      "prompt": "a snail whose shell is a gothic cathedral with lit stained-glass windows, crawling through a garden at dusk",
+      "tags": ["whimsy", "art"],
+      "model": "AlbedoBase XL 3.1",
+      "seed": "43002",
+      "seconds": 54.5,
+      "kudos": 39,
+      "width": 1024,
+      "height": 1024,
+      "request": {
+        "prompt": "a snail whose shell is a gothic cathedral with lit stained-glass windows, crawling through a garden at dusk",
+        "params": {
+          "width": 1024,
+          "height": 1024,
+          "steps": 25,
+          "cfg_scale": 5,
+          "sampler_name": "k_dpmpp_2m",
+          "karras": true,
+          "n": 1,
+          "seed": "43002"
+        },
+        "nsfw": false,
+        "censor_nsfw": true,
+        "models": ["AlbedoBase XL 3.1"],
+        "r2": true,
+        "slow_workers": true,
+        "shared": false
+      }
+    },
+    {
+      "id": "fox-snow",
+      "file": "gallery/fox-snow/result.webp",
+      "prompt": "a red fox curled up asleep in fresh snow, early morning light, wildlife photograph, telephoto",
+      "tags": ["everyday", "photo", "alchemy"],
+      "model": "Realistic Vision",
+      "seed": "41001",
+      "seconds": 61.8,
+      "kudos": 9,
+      "width": 512,
+      "height": 768,
+      "alchemy": {
+        "caption": {
+          "seconds": 214.4,
+          "text": "a red fox lies in the snow, with his paws crossed out and its eyes open"
+        }
+      },
+      "request": {
+        "prompt": "a red fox curled up asleep in fresh snow, early morning light, wildlife photograph, telephoto",
+        "params": {
+          "width": 512,
+          "height": 768,
+          "steps": 30,
+          "cfg_scale": 7,
+          "sampler_name": "k_euler_a",
+          "karras": true,
+          "n": 1,
+          "seed": "41001"
+        },
+        "nsfw": false,
+        "censor_nsfw": true,
+        "models": ["Realistic Vision"],
+        "r2": true,
+        "slow_workers": true,
+        "shared": false
+      }
+    },
+    {
+      "id": "tram-rainbow",
+      "file": "gallery/tram-rainbow/result.webp",
+      "prompt": "a vintage tram climbing a rainbow above a rainy city, painterly",
+      "tags": ["whimsy", "flux"],
+      "model": "Flux.1-Schnell fp8 (Compact)",
+      "seed": "42010",
+      "seconds": 33.2,
+      "kudos": 21,
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "id": "teacup-pool",
+      "file": "gallery/teacup-pool/result.webp",
+      "prompt": "a lighthouse standing in a teacup, storm outside",
+      "tags": ["whimsy"],
+      "model": "Deliberate 3.0",
+      "seed": "44004",
+      "seconds": 40.1,
+      "kudos": 12,
+      "width": 1024,
+      "height": 1024
+    }
+  ],
+  "texts": [],
+  "conversations": [],
+  "censored": ["teacup-pool"]
+}

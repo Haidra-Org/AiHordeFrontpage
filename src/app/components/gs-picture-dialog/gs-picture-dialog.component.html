@@ -1,0 +1,100 @@
+<div
+  #panel
+  class="gs-picdlg-panel gs-fadeup"
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+  [attr.aria-label]="heading()"
+  (keydown)="onKeydown($event)"
+>
+  <div class="gs-picdlg-head">
+    <div class="gs-picdlg-heading">
+      <h2 class="gs-picdlg-title">{{ heading() }}</h2>
+      <p class="gs-picdlg-facts">
+        <span class="gs-mono">{{ picture().model }}</span>
+        <span class="gs-picdlg-dot" aria-hidden="true">·</span>
+        <span class="gs-mono">{{
+          "gallery.seed" | transloco: { seed: picture().seed }
+        }}</span>
+      </p>
+    </div>
+    @if (count() > 1) {
+      <div class="gs-picdlg-steps">
+        <button
+          type="button"
+          class="gs-picdlg-step"
+          [attr.aria-label]="'gallery.prev_picture' | transloco"
+          (click)="prev.emit()"
+        >
+          <app-icon name="chevron-left" class="gs-ico-sm" />
+        </button>
+        <span class="gs-picdlg-count" aria-live="polite">
+          {{ "gallery.at_of" | transloco: { at: at(), count: count() } }}
+        </span>
+        <button
+          type="button"
+          class="gs-picdlg-step"
+          [attr.aria-label]="'gallery.next_picture' | transloco"
+          (click)="next.emit()"
+        >
+          <app-icon name="chevron-right" class="gs-ico-sm" />
+        </button>
+      </div>
+    }
+    <button
+      type="button"
+      class="gs-picdlg-x"
+      [attr.aria-label]="'gallery.close_picture' | transloco"
+      (click)="close()"
+    >
+      <app-icon name="x-mark" class="gs-ico-sm" />
+    </button>
+  </div>
+
+  <div class="gs-picdlg-body">
+    <div class="gs-picdlg-stage">
+      <img
+        class="gs-picdlg-img"
+        [src]="pictureUrl()"
+        [alt]="heading()"
+        [width]="picture().width"
+        [height]="picture().height"
+      />
+    </div>
+
+    <div class="gs-picdlg-side">
+      <p class="gs-picdlg-prompt">{{ picture().prompt }}</p>
+      <app-image-meta-panel
+        class="gs-picdlg-meta"
+        [embedded]="true"
+        [request]="recipe()"
+        [currentValue]="null"
+        [pinnable]="false"
+        [quickActions]="false"
+        [titleKey]="'gallery.recipe_title'"
+        [noteKey]="noteKey()"
+      />
+      <div class="gs-picdlg-foot">
+        @if (recipe()) {
+          <button
+            type="button"
+            class="hd-btn hd-btn--primary gs-picdlg-use"
+            [disabled]="going()"
+            [attr.aria-busy]="going() ? 'true' : null"
+            (click)="useRecipe()"
+          >
+            <app-icon name="adjustments-horizontal" class="gs-ico-sm" />
+            {{ "gallery.use_recipe" | transloco }}
+          </button>
+        }
+        <button
+          type="button"
+          class="hd-btn hd-btn--tonal gs-picdlg-copy"
+          (click)="copyPrompt()"
+        >
+          {{ "gallery.copy_prompt" | transloco }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

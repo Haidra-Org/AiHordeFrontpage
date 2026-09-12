@@ -187,6 +187,16 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    // Every published picture with the settings that made it. It is a door
+    // into the studio as much as a page of pictures, so it sits beside the
+    // studios rather than inside the documentation.
+    path: 'gallery',
+    loadComponent: () =>
+      import('./pages/gallery/gallery.component').then(
+        (c) => c.GalleryComponent,
+      ),
+  },
+  {
     path: 'faq',
     loadComponent: () =>
       import('./pages/faq/faq.component').then((c) => c.FaqComponent),

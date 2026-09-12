@@ -125,6 +125,14 @@ export class ImageMetaPanelComponent {
   public readonly currentValue = input<GenerateFormValue | null>(null);
   /** Which apply mode to open on; re-seeds {@link mode} when the host changes it. */
   public readonly defaultMode = input<MetaApplyMode>('replace');
+  /**
+   * Whether the panel is a region of a larger surface rather than the dialog
+   * it is in the studio. Embedded, it reads the request out and does nothing
+   * else: no dialog role of its own to take the surround's other controls out
+   * of reach, no close of its own where the host owns the close, and no row
+   * checkboxes or apply, because there is no form here to write to.
+   */
+  public readonly embedded = input(false);
   /** Whether the host keeps this panel open across images. */
   public readonly pinned = input(false);
   /** Whether pinning is on offer at all; hosts with nothing to pin turn it off. */

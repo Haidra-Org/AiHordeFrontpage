@@ -7463,6 +7463,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
   }
 }
+/* Embedded, the panel is a region of the surface holding it rather than a
+   sheet lifted off it, so it drops the lift and keeps only its edge. */
+.gen-studio .gs-meta-panel--embedded {
+  border-radius: var(--gs-radius-md);
+  box-shadow: none;
+}
 .gen-studio .gs-meta-grab {
   flex: none;
   width: 44px;
@@ -19332,4 +19338,185 @@ html:has(app-gs-sheet) {
    cascade layer and would lose to the door's own unlayered rule. */
 .gen-studio .gs-door--mark .gs-door-panel {
   flex-basis: 56px;
+}
+
+/* ------- published picture, seen whole ------------------------------- */
+/* The layer one gallery picture opens into, wherever it was pressed: the
+   picture on a stage, and the request that made it read out beside it on a
+   wide screen or under it on a narrow one. It carries `gen-studio` so the
+   metadata panel inside it finds the tokens its rules read. */
+.gs-picdlg {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gs-space-3);
+  background: rgba(3, 5, 10, 0.72);
+  overscroll-behavior: contain;
+}
+.gs-picdlg .gs-picdlg-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1180px;
+  max-height: 94dvh;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-lg);
+  background: var(--gs-panel);
+  box-shadow: var(--gs-elev-3);
+}
+.gs-picdlg .gs-picdlg-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-3);
+  padding: var(--gs-space-2-5) var(--gs-space-3);
+  border-bottom: 1px solid var(--gs-border);
+}
+.gs-picdlg .gs-picdlg-heading {
+  flex: 1;
+  min-width: 0;
+}
+.gs-picdlg .gs-picdlg-title {
+  margin: 0;
+  font-size: var(--gs-text-md);
+  font-weight: 700;
+  color: var(--gs-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gs-picdlg .gs-picdlg-facts {
+  margin: 2px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-1);
+  font-size: var(--gs-text-xs);
+  color: var(--gs-label);
+}
+.gs-picdlg .gs-picdlg-steps {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+}
+.gs-picdlg .gs-picdlg-count {
+  min-width: 4.5em;
+  text-align: center;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-label);
+}
+.gs-picdlg .gs-picdlg-step,
+.gs-picdlg .gs-picdlg-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-card);
+  color: var(--gs-ink);
+  cursor: pointer;
+}
+.gs-picdlg .gs-picdlg-step:hover,
+.gs-picdlg .gs-picdlg-x:hover {
+  background: var(--gs-field-soft);
+}
+@media (pointer: coarse) {
+  .gs-picdlg .gs-picdlg-step,
+  .gs-picdlg .gs-picdlg-x {
+    width: 44px;
+    height: 44px;
+  }
+}
+.gs-picdlg .gs-picdlg-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* On a narrow screen the panel is a picture over its recipe, and the two
+   split the height by hand: the panel's own height comes from a max-height, so
+   a percentage share would resolve against nothing and the recipe, which is as
+   tall as its rows, would take the lot. */
+.gs-picdlg .gs-picdlg-stage {
+  flex: none;
+  height: 42dvh;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gs-space-3);
+  background: var(--hd-stage);
+}
+.gs-picdlg .gs-picdlg-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--gs-radius-sm);
+}
+.gs-picdlg .gs-picdlg-side {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--gs-space-3);
+  border-top: 1px solid var(--gs-border);
+}
+.gs-picdlg .gs-picdlg-prompt {
+  margin: 0;
+  font-size: var(--gs-text-sm);
+  line-height: 1.45;
+  color: var(--gs-ink);
+}
+.gs-picdlg .gs-picdlg-meta {
+  display: flex;
+  flex: none;
+}
+.gs-picdlg .gs-picdlg-foot {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+  padding-top: var(--gs-space-1);
+}
+.gs-picdlg .gs-picdlg-use,
+.gs-picdlg .gs-picdlg-copy {
+  min-height: 44px;
+}
+@media (min-width: 1024px) {
+  .gs-picdlg .gs-picdlg-body {
+    flex-direction: row;
+  }
+  .gs-picdlg .gs-picdlg-stage {
+    flex: 1;
+    height: auto;
+  }
+  .gs-picdlg .gs-picdlg-side {
+    flex: none;
+    width: 380px;
+    max-width: 42vw;
+    border-top: 0;
+    border-left: 1px solid var(--gs-border);
+  }
+}
+
+/* The line above the three answers to an arriving recipe: what replacing the
+   settings would mean, said before the row that does it. */
+.gen-studio .gs-recipe-lead {
+  margin: 0 6px 8px;
+  font-size: var(--gs-text-sm);
+  line-height: 1.45;
+  color: var(--gs-label);
 }

@@ -44,6 +44,7 @@ describe('the Generate group', () => {
     expect(generate?.children?.map((child) => child.routerLink)).toEqual([
       '/generate/image',
       '/generate/alchemy',
+      '/gallery',
       '/generate/storage',
     ]);
     // A studio added later is an entry in this list and nothing else: no bar

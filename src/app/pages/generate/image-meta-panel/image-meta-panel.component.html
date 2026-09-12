@@ -1,23 +1,28 @@
 <div
   class="gs-meta-panel gs-fadeup"
-  role="dialog"
-  aria-modal="true"
+  [class.gs-meta-panel--embedded]="embedded()"
+  [attr.role]="embedded() ? 'group' : 'dialog'"
+  [attr.aria-modal]="embedded() ? null : 'true'"
   [attr.aria-label]="titleKey() | transloco"
 >
-  <button
-    type="button"
-    class="gs-meta-grab"
-    (click)="close()"
-    [attr.aria-label]="'generate.results.close' | transloco"
-  ></button>
+  @if (!embedded()) {
+    <button
+      type="button"
+      class="gs-meta-grab"
+      (click)="close()"
+      [attr.aria-label]="'generate.results.close' | transloco"
+    ></button>
+  }
   <div class="gs-meta-head">
     <span class="gs-meta-title">
       {{ titleKey() | transloco }}
     </span>
-    <button type="button" class="gs-meta-raw" (click)="rawJson.emit()">
-      <app-icon name="code-bracket" />
-      {{ "generate.results.raw_json" | transloco }}
-    </button>
+    @if (!embedded()) {
+      <button type="button" class="gs-meta-raw" (click)="rawJson.emit()">
+        <app-icon name="code-bracket" />
+        {{ "generate.results.raw_json" | transloco }}
+      </button>
+    }
     @if (pinnable()) {
       <button
         type="button"
@@ -31,14 +36,16 @@
         <app-icon name="pin" />
       </button>
     }
-    <button
-      type="button"
-      class="gs-modal-close"
-      (click)="close()"
-      [attr.aria-label]="'generate.results.close' | transloco"
-    >
-      <app-icon name="x-mark" />
-    </button>
+    @if (!embedded()) {
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="close()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" />
+      </button>
+    }
   </div>
 
   <div class="gs-meta-body">
@@ -47,9 +54,17 @@
     }
     @for (group of groups(); track group.id) {
       <div class="gs-meta-group">
-        <label class="gs-meta-group-head">
+        <label
+          class="gs-meta-group-head"
+          [class.gs-meta-group-head--info]="embedded()"
+        >
+          <!-- Embedded there is nothing to select for, so the box goes out of
+               reach and out of the accessibility tree rather than the row
+               being drawn twice, once with it and once without. -->
           <input
             type="checkbox"
+            [hidden]="embedded()"
+            [disabled]="embedded()"
             [checked]="groupState(group) === 'all'"
             [indeterminate]="groupState(group) === 'some'"
             (change)="toggleGroup(group)"
@@ -60,9 +75,15 @@
           }}</span>
         </label>
         @for (row of group.rows; track row.id) {
-          <label class="gs-meta-row" [class.gs-meta-row--off]="!isChecked(row)">
+          <label
+            class="gs-meta-row"
+            [class.gs-meta-row--off]="!isChecked(row)"
+            [class.gs-meta-row--info]="embedded()"
+          >
             <input
               type="checkbox"
+              [hidden]="embedded()"
+              [disabled]="embedded()"
               [checked]="isChecked(row)"
               (change)="toggleRow(row)"
             />
@@ -271,87 +292,92 @@
   </div>
 
   <!-- Nothing to apply without settings rows, so the whole apply apparatus
-       stands down rather than offering a disabled button. -->
-  <div class="gs-meta-foot">
-    @if (quickActions()) {
-      <!-- The three things people do with a finished picture, above the
+       stands down rather than offering a disabled button. A panel embedded in
+       a surface that has no form to write to stands it down for good. -->
+  @if (!embedded()) {
+    <div class="gs-meta-foot">
+      @if (quickActions()) {
+        <!-- The three things people do with a finished picture, above the
            row-by-row apply: most visits want one of them and nothing else, and
            on a phone this sheet covers everything that offers them. -->
-      <div class="gs-quick-acts">
+        <div class="gs-quick-acts">
+          <button
+            type="button"
+            class="gs-quick-act gs-quick-act--primary"
+            (click)="quickAction.emit('variation')"
+          >
+            <app-icon name="squares-2x2" />
+            {{ "generate.results.make_variation" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-quick-act"
+            (click)="quickAction.emit('source')"
+          >
+            <app-icon name="refresh-alt" />
+            {{ "generate.results.reuse" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-quick-act"
+            (click)="quickAction.emit('copy')"
+          >
+            <app-icon name="adjustments-horizontal" />
+            {{ "generate.results.copy_settings" | transloco }}
+          </button>
+        </div>
+      }
+      @if (groups().length > 0) {
+        <div class="gs-meta-seg" role="group">
+          <button
+            type="button"
+            class="gs-meta-seg-opt"
+            [class.gs-meta-seg-opt--on]="mode() === 'replace'"
+            [attr.aria-pressed]="mode() === 'replace'"
+            (click)="setMode('replace')"
+          >
+            {{ "generate.results.mode_replace" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-meta-seg-opt"
+            [class.gs-meta-seg-opt--on]="mode() === 'overlay'"
+            [attr.aria-pressed]="mode() === 'overlay'"
+            (click)="setMode('overlay')"
+          >
+            {{ "generate.results.mode_overlay" | transloco }}
+          </button>
+        </div>
         <button
           type="button"
-          class="gs-quick-act gs-quick-act--primary"
-          (click)="quickAction.emit('variation')"
+          class="gs-meta-apply"
+          [disabled]="selectedCount() === 0"
+          (click)="emitApply()"
         >
-          <app-icon name="squares-2x2" />
-          {{ "generate.results.make_variation" | transloco }}
+          {{
+            "generate.results.apply_n" | transloco: { count: selectedCount() }
+          }}
         </button>
-        <button
-          type="button"
-          class="gs-quick-act"
-          (click)="quickAction.emit('source')"
-        >
-          <app-icon name="refresh-alt" />
-          {{ "generate.results.reuse" | transloco }}
-        </button>
-        <button
-          type="button"
-          class="gs-quick-act"
-          (click)="quickAction.emit('copy')"
-        >
-          <app-icon name="adjustments-horizontal" />
-          {{ "generate.results.copy_settings" | transloco }}
-        </button>
-      </div>
-    }
-    @if (groups().length > 0) {
-      <div class="gs-meta-seg" role="group">
-        <button
-          type="button"
-          class="gs-meta-seg-opt"
-          [class.gs-meta-seg-opt--on]="mode() === 'replace'"
-          [attr.aria-pressed]="mode() === 'replace'"
-          (click)="setMode('replace')"
-        >
-          {{ "generate.results.mode_replace" | transloco }}
-        </button>
-        <button
-          type="button"
-          class="gs-meta-seg-opt"
-          [class.gs-meta-seg-opt--on]="mode() === 'overlay'"
-          [attr.aria-pressed]="mode() === 'overlay'"
-          (click)="setMode('overlay')"
-        >
-          {{ "generate.results.mode_overlay" | transloco }}
-        </button>
-      </div>
-      <button
-        type="button"
-        class="gs-meta-apply"
-        [disabled]="selectedCount() === 0"
-        (click)="emitApply()"
-      >
-        {{ "generate.results.apply_n" | transloco: { count: selectedCount() } }}
-      </button>
-      <p class="gs-meta-note">
-        <span
-          class="gs-meta-mode-name"
-          [class.gs-meta-mode-name--active]="mode() === 'replace'"
-          >{{ "generate.results.mode_replace" | transloco }}:</span
-        >
-        {{ "generate.results.mode_replace_explain" | transloco }}
-        <span
-          class="gs-meta-mode-name"
-          [class.gs-meta-mode-name--active]="mode() === 'overlay'"
-          >{{ "generate.results.mode_overlay" | transloco }}:</span
-        >
-        {{ "generate.results.mode_overlay_explain" | transloco }}
-        @if (hasDifferences()) {
-          <span class="gs-meta-note-delta">
-            {{ "generate.results.meta_delta_legend" | transloco }}
-          </span>
-        }
-      </p>
-    }
-  </div>
+        <p class="gs-meta-note">
+          <span
+            class="gs-meta-mode-name"
+            [class.gs-meta-mode-name--active]="mode() === 'replace'"
+            >{{ "generate.results.mode_replace" | transloco }}:</span
+          >
+          {{ "generate.results.mode_replace_explain" | transloco }}
+          <span
+            class="gs-meta-mode-name"
+            [class.gs-meta-mode-name--active]="mode() === 'overlay'"
+            >{{ "generate.results.mode_overlay" | transloco }}:</span
+          >
+          {{ "generate.results.mode_overlay_explain" | transloco }}
+          @if (hasDifferences()) {
+            <span class="gs-meta-note-delta">
+              {{ "generate.results.meta_delta_legend" | transloco }}
+            </span>
+          }
+        </p>
+      }
+    </div>
+  }
 </div>

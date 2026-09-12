@@ -1,0 +1,76 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="cancel()"
+  tabindex="-1"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-modal-panel--sm gs-fadeup"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gs-recipe-arrival-title"
+    (keydown)="onKeydown($event)"
+  >
+    <div class="gs-modal-header">
+      <div id="gs-recipe-arrival-title" class="gs-modal-title">
+        <app-icon name="adjustments-horizontal" class="gs-ico-sm" />
+        {{ "generate.recipe.title" | transloco: { title: title() } }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="cancel()"
+        [attr.aria-label]="'generate.results.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-body gs-options-rows">
+      <p class="gs-recipe-lead">{{ "generate.recipe.lead" | transloco }}</p>
+      <button
+        #firstRow
+        type="button"
+        class="gs-opt-row"
+        (click)="choose('replace')"
+      >
+        <app-icon
+          name="adjustments-horizontal"
+          class="gs-ico-sm"
+          aria-hidden="true"
+        />
+        <span class="gs-opt-text">
+          <span class="gs-opt-label">{{
+            "generate.recipe.replace_label" | transloco
+          }}</span>
+          <span class="gs-opt-hint">{{
+            "generate.recipe.replace_hint" | transloco
+          }}</span>
+        </span>
+      </button>
+      <button type="button" class="gs-opt-row" (click)="choose('prompt')">
+        <app-icon name="pencil" class="gs-ico-sm" aria-hidden="true" />
+        <span class="gs-opt-text">
+          <span class="gs-opt-label">{{
+            "generate.recipe.prompt_label" | transloco
+          }}</span>
+          <span class="gs-opt-hint">{{
+            "generate.recipe.prompt_hint" | transloco
+          }}</span>
+        </span>
+      </button>
+      <button type="button" class="gs-opt-row" (click)="choose('keep')">
+        <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
+        <span class="gs-opt-text">
+          <span class="gs-opt-label">{{
+            "generate.recipe.keep_label" | transloco
+          }}</span>
+          <span class="gs-opt-hint">{{
+            "generate.recipe.keep_hint" | transloco
+          }}</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

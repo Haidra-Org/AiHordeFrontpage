@@ -133,6 +133,9 @@
 /* Status page */
 @import "./styles/_status.css";
 
+/* Published picture gallery */
+@import "./styles/_gallery.css";
+
 /* =================================================================
    UTILITY LAYERS
    ================================================================= */

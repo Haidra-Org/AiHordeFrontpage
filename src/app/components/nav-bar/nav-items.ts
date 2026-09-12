@@ -25,6 +25,9 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { labelKey: 'generate.nav_link', routerLink: '/generate/image' },
       { labelKey: 'alchemy.nav_link', routerLink: '/generate/alchemy' },
+      // Worked examples: what the horde made, and the settings behind each
+      // one. It belongs with the making rather than with the reading.
+      { labelKey: 'gallery.nav_link', routerLink: '/gallery' },
       // What both studios have kept in this browser. A result card links here
       // once something has been made; from the bar it is reachable before.
       { labelKey: 'studio.storage.title', routerLink: '/generate/storage' },

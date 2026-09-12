@@ -1917,6 +1917,129 @@ describe('GenerateComponent', () => {
     });
   });
 
+  describe('a recipe sent over from a published example', () => {
+    const RECIPE: ImageGenerationRequest = {
+      prompt: 'a snail cathedral',
+      params: {
+        width: 512,
+        height: 768,
+        steps: 31,
+        cfg_scale: 5,
+        sampler_name: 'k_dpmpp_2m',
+        karras: true,
+        n: 1,
+        seed: '43002',
+      },
+      nsfw: false,
+      models: ['AlbedoBase XL 3.1'],
+    };
+
+    /** The studio as a reader who has never touched it finds it. */
+    const untouched = (): void =>
+      component.form.setValue({ ...DEFAULT_GENERATE_FORM_VALUE });
+
+    const sendRecipe = async (): Promise<void> => {
+      TestBed.inject(StudioHandoffService).set({
+        recipe: RECIPE,
+        recipeTitle: 'Snail cathedral',
+        promptMode: 'set',
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+    };
+
+    it('fills an untouched form outright and offers the undo', async () => {
+      untouched();
+      await sendRecipe();
+
+      const value = component.form.getRawValue();
+      expect(value.prompt).toBe('a snail cathedral');
+      expect(value.steps).toBe(31);
+      expect(value.width).toBe(512);
+      expect(value.model).toBe('AlbedoBase XL 3.1');
+      expect(component.pendingRecipe()).toBeNull();
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.recipe.applied',
+        expect.objectContaining({
+          messageParams: { title: 'Snail cathedral' },
+          action: expect.objectContaining({ label: 'generate.recipe.undo' }),
+        }),
+      );
+    });
+
+    it('asks first when the reader already has settings of their own', async () => {
+      untouched();
+      component.form.controls.steps.setValue(12);
+      await sendRecipe();
+
+      expect(component.pendingRecipe()?.title).toBe('Snail cathedral');
+      // Nothing is written until the question is answered.
+      expect(component.form.getRawValue().steps).toBe(12);
+      expect(component.form.getRawValue().prompt).toBe('');
+    });
+
+    it('replaces everything when the reader asks for the whole recipe', async () => {
+      untouched();
+      component.form.controls.steps.setValue(12);
+      await sendRecipe();
+
+      component.onRecipeChoice('replace');
+
+      const value = component.form.getRawValue();
+      expect(value.steps).toBe(31);
+      expect(value.prompt).toBe('a snail cathedral');
+      expect(component.pendingRecipe()).toBeNull();
+    });
+
+    it('takes only the words when the reader asks for only the prompt', async () => {
+      untouched();
+      component.form.controls.steps.setValue(12);
+      await sendRecipe();
+
+      component.onRecipeChoice('prompt');
+
+      const value = component.form.getRawValue();
+      expect(value.prompt).toBe('a snail cathedral');
+      expect(value.steps).toBe(12);
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.recipe.prompt_applied',
+        expect.objectContaining({
+          messageParams: { title: 'Snail cathedral' },
+        }),
+      );
+    });
+
+    it('changes nothing, and keeps no undo, when the reader keeps theirs', async () => {
+      untouched();
+      component.form.controls.steps.setValue(12);
+      await sendRecipe();
+      const before = component.controlUndoHistory().length;
+
+      component.onRecipeChoice('keep');
+
+      expect(component.form.getRawValue().steps).toBe(12);
+      expect(component.form.getRawValue().prompt).toBe('');
+      expect(component.controlUndoHistory()).toHaveLength(before);
+      expect(component.pendingRecipe()).toBeNull();
+    });
+
+    it('gives the pre-arrival form back through the results bar undo', async () => {
+      untouched();
+      component.form.controls.steps.setValue(12);
+      component.form.controls.prompt.setValue('a lighthouse');
+      await sendRecipe();
+
+      component.onRecipeChoice('replace');
+      expect(component.form.getRawValue().steps).toBe(31);
+
+      await component.undoLastResultAction();
+
+      const value = component.form.getRawValue();
+      expect(value.steps).toBe(12);
+      expect(value.prompt).toBe('a lighthouse');
+    });
+  });
+
   describe('try-it host', () => {
     it('applies a value armed by the routed reference page on arrival', async () => {
       Element.prototype.scrollIntoView = vi.fn();

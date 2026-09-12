@@ -1,0 +1,204 @@
+/* =================================================================
+   GALLERY PAGE
+
+   Every published picture the horde made for this site, as a grid of
+   square tiles that open the shared picture layer. Drawn on the `--hd-*`
+   family: every rule here reads a token, so both themes come out of the
+   token file and no `.dark` rule belongs in this file.
+
+   The picture layer itself is not styled here. It carries the studio's
+   scope because the metadata panel inside it does, so its rules live
+   with the rest of that scope in `_generate.css`.
+   ================================================================= */
+
+@layer components {
+  .gallery-page {
+    /* The page has one section, so its identity hue is the site accent and
+       the primitives inside take it through the --hd-sec* contract. */
+    --hd-sec: var(--hd-accent);
+    --hd-sec-tint: var(--hd-accent-tint);
+    --hd-sec-tint-border: var(--hd-accent-tint-border);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-4);
+  }
+
+  /* -----------------------------------------------------------------
+     FILTERS
+     ----------------------------------------------------------------- */
+
+  .gallery-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
+  }
+
+  .gallery-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .gallery-model {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 14rem;
+  }
+
+  .gallery-model-select {
+    min-height: var(--hd-control-h);
+  }
+
+  .gallery-count {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-label);
+  }
+
+  /* -----------------------------------------------------------------
+     GRID
+     ----------------------------------------------------------------- */
+
+  /* The grid, the tile and the picture inside it are the studio's own, taken
+     through the `gen-studio` scope the page root carries: a row of mixed
+     shapes justifies to one height there, and a second grid of the same
+     pictures would only be a copy of that one. What is left for this page is
+     the list reset, the press that covers a tile, and the name on it. */
+  .gallery-grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .gallery-tile {
+    list-style: none;
+  }
+
+  .gallery-tile--skeleton {
+    border-style: dashed;
+  }
+
+  .gallery-tile-press {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  .gallery-tile-press:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: -3px;
+  }
+
+  /* The name sits on the picture and comes forward on approach: at tile
+     size the words would take the room the picture needs, and the picture
+     is what the reader is choosing between. */
+  .gallery-tile-cap {
+    position: absolute;
+    inset: auto 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--hd-space-2);
+    /* The plate is opaque rather than a wash over the picture: the words have
+       to read at the documented contrast against it whatever picture is
+       underneath, and a gradient only guarantees that at its foot. */
+    border-top: 1px solid var(--hd-stage-rim);
+    background: var(--hd-stage-scrim);
+    color: var(--hd-stage-ink);
+    text-align: left;
+    opacity: 0;
+    transition: opacity var(--hd-dur) var(--hd-ease);
+  }
+
+  .gallery-tile:hover .gallery-tile-cap,
+  .gallery-tile-press:focus-visible .gallery-tile-cap {
+    opacity: 1;
+  }
+
+  .gallery-tile-title {
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gallery-tile-model {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-stage-label);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gallery-tile-go {
+    position: absolute;
+    top: var(--hd-space-2);
+    right: var(--hd-space-2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--hd-radius-pill);
+    border: 1px solid var(--hd-stage-rim);
+    background: var(--hd-stage-scrim);
+    color: var(--hd-stage-ink);
+    opacity: 0;
+    transition: opacity var(--hd-dur) var(--hd-ease);
+  }
+
+  .gallery-tile:hover .gallery-tile-go,
+  .gallery-tile-press:focus-visible .gallery-tile-go {
+    opacity: 1;
+  }
+
+  /* A coarse pointer has no hover to bring the name forward with, so it is
+     there from the start. */
+  @media (pointer: coarse) {
+    .gallery-tile-cap,
+    .gallery-tile-go {
+      opacity: 1;
+    }
+  }
+
+  .gallery-state {
+    padding-top: var(--hd-space-8);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gallery-tile-cap,
+    .gallery-tile-go {
+      transition: none;
+    }
+  }
+}
+
+/* How many square tiles a row of the studio's justified grid holds here. The
+   studio declares the default on `.gs-tile-grid` outside any cascade layer, so
+   this page's own count has to sit outside one too or it would never be read.
+   Nothing else of the grid is restated. */
+.gallery-grid.gs-tile-grid {
+  --gs-cols: 2;
+}
+
+@media (min-width: 768px) {
+  .gallery-grid.gs-tile-grid {
+    --gs-cols: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .gallery-grid.gs-tile-grid {
+    --gs-cols: 4;
+  }
+}

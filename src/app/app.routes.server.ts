@@ -65,6 +65,13 @@ export const serverRoutes: ServerRoute[] = [
     path: 'generate/storage',
     renderMode: RenderMode.Prerender,
   },
+  // The gallery's pictures come from a manifest the browser fetches, so the
+  // built page is the page before it arrives; it is still built, because it is
+  // written to be linked to and its head carries the card a preview reads.
+  {
+    path: 'gallery',
+    renderMode: RenderMode.Prerender,
+  },
 
   // The documentation is the opposite case: static prose written to be linked
   // to and found, so every page of it is built at build time. The parameters

@@ -1,0 +1,127 @@
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-page-title">{{ "gallery.title" | transloco }}</h1>
+      <p class="text-description">{{ "gallery.lead" | transloco }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="section-secondary">
+  <!-- `gen-studio` is the scope the studio's tile rules are declared under, so
+       the grid here is the studio's own justified grid rather than a copy of
+       it. The docs area and the installed-app landing borrow the scope the
+       same way. -->
+  <div class="container-content gallery-page gen-studio">
+    <div
+      class="gallery-filters"
+      role="group"
+      [attr.aria-label]="'gallery.filter_label' | transloco"
+    >
+      <div class="gallery-chips">
+        <button
+          type="button"
+          class="hd-chip"
+          [class.hd-chip--active]="activeTag() === ''"
+          [attr.aria-pressed]="activeTag() === ''"
+          (click)="setTag('')"
+        >
+          {{ "gallery.tag.all" | transloco }}
+        </button>
+        @for (tag of tags; track tag.id) {
+          <button
+            type="button"
+            class="hd-chip"
+            [class.hd-chip--active]="activeTag() === tag.id"
+            [attr.aria-pressed]="activeTag() === tag.id"
+            (click)="setTag(tag.id)"
+          >
+            {{ tag.labelKey | transloco }}
+          </button>
+        }
+      </div>
+
+      <label class="gallery-model">
+        <span class="hd-label">{{ "gallery.model_label" | transloco }}</span>
+        <select
+          class="hd-input gallery-model-select"
+          [value]="activeModel()"
+          (change)="onModelChange($event)"
+        >
+          <option value="">{{ "gallery.model_any" | transloco }}</option>
+          @for (model of models(); track model) {
+            <option [value]="model">{{ model }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (!loaded()) {
+      <ul class="gallery-grid gs-tile-grid" aria-busy="true">
+        @for (tile of skeletons; track tile) {
+          <li class="gs-tile gallery-tile gallery-tile--skeleton"></li>
+        }
+      </ul>
+    } @else if (failed()) {
+      <div class="hd-empty gallery-state">
+        <p class="hd-empty-title">{{ "gallery.failed" | transloco }}</p>
+        <button type="button" class="hd-btn hd-btn--tonal" (click)="retry()">
+          {{ "gallery.retry" | transloco }}
+        </button>
+      </div>
+    } @else {
+      <p class="gallery-count" aria-live="polite">
+        {{ countKey() | transloco: { count: tiles().length } }}
+      </p>
+
+      @if (tiles().length === 0) {
+        <div class="hd-empty gallery-state">
+          <p class="hd-empty-title">{{ "gallery.no_matches" | transloco }}</p>
+        </div>
+      } @else {
+        <ul class="gallery-grid gs-tile-grid">
+          @for (tile of tiles(); track tile.picture.id) {
+            <li class="gs-tile gallery-tile" [style.--gs-tile-ar]="tile.ratio">
+              <button
+                type="button"
+                class="gallery-tile-press"
+                (click)="openPicture(tile.picture.id)"
+              >
+                <img
+                  class="gs-tile-img"
+                  [src]="tile.url"
+                  [alt]="tile.title"
+                  [attr.loading]="$index < 4 ? null : 'lazy'"
+                  decoding="async"
+                  [width]="tile.picture.width"
+                  [height]="tile.picture.height"
+                />
+                <span class="gallery-tile-cap">
+                  <span class="gallery-tile-title">{{ tile.title }}</span>
+                  <span class="gallery-tile-model">{{
+                    tile.picture.model
+                  }}</span>
+                </span>
+                <span class="gallery-tile-go" aria-hidden="true">
+                  <app-icon name="magnifying-glass" class="icon-sm" />
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </div>
+</section>
+
+@if (open(); as shown) {
+  <app-gs-picture-dialog
+    [picture]="shown.picture"
+    [pictureUrl]="shown.url"
+    [title]="shown.title"
+    [set]="shown.set"
+    (closed)="closePicture()"
+    (prev)="step(-1)"
+    (next)="step(1)"
+  />
+}
