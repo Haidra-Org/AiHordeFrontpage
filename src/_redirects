@@ -1,0 +1,6 @@
+# Answered at the edge by the static host (Cloudflare Workers assets). These two
+# paths are redirects inside the app and so build no document of their own; a
+# crawler asking for them would otherwise get the client-only shell, which
+# carries no title, description or card.
+/generate /generate/image 302
+/docs /docs/image 302

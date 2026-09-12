@@ -15,6 +15,7 @@ import { GenerationDbService } from '../../../services/generation-db.service';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
 import { ToastService } from '../../../services/toast.service';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { setPageMeta } from '../../../helper/page-meta';
 
 /** Which history a pending confirmation is about. */
 type StorageArea = 'alchemy' | 'image' | 'civitai';
@@ -65,6 +66,10 @@ export class StudioStorageComponent {
   public readonly clearing = signal(false);
 
   constructor() {
+    setPageMeta({
+      titleKey: 'studio.storage.title',
+      descriptionKey: 'studio.storage.intro',
+    });
     void this.refresh();
   }
 

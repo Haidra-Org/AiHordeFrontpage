@@ -26,6 +26,7 @@
               "src/assets",
               "src/404.html",
               "src/.nojekyll",
+              "src/_redirects",
               {
                 "glob": "*",
                 "output": "/",
@@ -80,6 +81,7 @@
                 "src/assets",
                 "src/404.html",
                 "src/.nojekyll",
+                "src/_redirects",
                 {
                   "glob": "*",
                   "output": "/",
@@ -105,6 +107,7 @@
                 "src/assets",
                 "src/404.html",
                 "src/.nojekyll",
+                "src/_redirects",
                 {
                   "glob": "*",
                   "output": "/",

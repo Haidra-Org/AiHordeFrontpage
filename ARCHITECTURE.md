@@ -307,8 +307,11 @@ thumbnails come across; the result links they carried are long dead, so those
 forms are written off without a request. The key is removed only once the
 imports resolve, so a failure retries on the next load.
 
-The `/generate` page (`pages/generate/`, `RenderMode.Client`) is the canonical UI
-over this queue. The profile `generations` tab
+The `/generate` page (`pages/generate/`) is the canonical UI over this queue. It
+is prerendered as the empty studio so a link preview reads its title, description
+and card; the queue and stored results arrive after hydration. Bare `/generate`
+and `/docs` are in-app redirects that build no document, so `src/_redirects`
+answers them at the static host. The profile `generations` tab
 (`/profile/generations`) reuses it rather than duplicating the flow: its
 `ProfileGenerationsComponent` renders `<app-generate [embedded]="true" />`, where
 the `embedded` input suppresses the page's own intro/title chrome and its claim on

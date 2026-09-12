@@ -42,15 +42,28 @@ export const serverRoutes: ServerRoute[] = [
     path: 'alchemy',
     renderMode: RenderMode.Prerender,
   },
-  // Client-only: the page is driven entirely by browser-side IndexedDB/queue
-  // state, so there is nothing meaningful to server-render.
+  // The studios are driven by browser-side IndexedDB and queue state, so the
+  // built page is the empty studio; it is still built, because a link preview
+  // (Discord, Slack, X) reads the page's title, description and card from the
+  // served document and the client-only shell carries none of them. Each
+  // studio sets its own meta in its constructor, which runs at build time.
+  // Bare /generate is a redirect and builds no document: the hosting's
+  // `_redirects` answers it, so a crawler lands on /generate/image.
   {
     path: 'generate',
-    renderMode: RenderMode.Client,
+    renderMode: RenderMode.Prerender,
   },
   {
-    path: 'generate/**',
-    renderMode: RenderMode.Client,
+    path: 'generate/image',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'generate/alchemy',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'generate/storage',
+    renderMode: RenderMode.Prerender,
   },
 
   // The documentation is the opposite case: static prose written to be linked
