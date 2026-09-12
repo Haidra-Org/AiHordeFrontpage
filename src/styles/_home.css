@@ -1,0 +1,465 @@
+/* =================================================================
+   HOME PAGE
+
+   The front door, drawn on the `--hd-*` family. Every value here reads
+   an `--hd-*` token, so both themes come out of the token file and no
+   `.dark` rule belongs in this file.
+
+   The hero keeps the dark ramp in both themes, the way the studio's
+   stage does, by wearing `hd-dark-plate`: the ramp is declared once in
+   the token file and nothing about it is restated here.
+   ================================================================= */
+
+@layer components {
+  .home {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-8);
+    padding-bottom: var(--hd-space-8);
+  }
+
+  /* -----------------------------------------------------------------
+     HERO
+     ----------------------------------------------------------------- */
+
+  /* The plate takes its ramp from `hd-dark-plate` on the same element, so
+     a picture is read against one ground rather than against whichever
+     theme the reader happens to be in. */
+  .home-hero {
+    padding-block: var(--hd-space-8);
+    padding-inline: var(--hd-space-4);
+    background: var(--hd-stage);
+    color: var(--hd-stage-ink);
+  }
+
+  .home-hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hd-space-6);
+    align-items: center;
+    max-width: var(--max-width-container);
+    margin-inline: auto;
+  }
+
+  /* Beside each other only where both halves keep their measure: the
+     sentence wants 46 characters and the mosaic wants four columns wide
+     enough for a picture to read as one. */
+  @media (min-width: 1024px) {
+    .home-hero-inner {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: var(--hd-space-8);
+    }
+  }
+
+  .home-hero-eyebrow {
+    margin: 0;
+    font-size: var(--hd-text-2xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--hd-stage-label);
+  }
+
+  .home-hero-title {
+    margin: var(--hd-space-3) 0 0;
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    color: var(--hd-stage-ink);
+  }
+
+  .home-hero-lead {
+    max-width: 46ch;
+    margin: var(--hd-space-3) 0 0;
+    font-size: var(--hd-text-lg);
+    line-height: 1.6;
+    color: var(--hd-stage-ink);
+  }
+
+  .home-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-3);
+    margin-top: var(--hd-space-6);
+  }
+
+  .home-hero-action {
+    min-height: 44px;
+    padding-inline: var(--hd-space-6);
+    text-decoration: none;
+  }
+
+  .home-hero-note {
+    max-width: 46ch;
+    margin: var(--hd-space-4) 0 0;
+    font-size: var(--hd-text-sm);
+    line-height: 1.5;
+    color: var(--hd-stage-label);
+  }
+
+  /* -----------------------------------------------------------------
+     MOSAIC
+     ----------------------------------------------------------------- */
+
+  /* Nine published runs in four columns of three. One tile takes four of
+     the twelve cells so the eye has somewhere to land before it reads the
+     grid, and the other eight fill the rest exactly: the mosaic ends on a
+     straight edge at every width rather than trailing off. */
+  .home-mosaic {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--hd-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .home-mosaic-cell {
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  .home-mosaic-cell--wide-tall {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  /* The tile is the press, so it is a button wearing nothing of one: the
+     picture is the whole control and the words under it say what it does. */
+  .home-tile {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--hd-stage-rim);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-stage);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .home-tile:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Two pictures per tile, one showing: the change between them is a
+     crossfade rather than a blink. */
+  .home-tile-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity calc(var(--hd-dur) * 2) var(--hd-ease);
+  }
+
+  .home-tile-img--on {
+    opacity: 1;
+  }
+
+  /* The words sit on a scrim rather than on the picture, so what they
+     measure against is a known colour rather than whatever is under them. */
+  .home-tile-cap {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--hd-space-2);
+    background: var(--hd-stage-scrim);
+    color: var(--hd-stage-ink);
+    opacity: 0;
+    transition: opacity var(--hd-dur) var(--hd-ease);
+    pointer-events: none;
+  }
+
+  .home-tile:hover .home-tile-cap,
+  .home-tile:focus-within .home-tile-cap {
+    opacity: 1;
+  }
+
+  .home-tile-cap-title {
+    overflow: hidden;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .home-tile-cap-model {
+    overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--hd-text-2xs);
+    color: var(--hd-stage-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Two columns leave a spanning tile the whole width, which reads as a
+     banner rather than as one picture among nine, so the span goes; and six
+     tiles fill three rows exactly where nine would leave a hole. The three
+     that go are the lazy ones, so a phone never fetches what it hides. */
+  @media (max-width: 479.98px) {
+    .home-mosaic {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .home-mosaic-cell--wide-tall {
+      grid-column: auto;
+      grid-row: auto;
+      aspect-ratio: 1 / 1;
+    }
+
+    .home-mosaic-cell:nth-child(n + 7) {
+      display: none;
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     LIVE BAND
+     ----------------------------------------------------------------- */
+
+  .home-band,
+  .home-section {
+    padding-inline: var(--hd-space-4);
+  }
+
+  .home-band-inner,
+  .home-section-inner {
+    max-width: var(--max-width-container);
+    margin-inline: auto;
+  }
+
+  .home-band-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .home-band-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--hd-space-3);
+  }
+
+  @media (max-width: 767.98px) {
+    .home-band-tiles {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .home-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--hd-space-4);
+  }
+
+  .home-stat-label {
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hd-muted);
+  }
+
+  /* Tabular figures so a number counting in does not shuffle the ones
+     beside it. */
+  .home-stat-value {
+    font-size: clamp(26px, 2.6vw, 34px);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--hd-ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .home-stat-sub {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .home-band-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
+  }
+
+  .home-band-uptime {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .home-band-uptime-label {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  /* The trend is supporting detail and is already dropped from narrow rows
+     where it is drawn; its label goes with it rather than standing alone. */
+  @media (max-width: 640px) {
+    .home-band-uptime {
+      display: none;
+    }
+  }
+
+  .home-band-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-accent-text);
+  }
+
+  /* -----------------------------------------------------------------
+     SECTIONS
+     ----------------------------------------------------------------- */
+
+  .home-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
+    margin-bottom: var(--hd-space-4);
+  }
+
+  .home-section-title {
+    margin: 0 0 var(--hd-space-4);
+    font-size: var(--hd-text-xl);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .home-section-head .home-section-title {
+    margin-bottom: 0;
+  }
+
+  .home-section-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-accent-text);
+  }
+
+  .home-doors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--hd-space-3);
+  }
+
+  /* A door keeps a column measure inside a panel; given a third of the page it
+     takes the width it is handed, and the blue strip narrows with it to a mark
+     rather than a panel. The three then fill their row to the same height. */
+  .home-doors app-gs-door,
+  .home-door {
+    max-width: none;
+    height: 100%;
+  }
+
+  /* The scope is on the selector because the door's own rules carry it, and a
+     rule of equal weight declared earlier would lose to them. */
+  .gen-studio .home-door .gs-door-panel {
+    flex-basis: 56px;
+  }
+
+  /* -----------------------------------------------------------------
+     NEWS
+     ----------------------------------------------------------------- */
+
+  .home-news {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--hd-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 899.98px) {
+    .home-news {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .home-news-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    padding: var(--hd-space-4);
+  }
+
+  .home-news-date {
+    font-size: var(--hd-text-2xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hd-muted);
+  }
+
+  .home-news-title {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  .home-news-text {
+    margin: 0;
+    font-size: var(--hd-text-md);
+    line-height: 1.6;
+    color: var(--hd-ink-2);
+  }
+
+  .home-news-more {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: auto;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-accent-text);
+  }
+
+  .home-news-empty {
+    margin: 0;
+    font-size: var(--hd-text-md);
+    color: var(--hd-muted);
+  }
+
+  /* -----------------------------------------------------------------
+     SPONSORS AND CREDITS
+     ----------------------------------------------------------------- */
+
+  .home-credits-text {
+    max-width: 70ch;
+    margin: 0;
+    font-size: var(--hd-text-md);
+    line-height: 1.7;
+    color: var(--hd-ink-2);
+  }
+
+  .home-credits-mark {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: var(--hd-space-4);
+    color: var(--hd-muted);
+  }
+
+  .home-credits-svg {
+    width: 140px;
+    height: auto;
+  }
+}

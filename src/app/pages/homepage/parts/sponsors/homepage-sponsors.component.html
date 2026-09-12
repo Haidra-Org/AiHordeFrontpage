@@ -1,31 +1,30 @@
-<section class="section-primary homepage-section homepage-section--sponsors">
-  <div class="container-content-minimal">
-    <h2 class="mb-3 heading-section-lg" scrollReveal>Sponsors</h2>
-    <p class="sponsor-description" scrollReveal>
-      Funded by donations from the public, and NLnet / NGI0 Core (Next
-      Generation Internet).
-      <br />
-      Run by
+<section class="home-section home-credits" scrollReveal>
+  <div class="home-section-inner">
+    <h2 class="home-section-title">
+      {{ "homepage.sponsors.title" | transloco }}
+    </h2>
+    <p class="home-credits-text">
+      {{ "homepage.sponsors.funding" | transloco }}
+      {{ "homepage.sponsors.run_by_prefix" | transloco }}
       <a
         href="https://haidra.net"
         target="_blank"
         rel="noreferrer noopener"
         class="link external-link"
-        >Haidra</a
-      >, a community-based volunteer-run non-profit.
+        >{{ "homepage.sponsors.haidra_link" | transloco }}</a
+      >{{ "homepage.sponsors.run_by_suffix" | transloco }}
       <a routerLink="/mission" class="link">{{
         "homepage.sponsors.mission_link" | transloco
       }}</a>
     </p>
-    <div class="sponsor-grid" scrollReveal>
-      <a
-        href="https://nlnet.nl/project/AI-Horde/"
-        target="_blank"
-        rel="noreferrer noopener"
-        class="flex items-center lg:justify-center"
-      >
-        <inline-svg href="assets/img/nlnet.svg" class="sponsor-svg" />
-      </a>
-    </div>
+    <a
+      href="https://nlnet.nl/project/AI-Horde/"
+      target="_blank"
+      rel="noreferrer noopener"
+      class="home-credits-mark"
+      [attr.aria-label]="'homepage.sponsors.nlnet_link' | transloco"
+    >
+      <inline-svg href="assets/img/nlnet.svg" class="home-credits-svg" />
+    </a>
   </div>
 </section>

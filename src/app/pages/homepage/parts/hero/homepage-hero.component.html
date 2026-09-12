@@ -1,0 +1,76 @@
+<!-- `hd-dark-plate` is the design system's dark ramp in either theme, which the
+     pictures are read against. -->
+<section class="home-hero hd-dark-plate">
+  <div class="home-hero-inner">
+    <div class="home-hero-say">
+      <p class="home-hero-eyebrow">
+        {{ "homepage.hero.eyebrow" | transloco }}
+      </p>
+      <h1 class="home-hero-title">{{ "app_title" | transloco }}</h1>
+      <p class="home-hero-lead">
+        {{ "homepage.intro.tagline" | transloco }}
+      </p>
+      <div class="home-hero-actions">
+        <a
+          routerLink="/generate/image"
+          class="hd-btn hd-btn--primary home-hero-action"
+        >
+          {{ "homepage.hero.generate" | transloco }}
+        </a>
+        <a routerLink="/contribute" class="hd-btn home-hero-action">
+          {{ "homepage.hero.contribute" | transloco }}
+        </a>
+      </div>
+      <p class="home-hero-note">
+        {{ "homepage.hero.made_here" | transloco }}
+      </p>
+    </div>
+
+    <ul class="home-mosaic">
+      @for (tile of tiles(); track $index; let i = $index) {
+        @let shown = picture(tile);
+        <li class="home-mosaic-cell {{ spanClass[i] }}">
+          <!-- Every tile is a door into the studio, so the press is the tile
+               itself and its name says what pressing does. -->
+          <button
+            type="button"
+            class="home-tile"
+            [class.home-tile--bare]="tile.failed"
+            [attr.aria-label]="
+              'homepage.hero.tile_press' | transloco: { title: shown.title }
+            "
+            (click)="tryPrompt(shown)"
+            (mouseenter)="hold(i)"
+            (mouseleave)="release(i)"
+            (focusin)="hold(i)"
+            (focusout)="release(i)"
+          >
+            @if (!tile.failed) {
+              <img
+                class="home-tile-img"
+                [class.home-tile-img--on]="!tile.showBack"
+                [src]="imageUrl(tile.front)"
+                alt=""
+                [attr.loading]="i < 4 ? null : 'lazy'"
+                [attr.fetchpriority]="i < 4 ? 'high' : null"
+                (error)="markFailed(i)"
+              />
+              @if (tile.back; as back) {
+                <img
+                  class="home-tile-img"
+                  [class.home-tile-img--on]="tile.showBack"
+                  [src]="imageUrl(back)"
+                  alt=""
+                />
+              }
+              <span class="home-tile-cap">
+                <span class="home-tile-cap-title">{{ shown.title }}</span>
+                <span class="home-tile-cap-model">{{ shown.model }}</span>
+              </span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  </div>
+</section>

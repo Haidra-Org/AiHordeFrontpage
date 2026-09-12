@@ -50,7 +50,9 @@
 /* Typography */
 @import "./styles/_typography-headings.css";
 @import "./styles/_typography-text.css";
-@import "./styles/_intro-features.css";
+
+/* Home page */
+@import "./styles/_home.css";
 
 /* Forms */
 @import "./styles/_forms.css";

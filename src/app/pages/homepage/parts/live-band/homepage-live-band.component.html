@@ -1,0 +1,103 @@
+<section class="home-band" scrollReveal>
+  <div class="home-band-inner">
+    <div class="home-band-tiles">
+      <div class="hd-card home-stat">
+        <span class="home-stat-label">
+          {{ "homepage.band.workers" | transloco }}
+        </span>
+        <span class="home-stat-value">
+          @if (shownWorkers() !== null) {
+            {{ shownWorkers() | number: "1.0-0" }}
+          } @else {
+            {{ "homepage.band.unavailable" | transloco }}
+          }
+        </span>
+        @if (imageWorkers() !== null) {
+          <span class="home-stat-sub">
+            {{
+              "homepage.band.split"
+                | transloco
+                  : {
+                      image: imageWorkers() | number,
+                      text: textWorkers() | number,
+                    }
+            }}
+          </span>
+        }
+      </div>
+
+      <div class="hd-card home-stat">
+        <span class="home-stat-label">
+          {{ "homepage.band.queue" | transloco }}
+        </span>
+        <span class="home-stat-value">
+          @if (shownQueue() !== null) {
+            {{ shownQueue() | number: "1.0-0" }}
+          } @else {
+            {{ "homepage.band.unavailable" | transloco }}
+          }
+        </span>
+        @if (imageQueue() !== null) {
+          <span class="home-stat-sub">
+            {{
+              "homepage.band.split"
+                | transloco
+                  : {
+                      image: imageQueue() | number,
+                      text: textQueue() | number,
+                    }
+            }}
+          </span>
+        }
+      </div>
+
+      <div class="hd-card home-stat">
+        <span class="home-stat-label">
+          {{ "homepage.band.throughput" | transloco }}
+        </span>
+        <span class="home-stat-value">
+          @if (shownThroughput() !== null) {
+            {{ shownThroughput() | number: "1.1-1" }}
+          } @else {
+            {{ "homepage.band.unavailable" | transloco }}
+          }
+        </span>
+        @if (throughput() !== null) {
+          <span class="home-stat-sub">
+            {{ "homepage.band.throughput_sub" | transloco }}
+          </span>
+        }
+      </div>
+
+      <div class="hd-card home-stat">
+        <span class="home-stat-label">
+          {{ "homepage.band.pictures" | transloco }}
+        </span>
+        <span class="home-stat-value">
+          @if (shownPictures() !== null) {
+            {{ shownPictures() | number: "1.0-0" }}
+          } @else {
+            {{ "homepage.band.unavailable" | transloco }}
+          }
+        </span>
+        @if (pictures() !== null) {
+          <span class="home-stat-sub">
+            {{ "homepage.band.pictures_sub" | transloco }}
+          </span>
+        }
+      </div>
+    </div>
+
+    <div class="home-band-foot">
+      <div class="home-band-uptime">
+        <span class="home-band-uptime-label">
+          {{ "homepage.band.uptime" | transloco }}
+        </span>
+        <app-uptime-sparkline [days]="apiHistory()" />
+      </div>
+      <a routerLink="/status" class="home-band-link">
+        {{ "homepage.band.live_status" | transloco }}
+      </a>
+    </div>
+  </div>
+</section>

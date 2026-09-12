@@ -679,10 +679,17 @@
 
 /* --- Uptime sparkline -------------------------------------------- */
 /* A 30-day uptime trend drawn in the row's metrics cluster, between the
-   90-day figure and the status pill. The SVG is authored in a fixed
-   100×28 space and scaled by these box dimensions; `currentColor` ties the
-   line + area fill to the per-status tone set below, so it tracks the dot
-   and pill (and the dark-mode remaps) without per-tone SVG attributes. */
+   90-day figure and the status pill, and beside the home page's live band.
+   The SVG is authored in a fixed 100×28 space and scaled by these box
+   dimensions; `currentColor` ties the line + area fill to the per-status tone
+   set below, so it tracks the dot and pill (and the dark-mode remaps) without
+   per-tone SVG attributes. */
+
+/* The drawing is shared as a component, and its host would otherwise sit
+   between the figure and the row's flex layout. */
+app-uptime-sparkline {
+  display: contents;
+}
 
 .status-sparkline {
   display: block;

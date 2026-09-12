@@ -845,4 +845,138 @@
       height: 44px;
     }
   }
+
+  /* =================================================================
+     BEGINNER BANNER
+     The orientation callout at the head of the page
+     ================================================================= */
+
+  /* The banner keeps the purple it has always been read by, supplied as
+     the section identity so the callout's start edge, its tint and the
+     glyph beside the title all take it from one declaration. */
+  .beginner-banner {
+    --hd-sec: var(--hd-purple);
+    --hd-sec-tint: var(--hd-purple-tint);
+    --hd-sec-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .beginner-banner-main {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--hd-space-2-5);
+  }
+
+  /* Wide screens show the whole orientation; the fold toggle is a phone's. */
+  .beginner-banner-toggle {
+    display: none;
+    flex: none;
+    margin-left: auto;
+  }
+
+  @media (max-width: 639.98px) {
+    .beginner-banner-toggle {
+      display: inline-flex;
+    }
+
+    /* Folded, the banner is its title and its doors: the rest waits behind
+       the chevron so the page's own content starts on the first screen. */
+    .beginner-banner:not(.beginner-banner--open) .beginner-banner-fold {
+      display: none;
+    }
+  }
+
+  .beginner-banner-icon {
+    flex: none;
+    color: var(--hd-sec);
+  }
+
+  .beginner-banner-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+  }
+
+  .beginner-banner-recommendation {
+    margin: 0;
+  }
+
+  .beginner-banner-recommendation strong {
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  .beginner-banner-actions {
+    margin-top: var(--hd-space-1);
+  }
+
+  .beginner-banner-link {
+    text-decoration: none;
+  }
+
+  /* Compact category definition list for GUIs page orientation. The three
+     facts sit on cards so they read as a row of separate answers rather
+     than as a paragraph broken into pieces; a phone stacks them. */
+  .beginner-banner-categories {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--hd-space-2);
+    margin: 0;
+    padding: 0;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .beginner-banner-category {
+    display: flex;
+    flex-direction: column;
+    row-gap: 2px;
+  }
+
+  .beginner-banner-dt {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  .beginner-banner-dd {
+    margin: 0;
+    padding-inline-start: 18px;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .beginner-banner-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    flex: none;
+    border-radius: 9999px;
+  }
+
+  .beginner-banner-dot-purple {
+    background: var(--hd-purple);
+  }
+
+  .beginner-banner-dot-blue {
+    background: var(--hd-accent);
+  }
+
+  .beginner-banner-dot-green {
+    background: var(--hd-green);
+  }
+
+  .beginner-banner-kudos-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    font-size: var(--hd-text-sm);
+    color: var(--hd-muted);
+  }
 }

@@ -98,7 +98,7 @@ src/styles/
 ├── _layout.css             Section backgrounds, containers, .wrapper, grids
 ├── _typography-headings.css  Heading hierarchy from hero to subsection
 ├── _typography-text.css    Text colours, links, list styles, body variants
-├── _intro-features.css     Homepage hero stage and feature cards
+├── _home.css               Home page: the dark hero plate, the mosaic, the live band, its sections
 ├── _forms.css              Frontpage form patterns over the shared form primitives
 ├── _buttons.css            Frontpage button overrides and additions
 ├── _cards.css              Card system: base, variants, feature cards, callouts

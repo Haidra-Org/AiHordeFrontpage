@@ -1,0 +1,21 @@
+<!-- `gen-studio` is the scope the door's own rules are declared under; the
+     section borrows it so a door looks the same here as where it leads. -->
+<section class="home-section gen-studio" scrollReveal>
+  <div class="home-section-inner">
+    <h2 class="home-section-title">
+      {{ "homepage.doors.title" | transloco }}
+    </h2>
+    <div class="home-doors">
+      @for (door of doors; track door.id) {
+        <app-gs-door
+          kind="studio"
+          [icon]="door.icon"
+          controlClass="home-door"
+          [title]="door.titleKey | transloco"
+          [meta]="door.metaKey | transloco"
+          (entered)="enter(door)"
+        />
+      }
+    </div>
+  </div>
+</section>

@@ -1,61 +1,50 @@
-<section class="section-secondary">
-  <div class="container-content-minimal">
-    <div class="grid-items">
-      <div class="text-secondary sm:text-lg">
-        <h2 class="mb-3 heading-section-lg" scrollReveal>
-          <a routerLink="/news/">
-            {{ "latest_news.title" | transloco }}
-          </a>
-        </h2>
-        @if (error()) {
-          <p class="text-secondary">
-            {{ "latest_news.error" | transloco }}
-          </p>
-        } @else if (news().length > 0) {
-          @for (newsItem of news(); track newsItem.title) {
-            <div class="news-home-item" scrollReveal>
-              <h3 class="news-home-heading">
-                <span class="news-home-date">{{ newsItem.datePublished }}</span>
-                - <span [innerHTML]="newsItem.title"></span>
-              </h3>
-              @if (newsItem.excerpt) {
-                <p
-                  class="news-home-text"
-                  [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"
-                ></p>
-              }
-              @if (newsItem.moreLink) {
-                <p class="news-home-text">
-                  <a
-                    [href]="newsItem.moreLink"
-                    target="_blank"
-                    class="external-link"
-                    >{{ "read_more" | transloco }}</a
-                  >
-                </p>
-              }
-            </div>
-          }
-        } @else {
-          <!-- Loading skeleton for news -->
-          <div class="skeleton-pulse space-y-4">
-            @for (i of [1, 2, 3]; track i) {
-              <div class="mb-4">
-                <div class="news-skeleton-bar news-skeleton-bar--title"></div>
-                <div class="space-y-2">
-                  <div class="news-skeleton-bar news-skeleton-bar--line"></div>
-                  <div
-                    class="news-skeleton-bar news-skeleton-bar--line-short"
-                  ></div>
-                  <div
-                    class="news-skeleton-bar news-skeleton-bar--line-shorter"
-                  ></div>
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
+<section class="home-section" scrollReveal>
+  <div class="home-section-inner">
+    <div class="home-section-head">
+      <h2 class="home-section-title">
+        {{ "latest_news.title" | transloco }}
+      </h2>
+      <a routerLink="/news/" class="home-section-link">
+        {{ "latest_news.all" | transloco }}
+      </a>
     </div>
+
+    @if (error()) {
+      <p class="home-news-empty">{{ "latest_news.error" | transloco }}</p>
+    } @else if (news().length > 0) {
+      <ul class="home-news">
+        @for (newsItem of news(); track newsItem.title) {
+          <li class="hd-card home-news-item">
+            <span class="home-news-date">{{ newsItem.datePublished }}</span>
+            <h3 class="home-news-title" [innerHTML]="newsItem.title"></h3>
+            @if (newsItem.excerpt) {
+              <p
+                class="home-news-text"
+                [innerHTML]="newsItem.excerpt | markdown | stripWrapperTag"
+              ></p>
+            }
+            @if (newsItem.moreLink) {
+              <a
+                [href]="newsItem.moreLink"
+                target="_blank"
+                rel="noreferrer noopener"
+                class="home-news-more external-link"
+                >{{ "read_more" | transloco }}</a
+              >
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <ul class="home-news skeleton-pulse">
+        @for (i of [1, 2, 3]; track i) {
+          <li class="hd-card home-news-item">
+            <div class="news-skeleton-bar news-skeleton-bar--title"></div>
+            <div class="news-skeleton-bar news-skeleton-bar--line"></div>
+            <div class="news-skeleton-bar news-skeleton-bar--line-short"></div>
+          </li>
+        }
+      </ul>
+    }
   </div>
 </section>
