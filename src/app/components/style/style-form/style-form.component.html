@@ -83,11 +83,13 @@
             formControlName="name"
             class="hd-input"
             [class.field-invalid]="
-              form.controls['name'].invalid && form.controls['name'].touched
+              baseForm.controls.name.invalid && baseForm.controls.name.touched
             "
             [placeholder]="'styles.form.name_placeholder' | transloco"
           />
-          @if (form.controls["name"].invalid && form.controls["name"].touched) {
+          @if (
+            baseForm.controls.name.invalid && baseForm.controls.name.touched
+          ) {
             <p class="field-error" role="alert">
               {{ "styles.form.name_required" | transloco }}
             </p>
@@ -120,7 +122,8 @@
             formControlName="prompt"
             class="hd-textarea"
             [class.field-invalid]="
-              form.controls['prompt'].invalid && form.controls['prompt'].touched
+              baseForm.controls.prompt.invalid &&
+              baseForm.controls.prompt.touched
             "
             rows="4"
             [placeholder]="
@@ -130,7 +133,7 @@
             "
           ></textarea>
           @if (
-            form.controls["prompt"].invalid && form.controls["prompt"].touched
+            baseForm.controls.prompt.invalid && baseForm.controls.prompt.touched
           ) {
             <p class="field-error" role="alert">
               {{ "styles.form.prompt_required" | transloco }}
@@ -178,8 +181,8 @@
               formControlName="models"
               [models]="availableModels()"
               [invalid]="
-                form.controls['models'].invalid &&
-                form.controls['models'].touched
+                baseForm.controls.models.invalid &&
+                baseForm.controls.models.touched
               "
               placeholderKey="styles.form.models_placeholder"
               listAriaLabelKey="styles.form.models"
@@ -188,8 +191,8 @@
               emptyKey="styles.form.no_model_matches"
             />
             @if (
-              form.controls["models"].errors?.["requiresModel"] &&
-              form.controls["models"].touched
+              baseForm.controls.models.errors?.["requiresModel"] &&
+              baseForm.controls.models.touched
             ) {
               <p class="field-error" role="alert">
                 {{ "styles.form.models_required" | transloco }}
@@ -248,7 +251,7 @@
             <div
               class="form-field form-field-third"
               [class.form-field--unset]="
-                form.controls['cfg_scale'].value === null
+                imageForm.controls.cfg_scale.value === null
               "
             >
               <label for="style-cfg" class="hd-label">
@@ -267,7 +270,9 @@
 
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['steps'].value === null"
+              [class.form-field--unset]="
+                imageForm.controls.steps.value === null
+              "
             >
               <label for="style-steps" class="hd-label">
                 {{ "styles.form.steps" | transloco }}
@@ -286,7 +291,9 @@
           <div class="form-row">
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['width'].value === null"
+              [class.form-field--unset]="
+                imageForm.controls.width.value === null
+              "
             >
               <label for="style-width" class="hd-label">
                 {{ "styles.form.width" | transloco }}
@@ -297,13 +304,13 @@
                 formControlName="width"
                 class="hd-input"
                 [class.field-invalid]="
-                  form.controls['width'].errors?.['divisibleBy64']
+                  imageForm.controls.width.errors?.['divisibleBy64']
                 "
                 min="64"
                 max="3072"
                 step="64"
               />
-              @if (form.controls["width"].errors?.["divisibleBy64"]) {
+              @if (imageForm.controls.width.errors?.["divisibleBy64"]) {
                 <p class="field-error" role="alert">
                   {{ "styles.form.divisible_by_64" | transloco }}
                 </p>
@@ -312,7 +319,9 @@
 
             <div
               class="form-field form-field-third"
-              [class.form-field--unset]="form.controls['height'].value === null"
+              [class.form-field--unset]="
+                imageForm.controls.height.value === null
+              "
             >
               <label for="style-height" class="hd-label">
                 {{ "styles.form.height" | transloco }}
@@ -323,13 +332,13 @@
                 formControlName="height"
                 class="hd-input"
                 [class.field-invalid]="
-                  form.controls['height'].errors?.['divisibleBy64']
+                  imageForm.controls.height.errors?.['divisibleBy64']
                 "
                 min="64"
                 max="3072"
                 step="64"
               />
-              @if (form.controls["height"].errors?.["divisibleBy64"]) {
+              @if (imageForm.controls.height.errors?.["divisibleBy64"]) {
                 <p class="field-error" role="alert">
                   {{ "styles.form.divisible_by_64" | transloco }}
                 </p>
@@ -411,8 +420,8 @@
                  is elsewhere, so it brings the same scope the picker does. -->
             <div class="gs-civit-scope">
               <app-civitai-selection
-                [loras]="form.controls['loras'].value"
-                [tis]="form.controls['tis'].value"
+                [loras]="imageForm.controls.loras.value"
+                [tis]="imageForm.controls.tis.value"
                 [baseline]="styleBaseline()"
                 [allowSha256]="true"
                 [showCap]="false"
@@ -425,12 +434,12 @@
             <!-- A style is a document rather than a submission: the cap applies
                  to the merged request at generation time, and the editor is not
                  the place to decide which five survive that merge. -->
-            @if (form.controls["loras"].value.length > 5) {
+            @if (imageForm.controls.loras.value.length > 5) {
               <p class="gs-warn mt-1.5">
                 {{ "styles.form.loras_cap_note" | transloco }}
               </p>
             }
-            @if (form.controls["tis"].value.length > 20) {
+            @if (imageForm.controls.tis.value.length > 20) {
               <p class="gs-warn mt-1.5">
                 {{ "styles.form.tis_cap_note" | transloco }}
               </p>
@@ -475,8 +484,8 @@
           @if (civitaiOpen()) {
             <div class="gs-civit-scope">
               <app-civitai-picker
-                [loras]="form.controls['loras'].value"
-                [tis]="form.controls['tis'].value"
+                [loras]="imageForm.controls.loras.value"
+                [tis]="imageForm.controls.tis.value"
                 [baseline]="styleBaseline()"
                 [allowSha256]="true"
                 (lorasChange)="setLoras($event)"
@@ -518,7 +527,7 @@
             <div
               class="form-field form-field-quarter"
               [class.form-field--unset]="
-                form.controls['temperature'].value === null
+                textForm.controls.temperature.value === null
               "
             >
               <label for="style-temperature" class="hd-label">
@@ -537,7 +546,7 @@
 
             <div
               class="form-field form-field-quarter"
-              [class.form-field--unset]="form.controls['top_p'].value === null"
+              [class.form-field--unset]="textForm.controls.top_p.value === null"
             >
               <label for="style-top-p" class="hd-label">
                 {{ "styles.form.top_p" | transloco }}
@@ -570,7 +579,7 @@
             <div
               class="form-field form-field-quarter"
               [class.form-field--unset]="
-                form.controls['rep_pen'].value === null
+                textForm.controls.rep_pen.value === null
               "
             >
               <label for="style-rep-pen" class="hd-label">

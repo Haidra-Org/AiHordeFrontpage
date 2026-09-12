@@ -134,6 +134,7 @@ interface TextStyleFormValue extends StyleFormBaseValue {
 }
 
 type FormControlsOf<T> = { [K in keyof T]: FormControl<T[K] | null> };
+type StyleFormBaseControls = FormControlsOf<StyleFormBaseValue>;
 type ImageStyleFormControls = FormControlsOf<ImageStyleFormValue>;
 type TextStyleFormControls = FormControlsOf<TextStyleFormValue>;
 
@@ -237,10 +238,15 @@ export class StyleFormComponent implements OnInit, OnChanges {
   public form!: FormGroup;
   private initialPayloadSnapshot = '';
 
-  private get imageForm(): FormGroup<ImageStyleFormControls> {
+  public get baseForm(): FormGroup<StyleFormBaseControls> {
+    return this.form as FormGroup<StyleFormBaseControls>;
+  }
+
+  public get imageForm(): FormGroup<ImageStyleFormControls> {
     return this.form as FormGroup<ImageStyleFormControls>;
   }
-  private get textForm(): FormGroup<TextStyleFormControls> {
+
+  public get textForm(): FormGroup<TextStyleFormControls> {
     return this.form as FormGroup<TextStyleFormControls>;
   }
 
@@ -320,7 +326,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
     const found = new Set(
       names.map((name) => map[name]).filter((b): b is string => !!b),
     );
-    return found.size === 1 ? [...found][0] : null;
+    return found.size === 1 ? (Array.from(found).at(0) ?? null) : null;
   });
 
   public openCivitai(): void {
