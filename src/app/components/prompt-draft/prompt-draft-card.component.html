@@ -214,6 +214,15 @@
                     {{ "generate.describe.remove" | transloco }}
                   </button>
                 </div>
+                <!-- The alchemy queue has no dry run, so the price is worked
+                     out here and said before the reader presses anything. -->
+                @if (describe.readingKudos(); as kudos) {
+                  <p class="gs-sublabel">
+                    {{
+                      "generate.describe.price" | transloco: { kudos: kudos }
+                    }}
+                  </p>
+                }
               </div>
             </div>
           }

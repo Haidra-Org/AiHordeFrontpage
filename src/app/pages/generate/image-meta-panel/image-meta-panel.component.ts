@@ -49,6 +49,12 @@ export interface PromptCheckView {
   verdict: { text: string; model: string } | null;
   /** What asking for an opinion would cost, where the horde has quoted it. */
   verdictPrice: number | null;
+  /**
+   * What reading the picture back would cost. The alchemy queue has no dry
+   * run, so the host works it out from the horde's pricing rule; null where it
+   * cannot be worked out, and then nothing is shown.
+   */
+  readPrice: number | null;
 }
 
 /** Which of the prompt check's three buttons was pressed. */

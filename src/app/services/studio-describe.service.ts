@@ -13,12 +13,22 @@ import {
   base64ByteLength,
   fileToResizedBase64,
 } from '../helper/image-encoding';
+import { estimateAlchemyKudos } from '../helper/alchemy-kudos';
 
 /**
  * The largest payload the request is allowed to carry, matching alchemy's own
  * picker so a picture the studio accepts here is one alchemy would accept too.
  */
 const MAX_ENCODED_BYTES = 4 * 1024 * 1024;
+
+/** What a reading asks alchemy for: the sentence, then the strongest tags. */
+const READING_FORMS = ['caption', 'interrogation'] as const;
+
+/**
+ * The reading is worth waiting a little longer for; refusing slow workers
+ * would turn a quiet background job into a queue failure.
+ */
+const READING_SLOW_WORKERS = true;
 
 /** The words alchemy found in the picture, each once its form is done. */
 export interface DescribeFindings {
@@ -103,6 +113,19 @@ export class StudioDescribeService {
    * anything and never touches the request's own source setting.
    */
   public readonly sourcePicture = computed(() => this.attachedSource());
+
+  /**
+   * What a reading costs, so every surface that offers one quotes the same
+   * figure. The alchemy queue has no dry run to ask, so the horde's own
+   * pricing rule is applied to the forms this service sends; null would mean
+   * the request holds something that cannot be priced, and the callers show
+   * nothing rather than a guess.
+   */
+  public readonly readingKudos = computed(() =>
+    estimateAlchemyKudos(READING_FORMS, {
+      slowWorkers: READING_SLOW_WORKERS,
+    }),
+  );
 
   /** Tell the service what the source card currently holds. */
   public offerSourcePicture(blob: Blob | null): void {
@@ -252,10 +275,8 @@ export class StudioDescribeService {
   private async send(picture: PreparedPicture): Promise<void> {
     try {
       const outcome = await this.queue.submit({
-        forms: ['caption', 'interrogation'],
-        // The reading is worth waiting a little longer for; refusing slow
-        // workers would turn a quiet background job into a queue failure.
-        slowWorkers: true,
+        forms: [...READING_FORMS],
+        slowWorkers: READING_SLOW_WORKERS,
         source: picture.base64,
         sourceMimeType: picture.mimeType,
       });

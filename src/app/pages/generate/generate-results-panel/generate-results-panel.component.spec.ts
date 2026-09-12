@@ -116,6 +116,7 @@ describe('GenerateResultsPanelComponent', () => {
     describeService = {
       describe: vi.fn().mockResolvedValue(undefined),
       pending: signal(false),
+      readingKudos: signal(8),
     };
     // jsdom has no object-URL support and the grid makes one per thumbnail.
     URL.createObjectURL = vi.fn(() => 'blob:test');
@@ -1583,7 +1584,11 @@ describe('GenerateResultsPanelComponent empty pane', () => {
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
         {
           provide: StudioDescribeService,
-          useValue: { describe: vi.fn(), pending: signal(false) },
+          useValue: {
+            describe: vi.fn(),
+            pending: signal(false),
+            readingKudos: signal(8),
+          },
         },
       ],
     }).compileComponents();
@@ -1668,7 +1673,11 @@ describe('GenerateResultsPanelComponent status chip', () => {
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
         {
           provide: StudioDescribeService,
-          useValue: { describe: vi.fn(), pending: signal(false) },
+          useValue: {
+            describe: vi.fn(),
+            pending: signal(false),
+            readingKudos: signal(8),
+          },
         },
       ],
     }).compileComponents();
@@ -1766,7 +1775,11 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
         {
           provide: StudioDescribeService,
-          useValue: { describe: vi.fn(), pending: signal(false) },
+          useValue: {
+            describe: vi.fn(),
+            pending: signal(false),
+            readingKudos: signal(8),
+          },
         },
       ],
     }).compileComponents();
@@ -1892,7 +1905,11 @@ describe('GenerateResultsPanelComponent justified rows', () => {
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
         {
           provide: StudioDescribeService,
-          useValue: { describe: vi.fn(), pending: signal(false) },
+          useValue: {
+            describe: vi.fn(),
+            pending: signal(false),
+            readingKudos: signal(8),
+          },
         },
       ],
     }).compileComponents();

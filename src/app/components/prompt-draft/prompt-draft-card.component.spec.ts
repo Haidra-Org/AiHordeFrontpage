@@ -145,6 +145,7 @@ describe('PromptDraftCardComponent', () => {
             },
             pending,
             origin: (): DescribeOrigin => 'picked',
+            readingKudos: (): number | null => 8,
             sourcePicture,
             describe: describePicture,
             prepare: preparePicture,
@@ -785,6 +786,19 @@ describe('PromptDraftCardComponent', () => {
     );
     // Nothing offers to read the picture on the picker row any more.
     expect(el().querySelector('.gs-describe-open')).toBeNull();
+  });
+
+  it('says what the reading costs once a picture is staged', async () => {
+    const priceLines = (): string[] =>
+      [...el().querySelectorAll('.gs-describe-staged-body p')]
+        .map((node) => node.textContent ?? '')
+        .filter((text) => text.includes('en.generate.describe.price'));
+
+    await showPicture();
+    expect(priceLines()).toHaveLength(0);
+
+    await stage();
+    expect(priceLines()).toHaveLength(1);
   });
 
   it('asks for the reading only once the button is pressed', async () => {

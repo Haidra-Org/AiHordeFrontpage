@@ -1893,6 +1893,7 @@ export class GenerateResultsPanelComponent {
       failedKey: this.promptChecks.failure()?.key ?? null,
       verdict: this.promptChecks.reading(target)?.verdict ?? null,
       verdictPrice: this.promptChecks.verdictPrice(),
+      readPrice: this.describeService.readingKudos(),
     };
   });
 

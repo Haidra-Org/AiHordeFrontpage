@@ -116,6 +116,10 @@ describe('StudioDescribeService', () => {
     expect(service.error()).toBeNull();
   });
 
+  it('prices a reading at what the forms it sends cost', () => {
+    expect(service.readingKudos()).toBe(8);
+  });
+
   it('asks for a caption and tags, and follows the job it is given', async () => {
     await service.describe(picture(), 'source');
 

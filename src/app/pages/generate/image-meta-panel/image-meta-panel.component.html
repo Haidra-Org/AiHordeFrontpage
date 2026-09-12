@@ -203,6 +203,14 @@
           >
             {{ "generate.prompt_check.again" | transloco }}
           </button>
+          @if (check.readPrice !== null) {
+            <p class="gs-check-price">
+              {{
+                "generate.prompt_check.read_price"
+                  | transloco: { kudos: check.readPrice }
+              }}
+            </p>
+          }
         } @else if (check.reading) {
           <p class="gs-describe-pending">
             <app-icon name="spinner" class="gs-ico-sm gs-spin" />
@@ -219,6 +227,16 @@
           >
             {{ "generate.prompt_check.run" | transloco }}
           </button>
+          <!-- A press must say what it spends before it spends it, and the
+               alchemy queue has no dry run to ask for the figure. -->
+          @if (check.readPrice !== null) {
+            <p class="gs-check-price">
+              {{
+                "generate.prompt_check.read_price"
+                  | transloco: { kudos: check.readPrice }
+              }}
+            </p>
+          }
         }
         @if (check.failedKey; as failed) {
           <p class="gs-warn gs-check-warn">

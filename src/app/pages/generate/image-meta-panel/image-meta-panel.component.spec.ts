@@ -459,6 +459,7 @@ describe('ImageMetaPanelComponent', () => {
       failedKey: null,
       verdict: null,
       verdictPrice: null,
+      readPrice: 8,
     } satisfies PromptCheckView);
     fixture.detectChanges();
 
@@ -467,6 +468,62 @@ describe('ImageMetaPanelComponent', () => {
     host.querySelector<HTMLButtonElement>('.gs-check-run')?.click();
 
     expect(actions).toEqual([{ kind: 'check' }]);
+  });
+
+  it('says what a reading costs before the reader asks for one', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.componentRef.setInput('promptCheckView', {
+      report: null,
+      reading: false,
+      judging: false,
+      failedKey: null,
+      verdict: null,
+      verdictPrice: null,
+      readPrice: 8,
+    } satisfies PromptCheckView);
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-check-price')?.textContent).toContain(
+      'en.generate.prompt_check.read_price',
+    );
+
+    fixture.componentRef.setInput('promptCheckView', {
+      report: null,
+      reading: false,
+      judging: false,
+      failedKey: null,
+      verdict: null,
+      verdictPrice: null,
+      readPrice: null,
+    } satisfies PromptCheckView);
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-check-price')).toBeNull();
+  });
+
+  it('repeats the price beside the offer to read the picture again', () => {
+    fixture.componentRef.setInput('promptCheckView', {
+      report: buildPromptCheck('a lighthouse', {
+        caption: 'a lighthouse',
+        tags: null,
+      }),
+      reading: false,
+      judging: false,
+      failedKey: null,
+      verdict: { text: 'Matches.', model: 'm/1' },
+      verdictPrice: null,
+      readPrice: 8,
+    } satisfies PromptCheckView);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const prices = Array.from(
+      host.querySelectorAll('.gs-check-price'),
+      (node) => node.textContent ?? '',
+    );
+    expect(prices).toHaveLength(1);
+    expect(prices[0]).toContain('en.generate.prompt_check.read_price');
+    expect(host.querySelector('.gs-check-again')).not.toBeNull();
   });
 
   it('counts the phrases and offers a follow-through for each answer', () => {
@@ -480,6 +537,7 @@ describe('ImageMetaPanelComponent', () => {
       failedKey: null,
       verdict: null,
       verdictPrice: 7,
+      readPrice: 8,
     } satisfies PromptCheckView);
     fixture.detectChanges();
 
@@ -513,6 +571,7 @@ describe('ImageMetaPanelComponent', () => {
       failedKey: null,
       verdict: { text: 'Matches.\nMissing nothing.', model: 'm/1' },
       verdictPrice: null,
+      readPrice: 8,
     } satisfies PromptCheckView);
     fixture.detectChanges();
 
