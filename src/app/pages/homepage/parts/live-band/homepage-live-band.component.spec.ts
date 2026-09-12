@@ -97,8 +97,8 @@ describe('HomepageLiveBandComponent', () => {
                 '{{workers}} · {{threads}} threads',
               'homepage.band.requests': '{{count}} requests',
               'homepage.band.forms': '{{count}} forms',
-              'homepage.band.today':
-                'Today: {{images}} images · {{texts}} texts',
+              'homepage.band.today_images': '{{count}} images',
+              'homepage.band.today_texts': '{{count}} texts',
             },
           },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -130,16 +130,17 @@ describe('HomepageLiveBandComponent', () => {
   }
 
   /**
-   * The three figures of one column, in row order, as they are read: the unit
+   * One domain's figures, down its column, as they are read: the unit
    * tooltip's own body is behind the dotted word until it is asked for, so it
    * is dropped here rather than counted as part of the figure.
    */
-  function column(name: 'image' | 'text' | 'alchemy'): string[] {
-    const card = fixture.nativeElement.querySelector(
-      `.home-col--${name}`,
-    ) as HTMLElement;
-    return Array.from(card.querySelectorAll('.home-col-value')).map((cell) => {
-      const copy = (cell as HTMLElement).cloneNode(true) as HTMLElement;
+  function column(index: 1 | 2 | 3): string[] {
+    const rows = Array.from(fixture.nativeElement.querySelectorAll('tbody tr'));
+    return rows.map((row) => {
+      const cell = row.querySelectorAll('.home-ledger-figure')[
+        index - 1
+      ] as HTMLElement;
+      const copy = cell.cloneNode(true) as HTMLElement;
       copy.querySelectorAll('.tooltip-text').forEach((body) => body.remove());
       return copy.textContent.replace(/\s+/g, ' ').trim();
     });
@@ -150,59 +151,65 @@ describe('HomepageLiveBandComponent', () => {
     TestBed.resetTestingModule();
   });
 
-  it('reads one column per domain, in the order the site reads them', () => {
+  it('reads as one table, a column per domain and a header on each', () => {
     setup({ performance: PERFORMANCE, stats: 'ok' });
 
-    expect(
-      Array.from(fixture.nativeElement.querySelectorAll('.home-col-head')).map(
-        (head) => (head as HTMLElement).textContent.trim(),
-      ),
-    ).toEqual([
+    const heads = Array.from(
+      fixture.nativeElement.querySelectorAll('thead th'),
+    );
+    // Four columns: the measure's own, then the three domains, each a header
+    // cell scoped to its column so a figure is never read without its name.
+    expect(heads).toHaveLength(4);
+    expect(heads.every((head) => head.getAttribute('scope') === 'col')).toBe(
+      true,
+    );
+    expect(heads.slice(1).map((head) => head.textContent.trim())).toEqual([
       'homepage.band.image',
       'homepage.band.text',
       'homepage.band.alchemy',
     ]);
+    // The rows are named too, and the table itself is named for anyone who
+    // meets it without the heading above it.
+    expect(
+      Array.from(fixture.nativeElement.querySelectorAll('tbody th')).map(
+        (cell) => (cell as HTMLElement).getAttribute('scope'),
+      ),
+    ).toEqual(['row', 'row', 'row', 'row']);
+    expect(
+      fixture.nativeElement.querySelector('caption')!.textContent!.trim(),
+    ).toBe('homepage.band.table_caption');
   });
 
-  it('puts each domain workers, queue and throughput in its own column', () => {
+  it('reads workers, queue, throughput and the day down each domain', () => {
     setup({ performance: PERFORMANCE, stats: 'ok' });
 
     // 1200 megapixelsteps a minute is one standard image a second; the queue's
-    // own amount rides behind the request count as a unit anyone can read.
-    expect(column('image')).toEqual([
+    // own amount rides under the request count as a unit anyone can read.
+    expect(column(1)).toEqual([
       '40 · 96 threads',
       '12 requests 20.0 standard images',
       '1.0 homepage.band.standard_images homepage.band.per_second',
+      '48,210 images',
     ]);
-    expect(column('text')).toEqual([
+    expect(column(2)).toEqual([
       '9 · 18 threads',
       '5 requests 6.0 kilotokens',
       '60.0 tokens homepage.band.per_second',
+      '1,204 texts',
     ]);
-    // The performance endpoint publishes no alchemy rate, so that row is the
-    // placeholder rather than a figure that does not exist.
-    expect(column('alchemy')).toEqual(['3 · 6 threads', '7 forms', '—']);
-  });
-
-  it('says what the day has made, from both totals', () => {
-    setup({ performance: PERFORMANCE, stats: 'ok' });
-
-    expect(
-      (
-        fixture.nativeElement.querySelector('.home-band-today') as HTMLElement
-      ).textContent.trim(),
-    ).toBe('Today: 48,210 images · 1,204 texts');
+    // The performance endpoint publishes no alchemy rate and no alchemy
+    // totals, so those two read as the placeholder and as nothing at all.
+    expect(column(3)).toEqual(['3 · 6 threads', '7 forms', '—', '']);
   });
 
   it('shows a placeholder per figure and no error copy when nothing answers', () => {
     setup({ performance: null, stats: 'fails' });
 
-    expect([
-      ...column('image'),
-      ...column('text'),
-      ...column('alchemy'),
-    ]).toEqual(Array.from({ length: 9 }, () => '—'));
-    expect(fixture.nativeElement.querySelector('.home-band-today')).toBeNull();
+    // Every figure but the one alchemy never has, which stays empty.
+    expect([...column(1), ...column(2), ...column(3)]).toEqual([
+      ...Array.from({ length: 11 }, () => '—'),
+      '',
+    ]);
   });
 
   it('points at the status page from beside its own heading', () => {
@@ -213,7 +220,8 @@ describe('HomepageLiveBandComponent', () => {
     ) as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe('/status');
     // The sparkline moved back to the status page, which is the only place
-    // that draws a trend.
+    // that draws a trend, and the cards went with the columns.
     expect(fixture.nativeElement.querySelector('.status-sparkline')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.hd-card')).toBeNull();
   });
 });

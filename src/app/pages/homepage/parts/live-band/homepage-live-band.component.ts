@@ -19,6 +19,7 @@ import {
   UnitConversionService,
 } from '../../../../services/unit-conversion.service';
 import { UnitTooltipComponent } from '../../../../components/unit-tooltip/unit-tooltip.component';
+import { IconComponent } from '../../../../components/icon/icon.component';
 import { injectHostElement } from '../../../../helper/inject-host-element';
 import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
 
@@ -26,12 +27,12 @@ import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.dire
 const COUNT_IN_MS = 400;
 
 /**
- * What the horde is doing right now, a column per domain: who is on it, what is
- * waiting, and how fast it is going, then what the day has made.
+ * What the horde is doing right now, as one ledger: who is on it, what is
+ * waiting, how fast it is going, and what the day has made, read across the
+ * three domains.
  *
- * The three domains are read side by side because they are three separate
- * services sharing one network: a reader who came for text learns nothing from
- * the image queue, and the shape of the band is what says so. Nothing here is
+ * A table rather than three cards, because the three are the same measures of
+ * different services and a reader compares them along a row. Nothing here is
  * fetched on the server: the prerendered page carries the rows with their
  * placeholder, and the values arrive in the browser.
  */
@@ -42,6 +43,7 @@ const COUNT_IN_MS = 400;
     RouterLink,
     TranslocoPipe,
     UnitTooltipComponent,
+    IconComponent,
     ScrollRevealDirective,
   ],
   templateUrl: './homepage-live-band.component.html',

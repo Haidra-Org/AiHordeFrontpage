@@ -424,105 +424,261 @@
     margin-inline: auto;
   }
 
-  /* Three services sharing one network, read side by side. Each column is a
-     card with its domain's hue on the leading edge and its tint behind the
-     name, which is the only place the hue is allowed to carry meaning. */
-  .home-band-columns {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--hd-space-3);
+  /* One ledger on the page's own ground: no cards, no fills, nothing but
+     rules between the lines. The three domains are columns because the
+     reader compares the same measure across them. */
+  /* The ledger's own heading sits closer to it than a section heading does to
+     a band of cards: the table's head row is the next line down. */
+  .home-band .home-section-head {
+    margin-bottom: var(--hd-space-2);
   }
 
-  @media (max-width: 767.98px) {
-    .home-band-columns {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  .home-col {
-    overflow: hidden;
-    border-left: 3px solid var(--home-col-hue);
-  }
-
-  .home-col--image {
-    --home-col-hue: var(--hd-purple);
-    --home-col-tint: var(--hd-purple-tint);
-    --home-col-tint-border: var(--hd-purple-tint-border);
-  }
-
-  .home-col--text {
-    --home-col-hue: var(--hd-accent);
-    --home-col-tint: var(--hd-accent-tint);
-    --home-col-tint-border: var(--hd-accent-tint-border);
-  }
-
-  .home-col--alchemy {
-    --home-col-hue: var(--hd-green);
-    --home-col-tint: var(--hd-green-tint);
-    --home-col-tint-border: var(--hd-green-tint-border);
-  }
-
-  .home-col-head {
-    margin: 0;
-    padding: var(--hd-space-2) var(--hd-space-3);
-    border-bottom: 1px solid var(--home-col-tint-border);
-    background: var(--home-col-tint);
+  /* A ledger is read by running the eye from a label to a figure, so it takes
+     the width its own words need rather than the page's: stretched across a
+     wide screen the two ends of a line stop belonging to each other. */
+  .home-ledger {
+    width: 100%;
+    max-width: 46rem;
+    border-collapse: collapse;
     font-size: var(--hd-text-sm);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--hd-ink);
   }
 
-  .home-col-rows {
-    margin: 0;
-    padding: var(--hd-space-2) var(--hd-space-3) var(--hd-space-3);
+  /* Five rows and a heading have to sit inside a third of the screen, which
+     is what sets the line height rather than the other way round. */
+  .home-ledger th,
+  .home-ledger td {
+    height: 36px;
+    padding: var(--hd-space-1) var(--hd-space-3);
+    border-bottom: 1px solid var(--hd-border);
+    text-align: right;
+    vertical-align: middle;
   }
 
-  .home-col-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--hd-space-3);
-    padding-block: var(--hd-space-1);
+  /* The head and the day's line are the two places the eye should stop. */
+  .home-ledger thead th {
+    border-bottom-width: 2px;
   }
 
-  .home-col-row + .home-col-row {
-    border-top: 1px solid var(--hd-border-subtle);
+  .home-ledger-row--today th,
+  .home-ledger-row--today td {
+    border-top: 2px solid var(--hd-border);
+    border-bottom: 0;
   }
 
-  .home-col-label {
-    flex: none;
-    font-size: var(--hd-text-xs);
+  .home-ledger-corner,
+  .home-ledger-label {
+    width: 1%;
+    padding-left: 0;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
     color: var(--hd-muted);
   }
 
-  /* The figures are read down the column against each other, so they are in
-     the mono face and on tabular figures: a number counting in must not
-     shuffle the ones under it. */
-  .home-col-value {
-    /* The figure wraps onto a second line rather than being clipped by the
-       card: a narrow column has less room than "standard images per second". */
-    min-width: 0;
-    margin: 0;
+  .home-ledger-domain {
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  /* The hue names the domain and colours nothing else: a glyph, never a word
+     and never a ground. */
+  .home-ledger-glyph {
+    width: 16px;
+    height: 16px;
+    margin-right: var(--hd-space-1);
+    vertical-align: -3px;
+  }
+
+  .home-ledger-glyph--image {
+    color: var(--hd-purple);
+  }
+
+  .home-ledger-glyph--text {
+    color: var(--hd-accent);
+  }
+
+  .home-ledger-glyph--alchemy {
+    color: var(--hd-green);
+  }
+
+  /* Figures are read down a column against each other, so they are in the mono
+     face on tabular figures: a number counting in must not shuffle the ones
+     under it. */
+  .home-ledger-figure {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: var(--hd-text-xs);
-    text-align: right;
     color: var(--hd-ink);
     font-variant-numeric: tabular-nums;
   }
 
-  .home-col-dot::before {
-    content: "·";
-    margin-inline: 2px;
+  /* A queue is a count and what it amounts to: two lines, the amount quieter
+     than the count it explains. */
+  .home-ledger-lines {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.35;
+  }
+
+  .home-ledger-sub {
     color: var(--hd-muted);
   }
 
-  .home-band-today {
-    margin: var(--hd-space-3) 0 0;
-    font-size: var(--hd-text-sm);
-    color: var(--hd-muted);
-    font-variant-numeric: tabular-nums;
+  /* A phone has no room for four columns, so the ledger is read the other way
+     round: a group per domain, each with its own four lines. The rows and
+     cells become grid items (the roles in the markup are what keep the table a
+     table when their display changes), and each cell carries the row's own
+     label, which the row headers would otherwise have to repeat three times.
+
+     The label and the figure sit in two columns that line up down the whole
+     band, rather than being pushed to opposite edges: a line of a few words is
+     read from its label, and a gap the width of the screen between the two
+     breaks that. */
+  @media (max-width: 767.98px) {
+    .home-ledger {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      max-width: none;
+    }
+
+    .home-ledger thead,
+    .home-ledger tbody,
+    .home-ledger tr {
+      display: contents;
+    }
+
+    .home-ledger-corner,
+    .home-ledger-label {
+      display: none;
+    }
+
+    /* The element selector is carried on these so they outweigh the table's
+       own right-aligned cells, which a group does not want. */
+    .home-ledger th.home-ledger-domain {
+      display: flex;
+      align-items: center;
+      grid-column: 1 / -1;
+      height: auto;
+      padding: var(--hd-space-6) 0 var(--hd-space-2);
+      border-top: 2px solid var(--hd-border);
+      border-bottom: 0;
+      text-align: left;
+      font-size: var(--hd-text-md);
+      letter-spacing: 0.02em;
+    }
+
+    /* The first group opens the band, so it needs neither the rule nor the
+       room that separate the others from what is above them. */
+    .home-ledger thead th:nth-child(2) {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .home-ledger td.home-ledger-figure {
+      display: grid;
+      grid-template-columns: subgrid;
+      align-items: start;
+      gap: 0 var(--hd-space-4);
+      grid-column: 1 / -1;
+      height: auto;
+      padding: var(--hd-space-2) 0;
+      border-bottom: 1px solid var(--hd-border-subtle);
+      text-align: left;
+    }
+
+    /* The label reads first and the figure follows it, both starting on their
+       own edge: a line of a few words is read from its label, and a gap the
+       width of the screen between the two breaks that. */
+    .home-ledger td.home-ledger-figure::before {
+      content: attr(data-label);
+      font-family: var(--hd-font, inherit);
+      font-size: var(--hd-text-xs);
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--hd-muted);
+    }
+
+    .home-ledger-lines {
+      align-items: flex-start;
+    }
+
+    /* The day's line closes its group; the rule under it would only repeat the
+       one the next group opens with. */
+    .home-ledger-row--today td.home-ledger-figure {
+      border-bottom: 0;
+    }
+
+    /* A cell the day has nothing to say in is not a line of its own. */
+    .home-ledger td.home-ledger-figure:not(:has(.home-ledger-value)) {
+      display: none;
+    }
+
+    /* Each domain takes five rows: its name and its four lines. The heads sit
+       at the top of their group and every cell follows its own domain rather
+       than the order the table is written in. */
+    .home-ledger thead th:nth-child(2) {
+      grid-row: 1;
+    }
+
+    .home-ledger thead th:nth-child(3) {
+      grid-row: 6;
+    }
+
+    .home-ledger thead th:nth-child(4) {
+      grid-row: 11;
+    }
+
+    .home-ledger tbody tr:nth-child(1) td:nth-child(2) {
+      grid-row: 2;
+    }
+
+    .home-ledger tbody tr:nth-child(2) td:nth-child(2) {
+      grid-row: 3;
+    }
+
+    .home-ledger tbody tr:nth-child(3) td:nth-child(2) {
+      grid-row: 4;
+    }
+
+    .home-ledger tbody tr:nth-child(4) td:nth-child(2) {
+      grid-row: 5;
+    }
+
+    .home-ledger tbody tr:nth-child(1) td:nth-child(3) {
+      grid-row: 7;
+    }
+
+    .home-ledger tbody tr:nth-child(2) td:nth-child(3) {
+      grid-row: 8;
+    }
+
+    .home-ledger tbody tr:nth-child(3) td:nth-child(3) {
+      grid-row: 9;
+    }
+
+    .home-ledger tbody tr:nth-child(4) td:nth-child(3) {
+      grid-row: 10;
+    }
+
+    .home-ledger tbody tr:nth-child(1) td:nth-child(4) {
+      grid-row: 12;
+    }
+
+    .home-ledger tbody tr:nth-child(2) td:nth-child(4) {
+      grid-row: 13;
+    }
+
+    .home-ledger tbody tr:nth-child(3) td:nth-child(4) {
+      grid-row: 14;
+    }
+
+    .home-ledger tbody tr:nth-child(4) td:nth-child(4) {
+      grid-row: 15;
+    }
+
+    .home-ledger-row--today td {
+      border-top: 0;
+    }
   }
 
   /* -----------------------------------------------------------------

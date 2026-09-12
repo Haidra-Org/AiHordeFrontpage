@@ -9,16 +9,60 @@
       </a>
     </div>
 
-    <div class="home-band-columns">
-      <!-- Image -->
-      <section class="hd-card home-col home-col--image">
-        <h3 class="home-col-head">{{ "homepage.band.image" | transloco }}</h3>
-        <dl class="home-col-rows">
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.workers_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
+    <!-- One ledger rather than three cards: the three domains are read across
+         a row, which is what says they are the same measure of different
+         services. The roles are written out because the phone lays the table
+         out as groups, and a table whose display changes can lose its own
+         semantics without them. -->
+    <table class="home-ledger" role="table">
+      <caption class="sr-only">
+        {{
+          "homepage.band.table_caption" | transloco
+        }}
+      </caption>
+      <thead role="rowgroup">
+        <tr role="row">
+          <th scope="col" role="columnheader" class="home-ledger-corner">
+            <span class="sr-only">
+              {{ "homepage.band.metric_column" | transloco }}
+            </span>
+          </th>
+          <th scope="col" role="columnheader" class="home-ledger-domain">
+            <app-icon
+              name="photo"
+              class="home-ledger-glyph home-ledger-glyph--image"
+            />
+            {{ "homepage.band.image" | transloco }}
+          </th>
+          <th scope="col" role="columnheader" class="home-ledger-domain">
+            <app-icon
+              name="chat-bubble"
+              class="home-ledger-glyph home-ledger-glyph--text"
+            />
+            {{ "homepage.band.text" | transloco }}
+          </th>
+          <th scope="col" role="columnheader" class="home-ledger-domain">
+            <app-icon
+              name="beaker"
+              class="home-ledger-glyph home-ledger-glyph--alchemy"
+            />
+            {{ "homepage.band.alchemy" | transloco }}
+          </th>
+        </tr>
+      </thead>
+
+      <tbody role="rowgroup">
+        <tr role="row">
+          <th scope="row" role="rowheader" class="home-ledger-label">
+            {{ "homepage.band.workers_label" | transloco }}
+          </th>
+          @let workersLabel = "homepage.band.workers_label" | transloco;
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="workersLabel"
+          >
+            <span class="home-ledger-value">
               @if (imageWorkers() !== null) {
                 {{
                   "homepage.band.workers_value"
@@ -31,60 +75,14 @@
               } @else {
                 {{ "homepage.band.unavailable" | transloco }}
               }
-            </dd>
-          </div>
-
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.queue_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
-              @if (imageQueue() !== null) {
-                {{
-                  "homepage.band.requests"
-                    | transloco: { count: imageQueue() | number }
-                }}
-                @if (queuedImageWork(); as work) {
-                  <span class="home-col-dot" aria-hidden="true"></span>
-                  <app-unit-tooltip [unit]="work" />
-                }
-              } @else {
-                {{ "homepage.band.unavailable" | transloco }}
-              }
-            </dd>
-          </div>
-
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.throughput_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
-              @if (imageRate(); as rate) {
-                {{ rate.primary.value | number: "1.1-1" }}
-                <app-unit-tooltip
-                  [unit]="rate"
-                  [primaryOverride]="
-                    'homepage.band.standard_images' | transloco
-                  "
-                />
-                {{ "homepage.band.per_second" | transloco }}
-              } @else {
-                {{ "homepage.band.unavailable" | transloco }}
-              }
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <!-- Text -->
-      <section class="hd-card home-col home-col--text">
-        <h3 class="home-col-head">{{ "homepage.band.text" | transloco }}</h3>
-        <dl class="home-col-rows">
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.workers_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
+            </span>
+          </td>
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="workersLabel"
+          >
+            <span class="home-ledger-value">
               @if (textWorkers() !== null) {
                 {{
                   "homepage.band.workers_value"
@@ -97,55 +95,14 @@
               } @else {
                 {{ "homepage.band.unavailable" | transloco }}
               }
-            </dd>
-          </div>
-
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.queue_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
-              @if (textQueue() !== null) {
-                {{
-                  "homepage.band.requests"
-                    | transloco: { count: textQueue() | number }
-                }}
-                @if (queuedTextWork(); as work) {
-                  <span class="home-col-dot" aria-hidden="true"></span>
-                  <app-unit-tooltip [unit]="work" />
-                }
-              } @else {
-                {{ "homepage.band.unavailable" | transloco }}
-              }
-            </dd>
-          </div>
-
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.throughput_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
-              @if (textRate(); as rate) {
-                {{ rate.technical.value | number: "1.1-1" }}
-                <app-unit-tooltip [unit]="rate" [primaryOverride]="'tokens'" />
-                {{ "homepage.band.per_second" | transloco }}
-              } @else {
-                {{ "homepage.band.unavailable" | transloco }}
-              }
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <!-- Alchemy -->
-      <section class="hd-card home-col home-col--alchemy">
-        <h3 class="home-col-head">{{ "homepage.band.alchemy" | transloco }}</h3>
-        <dl class="home-col-rows">
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.workers_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
+            </span>
+          </td>
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="workersLabel"
+          >
+            <span class="home-ledger-value">
               @if (alchemyWorkers() !== null) {
                 {{
                   "homepage.band.workers_value"
@@ -158,14 +115,71 @@
               } @else {
                 {{ "homepage.band.unavailable" | transloco }}
               }
-            </dd>
-          </div>
+            </span>
+          </td>
+        </tr>
 
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.queue_label" | transloco }}
-            </dt>
-            <dd class="home-col-value">
+        <tr role="row">
+          <th scope="row" role="rowheader" class="home-ledger-label">
+            {{ "homepage.band.queue_label" | transloco }}
+          </th>
+          @let queueLabel = "homepage.band.queue_label" | transloco;
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="queueLabel"
+          >
+            <span class="home-ledger-value">
+              @if (imageQueue() !== null) {
+                <span class="home-ledger-lines">
+                  <span>
+                    {{
+                      "homepage.band.requests"
+                        | transloco: { count: imageQueue() | number }
+                    }}
+                  </span>
+                  @if (queuedImageWork(); as work) {
+                    <span class="home-ledger-sub">
+                      <app-unit-tooltip [unit]="work" />
+                    </span>
+                  }
+                </span>
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </span>
+          </td>
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="queueLabel"
+          >
+            <span class="home-ledger-value">
+              @if (textQueue() !== null) {
+                <span class="home-ledger-lines">
+                  <span>
+                    {{
+                      "homepage.band.requests"
+                        | transloco: { count: textQueue() | number }
+                    }}
+                  </span>
+                  @if (queuedTextWork(); as work) {
+                    <span class="home-ledger-sub">
+                      <app-unit-tooltip [unit]="work" />
+                    </span>
+                  }
+                </span>
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </span>
+          </td>
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="queueLabel"
+          >
+            <span class="home-ledger-value">
               @if (alchemyQueue() !== null) {
                 {{
                   "homepage.band.forms"
@@ -174,35 +188,106 @@
               } @else {
                 {{ "homepage.band.unavailable" | transloco }}
               }
-            </dd>
-          </div>
+            </span>
+          </td>
+        </tr>
 
-          <div class="home-col-row">
-            <dt class="home-col-label">
-              {{ "homepage.band.throughput_label" | transloco }}
-            </dt>
-            <!-- The performance endpoint publishes no alchemy rate: it counts
-                 alchemy workers and queued forms and nothing per minute, so
-                 there is no figure to show rather than a figure that is late. -->
-            <dd class="home-col-value">
-              {{ "homepage.band.unavailable" | transloco }}
-            </dd>
-          </div>
-        </dl>
-      </section>
-    </div>
+        <tr role="row">
+          <th scope="row" role="rowheader" class="home-ledger-label">
+            {{ "homepage.band.throughput_label" | transloco }}
+          </th>
+          @let rateLabel = "homepage.band.throughput_label" | transloco;
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="rateLabel"
+          >
+            <span class="home-ledger-value">
+              @if (imageRate(); as rate) {
+                {{ rate.primary.value | number: "1.1-1" }}
+                <app-unit-tooltip
+                  [unit]="rate"
+                  [primaryOverride]="
+                    'homepage.band.standard_images' | transloco
+                  "
+                />
+                {{ "homepage.band.per_second" | transloco }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </span>
+          </td>
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="rateLabel"
+          >
+            <span class="home-ledger-value">
+              @if (textRate(); as rate) {
+                {{ rate.technical.value | number: "1.1-1" }}
+                <app-unit-tooltip [unit]="rate" [primaryOverride]="'tokens'" />
+                {{ "homepage.band.per_second" | transloco }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </span>
+          </td>
+          <!-- The performance endpoint publishes no alchemy rate: it counts
+               alchemy workers and queued forms and nothing per minute, so there
+               is no figure to show rather than a figure that is late. -->
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="rateLabel"
+          >
+            <span class="home-ledger-value">
+              {{ "homepage.band.unavailable" | transloco }}</span
+            >
+          </td>
+        </tr>
 
-    @if (hasToday()) {
-      <p class="home-band-today">
-        {{
-          "homepage.band.today"
-            | transloco
-              : {
-                  images: picturesToday() | number,
-                  texts: textsTodayShown() | number,
-                }
-        }}
-      </p>
-    }
+        <tr role="row" class="home-ledger-row--today">
+          <th scope="row" role="rowheader" class="home-ledger-label">
+            {{ "homepage.band.today_label" | transloco }}
+          </th>
+          @let todayLabel = "homepage.band.today_label" | transloco;
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="todayLabel"
+          >
+            <span class="home-ledger-value">
+              @if (picturesToday() !== null) {
+                {{
+                  "homepage.band.today_images"
+                    | transloco: { count: picturesToday() | number }
+                }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </span>
+          </td>
+          <td
+            role="cell"
+            class="home-ledger-figure"
+            [attr.data-label]="todayLabel"
+          >
+            <span class="home-ledger-value">
+              @if (textsTodayShown() !== null) {
+                {{
+                  "homepage.band.today_texts"
+                    | transloco: { count: textsTodayShown() | number }
+                }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </span>
+          </td>
+          <!-- Alchemy publishes no totals endpoint, so the day has nothing to
+               say about it. -->
+          <td role="cell" class="home-ledger-figure"></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </section>

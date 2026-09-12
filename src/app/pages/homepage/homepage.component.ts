@@ -18,15 +18,15 @@ import { setPageMeta } from '../../helper/page-meta';
 import { setAppTitle } from '../../helper/page-title';
 
 /**
- * The front door: pictures the horde made, what it is doing right now, the
- * three ways in, what has happened lately, and who pays for it.
+ * The front door: pictures the horde made, the three ways in, what it is doing
+ * right now, what has happened lately, and who pays for it.
  */
 @Component({
   selector: 'app-homepage',
   imports: [
     HomepageHeroComponent,
-    HomepageLiveBandComponent,
     HomepageDoorsComponent,
+    HomepageLiveBandComponent,
     HomepageLatestNewsComponent,
     HomepageSponsorsComponent,
   ],
