@@ -14,28 +14,26 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AiHordeService } from '../../../../services/ai-horde.service';
 import { NetworkStatusService } from '../../../../services/network-status.service';
-import { StatusService } from '../../../../services/status.service';
-import { UnitConversionService } from '../../../../services/unit-conversion.service';
-import { PublicHistoryDay } from '../../../../types/status';
-import { UptimeSparklineComponent } from '../../../../components/uptime-sparkline/uptime-sparkline.component';
+import {
+  SynthesizedUnit,
+  UnitConversionService,
+} from '../../../../services/unit-conversion.service';
+import { UnitTooltipComponent } from '../../../../components/unit-tooltip/unit-tooltip.component';
 import { injectHostElement } from '../../../../helper/inject-host-element';
 import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
-
-/** The status page's id for the generation API, whose uptime the band shows. */
-const API_COMPONENT = 'api';
 
 /** How long the numbers take to reach their value the first time they are read. */
 const COUNT_IN_MS = 400;
 
 /**
- * What the horde is doing right now: how many machines are on it, what is
- * waiting, how fast it is going, and how much it made today.
+ * What the horde is doing right now, a column per domain: who is on it, what is
+ * waiting, and how fast it is going, then what the day has made.
  *
- * The numbers are the site's evidence that the service is alive, so they are
- * read where a reader lands rather than on a page they have to find. Nothing
- * here is fetched on the server: the prerendered page carries the tiles with
- * their placeholder, and the values arrive in the browser without moving
- * anything but the one line they sit on.
+ * The three domains are read side by side because they are three separate
+ * services sharing one network: a reader who came for text learns nothing from
+ * the image queue, and the shape of the band is what says so. Nothing here is
+ * fetched on the server: the prerendered page carries the rows with their
+ * placeholder, and the values arrive in the browser.
  */
 @Component({
   selector: 'app-homepage-live-band',
@@ -43,7 +41,7 @@ const COUNT_IN_MS = 400;
     DecimalPipe,
     RouterLink,
     TranslocoPipe,
-    UptimeSparklineComponent,
+    UnitTooltipComponent,
     ScrollRevealDirective,
   ],
   templateUrl: './homepage-live-band.component.html',
@@ -52,7 +50,6 @@ const COUNT_IN_MS = 400;
 })
 export class HomepageLiveBandComponent {
   private readonly aiHorde = inject(AiHordeService);
-  private readonly status = inject(StatusService);
   private readonly networkStatus = inject(NetworkStatusService);
   private readonly units = inject(UnitConversionService);
   private readonly destroyRef = inject(DestroyRef);
@@ -60,7 +57,7 @@ export class HomepageLiveBandComponent {
 
   private readonly perf = this.networkStatus.performance;
   private readonly imagesToday = signal<number | null>(null);
-  public readonly apiHistory = signal<readonly PublicHistoryDay[]>([]);
+  private readonly textsToday = signal<number | null>(null);
 
   /** 0 while the numbers are still arriving at their value, 1 once they are there. */
   private readonly progress = signal(0);
@@ -69,50 +66,87 @@ export class HomepageLiveBandComponent {
   private readonly seen = signal(false);
   private counting = false;
 
-  public readonly imageWorkers = computed(
-    () => this.perf()?.worker_count ?? null,
+  // --- Workers ------------------------------------------------------------
+
+  public readonly imageWorkers = computed(() =>
+    this.counted(this.perf()?.worker_count ?? null),
   );
-  public readonly textWorkers = computed(
-    () => this.perf()?.text_worker_count ?? null,
+  public readonly imageThreads = computed(() =>
+    this.counted(this.perf()?.thread_count ?? null),
   );
-  public readonly imageQueue = computed(
-    () => this.perf()?.queued_requests ?? null,
+  public readonly textWorkers = computed(() =>
+    this.counted(this.perf()?.text_worker_count ?? null),
   );
-  public readonly textQueue = computed(
-    () => this.perf()?.queued_text_requests ?? null,
+  public readonly textThreads = computed(() =>
+    this.counted(this.perf()?.text_thread_count ?? null),
+  );
+  public readonly alchemyWorkers = computed(() =>
+    this.counted(this.perf()?.interrogator_count ?? null),
+  );
+  public readonly alchemyThreads = computed(() =>
+    this.counted(this.perf()?.interrogator_thread_count ?? null),
   );
 
-  public readonly workers = computed(() =>
-    this.sum(this.imageWorkers(), this.textWorkers()),
+  // --- Queue --------------------------------------------------------------
+
+  public readonly imageQueue = computed(() =>
+    this.counted(this.perf()?.queued_requests ?? null),
   );
-  public readonly queue = computed(() =>
-    this.sum(this.imageQueue(), this.textQueue()),
+  public readonly textQueue = computed(() =>
+    this.counted(this.perf()?.queued_text_requests ?? null),
+  );
+  public readonly alchemyQueue = computed(() =>
+    this.counted(this.perf()?.queued_forms ?? null),
   );
 
-  /** Standard images a second, the same reading the statistics page publishes. */
-  public readonly throughput = computed(() => {
+  /** What the image queue amounts to, in the reader's unit rather than in work. */
+  public readonly queuedImageWork = computed<SynthesizedUnit | null>(() => {
     const perf = this.perf();
-    if (!perf) return null;
-    return this.units.formatImagePerformanceRate(
-      perf.past_minute_megapixelsteps,
-    ).primary.value;
+    return perf
+      ? this.units.formatQueuedImageWork(perf.queued_megapixelsteps)
+      : null;
   });
 
-  public readonly pictures = computed(() => this.imagesToday());
+  public readonly queuedTextWork = computed<SynthesizedUnit | null>(() => {
+    const perf = this.perf();
+    return perf ? this.units.formatQueuedTextWork(perf.queued_tokens) : null;
+  });
 
-  /** Each tile's value as it is being read, which is its own once counted in. */
-  public readonly shownWorkers = computed(() => this.counted(this.workers()));
-  public readonly shownQueue = computed(() => this.counted(this.queue()));
-  public readonly shownThroughput = computed(() =>
-    this.counted(this.throughput()),
+  // --- Throughput ---------------------------------------------------------
+
+  public readonly imageRate = computed<SynthesizedUnit | null>(() => {
+    const perf = this.perf();
+    return perf
+      ? this.units.formatImagePerformanceRate(perf.past_minute_megapixelsteps)
+      : null;
+  });
+
+  public readonly textRate = computed<SynthesizedUnit | null>(() => {
+    const perf = this.perf();
+    return perf
+      ? this.units.formatTextPerformanceRate(perf.past_minute_tokens)
+      : null;
+  });
+
+  // --- Today --------------------------------------------------------------
+
+  public readonly picturesToday = computed(() =>
+    this.counted(this.imagesToday()),
   );
-  public readonly shownPictures = computed(() => this.counted(this.pictures()));
+  public readonly textsTodayShown = computed(() =>
+    this.counted(this.textsToday()),
+  );
+
+  /** True once a day's figure has arrived, which is what the line needs. */
+  public readonly hasToday = computed(
+    () => this.imagesToday() !== null || this.textsToday() !== null,
+  );
 
   constructor() {
     // The count belongs to the numbers arriving, not to the page loading: the
     // first values land after the band has been on screen as often as before.
     effect(() => {
-      const ready = this.workers() !== null || this.pictures() !== null;
+      const ready = this.perf() !== null || this.hasToday();
       if (!this.seen() || !ready || this.counting) return;
       this.counting = true;
       this.runCount();
@@ -126,25 +160,20 @@ export class HomepageLiveBandComponent {
           error: () => this.imagesToday.set(null),
         });
 
-      this.status
-        .getHistory(API_COMPONENT)
+      this.aiHorde.textStats
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((response) => {
-          if (response) this.apiHistory.set(response.buckets);
+        .subscribe({
+          next: (stats) => this.textsToday.set(stats.day.requests),
+          error: () => this.textsToday.set(null),
         });
 
       this.startCountIn();
     });
   }
 
-  private sum(first: number | null, second: number | null): number | null {
-    if (first === null && second === null) return null;
-    return (first ?? 0) + (second ?? 0);
-  }
-
   private counted(value: number | null): number | null {
     if (value === null) return null;
-    return value * this.progress();
+    return Math.round(value * this.progress());
   }
 
   /**

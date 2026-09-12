@@ -5,9 +5,9 @@
    an `--hd-*` token, so both themes come out of the token file and no
    `.dark` rule belongs in this file.
 
-   The hero keeps the dark ramp in both themes, the way the studio's
-   stage does, by wearing `hd-dark-plate`: the ramp is declared once in
-   the token file and nothing about it is restated here.
+   The hero is the stage the pictures are read on, and it follows the
+   theme like everything else: the light stage grey in one and the dark
+   ramp in the other, both out of the same `--hd-stage*` tokens.
    ================================================================= */
 
 @layer components {
@@ -22,12 +22,12 @@
      HERO
      ----------------------------------------------------------------- */
 
-  /* The plate takes its ramp from `hd-dark-plate` on the same element, so
-     a picture is read against one ground rather than against whichever
-     theme the reader happens to be in. */
+  /* The stage, a step off the page's own ground in either theme, with a
+     hairline at its foot so the step reads where the two are close. */
   .home-hero {
     padding-block: var(--hd-space-8);
     padding-inline: var(--hd-space-4);
+    border-bottom: 1px solid var(--hd-stage-rim);
     background: var(--hd-stage);
     color: var(--hd-stage-ink);
   }
@@ -419,106 +419,124 @@
     padding-inline: var(--hd-space-4);
   }
 
-  .home-band-inner,
   .home-section-inner {
     max-width: var(--max-width-container);
     margin-inline: auto;
   }
 
-  .home-band-inner {
-    display: flex;
-    flex-direction: column;
-    gap: var(--hd-space-3);
-  }
-
-  .home-band-tiles {
+  /* Three services sharing one network, read side by side. Each column is a
+     card with its domain's hue on the leading edge and its tint behind the
+     name, which is the only place the hue is allowed to carry meaning. */
+  .home-band-columns {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--hd-space-3);
   }
 
   @media (max-width: 767.98px) {
-    .home-band-tiles {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .home-band-columns {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
-  .home-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--hd-space-4);
+  .home-col {
+    overflow: hidden;
+    border-left: 3px solid var(--home-col-hue);
   }
 
-  .home-stat-label {
-    font-size: var(--hd-text-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
+  .home-col--image {
+    --home-col-hue: var(--hd-purple);
+    --home-col-tint: var(--hd-purple-tint);
+    --home-col-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .home-col--text {
+    --home-col-hue: var(--hd-accent);
+    --home-col-tint: var(--hd-accent-tint);
+    --home-col-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .home-col--alchemy {
+    --home-col-hue: var(--hd-green);
+    --home-col-tint: var(--hd-green-tint);
+    --home-col-tint-border: var(--hd-green-tint-border);
+  }
+
+  .home-col-head {
+    margin: 0;
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border-bottom: 1px solid var(--home-col-tint-border);
+    background: var(--home-col-tint);
+    font-size: var(--hd-text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
+    color: var(--hd-ink);
+  }
+
+  .home-col-rows {
+    margin: 0;
+    padding: var(--hd-space-2) var(--hd-space-3) var(--hd-space-3);
+  }
+
+  .home-col-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--hd-space-3);
+    padding-block: var(--hd-space-1);
+  }
+
+  .home-col-row + .home-col-row {
+    border-top: 1px solid var(--hd-border-subtle);
+  }
+
+  .home-col-label {
+    flex: none;
+    font-size: var(--hd-text-xs);
     color: var(--hd-muted);
   }
 
-  /* Tabular figures so a number counting in does not shuffle the ones
-     beside it. */
-  .home-stat-value {
-    font-size: clamp(26px, 2.6vw, 34px);
-    font-weight: 700;
-    line-height: 1.15;
+  /* The figures are read down the column against each other, so they are in
+     the mono face and on tabular figures: a number counting in must not
+     shuffle the ones under it. */
+  .home-col-value {
+    /* The figure wraps onto a second line rather than being clipped by the
+       card: a narrow column has less room than "standard images per second". */
+    min-width: 0;
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--hd-text-xs);
+    text-align: right;
     color: var(--hd-ink);
     font-variant-numeric: tabular-nums;
   }
 
-  .home-stat-sub {
-    font-size: var(--hd-text-xs);
+  .home-col-dot::before {
+    content: "·";
+    margin-inline: 2px;
     color: var(--hd-muted);
   }
 
-  .home-band-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--hd-space-3);
-  }
-
-  .home-band-uptime {
-    display: flex;
-    align-items: center;
-    gap: var(--hd-space-2);
-  }
-
-  .home-band-uptime-label {
-    font-size: var(--hd-text-xs);
-    color: var(--hd-muted);
-  }
-
-  /* The trend is supporting detail and is already dropped from narrow rows
-     where it is drawn; its label goes with it rather than standing alone. */
-  @media (max-width: 640px) {
-    .home-band-uptime {
-      display: none;
-    }
-  }
-
-  .home-band-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
+  .home-band-today {
+    margin: var(--hd-space-3) 0 0;
     font-size: var(--hd-text-sm);
-    font-weight: 600;
-    color: var(--hd-accent-text);
+    color: var(--hd-muted);
+    font-variant-numeric: tabular-nums;
   }
 
   /* -----------------------------------------------------------------
      SECTIONS
      ----------------------------------------------------------------- */
 
+  /* The link belongs to the heading, so it sits with it rather than at the
+     far edge of the page where it reads as a control of its own. It wraps
+     under the heading where the two do not fit on one line. */
   .home-section-head {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    justify-content: space-between;
-    gap: var(--hd-space-3);
+    gap: var(--hd-space-2) var(--hd-space-3);
     margin-bottom: var(--hd-space-4);
   }
 

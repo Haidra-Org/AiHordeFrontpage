@@ -7,10 +7,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { HomepageLiveBandComponent } from './homepage-live-band.component';
 import { AiHordeService } from '../../../../services/ai-horde.service';
 import { NetworkStatusService } from '../../../../services/network-status.service';
-import { StatusService } from '../../../../services/status.service';
 import { HordePerformance } from '../../../../types/horde-performance';
 import { ImageTotalStats } from '../../../../types/image-total-stats';
-import { PublicHistoryDay } from '../../../../types/status';
+import { TextTotalStats } from '../../../../types/text-total-stats';
 
 // The band and the reveal directive both watch for the element being read,
 // which jsdom has no implementation of.
@@ -35,20 +34,20 @@ globalThis.IntersectionObserver ??= class {
 const PERFORMANCE = {
   queued_requests: 12,
   queued_text_requests: 5,
-  queued_forms: 0,
+  queued_forms: 7,
   worker_count: 40,
   text_worker_count: 9,
   interrogator_count: 3,
-  thread_count: 0,
-  text_thread_count: 0,
-  interrogator_thread_count: 0,
-  queued_megapixelsteps: 0,
+  thread_count: 96,
+  text_thread_count: 18,
+  interrogator_thread_count: 6,
+  queued_megapixelsteps: 400,
   past_minute_megapixelsteps: 1200,
-  queued_tokens: 0,
-  past_minute_tokens: 0,
+  queued_tokens: 6000,
+  past_minute_tokens: 3600,
 } as unknown as HordePerformance;
 
-function totals(images: number): ImageTotalStats {
+function imageTotals(images: number): ImageTotalStats {
   const point = { images, ps: 0 };
   return {
     minute: point,
@@ -59,15 +58,14 @@ function totals(images: number): ImageTotalStats {
   };
 }
 
-function day(): PublicHistoryDay {
+function textTotals(requests: number): TextTotalStats {
+  const point = { requests, tokens: 0 };
   return {
-    date: '2026-09-01',
-    status_level: 0,
-    operational_seconds: 86400,
-    degraded_seconds: 0,
-    down_seconds: 0,
-    maintenance_seconds: 0,
-    unknown_seconds: 0,
+    minute: point,
+    hour: point,
+    day: { requests, tokens: 0 },
+    month: point,
+    total: point,
   };
 }
 
@@ -78,8 +76,8 @@ describe('HomepageLiveBandComponent', () => {
     performance: HordePerformance | null;
     stats: 'ok' | 'fails';
   }): void {
-    // The reduced-motion path is the one without a count-in, so the tiles hold
-    // their value from the moment it arrives.
+    // The reduced-motion path is the one without a count-in, so the figures
+    // hold their value from the moment it arrives.
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query.includes('prefers-reduced-motion'),
       media: query,
@@ -95,7 +93,12 @@ describe('HomepageLiveBandComponent', () => {
           langs: {
             en: {
               'homepage.band.unavailable': '—',
-              'homepage.band.split': '{{image}} image · {{text}} text',
+              'homepage.band.workers_value':
+                '{{workers}} · {{threads}} threads',
+              'homepage.band.requests': '{{count}} requests',
+              'homepage.band.forms': '{{count}} forms',
+              'homepage.band.today':
+                'Today: {{images}} images · {{texts}} texts',
             },
           },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -111,14 +114,12 @@ describe('HomepageLiveBandComponent', () => {
           useValue: {
             imageStats:
               options.stats === 'ok'
-                ? of(totals(48210))
+                ? of(imageTotals(48210))
                 : throwError(() => new Error('unreachable')),
-          },
-        },
-        {
-          provide: StatusService,
-          useValue: {
-            getHistory: () => of({ buckets: [day(), day(), day()] }),
+            textStats:
+              options.stats === 'ok'
+                ? of(textTotals(1204))
+                : throwError(() => new Error('unreachable')),
           },
         },
       ],
@@ -128,10 +129,20 @@ describe('HomepageLiveBandComponent', () => {
     fixture.detectChanges();
   }
 
-  function values(): string[] {
-    return Array.from(
-      fixture.nativeElement.querySelectorAll('.home-stat-value'),
-    ).map((el) => (el as HTMLElement).textContent.trim());
+  /**
+   * The three figures of one column, in row order, as they are read: the unit
+   * tooltip's own body is behind the dotted word until it is asked for, so it
+   * is dropped here rather than counted as part of the figure.
+   */
+  function column(name: 'image' | 'text' | 'alchemy'): string[] {
+    const card = fixture.nativeElement.querySelector(
+      `.home-col--${name}`,
+    ) as HTMLElement;
+    return Array.from(card.querySelectorAll('.home-col-value')).map((cell) => {
+      const copy = (cell as HTMLElement).cloneNode(true) as HTMLElement;
+      copy.querySelectorAll('.tooltip-text').forEach((body) => body.remove());
+      return copy.textContent.replace(/\s+/g, ' ').trim();
+    });
   }
 
   afterEach(() => {
@@ -139,44 +150,70 @@ describe('HomepageLiveBandComponent', () => {
     TestBed.resetTestingModule();
   });
 
-  it('maps the horde numbers onto the four tiles', () => {
+  it('reads one column per domain, in the order the site reads them', () => {
     setup({ performance: PERFORMANCE, stats: 'ok' });
 
-    // Workers and queue are the two domains added up; throughput is the same
-    // reading the statistics page publishes, 1200 megapixelsteps a minute being
-    // one standard image a second.
-    expect(values()).toEqual(['49', '17', '1.0', '48,210']);
     expect(
-      Array.from(fixture.nativeElement.querySelectorAll('.home-stat-sub')).map(
-        (el) => (el as HTMLElement).textContent.trim(),
+      Array.from(fixture.nativeElement.querySelectorAll('.home-col-head')).map(
+        (head) => (head as HTMLElement).textContent.trim(),
       ),
     ).toEqual([
-      '40 image · 9 text',
-      '12 image · 5 text',
-      'homepage.band.throughput_sub',
-      'homepage.band.pictures_sub',
+      'homepage.band.image',
+      'homepage.band.text',
+      'homepage.band.alchemy',
     ]);
   });
 
-  it('shows a placeholder per tile and no error copy when nothing answers', () => {
-    setup({ performance: null, stats: 'fails' });
+  it('puts each domain workers, queue and throughput in its own column', () => {
+    setup({ performance: PERFORMANCE, stats: 'ok' });
 
-    expect(values()).toEqual(['—', '—', '—', '—']);
-    expect(
-      fixture.nativeElement.querySelectorAll('.home-stat-sub'),
-    ).toHaveLength(0);
+    // 1200 megapixelsteps a minute is one standard image a second; the queue's
+    // own amount rides behind the request count as a unit anyone can read.
+    expect(column('image')).toEqual([
+      '40 · 96 threads',
+      '12 requests 20.0 standard images',
+      '1.0 homepage.band.standard_images homepage.band.per_second',
+    ]);
+    expect(column('text')).toEqual([
+      '9 · 18 threads',
+      '5 requests 6.0 kilotokens',
+      '60.0 tokens homepage.band.per_second',
+    ]);
+    // The performance endpoint publishes no alchemy rate, so that row is the
+    // placeholder rather than a figure that does not exist.
+    expect(column('alchemy')).toEqual(['3 · 6 threads', '7 forms', '—']);
   });
 
-  it('draws the API uptime trend and points at the status page', () => {
+  it('says what the day has made, from both totals', () => {
     setup({ performance: PERFORMANCE, stats: 'ok' });
 
     expect(
-      fixture.nativeElement.querySelector('.status-sparkline'),
-    ).not.toBeNull();
-    expect(
-      fixture.nativeElement
-        .querySelector('.home-band-link')
-        .getAttribute('href'),
-    ).toBe('/status');
+      (
+        fixture.nativeElement.querySelector('.home-band-today') as HTMLElement
+      ).textContent.trim(),
+    ).toBe('Today: 48,210 images · 1,204 texts');
+  });
+
+  it('shows a placeholder per figure and no error copy when nothing answers', () => {
+    setup({ performance: null, stats: 'fails' });
+
+    expect([
+      ...column('image'),
+      ...column('text'),
+      ...column('alchemy'),
+    ]).toEqual(Array.from({ length: 9 }, () => '—'));
+    expect(fixture.nativeElement.querySelector('.home-band-today')).toBeNull();
+  });
+
+  it('points at the status page from beside its own heading', () => {
+    setup({ performance: PERFORMANCE, stats: 'ok' });
+
+    const link = fixture.nativeElement.querySelector(
+      '.home-section-head .home-section-link',
+    ) as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/status');
+    // The sparkline moved back to the status page, which is the only place
+    // that draws a trend.
+    expect(fixture.nativeElement.querySelector('.status-sparkline')).toBeNull();
   });
 });

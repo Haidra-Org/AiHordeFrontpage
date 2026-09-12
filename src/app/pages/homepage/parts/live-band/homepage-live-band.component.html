@@ -1,103 +1,208 @@
-<section class="home-band" scrollReveal>
-  <div class="home-band-inner">
-    <div class="home-band-tiles">
-      <div class="hd-card home-stat">
-        <span class="home-stat-label">
-          {{ "homepage.band.workers" | transloco }}
-        </span>
-        <span class="home-stat-value">
-          @if (shownWorkers() !== null) {
-            {{ shownWorkers() | number: "1.0-0" }}
-          } @else {
-            {{ "homepage.band.unavailable" | transloco }}
-          }
-        </span>
-        @if (imageWorkers() !== null) {
-          <span class="home-stat-sub">
-            {{
-              "homepage.band.split"
-                | transloco
-                  : {
-                      image: imageWorkers() | number,
-                      text: textWorkers() | number,
-                    }
-            }}
-          </span>
-        }
-      </div>
-
-      <div class="hd-card home-stat">
-        <span class="home-stat-label">
-          {{ "homepage.band.queue" | transloco }}
-        </span>
-        <span class="home-stat-value">
-          @if (shownQueue() !== null) {
-            {{ shownQueue() | number: "1.0-0" }}
-          } @else {
-            {{ "homepage.band.unavailable" | transloco }}
-          }
-        </span>
-        @if (imageQueue() !== null) {
-          <span class="home-stat-sub">
-            {{
-              "homepage.band.split"
-                | transloco
-                  : {
-                      image: imageQueue() | number,
-                      text: textQueue() | number,
-                    }
-            }}
-          </span>
-        }
-      </div>
-
-      <div class="hd-card home-stat">
-        <span class="home-stat-label">
-          {{ "homepage.band.throughput" | transloco }}
-        </span>
-        <span class="home-stat-value">
-          @if (shownThroughput() !== null) {
-            {{ shownThroughput() | number: "1.1-1" }}
-          } @else {
-            {{ "homepage.band.unavailable" | transloco }}
-          }
-        </span>
-        @if (throughput() !== null) {
-          <span class="home-stat-sub">
-            {{ "homepage.band.throughput_sub" | transloco }}
-          </span>
-        }
-      </div>
-
-      <div class="hd-card home-stat">
-        <span class="home-stat-label">
-          {{ "homepage.band.pictures" | transloco }}
-        </span>
-        <span class="home-stat-value">
-          @if (shownPictures() !== null) {
-            {{ shownPictures() | number: "1.0-0" }}
-          } @else {
-            {{ "homepage.band.unavailable" | transloco }}
-          }
-        </span>
-        @if (pictures() !== null) {
-          <span class="home-stat-sub">
-            {{ "homepage.band.pictures_sub" | transloco }}
-          </span>
-        }
-      </div>
-    </div>
-
-    <div class="home-band-foot">
-      <div class="home-band-uptime">
-        <span class="home-band-uptime-label">
-          {{ "homepage.band.uptime" | transloco }}
-        </span>
-        <app-uptime-sparkline [days]="apiHistory()" />
-      </div>
-      <a routerLink="/status" class="home-band-link">
+<section class="home-section home-band" scrollReveal>
+  <div class="home-section-inner">
+    <div class="home-section-head">
+      <h2 class="home-section-title">
+        {{ "homepage.band.title" | transloco }}
+      </h2>
+      <a routerLink="/status" class="home-section-link">
         {{ "homepage.band.live_status" | transloco }}
       </a>
     </div>
+
+    <div class="home-band-columns">
+      <!-- Image -->
+      <section class="hd-card home-col home-col--image">
+        <h3 class="home-col-head">{{ "homepage.band.image" | transloco }}</h3>
+        <dl class="home-col-rows">
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.workers_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (imageWorkers() !== null) {
+                {{
+                  "homepage.band.workers_value"
+                    | transloco
+                      : {
+                          workers: imageWorkers() | number,
+                          threads: imageThreads() | number,
+                        }
+                }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.queue_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (imageQueue() !== null) {
+                {{
+                  "homepage.band.requests"
+                    | transloco: { count: imageQueue() | number }
+                }}
+                @if (queuedImageWork(); as work) {
+                  <span class="home-col-dot" aria-hidden="true"></span>
+                  <app-unit-tooltip [unit]="work" />
+                }
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.throughput_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (imageRate(); as rate) {
+                {{ rate.primary.value | number: "1.1-1" }}
+                <app-unit-tooltip
+                  [unit]="rate"
+                  [primaryOverride]="
+                    'homepage.band.standard_images' | transloco
+                  "
+                />
+                {{ "homepage.band.per_second" | transloco }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Text -->
+      <section class="hd-card home-col home-col--text">
+        <h3 class="home-col-head">{{ "homepage.band.text" | transloco }}</h3>
+        <dl class="home-col-rows">
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.workers_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (textWorkers() !== null) {
+                {{
+                  "homepage.band.workers_value"
+                    | transloco
+                      : {
+                          workers: textWorkers() | number,
+                          threads: textThreads() | number,
+                        }
+                }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.queue_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (textQueue() !== null) {
+                {{
+                  "homepage.band.requests"
+                    | transloco: { count: textQueue() | number }
+                }}
+                @if (queuedTextWork(); as work) {
+                  <span class="home-col-dot" aria-hidden="true"></span>
+                  <app-unit-tooltip [unit]="work" />
+                }
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.throughput_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (textRate(); as rate) {
+                {{ rate.technical.value | number: "1.1-1" }}
+                <app-unit-tooltip [unit]="rate" [primaryOverride]="'tokens'" />
+                {{ "homepage.band.per_second" | transloco }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Alchemy -->
+      <section class="hd-card home-col home-col--alchemy">
+        <h3 class="home-col-head">{{ "homepage.band.alchemy" | transloco }}</h3>
+        <dl class="home-col-rows">
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.workers_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (alchemyWorkers() !== null) {
+                {{
+                  "homepage.band.workers_value"
+                    | transloco
+                      : {
+                          workers: alchemyWorkers() | number,
+                          threads: alchemyThreads() | number,
+                        }
+                }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.queue_label" | transloco }}
+            </dt>
+            <dd class="home-col-value">
+              @if (alchemyQueue() !== null) {
+                {{
+                  "homepage.band.forms"
+                    | transloco: { count: alchemyQueue() | number }
+                }}
+              } @else {
+                {{ "homepage.band.unavailable" | transloco }}
+              }
+            </dd>
+          </div>
+
+          <div class="home-col-row">
+            <dt class="home-col-label">
+              {{ "homepage.band.throughput_label" | transloco }}
+            </dt>
+            <!-- The performance endpoint publishes no alchemy rate: it counts
+                 alchemy workers and queued forms and nothing per minute, so
+                 there is no figure to show rather than a figure that is late. -->
+            <dd class="home-col-value">
+              {{ "homepage.band.unavailable" | transloco }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    </div>
+
+    @if (hasToday()) {
+      <p class="home-band-today">
+        {{
+          "homepage.band.today"
+            | transloco
+              : {
+                  images: picturesToday() | number,
+                  texts: textsTodayShown() | number,
+                }
+        }}
+      </p>
+    }
   </div>
 </section>
