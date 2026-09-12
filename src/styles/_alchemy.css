@@ -399,6 +399,25 @@
 .gen-studio .alchemy-draft__cost {
   margin: 0;
 }
+/* Weight as well as hue, so the figure still stands out to a reader who does
+   not see the red. */
+.gen-studio .alchemy-draft__price--high {
+  font-weight: 700;
+  color: var(--gs-danger);
+}
+.gen-studio .alchemy-draft__nudge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-draft__nudge-text {
+  margin: 0;
+}
+.gen-studio .alchemy-draft__nudge-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+}
 /* The two ways into a prompt lead the body, because which one is showing
    decides what the rest of the card is for. */
 .gen-studio .alchemy-draft__tabs {

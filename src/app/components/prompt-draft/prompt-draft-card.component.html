@@ -369,7 +369,11 @@
       @if (!busy() && price !== null) {
         <p class="gs-sublabel alchemy-draft__cost" aria-live="polite">
           {{ "prompt_draft.cost_lead" | transloco }}
-          <span class="gs-mono">{{ abbreviateKudos(price) }}</span>
+          <span
+            class="gs-mono"
+            [class.alchemy-draft__price--high]="priceIsHigh()"
+            >{{ abbreviateKudos(price) }}</span
+          >
           {{ "prompt_draft.cost_unit" | transloco }}
           @if (held !== null) {
             {{ "prompt_draft.cost_balance_lead" | transloco }}
@@ -478,6 +482,31 @@
                 }
               </select>
             </label>
+            @if (showCostNudge()) {
+              <div class="alchemy-draft__nudge">
+                <p class="gs-sublabel alchemy-draft__nudge-text">
+                  {{ "prompt_draft.model_costly_nudge" | transloco }}
+                </p>
+                <div class="alchemy-draft__nudge-actions">
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense"
+                    [disabled]="busy()"
+                    (click)="useValuePick()"
+                  >
+                    {{ "prompt_draft.model_costly_use_value" | transloco }}
+                  </button>
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense"
+                    [disabled]="busy()"
+                    (click)="onAnonymousChange(true)"
+                  >
+                    {{ "prompt_draft.model_costly_anonymous" | transloco }}
+                  </button>
+                </div>
+              </div>
+            }
           }
 
           <label class="alchemy-draft__field alchemy-draft__takes">

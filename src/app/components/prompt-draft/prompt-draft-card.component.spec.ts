@@ -446,6 +446,94 @@ describe('PromptDraftCardComponent', () => {
     );
   });
 
+  describe('steering away from costly models', () => {
+    const nudge = (): HTMLElement | null =>
+      el().querySelector('.alchemy-draft__nudge');
+    const nudgeButton = (key: string): HTMLButtonElement =>
+      [...el().querySelectorAll('.alchemy-draft__nudge button')].find(
+        (button) => (button.textContent ?? '').includes(key),
+      ) as HTMLButtonElement;
+    const price = (): HTMLElement | null =>
+      el().querySelector('.alchemy-draft__cost .gs-mono');
+    const pickAndSettle = async (value: string): Promise<void> => {
+      fixture.componentInstance.onPickChange(value);
+      fixture.detectChanges();
+      await settle();
+    };
+
+    beforeEach(() => {
+      loggedIn.set(true);
+      kudos.set(1_000);
+    });
+
+    it('suggests a smaller model or the anonymous key for the quality pick and bigger models', async () => {
+      build();
+      await settle();
+      await openOptions();
+      expect(nudge()).toBeNull();
+
+      await pickAndSettle('quality');
+      expect(nudge()?.textContent).toContain('prompt_draft.model_costly_nudge');
+
+      await pickAndSettle('model:koboldcpp/gemma-4-31B-it-heretic');
+      expect(nudge()).not.toBeNull();
+
+      await pickAndSettle('model:koboldcpp/L3-8B-Stheno-v3.2');
+      expect(nudge()).toBeNull();
+    });
+
+    it('says nothing when the request already goes out anonymously', async () => {
+      loggedIn.set(false);
+      build();
+      await settle();
+      await openOptions();
+      await pickAndSettle('quality');
+      expect(nudge()).toBeNull();
+    });
+
+    it('offers both ways out as one press each', async () => {
+      build();
+      await settle();
+      await openOptions();
+      await pickAndSettle('quality');
+
+      nudgeButton('prompt_draft.model_costly_use_value').click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.pick()).toBe('auto');
+      expect(nudge()).toBeNull();
+
+      await pickAndSettle('quality');
+      nudgeButton('prompt_draft.model_costly_anonymous').click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.anonymous()).toBe(true);
+      expect(nudge()).toBeNull();
+    });
+
+    it('marks a price above 25 kudos', async () => {
+      estimate.mockResolvedValue(26);
+      build();
+      await settlePrice();
+      expect(price()?.classList).toContain('alchemy-draft__price--high');
+    });
+
+    it('leaves a price of 25 kudos or less unmarked', async () => {
+      estimate.mockResolvedValue(25);
+      build();
+      await settlePrice();
+      expect(price()).not.toBeNull();
+      expect(price()?.classList).not.toContain('alchemy-draft__price--high');
+    });
+
+    it('leaves the price unmarked when the reader asks anonymously', async () => {
+      localStorage.setItem('aihorde.prompt-draft.anonymous', 'true');
+      estimate.mockResolvedValue(26);
+      build();
+      await settlePrice();
+      expect(price()).not.toBeNull();
+      expect(price()?.classList).not.toContain('alchemy-draft__price--high');
+    });
+  });
+
   it('offers no directions while the horde carries no styles for the job', async () => {
     build();
     await settle();

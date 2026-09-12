@@ -70,6 +70,13 @@ const OPTIONS_STORAGE_KEY = 'aihorde.prompt-draft.options';
  */
 const TAB_STORAGE_KEY = 'aihorde.prompt-draft.tab';
 
+/**
+ * The price above which a draft is flagged. Writing one line is short work for
+ * any model that follows an instruction, so a draft costing more than this is
+ * almost always paying for a model's size rather than for a better prompt.
+ */
+const COSTLY_DRAFT_KUDOS = 25;
+
 /** Long enough that a typed note is priced once, not on every keystroke. */
 const ESTIMATE_DEBOUNCE_MS = 600;
 
@@ -620,6 +627,34 @@ export class PromptDraftCardComponent {
 
   public onPickChange(value: string): void {
     this.pick.set(value as PickValue);
+  }
+
+  /**
+   * Whether the reader asked for a big model: the quality pick, or a named
+   * model whose size puts it past the small tier. Kudos scale with size, so
+   * these are the picks whose price can climb into the hundreds.
+   */
+  public readonly costlyPick = computed(() => {
+    const pick = this.pick();
+    if (pick === 'quality') return true;
+    if (!pick.startsWith('model:')) return false;
+    const tier = modelCostTier(pick.slice('model:'.length));
+    return tier === 'medium' || tier === 'large';
+  });
+
+  /** An anonymous request costs the reader nothing, so there is nothing to steer. */
+  public readonly showCostNudge = computed(
+    () => this.costlyPick() && !this.anonymous(),
+  );
+
+  /** Whether the price is worth stopping on before the reader's own kudos pay it. */
+  public readonly priceIsHigh = computed(() => {
+    const price = this.estimatedKudos();
+    return price !== null && price > COSTLY_DRAFT_KUDOS && !this.anonymous();
+  });
+
+  public useValuePick(): void {
+    this.pick.set('auto');
   }
 
   public onNoteInput(value: string): void {
