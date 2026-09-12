@@ -33,21 +33,29 @@ interface CanvasInfo {
   hasAlpha: boolean;
 }
 
+function readByte(bytes: Uint8Array, offset: number): number {
+  const value = bytes[offset];
+  if (value === undefined) {
+    throw new Error('byte read leaves the buffer');
+  }
+  return value;
+}
+
 function readFourCC(bytes: Uint8Array, offset: number): string {
   return String.fromCharCode(
-    bytes[offset],
-    bytes[offset + 1],
-    bytes[offset + 2],
-    bytes[offset + 3],
+    readByte(bytes, offset),
+    readByte(bytes, offset + 1),
+    readByte(bytes, offset + 2),
+    readByte(bytes, offset + 3),
   );
 }
 
 function readUint32LE(bytes: Uint8Array, offset: number): number {
   return (
-    (bytes[offset] |
-      (bytes[offset + 1] << 8) |
-      (bytes[offset + 2] << 16) |
-      (bytes[offset + 3] << 24)) >>>
+    (readByte(bytes, offset) |
+      (readByte(bytes, offset + 1) << 8) |
+      (readByte(bytes, offset + 2) << 16) |
+      (readByte(bytes, offset + 3) << 24)) >>>
     0
   );
 }
@@ -107,8 +115,10 @@ function readCanvasInfo(bytes: Uint8Array, chunks: WebpChunk[]): CanvasInfo {
         break;
       }
       return {
-        width: (bytes[at + 6] | (bytes[at + 7] << 8)) & 0x3fff,
-        height: (bytes[at + 8] | (bytes[at + 9] << 8)) & 0x3fff,
+        width:
+          (readByte(bytes, at + 6) | (readByte(bytes, at + 7) << 8)) & 0x3fff,
+        height:
+          (readByte(bytes, at + 8) | (readByte(bytes, at + 9) << 8)) & 0x3fff,
         hasAlpha: hasAlphaChunk,
       };
     }
@@ -258,7 +268,7 @@ function assembleChunks(
   let rest: WebpChunk[];
   if (chunks[0]?.fourCC === 'VP8X' && chunks[0].payloadSize >= 1) {
     const payload = new Uint8Array(detach(chunks[0]));
-    payload[0] |= VP8X_EXIF_FLAG;
+    payload[0] = readByte(payload, 0) | VP8X_EXIF_FLAG;
     header = { fourCC: 'VP8X', payload };
     rest = chunks.slice(1);
   } else {
@@ -410,8 +420,8 @@ function readTiffUint16(block: TiffBlock, offset: number): number {
   requireRange(block, at, 2);
   const { bytes } = block;
   return block.littleEndian
-    ? bytes[at] | (bytes[at + 1] << 8)
-    : (bytes[at] << 8) | bytes[at + 1];
+    ? readByte(bytes, at) | (readByte(bytes, at + 1) << 8)
+    : (readByte(bytes, at) << 8) | readByte(bytes, at + 1);
 }
 
 function readTiffUint32(block: TiffBlock, offset: number): number {
@@ -420,14 +430,14 @@ function readTiffUint32(block: TiffBlock, offset: number): number {
   const { bytes } = block;
   return (
     (block.littleEndian
-      ? bytes[at] |
-        (bytes[at + 1] << 8) |
-        (bytes[at + 2] << 16) |
-        (bytes[at + 3] << 24)
-      : (bytes[at] << 24) |
-        (bytes[at + 1] << 16) |
-        (bytes[at + 2] << 8) |
-        bytes[at + 3]) >>> 0
+      ? readByte(bytes, at) |
+        (readByte(bytes, at + 1) << 8) |
+        (readByte(bytes, at + 2) << 16) |
+        (readByte(bytes, at + 3) << 24)
+      : (readByte(bytes, at) << 24) |
+        (readByte(bytes, at + 1) << 16) |
+        (readByte(bytes, at + 2) << 8) |
+        readByte(bytes, at + 3)) >>> 0
   );
 }
 
@@ -470,7 +480,7 @@ function entryLongValue(block: TiffBlock, entry: TiffEntry): number {
 function readAscii(bytes: Uint8Array, at: number, length: number): string {
   let text = '';
   for (let index = 0; index < length; index++) {
-    text += String.fromCharCode(bytes[at + index]);
+    text += String.fromCharCode(readByte(bytes, at + index));
   }
   return text;
 }
@@ -479,7 +489,9 @@ function readAscii(bytes: Uint8Array, at: number, length: number): string {
 function decodeUtf16BE(bytes: Uint8Array): string {
   let text = '';
   for (let index = 0; index + 1 < bytes.length; index += 2) {
-    text += String.fromCharCode((bytes[index] << 8) | bytes[index + 1]);
+    text += String.fromCharCode(
+      (readByte(bytes, index) << 8) | readByte(bytes, index + 1),
+    );
   }
   return text;
 }
