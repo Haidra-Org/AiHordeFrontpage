@@ -241,6 +241,118 @@ export interface TextStyle {
 }
 
 // ============================================================================
+// Image Prompt Styles
+// ============================================================================
+
+/**
+ * The tag a text style carries to say that it writes image prompts. The horde
+ * has no flag for the class, so the convention is the whole of it.
+ */
+export const IMAGE_PROMPT_TAG = 'image-prompt';
+
+/** What an image-prompt style does: write from findings, or rewrite a prompt. */
+export type ImagePromptRole = 'describe' | 'improve';
+
+/** The role tags, spelled as the styles carry them. */
+export const IMAGE_PROMPT_ROLE_TAGS: Readonly<Record<ImagePromptRole, string>> =
+  {
+    describe: `${IMAGE_PROMPT_TAG}:describe`,
+    improve: `${IMAGE_PROMPT_TAG}:improve`,
+  };
+
+/**
+ * A text style read as one of the prompt cards' instructions. The horde applies
+ * the template, the sampling parameters and the model list server-side, so what
+ * is kept here is only what the client has to choose between.
+ */
+export interface ImagePromptStyle {
+  /** What a request names the style by; globally unique, unlike the name. */
+  id: string;
+  name: string;
+  role: ImagePromptRole;
+  /** The tag naming what the style writes towards, or null when it names none. */
+  direction: string | null;
+  /** Models the style declares; empty when it names none. */
+  models: string[];
+  info?: string;
+}
+
+/**
+ * Read a text style as an image-prompt style, or null when it does not carry
+ * the convention's tags. A style with both role tags is read as describing,
+ * since that is the job the wider tag set is written for.
+ */
+export function asImagePromptStyle(style: TextStyle): ImagePromptStyle | null {
+  const tags = style.tags ?? [];
+  if (!tags.includes(IMAGE_PROMPT_TAG)) {
+    return null;
+  }
+  const role: ImagePromptRole | null = tags.includes(
+    IMAGE_PROMPT_ROLE_TAGS.describe,
+  )
+    ? 'describe'
+    : tags.includes(IMAGE_PROMPT_ROLE_TAGS.improve)
+      ? 'improve'
+      : null;
+  if (!role) {
+    return null;
+  }
+  const roleTags: readonly string[] = Object.values(IMAGE_PROMPT_ROLE_TAGS);
+  const direction =
+    tags.find((tag) => tag !== IMAGE_PROMPT_TAG && !roleTags.includes(tag)) ??
+    null;
+  const read: ImagePromptStyle = {
+    id: style.id,
+    name: style.name,
+    role,
+    direction,
+    models: style.models ? [...style.models] : [],
+  };
+  if (style.info) read.info = style.info;
+  return read;
+}
+
+/**
+ * What a chip calls the style: the direction it names, or the last part of a
+ * name that lists one. Null where the style names neither, since the rest of
+ * such a name is the role, which says nothing next to the built-in entry; the
+ * caller then supplies a word of its own.
+ */
+export function imagePromptStyleLabel(style: ImagePromptStyle): string | null {
+  if (style.direction) {
+    return style.direction;
+  }
+  const comma = style.name.lastIndexOf(',');
+  if (comma === -1) {
+    return null;
+  }
+  const tail = style.name.slice(comma + 1).trim();
+  return tail === '' ? null : tail;
+}
+
+/**
+ * The words a style's prompt template adds of its own: the template with the
+ * placeholders taken out, and with the punctuation that only joined them to the
+ * rest tidied away. The positive and negative halves both count, since a prompt
+ * that repeats either of them fights the style.
+ */
+export function styleTemplateWords(template: string): string {
+  return template
+    .split('###')
+    .map((half) =>
+      half
+        .replaceAll('{p}', '')
+        .replaceAll('{np}', '')
+        .replace(/\s+/g, ' ')
+        .replace(/\s*,\s*(?=,)/g, '')
+        .replace(/^[\s,;|]+|[\s,;|]+$/g, '')
+        .trim(),
+    )
+    .filter((half) => half.length > 0)
+    .join(', ');
+}
+
+// ============================================================================
 // Union & Discriminated Types
 // ============================================================================
 

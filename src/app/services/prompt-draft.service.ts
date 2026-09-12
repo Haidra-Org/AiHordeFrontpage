@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import { AuthService } from './auth.service';
+import { StyleService } from './style.service';
 import {
   PromptDraftDbService,
   StoredPromptDraft,
@@ -13,6 +14,11 @@ import {
   HordeApiError,
   TextGenerationRequest,
 } from '../types/generation';
+import {
+  IMAGE_PROMPT_TAG,
+  ImagePromptStyle,
+  asImagePromptStyle,
+} from '../types/style';
 
 const ANONYMOUS_API_KEY = '0000000000';
 
@@ -32,6 +38,26 @@ export interface PromptDraftInput {
   tags?: string | null;
   note?: string | null;
   prompt?: string | null;
+  /**
+   * Words a rendering style already contributes to the finished picture. They
+   * are named so the model writes the subject and the scene instead of saying
+   * them twice.
+   */
+  styleWords?: string | null;
+}
+
+/**
+ * What the request asks for beyond the material: whose instruction the model
+ * follows, and how many answers come back.
+ */
+export interface PromptDraftShape {
+  /**
+   * The style the horde applies server-side. Null asks on the built-in
+   * instruction and the curated model list.
+   */
+  style?: ImagePromptStyle | null;
+  /** How many answers to ask for at once; one when unset. */
+  takes?: number;
 }
 
 /** Which surface asked for a draft, kept with it in the history. */
@@ -50,12 +76,13 @@ export interface PromptDraftOptions {
 export type PromptDraftOutcome =
   | {
       kind: 'done';
-      text: string;
+      /** Every take the request came back with, in the order the horde sent them. */
+      texts: string[];
       model: string;
       kudos: number;
       seed: number | null;
-      /** The history record written for this draft. */
-      id: string;
+      /** The history records written for this draft, one per take. */
+      ids: string[];
     }
   | { kind: 'refused'; error: HordeApiError }
   | { kind: 'faulted' }
@@ -119,27 +146,49 @@ export function pickTextModel(
 }
 
 /**
- * The request as an instruction the common instruct tunes follow. Alpaca's
- * markers are the ones the widest range of horde models were trained to see,
- * and a plain text prompt is what the endpoint takes; no chat template is
- * applied on the way.
+ * The material alone, labelled line by line. It is what a style's template
+ * wraps, so it carries no instruction and no markers of its own.
  */
-export function buildDraftPrompt(input: PromptDraftInput): string {
+export function buildDraftMaterial(input: PromptDraftInput): string {
+  const lines: string[] = [];
   const prompt = input.prompt?.trim();
-  const lines = [
-    prompt
-      ? 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. Write nothing but the prompt. No quotes, no explanation.'
-      : 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.',
-    '',
-  ];
   const caption = input.caption?.trim();
   const tags = input.tags?.trim();
   const note = input.note?.trim();
+  const styleWords = input.styleWords?.trim();
   if (prompt) lines.push(`Prompt: ${prompt}`);
   if (caption) lines.push(`Description: ${caption}`);
   if (tags) lines.push(`Tags: ${tags}`);
   if (note) lines.push(`Notes from the user: ${note}`);
-  return `### Instruction:\n${lines.join('\n')}\n\n### Response:\n`;
+  if (styleWords) {
+    lines.push(
+      `Rendering style applied separately (do not repeat these words): ${styleWords}`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
+ * The request as an instruction the common instruct tunes follow. Alpaca's
+ * markers are the ones the widest range of horde models were trained to see,
+ * and a plain text prompt is what the endpoint takes; no chat template is
+ * applied on the way.
+ *
+ * Where a rendering style is already applied to the picture, the instruction
+ * asks for the subject and the scene alone: the style's own words are added
+ * after the prompt is written, and a prompt that repeats them fights them.
+ */
+export function buildDraftPrompt(input: PromptDraftInput): string {
+  const prompt = input.prompt?.trim();
+  const styled = !!input.styleWords?.trim();
+  const instruction = prompt
+    ? styled
+      ? 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words. Write nothing but the prompt. No quotes, no explanation.'
+      : 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. Write nothing but the prompt. No quotes, no explanation.'
+    : styled
+      ? 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words. Write nothing but the prompt. No quotes, no explanation.'
+      : 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.';
+  return `### Instruction:\n${instruction}\n\n${buildDraftMaterial(input)}\n\n### Response:\n`;
 }
 
 /**
@@ -163,6 +212,16 @@ export function cleanDraft(text: string): string {
 const POLL_INTERVAL_MS = 2_500;
 const POLL_LIMIT = 48;
 
+/** The horde pages styles twenty-five at a time. */
+const STYLE_PAGE_SIZE = 25;
+
+/**
+ * How far the style listing is walked. The class is small by design, so a
+ * handful of pages is more than it will ever fill; the cap is there so a tag
+ * filter the server ignores cannot turn into an unbounded crawl.
+ */
+const STYLE_PAGE_LIMIT = 4;
+
 /**
  * Prompts written by the horde's text models. One client for every surface
  * that wants words drafted: the alchemy card first, the studio's own prompt
@@ -172,7 +231,11 @@ const POLL_LIMIT = 48;
 export class PromptDraftService {
   private readonly aiHorde = inject(AiHordeService);
   private readonly auth = inject(AuthService);
+  private readonly styles = inject(StyleService);
   private readonly history = inject(PromptDraftDbService);
+
+  /** Fetched once a session: the class changes on the horde, not in a visit. */
+  private stylesPromise: Promise<ImagePromptStyle[]> | null = null;
 
   /** The text models online now, for the auto pick and the override list. */
   public async textModels(): Promise<ActiveModel[]> {
@@ -184,14 +247,90 @@ export class PromptDraftService {
     }
   }
 
-  /** The request body a draft goes out with, priced or queued. */
-  private buildRequest(
+  /**
+   * The published text styles that write image prompts, by the tag convention
+   * in `scripts/prompt-styles/README.md`. An empty list is the ordinary answer:
+   * the cards fall back to their own instruction, which is what they did before
+   * any style existed.
+   */
+  public imagePromptStyles(): Promise<ImagePromptStyle[]> {
+    this.stylesPromise ??= this.fetchImagePromptStyles();
+    return this.stylesPromise;
+  }
+
+  private async fetchImagePromptStyles(): Promise<ImagePromptStyle[]> {
+    const found: ImagePromptStyle[] = [];
+    try {
+      for (let page = 1; page <= STYLE_PAGE_LIMIT; page += 1) {
+        const styles = await firstValueFrom(
+          this.styles.getTextStyles({ tag: IMAGE_PROMPT_TAG, page }),
+        );
+        // The tag is asked for, and checked again here: a server that ignores
+        // the filter would otherwise hand every text style to the chip row.
+        for (const style of styles) {
+          const read = asImagePromptStyle(style);
+          if (read) found.push(read);
+        }
+        if (styles.length < STYLE_PAGE_SIZE) break;
+      }
+    } catch {
+      // A catalogue that will not load leaves the built-in instruction, which
+      // is a whole answer rather than a degraded one.
+      return [];
+    }
+    return found;
+  }
+
+  /**
+   * The model list a request goes out with, and the name to show for it. A
+   * style names its own models and the horde routes on them, so the pick is
+   * narrowed to the ones the style allows and reports a label only.
+   */
+  private chooseModels(
+    models: readonly ActiveModel[],
+    pick: PromptDraftModelPick,
+    style: ImagePromptStyle | null,
+  ): { models: string[] | null; label: string | null } {
+    if (!style) return pickTextModel(models, pick);
+    if (pick !== 'auto') return pickTextModel(models, pick);
+    if (style.models.length === 0) return { models: null, label: null };
+    const allowed = new Set(style.models);
+    const pool = models.filter(
+      (model) => model.count > 0 && allowed.has(model.name),
+    );
+    const picked = pickTextModel(pool, 'auto');
+    if (picked.models) return picked;
+    return pool.length > 0
+      ? { models: pool.map((model) => model.name), label: pool[0].name }
+      : { models: null, label: null };
+  }
+
+  /**
+   * The request body a draft goes out with, priced or queued. With a style the
+   * body carries the material and the style's reference and nothing else: the
+   * horde supplies the template, the sampling parameters and the models, and a
+   * client-side copy of any of them would only contradict it. The one exception
+   * is how many answers to write, which no style declares.
+   */
+  public buildRequest(
     input: PromptDraftInput,
     chosen: { models: string[] | null },
+    shape: PromptDraftShape = {},
   ): TextGenerationRequest {
+    const takes = Math.max(1, Math.trunc(shape.takes ?? 1));
+    const style = shape.style ?? null;
+    if (style) {
+      return {
+        prompt: buildDraftMaterial(input),
+        style: style.id,
+        ...(takes > 1 ? { params: { n: takes } } : {}),
+        slow_workers: true,
+      };
+    }
     return {
       prompt: buildDraftPrompt(input),
       params: {
+        ...(takes > 1 ? { n: takes } : {}),
         max_context_length: 2048,
         max_length: 120,
         temperature: 0.7,
@@ -204,6 +343,23 @@ export class PromptDraftService {
       ...(chosen.models ? { models: chosen.models } : {}),
       slow_workers: true,
     };
+  }
+
+  /**
+   * The body a press would send, for the reader who wants to see it. It is the
+   * same builder the dry run and the draft use, so what is shown is what goes.
+   */
+  public previewRequest(
+    input: PromptDraftInput,
+    pick: PromptDraftModelPick,
+    models: readonly ActiveModel[],
+    shape: PromptDraftShape = {},
+  ): TextGenerationRequest {
+    return this.buildRequest(
+      input,
+      this.chooseModels(models, pick, shape.style ?? null),
+      shape,
+    );
   }
 
   /**
@@ -226,12 +382,14 @@ export class PromptDraftService {
     pick: PromptDraftModelPick,
     models: readonly ActiveModel[] | undefined,
     anonymous: boolean,
+    shape: PromptDraftShape = {},
   ): Promise<number | null> {
-    const chosen = pickTextModel(models ?? (await this.textModels()), pick);
+    const pool = models ?? (await this.textModels());
+    const chosen = this.chooseModels(pool, pick, shape.style ?? null);
     return firstValueFrom(
       this.aiHorde.dryRunTextGeneration(
         this.apiKeyFor(anonymous),
-        this.buildRequest(input, chosen),
+        this.buildRequest(input, chosen, shape),
       ),
     );
   }
@@ -246,9 +404,11 @@ export class PromptDraftService {
     pick: PromptDraftModelPick,
     models?: readonly ActiveModel[],
     options: PromptDraftOptions = { anonymous: false, origin: 'alchemy' },
+    shape: PromptDraftShape = {},
   ): Promise<PromptDraftOutcome> {
-    const chosen = pickTextModel(models ?? (await this.textModels()), pick);
-    const request = this.buildRequest(input, chosen);
+    const pool = models ?? (await this.textModels());
+    const chosen = this.chooseModels(pool, pick, shape.style ?? null);
+    const request = this.buildRequest(input, chosen, shape);
     const submitted = await firstValueFrom(
       this.aiHorde.submitTextGeneration(
         this.apiKeyFor(options.anonymous),
@@ -267,35 +427,45 @@ export class PromptDraftService {
       if (!status) continue;
       if (status.faulted) return { kind: 'faulted' };
       if (status.done) {
-        const generation = status.generations[0];
-        const text = generation ? cleanDraft(generation.text) : '';
-        if (!text) return { kind: 'faulted' };
-        const record: StoredPromptDraft = {
+        const takes = status.generations
+          .map((generation) => ({
+            generation,
+            text: cleanDraft(generation.text),
+          }))
+          .filter((take) => take.text.length > 0);
+        if (takes.length === 0) return { kind: 'faulted' };
+        const style = shape.style ?? null;
+        const records: StoredPromptDraft[] = takes.map((take, index) => ({
           id: randomUuid(),
           createdAt: Date.now(),
           origin: options.origin,
           input,
           pick,
-          model: generation?.model ?? chosen.label ?? '',
-          seed: generation?.seed ?? null,
+          model: take.generation.model ?? chosen.label ?? '',
+          seed: take.generation.seed ?? null,
           kudos: status.kudos,
           anonymous: options.anonymous,
-          text,
-        };
-        try {
-          await this.history.put(record);
-        } catch {
-          // The history is a convenience beside the draft. A store that will
-          // not take the record must not cost the reader the words they waited
-          // for.
+          text: take.text,
+          requestId: submitted.response.id,
+          takeIndex: index,
+          ...(style ? { style: style.id } : {}),
+        }));
+        for (const record of records) {
+          try {
+            await this.history.put(record);
+          } catch {
+            // The history is a convenience beside the draft. A store that will
+            // not take the record must not cost the reader the words they
+            // waited for.
+          }
         }
         return {
           kind: 'done',
-          text,
-          model: record.model,
-          kudos: record.kudos,
-          seed: record.seed,
-          id: record.id,
+          texts: records.map((record) => record.text),
+          model: records[0].model,
+          kudos: records[0].kudos,
+          seed: records[0].seed,
+          ids: records.map((record) => record.id),
         };
       }
     }

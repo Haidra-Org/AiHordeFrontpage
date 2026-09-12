@@ -518,6 +518,7 @@
             [seed]="form().controls.prompt.value"
             [caption]="describe.findings().caption"
             [tags]="describe.findings().tags"
+            [styleWords]="appliedStyleWords()"
             (apply)="fillPrompt($event)"
           />
         </section>

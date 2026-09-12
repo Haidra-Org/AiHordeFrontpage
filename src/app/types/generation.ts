@@ -378,6 +378,8 @@ export interface TextGenerationStatusResponse {
 
 /** The sampling knobs a text request carries; the horde's own names. */
 export interface TextGenerationParams {
+  /** How many answers to ask for at once (1-20). */
+  n?: number;
   max_context_length?: number;
   max_length?: number;
   temperature?: number;
@@ -398,6 +400,11 @@ export interface TextGenerationRequest {
   trusted_workers?: boolean;
   /** Price the request and queue nothing; the answer is the kudos alone. */
   dry_run?: boolean;
+  /**
+   * Server-side style reference (id or name). The horde then supplies the
+   * template, the sampling parameters and the models itself.
+   */
+  style?: string;
 }
 
 /**

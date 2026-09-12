@@ -52,7 +52,11 @@ import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { DatabaseService } from '../../../services/database.service';
 import { UnitConversionService } from '../../../services/unit-conversion.service';
 import { ActiveModel } from '../../../types/active-model';
-import { ImagePostProcessor, ImageSamplerName } from '../../../types/style';
+import {
+  ImagePostProcessor,
+  ImageSamplerName,
+  styleTemplateWords,
+} from '../../../types/style';
 import {
   StyleForcedParams,
   StyleRecord,
@@ -2746,6 +2750,20 @@ export class GenerateFormComponent implements OnInit {
     }
     const record = this.styleRecords().get(key);
     return record?.name ?? parseStyleRecordKey(key)?.value ?? key;
+  }
+
+  /**
+   * The words the applied look puts on every prompt, or null when no look is
+   * applied. The prompt card names them to the text model so a draft writes the
+   * subject and the scene rather than saying the look twice.
+   */
+  public appliedStyleWords(): string | null {
+    const record = this.styleRecords().get(this.selectedStyleKey());
+    if (!record) {
+      return null;
+    }
+    const words = styleTemplateWords(record.prompt);
+    return words === '' ? null : words;
   }
 
   /**

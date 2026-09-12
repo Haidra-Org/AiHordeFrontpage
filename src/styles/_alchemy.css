@@ -341,6 +341,36 @@
 .gen-studio .alchemy-draft__go {
   flex: none;
 }
+.gen-studio .alchemy-draft__preview-trigger {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+}
+.gen-studio .alchemy-draft__from-style {
+  flex: 1 1 260px;
+  margin: 0;
+}
+.gen-studio .alchemy-draft__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-draft__takes {
+  align-self: flex-start;
+}
+.gen-studio .alchemy-draft__takes-note {
+  margin: 0;
+}
+/* Several answers to one request read as a list, so each take carries its own
+   words and its own buttons rather than sharing a row with the next. */
+.gen-studio .alchemy-draft__take {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-draft__take-label {
+  margin: 0;
+}
 .gen-studio .alchemy-draft__text {
   align-self: stretch;
 }

@@ -7,17 +7,52 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { of, throwError } from 'rxjs';
 import {
   PromptDraftService,
+  buildDraftMaterial,
   buildDraftPrompt,
   cleanDraft,
   curatedRank,
   pickTextModel,
 } from './prompt-draft.service';
 import { AuthService } from './auth.service';
+import { StyleService } from './style.service';
 import { PromptDraftDbService } from './prompt-draft-db.service';
 import { ActiveModel } from '../types/active-model';
+import { ImagePromptStyle, TextStyle } from '../types/style';
 import { API_BASE as API_BASE_URL } from '../testing/api-test-helpers';
+
+/** A published text style as the horde lists it. */
+function textStyle(
+  id: string,
+  name: string,
+  tags: string[],
+  models: string[] = [],
+): TextStyle {
+  return {
+    id,
+    name,
+    prompt: '### Instruction:\n{p}\n\n### Response:\n',
+    public: true,
+    nsfw: false,
+    tags,
+    models,
+    use_count: 0,
+    creator: 'someone#1',
+  };
+}
+
+/** The style as the card hands it back to the service. */
+function chosenStyle(id: string, models: string[] = []): ImagePromptStyle {
+  return {
+    id,
+    name: `Image prompt: ${id}`,
+    role: 'describe',
+    direction: null,
+    models,
+  };
+}
 
 const model = (name: string, count: number, eta = 0): ActiveModel => ({
   name,
@@ -91,6 +126,24 @@ describe('the draft prompt and its answer', () => {
     expect(prompt).not.toContain('Description:');
   });
 
+  it('names the words a rendering style already adds, and asks for the scene alone', () => {
+    const input = {
+      prompt: 'a dog',
+      styleWords: 'oil painting, thick impasto',
+    };
+    const prompt = buildDraftPrompt(input);
+    expect(prompt).toContain(
+      'Rendering style applied separately (do not repeat these words): oil painting, thick impasto',
+    );
+    expect(prompt).toContain('Write the subject and the scene only');
+    expect(prompt).not.toContain('adding setting, style, lighting');
+    // The material a style's own template wraps carries the line and no
+    // instruction of its own.
+    expect(buildDraftMaterial(input)).toBe(
+      'Prompt: a dog\nRendering style applied separately (do not repeat these words): oil painting, thick impasto',
+    );
+  });
+
   it('keeps the first line the model wrote, without label or quotes', () => {
     expect(
       cleanDraft('\n"Prompt: a dog on a couch, soft light"\n\nMore.'),
@@ -103,8 +156,10 @@ describe('PromptDraftService', () => {
   let service: PromptDraftService;
   let http: HttpTestingController;
   let storedKey: string | null;
+  let getTextStyles: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    getTextStyles = vi.fn().mockReturnValue(of([]));
     // Only the poll's own delay is faked: fake-indexeddb drives its requests off
     // the other timer families, and a history write has to complete for real.
     vi.useFakeTimers({ toFake: ['setTimeout'] });
@@ -118,6 +173,7 @@ describe('PromptDraftService', () => {
           provide: AuthService,
           useValue: { getStoredApiKey: () => storedKey },
         },
+        { provide: StyleService, useValue: { getTextStyles } },
       ],
     });
     service = TestBed.inject(PromptDraftService);
@@ -164,7 +220,7 @@ describe('PromptDraftService', () => {
 
     await expect(pending).resolves.toMatchObject({
       kind: 'done',
-      text: 'a dog on a couch, warm light',
+      texts: ['a dog on a couch, warm light'],
       model: 'koboldcpp/gemma-4-31B-it-heretic',
       kudos: 3,
     });
@@ -240,7 +296,9 @@ describe('PromptDraftService', () => {
     const stored = await TestBed.inject(PromptDraftDbService).list(10);
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({
-      id: outcome.kind === 'done' ? outcome.id : '',
+      id: outcome.kind === 'done' ? outcome.ids[0] : '',
+      requestId: 'text-9',
+      takeIndex: 0,
       origin: 'studio',
       anonymous: true,
       model: 'm/1',
@@ -250,6 +308,162 @@ describe('PromptDraftService', () => {
       input: { caption: 'a dog' },
       pick: 'any',
     });
+  });
+
+  it('keeps only the tagged styles, and reads a role and a direction off them', async () => {
+    getTextStyles.mockReturnValue(
+      of([
+        textStyle('s1', 'Image prompt: photographic', [
+          'image-prompt',
+          'image-prompt:describe',
+          'photographic',
+        ]),
+        textStyle(
+          's2',
+          'Image prompt: sharpen',
+          ['image-prompt', 'image-prompt:improve'],
+          ['koboldcpp/gemma-4-31B-it-heretic'],
+        ),
+        textStyle('s3', 'A story style', ['roleplay']),
+        textStyle('s4', 'Tagged but roleless', ['image-prompt']),
+      ]),
+    );
+
+    const styles = await service.imagePromptStyles();
+
+    expect(styles).toEqual([
+      {
+        id: 's1',
+        name: 'Image prompt: photographic',
+        role: 'describe',
+        direction: 'photographic',
+        models: [],
+      },
+      {
+        id: 's2',
+        name: 'Image prompt: sharpen',
+        role: 'improve',
+        direction: null,
+        models: ['koboldcpp/gemma-4-31B-it-heretic'],
+      },
+    ]);
+    expect(getTextStyles).toHaveBeenCalledWith({
+      tag: 'image-prompt',
+      page: 1,
+    });
+    // Fetched once a session, however many cards ask for them.
+    await service.imagePromptStyles();
+    expect(getTextStyles).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers no styles when the catalogue will not load', async () => {
+    getTextStyles.mockReturnValue(throwError(() => new Error('offline')));
+    await expect(service.imagePromptStyles()).resolves.toEqual([]);
+  });
+
+  it('sends a chosen style as the whole instruction, without params or models', async () => {
+    const models = [model('koboldcpp/gemma-4-31B-it-heretic', 1)];
+    const pending = service.draft(
+      { caption: 'a dog', note: 'at night' },
+      'auto',
+      models,
+      { anonymous: true, origin: 'alchemy' },
+      { style: chosenStyle('s1', ['koboldcpp/gemma-4-31B-it-heretic']) },
+    );
+
+    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+    expect(submit.request.body).toEqual({
+      prompt: 'Description: a dog\nNotes from the user: at night',
+      style: 's1',
+      slow_workers: true,
+    });
+    submit.flush(
+      { message: 'nope', rc: 'Nope' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await pending;
+  });
+
+  it('writes its own instruction and model list when no style is chosen', async () => {
+    const models = [model('koboldcpp/gemma-4-31B-it-heretic', 1)];
+    const pending = service.draft({ caption: 'a dog' }, 'auto', models, {
+      anonymous: true,
+      origin: 'alchemy',
+    });
+    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+    expect(submit.request.body.style).toBeUndefined();
+    expect(submit.request.body.models).toEqual([
+      'koboldcpp/gemma-4-31B-it-heretic',
+    ]);
+    expect(submit.request.body.prompt).toContain('### Instruction:');
+    submit.flush(
+      { message: 'nope', rc: 'Nope' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await pending;
+  });
+
+  it('asks for three takes and keeps each of them', async () => {
+    const pending = service.draft(
+      { caption: 'a dog' },
+      'any',
+      [],
+      { anonymous: true, origin: 'studio' },
+      { takes: 3 },
+    );
+    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+    expect(submit.request.body.params.n).toBe(3);
+    submit.flush({ id: 'text-3', kudos: 9 });
+
+    await vi.advanceTimersByTimeAsync(2_500);
+    http.expectOne(`${API_BASE_URL}/generate/text/status/text-3`).flush({
+      done: true,
+      faulted: false,
+      kudos: 9,
+      generations: [
+        { text: 'one dog', model: 'm/1', seed: 1 },
+        { text: 'two dogs', model: 'm/1', seed: 2 },
+        { text: 'three dogs', model: 'm/1', seed: 3 },
+      ],
+    });
+
+    const outcome = await pending;
+    expect(outcome).toMatchObject({
+      kind: 'done',
+      texts: ['one dog', 'two dogs', 'three dogs'],
+    });
+    const stored = await TestBed.inject(PromptDraftDbService).list(10);
+    expect(stored).toHaveLength(3);
+    expect(stored.map((draft) => draft.requestId)).toEqual([
+      'text-3',
+      'text-3',
+      'text-3',
+    ]);
+    expect([...stored].map((draft) => draft.takeIndex).sort()).toEqual([
+      0, 1, 2,
+    ]);
+  });
+
+  it('previews the body a press would send, down to the last field', async () => {
+    const models = [model('koboldcpp/gemma-4-31B-it-heretic', 1)];
+    const input = { caption: 'a dog', styleWords: 'oil painting' };
+    const shape = { takes: 3 };
+    const preview = service.previewRequest(input, 'auto', models, shape);
+
+    const pending = service.draft(
+      input,
+      'auto',
+      models,
+      { anonymous: true, origin: 'alchemy' },
+      shape,
+    );
+    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+    expect(submit.request.body).toEqual(preview);
+    submit.flush(
+      { message: 'nope', rc: 'Nope' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    await pending;
   });
 
   it('reports the refusal as the horde worded it', async () => {

@@ -30,6 +30,15 @@ export interface StoredPromptDraft {
   kudos: number;
   anonymous: boolean;
   text: string;
+  /**
+   * The horde request the draft came out of. Several takes of one request each
+   * keep their own record, and this is what says they are the same ask.
+   */
+  requestId?: string;
+  /** Which take of that request this is, from zero. */
+  takeIndex?: number;
+  /** The style the horde applied, by id; absent for the built-in instruction. */
+  style?: string;
 }
 
 interface PromptDraftDbSchema extends DBSchema {

@@ -3,7 +3,12 @@ import {
   getFilterTypeOptions,
   FILTER_TYPE_LABELS,
 } from './filter';
-import { isImageStyle, isTextStyle } from './style';
+import {
+  ImagePromptStyle,
+  imagePromptStyleLabel,
+  isImageStyle,
+  isTextStyle,
+} from './style';
 import { ApiError } from './api-error';
 
 describe('filter type utilities', () => {
@@ -66,6 +71,36 @@ describe('style type guards', () => {
       const imgStyle = { id: '1', examples: [], prompt: '' } as never;
       expect(isTextStyle(imgStyle)).toBe(false);
     });
+  });
+});
+
+describe('imagePromptStyleLabel()', () => {
+  const style = (
+    name: string,
+    direction: string | null = null,
+  ): ImagePromptStyle => ({
+    id: 's1',
+    name,
+    role: 'improve',
+    direction,
+    models: [],
+  });
+
+  it('takes the direction the style tags itself with', () => {
+    expect(
+      imagePromptStyleLabel(style('Image prompt: improve', 'painterly')),
+    ).toBe('painterly');
+  });
+
+  it('falls back to what a name lists after its last comma', () => {
+    expect(
+      imagePromptStyleLabel(style('Image prompt: improve, cinematic')),
+    ).toBe('cinematic');
+  });
+
+  it('names nothing for a style that lists nothing', () => {
+    expect(imagePromptStyleLabel(style('Image prompt: improve'))).toBeNull();
+    expect(imagePromptStyleLabel(style('Image prompt: improve,  '))).toBeNull();
   });
 });
 
