@@ -40,66 +40,21 @@
     @let current = picked();
     <div class="alchemy-result__body">
       @if (current) {
+        <ng-container *ngTemplateOutlet="bar; context: { inViewer: false }" />
         <!-- The picked picture wiped against the source when the page has one;
              a map or an upscale is read by what it changed. -->
-        <div class="alchemy-pictures__stage">
-          @if (source(); as src) {
-            <app-gs-compare-wipe
-              [beforeSrc]="src"
-              [afterSrc]="current.url"
-              [beforeLabel]="'alchemy.pictures.source' | transloco"
-              [afterLabel]="nameKey(current) | transloco"
-              [beforeAlt]="'alchemy.pictures.source' | transloco"
-              [afterAlt]="'alchemy.result.image_alt' | transloco"
-              [handleOnly]="true"
-            />
-          } @else {
-            <img
-              class="alchemy-pictures__lone"
-              [src]="current.url"
-              crossorigin="anonymous"
-              alt="{{ 'alchemy.result.image_alt' | transloco }}"
-            />
-          }
-          <button
-            type="button"
-            class="alchemy-result__zoom-glyph alchemy-pictures__zoom"
-            [attr.aria-label]="'alchemy.result.zoom' | transloco"
-            (click)="openZoom()"
-          >
-            <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-          </button>
+        <div
+          #stageEl
+          class="alchemy-pictures__stage"
+          [class.is-pannable]="zoomedIn()"
+          (pointerdown)="onStagePointerDown($event)"
+          (pointermove)="onStagePointerMove($event)"
+          (pointerup)="onStagePointerUp()"
+          (pointercancel)="onStagePointerUp()"
+        >
+          <ng-container *ngTemplateOutlet="pair" />
         </div>
-
-        @if (pictures().length > 1) {
-          <div
-            class="alchemy-pictures__film"
-            role="group"
-            [attr.aria-label]="'alchemy.pictures.film_label' | transloco"
-          >
-            @for (picture of pictures(); track picture.key) {
-              <button
-                type="button"
-                class="alchemy-pictures__thumb"
-                [class.is-picked]="isPicked(picture)"
-                [attr.aria-pressed]="isPicked(picture)"
-                (click)="pick(picture.key)"
-              >
-                <img
-                  class="alchemy-pictures__thumb-img"
-                  [src]="picture.url"
-                  alt=""
-                />
-                <span class="alchemy-pictures__thumb-name">
-                  {{ nameKey(picture) | transloco }}
-                  @if (picture.detector) {
-                    <span class="gs-mono">{{ picture.detector }}</span>
-                  }
-                </span>
-              </button>
-            }
-          </div>
-        }
+        <ng-container *ngTemplateOutlet="film" />
 
         <div class="alchemy-pictures__actions">
           <a
@@ -130,33 +85,165 @@
             }}
           </p>
         </div>
-
-        @if (zoomOpen()) {
-          <div
-            class="alchemy-result__lightbox"
-            role="dialog"
-            aria-modal="true"
-            [attr.aria-label]="'alchemy.result.zoom' | transloco"
-            (click)="closeZoom()"
-            (keydown.escape)="closeZoom()"
-            tabindex="-1"
-          >
-            <img
-              class="alchemy-result__lightbox-img"
-              [src]="current.url"
-              alt="{{ 'alchemy.result.image_alt' | transloco }}"
-            />
-            <button
-              type="button"
-              class="gs-plate-x alchemy-result__lightbox-x"
-              (click)="closeZoom()"
-            >
-              {{ "alchemy.result.zoom_close" | transloco }}
-              <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
-            </button>
-          </div>
-        }
       }
     </div>
   }
+
+  <!-- The same pair at the size the window allows, with the same controls, so
+       what was found on the card can be looked at properly without losing the
+       pick or the zoom. -->
+  @if (viewerOpen() && picked()) {
+    <div
+      class="alchemy-pictures__viewer"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="'alchemy.result.zoom' | transloco"
+      cdkTrapFocus
+      [cdkTrapFocusAutoCapture]="true"
+      (keydown.escape)="closeViewer()"
+    >
+      <ng-container *ngTemplateOutlet="bar; context: { inViewer: true }" />
+      <div
+        #viewerEl
+        class="alchemy-pictures__viewer-body"
+        [class.is-pannable]="zoomedIn()"
+        (pointerdown)="onStagePointerDown($event)"
+        (pointermove)="onStagePointerMove($event)"
+        (pointerup)="onStagePointerUp()"
+        (pointercancel)="onStagePointerUp()"
+      >
+        <ng-container *ngTemplateOutlet="pair" />
+      </div>
+      <ng-container *ngTemplateOutlet="film" />
+    </div>
+  }
 </section>
+
+<!-- The pair itself: the wipe when there is a source, the picture alone when
+     there is not. Both sides are fitted into the measured box, so the divider
+     compares the same pixels and the zoom moves both together. -->
+<ng-template #pair>
+  @let current = picked();
+  @if (current) {
+    @if (source(); as src) {
+      <app-gs-compare-wipe
+        [beforeSrc]="src"
+        [afterSrc]="current.url"
+        [beforeLabel]="'alchemy.pictures.source' | transloco"
+        [afterLabel]="nameKey(current) | transloco"
+        [beforeAlt]="'alchemy.pictures.source' | transloco"
+        [afterAlt]="'alchemy.result.image_alt' | transloco"
+        [beforeNote]="
+          sourceEnlarged() ? ('alchemy.pictures.note_enlarged' | transloco) : ''
+        "
+        [handleOnly]="true"
+        [fit]="true"
+        [fitWidth]="fitBox()?.width ?? null"
+        [fitHeight]="fitBox()?.height ?? null"
+        [zoom]="zoomFactor()"
+        [panX]="panX()"
+        [panY]="panY()"
+      />
+    } @else {
+      <img
+        class="alchemy-pictures__lone"
+        [class.is-zoomed]="zoomedIn()"
+        [src]="current.url"
+        [style.width.px]="fitBox()?.width ?? null"
+        [style.height.px]="fitBox()?.height ?? null"
+        [style.--ap-zoom]="zoomFactor()"
+        [style.--ap-pan-x.px]="panX()"
+        [style.--ap-pan-y.px]="panY()"
+        crossorigin="anonymous"
+        alt="{{ 'alchemy.result.image_alt' | transloco }}"
+      />
+    }
+  }
+</ng-template>
+
+<!-- How close in, and the way to the viewer or back out of it. -->
+<ng-template #bar let-inViewer="inViewer">
+  <div class="alchemy-pictures__bar" [class.is-viewer]="inViewer">
+    @if (inViewer) {
+      <span class="alchemy-pictures__viewer-title">
+        {{ "alchemy.pictures.title" | transloco }}
+        @if (picked(); as current) {
+          <span class="gs-mono">{{ nameKey(current) | transloco }}</span>
+        }
+      </span>
+    }
+    @if (offersZoom()) {
+      <div
+        class="gs-sweep-scales alchemy-pictures__scales"
+        role="group"
+        [attr.aria-label]="'generate.sweeps.zoom_group' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-sweep-scale"
+          [class.is-on]="zoomStep() === 'fit'"
+          [attr.aria-pressed]="zoomStep() === 'fit'"
+          (click)="zoomTo(null)"
+        >
+          {{ "generate.sweeps.zoom_fit" | transloco }}
+        </button>
+        @for (step of zoomSteps; track step.id) {
+          <button
+            type="button"
+            class="gs-sweep-scale"
+            [class.is-on]="zoomStep() === step.id"
+            [attr.aria-pressed]="zoomStep() === step.id"
+            (click)="zoomTo(step.scale)"
+          >
+            {{ step.labelKey | transloco }}
+          </button>
+        }
+      </div>
+    }
+    @if (inViewer) {
+      <button type="button" class="gs-plate-x" (click)="closeViewer()">
+        {{ "alchemy.result.zoom_close" | transloco }}
+        <app-icon name="x-mark" class="gs-ico-sm" aria-hidden="true" />
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="gs-sweep-expand alchemy-pictures__open-viewer"
+        [attr.aria-label]="'alchemy.result.zoom' | transloco"
+        [title]="'alchemy.result.zoom' | transloco"
+        (click)="openViewer()"
+      >
+        <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+      </button>
+    }
+  </div>
+</ng-template>
+
+<!-- The strip: one thumb per picture, the pick outlined. -->
+<ng-template #film>
+  @if (pictures().length > 1) {
+    <div
+      class="alchemy-pictures__film"
+      role="group"
+      [attr.aria-label]="'alchemy.pictures.film_label' | transloco"
+    >
+      @for (picture of pictures(); track picture.key) {
+        <button
+          type="button"
+          class="alchemy-pictures__thumb"
+          [class.is-picked]="isPicked(picture)"
+          [attr.aria-pressed]="isPicked(picture)"
+          (click)="pick(picture.key)"
+        >
+          <img class="alchemy-pictures__thumb-img" [src]="picture.url" alt="" />
+          <span class="alchemy-pictures__thumb-name">
+            {{ nameKey(picture) | transloco }}
+            @if (picture.detector) {
+              <span class="gs-mono">{{ picture.detector }}</span>
+            }
+          </span>
+        </button>
+      }
+    </div>
+  }
+</ng-template>

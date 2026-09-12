@@ -2366,6 +2366,7 @@
   "alchemy.pictures.count": "{{count}}",
   "alchemy.pictures.source": "Source",
   "alchemy.pictures.film_label": "Pictures in this request",
+  "alchemy.pictures.note_enlarged": "enlarged to match",
   "alchemy.series.request": "Request",
   "alchemy.series.same_ops": "Same operations as selected",
   "alchemy.series.count": "{{shown}} of {{total}} requests",

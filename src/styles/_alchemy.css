@@ -227,45 +227,84 @@
 }
 
 /* --- Every picture of a request on one stage ----------------------
-   The strip picks, the stage shows the pick wiped against the source, and
-   the glyph opens it large. One height however many pictures came back. */
-.gen-studio .alchemy-pictures__stage {
-  position: relative;
-  /* The card body starts its children at the left edge; the stage and the
-     strip under it take the whole width instead. */
+   The bar says how close in, the strip picks, the stage shows the pick wiped
+   against the source, and the viewer is the same pair at window size. One
+   height however many pictures came back. */
+.gen-studio .alchemy-pictures__bar {
   align-self: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-pictures__scales {
+  flex-wrap: wrap;
+}
+.gen-studio .alchemy-pictures__bar .gs-sweep-scale,
+.gen-studio .alchemy-pictures__open-viewer {
+  /* Off the plate, on the card: the card's ink and edge rather than the
+     stage's. */
+  border-color: var(--gs-border);
+  background: var(--gs-card);
+  color: var(--gs-ink-2);
+}
+.gen-studio .alchemy-pictures__bar .gs-sweep-scale.is-on {
+  border-color: var(--gs-ink);
+  background: var(--gs-ink);
+  color: var(--gs-panel);
+}
+.gen-studio .alchemy-pictures__bar .gs-sweep-scale:focus-visible,
+.gen-studio .alchemy-pictures__open-viewer:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .alchemy-pictures__open-viewer {
+  margin-left: auto;
+}
+/* The stage clips what the zoom pushes past its edges; the pair inside keeps
+   its fitted box, so the card's height does not move as the zoom does. */
+.gen-studio .alchemy-pictures__stage {
+  align-self: stretch;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   padding: var(--gs-space-2);
   border: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-md);
   background: var(--gs-stage);
+  touch-action: pan-y;
+}
+.gen-studio .alchemy-pictures__stage.is-pannable,
+.gen-studio .alchemy-pictures__viewer-body.is-pannable {
+  cursor: grab;
+  touch-action: none;
+}
+.gen-studio .alchemy-pictures__stage.is-pannable:active,
+.gen-studio .alchemy-pictures__viewer-body.is-pannable:active {
+  cursor: grabbing;
 }
 /* The wipe host is a custom element, inline by default, which would let the
-   pair shrink to the picture's own width; the stage is the width it has. */
-.gen-studio .alchemy-pictures__stage app-gs-compare-wipe {
+   pair shrink to the picture's own width; it takes the box it was given. */
+.gen-studio .alchemy-pictures__stage app-gs-compare-wipe,
+.gen-studio .alchemy-pictures__viewer-body app-gs-compare-wipe {
   display: block;
-  width: 100%;
+  max-width: 100%;
 }
 .gen-studio .alchemy-pictures__stage .gs-wipe-img,
-.gen-studio .alchemy-pictures__lone {
-  max-height: min(48vh, 520px);
+.gen-studio .alchemy-pictures__viewer-body .gs-wipe-img {
   background: transparent;
 }
 .gen-studio .alchemy-pictures__lone {
   display: block;
   max-width: 100%;
-  margin: 0 auto;
+  max-height: min(48vh, 520px);
   object-fit: contain;
 }
-/* The wipe's own tags hold the bottom corners, so the glyph takes the top. */
-.gen-studio .alchemy-pictures__zoom {
-  top: var(--gs-space-2);
-  bottom: auto;
-  border: 1px solid var(--gs-stage-rim);
-  cursor: zoom-in;
-}
-.gen-studio .alchemy-pictures__zoom:focus-visible {
-  outline: 2px solid var(--gs-stage-ink);
-  outline-offset: 2px;
+.gen-studio .alchemy-pictures__lone.is-zoomed {
+  transform: translate(var(--ap-pan-x, 0), var(--ap-pan-y, 0))
+    scale(var(--ap-zoom, 1));
+  transform-origin: center;
 }
 .gen-studio .alchemy-pictures__film {
   align-self: stretch;
@@ -343,6 +382,60 @@
   height: 28px;
   border-radius: 4px;
   object-fit: cover;
+}
+/* The viewer: the pair at window size on the dark ground every viewer here
+   uses, the bar above it and the strip below, both on the same dark. */
+.gen-studio .alchemy-pictures__viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-3);
+  /* Near-opaque: the page behind a pair being read at 200% is noise. */
+  background: rgb(10 12 16 / 97%);
+  color: #e7eaf0;
+}
+.gen-studio .alchemy-pictures__viewer .alchemy-pictures__bar {
+  align-self: auto;
+}
+.gen-studio .alchemy-pictures__viewer-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  font-size: var(--gs-text-sm);
+  font-weight: 600;
+}
+.gen-studio .alchemy-pictures__viewer .gs-sweep-scale,
+.gen-studio .alchemy-pictures__viewer .gs-plate-x {
+  border-color: #3b4252;
+  background: rgb(14 16 22 / 88%);
+  color: #e7eaf0;
+}
+.gen-studio .alchemy-pictures__viewer .gs-sweep-scale.is-on {
+  border-color: #e7eaf0;
+  background: #e7eaf0;
+  color: #14161c;
+}
+.gen-studio .alchemy-pictures__viewer .gs-plate-x {
+  margin-left: auto;
+}
+.gen-studio .alchemy-pictures__viewer-body {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+.gen-studio .alchemy-pictures__viewer .alchemy-pictures__film {
+  justify-content: center;
+}
+.gen-studio .alchemy-pictures__viewer .alchemy-pictures__thumb {
+  color: #9aa1ad;
+}
+.gen-studio .alchemy-pictures__viewer .alchemy-pictures__thumb.is-picked {
+  color: #e7eaf0;
 }
 
 /* Caption: a distinct quoted passage rather than a bare paragraph, marked by
