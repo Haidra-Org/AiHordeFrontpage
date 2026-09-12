@@ -46,7 +46,7 @@ export function extractUserAlias(username: string | undefined | null): string {
   }
 
   const match = username.match(/^(.+?)#\d+$/);
-  return match ? match[1] : username;
+  return match?.at(1) ?? username;
 }
 
 /**

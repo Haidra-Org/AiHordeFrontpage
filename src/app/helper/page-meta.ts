@@ -86,7 +86,7 @@ export function setPageMeta(meta: PageMeta): void {
 
     // The URL without its query or fragment: two links to the same page that
     // differ only in how the reader arrived are one page.
-    const path = router.url.split('?')[0].split('#')[0];
+    const path = router.url.split('?', 1).at(0)?.split('#', 1).at(0) ?? '';
     const canonical = `${environment.siteUrl}${path}`;
     tags.updateTag({ property: 'og:url', content: canonical });
     tags.updateTag({ property: 'og:type', content: 'article' });

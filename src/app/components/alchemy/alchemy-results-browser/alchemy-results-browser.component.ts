@@ -54,7 +54,7 @@ const OPEN_ALL_UP_TO = 3;
 
 /** The last path segment of a result link, without its query. */
 function imageFileName(url: string): string {
-  const path = url.split('?')[0];
+  const path = url.split('?', 1).at(0) ?? '';
   return path.slice(path.lastIndexOf('/') + 1) || url;
 }
 

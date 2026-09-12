@@ -68,11 +68,15 @@ export function tokenizeProse(source: string): ProseRun[] {
   while ((match = TOKEN.exec(source)) !== null) {
     const [whole, kind, id, shown, code] = match;
     plain += source.slice(cursor, match.index);
-    cursor = match.index + whole.length;
+    cursor = match.index + (whole?.length ?? 0);
 
     if (code !== undefined) {
       flush();
       runs.push({ kind: 'code', text: code });
+      continue;
+    }
+    if (whole === undefined || kind === undefined || id === undefined) {
+      plain += whole ?? '';
       continue;
     }
     if (!known(kind, id)) {
@@ -145,9 +149,10 @@ export function splitProseBlocks(source: string): ProseBlock[] {
     };
     for (const line of chunk.split('\n')) {
       const item = LIST_ITEM.exec(line);
-      if (item) {
+      const itemText = item?.at(1);
+      if (itemText !== undefined) {
         flushParagraph();
-        items.push(item[1].trim());
+        items.push(itemText.trim());
       } else {
         flushList();
         paragraph.push(line);

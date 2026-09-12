@@ -154,7 +154,7 @@ export class WorkerCardComponent {
     const owner = this.worker().owner;
     if (!owner) return null;
     const match = owner.match(/#(\d+)$/);
-    return match ? match[1] : null;
+    return match?.at(1) ?? null;
   }
 
   /**

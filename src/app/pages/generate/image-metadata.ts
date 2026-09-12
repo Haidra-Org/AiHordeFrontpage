@@ -334,9 +334,10 @@ function readSettingsLine(line: string): Map<string, string> | null {
   const pattern = /([A-Za-z][A-Za-z ]*):\s*([^,]*)(?:,\s*|$)/g;
   let match = pattern.exec(line);
   while (match !== null) {
-    const key = match[1].trim().toLowerCase();
-    if (PARAMETER_KEYS.has(key)) {
-      settings.set(key, match[2].trim());
+    const key = match.at(1)?.trim().toLowerCase();
+    const value = match.at(2)?.trim();
+    if (key !== undefined && value !== undefined && PARAMETER_KEYS.has(key)) {
+      settings.set(key, value);
     }
     match = pattern.exec(line);
   }
@@ -416,7 +417,7 @@ export function parseParametersText(
     negativeAt === -1
       ? ''
       : [
-          lines[negativeAt].replace(NEGATIVE_PROMPT_PREFIX, ''),
+          (lines.at(negativeAt) ?? '').replace(NEGATIVE_PROMPT_PREFIX, ''),
           ...lines.slice(negativeAt + 1),
         ]
           .join('\n')
@@ -451,9 +452,11 @@ export function parseParametersText(
     params.seed = seed;
   }
   const size = /^(\d+)\s*x\s*(\d+)$/.exec(settings.get('size') ?? '');
-  if (size !== null) {
-    params.width = Number.parseInt(size[1], 10);
-    params.height = Number.parseInt(size[2], 10);
+  const width = size?.at(1);
+  const height = size?.at(2);
+  if (width !== undefined && height !== undefined) {
+    params.width = Number.parseInt(width, 10);
+    params.height = Number.parseInt(height, 10);
   }
   const clipSkip = readWhole(settings.get('clip skip'));
   if (clipSkip !== undefined) {

@@ -113,7 +113,7 @@ export async function blobToSourceImage(blob: Blob): Promise<SourceImage> {
 /** True when any pixel of an RGBA buffer has a non-zero alpha (was painted). */
 export function alphaHasPaint(rgba: Uint8ClampedArray): boolean {
   for (let i = 3; i < rgba.length; i += 4) {
-    if (rgba[i] > 0) {
+    if ((rgba[i] ?? 0) > 0) {
       return true;
     }
   }
@@ -133,7 +133,7 @@ export function alphaHasPaint(rgba: Uint8ClampedArray): boolean {
 export function alphaToMaskPixels(rgba: Uint8ClampedArray): Uint8ClampedArray {
   const out = new Uint8ClampedArray(rgba.length);
   for (let i = 0; i < rgba.length; i += 4) {
-    const value = rgba[i + 3] > 0 ? 255 : 0;
+    const value = (rgba[i + 3] ?? 0) > 0 ? 255 : 0;
     out[i] = value;
     out[i + 1] = value;
     out[i + 2] = value;
@@ -171,8 +171,11 @@ export function maskPixelsToAlpha(
   for (let i = 0; i < rgba.length; i += 4) {
     // Rec. 601 luma: the mask is grey by construction, but a resampled edge
     // need not be, and this keeps such a pixel on the side it looks like.
-    const luma = 0.299 * rgba[i] + 0.587 * rgba[i + 1] + 0.114 * rgba[i + 2];
-    const on = rgba[i + 3] > 0 && luma >= MASK_LUMINANCE_THRESHOLD;
+    const luma =
+      0.299 * (rgba[i] ?? 0) +
+      0.587 * (rgba[i + 1] ?? 0) +
+      0.114 * (rgba[i + 2] ?? 0);
+    const on = (rgba[i + 3] ?? 0) > 0 && luma >= MASK_LUMINANCE_THRESHOLD;
     out[i] = ink.r;
     out[i + 1] = ink.g;
     out[i + 2] = ink.b;

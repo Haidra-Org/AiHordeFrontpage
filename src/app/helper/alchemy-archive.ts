@@ -53,14 +53,14 @@ function formImageUrl(form: AlchemyForm): string | null {
 
 function imageExtension(url: string, contentType: string | null): string {
   if (contentType) {
-    const base = contentType.split(';')[0].trim().toLowerCase();
+    const base = (contentType.split(';', 1).at(0) ?? '').trim().toLowerCase();
     const mapped = CONTENT_TYPE_EXTENSIONS[base];
     if (mapped) {
       return mapped;
     }
   }
   const match = /\.([a-z0-9]{3,4})(?:$|\?|#)/i.exec(url);
-  return match ? match[1].toLowerCase() : 'img';
+  return match?.at(1)?.toLowerCase() ?? 'img';
 }
 
 function uniqueName(name: string, used: Set<string>): string {

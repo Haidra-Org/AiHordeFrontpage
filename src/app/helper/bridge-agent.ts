@@ -49,7 +49,7 @@ export function parseBridgeAgent(agent: string): ParsedBridgeAgent | null {
 
   if (!name || !version) return null;
 
-  const leading = version.split('.')[0];
+  const leading = version.split('.', 1).at(0) ?? '';
   const major = /^\d+$/.test(leading) ? Number(leading) : null;
 
   return { name, version, major, contact };
