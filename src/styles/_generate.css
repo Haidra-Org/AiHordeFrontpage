@@ -19325,6 +19325,11 @@ html:has(app-gs-sheet) {
   max-width: none;
   height: 100%;
 }
-.gs-app-landing .gs-app-landing-door .gs-door-panel {
+/* A door wearing `gs-door--mark` narrows its blue strip from the panel that
+   frames a picture sheet to a mark beside the words: the shape for a door
+   that leads with a glyph alone, as the landing's and the home page's do.
+   Declared here rather than in a page sheet because those sheets sit in a
+   cascade layer and would lose to the door's own unlayered rule. */
+.gen-studio .gs-door--mark .gs-door-panel {
   flex-basis: 56px;
 }

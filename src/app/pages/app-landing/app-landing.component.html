@@ -16,7 +16,7 @@
       <app-gs-door
         kind="studio"
         [icon]="door.icon"
-        controlClass="gs-app-landing-door"
+        controlClass="gs-app-landing-door gs-door--mark"
         [title]="door.titleKey | transloco"
         [meta]="door.noteKey | transloco"
         (entered)="enter(door.link)"
@@ -29,7 +29,7 @@
     <app-gs-door
       kind="studio"
       icon="user-circle"
-      controlClass="gs-app-landing-door"
+      controlClass="gs-app-landing-door gs-door--mark"
       [eyebrow]="account ? account.username : null"
       [title]="'app_landing.account_title' | transloco"
       [meta]="

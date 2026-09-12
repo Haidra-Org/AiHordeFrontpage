@@ -549,18 +549,13 @@
   }
 
   /* A door keeps a column measure inside a panel; given a third of the page it
-     takes the width it is handed, and the blue strip narrows with it to a mark
-     rather than a panel. The three then fill their row to the same height. */
+     takes the width it is handed, and the three fill their row to the same
+     height. The blue strip narrows through the door's own `gs-door--mark`,
+     declared in the studio sheet: this sheet is layered and would lose. */
   .home-doors app-gs-door,
   .home-door {
     max-width: none;
     height: 100%;
-  }
-
-  /* The scope is on the selector because the door's own rules carry it, and a
-     rule of equal weight declared earlier would lose to them. */
-  .gen-studio .home-door .gs-door-panel {
-    flex-basis: 56px;
   }
 
   /* -----------------------------------------------------------------
