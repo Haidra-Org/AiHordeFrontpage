@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router, convertToParamMap, provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -9,7 +9,10 @@ import {
   GsPictureDialogComponent,
   type PictureSetPosition,
 } from './gs-picture-dialog.component';
-import { StudioHandoffService } from '../../services/studio-handoff.service';
+import {
+  STUDIO_LINK_PATH,
+  parseStudioLink,
+} from '../../pages/generate/studio-link';
 import { PromoGalleryImage } from '../../types/promo-gallery';
 
 const SNAIL_TITLE = 'Snail whose shell is a gothic cathedral with lit…';
@@ -153,19 +156,25 @@ describe('GsPictureDialogComponent', () => {
     );
   });
 
-  it('hands the recipe to the studio and goes there', async () => {
-    const handoff = TestBed.inject(StudioHandoffService);
+  it('opens the studio on a settings link rather than writing anything', async () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
     find<HTMLButtonElement>('.gs-picdlg-use')!.click();
     await fixture.whenStable();
 
-    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
-    const pending = handoff.consume();
-    expect(pending?.recipe).toEqual(WITH_RECIPE.request);
-    expect(pending?.recipeTitle).toBe(SNAIL_TITLE);
-    expect(pending?.promptMode).toBe('set');
+    expect(navigate).toHaveBeenCalledTimes(1);
+    const [commands, extras] = navigate.mock.calls[0] as [
+      string[],
+      { queryParams: Record<string, string> },
+    ];
+    expect(commands).toEqual([STUDIO_LINK_PATH]);
+    // The address is the same one a copied settings link carries, so the
+    // studio meets it through the review panel every other link goes through.
+    const payload = parseStudioLink(convertToParamMap(extras.queryParams));
+    expect(payload?.kind).toBe('full');
+    expect(payload?.request).toEqual(WITH_RECIPE.request);
+    expect(payload?.title).toBe(SNAIL_TITLE);
   });
 
   it('grows a step band only when the caller offers a set', () => {

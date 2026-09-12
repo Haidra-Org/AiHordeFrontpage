@@ -17,7 +17,11 @@ import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import { ImageMetaPanelComponent } from '../../pages/generate/image-meta-panel/image-meta-panel.component';
-import { StudioHandoffService } from '../../services/studio-handoff.service';
+import {
+  STUDIO_LINK_MAX_PARAM_CHARS,
+  STUDIO_LINK_PATH,
+  studioLinkParams,
+} from '../../pages/generate/studio-link';
 import { ToastService } from '../../services/toast.service';
 import { useScrollLock } from '../../helper/scroll-lock';
 import { PromoGalleryImage, galleryTitle } from '../../types/promo-gallery';
@@ -61,7 +65,6 @@ export class GsPictureDialogComponent {
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
   private readonly router = inject(Router);
-  private readonly handoff = inject(StudioHandoffService);
   private readonly toast = inject(ToastService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -169,25 +172,28 @@ export class GsPictureDialogComponent {
   }
 
   /**
-   * Take the recipe into the studio. The settings are handed over rather than
-   * applied from here: the studio owns the form, and it is the studio that has
-   * to ask before replacing what the reader already had.
+   * Open the studio on this picture's settings, as a copied settings link
+   * does. The request travels in the address rather than in a service, so the
+   * studio meets it through the one path every link takes: the review panel,
+   * with its own heading and its own undo, and nothing written to the form
+   * until the reader has ticked their way through it. The picture's name rides
+   * along so the panel can say whose settings these are.
    */
   public async useRecipe(): Promise<void> {
     const recipe = this.recipe();
     if (!recipe || this.going()) {
       return;
     }
+    const packed = studioLinkParams(recipe, null);
+    if (packed.r.length > STUDIO_LINK_MAX_PARAM_CHARS) {
+      this.toast.error('gallery.recipe_too_large', { transloco: true });
+      return;
+    }
     this.going.set(true);
-    // The recipe carries its own prompt, so no separate prompt is sent; the
-    // mode still says which of the two readings applies to it.
-    this.handoff.set({
-      recipe,
-      recipeTitle: this.heading(),
-      promptMode: 'set',
-    });
     try {
-      await this.router.navigate(['/generate/image']);
+      await this.router.navigate([STUDIO_LINK_PATH], {
+        queryParams: { r: packed.r, title: this.heading() },
+      });
     } catch {
       // The studio never opened, so the door goes back to being a door.
       this.going.set(false);

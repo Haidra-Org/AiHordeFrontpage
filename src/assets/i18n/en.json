@@ -1258,6 +1258,7 @@
   "generate.learn.apply_all_hint": "Choose which example settings to apply, then confirm your selection.",
   "generate.learn.bulk_title": "The example's settings",
   "generate.link.review_title": "The settings in this link",
+  "generate.link.review_title_named": "The settings from {{title}}",
   "generate.link.style_gone": "The style this link asked for is no longer published, so nothing was applied for it.",
   "generate.link.source_missing": "This link came without its picture. Add one to continue.",
   "generate.link.copy_image": "Copy link to this image",
@@ -4979,6 +4980,7 @@
   "gallery.recipe_title": "The settings that made it",
   "gallery.recipe_missing": "This picture's settings are not published yet.",
   "gallery.use_recipe": "Use this recipe in the studio",
+  "gallery.recipe_too_large": "These settings are too long to open in the studio.",
   "gallery.copy_prompt": "Copy prompt",
   "gallery.prompt_copied": "Prompt copied.",
   "gallery.prompt_copy_failed": "The prompt could not be copied.",
@@ -4986,16 +4988,5 @@
   "gallery.at_of": "{{at}} of {{count}}",
   "gallery.prev_picture": "Previous picture",
   "gallery.next_picture": "Next picture",
-  "gallery.close_picture": "Close the picture",
-  "generate.recipe.title": "Use the settings from {{title}}?",
-  "generate.recipe.lead": "This replaces the settings you have now. You can undo it afterwards.",
-  "generate.recipe.replace_label": "Replace all settings",
-  "generate.recipe.replace_hint": "The prompt, the model, the size and everything else the example was made with.",
-  "generate.recipe.prompt_label": "Only the prompt",
-  "generate.recipe.prompt_hint": "Take the words and keep the settings you have.",
-  "generate.recipe.keep_label": "Keep mine",
-  "generate.recipe.keep_hint": "Change nothing.",
-  "generate.recipe.applied": "Settings set from {{title}}.",
-  "generate.recipe.prompt_applied": "Prompt set from {{title}}.",
-  "generate.recipe.undo": "Undo"
+  "gallery.close_picture": "Close the picture"
 }

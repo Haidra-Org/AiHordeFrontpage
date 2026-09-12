@@ -219,13 +219,6 @@
     />
   }
 
-  @if (pendingRecipe(); as recipe) {
-    <app-recipe-arrival-modal
-      [title]="recipe.title"
-      (chose)="onRecipeChoice($event)"
-    />
-  }
-
   @if (pendingLoadRequest(); as request) {
     <!-- A preset is reviewed the same way a past generation's settings are: the
          same panel, a sheet on phones and a centred panel on desktop. -->
@@ -240,6 +233,7 @@
         [request]="request"
         [currentValue]="formValue()"
         [titleKey]="loadTitleKey()"
+        [titleParams]="loadTitleParams()"
         [pinnable]="false"
         [defaultMode]="'replace'"
         (apply)="onApplyPresetSelection($event, presetMeta.offeredKeys())"

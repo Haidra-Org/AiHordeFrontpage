@@ -107,10 +107,6 @@ import {
   SourceSettingsModalComponent,
 } from './source-settings-modal/source-settings-modal.component';
 import {
-  RecipeArrivalChoice,
-  RecipeArrivalModalComponent,
-} from './recipe-arrival-modal/recipe-arrival-modal.component';
-import {
   BOUNDED_FIELD_NAMES,
   BOUNDED_FIELD_RANGES,
   BuildImageRequestOptions,
@@ -300,7 +296,6 @@ const SOURCE_DEPENDENT_KEYS: readonly (keyof GenerateFormValue)[] = [
     StudioJsonModalComponent,
     StudioPasteModalComponent,
     SourceSettingsModalComponent,
-    RecipeArrivalModalComponent,
     GenerateReviewModalComponent,
     GenerateBlockersModalComponent,
     GenerateWelcomeComponent,
@@ -503,6 +498,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * same thing to the reader, so the heading follows whichever opened it.
    */
   public readonly loadTitleKey = signal('generate.form.load_title');
+  /** What the heading names, for the headings that name something. */
+  public readonly loadTitleParams = signal<Record<string, unknown> | undefined>(
+    undefined,
+  );
 
   /**
    * The preset the user picked from the control panel's presets menu, held while
@@ -510,18 +509,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * same way, from the results grid.
    */
   public readonly pendingLoad = signal<GenerateFormValue | null>(null);
-
-  /**
-   * A published example's settings, waiting on an answer because the reader
-   * already has settings of their own. The checkpoint is taken before the
-   * dialog opens, so whichever answer is given the undo restores the form as
-   * it stood when the recipe arrived rather than as it stood afterwards.
-   */
-  public readonly pendingRecipe = signal<{
-    request: ImageGenerationRequest;
-    title: string;
-    checkpoint: StudioControlCheckpoint;
-  } | null>(null);
   /** The pending preset as a request, which is what the review panel reads. */
   public readonly pendingLoadRequest = computed<ImageGenerationRequest | null>(
     () => {
@@ -1211,6 +1198,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    */
   public openBulkApply(example: GenerateFormValue): void {
     this.loadTitleKey.set('generate.learn.bulk_title');
+    this.loadTitleParams.set(undefined);
     this.pendingLoad.set(example);
   }
 
@@ -1514,6 +1502,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public cancelLoad(): void {
     this.pendingLoad.set(null);
     this.loadTitleKey.set('generate.form.load_title');
+    this.loadTitleParams.set(undefined);
     this.formRef()?.focusPresetsButton();
   }
 
@@ -1543,6 +1532,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.pendingLoad.set(null);
     this.pendingLinkSourceMode = null;
     this.loadTitleKey.set('generate.form.load_title');
+    this.loadTitleParams.set(undefined);
     this.formRef()?.focusPresetsButton();
     if (!pending || event.keys.length === 0) {
       return;
@@ -1876,12 +1866,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     // The first-visit offer sits over the whole page, and a reader arriving
     // with something in hand has asked for the studio, not for the offer.
     this.welcomeClosed.set(true);
-    if (pending.recipe) {
-      // A recipe carries its own prompt, so the words arrive with the rest of
-      // the settings rather than separately.
-      this.receiveRecipe(pending.recipe, pending.recipeTitle ?? '');
-      return;
-    }
     if (pending.prompt) {
       if (pending.promptMode === 'set') {
         // A picture the reader chose comes with the prompt that made it, and
@@ -1911,93 +1895,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     }
     await section.applySource(pending.blob);
     this.toast.success('generate.source.attached', { transloco: true });
-  }
-
-  /**
-   * Whether the form is still exactly as the studio opens it. A reader who has
-   * touched nothing has nothing to lose, so an arriving recipe is applied
-   * outright; anyone else is asked first.
-   */
-  private formIsUntouched(): boolean {
-    const current = this.form.getRawValue();
-    return (
-      Object.keys(DEFAULT_GENERATE_FORM_VALUE) as (keyof GenerateFormValue)[]
-    ).every(
-      (key) =>
-        JSON.stringify(current[key]) ===
-        JSON.stringify(DEFAULT_GENERATE_FORM_VALUE[key]),
-    );
-  }
-
-  /**
-   * A published example's settings have arrived. They replace what the reader
-   * has, so an untouched form takes them outright and anything else is asked
-   * about; either way the form as it stood is kept, so the results bar's undo
-   * gives it back.
-   */
-  private receiveRecipe(request: ImageGenerationRequest, title: string): void {
-    const checkpoint = this.controlCheckpoint('settings');
-    if (this.formIsUntouched()) {
-      this.applyRecipe(request, title, 'replace', checkpoint);
-      return;
-    }
-    this.pendingRecipe.set({ request, title, checkpoint });
-  }
-
-  /** What the reader wants done with the recipe they were asked about. */
-  public onRecipeChoice(choice: RecipeArrivalChoice): void {
-    const pending = this.pendingRecipe();
-    this.pendingRecipe.set(null);
-    if (!pending || choice === 'keep') {
-      return;
-    }
-    this.applyRecipe(
-      pending.request,
-      pending.title,
-      choice,
-      pending.checkpoint,
-    );
-  }
-
-  /**
-   * Write a recipe into the form, whole or words-only, and say so with a way
-   * back. The undo is the results bar's own: one checkpoint stack means a
-   * recipe is undone the same way a variation or a settings load is.
-   */
-  private applyRecipe(
-    request: ImageGenerationRequest,
-    title: string,
-    mode: 'replace' | 'prompt',
-    checkpoint: StudioControlCheckpoint,
-  ): void {
-    const incoming = requestToFormValue(request);
-    if (mode === 'replace') {
-      // A stale source blob would otherwise outlive the settings that wanted it.
-      this.sourceState.set(DEFAULT_SOURCE_STATE);
-      this.clearSourceEncodings();
-      this.form.setValue(incoming);
-    } else {
-      this.form.patchValue({
-        prompt: incoming.prompt,
-        negativePrompt: incoming.negativePrompt,
-      });
-    }
-    this.form.markAsDirty();
-    this.keepControlCheckpoint(checkpoint);
-    this.formRef()?.focusPrompt();
-    this.toast.success(
-      mode === 'replace'
-        ? 'generate.recipe.applied'
-        : 'generate.recipe.prompt_applied',
-      {
-        transloco: true,
-        messageParams: { title },
-        action: {
-          label: 'generate.recipe.undo',
-          run: () => void this.undoLastResultAction(),
-        },
-      },
-    );
   }
 
   /** Put a picture in as the source image, saying so once it is in. */
@@ -2470,6 +2367,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** Hold a link's whole request in the review panel under its own heading. */
   private offerLinkedRequest(payload: StudioLinkPayload): void {
+    const title = payload.title;
     const settings = requestToFormValue(payload.request);
     if (payload.styleKey !== null) {
       settings.styleName = payload.styleKey;
@@ -2479,7 +2377,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.pendingLinkSourceMode =
       settings.sourceMode === 'none' ? null : settings.sourceMode;
     this.openBulkApply(settings);
-    this.loadTitleKey.set('generate.link.review_title');
+    // A link that says what its settings are of is headed with that rather
+    // than with the address it arrived in.
+    this.loadTitleKey.set(
+      title === null
+        ? 'generate.link.review_title'
+        : 'generate.link.review_title_named',
+    );
+    this.loadTitleParams.set(title === null ? undefined : { title });
   }
 
   /**

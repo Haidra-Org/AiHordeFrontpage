@@ -140,6 +140,10 @@ export class ImageMetaPanelComponent {
   /** The panel's heading, so hosts that review something other than an image
    * can say what it is. */
   public readonly titleKey = input('generate.results.metadata_title');
+  /** What that heading names, for the headings that name something. */
+  public readonly titleParams = input<Record<string, unknown> | undefined>(
+    undefined,
+  );
   /**
    * A line explaining why there are no settings rows, for an image whose
    * request this browser never held. Shown in place of them, and null where

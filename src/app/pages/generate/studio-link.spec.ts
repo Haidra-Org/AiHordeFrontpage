@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { convertToParamMap, type ParamMap } from '@angular/router';
 import { deflateSync, strToU8 } from 'fflate';
 import {
+  STUDIO_LINK_MAX_PARAM_CHARS,
   parseStudioLink,
   studioLinkFromText,
   studioLinkParams,
@@ -104,7 +105,25 @@ describe('parseStudioLink', () => {
       request: { prompt: '', models: ['Deliberate'] },
       styleKey: null,
       kind: 'simple',
+      title: null,
     });
+  });
+
+  it('reads the name a link gives its settings, and only a usable one', () => {
+    expect(
+      parseStudioLink(
+        mapOf({ model: 'Deliberate', title: ' Snail cathedral ' }),
+      )?.title,
+    ).toBe('Snail cathedral');
+    expect(parseStudioLink(mapOf({ model: 'Deliberate' }))?.title).toBeNull();
+    expect(
+      parseStudioLink(
+        mapOf({
+          model: 'Deliberate',
+          title: 'x'.repeat(STUDIO_LINK_MAX_PARAM_CHARS + 1),
+        }),
+      )?.title,
+    ).toBeNull();
   });
 
   it('reads a preset named openly', () => {

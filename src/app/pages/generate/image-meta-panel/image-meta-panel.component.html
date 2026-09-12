@@ -3,7 +3,7 @@
   [class.gs-meta-panel--embedded]="embedded()"
   [attr.role]="embedded() ? 'group' : 'dialog'"
   [attr.aria-modal]="embedded() ? null : 'true'"
-  [attr.aria-label]="titleKey() | transloco"
+  [attr.aria-label]="titleKey() | transloco: titleParams()"
 >
   @if (!embedded()) {
     <button
@@ -15,7 +15,7 @@
   }
   <div class="gs-meta-head">
     <span class="gs-meta-title">
-      {{ titleKey() | transloco }}
+      {{ titleKey() | transloco: titleParams() }}
     </span>
     @if (!embedded()) {
       <button type="button" class="gs-meta-raw" (click)="rawJson.emit()">

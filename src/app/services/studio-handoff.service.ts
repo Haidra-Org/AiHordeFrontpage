@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import type { ImageGenerationRequest } from '../types/generation';
 
 /**
  * What one studio hands the other on the way over: a picture to become the
@@ -10,14 +9,6 @@ export interface StudioHandoff {
   blob?: Blob;
   mimeType?: string;
   prompt?: string;
-  /**
-   * A whole request to fill the form from, as a published worked example
-   * carries. The studio asks before replacing settings the reader already has,
-   * so this is an offer rather than an instruction.
-   */
-  recipe?: ImageGenerationRequest;
-  /** What the recipe is a recipe for, in words, so the studio can name it. */
-  recipeTitle?: string;
   /**
    * What the words are to the prompt already written: material to add to it,
    * which is what a caption read off a picture is, or the prompt itself, which

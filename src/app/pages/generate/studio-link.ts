@@ -40,6 +40,13 @@ export interface StudioLinkPayload {
   /** The style's source-qualified key, or null when the link names none. */
   styleKey: string | null;
   kind: 'simple' | 'full';
+  /**
+   * What the settings are of, where the link says: a published example names
+   * the picture they made, so the review panel can head them with it instead
+   * of calling them "this link". Null where the link names nothing, which is
+   * every link copied out of the studio itself.
+   */
+  title: string | null;
 }
 
 /** The query parameters that carry a whole request. */
@@ -243,6 +250,13 @@ function readLink(
   const model = get('model')?.trim() ?? '';
   const style = get('style')?.trim() ?? '';
   const styleId = get('styleId')?.trim() ?? '';
+  // Held to the same length as the packed request: a name longer than a link
+  // is worth carrying is not a name, and it is drawn as a heading.
+  const givenTitle = get('title')?.trim() ?? '';
+  const title =
+    givenTitle !== '' && givenTitle.length <= STUDIO_LINK_MAX_PARAM_CHARS
+      ? givenTitle
+      : null;
   // An id and a name in the same address name two different styles, and the id
   // is the more exact of the two, so it is the one that is answered.
   const named =
@@ -261,6 +275,7 @@ function readLink(
       request,
       styleKey: named ?? unpacked.styleKey,
       kind: 'full',
+      title,
     };
   }
 
@@ -275,6 +290,7 @@ function readLink(
     request,
     styleKey: named,
     kind: 'simple',
+    title,
   };
 }
 
@@ -306,6 +322,7 @@ export function studioLinkFromText(text: string): StudioLinkPayload | null {
       request: sanitizeRequest(body),
       styleKey: null,
       kind: 'full',
+      title: null,
     };
   }
   const query = trimmed.indexOf('?');
@@ -340,5 +357,10 @@ export async function studioPayloadFromImage(
   if (request === null) {
     return null;
   }
-  return { request: sanitizeRequest(request), styleKey: null, kind: 'full' };
+  return {
+    request: sanitizeRequest(request),
+    styleKey: null,
+    kind: 'full',
+    title: null,
+  };
 }
