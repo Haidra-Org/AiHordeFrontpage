@@ -567,7 +567,7 @@
       @if (isPictureCard(card)) {
         <!-- Every processed picture of the request shares one stage, drawn
              where the first of them falls in the request order. -->
-        @if (pictures.length > 0 && card.key === pictures[0].key) {
+        @if (card.key === pictures.at(0)?.key) {
           <app-alchemy-pictures
             [pictures]="pictures"
             [source]="sourceFor(job)"

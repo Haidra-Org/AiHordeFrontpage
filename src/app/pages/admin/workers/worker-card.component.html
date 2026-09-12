@@ -871,28 +871,27 @@
             >{{ "admin.workers.card.models_loaded" | transloco }}:</span
           >
           <span class="worker-card-value worker-card-value-inline">
-            @if ((worker().models?.length ?? 0) === 1) {
+            @if (singleModel(); as model) {
               @if (singleModelExpanded()) {
                 <span
                   class="worker-link worker-single-model-name worker-single-model-name-expanded"
-                  >{{ worker().models![0] }}</span
+                  >{{ model }}</span
                 >
               } @else {
                 <button
                   type="button"
                   class="worker-link worker-single-model-name"
-                  [title]="worker().models![0]"
+                  [title]="model"
                   (click)="singleModelExpanded.set(true)"
                 >
-                  {{ worker().models![0] }}
+                  {{ model }}
                 </button>
               }
               <a
-                [routerLink]="getModelLink(worker().models![0])"
+                [routerLink]="getModelLink(model)"
                 class="worker-single-model-action"
                 [attr.aria-label]="
-                  'admin.workers.action.view_model'
-                    | transloco: { name: worker().models![0] }
+                  'admin.workers.action.view_model' | transloco: { name: model }
                 "
               >
                 <app-icon class="w-3.5 h-3.5" name="external-link" />
@@ -900,10 +899,9 @@
               <button
                 type="button"
                 class="worker-single-model-action"
-                (click)="copyModelName(worker().models![0])"
+                (click)="copyModelName(model)"
                 [attr.aria-label]="
-                  'admin.workers.action.copy_model'
-                    | transloco: { name: worker().models![0] }
+                  'admin.workers.action.copy_model' | transloco: { name: model }
                 "
               >
                 <app-icon class="w-3.5 h-3.5" name="copy" />

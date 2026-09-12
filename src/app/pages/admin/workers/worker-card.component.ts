@@ -116,6 +116,10 @@ export class WorkerCardComponent {
   public selectedTeamId = signal<string>('');
   public rawJsonOpen = signal(false);
   public singleModelExpanded = signal(false);
+  public readonly singleModel = computed(() => {
+    const models = this.worker().models;
+    return models?.length === 1 ? (models.at(0) ?? null) : null;
+  });
 
   public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(
     () => {

@@ -196,7 +196,7 @@
                   @if (
                     section.parentId &&
                     ($index === 0 ||
-                      visibleSections()[$index - 1].parentId !==
+                      visibleSections().at($index - 1)?.parentId !==
                         section.parentId)
                   ) {
                     <li class="tools-toc-group">

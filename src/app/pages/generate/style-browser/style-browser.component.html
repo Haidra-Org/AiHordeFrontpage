@@ -485,10 +485,10 @@
               </button>
             }
           </div>
-        } @else {
+        } @else if (view.shots.at(0); as shot) {
           <img
             class="gs-sb-viewer-img"
-            [src]="view.shots[0].url"
+            [src]="shot.url"
             [alt]="view.name"
             decoding="async"
           />

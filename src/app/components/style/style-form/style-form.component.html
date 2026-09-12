@@ -420,8 +420,8 @@
                  is elsewhere, so it brings the same scope the picker does. -->
             <div class="gs-civit-scope">
               <app-civitai-selection
-                [loras]="imageForm.controls.loras.value"
-                [tis]="imageForm.controls.tis.value"
+                [loras]="imageForm.controls.loras.value ?? []"
+                [tis]="imageForm.controls.tis.value ?? []"
                 [baseline]="styleBaseline()"
                 [allowSha256]="true"
                 [showCap]="false"
@@ -434,12 +434,12 @@
             <!-- A style is a document rather than a submission: the cap applies
                  to the merged request at generation time, and the editor is not
                  the place to decide which five survive that merge. -->
-            @if (imageForm.controls.loras.value.length > 5) {
+            @if ((imageForm.controls.loras.value?.length ?? 0) > 5) {
               <p class="gs-warn mt-1.5">
                 {{ "styles.form.loras_cap_note" | transloco }}
               </p>
             }
-            @if (imageForm.controls.tis.value.length > 20) {
+            @if ((imageForm.controls.tis.value?.length ?? 0) > 20) {
               <p class="gs-warn mt-1.5">
                 {{ "styles.form.tis_cap_note" | transloco }}
               </p>
@@ -484,8 +484,8 @@
           @if (civitaiOpen()) {
             <div class="gs-civit-scope">
               <app-civitai-picker
-                [loras]="imageForm.controls.loras.value"
-                [tis]="imageForm.controls.tis.value"
+                [loras]="imageForm.controls.loras.value ?? []"
+                [tis]="imageForm.controls.tis.value ?? []"
                 [baseline]="styleBaseline()"
                 [allowSha256]="true"
                 (lorasChange)="setLoras($event)"

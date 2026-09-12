@@ -208,12 +208,12 @@
                   }
                 }
                 <div class="gs-civit-tags">
-                  @if (model.versions[0]?.baseModel) {
+                  @if (model.versions.at(0)?.baseModel; as baseModel) {
                     <span
                       class="gs-civit-tag"
                       [class.gs-civit-tag--misfit]="!suits(model)"
                     >
-                      {{ model.versions[0].baseModel }}
+                      {{ baseModel }}
                     </span>
                   }
                   @if (
