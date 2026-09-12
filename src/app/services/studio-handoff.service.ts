@@ -9,6 +9,13 @@ export interface StudioHandoff {
   blob?: Blob;
   mimeType?: string;
   prompt?: string;
+  /**
+   * What the words are to the prompt already written: material to add to it,
+   * which is what a caption read off a picture is, or the prompt itself, which
+   * is what a published picture's own prompt is. Absent means 'join', because
+   * the studios have always joined.
+   */
+  promptMode?: 'set' | 'join';
 }
 
 @Injectable({ providedIn: 'root' })

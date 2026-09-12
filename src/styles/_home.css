@@ -125,6 +125,13 @@
     grid-row: span 2;
   }
 
+  /* The rest of the gallery is the phone's strip. Where there is room for the
+     grid they are not shown, and their pictures are lazy, so nothing here is
+     fetched for a tile a wide screen never draws. */
+  .home-mosaic-cell:nth-child(n + 10) {
+    display: none;
+  }
+
   /* The tile is the press, so it is a button wearing nothing of one: the
      picture is the whole control and the words under it say what it does. */
   .home-tile {
@@ -201,23 +208,82 @@
     white-space: nowrap;
   }
 
-  /* Two columns leave a spanning tile the whole width, which reads as a
-     banner rather than as one picture among nine, so the span goes; and six
-     tiles fill three rows exactly where nine would leave a hole. The three
-     that go are the lazy ones, so a phone never fetches what it hides. */
+  /* A press says so. The studio is the heaviest page on the site, and a tile
+     that looked the same after being pressed reads as a press that missed. */
+  .home-tile--going .home-tile-img {
+    opacity: 0.35;
+  }
+
+  .home-tile--going .home-tile-cap {
+    opacity: 1;
+  }
+
+  .home-tile:disabled {
+    cursor: default;
+  }
+
+  .home-tile-spin {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: var(--hd-space-1);
+    border: 2px solid var(--hd-stage-label);
+    border-top-color: var(--hd-stage-ink);
+    border-radius: var(--hd-radius-pill);
+    vertical-align: -1px;
+    animation: home-tile-spin 800ms linear infinite;
+  }
+
+  @keyframes home-tile-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-tile-spin {
+      animation: none;
+    }
+  }
+
+  /* A phone has no room for a grid worth reading, so the mosaic becomes one
+     row the reader pushes along: the whole gallery, a tile at a time, snapping
+     so a picture is never left half on the screen. The scrolling is the motion
+     here, which is why the crossfade is off at this width. */
   @media (max-width: 479.98px) {
     .home-mosaic {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: flex;
+      /* The row runs to both edges of the screen while the tiles keep the
+         page's gutter, so the one past the fold reads as "there is more". */
+      margin-inline: calc(var(--hd-space-4) * -1);
+      padding-inline: var(--hd-space-4);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      /* Coverage rather than colour: the mask says how much of the row is
+         painted, and the plate behind it is what shows through. */
+      mask-image: linear-gradient(
+        to right,
+        #000 0,
+        #000 calc(100% - 40px),
+        transparent 100%
+      );
     }
 
-    .home-mosaic-cell--wide-tall {
+    .home-mosaic::-webkit-scrollbar {
+      display: none;
+    }
+
+    .home-mosaic-cell,
+    .home-mosaic-cell--wide-tall,
+    .home-mosaic-cell:nth-child(n + 10) {
+      display: block;
+      flex: 0 0 40vw;
       grid-column: auto;
       grid-row: auto;
       aspect-ratio: 1 / 1;
-    }
-
-    .home-mosaic-cell:nth-child(n + 7) {
-      display: none;
+      scroll-snap-align: start;
     }
   }
 

@@ -1884,6 +1884,27 @@ describe('GenerateComponent', () => {
       expect(component.form.getRawValue().sourceMode).toBe('none');
     });
 
+    it('replaces the prompt where the words are the prompt themselves', async () => {
+      const handoff = TestBed.inject(StudioHandoffService);
+      component.form.controls.prompt.setValue('a portrait');
+      handoff.set({ prompt: 'a snail cathedral', promptMode: 'set' });
+      const fillPrompt = vi.fn();
+      Object.defineProperty(component, 'formRef', {
+        value: () => ({ fillPrompt }),
+      });
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      // A picture chosen off the home page brings the prompt that made it, so
+      // nothing of the box's own words survives into it.
+      expect(fillPrompt).toHaveBeenCalledWith('a snail cathedral');
+      expect(handoff.has()).toBe(false);
+      expect(toastSuccess).toHaveBeenCalledWith('generate.source.prompt_set', {
+        transloco: true,
+      });
+    });
+
     it('leaves the form alone when nothing was sent', async () => {
       fixture.detectChanges();
       await fixture.whenStable();

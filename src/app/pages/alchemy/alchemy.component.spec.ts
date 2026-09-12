@@ -641,6 +641,8 @@ describe('AlchemyComponent', () => {
 
     it('hands a caption to the image studio prompt and goes there', async () => {
       await component.sendToPrompt('a dog on a couch');
+      // No mode, which is the join: a caption is material for the prompt over
+      // there rather than the prompt itself, so it never clears the box.
       expect(TestBed.inject(StudioHandoffService).consume()).toEqual({
         prompt: 'a dog on a couch',
       });

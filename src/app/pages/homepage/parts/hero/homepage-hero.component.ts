@@ -11,7 +11,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import {
   HOME_MOSAIC_PHONE_TILES,
   HOME_MOSAIC_TILES,
-  HOME_SHOWCASE_FIRST,
+  HOME_SHOWCASE,
   HOME_SHOWCASE_REST,
   ShowcasePicture,
   showcaseImageUrl,
@@ -21,7 +21,7 @@ import { StudioHandoffService } from '../../../../services/studio-handoff.servic
 /** How long a picture holds a tile before the next one takes it. */
 const ROTATE_MS = 6000;
 
-/** The width at which the mosaic falls to two columns and its first six tiles. */
+/** The width at which the mosaic becomes a strip the reader scrolls itself. */
 const PHONE_QUERY = '(max-width: 479.98px)';
 
 /**
@@ -117,8 +117,13 @@ export class HomepageHeroComponent {
     '',
   ];
 
+  /**
+   * Every picture, in order. The first nine are the mosaic and the ones the
+   * rotation moves; a phone shows the lot as a strip it scrolls itself, and a
+   * wider screen hides the rest, which are lazy and so never fetched there.
+   */
   public readonly tiles = signal<readonly MosaicTile[]>(
-    HOME_SHOWCASE_FIRST.slice(0, HOME_MOSAIC_TILES).map((picture) => ({
+    HOME_SHOWCASE.map((picture) => ({
       front: picture,
       back: null,
       showBack: false,
@@ -135,9 +140,14 @@ export class HomepageHeroComponent {
   /** The tile under the pointer or holding focus, which never changes under it. */
   private held: number | null = null;
 
+  /** The tile whose press is on its way to the studio, while it is on its way. */
+  public readonly going = signal<number | null>(null);
+
   constructor() {
     afterNextRender(() => {
-      if (this.reducedMotion()) return;
+      // The strip's own scrolling is the phone's motion; a picture changing
+      // under a thumb that is dragging the row past it is one motion too many.
+      if (this.reducedMotion() || this.onPhone()) return;
       const timer = setInterval(() => this.rotate(), ROTATE_MS);
       this.destroyRef.onDestroy(() => clearInterval(timer));
     });
@@ -155,18 +165,50 @@ export class HomepageHeroComponent {
    * Take the picture's prompt to the studio. The handoff is how one studio
    * hands the other a prompt already, and the studio writes it into the box on
    * arrival, so a reader who liked a picture starts from what made it rather
-   * than from an empty page.
+   * than from an empty page. The prompt replaces rather than joins: it is the
+   * prompt the reader chose, not material for one.
+   *
+   * The tile says so while it happens. Loading the studio is the heaviest route
+   * on the site, and a press with nothing to show for it reads as a press that
+   * missed, so the tile holds the reader's place until the page changes.
    */
-  public async tryPrompt(picture: ShowcasePicture): Promise<void> {
-    this.handoff.set({ prompt: picture.prompt });
-    await this.router.navigate(['/generate/image']);
+  public async tryPrompt(
+    index: number,
+    picture: ShowcasePicture,
+  ): Promise<void> {
+    if (this.going() !== null) return;
+    this.going.set(index);
+    this.handoff.set({ prompt: picture.prompt, promptMode: 'set' });
+    try {
+      await this.router.navigate(['/generate/image']);
+    } catch {
+      // The studio never opened, so the tile goes back to being a picture and
+      // the press can be made again.
+      this.going.set(null);
+    }
   }
 
-  public hold(index: number): void {
+  /**
+   * A pointer resting on a tile. Only a mouse hovers: a tap reports itself as a
+   * pointer entering and never leaving, which would hold the tile still for
+   * good and show the caption of a tile nobody is looking at.
+   */
+  public hold(index: number, event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
     this.held = index;
   }
 
-  public release(index: number): void {
+  public release(index: number, event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+    if (this.held === index) this.held = null;
+  }
+
+  /** Focus holds a tile too, whatever moved the focus there. */
+  public holdFocus(index: number): void {
+    this.held = index;
+  }
+
+  public releaseFocus(index: number): void {
     if (this.held === index) this.held = null;
   }
 

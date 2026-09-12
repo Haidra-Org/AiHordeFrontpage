@@ -1860,15 +1860,23 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     // with something in hand has asked for the studio, not for the offer.
     this.welcomeClosed.set(true);
     if (pending.prompt) {
-      // Words sent over join what is already written rather than replacing
-      // it: a caption is material for the prompt, not the prompt.
-      const current = this.form.controls.prompt.value.trim();
-      this.onUsePrompt(
-        current ? `${current}, ${pending.prompt}` : pending.prompt,
-      );
-      this.toast.success('generate.source.prompt_attached', {
-        transloco: true,
-      });
+      if (pending.promptMode === 'set') {
+        // A picture the reader chose comes with the prompt that made it, and
+        // what they asked for is that prompt rather than a mixture of it and
+        // whatever was in the box.
+        this.onUsePrompt(pending.prompt);
+        this.toast.success('generate.source.prompt_set', { transloco: true });
+      } else {
+        // Words sent over join what is already written rather than replacing
+        // it: a caption is material for the prompt, not the prompt.
+        const current = this.form.controls.prompt.value.trim();
+        this.onUsePrompt(
+          current ? `${current}, ${pending.prompt}` : pending.prompt,
+        );
+        this.toast.success('generate.source.prompt_attached', {
+          transloco: true,
+        });
+      }
     }
     if (!pending.blob) {
       return;

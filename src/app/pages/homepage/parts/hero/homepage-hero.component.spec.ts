@@ -7,12 +7,19 @@ import {
   preferUnlikeNeighbours,
 } from './homepage-hero.component';
 import {
-  HOME_MOSAIC_PHONE_TILES,
-  HOME_MOSAIC_TILES,
+  HOME_SHOWCASE,
   HOME_SHOWCASE_FIRST,
   ShowcasePicture,
 } from '../../../../content/home-showcase';
 import { StudioHandoffService } from '../../../../services/studio-handoff.service';
+
+/** A pointer of a given kind, for the two that behave differently. */
+function pointer(pointerType: string): PointerEvent {
+  return { pointerType } as PointerEvent;
+}
+
+const mouse = (): PointerEvent => pointer('mouse');
+const touch = (): PointerEvent => pointer('touch');
 
 /** A pool of known subjects, so the choice is read rather than inferred. */
 function pool(...subjects: string[]): ShowcasePicture[] {
@@ -112,11 +119,13 @@ describe('HomepageHeroComponent', () => {
     TestBed.resetTestingModule();
   });
 
-  it('paints the nine first pictures as presses', () => {
+  it('renders the whole gallery as presses, the mosaic being the first nine', () => {
     setup(false);
 
     const tiles = fixture.nativeElement.querySelectorAll('.home-tile');
-    expect(tiles).toHaveLength(HOME_MOSAIC_TILES);
+    // Every picture is in the markup: a phone scrolls the lot as a strip, and
+    // a wider screen draws the first nine and hides the rest by rule.
+    expect(tiles).toHaveLength(HOME_SHOWCASE.length);
     expect((tiles[0] as HTMLButtonElement).tagName).toBe('BUTTON');
     expect(tiles[0].getAttribute('aria-label')).toContain(
       HOME_SHOWCASE_FIRST[0].title,
@@ -127,23 +136,23 @@ describe('HomepageHeroComponent', () => {
     ).toHaveLength(1);
   });
 
-  it('leaves every tile a phone hides to lazy loading', () => {
+  it('leaves everything past the first three to lazy loading', () => {
     setup(false);
 
     const images = Array.from(
       fixture.nativeElement.querySelectorAll('.home-tile-img'),
     );
 
-    // A hidden tile whose picture is lazy is never fetched, which is what
-    // keeps the three the two-column form drops off a phone's connection.
+    // A tile that is hidden at this width, or off the end of the strip at a
+    // phone's, is never fetched while its picture is lazy.
     expect(
       images
-        .slice(HOME_MOSAIC_PHONE_TILES)
+        .slice(3)
         .every((image) => image.getAttribute('loading') === 'lazy'),
     ).toBe(true);
     expect(
       images
-        .slice(0, 4)
+        .slice(0, 3)
         .every((image) => image.getAttribute('loading') === null),
     ).toBe(true);
   });
@@ -174,27 +183,18 @@ describe('HomepageHeroComponent', () => {
     expect(fixture.componentInstance.tiles()).toEqual(before);
   });
 
-  it('cycles only the tiles a phone shows', () => {
+  it('holds still on a phone, where the strip scrolling is the motion', () => {
     setup(false, true);
+    const before = fixture.componentInstance.tiles();
 
-    // Six ticks take the rotation round the visible six and back to the first;
-    // the three the phone hides are never a place a picture is moved to.
-    for (let tick = 0; tick < 6; tick++) {
-      vi.advanceTimersByTime(6000);
-    }
+    vi.advanceTimersByTime(60000);
 
-    const tiles = fixture.componentInstance.tiles();
-    expect(
-      tiles.slice(0, HOME_MOSAIC_PHONE_TILES).every((t) => t.showBack),
-    ).toBe(true);
-    expect(tiles.slice(HOME_MOSAIC_PHONE_TILES).every((t) => !t.showBack)).toBe(
-      true,
-    );
+    expect(fixture.componentInstance.tiles()).toEqual(before);
   });
 
   it('never moves the tile being read', () => {
     setup(false);
-    fixture.componentInstance.hold(0);
+    fixture.componentInstance.hold(0, mouse());
 
     vi.advanceTimersByTime(6000);
 
@@ -217,6 +217,71 @@ describe('HomepageHeroComponent', () => {
     };
 
     expect([1, 3, 5, 6].map(subjectOf)).not.toContain(subjectOf(0));
+  });
+
+  it('ignores a touch resting on a tile, which is a tap rather than a hover', () => {
+    setup(false);
+    fixture.componentInstance.hold(0, touch());
+
+    vi.advanceTimersByTime(6000);
+
+    // A tap reports a pointer entering and never leaving, so honouring it would
+    // hold the first tile still for good.
+    expect(fixture.componentInstance.tiles()[0].showBack).toBe(true);
+  });
+
+  it('takes the picture prompt to the studio when a tile is pressed', () => {
+    setup(false);
+
+    const tile = fixture.nativeElement.querySelectorAll(
+      '.home-tile',
+    )[0] as HTMLButtonElement;
+    tile.click();
+
+    // The studio writes the handed-over prompt into its box on arrival, so what
+    // is handed over is the picture's own prompt, exactly as published, and it
+    // replaces whatever was there rather than joining it.
+    expect(handoff.set).toHaveBeenCalledWith({
+      prompt: HOME_SHOWCASE_FIRST[0].prompt,
+      promptMode: 'set',
+    });
+    expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+  });
+
+  it('says the press landed until the studio opens, and holds the rest', () => {
+    setup(false);
+    let openStudio: (value: boolean) => void = () => undefined;
+    navigate.mockReturnValue(
+      new Promise<boolean>((resolve) => (openStudio = resolve)),
+    );
+
+    const tiles = fixture.nativeElement.querySelectorAll('.home-tile');
+    (tiles[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(tiles[1].classList.contains('home-tile--going')).toBe(true);
+    expect(tiles[1].getAttribute('aria-busy')).toBe('true');
+    expect((tiles[0] as HTMLButtonElement).disabled).toBe(true);
+    expect((tiles[1] as HTMLButtonElement).disabled).toBe(false);
+
+    openStudio(true);
+  });
+
+  it('goes back to being a picture when the studio does not open', async () => {
+    setup(false);
+    navigate.mockRejectedValue(new Error('no route'));
+
+    const tile = fixture.nativeElement.querySelectorAll(
+      '.home-tile',
+    )[0] as HTMLButtonElement;
+    tile.click();
+    // The failure lands in a microtask, which is all the state has to wait for.
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.going()).toBeNull();
+    expect(tile.classList.contains('home-tile--going')).toBe(false);
   });
 
   it('leaves a tile bare when its picture cannot be loaded', () => {
