@@ -746,21 +746,29 @@ export class GsParamEntryComponent {
     if (stops.length < 2) {
       return null;
     }
+    const first = stops.at(0);
+    const fallback = stops.at(1);
+    if (!strip || !first?.crop || !fallback?.crop) {
+      return null;
+    }
     const id = 'gs-ref-pair-strip';
     const options = stops.slice(1).map((stop) => ({
       key: stop.label,
       text: String(stop.value),
     }));
     const chosen = this.chosenOf(id, options);
-    const against = stops.find((stop) => stop.label === chosen) ?? stops[1];
+    const against = stops.find((stop) => stop.label === chosen) ?? fallback;
+    if (!against.crop) {
+      return null;
+    }
     return {
       id,
       titleKey: 'generate.reference.crop_head_strip',
-      before: this.sideOf(stops[0].crop!.file, stops[0].crop!, stops[0].value),
-      after: this.sideOf(against.crop!.file, against.crop!, against.value),
+      before: this.sideOf(first.crop.file, first.crop, first.value),
+      after: this.sideOf(against.crop.file, against.crop, against.value),
       options,
       chosen,
-      stopAt: strip!.stops.indexOf(against),
+      stopAt: strip.stops.indexOf(against),
     };
   }
 
@@ -778,20 +786,23 @@ export class GsParamEntryComponent {
     const id = 'gs-ref-pair-alchemy';
     const options = entries.map((run) => ({ key: run.form, text: run.title }));
     const chosen = this.chosenOf(id, options);
-    const run = entries.find((entry) => entry.form === chosen) ?? entries[0];
+    const run = entries.find((entry) => entry.form === chosen) ?? entries.at(0);
+    if (!run?.source_crop || !run.result_crop) {
+      return null;
+    }
     return {
       id,
       titleKey: 'generate.reference.crop_head_alchemy',
       before: {
-        src: this.alchemy.assetUrl(run.source_crop!.file),
-        width: run.source_crop!.width,
-        height: run.source_crop!.height,
+        src: this.alchemy.assetUrl(run.source_crop.file),
+        width: run.source_crop.width,
+        height: run.source_crop.height,
         label: this.transloco.translate('alchemy.usecases.evidence_source'),
       },
       after: {
-        src: this.alchemy.assetUrl(run.result_crop!.file),
-        width: run.result_crop!.width,
-        height: run.result_crop!.height,
+        src: this.alchemy.assetUrl(run.result_crop.file),
+        width: run.result_crop.width,
+        height: run.result_crop.height,
         label: run.title,
       },
       options,
@@ -803,9 +814,10 @@ export class GsParamEntryComponent {
   /** The frame a pair is read against: the reader's choice, or the first one. */
   private chosenOf(id: string, options: readonly { key: string }[]): string {
     const asked = this.picked()[id];
-    return options.some((option) => option.key === asked)
-      ? asked
-      : (options[options.length - 1]?.key ?? '');
+    if (asked !== undefined && options.some((option) => option.key === asked)) {
+      return asked;
+    }
+    return options.at(-1)?.key ?? '';
   }
 
   /** One side of a strip pair: the published crop, named by its own value. */
