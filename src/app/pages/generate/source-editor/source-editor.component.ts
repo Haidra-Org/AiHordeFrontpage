@@ -190,15 +190,19 @@ function relativeLuminance(hex: string): number {
   if (!match) {
     return 0.5;
   }
+  const matchedDigits = match.at(1);
+  if (!matchedDigits) {
+    return 0.5;
+  }
   const digits =
-    match[1].length === 3
-      ? match[1].replace(/./g, (character) => character + character)
-      : match[1];
-  const channels = [0, 2, 4].map((start) => {
+    matchedDigits.length === 3
+      ? matchedDigits.replace(/./g, (character) => character + character)
+      : matchedDigits;
+  const channel = (start: number): number => {
     const value = parseInt(digits.slice(start, start + 2), 16) / 255;
     return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
 }
 
 const SHAPE_INK_ATTR = 'editorInk';
@@ -1189,7 +1193,12 @@ export class SourceEditorComponent {
       this.autoPanFromPinch = true;
       this.setTool('pan');
     }
-    const [first, second] = [touches[0], touches[1]];
+    const first = touches.item(0);
+    const second = touches.item(1);
+    if (!first || !second) {
+      this.endPinchPan();
+      return;
+    }
     const distance = Math.hypot(
       second.clientX - first.clientX,
       second.clientY - first.clientY,
@@ -1497,7 +1506,16 @@ export class SourceEditorComponent {
       return shape.width() < 1 || shape.height() < 1;
     }
     const points = (shape as Line).points();
-    return Math.hypot(points[2] - points[0], points[3] - points[1]) < 1;
+    const [startX, startY, endX, endY] = points;
+    if (
+      startX === undefined ||
+      startY === undefined ||
+      endX === undefined ||
+      endY === undefined
+    ) {
+      return true;
+    }
+    return Math.hypot(endX - startX, endY - startY) < 1;
   }
 
   // -- brush preview -------------------------------------------------------
