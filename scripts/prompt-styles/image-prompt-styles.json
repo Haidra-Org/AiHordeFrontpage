@@ -1,0 +1,140 @@
+[
+  {
+    "name": "Image prompt: describe",
+    "info": "Writes an image prompt from what alchemy found in a picture: the caption, the strongest tags and a note from the reader. One line of comma-separated phrases, subject first. For the Image prompt cards in the AI Horde frontpage.",
+    "prompt": "### Instruction:\nYou write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "params": {
+      "max_context_length": 2048,
+      "max_length": 120,
+      "temperature": 0.7,
+      "top_p": 0.92,
+      "min_p": 0.05,
+      "rep_pen": 1.1,
+      "singleline": true,
+      "stop_sequence": ["\n\n", "###"]
+    },
+    "public": true,
+    "nsfw": false,
+    "tags": ["image-prompt", "image-prompt:describe"],
+    "models": [
+      "koboldcpp/gemma-4-31B-it-heretic",
+      "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic",
+      "koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M"
+    ]
+  },
+  {
+    "name": "Image prompt: describe, photographic",
+    "info": "As 'Image prompt: describe', steered towards a photograph: camera, lens, film or sensor character, natural light. For the Image prompt cards in the AI Horde frontpage.",
+    "prompt": "### Instruction:\nYou write prompts for an AI image generator. Turn the description below into one prompt for a photograph: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, then the camera and lens, the light and the time of day, and photographic quality words. No painting or illustration words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "params": {
+      "max_context_length": 2048,
+      "max_length": 120,
+      "temperature": 0.7,
+      "top_p": 0.92,
+      "min_p": 0.05,
+      "rep_pen": 1.1,
+      "singleline": true,
+      "stop_sequence": ["\n\n", "###"]
+    },
+    "public": true,
+    "nsfw": false,
+    "tags": ["image-prompt", "image-prompt:describe", "photographic"],
+    "models": [
+      "koboldcpp/gemma-4-31B-it-heretic",
+      "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic",
+      "koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M"
+    ]
+  },
+  {
+    "name": "Image prompt: describe, painterly",
+    "info": "As 'Image prompt: describe', steered towards a painting or illustration: medium, brushwork, palette, a named movement where it fits. For the Image prompt cards in the AI Horde frontpage.",
+    "prompt": "### Instruction:\nYou write prompts for an AI image generator. Turn the description below into one prompt for a painting or illustration: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, then the medium and brushwork, the palette, and one art movement or illustration tradition where it fits. No camera or photograph words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "params": {
+      "max_context_length": 2048,
+      "max_length": 120,
+      "temperature": 0.8,
+      "top_p": 0.92,
+      "min_p": 0.05,
+      "rep_pen": 1.1,
+      "singleline": true,
+      "stop_sequence": ["\n\n", "###"]
+    },
+    "public": true,
+    "nsfw": false,
+    "tags": ["image-prompt", "image-prompt:describe", "painterly"],
+    "models": [
+      "koboldcpp/gemma-4-31B-it-heretic",
+      "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic",
+      "koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M"
+    ]
+  },
+  {
+    "name": "Image prompt: improve",
+    "info": "Rewrites an image prompt as a stronger one, keeping every subject and detail the writer asked for and adding setting, style, lighting and quality words only where they are missing. For the Image prompt cards in the AI Horde frontpage.",
+    "prompt": "### Instruction:\nYou improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. If the notes name a rendering style that will be applied separately, do not repeat its words; write the subject and scene only. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "params": {
+      "max_context_length": 2048,
+      "max_length": 120,
+      "temperature": 0.7,
+      "top_p": 0.92,
+      "min_p": 0.05,
+      "rep_pen": 1.1,
+      "singleline": true,
+      "stop_sequence": ["\n\n", "###"]
+    },
+    "public": true,
+    "nsfw": false,
+    "tags": ["image-prompt", "image-prompt:improve"],
+    "models": [
+      "koboldcpp/gemma-4-31B-it-heretic",
+      "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic",
+      "koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M"
+    ]
+  },
+  {
+    "name": "Image prompt: improve, cinematic",
+    "info": "As 'Image prompt: improve', steered towards a film still: framing, lens, colour grade, dramatic light. For the Image prompt cards in the AI Horde frontpage.",
+    "prompt": "### Instruction:\nYou improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt for a film still: a single line of comma-separated phrases, keeping every subject and detail the writer asked for, adding the framing and lens, a colour grade, and dramatic light where they are missing. If the notes name a rendering style that will be applied separately, do not repeat its words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "params": {
+      "max_context_length": 2048,
+      "max_length": 120,
+      "temperature": 0.75,
+      "top_p": 0.92,
+      "min_p": 0.05,
+      "rep_pen": 1.1,
+      "singleline": true,
+      "stop_sequence": ["\n\n", "###"]
+    },
+    "public": true,
+    "nsfw": false,
+    "tags": ["image-prompt", "image-prompt:improve", "cinematic"],
+    "models": [
+      "koboldcpp/gemma-4-31B-it-heretic",
+      "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic",
+      "koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M"
+    ]
+  },
+  {
+    "name": "Image prompt: improve, minimal",
+    "info": "As 'Image prompt: improve', but tighter: removes filler and repeated quality words, keeps the subject and the few details that matter, under twenty words. For the Image prompt cards in the AI Horde frontpage.",
+    "prompt": "### Instruction:\nYou tighten prompts for an AI image generator. Rewrite the prompt below as one shorter, sharper prompt of at most twenty words: keep the subject and the details that change the picture, drop filler and repeated quality words, and add nothing new. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "params": {
+      "max_context_length": 2048,
+      "max_length": 60,
+      "temperature": 0.5,
+      "top_p": 0.9,
+      "min_p": 0.05,
+      "rep_pen": 1.1,
+      "singleline": true,
+      "stop_sequence": ["\n\n", "###"]
+    },
+    "public": true,
+    "nsfw": false,
+    "tags": ["image-prompt", "image-prompt:improve", "minimal"],
+    "models": [
+      "koboldcpp/gemma-4-31B-it-heretic",
+      "koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic",
+      "koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M"
+    ]
+  }
+]
