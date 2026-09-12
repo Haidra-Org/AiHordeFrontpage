@@ -354,12 +354,15 @@
                 <option value="auto">
                   {{ "prompt_draft.model_auto" | transloco }}
                 </option>
+                <option value="quality">
+                  {{ "prompt_draft.model_quality" | transloco }}
+                </option>
                 <option value="any">
                   {{ "prompt_draft.model_any" | transloco }}
                 </option>
                 @for (model of onlineModels(); track model.name) {
                   <option [value]="'model:' + model.name">
-                    {{ model.name }} ({{ model.count }})
+                    {{ model.name }} ({{ modelMeta(model) }})
                     @if (isCurated(model)) {
                       ★
                     }

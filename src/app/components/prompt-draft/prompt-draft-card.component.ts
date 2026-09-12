@@ -22,6 +22,7 @@ import {
   PromptDraftService,
   PromptDraftShape,
   curatedRank,
+  modelCostTier,
 } from '../../services/prompt-draft.service';
 import {
   PromptDraftDbService,
@@ -41,7 +42,7 @@ import type { JsonInspectorSection } from '../json-inspector/json-inspector.comp
 import type { AlchemyFoldPin } from '../alchemy/alchemy-pictures/alchemy-pictures.component';
 
 /** How the override select names its choice. */
-type PickValue = 'auto' | 'any' | `model:${string}`;
+type PickValue = 'auto' | 'quality' | 'any' | `model:${string}`;
 
 /**
  * Which of the two ways into a prompt the card is showing. Only the studio
@@ -463,6 +464,22 @@ export class PromptDraftCardComponent {
     return curatedRank(model.name) !== null;
   }
 
+  /**
+   * What the option says about a model beside its name: the workers running it
+   * and, where the name gives its size away, what asking it is likely to cost.
+   */
+  public modelMeta(model: ActiveModel): string {
+    const tier = modelCostTier(model.name);
+    if (tier === null) return String(model.count);
+    const word =
+      tier === 'small'
+        ? this.transloco.translate('prompt_draft.tier_small')
+        : tier === 'medium'
+          ? this.transloco.translate('prompt_draft.tier_medium')
+          : this.transloco.translate('prompt_draft.tier_large');
+    return `${model.count}, ${word}`;
+  }
+
   public onPickChange(value: string): void {
     this.pick.set(value as PickValue);
   }
@@ -473,7 +490,7 @@ export class PromptDraftCardComponent {
 
   private modelPick(): PromptDraftModelPick {
     const pick = this.pick();
-    if (pick === 'auto' || pick === 'any') return pick;
+    if (pick === 'auto' || pick === 'quality' || pick === 'any') return pick;
     return { model: pick.slice('model:'.length) };
   }
 

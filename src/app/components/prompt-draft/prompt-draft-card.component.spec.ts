@@ -154,10 +154,39 @@ describe('PromptDraftCardComponent', () => {
     );
     expect(options).toEqual([
       'auto',
+      'quality',
       'any',
       'model:koboldcpp/gemma-4-31B-it-heretic',
       'model:koboldcpp/L3-8B-Stheno-v3.2',
     ]);
+  });
+
+  it('names the value pick, the costly one, and what each model costs', async () => {
+    build();
+    await settle();
+    await openOptions();
+    const options = [...el().querySelectorAll('select option')].map((option) =>
+      (option.textContent ?? '').replace(/\s+/g, ' ').trim(),
+    );
+    expect(options[0]).toBe('en.prompt_draft.model_auto');
+    expect(options[1]).toBe('en.prompt_draft.model_quality');
+    expect(options[3]).toBe(
+      'koboldcpp/gemma-4-31B-it-heretic (1, en.prompt_draft.tier_medium) ★',
+    );
+    expect(options[4]).toBe(
+      'koboldcpp/L3-8B-Stheno-v3.2 (4, en.prompt_draft.tier_small)',
+    );
+  });
+
+  it('prices whichever pick the reader chooses', async () => {
+    estimate.mockResolvedValue(9);
+    build();
+    await settle();
+    await openOptions();
+    fixture.componentInstance.onPickChange('quality');
+    fixture.detectChanges();
+    await settlePrice();
+    expect(estimate.mock.calls.at(-1)?.[1]).toBe('quality');
   });
 
   it('asks for a draft from the material and the pick, then offers it to the studio', async () => {

@@ -18,6 +18,12 @@ user:` lines. The style's template wraps it in the instruction. A style's `model
 pick for that style; the client falls back to its built-in instruction and curated list when no style
 of the role is online.
 
+Kudos scale with the parameter count, and one line of comma-separated phrases is not work a large
+model does better, so the client's default pick is the value tier: the smallest curated build online
+(at or under 9B), reaching for a bigger one only when nothing smaller is running. A reader who wants
+the biggest model on the day chooses it in the card. List each style's `models` small-first for the
+same reason: the horde routes on the list, and the cheap build should be the one it reaches first.
+
 `image-prompt-styles.json` holds the first set. To create them under your account:
 
 ```bash

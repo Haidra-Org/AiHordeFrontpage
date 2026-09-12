@@ -14,6 +14,8 @@ import {
   buildDraftPrompt,
   cleanDraft,
   curatedRank,
+  modelCostTier,
+  modelParameterCount,
   pickTextModel,
 } from './prompt-draft.service';
 import { AuthService } from './auth.service';
@@ -69,17 +71,80 @@ describe('picking a text model', () => {
     model('koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M', 0),
   ];
 
-  it('ranks instruct families and leaves story tunes off the list', () => {
-    expect(curatedRank('koboldcpp/gemma-4-31B-it-heretic')).toBe(0);
-    expect(curatedRank('koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M')).toBe(6);
+  it('ranks the small instruct builds above the big ones', () => {
+    expect(
+      curatedRank('koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic'),
+    ).toBe(0);
+    expect(curatedRank('koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M')).toBe(3);
+    expect(curatedRank('koboldcpp/gemma-4-31B-it-heretic')).toBeGreaterThan(3);
+    expect(curatedRank('aphrodite/TheDrummer/Behemoth-X-123B-v2.1')).toBe(10);
     expect(curatedRank('koboldcpp/L3-8B-Stheno-v3.2')).toBeNull();
   });
 
-  it('takes the best-ranked model that has workers', () => {
+  it('reads the parameter count off a name, however it is written', () => {
+    expect(modelParameterCount('koboldcpp/gemma-4-31B-it-heretic')).toBe(31);
+    expect(
+      modelParameterCount('aphrodite/TheDrummer/Behemoth-X-123B-v2.1'),
+    ).toBe(123);
+    expect(modelParameterCount('koboldcpp/L3-8B-Stheno-v3.2')).toBe(8);
+    expect(modelParameterCount('koboldcpp/Qwen3-0.8B')).toBe(0.8);
+    expect(
+      modelParameterCount('koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic'),
+    ).toBe(4);
+    expect(modelParameterCount('koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M')).toBe(
+      3,
+    );
+    expect(modelParameterCount('some/model-12b')).toBe(12);
+    // A quantisation suffix is not a size, and neither is a version.
+    expect(modelParameterCount('koboldcpp/MythoMax-v2-Q4bit')).toBeNull();
+    expect(modelParameterCount('koboldcpp/Unnamed-Tune-v3.2')).toBeNull();
+  });
+
+  it('sorts the sizes into what they cost to ask', () => {
+    expect(modelCostTier('koboldcpp/Llama-3.2-3B-Instruct-Q4_K_M')).toBe(
+      'small',
+    );
+    expect(modelCostTier('koboldcpp/L3-8B-Stheno-v3.2')).toBe('small');
+    expect(modelCostTier('koboldcpp/gemma-4-31B-it-heretic')).toBe('medium');
+    expect(modelCostTier('some/Cydonia-24B-v4')).toBe('medium');
+    expect(modelCostTier('aphrodite/TheDrummer/Behemoth-X-123B-v2.1')).toBe(
+      'large',
+    );
+    expect(modelCostTier('koboldcpp/Unnamed-Tune-v3.2')).toBeNull();
+  });
+
+  it('takes the cheapest curated tier that has a model online', () => {
     expect(pickTextModel(pool, 'auto')).toEqual({
-      models: ['koboldcpp/gemma-4-31B-it-heretic'],
-      label: 'koboldcpp/gemma-4-31B-it-heretic',
+      models: ['koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic'],
+      label: 'koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
     });
+  });
+
+  it('falls through to the bigger tiers only when nothing smaller is online', () => {
+    const noSmall = [
+      model('aphrodite/TheDrummer/Behemoth-X-123B-v2.1', 16),
+      model('koboldcpp/gemma-4-31B-it-heretic', 1),
+    ];
+    expect(pickTextModel(noSmall, 'auto').models).toEqual([
+      'koboldcpp/gemma-4-31B-it-heretic',
+    ]);
+    const largeOnly = [model('aphrodite/TheDrummer/Behemoth-X-123B-v2.1', 16)];
+    expect(pickTextModel(largeOnly, 'auto').models).toEqual([
+      'aphrodite/TheDrummer/Behemoth-X-123B-v2.1',
+    ]);
+  });
+
+  it('asks the biggest curated model online when quality is chosen', () => {
+    expect(pickTextModel(pool, 'quality').models).toEqual([
+      'aphrodite/TheDrummer/Behemoth-X-123B-v2.1',
+    ]);
+    const noLarge = [
+      model('koboldcpp/gemma-4-31B-it-heretic', 1),
+      model('koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic', 2),
+    ];
+    expect(pickTextModel(noLarge, 'quality').models).toEqual([
+      'koboldcpp/gemma-4-31B-it-heretic',
+    ]);
   });
 
   it('breaks a rank tie by workers online', () => {

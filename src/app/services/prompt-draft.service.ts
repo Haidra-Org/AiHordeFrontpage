@@ -23,10 +23,14 @@ import {
 const ANONYMOUS_API_KEY = '0000000000';
 
 /**
- * Which text model answers a draft: the best of the curated list that has
- * workers, any model at all, or one named outright.
+ * Which text model answers a draft: the best value of the curated list that
+ * has workers, the biggest of them, any model at all, or one named outright.
  */
-export type PromptDraftModelPick = 'auto' | 'any' | { model: string };
+export type PromptDraftModelPick =
+  | 'auto'
+  | 'quality'
+  | 'any'
+  | { model: string };
 
 /**
  * What a draft is written from. Any part may be empty; not all of them. With
@@ -97,14 +101,21 @@ export type PromptDraftOutcome =
  */
 export const CURATED_TEXT_MODELS: readonly { pattern: RegExp; rank: number }[] =
   [
-    { pattern: /gemma-4-31b.*-it/i, rank: 0 },
-    { pattern: /gemma-4.*-it/i, rank: 1 },
-    { pattern: /llama-3(\.\d)?-(8|70)b-instruct/i, rank: 2 },
-    { pattern: /cydonia/i, rank: 3 },
-    { pattern: /behemoth/i, rank: 4 },
-    { pattern: /qwen3(\.5)?-(4|7|8|14|32)b/i, rank: 5 },
-    { pattern: /llama-3\.2-3b-instruct/i, rank: 6 },
-    { pattern: /qwen.*-(0\.6|0\.8|1\.7)b|llama-3\.2-1b-instruct/i, rank: 7 },
+    // Kudos scale with the parameter count, and writing one line of comma
+    // separated phrases is not work a large model does better. The small
+    // instruct builds lead the list; the big ones are last, for the reader
+    // who asks for them.
+    { pattern: /gemma-4.*e\d+b.*-it/i, rank: 0 },
+    { pattern: /llama-3(\.\d)?-8b-instruct/i, rank: 1 },
+    { pattern: /qwen3(\.5)?-(4|7|8)b/i, rank: 2 },
+    { pattern: /llama-3\.2-3b-instruct/i, rank: 3 },
+    { pattern: /qwen.*-(0\.6|0\.8|1\.7)b|llama-3\.2-1b-instruct/i, rank: 4 },
+    { pattern: /qwen3(\.5)?-(14|32)b/i, rank: 5 },
+    { pattern: /llama-3(\.\d)?-70b-instruct/i, rank: 6 },
+    { pattern: /gemma-4-31b.*-it/i, rank: 7 },
+    { pattern: /gemma-4.*-it/i, rank: 8 },
+    { pattern: /cydonia/i, rank: 9 },
+    { pattern: /behemoth/i, rank: 10 },
   ];
 
 /** Where a model falls on the curated list, or null when it is not on it. */
@@ -116,17 +127,59 @@ export function curatedRank(name: string): number | null {
 }
 
 /**
- * The model list a request goes out with, and the name to show for it. Auto
- * takes the highest-ranked curated model with workers, ties broken by how
- * many; with none online it asks for any model rather than nothing.
+ * How many billion parameters a model's name claims, or null when the name
+ * does not say. Volunteers name their builds every way there is, so this reads
+ * the one part they all spell the same: a number followed by a B, whether it
+ * is `31B`, `0.8B`, `12b`, `3B-Instruct` or Gemma's effective-size `E4B`. The
+ * last such group wins, since quantisation suffixes carry digits of their own.
  */
-export function pickTextModel(
+export function modelParameterCount(name: string): number | null {
+  const matches = [...name.matchAll(/(\d+(?:\.\d+)?)b(?![a-z0-9])/gi)];
+  const last = matches.at(-1);
+  if (!last) return null;
+  const value = Number.parseFloat(last[1]);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+/** What a model costs to ask, in the only terms its name gives away. */
+export type ModelCostTier = 'small' | 'medium' | 'large';
+
+/** Where the tiers part, in billions of parameters. */
+const SMALL_TIER_LIMIT = 9;
+const MEDIUM_TIER_LIMIT = 35;
+
+/** A model's cost tier, or null when its name does not say how big it is. */
+export function modelCostTier(name: string): ModelCostTier | null {
+  const size = modelParameterCount(name);
+  if (size === null) return null;
+  if (size <= SMALL_TIER_LIMIT) return 'small';
+  return size <= MEDIUM_TIER_LIMIT ? 'medium' : 'large';
+}
+
+/**
+ * Which tier is looked at first. The default asks the cheapest models that can
+ * do the job and only reaches for a bigger one when nothing smaller is online;
+ * the deliberate choice does the reverse. A model whose name hides its size is
+ * last in both, since there is no telling what it would cost.
+ */
+const VALUE_TIER_ORDER: readonly (ModelCostTier | null)[] = [
+  'small',
+  'medium',
+  'large',
+  null,
+];
+const QUALITY_TIER_ORDER: readonly (ModelCostTier | null)[] = [
+  'large',
+  'medium',
+  'small',
+  null,
+];
+
+/** The curated models with workers, best first within the curated order. */
+function rankedCurated(
   models: readonly ActiveModel[],
-  pick: PromptDraftModelPick,
-): { models: string[] | null; label: string | null } {
-  if (pick === 'any') return { models: null, label: null };
-  if (pick !== 'auto') return { models: [pick.model], label: pick.model };
-  const ranked = models
+): { model: ActiveModel; rank: number }[] {
+  return models
     .filter((model) => model.count > 0)
     .map((model) => ({ model, rank: curatedRank(model.name) }))
     .filter(
@@ -139,7 +192,44 @@ export function pickTextModel(
         b.model.count - a.model.count ||
         (a.model.eta ?? 0) - (b.model.eta ?? 0),
     );
-  const best = ranked[0]?.model;
+}
+
+/** The first model of the first tier in `order` that has one online. */
+function bestOfTiers(
+  ranked: readonly { model: ActiveModel; rank: number }[],
+  order: readonly (ModelCostTier | null)[],
+): ActiveModel | undefined {
+  for (const tier of order) {
+    const found = ranked.find(
+      (entry) => modelCostTier(entry.model.name) === tier,
+    );
+    if (found) return found.model;
+  }
+  return undefined;
+}
+
+/**
+ * The model list a request goes out with, and the name to show for it.
+ *
+ * `auto` takes the cheapest tier that has a curated model online, ranked
+ * within it by the curated order and then by how many workers run it, so a
+ * draft costs what a short answer is worth. `quality` walks the tiers the
+ * other way for a reader who asks for the biggest model on the day. Neither
+ * finds anything when nothing curated is online, and the request then asks for
+ * any model rather than nothing.
+ */
+export function pickTextModel(
+  models: readonly ActiveModel[],
+  pick: PromptDraftModelPick,
+): { models: string[] | null; label: string | null } {
+  if (pick === 'any') return { models: null, label: null };
+  if (pick !== 'auto' && pick !== 'quality') {
+    return { models: [pick.model], label: pick.model };
+  }
+  const best = bestOfTiers(
+    rankedCurated(models),
+    pick === 'quality' ? QUALITY_TIER_ORDER : VALUE_TIER_ORDER,
+  );
   return best
     ? { models: [best.name], label: best.name }
     : { models: null, label: null };
@@ -292,13 +382,15 @@ export class PromptDraftService {
     style: ImagePromptStyle | null,
   ): { models: string[] | null; label: string | null } {
     if (!style) return pickTextModel(models, pick);
-    if (pick !== 'auto') return pickTextModel(models, pick);
+    if (pick !== 'auto' && pick !== 'quality') {
+      return pickTextModel(models, pick);
+    }
     if (style.models.length === 0) return { models: null, label: null };
     const allowed = new Set(style.models);
     const pool = models.filter(
       (model) => model.count > 0 && allowed.has(model.name),
     );
-    const picked = pickTextModel(pool, 'auto');
+    const picked = pickTextModel(pool, pick);
     if (picked.models) return picked;
     return pool.length > 0
       ? { models: pool.map((model) => model.name), label: pool[0].name }
@@ -331,8 +423,10 @@ export class PromptDraftService {
       prompt: buildDraftPrompt(input),
       params: {
         ...(takes > 1 ? { n: takes } : {}),
-        max_context_length: 2048,
-        max_length: 120,
+        // The material is a caption, some tags and a note, and one line comes
+        // back. Asking for room nothing uses is paid for all the same.
+        max_context_length: 1024,
+        max_length: 96,
         temperature: 0.7,
         top_p: 0.92,
         min_p: 0.05,
