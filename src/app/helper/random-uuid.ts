@@ -3,6 +3,14 @@ const BYTE_TO_HEX: readonly string[] = Array.from({ length: 256 }, (_, i) =>
   (i + 0x100).toString(16).slice(1),
 );
 
+function hexByte(byte: number): string {
+  const hex = BYTE_TO_HEX[byte];
+  if (hex === undefined) {
+    throw new RangeError('UUID byte is outside the hexadecimal lookup');
+  }
+  return hex;
+}
+
 /**
  * Return an RFC 4122 version 4 UUID.
  *
@@ -17,30 +25,17 @@ export function randomUuid(): string {
   }
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   // Pin the version (4) and variant (RFC 4122) bits per the spec.
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = BYTE_TO_HEX;
-  return (
-    hex[bytes[0]] +
-    hex[bytes[1]] +
-    hex[bytes[2]] +
-    hex[bytes[3]] +
-    '-' +
-    hex[bytes[4]] +
-    hex[bytes[5]] +
-    '-' +
-    hex[bytes[6]] +
-    hex[bytes[7]] +
-    '-' +
-    hex[bytes[8]] +
-    hex[bytes[9]] +
-    '-' +
-    hex[bytes[10]] +
-    hex[bytes[11]] +
-    hex[bytes[12]] +
-    hex[bytes[13]] +
-    hex[bytes[14]] +
-    hex[bytes[15]]
-  );
+  view.setUint8(6, (view.getUint8(6) & 0x0f) | 0x40);
+  view.setUint8(8, (view.getUint8(8) & 0x3f) | 0x80);
+  return [
+    bytes.subarray(0, 4),
+    bytes.subarray(4, 6),
+    bytes.subarray(6, 8),
+    bytes.subarray(8, 10),
+    bytes.subarray(10, 16),
+  ]
+    .map((part) => Array.from(part, hexByte).join(''))
+    .join('-');
 }
