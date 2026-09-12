@@ -7,7 +7,6 @@
       type="button"
       class="alchemy-result__toggle"
       [attr.aria-expanded]="isOpen()"
-      [attr.aria-label]="'alchemy.result.toggle_label' | transloco"
       (click)="toggleOpen()"
     >
       <app-icon
@@ -89,45 +88,145 @@
       @if (activeTab() === "picture") {
         <!-- A picture read for words to write a prompt from. The picture is
              read and forgotten: it is never attached as the source, and
-             nothing about the image request changes. The two forms land
-             separately, so the caption shows without waiting on the tags. -->
+             nothing about the image request changes. Picking one only puts it
+             on screen; the reading is a press of its own, so nothing is paid
+             for before the reader has seen what they chose. The two forms
+             land separately, so the caption shows without waiting on the
+             tags. -->
         <div class="gs-describe" [class.gs-describe--drop]="describeDragging()">
-          <div class="gs-describe-open">
-            <button
-              type="button"
-              class="gs-chip gap-1.5"
-              [disabled]="describe.pending()"
-              (click)="describeFile.click()"
-            >
-              <app-icon name="beaker" class="gs-ico-sm" />
-              {{ "generate.describe.open" | transloco }}
-            </button>
-            @if (describe.sourcePicture()) {
+          <input
+            #describeFile
+            type="file"
+            accept="image/*"
+            class="sr-only"
+            (change)="onDescribeFilePicked($event)"
+          />
+          @if (!hasStaged()) {
+            <div class="gs-describe-open">
               <button
                 type="button"
-                class="gs-chip"
+                class="gs-chip gap-1.5"
                 [disabled]="describe.pending()"
-                (click)="describeSourcePicture()"
+                (click)="describeFile.click()"
               >
-                {{ "generate.describe.use_source" | transloco }}
+                <app-icon name="beaker" class="gs-ico-sm" />
+                {{ "generate.describe.open" | transloco }}
               </button>
-            }
-            <input
-              #describeFile
-              type="file"
-              accept="image/*"
-              class="sr-only"
-              (change)="onDescribeFilePicked($event)"
-            />
-          </div>
-          <p class="gs-sublabel">
-            {{
-              (describeDragging()
-                ? "generate.describe.drop_hint"
-                : "generate.describe.lead"
-              ) | transloco
-            }}
-          </p>
+              @if (describe.sourcePicture()) {
+                <button
+                  type="button"
+                  class="gs-chip"
+                  [disabled]="describe.pending()"
+                  (click)="describeSourcePicture()"
+                >
+                  {{ "generate.describe.use_source" | transloco }}
+                </button>
+              }
+            </div>
+            <p class="gs-sublabel">
+              {{
+                (describeDragging()
+                  ? "generate.describe.drop_hint"
+                  : "generate.describe.lead"
+                ) | transloco
+              }}
+            </p>
+          } @else {
+            <div class="gs-describe-staged">
+              @if (stagedUrl(); as url) {
+                <img
+                  class="gs-describe-thumb"
+                  [src]="url"
+                  [alt]="stagedAlt()"
+                />
+              }
+              <div class="gs-describe-staged-body">
+                <ol
+                  class="gs-describe-steps"
+                  [attr.aria-label]="
+                    'generate.describe.steps_label' | transloco
+                  "
+                >
+                  <li class="gs-describe-step">
+                    <span
+                      class="gs-step-num gs-step-num--done"
+                      aria-hidden="true"
+                    >
+                      <app-icon name="check" class="gs-ico-sm" />
+                    </span>
+                    <span class="gs-step-title">
+                      {{ "generate.describe.step_pick" | transloco }}
+                    </span>
+                  </li>
+                  <li class="gs-describe-step" aria-current="step">
+                    <span class="gs-step-num" aria-hidden="true">2</span>
+                    <span class="gs-step-title">
+                      {{
+                        (describe.pending()
+                          ? "generate.describe.step_reading"
+                          : "generate.describe.step_read"
+                        ) | transloco
+                      }}
+                    </span>
+                  </li>
+                </ol>
+                @if (stagedPicture(); as ready) {
+                  <app-gs-pixel-badge
+                    [width]="ready.width"
+                    [height]="ready.height"
+                  />
+                }
+                @if (staging()) {
+                  <p class="gs-sublabel">
+                    {{ "generate.describe.staging" | transloco }}
+                  </p>
+                }
+                @if (stagedError(); as refusal) {
+                  <p class="gs-warn">
+                    <app-icon name="warning-triangle" class="gs-ico-sm" />
+                    {{ refusal | transloco }}
+                  </p>
+                }
+                <div class="gs-describe-staged-actions">
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense"
+                    [disabled]="!canRead()"
+                    (click)="readStagedPicture()"
+                  >
+                    <app-icon name="beaker" class="gs-ico-sm" />
+                    {{ "generate.describe.read_button" | transloco }}
+                  </button>
+                  <button
+                    type="button"
+                    class="gs-chip"
+                    [disabled]="describe.pending()"
+                    (click)="describeFile.click()"
+                  >
+                    {{ "generate.describe.replace" | transloco }}
+                  </button>
+                  <button
+                    type="button"
+                    class="gs-chip"
+                    [disabled]="describe.pending()"
+                    (click)="clearStagedPicture()"
+                  >
+                    {{ "generate.describe.remove" | transloco }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+          <!-- The reading is an alchemy job like any other, and the reader is
+               told so here rather than finding it in the other studio's list. -->
+          @if (hasStaged() || describe.pending()) {
+            <p class="gs-sublabel gs-describe-alchemy">
+              {{ "generate.describe.runs_as_alchemy" | transloco }}
+              <a class="gs-retention-link" routerLink="/generate/alchemy">
+                {{ "generate.describe.runs_as_alchemy_link" | transloco }}
+              </a>
+            </p>
+          }
           @if (describe.pending() || describe.hasFindings()) {
             @if (describe.pending()) {
               <p class="gs-describe-pending">
@@ -198,7 +297,7 @@
                 type="button"
                 class="gs-describe-glyph ml-auto"
                 [attr.aria-label]="'generate.describe.dismiss' | transloco"
-                (click)="describe.clear()"
+                (click)="clearStagedPicture()"
               >
                 <app-icon name="x-mark" class="gs-ico-sm" />
               </button>

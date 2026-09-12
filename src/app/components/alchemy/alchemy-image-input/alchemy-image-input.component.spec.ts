@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -135,6 +136,16 @@ describe('AlchemyImageInputComponent', () => {
 
       expect(spy).not.toHaveBeenCalled();
     });
+  });
+
+  it('names the size pictures are shrunk to, as the encoder shrinks them', () => {
+    const copy = JSON.parse(
+      readFileSync('src/assets/i18n/en.json', 'utf8'),
+    ) as Record<string, string>;
+
+    expect(copy['alchemy.image_input.upload_hint']).toContain(
+      `${encoding.DEFAULT_MAX_EDGE}px`,
+    );
   });
 
   it('setMode switches mode and resets state', async () => {

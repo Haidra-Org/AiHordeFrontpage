@@ -244,6 +244,53 @@ describe('StudioDescribeService', () => {
     expect(service.error()).toBeNull();
   });
 
+  it('shrinks a picture without asking the horde for anything', async () => {
+    const outcome = await service.prepare(picture());
+
+    expect(outcome).toEqual({
+      kind: 'ready',
+      picture: { base64: 'AAAA', mimeType: 'image/webp', width: 8, height: 8 },
+    });
+    expect(submissions).toHaveLength(0);
+    expect(service.pending()).toBe(false);
+    expect(toast.toasts()).toHaveLength(0);
+  });
+
+  it('refuses a picture past the size cap while preparing it', async () => {
+    // Four megabytes of payload is the ceiling; this is comfortably past it.
+    encoded.mockResolvedValueOnce({
+      base64: 'A'.repeat(8 * 1024 * 1024),
+      mimeType: 'image/webp',
+      width: 8,
+      height: 8,
+    });
+
+    const outcome = await service.prepare(picture());
+
+    expect(outcome).toEqual({
+      kind: 'refused',
+      error: { key: 'generate.describe.too_large' },
+    });
+    expect(submissions).toHaveLength(0);
+    // The refusal is the caller's to show beside the picture, not a toast.
+    expect(toast.toasts()).toHaveLength(0);
+  });
+
+  it('reads a picture already prepared, without shrinking it again', async () => {
+    const prepared = await service.prepare(picture());
+    expect(prepared.kind).toBe('ready');
+    encoded.mockClear();
+
+    if (prepared.kind !== 'ready') return;
+    await service.read(prepared.picture, 'source');
+
+    expect(encoded).not.toHaveBeenCalled();
+    expect(submissions).toHaveLength(1);
+    expect(submissions[0].source).toBe('AAAA');
+    expect(service.jobId()).toBe('job-1');
+    expect(service.origin()).toBe('source');
+  });
+
   it('carries the attached source picture for the prompt section', () => {
     const blob = picture();
     service.offerSourcePicture(blob);

@@ -12,8 +12,14 @@ import {
   isLikelyImageFileLink,
   toRenderableImageSource,
 } from './generation-image';
+import { SOURCE_MAX_EDGE } from './source-image';
 
-export const DEFAULT_MAX_EDGE = 1024;
+/**
+ * The horde's own dimension cap, so a picture alchemy accepts is one the image
+ * studio would accept too. The 4 MB payload ceiling, not this edge, is what a
+ * large picture actually runs into.
+ */
+export const DEFAULT_MAX_EDGE = SOURCE_MAX_EDGE;
 export const DEFAULT_WEBP_QUALITY = 0.9;
 
 /**

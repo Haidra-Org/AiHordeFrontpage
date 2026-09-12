@@ -9,6 +9,7 @@ import {
   resultPromptText,
 } from '../helper/alchemy-job-view';
 import {
+  EncodedImage,
   base64ByteLength,
   fileToResizedBase64,
 } from '../helper/image-encoding';
@@ -40,6 +41,18 @@ export interface DescribeError {
   key: string;
   reason?: string;
 }
+
+/**
+ * A picture already shrunk to what the horde will be given, with the size it
+ * came out at. Held by a caller that shows the picture before asking for it to
+ * be read, so the size on screen is the size that goes out.
+ */
+export type PreparedPicture = EncodedImage;
+
+/** Either a picture ready to be read, or the reason it cannot be. */
+export type PreparePictureOutcome =
+  | { kind: 'ready'; picture: PreparedPicture }
+  | { kind: 'refused'; error: DescribeError };
 
 const NO_FINDINGS: DescribeFindings = { caption: null, tags: null };
 
@@ -163,17 +176,13 @@ export class StudioDescribeService {
   });
 
   /**
-   * Read a picture for its caption and its tags. The picture is only read:
-   * nothing here attaches it to the request or changes what Generate does.
+   * Shrink a picture to what would be sent and check it against the size the
+   * horde accepts, without asking for anything. A caller that shows the picture
+   * first uses this so the size it puts on screen is the size that goes out,
+   * and so a picture too big to send is refused while the reader is still
+   * looking at it rather than after they commit to reading it.
    */
-  public async describe(
-    blob: Blob,
-    origin: DescribeOrigin = 'picked',
-  ): Promise<void> {
-    this.currentJobId.set(null);
-    this.failure.set(null);
-    this.currentOrigin.set(origin);
-    this.submitting.set(true);
+  public async prepare(blob: Blob): Promise<PreparePictureOutcome> {
     try {
       const type = blob.type || 'image/webp';
       const extension = type.split('/')[1] ?? 'webp';
@@ -181,16 +190,74 @@ export class StudioDescribeService {
         new File([blob], `studio.${extension}`, { type }),
       );
       if (base64ByteLength(encoded.base64) > MAX_ENCODED_BYTES) {
-        this.fail({ key: 'generate.describe.too_large' });
+        return {
+          kind: 'refused',
+          error: { key: 'generate.describe.too_large' },
+        };
+      }
+      return { kind: 'ready', picture: encoded };
+    } catch {
+      return {
+        kind: 'refused',
+        error: { key: 'generate.describe.encode_failed' },
+      };
+    }
+  }
+
+  /**
+   * Ask for the caption and tags of a picture already prepared. The picture is
+   * only read: nothing here attaches it to the request or changes what Generate
+   * does.
+   */
+  public async read(
+    picture: PreparedPicture,
+    origin: DescribeOrigin = 'picked',
+  ): Promise<void> {
+    this.begin(origin);
+    try {
+      await this.send(picture);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  /**
+   * Prepare a picture and read it in one go, for the callers that hand over a
+   * picture the reader has already chosen elsewhere.
+   */
+  public async describe(
+    blob: Blob,
+    origin: DescribeOrigin = 'picked',
+  ): Promise<void> {
+    this.begin(origin);
+    try {
+      const prepared = await this.prepare(blob);
+      if (prepared.kind === 'refused') {
+        this.fail(prepared.error);
         return;
       }
+      await this.send(prepared.picture);
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  private begin(origin: DescribeOrigin): void {
+    this.currentJobId.set(null);
+    this.failure.set(null);
+    this.currentOrigin.set(origin);
+    this.submitting.set(true);
+  }
+
+  private async send(picture: PreparedPicture): Promise<void> {
+    try {
       const outcome = await this.queue.submit({
         forms: ['caption', 'interrogation'],
         // The reading is worth waiting a little longer for; refusing slow
         // workers would turn a quiet background job into a queue failure.
         slowWorkers: true,
-        source: encoded.base64,
-        sourceMimeType: encoded.mimeType,
+        source: picture.base64,
+        sourceMimeType: picture.mimeType,
       });
       if (outcome.kind === 'refused') {
         this.fail(this.refusal(outcome.error));
@@ -198,9 +265,7 @@ export class StudioDescribeService {
       }
       this.currentJobId.set(outcome.id);
     } catch {
-      this.fail({ key: 'generate.describe.encode_failed' });
-    } finally {
-      this.submitting.set(false);
+      this.fail({ key: 'generate.describe.failed' });
     }
   }
 

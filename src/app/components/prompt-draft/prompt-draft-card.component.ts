@@ -12,6 +12,7 @@ import {
   untracked,
 } from '@angular/core';
 import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import {
@@ -29,7 +30,11 @@ import {
   StoredPromptDraft,
 } from '../../services/prompt-draft-db.service';
 import { AuthService } from '../../services/auth.service';
-import { StudioDescribeService } from '../../services/studio-describe.service';
+import {
+  DescribeOrigin,
+  PreparedPicture,
+  StudioDescribeService,
+} from '../../services/studio-describe.service';
 import { ToastService } from '../../services/toast.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { API_BASE_URL } from '../../services/api-config';
@@ -40,6 +45,7 @@ import { stringifyAsJson } from '../../helper/json-formatter';
 import { JsonInspectorComponent } from '../json-inspector/json-inspector.component';
 import type { JsonInspectorSection } from '../json-inspector/json-inspector.component';
 import type { AlchemyFoldPin } from '../alchemy/alchemy-pictures/alchemy-pictures.component';
+import { GsPixelBadgeComponent } from '../gs-pixel-badge/gs-pixel-badge.component';
 
 /** How the override select names its choice. */
 type PickValue = 'auto' | 'quality' | 'any' | `model:${string}`;
@@ -56,6 +62,13 @@ const ANONYMOUS_STORAGE_KEY = 'aihorde.prompt-draft.anonymous';
 
 /** Where the settings fold's state is remembered between visits. */
 const OPTIONS_STORAGE_KEY = 'aihorde.prompt-draft.options';
+
+/**
+ * Where the chosen way into a prompt is remembered. The card is built and torn
+ * down with the studio it sits in, so a reader who switches studios and comes
+ * back would otherwise land on the other tab.
+ */
+const TAB_STORAGE_KEY = 'aihorde.prompt-draft.tab';
 
 /** Long enough that a typed note is priced once, not on every keystroke. */
 const ESTIMATE_DEBOUNCE_MS = 600;
@@ -96,7 +109,14 @@ const ANONYMOUS_API_KEY = '0000000000';
  */
 @Component({
   selector: 'app-prompt-draft-card',
-  imports: [TranslocoPipe, IconComponent, DatePipe, JsonInspectorComponent],
+  imports: [
+    TranslocoPipe,
+    IconComponent,
+    DatePipe,
+    RouterLink,
+    JsonInspectorComponent,
+    GsPixelBadgeComponent,
+  ],
   templateUrl: './prompt-draft-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -174,6 +194,24 @@ export class PromptDraftCardComponent {
   /** Whether a picture is being dragged over the card. */
   public readonly describeDragging = signal(false);
 
+  /**
+   * The picture waiting to be read. It is shrunk as soon as it is chosen, so
+   * the size beside the thumbnail is the size that goes to the horde and a
+   * picture too big to send is refused while the reader is still looking at it.
+   */
+  public readonly stagedPicture = signal<PreparedPicture | null>(null);
+  /** The thumbnail's address, revoked whenever the picture behind it goes. */
+  public readonly stagedUrl = signal<string | null>(null);
+  /** The file's own name, where the picture came from one. */
+  private readonly stagedName = signal<string | null>(null);
+  private readonly stagedOrigin = signal<DescribeOrigin>('picked');
+  /** Why the staged picture cannot be read, shown before the button. */
+  public readonly stagedError = signal<string | null>(null);
+  /** Whether the chosen picture is still being shrunk. */
+  public readonly staging = signal(false);
+  /** Newer picks win, so a slow shrink cannot overwrite the picture on screen. */
+  private stageToken = 0;
+
   public readonly minTakes = MIN_TAKES;
   public readonly maxTakes = MAX_TAKES;
 
@@ -196,7 +234,11 @@ export class PromptDraftCardComponent {
   constructor() {
     this.chosenAnonymous.set(this.storedAnonymous());
     this.optionsOpen.set(this.storedOptions());
-    inject(DestroyRef).onDestroy(() => this.cancelEstimate());
+    this.chosenTab.set(this.storedTab());
+    inject(DestroyRef).onDestroy(() => {
+      this.cancelEstimate();
+      this.releaseStagedUrl();
+    });
 
     effect(() => {
       const pin = this.foldPin();
@@ -256,6 +298,28 @@ export class PromptDraftCardComponent {
 
   public chooseTab(tab: PromptHelpTab): void {
     this.chosenTab.set(tab);
+    this.rememberTab(tab);
+  }
+
+  private storedTab(): PromptHelpTab {
+    if (!this.isBrowser) return 'improve';
+    try {
+      return localStorage.getItem(TAB_STORAGE_KEY) === 'picture'
+        ? 'picture'
+        : 'improve';
+    } catch {
+      // Private modes refuse storage; the first tab is a fine answer.
+      return 'improve';
+    }
+  }
+
+  private rememberTab(tab: PromptHelpTab): void {
+    if (!this.isBrowser) return;
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, tab);
+    } catch {
+      // Nothing here is worth failing a tab press over.
+    }
   }
 
   /**
@@ -386,13 +450,13 @@ export class PromptDraftCardComponent {
     this.styleId.set(id);
   }
 
-  /** Take a picture from the file picker and read it, without attaching it. */
+  /** Take a picture from the file picker and show it, without reading it yet. */
   public onDescribeFilePicked(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     // Cleared so picking the same picture again still counts as a change.
     input.value = '';
-    if (file) void this.describe.describe(file, 'picked');
+    if (file) void this.stagePicture(file, 'picked', file.name);
   }
 
   /** The card takes a drop anywhere on its body while the picture tab shows. */
@@ -415,13 +479,83 @@ export class PromptDraftCardComponent {
     event.preventDefault();
     this.describeDragging.set(false);
     const file = event.dataTransfer?.files?.[0];
-    if (file) void this.describe.describe(file, 'picked');
+    if (file) void this.stagePicture(file, 'picked', file.name);
   }
 
-  /** Read the picture already attached as the source, leaving it attached. */
+  /** Show the picture already attached as the source, leaving it attached. */
   public describeSourcePicture(): void {
     const blob = this.describe.sourcePicture();
-    if (blob) void this.describe.describe(blob, 'source');
+    if (blob) void this.stagePicture(blob, 'source', null);
+  }
+
+  /**
+   * Put a picture in front of the reader, shrunk to what would be sent, and
+   * wait there. Nothing is asked of the horde until the button below it is
+   * pressed, so a pick or a drop costs nothing and can be undone.
+   */
+  private async stagePicture(
+    blob: Blob,
+    origin: DescribeOrigin,
+    name: string | null,
+  ): Promise<void> {
+    const token = (this.stageToken += 1);
+    this.releaseStagedUrl();
+    this.stagedPicture.set(null);
+    this.stagedError.set(null);
+    this.stagedName.set(name);
+    this.stagedOrigin.set(origin);
+    this.stagedUrl.set(this.isBrowser ? URL.createObjectURL(blob) : null);
+    this.staging.set(true);
+    const outcome = await this.describe.prepare(blob);
+    if (token !== this.stageToken) return;
+    this.staging.set(false);
+    if (outcome.kind === 'refused') {
+      this.stagedError.set(outcome.error.key);
+      return;
+    }
+    this.stagedPicture.set(outcome.picture);
+  }
+
+  /** Whether there is a picture on screen waiting on the reader. */
+  public readonly hasStaged = computed(
+    () => this.stagedUrl() !== null || this.staging(),
+  );
+
+  /** Whether the button that starts the reading can do anything. */
+  public readonly canRead = computed(
+    () => this.stagedPicture() !== null && !this.describe.pending(),
+  );
+
+  /** The thumbnail names the picture it stands for. */
+  public readonly stagedAlt = computed(() => {
+    const name = this.stagedName();
+    return name
+      ? this.transloco.translate('generate.describe.staged_alt', { name })
+      : this.transloco.translate('generate.describe.staged_alt_source');
+  });
+
+  /** Ask for the staged picture to be read. */
+  public readStagedPicture(): void {
+    const picture = this.stagedPicture();
+    if (!picture || this.describe.pending()) return;
+    void this.describe.read(picture, this.stagedOrigin());
+  }
+
+  /** Take the staged picture away, along with anything read from it. */
+  public clearStagedPicture(): void {
+    this.stageToken += 1;
+    this.releaseStagedUrl();
+    this.stagedPicture.set(null);
+    this.stagedError.set(null);
+    this.stagedName.set(null);
+    this.staging.set(false);
+    this.describe.clear();
+  }
+
+  private releaseStagedUrl(): void {
+    const url = this.stagedUrl();
+    if (url) URL.revokeObjectURL(url);
+    this.stagedUrl.set(null);
   }
 
   /** Put alchemy's caption in the prompt box, as the reading worded it. */

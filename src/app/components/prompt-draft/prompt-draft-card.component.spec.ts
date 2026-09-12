@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PromptDraftCardComponent } from './prompt-draft-card.component';
@@ -15,11 +16,26 @@ import { AuthService } from '../../services/auth.service';
 import {
   DescribeFindings,
   DescribeOrigin,
+  PreparePictureOutcome,
+  PreparedPicture,
   StudioDescribeService,
 } from '../../services/studio-describe.service';
 
 /** Comfortably past the card's own debounce, so a price has been asked for. */
 const ESTIMATE_WAIT_MS = 750;
+
+/** A picture as the service hands it back once it has been shrunk. */
+const READY: PreparedPicture = {
+  base64: 'AAAA',
+  mimeType: 'image/webp',
+  width: 640,
+  height: 480,
+};
+
+// jsdom carries no object-URL store, and the card only needs an address it can
+// hand to an <img> and give back.
+let objectUrls: string[];
+let revokedUrls: string[];
 
 function makeStored(id: string, text: string): StoredPromptDraft {
   return {
@@ -49,9 +65,23 @@ describe('PromptDraftCardComponent', () => {
   let sent: string | null;
   let findings: ReturnType<typeof signal<DescribeFindings>>;
   let describePicture: ReturnType<typeof vi.fn>;
+  let preparePicture: ReturnType<typeof vi.fn>;
+  let readPicture: ReturnType<typeof vi.fn>;
+  let pending: ReturnType<typeof signal<boolean>>;
+  let sourcePicture: ReturnType<typeof signal<Blob | null>>;
 
   beforeEach(() => {
     localStorage.clear();
+    objectUrls = [];
+    revokedUrls = [];
+    URL.createObjectURL = vi.fn(() => {
+      const url = `blob:picture-${objectUrls.length}`;
+      objectUrls.push(url);
+      return url;
+    });
+    URL.revokeObjectURL = vi.fn((url: string) => {
+      revokedUrls.push(url);
+    });
     draft = vi.fn();
     estimate = vi.fn().mockResolvedValue(null);
     list = vi.fn().mockResolvedValue([]);
@@ -64,6 +94,12 @@ describe('PromptDraftCardComponent', () => {
     kudos = signal<number | null>(null);
     findings = signal<DescribeFindings>({ caption: null, tags: null });
     describePicture = vi.fn().mockResolvedValue(undefined);
+    preparePicture = vi
+      .fn<(blob: Blob) => Promise<PreparePictureOutcome>>()
+      .mockResolvedValue({ kind: 'ready', picture: READY });
+    readPicture = vi.fn().mockResolvedValue(undefined);
+    pending = signal(false);
+    sourcePicture = signal<Blob | null>(null);
     TestBed.configureTestingModule({
       imports: [
         PromptDraftCardComponent,
@@ -73,6 +109,7 @@ describe('PromptDraftCardComponent', () => {
         }),
       ],
       providers: [
+        provideRouter([]),
         {
           provide: PromptDraftService,
           useValue: {
@@ -106,11 +143,13 @@ describe('PromptDraftCardComponent', () => {
               const { caption, tags } = findings();
               return caption !== null || tags !== null;
             },
-            pending: () => false,
+            pending,
             origin: (): DescribeOrigin => 'picked',
-            sourcePicture: () => null,
+            sourcePicture,
             describe: describePicture,
-            clear: () => findings.set({ caption: null, tags: null }),
+            prepare: preparePicture,
+            read: readPicture,
+            clear: (): void => findings.set({ caption: null, tags: null }),
           },
         },
       ],
@@ -144,6 +183,40 @@ describe('PromptDraftCardComponent', () => {
     fixture.detectChanges();
     await settle();
   };
+  const file = (name: string): File =>
+    new File(['x'], name, { type: 'image/png' });
+  /** Let a picture go over the card's body, as a reader would. */
+  const drop = (picked: File): void => {
+    const body = el().querySelector('.alchemy-draft__body') as HTMLElement;
+    const event = new Event('drop', { bubbles: true });
+    Object.defineProperty(event, 'dataTransfer', {
+      value: { files: [picked] } as unknown as DataTransfer,
+    });
+    body.dispatchEvent(event);
+  };
+  /** A studio card on the picture tab, which is where a reading starts. */
+  const showPicture = async (): Promise<void> => {
+    build();
+    fixture.componentRef.setInput('picture', true);
+    fixture.componentRef.setInput('seed', 'a dog');
+    fixture.detectChanges();
+    await settle();
+    fixture.componentInstance.chooseTab('picture');
+    fixture.detectChanges();
+  };
+  /** Put a picture in front of the reader and wait for it to be measured. */
+  const stage = async (): Promise<void> => {
+    drop(file('p.png'));
+    await settle();
+  };
+  const readButton = (): HTMLButtonElement =>
+    el().querySelector(
+      '.gs-describe-staged-actions .gs-btn',
+    ) as HTMLButtonElement;
+  const chip = (text: string): HTMLButtonElement =>
+    [...el().querySelectorAll('.gs-describe-staged-actions .gs-chip')].find(
+      (button) => (button.textContent ?? '').includes(text),
+    ) as HTMLButtonElement;
 
   it('lists the models online under Options, curated ones first', async () => {
     build();
@@ -642,27 +715,136 @@ describe('PromptDraftCardComponent', () => {
     });
   });
 
-  it('reads a picture let go anywhere on the body of the picture tab', async () => {
+  it('takes a picture let go anywhere on the body of the picture tab', async () => {
     build();
     fixture.componentRef.setInput('picture', true);
     fixture.componentRef.setInput('seed', 'a dog');
     fixture.detectChanges();
     await settle();
-    const body = el().querySelector('.alchemy-draft__body') as HTMLElement;
-    const file = new File(['x'], 'p.png', { type: 'image/png' });
-    const transfer = { files: [file] } as unknown as DataTransfer;
 
     // The improve tab is showing, so the body is not a drop target.
-    const ignored = new Event('drop', { bubbles: true });
-    Object.defineProperty(ignored, 'dataTransfer', { value: transfer });
-    body.dispatchEvent(ignored);
-    expect(describePicture).not.toHaveBeenCalled();
+    drop(file('p.png'));
+    expect(preparePicture).not.toHaveBeenCalled();
 
-    fixture.componentInstance.chooseTab('picture');
+    await showPicture();
+    drop(file('p.png'));
+    await settle();
+    expect(preparePicture).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the picture and its steps without asking for a reading', async () => {
+    await showPicture();
+    await stage();
+
+    expect(readPicture).not.toHaveBeenCalled();
+    const thumb = el().querySelector('.gs-describe-thumb') as HTMLImageElement;
+    expect(thumb.getAttribute('src')).toBe(objectUrls[0]);
+    expect(thumb.getAttribute('alt')).toContain(
+      'en.generate.describe.staged_alt',
+    );
+    const steps = [...el().querySelectorAll('.gs-describe-step')];
+    expect(steps).toHaveLength(2);
+    expect(steps[1].getAttribute('aria-current')).toBe('step');
+    expect(steps[1].textContent).toContain('en.generate.describe.step_read');
+    // The size on screen is the size that would go out.
+    expect(el().querySelector('.gs-pixels')?.textContent).toContain(
+      'en.generate.pixels.size',
+    );
+    // Nothing offers to read the picture on the picker row any more.
+    expect(el().querySelector('.gs-describe-open')).toBeNull();
+  });
+
+  it('asks for the reading only once the button is pressed', async () => {
+    await showPicture();
+    await stage();
+    expect(readPicture).not.toHaveBeenCalled();
+
+    readButton().click();
+    expect(readPicture).toHaveBeenCalledTimes(1);
+    expect(readPicture).toHaveBeenCalledWith(
+      expect.objectContaining({ base64: 'AAAA' }),
+      'picked',
+    );
+
+    // While the horde has it the picture stays put and the step says so.
+    pending.set(true);
     fixture.detectChanges();
-    const dropped = new Event('drop', { bubbles: true });
-    Object.defineProperty(dropped, 'dataTransfer', { value: transfer });
-    body.dispatchEvent(dropped);
-    expect(describePicture).toHaveBeenCalledWith(file, 'picked');
+    expect(el().querySelector('.gs-describe-thumb')).not.toBeNull();
+    expect(el().querySelectorAll('.gs-describe-step')[1].textContent).toContain(
+      'en.generate.describe.step_reading',
+    );
+    readButton().click();
+    expect(readPicture).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces the picture on a second pick and lets go of the first', async () => {
+    await showPicture();
+    await stage();
+    await stage();
+
+    expect(objectUrls).toHaveLength(2);
+    expect(revokedUrls).toEqual([objectUrls[0]]);
+    expect(
+      (
+        el().querySelector('.gs-describe-thumb') as HTMLImageElement
+      ).getAttribute('src'),
+    ).toBe(objectUrls[1]);
+  });
+
+  it('clears the picture on Remove, back to the picker', async () => {
+    await showPicture();
+    await stage();
+
+    chip('en.generate.describe.remove').click();
+    fixture.detectChanges();
+    expect(revokedUrls).toEqual([objectUrls[0]]);
+    expect(el().querySelector('.gs-describe-thumb')).toBeNull();
+    expect(el().querySelector('.gs-describe-open')).not.toBeNull();
+    expect(readPicture).not.toHaveBeenCalled();
+  });
+
+  it('refuses a picture too large to send before the button, not after', async () => {
+    preparePicture.mockResolvedValue({
+      kind: 'refused',
+      error: { key: 'generate.describe.too_large' },
+    });
+    await showPicture();
+    await stage();
+
+    expect(el().querySelector('.gs-warn')?.textContent).toContain(
+      'en.generate.describe.too_large',
+    );
+    expect(readButton().disabled).toBe(true);
+    expect(readPicture).not.toHaveBeenCalled();
+  });
+
+  it('says the reading runs as an alchemy job, and where to watch it', async () => {
+    await showPicture();
+    await stage();
+
+    const note = el().querySelector('.gs-describe-alchemy') as HTMLElement;
+    expect(note.textContent).toContain('en.generate.describe.runs_as_alchemy');
+    const link = note.querySelector('a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/generate/alchemy');
+  });
+
+  it('comes back to the tab the reader last chose, findings and all', async () => {
+    await showPicture();
+    expect(localStorage.getItem('aihorde.prompt-draft.tab')).toBe('picture');
+    // A finished reading is held by the root service, not by the card.
+    findings.set({ caption: 'a dog on a couch', tags: 'dog, couch' });
+
+    // The card is torn down with its studio and built again on the way back.
+    fixture.destroy();
+    build();
+    fixture.componentRef.setInput('picture', true);
+    fixture.componentRef.setInput('seed', 'a dog');
+    fixture.detectChanges();
+    await settle();
+    expect(fixture.componentInstance.activeTab()).toBe('picture');
+    expect(el().querySelector('.gs-describe')).not.toBeNull();
+    expect(el().querySelector('.gs-describe-text')?.textContent).toContain(
+      'a dog on a couch',
+    );
   });
 });

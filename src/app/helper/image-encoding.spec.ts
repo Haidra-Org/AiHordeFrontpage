@@ -1,11 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   base64ByteLength,
+  DEFAULT_MAX_EDGE,
   fileToResizedBase64,
   ImageEncodingError,
   sourceToThumbnailDataUrl,
   stripDataUrlPrefix,
 } from './image-encoding';
+import { SOURCE_MAX_EDGE } from './source-image';
+
+describe('DEFAULT_MAX_EDGE', () => {
+  it('is the horde dimension cap the image studio already works to', () => {
+    expect(DEFAULT_MAX_EDGE).toBe(SOURCE_MAX_EDGE);
+    expect(DEFAULT_MAX_EDGE).toBe(3072);
+  });
+});
 
 describe('stripDataUrlPrefix', () => {
   it('removes a data-url prefix', () => {
@@ -85,6 +94,18 @@ describe('fileToResizedBase64', () => {
     expect(result.base64).toBe('ENCODED');
     expect(result.mimeType).toBe('image/webp');
     expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('scales to the default max edge when the caller names none', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(() => Promise.resolve({ width: 6144, height: 3072, close })),
+    );
+
+    const result = await fileToResizedBase64(makeFile('image/png'));
+
+    expect(result.width).toBe(DEFAULT_MAX_EDGE);
+    expect(result.height).toBe(DEFAULT_MAX_EDGE / 2);
   });
 
   it('never upscales smaller images', async () => {
