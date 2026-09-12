@@ -396,6 +396,18 @@ export interface TextGenerationRequest {
   models?: string[];
   slow_workers?: boolean;
   trusted_workers?: boolean;
+  /** Price the request and queue nothing; the answer is the kudos alone. */
+  dry_run?: boolean;
+}
+
+/**
+ * What a priced request answers with. A dry run carries no id because nothing
+ * was queued, so it is a shape of its own rather than a text response with
+ * holes in it.
+ */
+export interface TextGenerationDryRunResponse {
+  kudos: number;
+  message?: string;
 }
 
 export interface TextGenerationResponse {

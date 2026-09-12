@@ -352,6 +352,70 @@
   flex-wrap: wrap;
   gap: var(--gs-space-2);
 }
+.gen-studio .alchemy-draft__anon {
+  align-self: flex-start;
+}
+.gen-studio .alchemy-draft__cost {
+  margin: 0;
+}
+/* The past drafts sit below a rule so the card reads as the draft first and
+   the archive second. */
+.gen-studio .alchemy-draft__history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+  padding-top: var(--gs-space-2);
+  border-top: 1px solid var(--gs-border);
+}
+.gen-studio .alchemy-draft__history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gs-label);
+  font: inherit;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.gen-studio .alchemy-draft__history-note {
+  margin: 0;
+}
+.gen-studio .alchemy-draft__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .alchemy-draft__history-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-1) var(--gs-space-2);
+  min-width: 0;
+}
+/* One line each: the row is a way back to a draft, not a place to read it. */
+.gen-studio .alchemy-draft__history-text {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gen-studio .alchemy-draft__history-meta {
+  flex: none;
+}
+.gen-studio .alchemy-draft__history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-1);
+}
 /* The stage clips what the zoom pushes past its edges; the pair inside keeps
    its fitted box, so the card's height does not move as the zoom does. */
 .gen-studio .alchemy-pictures__stage {

@@ -23,6 +23,7 @@ import {
   GenerationCheckResponse,
   GenerationStatusResponse,
   SubmitTextGenerationResult,
+  TextGenerationDryRunResponse,
   TextGenerationRequest,
   TextGenerationResponse,
   TextGenerationStatusResponse,
@@ -464,6 +465,32 @@ export class AiHordeService {
         catchError((err: unknown) =>
           of({ kind: 'error' as const, error: this.toHordeApiError(err) }),
         ),
+      );
+  }
+
+  /**
+   * What a text request would cost, without queueing it. A refusal is answered
+   * with no price rather than an error: the caller is showing a hint beside a
+   * button, and has nothing useful to say about a rejected dry run.
+   */
+  public dryRunTextGeneration(
+    apiKey: string,
+    request: TextGenerationRequest,
+  ): Observable<number | null> {
+    return this.httpClient
+      .post<TextGenerationDryRunResponse>(
+        `${this.baseUrl}/generate/text/async`,
+        { ...request, dry_run: true },
+        {
+          headers: { apikey: apiKey },
+          context: this.generateContext,
+        },
+      )
+      .pipe(
+        map((response) =>
+          typeof response?.kudos === 'number' ? response.kudos : null,
+        ),
+        catchError(() => of(null)),
       );
   }
 

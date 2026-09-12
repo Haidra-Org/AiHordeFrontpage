@@ -2,7 +2,12 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import { AuthService } from './auth.service';
+import {
+  PromptDraftDbService,
+  StoredPromptDraft,
+} from './prompt-draft-db.service';
 import { ActiveModel } from '../types/active-model';
+import { randomUuid } from '../helper/random-uuid';
 import {
   GENERATION_NOT_FOUND,
   HordeApiError,
@@ -29,8 +34,29 @@ export interface PromptDraftInput {
   prompt?: string | null;
 }
 
+/** Which surface asked for a draft, kept with it in the history. */
+export type PromptDraftOrigin = 'alchemy' | 'studio';
+
+/** How a request goes out: on whose account, and on whose behalf. */
+export interface PromptDraftOptions {
+  /**
+   * Send on the shared anonymous key. It costs the reader nothing and queues
+   * at the lowest priority, which is the only choice open when logged out.
+   */
+  anonymous: boolean;
+  origin: PromptDraftOrigin;
+}
+
 export type PromptDraftOutcome =
-  | { kind: 'done'; text: string; model: string; kudos: number }
+  | {
+      kind: 'done';
+      text: string;
+      model: string;
+      kudos: number;
+      seed: number | null;
+      /** The history record written for this draft. */
+      id: string;
+    }
   | { kind: 'refused'; error: HordeApiError }
   | { kind: 'faulted' }
   | { kind: 'timeout' };
@@ -146,6 +172,7 @@ const POLL_LIMIT = 48;
 export class PromptDraftService {
   private readonly aiHorde = inject(AiHordeService);
   private readonly auth = inject(AuthService);
+  private readonly history = inject(PromptDraftDbService);
 
   /** The text models online now, for the auto pick and the override list. */
   public async textModels(): Promise<ActiveModel[]> {
@@ -157,18 +184,12 @@ export class PromptDraftService {
     }
   }
 
-  /**
-   * Ask for a prompt and wait for it. The request queues like any other on
-   * the horde, behind whatever the account's priority buys it, so this can
-   * take a minute; the caller shows that rather than hiding it.
-   */
-  public async draft(
+  /** The request body a draft goes out with, priced or queued. */
+  private buildRequest(
     input: PromptDraftInput,
-    pick: PromptDraftModelPick,
-    models?: readonly ActiveModel[],
-  ): Promise<PromptDraftOutcome> {
-    const chosen = pickTextModel(models ?? (await this.textModels()), pick);
-    const request: TextGenerationRequest = {
+    chosen: { models: string[] | null },
+  ): TextGenerationRequest {
+    return {
       prompt: buildDraftPrompt(input),
       params: {
         max_context_length: 2048,
@@ -183,9 +204,56 @@ export class PromptDraftService {
       ...(chosen.models ? { models: chosen.models } : {}),
       slow_workers: true,
     };
-    const apiKey = this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
+  }
+
+  /**
+   * Whose account pays. Logged out there is only the shared key, so the
+   * anonymous choice is the only one available and asking for it changes
+   * nothing.
+   */
+  private apiKeyFor(anonymous: boolean): string {
+    if (anonymous) return ANONYMOUS_API_KEY;
+    return this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
+  }
+
+  /**
+   * What the draft would cost, asked before the reader commits to it. Null
+   * when the horde would not take the request at all, which is a hint worth
+   * nothing rather than a failure worth reporting.
+   */
+  public async estimate(
+    input: PromptDraftInput,
+    pick: PromptDraftModelPick,
+    models: readonly ActiveModel[] | undefined,
+    anonymous: boolean,
+  ): Promise<number | null> {
+    const chosen = pickTextModel(models ?? (await this.textModels()), pick);
+    return firstValueFrom(
+      this.aiHorde.dryRunTextGeneration(
+        this.apiKeyFor(anonymous),
+        this.buildRequest(input, chosen),
+      ),
+    );
+  }
+
+  /**
+   * Ask for a prompt and wait for it. The request queues like any other on
+   * the horde, behind whatever the account's priority buys it, so this can
+   * take a minute; the caller shows that rather than hiding it.
+   */
+  public async draft(
+    input: PromptDraftInput,
+    pick: PromptDraftModelPick,
+    models?: readonly ActiveModel[],
+    options: PromptDraftOptions = { anonymous: false, origin: 'alchemy' },
+  ): Promise<PromptDraftOutcome> {
+    const chosen = pickTextModel(models ?? (await this.textModels()), pick);
+    const request = this.buildRequest(input, chosen);
     const submitted = await firstValueFrom(
-      this.aiHorde.submitTextGeneration(apiKey, request),
+      this.aiHorde.submitTextGeneration(
+        this.apiKeyFor(options.anonymous),
+        request,
+      ),
     );
     if (submitted.kind === 'error') {
       return { kind: 'refused', error: submitted.error };
@@ -202,11 +270,32 @@ export class PromptDraftService {
         const generation = status.generations[0];
         const text = generation ? cleanDraft(generation.text) : '';
         if (!text) return { kind: 'faulted' };
+        const record: StoredPromptDraft = {
+          id: randomUuid(),
+          createdAt: Date.now(),
+          origin: options.origin,
+          input,
+          pick,
+          model: generation?.model ?? chosen.label ?? '',
+          seed: generation?.seed ?? null,
+          kudos: status.kudos,
+          anonymous: options.anonymous,
+          text,
+        };
+        try {
+          await this.history.put(record);
+        } catch {
+          // The history is a convenience beside the draft. A store that will
+          // not take the record must not cost the reader the words they waited
+          // for.
+        }
         return {
           kind: 'done',
           text,
-          model: generation?.model ?? chosen.label ?? '',
-          kudos: status.kudos,
+          model: record.model,
+          kudos: record.kudos,
+          seed: record.seed,
+          id: record.id,
         };
       }
     }

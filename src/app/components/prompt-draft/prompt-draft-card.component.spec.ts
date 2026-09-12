@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PromptDraftCardComponent } from './prompt-draft-card.component';
@@ -6,14 +7,48 @@ import {
   PromptDraftOutcome,
   PromptDraftService,
 } from '../../services/prompt-draft.service';
+import {
+  PromptDraftDbService,
+  StoredPromptDraft,
+} from '../../services/prompt-draft-db.service';
+import { AuthService } from '../../services/auth.service';
+
+/** Comfortably past the card's own debounce, so a price has been asked for. */
+const ESTIMATE_WAIT_MS = 750;
+
+function makeStored(id: string, text: string): StoredPromptDraft {
+  return {
+    id,
+    createdAt: 1_700_000_000_000,
+    origin: 'alchemy',
+    input: { caption: 'a dog' },
+    pick: 'auto',
+    model: 'm/1',
+    seed: null,
+    kudos: 3,
+    anonymous: false,
+    text,
+  };
+}
 
 describe('PromptDraftCardComponent', () => {
   let fixture: ComponentFixture<PromptDraftCardComponent>;
   let draft: ReturnType<typeof vi.fn>;
+  let estimate: ReturnType<typeof vi.fn>;
+  let list: ReturnType<typeof vi.fn>;
+  let remove: ReturnType<typeof vi.fn>;
+  let loggedIn: ReturnType<typeof signal<boolean>>;
+  let kudos: ReturnType<typeof signal<number | null>>;
   let sent: string | null;
 
   beforeEach(() => {
+    localStorage.clear();
     draft = vi.fn();
+    estimate = vi.fn().mockResolvedValue(null);
+    list = vi.fn().mockResolvedValue([]);
+    remove = vi.fn().mockResolvedValue(undefined);
+    loggedIn = signal(false);
+    kudos = signal<number | null>(null);
     TestBed.configureTestingModule({
       imports: [
         PromptDraftCardComponent,
@@ -27,14 +62,30 @@ describe('PromptDraftCardComponent', () => {
           provide: PromptDraftService,
           useValue: {
             draft,
+            estimate,
             textModels: vi.fn().mockResolvedValue([
               { name: 'koboldcpp/L3-8B-Stheno-v3.2', count: 4 },
               { name: 'koboldcpp/gemma-4-31B-it-heretic', count: 1 },
             ]),
           },
         },
+        {
+          provide: PromptDraftDbService,
+          useValue: { list, remove, put: vi.fn(), clear: vi.fn() },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            isLoggedIn: loggedIn,
+            kudos,
+            getStoredApiKey: () => null,
+          },
+        },
       ],
     });
+  });
+
+  const build = (): void => {
     fixture = TestBed.createComponent(PromptDraftCardComponent);
     fixture.componentRef.setInput('caption', 'a dog on a couch');
     fixture.componentRef.setInput('tags', 'dog, couch');
@@ -42,15 +93,22 @@ describe('PromptDraftCardComponent', () => {
     sent = null;
     fixture.componentInstance.apply.subscribe((text) => (sent = text));
     fixture.detectChanges();
-  });
+  };
 
   const el = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const settle = async (): Promise<void> => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
+  const settlePrice = async (): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, ESTIMATE_WAIT_MS));
+    await settle();
+  };
+  const anonInput = (): HTMLInputElement =>
+    el().querySelector('.alchemy-draft__anon input') as HTMLInputElement;
 
   it('lists the models online once open, curated ones first', async () => {
+    build();
     await settle();
     const options = [...el().querySelectorAll('select option')].map(
       (o) => (o as HTMLOptionElement).value,
@@ -69,8 +127,11 @@ describe('PromptDraftCardComponent', () => {
       text: 'a dog on a couch, warm light',
       model: 'koboldcpp/gemma-4-31B-it-heretic',
       kudos: 2,
+      seed: null,
+      id: 'draft-1',
     };
     draft.mockResolvedValue(outcome);
+    build();
     await settle();
     fixture.componentInstance.onNoteInput('make it painterly');
     fixture.componentInstance.onPickChange('model:x/y');
@@ -85,6 +146,7 @@ describe('PromptDraftCardComponent', () => {
       },
       { model: 'x/y' },
       expect.any(Array),
+      { anonymous: true, origin: 'alchemy' },
     );
     expect(
       el().querySelector('.alchemy-draft__text')?.textContent?.trim(),
@@ -100,6 +162,7 @@ describe('PromptDraftCardComponent', () => {
       kind: 'refused',
       error: { status: 400, message: 'No workers', rc: 'NoWorkers' },
     });
+    build();
     await fixture.componentInstance.draft();
     fixture.detectChanges();
     expect(el().querySelector('.gs-warn')?.textContent).toContain(
@@ -108,6 +171,7 @@ describe('PromptDraftCardComponent', () => {
   });
 
   it('does nothing without material to write from', async () => {
+    build();
     fixture.componentRef.setInput('caption', null);
     fixture.componentRef.setInput('tags', null);
     fixture.detectChanges();
@@ -121,7 +185,11 @@ describe('PromptDraftCardComponent', () => {
       text: 'a dog on a couch, golden hour, 35mm',
       model: 'm',
       kudos: 1,
+      seed: null,
+      id: 'draft-2',
     });
+    build();
+    await settle();
     fixture.componentRef.setInput('caption', null);
     fixture.componentRef.setInput('tags', null);
     fixture.componentRef.setInput('seed', 'a dog on a couch');
@@ -133,6 +201,95 @@ describe('PromptDraftCardComponent', () => {
       { prompt: 'a dog on a couch', note: '' },
       'auto',
       expect.anything(),
+      { anonymous: true, origin: 'studio' },
     );
+  });
+
+  it('prices the draft once the card has settled, and names the balance when there is one', async () => {
+    loggedIn.set(true);
+    kudos.set(1_234);
+    estimate.mockResolvedValue(12);
+    build();
+    await settlePrice();
+    expect(estimate).toHaveBeenCalled();
+    const line = el().querySelector('.alchemy-draft__cost');
+    const cost = line?.textContent ?? '';
+    expect(cost).toContain('prompt_draft.cost_lead');
+    expect(cost).toContain('prompt_draft.cost_balance_lead');
+    expect(cost).toContain('prompt_draft.cost_unit');
+    // Both figures are abbreviated the way the studio's balance chip writes them.
+    expect(
+      [...(line?.querySelectorAll('.gs-mono') ?? [])].map((span) =>
+        span.textContent?.trim(),
+      ),
+    ).toEqual(['12', '1.2K']);
+    expect(fixture.componentInstance.estimatedKudos()).toBe(12);
+  });
+
+  it('locks the switch on when there is nobody signed in', async () => {
+    build();
+    await settle();
+    expect(anonInput().checked).toBe(true);
+    expect(anonInput().disabled).toBe(true);
+    expect(fixture.componentInstance.anonymous()).toBe(true);
+  });
+
+  it('leaves the switch off and usable for a signed-in reader', async () => {
+    loggedIn.set(true);
+    kudos.set(400);
+    build();
+    await settle();
+    expect(anonInput().checked).toBe(false);
+    expect(anonInput().disabled).toBe(false);
+  });
+
+  it('remembers a switch the reader set on a previous visit', async () => {
+    localStorage.setItem('aihorde.prompt-draft.anonymous', 'true');
+    loggedIn.set(true);
+    kudos.set(400);
+    build();
+    await settle();
+    expect(anonInput().checked).toBe(true);
+
+    fixture.componentInstance.onAnonymousChange(false);
+    expect(localStorage.getItem('aihorde.prompt-draft.anonymous')).toBe(
+      'false',
+    );
+  });
+
+  it('moves a draft the balance cannot pay for onto the anonymous key, and says why', async () => {
+    loggedIn.set(true);
+    kudos.set(5);
+    estimate.mockResolvedValue(50);
+    build();
+    await settlePrice();
+    expect(fixture.componentInstance.anonymous()).toBe(true);
+    expect(fixture.componentInstance.flippedForCost()).toBe(true);
+    expect(el().querySelector('.alchemy-draft__cost')?.textContent).toContain(
+      'prompt_draft.cost_flipped',
+    );
+  });
+
+  it('offers a past draft back to the prompt box, and deletes one on request', async () => {
+    list.mockResolvedValue([makeStored('p1', 'an older draft')]);
+    build();
+    await settle();
+    await fixture.componentInstance.toggleHistory();
+    fixture.detectChanges();
+
+    const row = el().querySelector('.alchemy-draft__history-row');
+    expect(row?.textContent).toContain('an older draft');
+    const buttons = [
+      ...(row?.querySelectorAll('button') ?? []),
+    ] as HTMLButtonElement[];
+    buttons[0].click();
+    expect(sent).toBe('an older draft');
+
+    list.mockResolvedValue([]);
+    buttons[2].click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await settle();
+    expect(remove).toHaveBeenCalledWith('p1');
+    expect(el().querySelector('.alchemy-draft__history-row')).toBeNull();
   });
 });

@@ -114,6 +114,44 @@
         </button>
       </div>
 
+      <label
+        class="gs-switch gs-switch-row alchemy-draft__anon"
+        [attr.title]="
+          anonymousLocked()
+            ? ('prompt_draft.anonymous_locked' | transloco)
+            : null
+        "
+      >
+        <span>{{ "prompt_draft.anonymous_label" | transloco }}</span>
+        <input
+          type="checkbox"
+          [checked]="anonymous()"
+          [disabled]="anonymousLocked() || busy()"
+          (change)="onAnonymousChange($any($event.target).checked)"
+        />
+        <span class="gs-switch-track"
+          ><span class="gs-switch-knob"></span
+        ></span>
+      </label>
+
+      @let price = estimatedKudos();
+      @let held = balance();
+      @if (!busy() && price !== null) {
+        <p class="gs-sublabel alchemy-draft__cost" aria-live="polite">
+          {{ "prompt_draft.cost_lead" | transloco }}
+          <span class="gs-mono">{{ abbreviateKudos(price) }}</span>
+          {{ "prompt_draft.cost_unit" | transloco }}
+          @if (held !== null) {
+            {{ "prompt_draft.cost_balance_lead" | transloco }}
+            <span class="gs-mono">{{ abbreviateKudos(held) }}</span>
+            {{ "prompt_draft.cost_unit" | transloco }}
+          }
+          @if (flippedForCost()) {
+            {{ "prompt_draft.cost_flipped" | transloco }}
+          }
+        </p>
+      }
+
       @if (busy()) {
         <p class="gs-sublabel" aria-live="polite">
           {{ "prompt_draft.waiting" | transloco }}
@@ -194,6 +232,73 @@
           }
         }
       }
+      <div class="alchemy-draft__history">
+        <button
+          type="button"
+          class="alchemy-draft__history-toggle"
+          [attr.aria-expanded]="historyOpen()"
+          (click)="toggleHistory()"
+        >
+          <app-icon
+            name="chevron-right"
+            class="alchemy-result__chevron"
+            [class.alchemy-result__chevron--open]="historyOpen()"
+          />
+          {{ "prompt_draft.history_title" | transloco }}
+        </button>
+        @if (historyOpen()) {
+          <p class="gs-sublabel alchemy-draft__history-note">
+            {{ "prompt_draft.history_note" | transloco }}
+          </p>
+          @if (history().length === 0) {
+            <p class="gs-sublabel">
+              {{ "prompt_draft.history_empty" | transloco }}
+            </p>
+          } @else {
+            <ul class="alchemy-draft__history-list">
+              @for (past of history(); track past.id) {
+                <li class="alchemy-draft__history-row">
+                  <span class="alchemy-draft__history-text" [title]="past.text">
+                    {{ past.text }}
+                  </span>
+                  <span class="gs-sublabel alchemy-draft__history-meta">
+                    {{
+                      "prompt_draft.history_meta"
+                        | transloco: { model: past.model, kudos: past.kudos }
+                    }}
+                    <span [title]="past.createdAt | date: 'medium'">{{
+                      past.createdAt | date: "short"
+                    }}</span>
+                  </span>
+                  <span class="alchemy-draft__history-actions">
+                    <button
+                      type="button"
+                      class="gs-btn gs-btn--dense"
+                      (click)="usePast(past)"
+                    >
+                      {{ "prompt_draft.history_use" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-btn gs-btn--dense"
+                      (click)="copyPast(past)"
+                    >
+                      {{ "prompt_draft.history_copy" | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="gs-btn gs-btn--dense gs-btn--danger"
+                      (click)="deletePast(past)"
+                    >
+                      {{ "prompt_draft.history_delete" | transloco }}
+                    </button>
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </div>
     </div>
   }
 </section>
