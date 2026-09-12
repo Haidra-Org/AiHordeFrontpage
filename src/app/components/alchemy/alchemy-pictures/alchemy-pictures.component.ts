@@ -106,6 +106,8 @@ export class AlchemyPicturesComponent {
   public readonly foldPin = input<AlchemyFoldPin | null>(null);
   /** Asks for the picked picture to be carried to the image studio. */
   public readonly useInStudio = output<string>();
+  /** Asks for the picked picture to become this studio's source. */
+  public readonly useAsSource = output<string>();
 
   private readonly openOverride = signal<boolean | null>(null);
   private readonly pickedKey = signal<string | null>(null);
@@ -158,6 +160,11 @@ export class AlchemyPicturesComponent {
 
   /** The picked result's own pixels, once the browser has read them. */
   private readonly resultSize = signal<PixelSize | null>(null);
+  /**
+   * The picked picture could not be loaded: the horde's link has expired and
+   * no copy was kept, so the stage says so rather than drawing nothing.
+   */
+  public readonly resultGone = signal(false);
   /** The source's own pixels, for the note that says it was enlarged. */
   private readonly sourceSize = signal<PixelSize | null>(null);
   /** The room the card's stage has, and the room the viewer has. */
@@ -181,8 +188,13 @@ export class AlchemyPicturesComponent {
     // fitted box with it, for a frame at a time.
     effect((onCleanup) => {
       const url = this.pickedUrl();
-      untracked(() => this.pan.set({ x: 0, y: 0 }));
-      onCleanup(this.probe(url, this.resultSize));
+      untracked(() => {
+        this.pan.set({ x: 0, y: 0 });
+        this.resultGone.set(false);
+      });
+      onCleanup(
+        this.probe(url, this.resultSize, () => this.resultGone.set(true)),
+      );
     });
     effect((onCleanup) => {
       onCleanup(this.probe(this.source(), this.sourceSize));
@@ -267,6 +279,79 @@ export class AlchemyPicturesComponent {
     this.pan.set({ x: 0, y: 0 });
   }
 
+  /** One named size closer in, or further out; Fit is the floor. */
+  private stepZoom(direction: 1 | -1): void {
+    const steps: (number | null)[] = [
+      null,
+      ...ZOOM_STEPS.map((step) => step.scale),
+    ];
+    const asked = this.zoomAsked();
+    const at = steps.findIndex((step) =>
+      step === null ? asked === null : asked !== null && near(step, asked),
+    );
+    const next = steps[Math.min(steps.length - 1, Math.max(0, at + direction))];
+    if (next !== steps[at]) this.zoomTo(next);
+  }
+
+  /**
+   * The keys the stage answers: arrows move the pair while it is drawn closer
+   * in than its room, plus and minus step the size, zero fits it again. The
+   * wipe's divider keeps its own arrow keys, so a press that started there is
+   * left alone.
+   */
+  public onStageKeydown(event: KeyboardEvent): void {
+    if (
+      event.target instanceof Element &&
+      event.target.closest('.gs-wipe-divider, button, a')
+    ) {
+      return;
+    }
+    const nudge = 40;
+    const over = this.overflow();
+    const clamp = (value: number, limit: number) =>
+      Math.min(limit, Math.max(-limit, value));
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'ArrowRight':
+      case 'ArrowUp':
+      case 'ArrowDown': {
+        if (!this.zoomedIn()) return;
+        const dx =
+          event.key === 'ArrowLeft'
+            ? nudge
+            : event.key === 'ArrowRight'
+              ? -nudge
+              : 0;
+        const dy =
+          event.key === 'ArrowUp'
+            ? nudge
+            : event.key === 'ArrowDown'
+              ? -nudge
+              : 0;
+        const pan = this.pan();
+        this.pan.set({
+          x: clamp(pan.x + dx, over.x),
+          y: clamp(pan.y + dy, over.y),
+        });
+        break;
+      }
+      case '+':
+      case '=':
+        this.stepZoom(1);
+        break;
+      case '-':
+      case '_':
+        this.stepZoom(-1);
+        break;
+      case '0':
+        this.zoomTo(null);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+
   /** How far the drawn pair overhangs its room on each side, in CSS pixels. */
   private readonly overflow = computed(() => {
     const fit = this.fitBox();
@@ -344,6 +429,7 @@ export class AlchemyPicturesComponent {
   private probe(
     url: string | null,
     into: { set(value: PixelSize | null): void },
+    onFail?: () => void,
   ): () => void {
     into.set(null);
     if (!url || typeof Image === 'undefined') return () => undefined;
@@ -353,6 +439,9 @@ export class AlchemyPicturesComponent {
       if (live && image.naturalWidth > 0) {
         into.set({ width: image.naturalWidth, height: image.naturalHeight });
       }
+    };
+    image.onerror = () => {
+      if (live) onFail?.();
     };
     image.src = url;
     return () => {

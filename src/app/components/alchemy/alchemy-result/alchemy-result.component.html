@@ -30,14 +30,16 @@
           <span class="gs-mono">{{ detector() }}</span>
         }
       </ng-template>
-      <span class="gs-op-badge">
-        {{
-          (returnsImage()
-            ? "alchemy.result.output_image"
-            : "alchemy.result.output_text"
-          ) | transloco
-        }}
-      </span>
+      @if (showsKindBadge()) {
+        <span class="gs-op-badge">
+          {{
+            (returnsImage()
+              ? "alchemy.result.output_image"
+              : "alchemy.result.output_text"
+            ) | transloco
+          }}
+        </span>
+      }
 
       @if (!isOpen()) {
         <span class="alchemy-result__summary">
@@ -106,6 +108,18 @@
         </span>
       }
     </button>
+
+    @if (promptText(); as text) {
+      <button
+        type="button"
+        class="btn-json-inspector alchemy-result__prompt-trigger"
+        [attr.aria-label]="'alchemy.result.send_to_prompt' | transloco"
+        [attr.title]="'alchemy.result.send_to_prompt' | transloco"
+        (click)="sendToPrompt.emit(text)"
+      >
+        <app-icon name="pencil-square" />
+      </button>
+    }
 
     @if (rawJsonSections().length > 0) {
       <app-json-inspector-trigger

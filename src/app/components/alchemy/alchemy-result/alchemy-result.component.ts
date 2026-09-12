@@ -28,6 +28,7 @@ import type { JsonInspectorSection } from '../../json-inspector/json-inspector.c
 import { JsonInspectorTriggerComponent } from '../../json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../icon/icon.component';
 import type { AlchemyFoldPin } from '../alchemy-pictures/alchemy-pictures.component';
+import { resultPromptText } from '../../../helper/alchemy-job-view';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { stringifyAsJson } from '../../../helper/json-formatter';
 
@@ -324,6 +325,19 @@ export class AlchemyResultComponent {
   });
 
   public readonly zoomOpen = signal(false);
+
+  /** What this result offers the image studio's prompt, if anything. */
+  public readonly promptText = computed(() => resultPromptText(this.form()));
+
+  /** Asks for the result's words to go to the image studio's prompt box. */
+  public readonly sendToPrompt = output<string>();
+
+  /**
+   * The type badge says whether a card holds words or a picture; a card that
+   * shares a row with its neighbours has said so by its size, and the badge
+   * would be the third thing in a head with room for two.
+   */
+  public readonly showsKindBadge = computed(() => this.size() !== 'short');
 
   public openZoom(): void {
     if (this.imageUrl()) this.zoomOpen.set(true);

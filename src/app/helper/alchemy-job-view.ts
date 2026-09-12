@@ -616,6 +616,27 @@ export function toCsv(rows: readonly (readonly string[])[]): string {
     .join('\r\n');
 }
 
+/** How many tags a prompt takes from an interrogation. */
+const PROMPT_TAG_COUNT = 20;
+
+/**
+ * What a text result offers the image studio's prompt box: the caption as
+ * written, or an interrogation's strongest tags in a line. Null for a result
+ * that is not prompt material (a palette, a score).
+ */
+export function resultPromptText(form: AlchemyForm): string | null {
+  const result = form.result ?? {};
+  if (form.form === 'caption' && typeof result.caption === 'string') {
+    const caption = result.caption.trim();
+    return caption || null;
+  }
+  if (form.form === 'interrogation') {
+    const tags = topTags(result.interrogation, PROMPT_TAG_COUNT);
+    return tags.length ? tags.join(', ') : null;
+  }
+  return null;
+}
+
 /** A job is worth archiving/showing once any form has produced a result. */
 export function jobHasResults(job: AlchemyJob): boolean {
   return (job.status?.forms ?? []).some(

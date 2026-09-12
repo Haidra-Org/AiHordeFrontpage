@@ -45,6 +45,9 @@ const makeJob = (
       (toggleSelected)="toggled = $event"
       (closePane)="paneClosed = paneClosed + 1"
       (exportCsv)="exported = $event"
+      (repeatRequest)="repeated = $event.id"
+      (useResultAsSource)="chained = $event.key"
+      (sendToPrompt)="prompted = $event"
     />
     <ng-template #foot><p class="test-foot">foot</p></ng-template>`,
 })
@@ -65,6 +68,9 @@ class HostComponent {
   toggled: string | null = null;
   paneClosed = 0;
   exported: { fileName: string; text: string } | null = null;
+  repeated: string | null = null;
+  chained: string | null = null;
+  prompted: string | null = null;
 }
 
 describe('AlchemyResultsBrowserComponent', () => {
@@ -546,6 +552,97 @@ describe('AlchemyResultsBrowserComponent', () => {
       fold().click();
       fixture.detectChanges();
       expect(openCount()).toBe(2);
+    });
+  });
+
+  describe('next steps of a batch', () => {
+    const doneJob = (): AlchemyJob => ({
+      ...makeJob('job-done', 'blob:source'),
+      forms: ['caption', 'RealESRGAN_x4plus'],
+      done: true,
+      status: {
+        state: 'done',
+        forms: [
+          { form: 'caption', state: 'done', result: { caption: 'a dog' } },
+          {
+            form: 'RealESRGAN_x4plus',
+            state: 'done',
+            result: { RealESRGAN_x4plus: 'https://r2.example/up.webp' },
+          },
+        ],
+      },
+    });
+
+    beforeEach(() => {
+      host.jobs.set([doneJob()]);
+      host.selectedJobId.set('job-done');
+      host.resultImageUrls.set(
+        new Map([['job-done::RealESRGAN_x4plus', 'blob:up']]),
+      );
+      fixture.detectChanges();
+    });
+
+    it('asks for the same operations on another image from the head', () => {
+      const buttons = [
+        ...fixture.nativeElement.querySelectorAll('.gs-detail-actions button'),
+      ] as HTMLButtonElement[];
+      expect(buttons[0].textContent).toContain('alchemy.jobs.repeat');
+      buttons[0].click();
+      expect(host.repeated).toBe('job-done');
+    });
+
+    it('carries a caption to the prompt and a picture to the source', () => {
+      (
+        fixture.nativeElement.querySelector(
+          '.alchemy-result__prompt-trigger',
+        ) as HTMLButtonElement
+      ).click();
+      expect(host.prompted).toBe('a dog');
+      (
+        fixture.nativeElement.querySelector(
+          '.alchemy-pictures__actions button',
+        ) as HTMLButtonElement
+      ).click();
+      expect(host.chained).toBe('RealESRGAN_x4plus');
+    });
+
+    it('shows no kind badge on a short card', () => {
+      const caption = fixture.nativeElement.querySelector(
+        'app-alchemy-result[data-size="short"] .gs-op-badge',
+      );
+      expect(caption).toBeNull();
+    });
+
+    it('closes the panel from the backdrop beside it', () => {
+      host.viewMode.set('gallery');
+      host.paneOpen.set(true);
+      fixture.detectChanges();
+      (
+        fixture.nativeElement.querySelector(
+          '.gs-jobpane-backdrop',
+        ) as HTMLElement
+      ).click();
+      expect(host.paneClosed).toBe(1);
+    });
+
+    it('lists only the operations the shown rows ran', () => {
+      host.jobs.set([
+        doneJob(),
+        { ...makeJob('job-other', null), forms: ['nsfw'] },
+      ]);
+      host.viewMode.set('table');
+      fixture.detectChanges();
+      const heads = () =>
+        [...fixture.nativeElement.querySelectorAll('thead .gs-series-th')]
+          .length;
+      expect(heads()).toBe(4);
+      (
+        fixture.nativeElement.querySelector(
+          '.gs-series-bar .gs-view-toggle',
+        ) as HTMLButtonElement
+      ).click();
+      fixture.detectChanges();
+      expect(heads()).toBe(3);
     });
   });
 });

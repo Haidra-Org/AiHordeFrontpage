@@ -1861,6 +1861,29 @@ describe('GenerateComponent', () => {
       });
     });
 
+    it('joins words sent over to whatever the prompt already says', async () => {
+      const handoff = TestBed.inject(StudioHandoffService);
+      component.form.controls.prompt.setValue('a portrait');
+      handoff.set({ prompt: 'grey hair, sunglasses' });
+      const fillPrompt = vi.fn();
+      Object.defineProperty(component, 'formRef', {
+        value: () => ({ fillPrompt }),
+      });
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(fillPrompt).toHaveBeenCalledWith(
+        'a portrait, grey hair, sunglasses',
+      );
+      expect(handoff.has()).toBe(false);
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'generate.source.prompt_attached',
+        { transloco: true },
+      );
+      expect(component.form.getRawValue().sourceMode).toBe('none');
+    });
+
     it('leaves the form alone when nothing was sent', async () => {
       fixture.detectChanges();
       await fixture.whenStable();

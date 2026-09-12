@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AlchemyResultComponent } from '../alchemy-result/alchemy-result.component';
@@ -66,6 +66,7 @@ function imageFileName(url: string): string {
 @Component({
   selector: 'app-alchemy-results-browser',
   imports: [
+    DatePipe,
     NgTemplateOutlet,
     TranslocoPipe,
     AlchemyResultComponent,
@@ -124,6 +125,15 @@ export class AlchemyResultsBrowserComponent {
   public readonly closePane = output<void>();
   /** The series table as shown, as a CSV document to save. */
   public readonly exportCsv = output<{ fileName: string; text: string }>();
+  /** Asks the page to set the form up as this request was, for another image. */
+  public readonly repeatRequest = output<AlchemyJob>();
+  /** Asks the page to make one result picture the source of the next request. */
+  public readonly useResultAsSource = output<{
+    job: AlchemyJob;
+    key: string;
+  }>();
+  /** Words from a result, for the image studio's prompt box. */
+  public readonly sendToPrompt = output<string>();
 
   // --- the series table ----------------------------------------------------
 
@@ -134,7 +144,12 @@ export class AlchemyResultsBrowserComponent {
   /** Only requests that ran the selected request's operations. */
   protected readonly sameOpsOnly = signal(false);
 
-  protected readonly columns = computed(() => seriesColumns(this.jobs()));
+  /**
+   * The columns are the operations the shown rows ran, so narrowing the rows
+   * drops the columns none of them fill, and a lone request's table is that
+   * request's operations and no more.
+   */
+  protected readonly columns = computed(() => seriesColumns(this.seriesJobs()));
 
   protected readonly seriesJobs = computed(() => {
     const selected = this.selectedJob();
@@ -159,6 +174,17 @@ export class AlchemyResultsBrowserComponent {
     const sort = this.seriesSort();
     if (sort?.key !== key) return 'none';
     return sort.direction === 'asc' ? 'ascending' : 'descending';
+  }
+
+  protected sortIcon(key: string): string {
+    switch (this.sortState(key)) {
+      case 'ascending':
+        return 'chevron-up';
+      case 'descending':
+        return 'chevron-down';
+      default:
+        return 'arrows-up-down';
+    }
   }
 
   protected toggleSameOps(): void {

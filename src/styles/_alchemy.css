@@ -261,6 +261,38 @@
 .gen-studio .alchemy-pictures__open-viewer {
   margin-left: auto;
 }
+.gen-studio .alchemy-pictures__download {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-card);
+  color: var(--gs-ink-2);
+}
+.gen-studio .alchemy-pictures__download.is-viewer-end {
+  margin-left: auto;
+}
+.gen-studio .alchemy-pictures__download:focus-visible,
+.gen-studio .alchemy-pictures__stage:focus-visible,
+.gen-studio .alchemy-pictures__viewer-body:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+/* The link is gone and nothing was kept: said on the plate, in its ink. */
+.gen-studio .alchemy-pictures__gone {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin: 0;
+  padding: var(--gs-space-4);
+  font-size: var(--gs-text-sm);
+  color: var(--gs-stage-label);
+}
+.gen-studio .alchemy-result__prompt-trigger {
+  flex-shrink: 0;
+}
 /* The stage clips what the zoom pushes past its edges; the pair inside keeps
    its fitted box, so the card's height does not move as the zoom does. */
 .gen-studio .alchemy-pictures__stage {
@@ -407,6 +439,15 @@
   font-size: var(--gs-text-sm);
   font-weight: 600;
 }
+.gen-studio
+  .alchemy-pictures__viewer
+  .alchemy-pictures__download.is-viewer-end {
+  margin-left: auto;
+}
+.gen-studio .alchemy-pictures__viewer .gs-plate-x {
+  margin-left: 0;
+}
+.gen-studio .alchemy-pictures__viewer .alchemy-pictures__download,
 .gen-studio .alchemy-pictures__viewer .gs-sweep-scale,
 .gen-studio .alchemy-pictures__viewer .gs-plate-x {
   border-color: #3b4252;

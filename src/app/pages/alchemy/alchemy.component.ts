@@ -854,10 +854,12 @@ export class AlchemyComponent {
   private async consumeHandoff(): Promise<void> {
     const pending = this.handoff.consume();
     const input = this.imageInput();
-    if (!pending || !input) {
+    // Words alone are for the image studio's prompt box; here only a picture
+    // has somewhere to go.
+    if (!pending?.blob || !input) {
       return;
     }
-    await input.applyBlob(pending.blob, pending.mimeType);
+    await input.applyBlob(pending.blob, pending.mimeType ?? pending.blob.type);
   }
 
   /**
@@ -886,6 +888,52 @@ export class AlchemyComponent {
 
   public onSourceImage(value: string | null): void {
     this.sourceImage.set(value);
+  }
+
+  /**
+   * Set the form up as a finished request was, for another image: the same
+   * operations and detectors, the source cleared, and the reader taken to the
+   * source step. A batch is the same operations over many pictures, and this
+   * is what makes the second picture one press away.
+   */
+  public repeatRequest(job: AlchemyJob): void {
+    this.selectedForms.set(new Set(job.forms));
+    this.annotationControlTypes.set([...job.annotationControlTypes]);
+    this.imageInput()?.clear();
+    this.sourceImage.set(null);
+    this.toast.success('alchemy.jobs.repeat_ready', { transloco: true });
+    this.focusElementById('alchemy-source-step');
+  }
+
+  /**
+   * Make one result picture the source of the next request, keeping the
+   * operations as picked: upscale then face-fix is pick the fixer, press.
+   */
+  public async useResultAsSource(event: {
+    job: AlchemyJob;
+    key: string;
+  }): Promise<void> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const input = this.imageInput();
+    const images = await this.queue.getResultImages(event.job.localId);
+    const image = images.find((candidate) => candidate.imageId === event.key);
+    if (!image || !input) {
+      this.toast.error('alchemy.result.use_in_studio_failed', {
+        transloco: true,
+      });
+      return;
+    }
+    await input.applyBlob(image.blob, image.mimeType);
+    this.toast.success('alchemy.pictures.source_set', { transloco: true });
+    this.focusElementById('alchemy-source-step');
+  }
+
+  /** Carry a caption or a tag list over to the image studio's prompt box. */
+  public async sendToPrompt(text: string): Promise<void> {
+    this.handoff.set({ prompt: text });
+    await this.router.navigate(['/generate/image']);
   }
 
   /**

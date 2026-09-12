@@ -589,6 +589,31 @@ describe('AlchemyComponent', () => {
       expect(component.jobPaneOpen()).toBe(true);
     });
 
+    it('sets the form up as a finished request was, for another image', () => {
+      queue.add('job-a', ['caption', 'annotation']);
+      const job: AlchemyJob = {
+        ...component.jobs()[0],
+        annotationControlTypes: ['canny', 'depth'],
+      };
+      component.onSourceImage('https://example.com/i.png');
+      component.repeatRequest(job);
+      expect([...component.selectedForms()]).toEqual(['caption', 'annotation']);
+      expect(component.annotationControlTypes()).toEqual(['canny', 'depth']);
+      expect(component.sourceImage()).toBeNull();
+      expect(toastSuccess).toHaveBeenCalledWith(
+        'alchemy.jobs.repeat_ready',
+        expect.anything(),
+      );
+    });
+
+    it('hands a caption to the image studio prompt and goes there', async () => {
+      await component.sendToPrompt('a dog on a couch');
+      expect(TestBed.inject(StudioHandoffService).consume()).toEqual({
+        prompt: 'a dog on a couch',
+      });
+      expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    });
+
     it('closes the job pane when the view changes', () => {
       track('job-a');
       component.setViewMode('gallery');

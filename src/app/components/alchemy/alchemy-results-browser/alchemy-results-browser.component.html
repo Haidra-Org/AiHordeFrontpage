@@ -156,19 +156,11 @@
                   @if (column.detector) {
                     <span class="gs-mono">{{ column.detector }}</span>
                   }
-                  <span class="gs-series-sort-glyph" aria-hidden="true">
-                    @switch (sortState(column.key)) {
-                      @case ("ascending") {
-                        ↑
-                      }
-                      @case ("descending") {
-                        ↓
-                      }
-                      @default {
-                        ↕
-                      }
-                    }
-                  </span>
+                  <app-icon
+                    [name]="sortIcon(column.key)"
+                    class="gs-ico-sm gs-series-sort-glyph"
+                    aria-hidden="true"
+                  />
                 </button>
               </th>
             }
@@ -203,7 +195,10 @@
                       <app-icon name="beaker" />
                     </span>
                   }
-                  <span class="gs-series-age">
+                  <span
+                    class="gs-series-age"
+                    [title]="job.firstSeenAt | date: 'medium'"
+                  >
                     {{ age(job).key | transloco: { count: age(job).count } }}
                   </span>
                 </button>
@@ -386,6 +381,11 @@
     <!-- Focus goes to the panel as it opens and back to the tile as it
          closes, so a keyboard reader is never left on a grid behind a
          panel. -->
+    <div
+      class="gs-jobpane-backdrop"
+      aria-hidden="true"
+      (click)="closePane.emit()"
+    ></div>
     <aside
       class="gs-jobpane"
       role="dialog"
@@ -428,7 +428,7 @@
       {{ stateView(job).key | transloco }}
     </span>
     <span class="gs-job-count gs-mono">{{ p.done }}/{{ p.total }}</span>
-    <span class="gs-job-age">
+    <span class="gs-job-age" [title]="job.firstSeenAt | date: 'medium'">
       {{ age(job).key | transloco: { count: age(job).count } }}
     </span>
     @if (cards.length > 1 && hasResults(job)) {
@@ -460,6 +460,15 @@
           {{ "alchemy.jobs.cancel" | transloco }}
         </button>
       } @else if (hasResults(job)) {
+        <!-- The same operations on another image: the batch's next step. -->
+        <button
+          type="button"
+          class="gs-tile-btn"
+          (click)="repeatRequest.emit(job)"
+        >
+          <app-icon name="pencil-square" />
+          {{ "alchemy.jobs.repeat" | transloco }}
+        </button>
         <button
           type="button"
           class="gs-tile-btn"
@@ -539,6 +548,7 @@
             [defaultOpen]="openPreset(cards.length)"
             [foldPin]="foldPinFor(job.id)"
             (useInStudio)="useResultInStudio.emit({ job: job, key: $event })"
+            (useAsSource)="useResultAsSource.emit({ job: job, key: $event })"
           />
         }
       } @else if (card.view; as view) {
@@ -549,6 +559,7 @@
           [defaultOpen]="openPreset(cards.length)"
           [foldPin]="foldPinFor(job.id)"
           (useInStudio)="useResultInStudio.emit({ job: job, key: view.key })"
+          (sendToPrompt)="sendToPrompt.emit($event)"
         />
       } @else {
         @let view = statusView(card.state);

@@ -153,7 +153,7 @@
       <div class="gs-body">
         <div class="flex flex-col gap-[14px]">
           <!-- STEP 1: source -->
-          <div class="gs-step-head">
+          <div class="gs-step-head" id="alchemy-source-step" tabindex="-1">
             <span
               class="gs-step-num"
               [class.gs-step-num--done]="hasSource()"
@@ -740,6 +740,9 @@
             (useResultInStudio)="useResultInStudio($event)"
             (closePane)="closeJobPane()"
             (exportCsv)="downloadSeriesCsv($event)"
+            (repeatRequest)="repeatRequest($event)"
+            (useResultAsSource)="useResultAsSource($event)"
+            (sendToPrompt)="sendToPrompt($event)"
           />
         }
       </div>

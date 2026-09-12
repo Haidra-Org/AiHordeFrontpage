@@ -6069,7 +6069,15 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
 }
 /* The picked job over the gallery: a panel at the pane's edge on a wide
-   layout (the phone gets the bottom sheet). The grid stays where it was. */
+   layout (the phone gets the bottom sheet). The grid stays where it was. A
+   press on the list beside the panel is the first thing a reader tries to
+   close it with, so the backdrop takes that press. */
+.gen-studio .gs-jobpane-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgb(17 24 39 / 12%);
+}
 .gen-studio .gs-jobpane {
   position: absolute;
   top: 0;

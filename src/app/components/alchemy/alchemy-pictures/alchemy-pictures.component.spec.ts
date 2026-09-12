@@ -81,16 +81,44 @@ describe('AlchemyPicturesComponent', () => {
     expect(el().querySelector('.alchemy-pictures__film')).toBeNull();
   });
 
-  it('offers the studio only for a copy held in this browser', () => {
+  it('offers the studio and the chain only for a copy held in this browser', () => {
     render([picture('a', false)]);
-    expect(el().querySelector('.alchemy-pictures__actions button')).toBeNull();
+    expect(
+      el().querySelectorAll('.alchemy-pictures__actions button').length,
+    ).toBe(0);
     render([picture('b', true)]);
-    (
-      el().querySelector(
-        '.alchemy-pictures__actions button',
-      ) as HTMLButtonElement
-    ).click();
+    const buttons = [
+      ...el().querySelectorAll('.alchemy-pictures__actions button'),
+    ] as HTMLButtonElement[];
+    expect(buttons.length).toBe(2);
+    let chained: string | null = null;
+    fixture.componentInstance.useAsSource.subscribe((key) => (chained = key));
+    buttons[0].click();
+    expect(chained).toBe('b');
+    buttons[1].click();
     expect(carried).toBe('b');
+  });
+
+  it('offers the download in the bar, as a saved file only for a held copy', () => {
+    render([picture('a', false)]);
+    const remote = el().querySelector(
+      '.alchemy-pictures__download',
+    ) as HTMLAnchorElement;
+    expect(remote.getAttribute('download')).toBeNull();
+    expect(remote.getAttribute('target')).toBe('_blank');
+    render([picture('b', true)]);
+    const held = el().querySelector(
+      '.alchemy-pictures__download',
+    ) as HTMLAnchorElement;
+    expect(held.getAttribute('download')).toBe('b.webp');
+  });
+
+  it('says so when the picked link has died and nothing was kept', () => {
+    render([picture('gone', false)]);
+    fixture.componentInstance.resultGone.set(true);
+    fixture.detectChanges();
+    expect(el().querySelector('.alchemy-pictures__gone')).not.toBeNull();
+    expect(el().querySelector('app-gs-compare-wipe')).toBeNull();
   });
 
   it('folds to a strip of small frames and follows the fold pin', () => {
@@ -192,6 +220,28 @@ describe('AlchemyPicturesComponent', () => {
       c.onStagePointerUp();
       c.onStagePointerMove(move(0, 0));
       expect(c.panX()).toBe(768);
+    });
+
+    it('answers the keyboard: plus and minus step the size, arrows pan, zero fits', () => {
+      const c = fixture.componentInstance;
+      const key = (k: string) => new KeyboardEvent('keydown', { key: k });
+      c.onStageKeydown(key('ArrowLeft'));
+      expect(c.panX()).toBe(0);
+      c.onStageKeydown(key('+'));
+      expect(c.zoomStep()).toBe('full');
+      c.onStageKeydown(key('='));
+      expect(c.zoomStep()).toBe('double');
+      c.onStageKeydown(key('+'));
+      expect(c.zoomStep()).toBe('double');
+      c.onStageKeydown(key('ArrowLeft'));
+      c.onStageKeydown(key('ArrowDown'));
+      expect(c.panX()).toBe(40);
+      expect(c.panY()).toBe(-40);
+      c.onStageKeydown(key('-'));
+      expect(c.zoomStep()).toBe('full');
+      expect(c.panX()).toBe(0);
+      c.onStageKeydown(key('0'));
+      expect(c.zoomStep()).toBe('fit');
     });
 
     it('opens the viewer on the same pick and closes it again', () => {

@@ -1,22 +1,21 @@
 import { Injectable } from '@angular/core';
 
-/** An image handed from one studio tab to another. */
-export interface StudioImageHandoff {
-  blob: Blob;
-  mimeType: string;
+/**
+ * What one studio hands the other on the way over: a picture to become the
+ * source, prompt text to go in the prompt box, or both. Either half may be
+ * absent; a caption sent to the image studio carries no bytes.
+ */
+export interface StudioHandoff {
+  blob?: Blob;
+  mimeType?: string;
+  prompt?: string;
 }
 
-/**
- * Carries a single image between the studio's tabs (a generation result sent to
- * alchemy, say). The blob is held in memory only and consumed exactly once by
- * the receiving page, so a reload or a second visit starts clean: persisting it
- * would resurrect an image the user has long since moved on from.
- */
 @Injectable({ providedIn: 'root' })
 export class StudioHandoffService {
-  private pending: StudioImageHandoff | null = null;
+  private pending: StudioHandoff | null = null;
 
-  public set(handoff: StudioImageHandoff): void {
+  public set(handoff: StudioHandoff): void {
     this.pending = handoff;
   }
 
@@ -24,8 +23,7 @@ export class StudioHandoffService {
     return this.pending !== null;
   }
 
-  /** Take the pending image, leaving nothing behind for the next visit. */
-  public consume(): StudioImageHandoff | null {
+  public consume(): StudioHandoff | null {
     const handoff = this.pending;
     this.pending = null;
     return handoff;

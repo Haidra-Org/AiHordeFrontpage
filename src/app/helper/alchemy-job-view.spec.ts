@@ -8,6 +8,7 @@ import {
   jobFormRows,
   jobLeadPreview,
   jobProgress,
+  resultPromptText,
   seriesCell,
   seriesColumns,
   sharesOperations,
@@ -499,5 +500,38 @@ describe('series table', () => {
         ['1', 'x,y'],
       ]),
     ).toBe('"a","b ""c"" d"\r\n"1","x,y"');
+  });
+
+  describe('resultPromptText', () => {
+    it('offers a caption as written and the strongest tags in a line', () => {
+      expect(
+        resultPromptText({
+          form: 'caption',
+          state: 'done',
+          result: { caption: '  a dog  ' },
+        }),
+      ).toBe('a dog');
+      expect(
+        resultPromptText({
+          form: 'interrogation',
+          state: 'done',
+          result: {
+            interrogation: {
+              tags: [
+                { text: 'low', confidence: 0.2 },
+                { text: 'high', confidence: 0.9 },
+              ],
+            },
+          },
+        }),
+      ).toBe('high, low');
+      expect(
+        resultPromptText({
+          form: 'nsfw',
+          state: 'done',
+          result: { nsfw: false },
+        }),
+      ).toBeNull();
+    });
   });
 });

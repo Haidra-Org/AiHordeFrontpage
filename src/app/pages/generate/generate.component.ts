@@ -1841,8 +1841,22 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       return;
     }
     // The first-visit offer sits over the whole page, and a reader arriving
-    // with a picture in hand has asked for the studio, not for the offer.
+    // with something in hand has asked for the studio, not for the offer.
     this.welcomeClosed.set(true);
+    if (pending.prompt) {
+      // Words sent over join what is already written rather than replacing
+      // it: a caption is material for the prompt, not the prompt.
+      const current = this.form.controls.prompt.value.trim();
+      this.onUsePrompt(
+        current ? `${current}, ${pending.prompt}` : pending.prompt,
+      );
+      this.toast.success('generate.source.prompt_attached', {
+        transloco: true,
+      });
+    }
+    if (!pending.blob) {
+      return;
+    }
     const section = await this.openSourceSection();
     if (!section) {
       this.toast.error('generate.source.attach_failed', { transloco: true });

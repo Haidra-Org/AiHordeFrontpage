@@ -47,6 +47,9 @@
           #stageEl
           class="alchemy-pictures__stage"
           [class.is-pannable]="zoomedIn()"
+          tabindex="0"
+          [attr.aria-label]="'alchemy.pictures.stage_label' | transloco"
+          (keydown)="onStageKeydown($event)"
           (pointerdown)="onStagePointerDown($event)"
           (pointermove)="onStagePointerMove($event)"
           (pointerup)="onStagePointerUp()"
@@ -57,16 +60,15 @@
         <ng-container *ngTemplateOutlet="film" />
 
         <div class="alchemy-pictures__actions">
-          <a
-            class="gs-btn gs-btn--dense"
-            [href]="current.url"
-            [attr.download]="current.stored ? current.downloadName : null"
-            [attr.target]="current.stored ? null : '_blank'"
-            [attr.rel]="current.stored ? null : 'noopener noreferrer'"
-          >
-            {{ "alchemy.result.open_image" | transloco }}
-          </a>
           @if (current.stored) {
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense"
+              (click)="useAsSource.emit(current.key)"
+            >
+              <app-icon name="beaker" class="gs-ico-sm" />
+              {{ "alchemy.pictures.use_as_source" | transloco }}
+            </button>
             <button
               type="button"
               class="gs-btn gs-btn--dense"
@@ -107,6 +109,9 @@
         #viewerEl
         class="alchemy-pictures__viewer-body"
         [class.is-pannable]="zoomedIn()"
+        tabindex="0"
+        [attr.aria-label]="'alchemy.pictures.stage_label' | transloco"
+        (keydown)="onStageKeydown($event)"
         (pointerdown)="onStagePointerDown($event)"
         (pointermove)="onStagePointerMove($event)"
         (pointerup)="onStagePointerUp()"
@@ -125,7 +130,12 @@
 <ng-template #pair>
   @let current = picked();
   @if (current) {
-    @if (source(); as src) {
+    @if (resultGone()) {
+      <p class="alchemy-pictures__gone">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ "alchemy.pictures.gone" | transloco }}
+      </p>
+    } @else if (source(); as src) {
       <app-gs-compare-wipe
         [beforeSrc]="src"
         [afterSrc]="current.url"
@@ -199,6 +209,20 @@
           </button>
         }
       </div>
+    }
+    @if (picked(); as current) {
+      <a
+        class="gs-sweep-expand alchemy-pictures__download"
+        [class.is-viewer-end]="inViewer"
+        [href]="current.url"
+        [attr.download]="current.stored ? current.downloadName : null"
+        [attr.target]="current.stored ? null : '_blank'"
+        [attr.rel]="current.stored ? null : 'noopener noreferrer'"
+        [attr.aria-label]="'alchemy.pictures.download' | transloco"
+        [title]="'alchemy.pictures.download' | transloco"
+      >
+        <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+      </a>
     }
     @if (inViewer) {
       <button type="button" class="gs-plate-x" (click)="closeViewer()">
