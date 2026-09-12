@@ -10,6 +10,7 @@ import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
 import { Router, provideRouter } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
+import { StudioDescribeService } from '../../../services/studio-describe.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import { WorkerPoolService } from '../../../services/worker-pool.service';
@@ -84,6 +85,10 @@ describe('GenerateResultsPanelComponent', () => {
   let dbStore: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
   let handoff: { set: ReturnType<typeof vi.fn> };
+  let describeService: {
+    describe: ReturnType<typeof vi.fn>;
+    pending: ReturnType<typeof signal<boolean>>;
+  };
 
   /**
    * Let the thumbnail effect run and its stored-image read resolve, so the
@@ -108,6 +113,10 @@ describe('GenerateResultsPanelComponent', () => {
     dbStore = vi.fn();
     navigate = vi.fn().mockResolvedValue(true);
     handoff = { set: vi.fn() };
+    describeService = {
+      describe: vi.fn().mockResolvedValue(undefined),
+      pending: signal(false),
+    };
     // jsdom has no object-URL support and the grid makes one per thumbnail.
     URL.createObjectURL = vi.fn(() => 'blob:test');
     URL.revokeObjectURL = vi.fn();
@@ -160,6 +169,7 @@ describe('GenerateResultsPanelComponent', () => {
           },
         },
         { provide: StudioHandoffService, useValue: handoff },
+        { provide: StudioDescribeService, useValue: describeService },
         {
           provide: TranslocoService,
           useValue: { translate: (key: string) => key },
@@ -934,6 +944,16 @@ describe('GenerateResultsPanelComponent', () => {
       expect(navigate).toHaveBeenCalledWith(['/generate/alchemy']);
       expect(component.viewerKey()).toBeNull();
     });
+
+    it('reads a result for words without leaving the studio', async () => {
+      const tile = component.viewerTiles()[0];
+
+      await component.describeTile(tile);
+
+      expect(describeService.describe).toHaveBeenCalledTimes(1);
+      expect(describeService.describe.mock.calls[0][1]).toBe('result');
+      expect(navigate).not.toHaveBeenCalled();
+    });
   });
 
   describe('style provenance', () => {
@@ -1561,6 +1581,10 @@ describe('GenerateResultsPanelComponent empty pane', () => {
           useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
         },
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+        {
+          provide: StudioDescribeService,
+          useValue: { describe: vi.fn(), pending: signal(false) },
+        },
       ],
     }).compileComponents();
 
@@ -1642,6 +1666,10 @@ describe('GenerateResultsPanelComponent status chip', () => {
           useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
         },
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+        {
+          provide: StudioDescribeService,
+          useValue: { describe: vi.fn(), pending: signal(false) },
+        },
       ],
     }).compileComponents();
 
@@ -1736,6 +1764,10 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
           useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
         },
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+        {
+          provide: StudioDescribeService,
+          useValue: { describe: vi.fn(), pending: signal(false) },
+        },
       ],
     }).compileComponents();
 
@@ -1858,6 +1890,10 @@ describe('GenerateResultsPanelComponent justified rows', () => {
           useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
         },
         { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+        {
+          provide: StudioDescribeService,
+          useValue: { describe: vi.fn(), pending: signal(false) },
+        },
       ],
     }).compileComponents();
 

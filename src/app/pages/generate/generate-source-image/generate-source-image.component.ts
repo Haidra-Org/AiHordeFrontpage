@@ -21,6 +21,7 @@ import { GsHelpComponent } from '../../../components/gs-help/gs-help.component';
 import { GsGroupComponent } from '../generate-form/gs-group/gs-group.component';
 import { DatabaseService } from '../../../services/database.service';
 import { ModelReferenceService } from '../../../services/model-reference.service';
+import { StudioDescribeService } from '../../../services/studio-describe.service';
 import {
   LicensingService,
   licensingExplorerUrl,
@@ -180,6 +181,7 @@ export class GenerateSourceImageComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly licensing = inject(LicensingService);
+  private readonly describeService = inject(StudioDescribeService);
 
   public readonly form = input.required<GenerateFormGroup>();
   /** When true, show a validation hint for whatever the current mode lacks. */
@@ -618,10 +620,19 @@ export class GenerateSourceImageComponent implements OnInit {
       void this.rebuildOutpaintCanvas(image, width, height, anchor, offset);
     });
 
+    // The prompt section offers the attached picture as something to read for
+    // a caption and tags, and only this card knows what is attached. Reading
+    // it is a separate act from attaching it, so nothing here changes the mode
+    // or what the request sends.
+    effect(() => {
+      this.describeService.offerSourcePicture(this.sourceImage()?.blob ?? null);
+    });
+
     this.destroyRef.onDestroy(() => {
       this.revokePreview();
       this.revokeMaskPreview();
       this.revokeExtraPreviews();
+      this.describeService.offerSourcePicture(null);
     });
   }
 

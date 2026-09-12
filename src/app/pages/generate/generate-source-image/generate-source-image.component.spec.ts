@@ -16,6 +16,7 @@ import {
 } from '../generate-form.model';
 import { SourceImage } from '../../../helper/source-image';
 import { GenerationDbService } from '../../../services/generation-db.service';
+import { StudioDescribeService } from '../../../services/studio-describe.service';
 import { StoredSourceDraft } from '../../../types/generation-job';
 import { provideRouter } from '@angular/router';
 import {
@@ -143,6 +144,21 @@ describe('GenerateSourceImageComponent', () => {
     expect(last.mode).toBe('img2img');
     expect(last.valid).toBe(true);
     expect(last.sourceBlob).not.toBeNull();
+  });
+
+  it('offers the attached picture to the prompt section for reading', async () => {
+    const { fixture, component } = await createComponent();
+    const describeService = TestBed.inject(StudioDescribeService);
+    expect(describeService.sourcePicture()).toBeNull();
+
+    const image = fakeImage();
+    component.sourceImage.set(image);
+    fixture.detectChanges();
+    expect(describeService.sourcePicture()).toBe(image.blob);
+
+    component.clearImage();
+    fixture.detectChanges();
+    expect(describeService.sourcePicture()).toBeNull();
   });
 
   it('carries what it is missing beside the flag, for the page to word', async () => {

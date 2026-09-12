@@ -47,6 +47,8 @@ import { GeneratePresetsService } from '../../../services/generate-presets.servi
 import { GlossaryService } from '../../../services/glossary.service';
 import { AuthService } from '../../../services/auth.service';
 import { ToastService } from '../../../services/toast.service';
+import { StudioDescribeService } from '../../../services/studio-describe.service';
+import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { DatabaseService } from '../../../services/database.service';
 import { UnitConversionService } from '../../../services/unit-conversion.service';
 import { ActiveModel } from '../../../types/active-model';
@@ -595,6 +597,12 @@ export class GenerateFormComponent implements OnInit {
   /** Backs the full-screen control: in Options wide, beside it on a phone. */
   public readonly fullscreen = inject(FullscreenService);
   private readonly toast = inject(ToastService);
+  /**
+   * What alchemy read out of the picture on the bench. Held by a root service
+   * because the reading is asked for from the source card and from a result
+   * tile, and shown here, where the words are used.
+   */
+  public readonly describe = inject(StudioDescribeService);
   private readonly anchors = inject(TutorialAnchorService);
   private readonly injector = inject(Injector);
   private readonly transloco = inject(TranslocoService);
@@ -3258,6 +3266,61 @@ export class GenerateFormComponent implements OnInit {
       controls.negativePrompt.markAsDirty();
     }
     this.focusPrompt();
+  }
+
+  /** Whether a picture is being dragged over the reading block. */
+  public readonly describeDragging = signal(false);
+
+  /** Take a picture from the file picker and read it, without attaching it. */
+  public onDescribeFilePicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Cleared so picking the same picture again still counts as a change.
+    input.value = '';
+    if (file) {
+      void this.describe.describe(file, 'picked');
+    }
+  }
+
+  public onDescribeDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.describeDragging.set(true);
+  }
+
+  public onDescribeDragLeave(): void {
+    this.describeDragging.set(false);
+  }
+
+  public onDescribeDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.describeDragging.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) {
+      void this.describe.describe(file, 'picked');
+    }
+  }
+
+  /** Read the picture already attached as the source, leaving it attached. */
+  public describeSourcePicture(): void {
+    const blob = this.describe.sourcePicture();
+    if (blob) {
+      void this.describe.describe(blob, 'source');
+    }
+  }
+
+  /** Put alchemy's caption in the prompt box, as the reading worded it. */
+  public useDescribeCaption(): void {
+    const caption = this.describe.findings().caption;
+    if (caption) {
+      this.fillPrompt(caption);
+    }
+  }
+
+  /** Take one of the findings away for use elsewhere. */
+  public async copyDescribeLine(text: string): Promise<void> {
+    if (await copyToClipboard(text)) {
+      this.toast.success('generate.describe.copied', { transloco: true });
+    }
   }
 
   /** Open the full-screen editor on one of the two prompt fields. */

@@ -33,6 +33,7 @@ import {
   retentionNoticeSeen,
 } from '../../../helper/retention-notice';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
+import { StudioDescribeService } from '../../../services/studio-describe.service';
 import { buildJobImageArchive, extensionFor } from '../generate-archive';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import { useBackClose } from '../../../helper/back-close';
@@ -358,6 +359,7 @@ export class GenerateResultsPanelComponent {
   private readonly transloco = inject(TranslocoService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly handoff = inject(StudioHandoffService);
+  private readonly describeService = inject(StudioDescribeService);
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly helpDock = inject(GsHelpDockService);
@@ -1976,6 +1978,22 @@ export class GenerateResultsPanelComponent {
     this.closeViewer();
     this.unflip();
     await this.router.navigate(['/generate/alchemy']);
+  }
+
+  /** Whether a reading is already on its way, for the menu item's state. */
+  public readonly describePending = this.describeService.pending;
+
+  /**
+   * Ask alchemy what is in a picture the studio made. The findings appear in
+   * the prompt section, where the words they offer are used, so the reader
+   * stays in the studio rather than being sent to the alchemy page.
+   */
+  public async describeTile(tile: ResultTile): Promise<void> {
+    const blob = await this.resultBlob(tile);
+    if (!blob) {
+      return;
+    }
+    await this.describeService.describe(blob, 'result');
   }
 
   /** The stored blob behind a result tile, or null when it is not a result. */

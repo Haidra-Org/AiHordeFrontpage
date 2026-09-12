@@ -2103,6 +2103,16 @@
       type="button"
       class="gs-tile-menu-item"
       role="menuitem"
+      [disabled]="!menu.tile.thumb || describePending()"
+      (click)="describeTile(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="beaker" />
+      {{ "generate.describe.action" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
       [disabled]="!menu.tile.seed"
       (click)="copySeed(menu.tile); closeTileMenu()"
     >
