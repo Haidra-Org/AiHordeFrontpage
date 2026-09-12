@@ -149,8 +149,9 @@ export class KudosLeaderboardComponent implements OnInit {
           // Combine all loaded pages in order
           const allUsers: LeaderboardUser[] = [];
           for (let i = 1; i <= KudosLeaderboardComponent.TOTAL_PAGES; i++) {
-            if (accumulated.pages[i]) {
-              allUsers.push(...accumulated.pages[i]);
+            const page = accumulated.pages[i];
+            if (page) {
+              allUsers.push(...page);
             }
           }
           this.users.set(allUsers);
@@ -210,7 +211,10 @@ export class KudosLeaderboardComponent implements OnInit {
       this.aiHorde.getKudosLeaderboardPage(highPage),
     );
     while (pageData.length === KudosLeaderboardComponent.PAGE_SIZE) {
-      const lastUserKudos = pageData[pageData.length - 1].kudos;
+      const lastUserKudos = pageData.at(-1)?.kudos;
+      if (lastUserKudos === undefined) {
+        break;
+      }
       if (lastUserKudos < userKudos) {
         // User is on a page before or at highPage
         break;
@@ -235,8 +239,12 @@ export class KudosLeaderboardComponent implements OnInit {
         continue;
       }
 
-      const firstUserKudos = pageData[0].kudos;
-      const lastUserKudos = pageData[pageData.length - 1].kudos;
+      const firstUserKudos = pageData.at(0)?.kudos;
+      const lastUserKudos = pageData.at(-1)?.kudos;
+      if (firstUserKudos === undefined || lastUserKudos === undefined) {
+        highPage = midPage;
+        continue;
+      }
 
       if (userKudos > firstUserKudos) {
         // User has more kudos than everyone on this page, search earlier pages
@@ -257,8 +265,8 @@ export class KudosLeaderboardComponent implements OnInit {
     );
 
     // Find user by ID in this page
-    for (let i = 0; i < pageData.length; i++) {
-      if (pageData[i].id === userId) {
+    for (const [i, user] of pageData.entries()) {
+      if (user.id === userId) {
         return (lowPage - 1) * KudosLeaderboardComponent.PAGE_SIZE + i + 1;
       }
     }
@@ -269,8 +277,8 @@ export class KudosLeaderboardComponent implements OnInit {
       const prevPageData = await firstValueFrom(
         this.aiHorde.getKudosLeaderboardPage(lowPage - 1),
       );
-      for (let i = 0; i < prevPageData.length; i++) {
-        if (prevPageData[i].id === userId) {
+      for (const [i, user] of prevPageData.entries()) {
+        if (user.id === userId) {
           return (lowPage - 2) * KudosLeaderboardComponent.PAGE_SIZE + i + 1;
         }
       }
@@ -280,15 +288,15 @@ export class KudosLeaderboardComponent implements OnInit {
     const nextPageData = await firstValueFrom(
       this.aiHorde.getKudosLeaderboardPage(lowPage + 1),
     );
-    for (let i = 0; i < nextPageData.length; i++) {
-      if (nextPageData[i].id === userId) {
+    for (const [i, user] of nextPageData.entries()) {
+      if (user.id === userId) {
         return lowPage * KudosLeaderboardComponent.PAGE_SIZE + i + 1;
       }
     }
 
     // Fallback: estimate based on kudos position
-    for (let i = 0; i < pageData.length; i++) {
-      if (pageData[i].kudos <= userKudos) {
+    for (const [i, user] of pageData.entries()) {
+      if (user.kudos <= userKudos) {
         return (lowPage - 1) * KudosLeaderboardComponent.PAGE_SIZE + i + 1;
       }
     }

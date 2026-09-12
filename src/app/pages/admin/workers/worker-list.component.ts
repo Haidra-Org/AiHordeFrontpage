@@ -371,8 +371,8 @@ export class WorkerListComponent implements OnInit {
     const parts = versionString.split(':');
 
     if (parts.length >= 3) {
-      const name = parts[0].trim();
-      const version = parts[1].trim();
+      const name = parts.at(0)?.trim() ?? '';
+      const version = parts.at(1)?.trim() ?? '';
       const url = parts.slice(2).join(':').trim(); // Rejoin in case URL has colons
 
       return {
@@ -380,8 +380,8 @@ export class WorkerListComponent implements OnInit {
         url: url || null,
       };
     } else if (parts.length === 2) {
-      const name = parts[0].trim();
-      const version = parts[1].trim();
+      const name = parts.at(0)?.trim() ?? '';
+      const version = parts.at(1)?.trim() ?? '';
       return {
         displayName: `${name} v${version}`,
         url: null,

@@ -302,9 +302,8 @@ export class UserManagementComponent implements OnInit {
       this.searchUser();
     } else {
       // Auto-load the last user if available
-      const history = this.userHistory();
-      if (history.length > 0) {
-        const lastUser = history[0];
+      const lastUser = this.userHistory().at(0);
+      if (lastUser) {
         this.searchQuery.set(lastUser.id.toString());
         this.searchUser();
       }
@@ -343,8 +342,9 @@ export class UserManagementComponent implements OnInit {
     } else {
       // Try to extract ID from "username#id" or "#id" format
       const match = query.match(/#(\d+)$/);
-      if (match) {
-        userId = parseInt(match[1], 10);
+      const matchedId = match?.at(1);
+      if (matchedId) {
+        userId = parseInt(matchedId, 10);
       }
     }
 

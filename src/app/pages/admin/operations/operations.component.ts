@@ -638,7 +638,11 @@ export class OperationsComponent implements OnInit {
         return;
       }
 
-      const ip = selected[index];
+      const ip = selected.at(index);
+      if (!ip) {
+        processNext(selected.length);
+        return;
+      }
       this.operationsService
         .addIPTimeout({ ipaddr: ip.ipaddr, hours })
         .pipe(takeUntilDestroyed(this.destroyRef))

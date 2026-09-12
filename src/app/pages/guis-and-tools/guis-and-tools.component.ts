@@ -463,8 +463,8 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
     const visible = this.visibleSections();
     const activeIdx = visible.findIndex((s) => s.id === active);
     const passed = new Set<string>();
-    for (let i = 0; i < activeIdx; i++) {
-      passed.add(visible[i].id);
+    for (const section of visible.slice(0, activeIdx)) {
+      passed.add(section.id);
     }
     return passed;
   });

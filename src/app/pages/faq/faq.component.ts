@@ -437,8 +437,7 @@ export class FaqComponent implements OnInit, OnDestroy {
     const manual = this.manualTocSections();
     const next = new Set<string>();
 
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
+    for (const [i, key] of keys.entries()) {
       const distance = Math.abs(i - activeIdx);
       if (distance <= 1 || manual.has(key)) {
         next.add(key);
@@ -471,8 +470,9 @@ export class FaqComponent implements OnInit, OnDestroy {
           toExpand.add(item.question);
           toHighlight.add(item.question);
         }
-        if (!firstMatchElement && items.length > 0) {
-          firstMatchElement = `faq-item-${slugify(items[0].question)}`;
+        const firstItem = items.at(0);
+        if (!firstMatchElement && firstItem) {
+          firstMatchElement = `faq-item-${slugify(firstItem.question)}`;
         }
       }
 
