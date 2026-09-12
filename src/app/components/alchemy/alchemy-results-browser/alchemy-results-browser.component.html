@@ -584,5 +584,16 @@
         </div>
       }
     }
+    <!-- The words the results offer, drafted into a prompt by a text model:
+         the last card of the flow, once there is a caption or tags to write
+         from, folded until asked. -->
+    @if (promptMaterial(cards); as material) {
+      <app-alchemy-prompt-draft
+        [caption]="material.caption"
+        [tags]="material.tags"
+        [foldPin]="foldPinFor(job.id)"
+        (sendToPrompt)="sendToPrompt.emit($event)"
+      />
+    }
   </div>
 </ng-template>

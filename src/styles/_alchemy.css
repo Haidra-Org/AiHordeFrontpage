@@ -293,6 +293,52 @@
 .gen-studio .alchemy-result__prompt-trigger {
   flex-shrink: 0;
 }
+
+/* --- A prompt drafted by a text model ----------------------------- */
+.gen-studio .alchemy-draft__body {
+  align-items: stretch;
+}
+.gen-studio .alchemy-draft__lead {
+  margin: 0;
+}
+.gen-studio .alchemy-draft__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.gen-studio .alchemy-draft__label {
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-label);
+}
+.gen-studio .alchemy-draft__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-draft__field--model {
+  flex: 1 1 260px;
+}
+.gen-studio .alchemy-draft__field--model .gs-view-select {
+  width: 100%;
+  max-width: 100%;
+}
+.gen-studio .alchemy-draft__go {
+  flex: none;
+}
+.gen-studio .alchemy-draft__text {
+  align-self: stretch;
+}
+.gen-studio .alchemy-draft__meta {
+  margin: 0;
+}
+.gen-studio .alchemy-draft__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+}
 /* The stage clips what the zoom pushes past its edges; the pair inside keeps
    its fitted box, so the card's height does not move as the zoom does. */
 .gen-studio .alchemy-pictures__stage {

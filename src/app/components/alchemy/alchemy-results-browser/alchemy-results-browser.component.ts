@@ -17,6 +17,7 @@ import {
   AlchemyPicture,
   AlchemyPicturesComponent,
 } from '../alchemy-pictures/alchemy-pictures.component';
+import { AlchemyPromptDraftComponent } from '../alchemy-prompt-draft/alchemy-prompt-draft.component';
 import { ALCHEMY_DATA_FORMS } from '../../../types/generation';
 import {
   isLikelyImageFileLink,
@@ -40,6 +41,7 @@ import {
   jobLeadPreview,
   jobProgress,
   jobStateView,
+  resultPromptText,
   seriesCell,
   seriesColumns,
   sharesOperations,
@@ -71,6 +73,7 @@ function imageFileName(url: string): string {
     TranslocoPipe,
     AlchemyResultComponent,
     AlchemyPicturesComponent,
+    AlchemyPromptDraftComponent,
     IconComponent,
     GsSheetComponent,
     A11yModule,
@@ -262,6 +265,26 @@ export class AlchemyResultsBrowserComponent {
   protected readonly settled = isJobSettled;
   protected readonly hasResults = jobHasResults;
   protected readonly leadPreview = jobLeadPreview;
+
+  /**
+   * The words a job's results offer a prompt: its caption and its strongest
+   * tags, each once the form is done. Null when there is nothing yet, which
+   * is when the draft card has nothing to write from and stays away.
+   */
+  protected promptMaterial(
+    cards: AlchemyFormCard[],
+  ): { caption: string | null; tags: string | null } | null {
+    let caption: string | null = null;
+    let tags: string | null = null;
+    for (const card of cards) {
+      if (!card.view) continue;
+      const text = resultPromptText(card.view.form);
+      if (!text) continue;
+      if (card.form === 'caption') caption = text;
+      if (card.form === 'interrogation') tags = text;
+    }
+    return caption || tags ? { caption, tags } : null;
+  }
 
   // --- pictures and folding -------------------------------------------------
 

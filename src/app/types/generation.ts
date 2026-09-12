@@ -376,6 +376,38 @@ export interface TextGenerationStatusResponse {
   generations: TextGenerationOutput[];
 }
 
+/** The sampling knobs a text request carries; the horde's own names. */
+export interface TextGenerationParams {
+  max_context_length?: number;
+  max_length?: number;
+  temperature?: number;
+  top_p?: number;
+  top_k?: number;
+  min_p?: number;
+  rep_pen?: number;
+  singleline?: boolean;
+  stop_sequence?: string[];
+}
+
+export interface TextGenerationRequest {
+  prompt: string;
+  params?: TextGenerationParams;
+  /** Models allowed to answer; absent means any. */
+  models?: string[];
+  slow_workers?: boolean;
+  trusted_workers?: boolean;
+}
+
+export interface TextGenerationResponse {
+  id: string;
+  kudos: number;
+  message?: string;
+}
+
+export type SubmitTextGenerationResult =
+  | { kind: 'success'; response: TextGenerationResponse }
+  | { kind: 'error'; error: HordeApiError };
+
 // ============================================================================
 // Alchemy (Interrogation) Types
 // ============================================================================

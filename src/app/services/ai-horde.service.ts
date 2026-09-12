@@ -22,6 +22,9 @@ import {
   ImageGenerationResponse,
   GenerationCheckResponse,
   GenerationStatusResponse,
+  SubmitTextGenerationResult,
+  TextGenerationRequest,
+  TextGenerationResponse,
   TextGenerationStatusResponse,
   AlchemyStatusResponse,
   InterrogationRequest,
@@ -437,6 +440,31 @@ export class AiHordeService {
         `${this.baseUrl}/generate/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));
+  }
+
+  /**
+   * Submit a text request, surfacing the horde's refusal on failure the way
+   * an alchemy request does.
+   */
+  public submitTextGeneration(
+    apiKey: string,
+    request: TextGenerationRequest,
+  ): Observable<SubmitTextGenerationResult> {
+    return this.httpClient
+      .post<TextGenerationResponse>(
+        `${this.baseUrl}/generate/text/async`,
+        request,
+        {
+          headers: { apikey: apiKey },
+          context: this.generateContext,
+        },
+      )
+      .pipe(
+        map((response) => ({ kind: 'success' as const, response })),
+        catchError((err: unknown) =>
+          of({ kind: 'error' as const, error: this.toHordeApiError(err) }),
+        ),
+      );
   }
 
   public getTextGenerationStatus(

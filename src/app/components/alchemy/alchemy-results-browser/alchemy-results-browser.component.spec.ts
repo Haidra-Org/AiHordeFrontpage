@@ -271,7 +271,7 @@ describe('AlchemyResultsBrowserComponent', () => {
     const flow = fixture.nativeElement.querySelector(
       '.gs-result-flow',
     ) as HTMLElement;
-    expect(flow.querySelectorAll('.alchemy-result').length).toBe(1);
+    expect(flow.querySelectorAll('app-alchemy-result').length).toBe(1);
     const waits = [...flow.querySelectorAll('.gs-form-wait')] as HTMLElement[];
     expect(waits.map((w) => w.className)).toEqual([
       'gs-form-wait gs-form-wait--processing',
@@ -544,7 +544,9 @@ describe('AlchemyResultsBrowserComponent', () => {
           '.gs-fold-all',
         ) as HTMLButtonElement;
       const openCount = () =>
-        fixture.nativeElement.querySelectorAll('.alchemy-result--open').length;
+        fixture.nativeElement.querySelectorAll(
+          ':is(app-alchemy-result, app-alchemy-pictures) .alchemy-result--open',
+        ).length;
       expect(openCount()).toBe(2);
       expect(fold().textContent).toContain('alchemy.jobs.fold_all');
       fold().click();
