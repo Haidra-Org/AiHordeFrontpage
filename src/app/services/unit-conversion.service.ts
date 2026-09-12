@@ -36,25 +36,27 @@ export interface SynthesizedUnit {
 /**
  * SI prefixes with their multipliers
  */
+const BASE_SI_PREFIX = { threshold: 1, prefix: '', short: '' };
 const SI_PREFIXES = [
   { threshold: 1e15, prefix: 'peta', short: 'P' },
   { threshold: 1e12, prefix: 'tera', short: 'T' },
   { threshold: 1e9, prefix: 'giga', short: 'G' },
   { threshold: 1e6, prefix: 'mega', short: 'M' },
   { threshold: 1e3, prefix: 'kilo', short: 'K' },
-  { threshold: 1, prefix: '', short: '' },
+  BASE_SI_PREFIX,
 ];
 
 /**
  * Human-readable number words for everyday units like "images" and "requests"
  */
+const BASE_HUMAN_PREFIX = { threshold: 1, prefix: '', short: '' };
 const HUMAN_PREFIXES = [
   { threshold: 1e15, prefix: 'quadrillion', short: 'Q' },
   { threshold: 1e12, prefix: 'trillion', short: 'T' },
   { threshold: 1e9, prefix: 'billion', short: 'B' },
   { threshold: 1e6, prefix: 'million', short: 'M' },
   { threshold: 1e3, prefix: 'thousand', short: 'K' },
-  { threshold: 1, prefix: '', short: '' },
+  BASE_HUMAN_PREFIX,
 ];
 
 /**
@@ -163,7 +165,7 @@ export class UnitConversionService {
         return prefix;
       }
     }
-    return SI_PREFIXES[SI_PREFIXES.length - 1];
+    return BASE_SI_PREFIX;
   }
 
   // ============================================================================
@@ -406,7 +408,7 @@ export class UnitConversionService {
         return prefix;
       }
     }
-    return HUMAN_PREFIXES[HUMAN_PREFIXES.length - 1];
+    return BASE_HUMAN_PREFIX;
   }
 
   /**

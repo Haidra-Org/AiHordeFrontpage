@@ -77,7 +77,9 @@ export class NeedWorkersNotifierService {
    * Used as-is in the transloco interpolation params.
    */
   private formatTypeList(types: string[]): string {
-    if (types.length === 1) return types[0];
-    return types.slice(0, -1).join(', ') + ' and ' + types[types.length - 1];
+    const last = types.at(-1);
+    if (!last) return '';
+    if (types.length === 1) return last;
+    return types.slice(0, -1).join(', ') + ' and ' + last;
   }
 }

@@ -449,7 +449,8 @@ export class SweepLibraryService {
       (modelSlug
         ? candidates.find((entry) => entry.image_model.slug === modelSlug)
         : undefined) ??
-      candidates[0]
+      candidates.at(0) ??
+      null
     );
   }
 

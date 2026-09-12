@@ -73,7 +73,8 @@ export class GeneratePresetsService {
     const stored = stripEphemeralExtras(value);
     const current = this.recent();
     const signature = JSON.stringify(stored);
-    if (current.length > 0 && JSON.stringify(current[0].value) === signature) {
+    const newest = current.at(0);
+    if (newest && JSON.stringify(newest.value) === signature) {
       return;
     }
     const next = [{ value: stored, at: Date.now() }, ...current].slice(

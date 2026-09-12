@@ -471,12 +471,16 @@ export function mixedBaselineWarning(
   if (baselines.size < 2) {
     return null;
   }
+  const firstSelection = selections.at(0);
+  if (!firstSelection) {
+    return null;
+  }
   return {
     id: 'models_mixed',
     section: 'model',
     anchor: 'model',
     key: 'generate.lint.models_mixed',
-    params: { model: selections[0].name },
+    params: { model: firstSelection.name },
   };
 }
 

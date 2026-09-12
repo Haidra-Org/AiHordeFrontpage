@@ -2483,12 +2483,16 @@ export function buildStyledImageRequest(
   // names for the panel's single-model field, and stands for a list of one.
   const forcedModels =
     forced.models ?? (forced.model === undefined ? [] : [forced.model]);
-  if (pinned('model') && forcedModels.length > 0) {
+  const primaryForcedModel = forcedModels.at(0);
+  if (pinned('model') && primaryForcedModel) {
     // A style that pins models replaces the whole list: it is naming the models
     // its settings were written for, so widening the routing past them would
     // send the style's numbers to a model they were never meant for. A style
     // that names several accepts any of them, so all are carried.
-    request.models = requestModelNames(forcedModels[0], forcedModels.slice(1));
+    request.models = requestModelNames(
+      primaryForcedModel,
+      forcedModels.slice(1),
+    );
   }
   // A style names its schedule as the legacy boolean, so the modern pass runs
   // against that schedule rather than the form's: leaving the form's in would
@@ -2670,14 +2674,16 @@ export function requestToFormValue(
     ? styleRecordKey('native', request.style)
     : '';
 
-  if (request.models && request.models.length > 0) {
+  const requestedModels = request.models ?? [];
+  const primaryModel = requestedModels.at(0);
+  if (primaryModel) {
     // The horde's list is unordered as far as routing goes, but the first name
     // is the one the panel's advice will speak for, which is what the form's
     // own primary means.
-    result.model = request.models[0];
+    result.model = primaryModel;
     result.extraModels = normalizeExtraModels(
       result.model,
-      request.models.slice(1),
+      requestedModels.slice(1),
     );
   }
   if (params.sampler_name) result.sampler_name = params.sampler_name;

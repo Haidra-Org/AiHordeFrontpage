@@ -136,8 +136,9 @@ export function curatedRank(name: string): number | null {
 export function modelParameterCount(name: string): number | null {
   const matches = [...name.matchAll(/(\d+(?:\.\d+)?)b(?![a-z0-9])/gi)];
   const last = matches.at(-1);
-  if (!last) return null;
-  const value = Number.parseFloat(last[1]);
+  const matchedValue = last?.at(1);
+  if (!matchedValue) return null;
+  const value = Number.parseFloat(matchedValue);
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
@@ -392,8 +393,9 @@ export class PromptDraftService {
     );
     const picked = pickTextModel(pool, pick);
     if (picked.models) return picked;
-    return pool.length > 0
-      ? { models: pool.map((model) => model.name), label: pool[0].name }
+    const first = pool.at(0);
+    return first
+      ? { models: pool.map((model) => model.name), label: first.name }
       : { models: null, label: null };
   }
 
@@ -544,6 +546,8 @@ export class PromptDraftService {
           takeIndex: index,
           ...(style ? { style: style.id } : {}),
         }));
+        const firstRecord = records.at(0);
+        if (!firstRecord) return { kind: 'faulted' };
         for (const record of records) {
           try {
             await this.history.put(record);
@@ -556,9 +560,9 @@ export class PromptDraftService {
         return {
           kind: 'done',
           texts: records.map((record) => record.text),
-          model: records[0].model,
-          kudos: records[0].kudos,
-          seed: records[0].seed,
+          model: firstRecord.model,
+          kudos: firstRecord.kudos,
+          seed: firstRecord.seed,
           ids: records.map((record) => record.id),
         };
       }

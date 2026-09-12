@@ -284,8 +284,11 @@ export class GenerationWaitInsightsService {
     let improved = false;
     let worsened = false;
     for (let index = 1; index < samples.length; index += 1) {
-      const previous = samples[index - 1].queuePosition;
-      const current = samples[index].queuePosition;
+      const previous = samples.at(index - 1)?.queuePosition;
+      const current = samples.at(index)?.queuePosition;
+      if (previous === undefined || current === undefined) {
+        continue;
+      }
       improved ||= current < previous;
       worsened ||= current > previous;
     }
@@ -309,12 +312,16 @@ export class GenerationWaitInsightsService {
   private pruneWorkerSnapshots(at: number): void {
     const interval = (snapshot: WorkerSnapshot): number =>
       Math.floor(snapshot.at / SNAPSHOT_SPACING_MS);
-    const kept = this.workerSnapshots.filter(
-      (snapshot, index, all) =>
-        at - snapshot.at <= HISTORY_WINDOW_MS &&
-        (index >= all.length - DENSE_SNAPSHOTS ||
-          interval(snapshot) !== interval(all[index + 1])),
-    );
+    const kept = this.workerSnapshots.filter((snapshot, index, all) => {
+      if (at - snapshot.at > HISTORY_WINDOW_MS) {
+        return false;
+      }
+      if (index >= all.length - DENSE_SNAPSHOTS) {
+        return true;
+      }
+      const next = all.at(index + 1);
+      return !next || interval(snapshot) !== interval(next);
+    });
     this.workerSnapshots.splice(0, this.workerSnapshots.length, ...kept);
   }
 
