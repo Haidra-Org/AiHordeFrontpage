@@ -142,25 +142,64 @@ export async function sourceToThumbnailDataUrl(
 ): Promise<string | null> {
   if (!source) return null;
   if (isLikelyImageFileLink(source)) return source;
-  if (typeof document === 'undefined') return null;
+  if (!canDrawThumbnails()) return null;
 
   try {
     const image = await loadImageElement(toRenderableImageSource(source));
-    const target = computeTargetSize(
-      image.naturalWidth,
-      image.naturalHeight,
-      THUMB_MAX_EDGE,
-    );
-    const canvas = document.createElement('canvas');
-    canvas.width = target.width;
-    canvas.height = target.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-    ctx.drawImage(image, 0, 0, target.width, target.height);
-    return canvas.toDataURL('image/webp', THUMB_WEBP_QUALITY);
+    return imageToThumbnailDataUrl(image);
   } catch {
     return null;
   }
+}
+
+/**
+ * A small copy of a picture held as bytes, for the tiles and table cells that
+ * show every request's results at once. Null where the picture cannot be
+ * decoded or drawn, which the caller treats as "no small copy" rather than
+ * an error: the full picture is still there.
+ */
+export async function blobToThumbnailDataUrl(
+  blob: Blob,
+): Promise<string | null> {
+  if (!canDrawThumbnails()) return null;
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = await loadImageElement(url);
+    return imageToThumbnailDataUrl(image);
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Whether this runtime can draw at all. A test DOM has a canvas element with
+ * no drawing context, and an image it never loads: asking it for a thumbnail
+ * would wait forever rather than fail.
+ */
+function canDrawThumbnails(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    return document.createElement('canvas').getContext('2d') !== null;
+  } catch {
+    return false;
+  }
+}
+
+function imageToThumbnailDataUrl(image: HTMLImageElement): string | null {
+  const target = computeTargetSize(
+    image.naturalWidth,
+    image.naturalHeight,
+    THUMB_MAX_EDGE,
+  );
+  const canvas = document.createElement('canvas');
+  canvas.width = target.width;
+  canvas.height = target.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.drawImage(image, 0, 0, target.width, target.height);
+  return canvas.toDataURL('image/webp', THUMB_WEBP_QUALITY);
 }
 
 function loadImageElement(src: string): Promise<HTMLImageElement> {

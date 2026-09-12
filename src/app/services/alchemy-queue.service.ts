@@ -29,6 +29,7 @@ import {
   AlchemySourceMode,
   StoredAlchemyImage,
   StoredAlchemyJob,
+  resultThumbImageId,
 } from '../types/alchemy-job';
 import {
   AlchemyJob,
@@ -43,6 +44,7 @@ import {
   isLikelyImageFileLink,
 } from '../helper/generation-image';
 import {
+  blobToThumbnailDataUrl,
   sourceToThumbnailDataUrl,
   stripDataUrlPrefix,
 } from '../helper/image-encoding';
@@ -579,6 +581,9 @@ export class AlchemyQueueService {
             fetchedAt: Date.now(),
           });
           this.imageAttempts.delete(attemptKey);
+          // The small copy is a convenience, so it never holds the result's
+          // own bookkeeping up and its absence is never a failure.
+          void this.storeResultThumb(job.localId, image.key, blob);
           stored.push(image.key);
         } catch (error) {
           if (this.isQuotaError(error)) {
@@ -692,6 +697,58 @@ export class AlchemyQueueService {
   public async getResultImages(localId: string): Promise<StoredAlchemyImage[]> {
     const images = await this.db.getImagesForJob(localId);
     return images.filter((image) => image.kind === 'result');
+  }
+
+  /**
+   * The small copies of a request's results, after making any that are
+   * missing: results captured before small copies were kept get theirs the
+   * first time a surface asks. A result that cannot be drawn is left out.
+   */
+  public async getResultThumbs(localId: string): Promise<StoredAlchemyImage[]> {
+    if (!this.isBrowser) {
+      return [];
+    }
+    const images = await this.db.getImagesForJob(localId);
+    const thumbs = new Map(
+      images
+        .filter((image) => image.kind === 'result-thumb')
+        .map((image) => [image.imageId, image]),
+    );
+    for (const result of images) {
+      if (result.kind !== 'result') continue;
+      const thumbId = resultThumbImageId(result.imageId);
+      if (thumbs.has(thumbId)) continue;
+      const thumb = await this.storeResultThumb(
+        localId,
+        result.imageId,
+        result.blob,
+      );
+      if (thumb) thumbs.set(thumbId, thumb);
+    }
+    return [...thumbs.values()];
+  }
+
+  private async storeResultThumb(
+    localId: string,
+    resultKey: string,
+    blob: Blob,
+  ): Promise<StoredAlchemyImage | null> {
+    try {
+      const dataUrl = await blobToThumbnailDataUrl(blob);
+      if (!dataUrl?.startsWith('data:')) return null;
+      const thumb: StoredAlchemyImage = {
+        localId,
+        imageId: resultThumbImageId(resultKey),
+        kind: 'result-thumb',
+        blob: base64ToBlob(stripDataUrlPrefix(dataUrl), 'image/webp'),
+        mimeType: 'image/webp',
+      };
+      await this.putImage(thumb);
+      return thumb;
+    } catch (error) {
+      console.warn('Could not keep a small copy of an alchemy result.', error);
+      return null;
+    }
   }
 
   // --- State ---------------------------------------------------------------

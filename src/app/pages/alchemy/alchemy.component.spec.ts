@@ -53,6 +53,7 @@ class FakeAlchemyQueue {
   public readonly getThumbnail = vi.fn(() => Promise.resolve(undefined));
   public readonly getSourceImage = vi.fn(() => Promise.resolve(undefined));
   public readonly getResultImages = vi.fn(() => Promise.resolve([]));
+  public readonly getResultThumbs = vi.fn(() => Promise.resolve([]));
   public whenReady(): Promise<void> {
     return Promise.resolve();
   }
@@ -612,6 +613,33 @@ describe('AlchemyComponent', () => {
         prompt: 'a dog on a couch',
       });
       expect(navigate).toHaveBeenCalledWith(['/generate/image']);
+    });
+
+    it('holds a small copy of every stored result, keyed for the browser', async () => {
+      URL.createObjectURL = vi.fn(() => 'blob:thumb');
+      URL.revokeObjectURL = vi.fn();
+      queue.getResultThumbs.mockResolvedValue([
+        {
+          localId: 'local-job-a',
+          imageId: 'thumb:RealESRGAN_x4plus',
+          kind: 'result-thumb',
+          blob: new Blob(['x'], { type: 'image/webp' }),
+          mimeType: 'image/webp',
+        },
+      ]);
+      queue.add('job-a', ['RealESRGAN_x4plus']);
+      queue.stored.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          storedResultForms: ['RealESRGAN_x4plus'],
+        })),
+      );
+      fixture.detectChanges();
+      await settle();
+      expect(queue.getResultThumbs).toHaveBeenCalledWith('local-job-a');
+      expect(
+        component.resultThumbUrls().get('local-job-a::RealESRGAN_x4plus'),
+      ).toBe('blob:thumb');
     });
 
     it('closes the job pane when the view changes', () => {

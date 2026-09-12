@@ -13,9 +13,19 @@ export type AlchemySourceMode = 'url' | 'upload' | 'none';
 
 /**
  * What an alchemy image blob is. `source` and `thumb` belong to the request;
- * `result` is what a post-processor form returned.
+ * `result` is what a post-processor form returned, and `result-thumb` is the
+ * small copy of it every tile and table cell can afford to show.
  */
-export type StoredAlchemyImageKind = 'source' | 'thumb' | 'result';
+export type StoredAlchemyImageKind =
+  | 'source'
+  | 'thumb'
+  | 'result'
+  | 'result-thumb';
+
+/** The image id a result's small copy is stored under. */
+export function resultThumbImageId(resultKey: string): string {
+  return `thumb:${resultKey}`;
+}
 
 /** An image blob attached to a stored alchemy job. */
 export interface StoredAlchemyImage {

@@ -39,6 +39,7 @@ const makeJob = (
       [selectedJobIds]="selectedJobIds()"
       [isNarrow]="isNarrow()"
       [resultImageUrls]="resultImageUrls()"
+      [resultThumbUrls]="resultThumbUrls()"
       [paneOpen]="paneOpen()"
       [foot]="foot"
       (activateJob)="selected = $event"
@@ -63,6 +64,7 @@ class HostComponent {
   selectedJobIds = signal<ReadonlySet<string>>(new Set());
   isNarrow = signal(false);
   resultImageUrls = signal<ReadonlyMap<string, string>>(new Map());
+  resultThumbUrls = signal<ReadonlyMap<string, string>>(new Map());
   paneOpen = signal(false);
   selected: string | null = null;
   toggled: string | null = null;
@@ -643,6 +645,58 @@ describe('AlchemyResultsBrowserComponent', () => {
       ).click();
       fixture.detectChanges();
       expect(heads()).toBe(3);
+    });
+  });
+
+  describe('small copies of results', () => {
+    const upscaled = (id: string): AlchemyJob => ({
+      ...makeJob(id, null),
+      forms: ['RealESRGAN_x4plus'],
+      done: true,
+      status: {
+        state: 'done',
+        forms: [
+          {
+            form: 'RealESRGAN_x4plus',
+            state: 'done',
+            result: { RealESRGAN_x4plus: 'https://r2.example/up.webp' },
+          },
+        ],
+      },
+    });
+
+    beforeEach(() => {
+      host.jobs.set([upscaled('job-shown'), upscaled('job-other')]);
+      host.selectedJobId.set('job-shown');
+      host.resultImageUrls.set(
+        new Map([['job-shown::RealESRGAN_x4plus', 'blob:full']]),
+      );
+      host.resultThumbUrls.set(
+        new Map([
+          ['job-shown::RealESRGAN_x4plus', 'blob:thumb-shown'],
+          ['job-other::RealESRGAN_x4plus', 'blob:thumb-other'],
+        ]),
+      );
+    });
+
+    it('gives every gallery tile its processed picture, full for the shown job', () => {
+      host.viewMode.set('gallery');
+      fixture.detectChanges();
+      const sources = [
+        ...fixture.nativeElement.querySelectorAll('.gs-gtile .gs-tile-img'),
+      ].map((img) => (img as HTMLImageElement).getAttribute('src'));
+      expect(sources).toEqual(['blob:full', 'blob:thumb-other']);
+    });
+
+    it('fills the table cells the same way', () => {
+      host.viewMode.set('table');
+      fixture.detectChanges();
+      const sources = [
+        ...fixture.nativeElement.querySelectorAll(
+          'tbody .gs-series-td--image img',
+        ),
+      ].map((img) => (img as HTMLImageElement).getAttribute('src'));
+      expect(sources).toEqual(['blob:full', 'blob:thumb-other']);
     });
   });
 });

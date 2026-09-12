@@ -110,9 +110,30 @@ export class AlchemyResultsBrowserComponent {
     new Map(),
   );
 
+  /**
+   * Small copies of every job's result images, keyed as `resultImageUrls`
+   * is. Held for the whole history, so a tile or a cell has a picture for
+   * any job, where the full copies are only resolved for the shown one.
+   */
+  public readonly resultThumbUrls = input<ReadonlyMap<string, string>>(
+    new Map(),
+  );
+
   /** The locally held copy of a form's result image, if there is one. */
   public storedImageUrl(job: AlchemyJob, resultKey: string): string | null {
     return this.resultImageUrls().get(`${job.localId}::${resultKey}`) ?? null;
+  }
+
+  /** The best picture of a result a small surface can show: full, else small. */
+  protected resultPreviewUrl(
+    job: AlchemyJob,
+    resultKey: string,
+  ): string | null {
+    return (
+      this.storedImageUrl(job, resultKey) ??
+      this.resultThumbUrls().get(`${job.localId}::${resultKey}`) ??
+      null
+    );
   }
 
   /** Activate a request (rail thumb or gallery tile) to view its results. */
@@ -193,7 +214,7 @@ export class AlchemyResultsBrowserComponent {
 
   /** A processed image the table can show: the local copy, or nothing. */
   protected cellImage(job: AlchemyJob, cell: AlchemySeriesCell): string | null {
-    return cell.imageKey ? this.storedImageUrl(job, cell.imageKey) : null;
+    return cell.imageKey ? this.resultPreviewUrl(job, cell.imageKey) : null;
   }
 
   /**
@@ -364,8 +385,8 @@ export class AlchemyResultsBrowserComponent {
     lead: AlchemyLeadPreview,
   ): string | null {
     if (lead?.kind === 'image') {
-      const stored = this.storedImageUrl(job, lead.key);
-      if (stored) return stored;
+      const preview = this.resultPreviewUrl(job, lead.key);
+      if (preview) return preview;
     }
     return job.sourceFull ?? job.sourceThumb;
   }

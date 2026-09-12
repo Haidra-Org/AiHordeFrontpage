@@ -501,6 +501,17 @@ export class AlchemyComponent {
   public readonly resultImageUrls = signal<ReadonlyMap<string, string>>(
     new Map(),
   );
+
+  /**
+   * Object URLs over the small copies of every job's results, keyed like
+   * `resultImageUrls`. A few kilobytes each, so the gallery and the table can
+   * show every request's processed picture rather than only the shown job's.
+   */
+  public readonly resultThumbUrls = signal<ReadonlyMap<string, string>>(
+    new Map(),
+  );
+  /** Which jobs' small copies are held, with how many results they had then. */
+  private readonly loadedResultThumbs = new Map<string, number>();
   public readonly downloadingJobId = signal<string | null>(null);
 
   /**
@@ -662,6 +673,21 @@ export class AlchemyComponent {
         void this.loadThumbnail(job.localId);
       }
       this.revokeDepartedThumbs();
+    });
+
+    // Small copies of every job's results, for the tiles and the table. Keyed
+    // on how many results a job has stored, so one landing later is added.
+    effect(() => {
+      this.queue.imagesVersion();
+      for (const job of this.queue.jobs()) {
+        const count = job.storedResultForms.length;
+        if (count === 0 || this.loadedResultThumbs.get(job.localId) === count) {
+          continue;
+        }
+        this.loadedResultThumbs.set(job.localId, count);
+        void this.loadResultThumbs(job.localId);
+      }
+      this.revokeDepartedResultThumbs();
     });
 
     // The full-size source, for the one job whose detail view can show it.
@@ -1382,6 +1408,42 @@ export class AlchemyComponent {
     this.thumbUrls.update((map) => new Map(map).set(localId, url));
   }
 
+  private async loadResultThumbs(localId: string): Promise<void> {
+    const thumbs = await this.queue.getResultThumbs(localId);
+    if (!this.queue.jobs().some((job) => job.localId === localId)) {
+      return;
+    }
+    this.resultThumbUrls.update((map) => {
+      const next = new Map(map);
+      for (const thumb of thumbs) {
+        const key = `${localId}::${thumb.imageId.replace(/^thumb:/, '')}`;
+        const previous = next.get(key);
+        if (previous) URL.revokeObjectURL(previous);
+        next.set(key, URL.createObjectURL(thumb.blob));
+      }
+      return next;
+    });
+  }
+
+  private revokeDepartedResultThumbs(): void {
+    const live = new Set(this.queue.jobs().map((job) => job.localId));
+    const departed = [...this.resultThumbUrls().keys()].filter(
+      (key) => !live.has(key.split('::')[0]),
+    );
+    for (const id of [...this.loadedResultThumbs.keys()]) {
+      if (!live.has(id)) this.loadedResultThumbs.delete(id);
+    }
+    if (departed.length === 0) return;
+    this.resultThumbUrls.update((map) => {
+      const next = new Map(map);
+      for (const key of departed) {
+        URL.revokeObjectURL(next.get(key) as string);
+        next.delete(key);
+      }
+      return next;
+    });
+  }
+
   /** Release thumbnails for jobs that have left the list. */
   private revokeDepartedThumbs(): void {
     const live = new Set(this.queue.jobs().map((job) => job.localId));
@@ -1453,6 +1515,9 @@ export class AlchemyComponent {
 
   private revokeAllSourceUrls(): void {
     for (const url of this.thumbUrls().values()) {
+      URL.revokeObjectURL(url);
+    }
+    for (const url of this.resultThumbUrls().values()) {
       URL.revokeObjectURL(url);
     }
     const full = this.sourceFullUrl();
