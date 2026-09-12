@@ -1033,7 +1033,9 @@ export class AlchemyComponent {
    */
   public pickImageToPrompt(): void {
     this.activeDetector.set(null);
-    this.activeOperation.set(this.promptForms[0]);
+    const firstPromptForm = this.promptForms.at(0);
+    if (!firstPromptForm) return;
+    this.activeOperation.set(firstPromptForm);
     this.selectedForms.update((current) => {
       const next = new Set(current);
       for (const form of this.promptForms) next.add(form);
@@ -1220,8 +1222,11 @@ export class AlchemyComponent {
   }
 
   public setGalleryColumns(count: number): void {
-    const min = GALLERY_PER_ROW_OPTIONS[0];
-    const max = GALLERY_PER_ROW_OPTIONS[GALLERY_PER_ROW_OPTIONS.length - 1];
+    const min = GALLERY_PER_ROW_OPTIONS.at(0) ?? GALLERY_DEFAULT_PER_ROW;
+    const max =
+      GALLERY_PER_ROW_OPTIONS.at(-1) ??
+      GALLERY_PER_ROW_OPTIONS.at(0) ??
+      GALLERY_DEFAULT_PER_ROW;
     const clamped = Math.min(max, Math.max(min, count));
     this.galleryColumns.set(clamped);
     this.db.store(GALLERY_PER_ROW_KEY, clamped);
@@ -1522,9 +1527,10 @@ export class AlchemyComponent {
 
   private revokeDepartedResultThumbs(): void {
     const live = new Set(this.queue.jobs().map((job) => job.localId));
-    const departed = [...this.resultThumbUrls().keys()].filter(
-      (key) => !live.has(key.split('::')[0]),
-    );
+    const departed = [...this.resultThumbUrls().keys()].filter((key) => {
+      const localId = key.split('::').at(0);
+      return localId === undefined || !live.has(localId);
+    });
     for (const id of [...this.loadedResultThumbs.keys()]) {
       if (!live.has(id)) this.loadedResultThumbs.delete(id);
     }

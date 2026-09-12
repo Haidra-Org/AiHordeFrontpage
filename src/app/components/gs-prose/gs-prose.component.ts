@@ -242,8 +242,9 @@ export class GsProseComponent {
         };
       }
       const runs = this.cut(block.text);
-      return runs.length === 1 && runs[0].kind === 'code'
-        ? { kind: 'quote', text: runs[0].text }
+      const onlyRun = runs.at(0);
+      return runs.length === 1 && onlyRun?.kind === 'code'
+        ? { kind: 'quote', text: onlyRun.text }
         : { kind: 'paragraph', runs };
     }),
   );

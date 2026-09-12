@@ -443,7 +443,9 @@ export class PromptDraftCardComponent {
     return outcome?.kind === 'done' ? outcome.texts : [];
   });
 
-  public readonly draftText = computed(() => this.draftTexts()[0] ?? null);
+  public readonly draftText = computed<string | null>(
+    () => this.draftTexts().at(0) ?? null,
+  );
 
   /**
    * Anything at all to write from. A studio card improving a prompt can also

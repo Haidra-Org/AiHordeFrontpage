@@ -557,7 +557,8 @@ export class LicensingService {
     }
     // An expression naming several licences has no single definition to link,
     // so it is shown as published and left unlinked.
-    const only = asset.licenseIds.length === 1 ? asset.licenseIds[0] : null;
+    const only =
+      asset.licenseIds.length === 1 ? (asset.licenseIds[0] ?? null) : null;
     const definition =
       only === null ? null : (this.definitions().get(only) ?? null);
     const path = only === null ? null : (asset.definitionUrls[only] ?? null);
@@ -655,8 +656,10 @@ export class LicensingService {
     this.updatedAt = metadata.updatedAt;
     this.persist();
     for (const asset of gathered.values()) {
-      if (asset.licenseIds.length === 1) {
-        this.fetchDefinition(asset.licenseIds[0], asset.definitionUrls);
+      const only =
+        asset.licenseIds.length === 1 ? (asset.licenseIds[0] ?? null) : null;
+      if (only !== null) {
+        this.fetchDefinition(only, asset.definitionUrls);
       }
     }
   }
