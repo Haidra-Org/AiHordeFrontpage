@@ -304,6 +304,34 @@ export function applyStyle(
   };
   if (record.source === 'native') {
     applied.hordeApplied = true;
+    // The horde replaces the request's parameters with the style's, so a
+    // setting the style leaves out runs at the horde's default rather than at
+    // the reader's value; the forced view names that default so the frozen
+    // control shows what will run.
+    forcedParams.steps ??= HORDE_PARAM_DEFAULTS.steps;
+    forcedParams.cfg_scale ??= HORDE_PARAM_DEFAULTS.cfg_scale;
+    forcedParams.sampler_name ??= HORDE_PARAM_DEFAULTS.sampler_name;
+    forcedParams.clip_skip ??= HORDE_PARAM_DEFAULTS.clip_skip;
+    forcedParams.karras ??= HORDE_PARAM_DEFAULTS.karras;
+    forcedParams.hires_fix ??= HORDE_PARAM_DEFAULTS.hires_fix;
+    forcedParams.tiling ??= HORDE_PARAM_DEFAULTS.tiling;
+    forcedParams.post_processing ??= [];
   }
   return applied;
 }
+
+/**
+ * What the horde runs for a parameter a request (or a style applied by the
+ * horde) does not name, per the API's declared defaults; `clip_skip` has none
+ * declared and the worker treats a missing value as 1. Post-processing
+ * defaults to none.
+ */
+const HORDE_PARAM_DEFAULTS = {
+  steps: 30,
+  cfg_scale: 7.5,
+  sampler_name: 'k_euler_a',
+  clip_skip: 1,
+  karras: false,
+  hires_fix: false,
+  tiling: false,
+} as const;

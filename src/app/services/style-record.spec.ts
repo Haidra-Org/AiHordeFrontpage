@@ -280,6 +280,33 @@ describe('applyStyle', () => {
     expect(applied.forcedParams.transparent).toBe(false);
   });
 
+  it("names the horde's defaults for what a published style leaves out", () => {
+    const applied = applyStyle(fromNativeImageStyle(NATIVE_STYLE), 'a fox', '');
+
+    expect(applied.hordeApplied).toBe(true);
+    expect(applied.forcedParams.steps).toBe(20);
+    expect(applied.forcedParams.post_processing).toEqual(['GFPGAN']);
+    expect(applied.forcedParams.tiling).toBe(true);
+    expect(applied.forcedParams.cfg_scale).toBe(7.5);
+    expect(applied.forcedParams.sampler_name).toBe('k_euler_a');
+    expect(applied.forcedParams.clip_skip).toBe(1);
+    expect(applied.forcedParams.karras).toBe(false);
+    expect(applied.forcedParams.hires_fix).toBe(false);
+  });
+
+  it('leaves a preset style naming only what it names', () => {
+    const applied = applyStyle(
+      fromPreset('sketch', { prompt: 'sketch of {p}', steps: 12 }),
+      'a fox',
+      '',
+    );
+
+    expect(applied.hordeApplied).toBeUndefined();
+    expect(applied.forcedParams.steps).toBe(12);
+    expect(applied.forcedParams.cfg_scale).toBeUndefined();
+    expect(applied.forcedParams.sampler_name).toBeUndefined();
+  });
+
   it('copies the parameter arrays rather than sharing them with the style', () => {
     const record: StyleRecord = fromNativeImageStyle(NATIVE_STYLE);
 
