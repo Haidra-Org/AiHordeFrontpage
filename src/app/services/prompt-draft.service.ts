@@ -17,11 +17,16 @@ const ANONYMOUS_API_KEY = '0000000000';
  */
 export type PromptDraftModelPick = 'auto' | 'any' | { model: string };
 
-/** What a draft is written from. Any part may be empty; not all of them. */
+/**
+ * What a draft is written from. Any part may be empty; not all of them. With
+ * a `prompt` the request is to improve what is written; without one it is to
+ * write a prompt from what alchemy found.
+ */
 export interface PromptDraftInput {
   caption?: string | null;
   tags?: string | null;
   note?: string | null;
+  prompt?: string | null;
 }
 
 export type PromptDraftOutcome =
@@ -94,13 +99,17 @@ export function pickTextModel(
  * applied on the way.
  */
 export function buildDraftPrompt(input: PromptDraftInput): string {
+  const prompt = input.prompt?.trim();
   const lines = [
-    'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.',
+    prompt
+      ? 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. Write nothing but the prompt. No quotes, no explanation.'
+      : 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.',
     '',
   ];
   const caption = input.caption?.trim();
   const tags = input.tags?.trim();
   const note = input.note?.trim();
+  if (prompt) lines.push(`Prompt: ${prompt}`);
   if (caption) lines.push(`Description: ${caption}`);
   if (tags) lines.push(`Tags: ${tags}`);
   if (note) lines.push(`Notes from the user: ${note}`);

@@ -70,7 +70,10 @@ import { AlchemyResultsBrowserComponent } from '../../components/alchemy/alchemy
 import { IconComponent } from '../../components/icon/icon.component';
 import { FullscreenToggleComponent } from '../../components/fullscreen-toggle/fullscreen-toggle.component';
 import { NetworkStatusComponent } from '../../components/network-status/network-status.component';
-import { buildAlchemyJobArchive } from '../../helper/alchemy-archive';
+import {
+  buildAlchemyJobArchive,
+  buildAlchemySeriesArchive,
+} from '../../helper/alchemy-archive';
 import {
   AlchemyJob,
   isJobSettled,
@@ -1251,6 +1254,57 @@ export class AlchemyComponent {
       new Blob([bytes as BlobPart], { type: 'application/zip' }),
       fileName,
     );
+  }
+
+  public readonly seriesDownloading = signal(false);
+
+  /**
+   * The shown rows of the series table as one zip: a folder per request
+   * holding what its own zip holds, and the table as CSV beside them.
+   */
+  public async downloadSeriesZip(event: {
+    jobs: AlchemyJob[];
+    csv: { fileName: string; text: string };
+  }): Promise<void> {
+    if (!isPlatformBrowser(this.platformId) || this.seriesDownloading()) {
+      return;
+    }
+    const entries = event.jobs.filter((job) => job.status !== null);
+    if (entries.length === 0) return;
+    this.seriesDownloading.set(true);
+    try {
+      const { bytes, imageCount, failedImages } =
+        await buildAlchemySeriesArchive(
+          await Promise.all(
+            entries.map(async (job) => ({
+              jobId: job.id,
+              status: job.status as NonNullable<AlchemyJob['status']>,
+              options: {
+                storedImages: await this.queue.getResultImages(job.localId),
+                annotationControlTypes: job.annotationControlTypes,
+              },
+            })),
+          ),
+          event.csv,
+        );
+      this.triggerZipDownload(
+        bytes,
+        `alchemy-series-${new Date().toISOString().slice(0, 10)}.zip`,
+      );
+      if (imageCount === 0 && failedImages > 0) {
+        this.toast.error('alchemy.jobs.download_images_failed', {
+          transloco: true,
+        });
+      } else if (failedImages > 0) {
+        this.toast.warning('alchemy.jobs.download_partial', {
+          transloco: true,
+        });
+      }
+    } catch {
+      this.toast.error('alchemy.jobs.download_error', { transloco: true });
+    } finally {
+      this.seriesDownloading.set(false);
+    }
   }
 
   /** The series table as the browser rendered it, saved as a CSV file. */

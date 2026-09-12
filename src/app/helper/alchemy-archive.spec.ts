@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { strFromU8, unzipSync } from 'fflate';
-import { buildAlchemyJobArchive } from './alchemy-archive';
+import {
+  buildAlchemyJobArchive,
+  buildAlchemySeriesArchive,
+} from './alchemy-archive';
 import type { AlchemyStatusResponse } from '../types/generation';
 
 function imageResponse(bytes: number[], contentType: string): Response {
@@ -213,6 +216,43 @@ describe('buildAlchemyJobArchive', () => {
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(imageCount).toBe(2);
+    expect(failedImages).toBe(0);
+  });
+});
+
+describe('buildAlchemySeriesArchive', () => {
+  it('folds each request into its own folder with the table beside them', async () => {
+    const fetchFn = vi.fn(() =>
+      Promise.resolve(imageResponse([1, 2], 'image/webp')),
+    );
+    const { bytes, imageCount, failedImages } = await buildAlchemySeriesArchive(
+      [
+        {
+          jobId: 'job-a',
+          status: STATUS,
+          options: { fetchFn: fetchFn as unknown as typeof fetch },
+        },
+        {
+          jobId: 'job-b',
+          status: TWO_IMAGE_STATUS,
+          options: { fetchFn: fetchFn as unknown as typeof fetch },
+        },
+      ],
+      { fileName: 'series.csv', text: '"request"\r\n"job-a"\r\n"job-b"' },
+    );
+    const files = unzipSync(bytes);
+    expect(Object.keys(files).sort()).toEqual([
+      'job-a/images/RestoreFormer.webp',
+      'job-a/results.html',
+      'job-a/results.json',
+      'job-b/images/GFPGAN.webp',
+      'job-b/images/RestoreFormer.webp',
+      'job-b/results.html',
+      'job-b/results.json',
+      'series.csv',
+    ]);
+    expect(strFromU8(files['series.csv'])).toContain('"job-b"');
+    expect(imageCount).toBe(3);
     expect(failedImages).toBe(0);
   });
 });

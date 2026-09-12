@@ -10,48 +10,56 @@ import {
   untracked,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { IconComponent } from '../../icon/icon.component';
+import { IconComponent } from '../icon/icon.component';
 import {
   PromptDraftModelPick,
   PromptDraftOutcome,
   PromptDraftService,
   curatedRank,
-} from '../../../services/prompt-draft.service';
-import { ActiveModel } from '../../../types/active-model';
-import { copyToClipboard } from '../../../helper/copy-to-clipboard';
-import type { AlchemyFoldPin } from '../alchemy-pictures/alchemy-pictures.component';
+} from '../../services/prompt-draft.service';
+import { ActiveModel } from '../../types/active-model';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
+import type { AlchemyFoldPin } from '../alchemy/alchemy-pictures/alchemy-pictures.component';
 
 /** How the override select names its choice. */
 type PickValue = 'auto' | 'any' | `model:${string}`;
 
 /**
- * A prompt for the image studio, written by one of the horde's text models
- * from what alchemy found in a picture: the caption, the strongest tags, and
- * a note from the reader. The draft is shown, not applied: it goes to the
- * studio or the clipboard on a press.
+ * A prompt written by one of the horde's text models. Under an alchemy job it
+ * writes from what alchemy found in a picture: the caption, the strongest
+ * tags, and a note from the reader. Under the image studio's prompt box it
+ * improves what is already written. Either way the draft is shown, not
+ * applied: it goes to the prompt box or the clipboard on a press.
  *
  * The model is picked from a curated list by default, and the pick can be
  * overridden with any model online, or no preference at all, for a reader
  * who knows what they want.
  */
 @Component({
-  selector: 'app-alchemy-prompt-draft',
+  selector: 'app-prompt-draft-card',
   imports: [TranslocoPipe, IconComponent],
-  templateUrl: './alchemy-prompt-draft.component.html',
+  templateUrl: './prompt-draft-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[attr.data-size]': '"tall"',
   },
 })
-export class AlchemyPromptDraftComponent {
+export class PromptDraftCardComponent {
   private readonly drafts = inject(PromptDraftService);
 
   public readonly caption = input<string | null>(null);
   public readonly tags = input<string | null>(null);
+  /** The prompt as written, when the card is there to improve one. */
+  public readonly seed = input<string | null>(null);
   public readonly defaultOpen = input<boolean | null>(null);
   public readonly foldPin = input<AlchemyFoldPin | null>(null);
-  /** The draft, for the image studio's prompt box. */
-  public readonly sendToPrompt = output<string>();
+  /** The draft, for the prompt box it was written for. */
+  public readonly apply = output<string>();
+
+  /** Which job the card has: writing from findings, or improving a prompt. */
+  public readonly mode = computed<'draft' | 'improve'>(() =>
+    this.seed() !== null ? 'improve' : 'draft',
+  );
 
   private readonly openOverride = signal<boolean | null>(null);
   public readonly note = signal('');
@@ -101,8 +109,10 @@ export class AlchemyPromptDraftComponent {
     return outcome?.kind === 'done' ? outcome.text : null;
   });
 
-  public readonly hasMaterial = computed(
-    () => !!(this.caption() || this.tags() || this.note().trim()),
+  public readonly hasMaterial = computed(() =>
+    this.mode() === 'improve'
+      ? !!this.seed()?.trim()
+      : !!(this.caption() || this.tags() || this.note().trim()),
   );
 
   public isCurated(model: ActiveModel): boolean {
@@ -130,7 +140,9 @@ export class AlchemyPromptDraftComponent {
     this.copied.set(false);
     try {
       const outcome = await this.drafts.draft(
-        { caption: this.caption(), tags: this.tags(), note: this.note() },
+        this.mode() === 'improve'
+          ? { prompt: this.seed(), note: this.note() }
+          : { caption: this.caption(), tags: this.tags(), note: this.note() },
         this.modelPick(),
         this.models() ?? undefined,
       );
@@ -149,7 +161,7 @@ export class AlchemyPromptDraftComponent {
 
   public send(): void {
     const text = this.draftText();
-    if (text) this.sendToPrompt.emit(text);
+    if (text) this.apply.emit(text);
   }
 
   private async loadModels(): Promise<void> {

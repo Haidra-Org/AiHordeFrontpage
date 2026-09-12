@@ -17,7 +17,7 @@ import {
   AlchemyPicture,
   AlchemyPicturesComponent,
 } from '../alchemy-pictures/alchemy-pictures.component';
-import { AlchemyPromptDraftComponent } from '../alchemy-prompt-draft/alchemy-prompt-draft.component';
+import { PromptDraftCardComponent } from '../../prompt-draft/prompt-draft-card.component';
 import { ALCHEMY_DATA_FORMS } from '../../../types/generation';
 import {
   isLikelyImageFileLink,
@@ -73,7 +73,7 @@ function imageFileName(url: string): string {
     TranslocoPipe,
     AlchemyResultComponent,
     AlchemyPicturesComponent,
-    AlchemyPromptDraftComponent,
+    PromptDraftCardComponent,
     IconComponent,
     GsSheetComponent,
     A11yModule,
@@ -149,6 +149,13 @@ export class AlchemyResultsBrowserComponent {
   public readonly closePane = output<void>();
   /** The series table as shown, as a CSV document to save. */
   public readonly exportCsv = output<{ fileName: string; text: string }>();
+  /** The shown rows with their pictures, as one zip, the table inside it. */
+  public readonly exportZip = output<{
+    jobs: AlchemyJob[];
+    csv: { fileName: string; text: string };
+  }>();
+  /** Whether the page is building a series zip, so the button waits. */
+  public readonly zipBusy = input<boolean>(false);
   /** Asks the page to set the form up as this request was, for another image. */
   public readonly repeatRequest = output<AlchemyJob>();
   /** Asks the page to make one result picture the source of the next request. */
@@ -226,6 +233,14 @@ export class AlchemyResultsBrowserComponent {
    * the per-request zip.
    */
   protected requestExport(): void {
+    this.exportCsv.emit(this.seriesCsv());
+  }
+
+  protected requestZip(): void {
+    this.exportZip.emit({ jobs: this.seriesJobs(), csv: this.seriesCsv() });
+  }
+
+  private seriesCsv(): { fileName: string; text: string } {
     const columns = this.columns();
     const labels = columns.map((column) =>
       [this.transloco.translate(this.columnLabelKey(column)), column.detector]
@@ -241,10 +256,10 @@ export class AlchemyResultsBrowserComponent {
         return cell.kind === 'image' ? imageFileName(cell.text) : cell.text;
       }),
     ]);
-    this.exportCsv.emit({
+    return {
       fileName: `alchemy-series-${new Date().toISOString().slice(0, 10)}.csv`,
       text: toCsv([header, ...rows]),
-    });
+    };
   }
 
   protected columnLabelKey(column: AlchemySeriesColumn): string {

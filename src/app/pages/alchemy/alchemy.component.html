@@ -741,6 +741,8 @@
             (useResultInStudio)="useResultInStudio($event)"
             (closePane)="closeJobPane()"
             (exportCsv)="downloadSeriesCsv($event)"
+            [zipBusy]="seriesDownloading()"
+            (exportZip)="downloadSeriesZip($event)"
             (repeatRequest)="repeatRequest($event)"
             (useResultAsSource)="useResultAsSource($event)"
             (sendToPrompt)="sendToPrompt($event)"

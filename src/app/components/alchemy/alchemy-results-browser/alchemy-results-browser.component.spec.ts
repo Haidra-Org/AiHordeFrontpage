@@ -46,6 +46,7 @@ const makeJob = (
       (toggleSelected)="toggled = $event"
       (closePane)="paneClosed = paneClosed + 1"
       (exportCsv)="exported = $event"
+      (exportZip)="zipped = $event"
       (repeatRequest)="repeated = $event.id"
       (useResultAsSource)="chained = $event.key"
       (sendToPrompt)="prompted = $event"
@@ -70,6 +71,10 @@ class HostComponent {
   toggled: string | null = null;
   paneClosed = 0;
   exported: { fileName: string; text: string } | null = null;
+  zipped: {
+    jobs: AlchemyJob[];
+    csv: { fileName: string; text: string };
+  } | null = null;
   repeated: string | null = null;
   chained: string | null = null;
   prompted: string | null = null;
@@ -444,6 +449,21 @@ describe('AlchemyResultsBrowserComponent', () => {
       expect(lines[1]).toContain('"job-a"');
       expect(lines[1]).toContain('"zebra"');
       expect(lines[1]).toContain('"3.00"');
+    });
+
+    it('offers the shown rows as one zip with the table inside', () => {
+      const buttons = [
+        ...fixture.nativeElement.querySelectorAll(
+          '.gs-series-bar .gs-download-all',
+        ),
+      ] as HTMLButtonElement[];
+      expect(buttons.length).toBe(2);
+      buttons[1].click();
+      expect(host.zipped?.jobs.map((job) => job.id)).toEqual([
+        'job-a',
+        'job-b',
+      ]);
+      expect(host.zipped?.csv.text).toContain('"job-a"');
     });
 
     it('shows the picked job over the table', () => {

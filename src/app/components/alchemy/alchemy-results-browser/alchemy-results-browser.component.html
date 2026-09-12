@@ -132,6 +132,20 @@
         <app-icon name="arrow-down-tray" class="gs-ico-sm" />
         {{ "alchemy.series.export" | transloco }}
       </button>
+      <button
+        type="button"
+        class="gs-download-all"
+        [disabled]="seriesJobs().length === 0 || zipBusy()"
+        (click)="requestZip()"
+      >
+        @if (zipBusy()) {
+          <app-icon name="spinner" class="gs-spin gs-ico-sm" />
+          {{ "alchemy.jobs.download_busy" | transloco }}
+        } @else {
+          <app-icon name="arrow-down-tray" class="gs-ico-sm" />
+          {{ "alchemy.series.export_zip" | transloco }}
+        }
+      </button>
     </div>
     <div class="gs-series-scroll">
       <table class="gs-series-table">
@@ -588,11 +602,11 @@
          the last card of the flow, once there is a caption or tags to write
          from, folded until asked. -->
     @if (promptMaterial(cards); as material) {
-      <app-alchemy-prompt-draft
+      <app-prompt-draft-card
         [caption]="material.caption"
         [tags]="material.tags"
         [foldPin]="foldPinFor(job.id)"
-        (sendToPrompt)="sendToPrompt.emit($event)"
+        (apply)="sendToPrompt.emit($event)"
       />
     }
   </div>

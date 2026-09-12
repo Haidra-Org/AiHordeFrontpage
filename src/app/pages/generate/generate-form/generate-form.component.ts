@@ -175,6 +175,7 @@ import {
   type WorkerPickOption,
 } from '../../../services/worker-pool.service';
 import type { HordeWorker } from '../../../types/horde-worker';
+import { PromptDraftCardComponent } from '../../../components/prompt-draft/prompt-draft-card.component';
 import {
   ImageSchedulerName,
   MAX_FLOW_SHIFT,
@@ -555,6 +556,7 @@ const SUMMARY_SEPARATOR = ' · ';
   selector: 'app-generate-form',
   imports: [
     NgTemplateOutlet,
+    PromptDraftCardComponent,
     ReactiveFormsModule,
     TranslocoPipe,
     CivitaiSelectionComponent,

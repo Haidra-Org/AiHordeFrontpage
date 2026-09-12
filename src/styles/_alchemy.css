@@ -295,6 +295,19 @@
 }
 
 /* --- A prompt drafted by a text model ----------------------------- */
+/* Under the studio's prompt box the card is a block of the section, on the
+   card tone, a step below the box it improves. */
+.gen-studio .gs-prompt-improve {
+  display: block;
+  margin-top: var(--gs-space-2);
+}
+.gen-studio .gs-prompt-improve .alchemy-result {
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-top: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+  background: var(--gs-card);
+}
 .gen-studio .alchemy-draft__body {
   align-items: stretch;
 }

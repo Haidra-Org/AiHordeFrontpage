@@ -1,14 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AlchemyPromptDraftComponent } from './alchemy-prompt-draft.component';
+import { PromptDraftCardComponent } from './prompt-draft-card.component';
 import {
   PromptDraftOutcome,
   PromptDraftService,
-} from '../../../services/prompt-draft.service';
+} from '../../services/prompt-draft.service';
 
-describe('AlchemyPromptDraftComponent', () => {
-  let fixture: ComponentFixture<AlchemyPromptDraftComponent>;
+describe('PromptDraftCardComponent', () => {
+  let fixture: ComponentFixture<PromptDraftCardComponent>;
   let draft: ReturnType<typeof vi.fn>;
   let sent: string | null;
 
@@ -16,7 +16,7 @@ describe('AlchemyPromptDraftComponent', () => {
     draft = vi.fn();
     TestBed.configureTestingModule({
       imports: [
-        AlchemyPromptDraftComponent,
+        PromptDraftCardComponent,
         TranslocoTestingModule.forRoot({
           langs: {},
           translocoConfig: { defaultLang: 'en' },
@@ -35,12 +35,12 @@ describe('AlchemyPromptDraftComponent', () => {
         },
       ],
     });
-    fixture = TestBed.createComponent(AlchemyPromptDraftComponent);
+    fixture = TestBed.createComponent(PromptDraftCardComponent);
     fixture.componentRef.setInput('caption', 'a dog on a couch');
     fixture.componentRef.setInput('tags', 'dog, couch');
     fixture.componentRef.setInput('defaultOpen', true);
     sent = null;
-    fixture.componentInstance.sendToPrompt.subscribe((text) => (sent = text));
+    fixture.componentInstance.apply.subscribe((text) => (sent = text));
     fixture.detectChanges();
   });
 
@@ -103,7 +103,7 @@ describe('AlchemyPromptDraftComponent', () => {
     await fixture.componentInstance.draft();
     fixture.detectChanges();
     expect(el().querySelector('.gs-warn')?.textContent).toContain(
-      'alchemy.draft.refused',
+      'prompt_draft.refused',
     );
   });
 
@@ -113,5 +113,26 @@ describe('AlchemyPromptDraftComponent', () => {
     fixture.detectChanges();
     await fixture.componentInstance.draft();
     expect(draft).not.toHaveBeenCalled();
+  });
+
+  it('improves a prompt when given one, and asks for that rather than findings', async () => {
+    draft.mockResolvedValue({
+      kind: 'done',
+      text: 'a dog on a couch, golden hour, 35mm',
+      model: 'm',
+      kudos: 1,
+    });
+    fixture.componentRef.setInput('caption', null);
+    fixture.componentRef.setInput('tags', null);
+    fixture.componentRef.setInput('seed', 'a dog on a couch');
+    fixture.detectChanges();
+    expect(fixture.componentInstance.mode()).toBe('improve');
+    expect(fixture.componentInstance.hasMaterial()).toBe(true);
+    await fixture.componentInstance.draft();
+    expect(draft).toHaveBeenCalledWith(
+      { prompt: 'a dog on a couch', note: '' },
+      'auto',
+      expect.anything(),
+    );
   });
 });

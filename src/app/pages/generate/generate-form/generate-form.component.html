@@ -382,6 +382,14 @@
               </button>
             </p>
           }
+          <!-- A text model on the horde rewrites what is in the box, on
+               request. Folded until asked, so the prompt card costs nothing
+               to a reader who writes their own. -->
+          <app-prompt-draft-card
+            class="gs-prompt-improve"
+            [seed]="form().controls.prompt.value"
+            (apply)="fillPrompt($event)"
+          />
         </section>
 
         <!-- Negative prompt (one row by default; drag the grip to grow it). It

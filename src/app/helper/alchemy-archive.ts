@@ -94,11 +94,68 @@ export interface AlchemyArchiveOptions {
  * is fetched, concurrently, and a failure is tolerated so a CORS-blocked or
  * expired image never prevents the user from saving the rest of their results.
  */
+/** A job's files before zipping, so a series can hold many under folders. */
+export interface AlchemyJobFiles {
+  files: Zippable;
+  imageCount: number;
+  failedImages: number;
+}
+
 export async function buildAlchemyJobArchive(
   jobId: string,
   status: AlchemyStatusResponse,
   options: AlchemyArchiveOptions = {},
 ): Promise<AlchemyJobArchive> {
+  const { files, imageCount, failedImages } = await collectAlchemyJobFiles(
+    jobId,
+    status,
+    options,
+  );
+  return { bytes: zipSync(files), imageCount, failedImages };
+}
+
+/** One request of a series archive: its id, status and what it holds. */
+export interface AlchemySeriesEntry {
+  jobId: string;
+  status: AlchemyStatusResponse;
+  options?: AlchemyArchiveOptions;
+}
+
+/**
+ * Every request of a series in one zip, each under a folder named for its
+ * id, with the table the reader exported beside them. The folders hold what
+ * the per-request zip holds, so nothing has two shapes.
+ */
+export async function buildAlchemySeriesArchive(
+  entries: readonly AlchemySeriesEntry[],
+  csv: { fileName: string; text: string } | null,
+): Promise<AlchemyJobArchive> {
+  const files: Zippable = {};
+  let imageCount = 0;
+  let failedImages = 0;
+  for (const entry of entries) {
+    const collected = await collectAlchemyJobFiles(
+      entry.jobId,
+      entry.status,
+      entry.options,
+    );
+    for (const [name, data] of Object.entries(collected.files)) {
+      files[`${entry.jobId}/${name}`] = data;
+    }
+    imageCount += collected.imageCount;
+    failedImages += collected.failedImages;
+  }
+  if (csv) {
+    files[csv.fileName] = strToU8(csv.text);
+  }
+  return { bytes: zipSync(files), imageCount, failedImages };
+}
+
+export async function collectAlchemyJobFiles(
+  jobId: string,
+  status: AlchemyStatusResponse,
+  options: AlchemyArchiveOptions = {},
+): Promise<AlchemyJobFiles> {
   const {
     storedImages = [],
     annotationControlTypes = [],
@@ -163,5 +220,5 @@ export async function buildAlchemyJobArchive(
   );
 
   const imageCount = reportImages.length;
-  return { bytes: zipSync(files), imageCount, failedImages };
+  return { files, imageCount, failedImages };
 }

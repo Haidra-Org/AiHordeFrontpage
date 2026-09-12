@@ -80,6 +80,14 @@ describe('the draft prompt and its answer', () => {
     expect(prompt.endsWith('### Response:\n')).toBe(true);
   });
 
+  it('asks for a rewrite when given a prompt, keeping the note', () => {
+    const prompt = buildDraftPrompt({ prompt: 'a dog', note: 'at night' });
+    expect(prompt).toContain('You improve prompts');
+    expect(prompt).toContain('Prompt: a dog');
+    expect(prompt).toContain('Notes from the user: at night');
+    expect(prompt).not.toContain('Description:');
+  });
+
   it('keeps the first line the model wrote, without label or quotes', () => {
     expect(
       cleanDraft('\n"Prompt: a dog on a couch, soft light"\n\nMore.'),
