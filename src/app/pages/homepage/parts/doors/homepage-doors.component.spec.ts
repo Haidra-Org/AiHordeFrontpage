@@ -71,6 +71,25 @@ describe('HomepageDoorsComponent', () => {
     ]);
   });
 
+  it('marks the one door that leaves the site, and only that one', () => {
+    const doors = fixture.componentInstance.doors;
+
+    expect(doors.map((door) => door.external ?? false)).toEqual([
+      false,
+      false,
+      true,
+    ]);
+    // The door says so where the reader is, too: one appended phrase, on the
+    // press that opens a window rather than moving the page.
+    const notes = fixture.nativeElement.querySelectorAll('.gs-door .sr-only');
+    expect(notes).toHaveLength(1);
+    expect(
+      (
+        fixture.nativeElement.querySelectorAll('.gs-door')[2] as HTMLElement
+      ).querySelector('.sr-only'),
+    ).not.toBeNull();
+  });
+
   it('goes where each door says', () => {
     const doors = fixture.nativeElement.querySelectorAll(
       '.gs-door',

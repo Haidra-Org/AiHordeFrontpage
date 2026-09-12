@@ -1187,6 +1187,7 @@
   "generate.learn.rail_label": "On this page",
   "generate.learn.settings_rail_label": "Setting areas",
 
+  "generate.door.external_suffix": ", opens in a new tab",
   "generate.learn.hero_eyebrow": "Start here",
   "generate.learn.hero_title": "Make your first image",
   "generate.learn.hero_sub": "Generate for free with volunteer workers. You can try it without an account; anonymous requests have lower priority and request limits.",
@@ -2941,7 +2942,7 @@
   "homepage.doors.contribute_title": "Contribute",
   "homepage.doors.contribute_meta": "Run a worker or donate; earn kudos",
   "homepage.doors.build_title": "Build",
-  "homepage.doors.build_meta": "REST API, tools and GUIs",
+  "homepage.doors.build_meta": "REST API reference, tools and GUIs",
   "homepage.sponsors.title": "Sponsors and credits",
   "homepage.sponsors.funding": "Paid for by donations from the public and by NLnet / NGI0 Core.",
   "homepage.sponsors.run_by_prefix": "Run by",

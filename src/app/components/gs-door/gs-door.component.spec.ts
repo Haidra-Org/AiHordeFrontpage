@@ -1,5 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GsDoorComponent } from './gs-door.component';
 
@@ -12,6 +14,7 @@ import { GsDoorComponent } from './gs-door.component';
     [meta]="meta()"
     [tiles]="tiles()"
     [controlClass]="controlClass()"
+    [external]="external()"
     [disabled]="disabled()"
     (entered)="entered()"
   />`,
@@ -27,6 +30,7 @@ class HostComponent {
     '/c.webp',
   ]);
   public readonly controlClass = signal('');
+  public readonly external = signal(false);
   public readonly disabled = signal(false);
   public readonly entered = vi.fn();
 }
@@ -42,7 +46,15 @@ describe('GsDoorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HostComponent],
+      imports: [
+        HostComponent,
+        TranslocoTestingModule.forRoot({
+          langs: {
+            en: { 'generate.door.external_suffix': ', opens in a new tab' },
+          },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(HostComponent);
@@ -93,6 +105,34 @@ describe('GsDoorComponent', () => {
 
     expect(button.disabled).toBe(true);
     expect(fixture.componentInstance.entered).toHaveBeenCalledTimes(1);
+  });
+
+  /** The door itself, for the glyph it picks. */
+  const door = (): GsDoorComponent =>
+    fixture.debugElement.query(By.directive(GsDoorComponent))
+      .componentInstance as GsDoorComponent;
+
+  it('says nothing about new tabs while the door stays on the site', () => {
+    fixture.componentInstance.kind.set('studio');
+    fixture.detectChanges();
+
+    expect(door().arrowIcon()).toBe('arrow-right');
+    expect(el().textContent).not.toContain('opens in a new tab');
+    expect(find('.sr-only')).toBeNull();
+  });
+
+  it('marks a door that leaves the site, in the glyph and in its name', () => {
+    fixture.componentInstance.kind.set('studio');
+    fixture.componentInstance.external.set(true);
+    fixture.detectChanges();
+
+    // The glyph is the warning a sighted reader gets; the appended words are
+    // everyone else's, and they add to the door's own rather than replace it.
+    expect(door().arrowIcon()).toBe('external-link');
+    expect(find('.sr-only')?.textContent).toContain(', opens in a new tab');
+    expect(find('.gs-cap-title')?.textContent?.trim()).toBe(
+      'Open the Steps × Guidance grid',
+    );
   });
 
   it('wears the class the surface mounting it hangs its own rules on', () => {

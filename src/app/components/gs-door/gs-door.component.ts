@@ -5,6 +5,7 @@ import {
   input,
   output,
 } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 
 /**
@@ -29,7 +30,7 @@ import { IconComponent } from '../icon/icon.component';
  */
 @Component({
   selector: 'app-gs-door',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslocoPipe],
   template: `
     <button
       type="button"
@@ -76,6 +77,15 @@ import { IconComponent } from '../icon/icon.component';
       <span class="gs-door-arrow" aria-hidden="true">
         <app-icon [name]="arrowIcon()" class="gs-ico-sm" />
       </span>
+      @if (external()) {
+        <!-- Said rather than only drawn: the glyph is the sighted reader's
+             warning that the press leaves the site, and this is everyone
+             else's. It is appended to the door's own words rather than
+             replacing them. -->
+        <span class="sr-only">{{
+          'generate.door.external_suffix' | transloco
+        }}</span>
+      }
     </button>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -102,6 +112,12 @@ export class GsDoorComponent {
   /** The frames a grid door leads with, as URLs the caller has resolved. */
   public readonly tiles = input<readonly string[]>([]);
   /**
+   * Whether the door leads off the site, which opens a window rather than
+   * moving the page. It changes what the door promises, so it changes both the
+   * glyph on the trailing edge and the words the door is announced by.
+   */
+  public readonly external = input(false);
+  /**
    * A class for the button itself, where the surface mounting the door already
    * has one it hangs behaviour or layout on.
    */
@@ -110,8 +126,14 @@ export class GsDoorComponent {
 
   public readonly entered = output<void>();
 
-  /** Off the page for a grid, across to the panel for the studio. */
-  public readonly arrowIcon = computed(() =>
-    this.kind() === 'studio' ? 'arrow-right' : 'arrow-top-right-on-square',
-  );
+  /**
+   * Off the site for a door that leaves it, off the page for a grid, across to
+   * the panel for the studio.
+   */
+  public readonly arrowIcon = computed(() => {
+    if (this.external()) return 'external-link';
+    return this.kind() === 'studio'
+      ? 'arrow-right'
+      : 'arrow-top-right-on-square';
+  });
 }

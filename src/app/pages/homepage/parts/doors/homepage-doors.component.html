@@ -11,6 +11,7 @@
           kind="studio"
           [icon]="door.icon"
           controlClass="home-door"
+          [external]="door.external ?? false"
           [title]="door.titleKey | transloco"
           [meta]="door.metaKey | transloco"
           (entered)="enter(door)"

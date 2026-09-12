@@ -213,6 +213,25 @@ describe('HomepageHeroComponent', () => {
     expect(fixture.componentInstance.tiles()).toEqual(before);
   });
 
+  it('holds every tile for a moment after the pointer moves over the mosaic', () => {
+    setup(false);
+    const before = fixture.componentInstance.tiles();
+
+    // The pointer moves a second before the tile's turn comes round.
+    vi.advanceTimersByTime(5000);
+    fixture.componentInstance.onPointerMove(mouse());
+    vi.advanceTimersByTime(1000);
+
+    // A reader moving towards a picture is on their way to it, so the tick
+    // passes without changing anything.
+    expect(fixture.componentInstance.tiles()).toEqual(before);
+
+    // Four seconds after the last movement the mosaic goes back to its own
+    // pace, and the next tick moves the tile whose turn it was.
+    vi.advanceTimersByTime(6000);
+    expect(fixture.componentInstance.tiles()[0].showBack).toBe(true);
+  });
+
   it('never moves the tile being read', () => {
     setup(false);
     fixture.componentInstance.hold(0, mouse());

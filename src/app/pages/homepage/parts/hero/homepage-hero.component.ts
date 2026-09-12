@@ -24,6 +24,15 @@ import { StudioHandoffService } from '../../../../services/studio-handoff.servic
 /** How long a picture holds a tile before the next one takes it. */
 const ROTATE_MS = 6000;
 
+/**
+ * How long the whole mosaic holds still after the pointer last moved over it.
+ * A reader moving towards a picture is on their way to it, and a tile that
+ * crossfades under an approaching pointer takes the picture they were going
+ * for. Hovering holds that one tile for as long as the pointer rests on it;
+ * this holds every tile for a moment after any movement at all.
+ */
+const POINTER_QUIET_MS = 4000;
+
 /** The width at which the mosaic becomes a strip the reader scrolls itself. */
 const PHONE_QUERY = '(max-width: 479.98px)';
 
@@ -154,6 +163,10 @@ export class HomepageHeroComponent {
   /** The tile under the pointer or holding focus, which never changes under it. */
   private held: number | null = null;
 
+  /** Set while the pointer has moved recently; nothing rotates until it clears. */
+  private pointerQuiet = false;
+  private quietTimer: ReturnType<typeof setTimeout> | null = null;
+
   /** The tile whose press is on its way to the studio, while it is on its way. */
   public readonly going = signal<number | null>(null);
 
@@ -170,7 +183,10 @@ export class HomepageHeroComponent {
       // under a thumb that is dragging the row past it is one motion too many.
       if (this.reducedMotion() || this.onPhone()) return;
       const timer = setInterval(() => this.rotate(), ROTATE_MS);
-      this.destroyRef.onDestroy(() => clearInterval(timer));
+      this.destroyRef.onDestroy(() => {
+        clearInterval(timer);
+        if (this.quietTimer !== null) clearTimeout(this.quietTimer);
+      });
     });
   }
 
@@ -237,6 +253,17 @@ export class HomepageHeroComponent {
     }
   }
 
+  /** A mouse moving anywhere over the mosaic holds every tile for a moment. */
+  public onPointerMove(event: PointerEvent): void {
+    if (event.pointerType !== 'mouse') return;
+    this.pointerQuiet = true;
+    if (this.quietTimer !== null) clearTimeout(this.quietTimer);
+    this.quietTimer = setTimeout(() => {
+      this.pointerQuiet = false;
+      this.quietTimer = null;
+    }, POINTER_QUIET_MS);
+  }
+
   /**
    * A pointer resting on a tile. Only a mouse hovers: a tap reports itself as a
    * pointer entering and never leaving, which would hold the tile still for
@@ -277,6 +304,8 @@ export class HomepageHeroComponent {
   private rotate(): void {
     // A phone hides the last three tiles, so they are not places a picture can
     // be moved to: the rotation is over what is on the screen.
+    if (this.pointerQuiet) return;
+
     const phone = this.onPhone();
     const neighbours = phone ? PHONE_NEIGHBOURS : NEIGHBOURS;
     const total = Math.min(
