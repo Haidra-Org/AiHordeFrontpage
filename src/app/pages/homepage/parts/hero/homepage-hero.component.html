@@ -29,57 +29,101 @@
     <ul class="home-mosaic">
       @for (tile of tiles(); track $index; let i = $index) {
         @let shown = picture(tile);
+        @let open = flipped() === i;
         @let going = this.going() === i;
-        <li class="home-mosaic-cell {{ spanClass[i] }}">
-          <!-- Every tile is a door into the studio, so the press is the tile
-               itself and its name says what pressing does. -->
-          <button
-            type="button"
+        <li
+          class="home-mosaic-cell {{ spanClass[i] }}"
+          [class.home-mosaic-cell--flipped]="open"
+        >
+          <!-- A picture and what made it, on the two faces of one tile: the
+               press asks, the face answers, and only a press on the answer
+               leaves the page. -->
+          <div
             class="home-tile"
+            [class.home-tile--flipped]="open"
             [class.home-tile--bare]="tile.failed"
-            [class.home-tile--going]="going"
-            [attr.aria-busy]="going ? 'true' : null"
-            [disabled]="this.going() !== null && !going"
-            [attr.aria-label]="
-              'homepage.hero.tile_press' | transloco: { title: shown.title }
-            "
-            (click)="tryPrompt(i, shown)"
-            (pointerenter)="hold(i, $event)"
-            (pointerleave)="release(i, $event)"
-            (focusin)="holdFocus(i)"
-            (focusout)="releaseFocus(i)"
           >
-            @if (!tile.failed) {
-              <img
-                class="home-tile-img"
-                [class.home-tile-img--on]="!tile.showBack"
-                [src]="imageUrl(tile.front)"
-                alt=""
-                [attr.loading]="i < 3 ? null : 'lazy'"
-                [attr.fetchpriority]="i < 3 ? 'high' : null"
-                (error)="markFailed(i)"
-              />
-              @if (tile.back; as back) {
-                <img
-                  class="home-tile-img"
-                  [class.home-tile-img--on]="tile.showBack"
-                  [src]="imageUrl(back)"
-                  alt=""
-                />
-              }
-              <span class="home-tile-cap">
-                @if (going) {
-                  <span class="home-tile-cap-title">
-                    <span class="home-tile-spin" aria-hidden="true"></span>
-                    {{ "homepage.hero.opening" | transloco }}
-                  </span>
-                } @else {
-                  <span class="home-tile-cap-title">{{ shown.title }}</span>
-                  <span class="home-tile-cap-model">{{ shown.model }}</span>
-                }
-              </span>
-            }
-          </button>
+            <div class="home-flip-inner">
+              <div class="home-flip-face home-flip-face--front">
+                <button
+                  #tileButton
+                  type="button"
+                  class="home-tile-front"
+                  [attr.aria-expanded]="open"
+                  [attr.aria-label]="
+                    'homepage.hero.tile_press'
+                      | transloco: { title: shown.title }
+                  "
+                  (click)="flip(i)"
+                  (pointerenter)="hold(i, $event)"
+                  (pointerleave)="release(i, $event)"
+                  (focusin)="holdFocus(i)"
+                  (focusout)="releaseFocus(i)"
+                >
+                  @if (!tile.failed) {
+                    <img
+                      class="home-tile-img"
+                      [class.home-tile-img--on]="!tile.showBack"
+                      [src]="imageUrl(tile.front)"
+                      alt=""
+                      [attr.loading]="i < 3 ? null : 'lazy'"
+                      [attr.fetchpriority]="i < 3 ? 'high' : null"
+                      (error)="markFailed(i)"
+                    />
+                    @if (tile.back; as back) {
+                      <img
+                        class="home-tile-img"
+                        [class.home-tile-img--on]="tile.showBack"
+                        [src]="imageUrl(back)"
+                        alt=""
+                      />
+                    }
+                    <span class="home-tile-cap">
+                      <span class="home-tile-cap-title">{{ shown.title }}</span>
+                      <span class="home-tile-cap-model">{{ shown.model }}</span>
+                    </span>
+                  }
+                </button>
+              </div>
+
+              <div
+                class="home-flip-face home-flip-face--back"
+                [attr.aria-busy]="going ? 'true' : null"
+              >
+                <p class="home-back-title">{{ shown.title }}</p>
+                <p class="home-back-model">{{ shown.model }}</p>
+                <!-- The prompt is clamped to what the tile has room for; the
+                     whole of it is on the element for anyone who wants it. -->
+                <p class="home-back-prompt" [title]="shown.prompt">
+                  {{ shown.prompt }}
+                </p>
+                <div class="home-back-actions">
+                  <button
+                    #tryButton
+                    type="button"
+                    class="hd-btn hd-btn--primary home-back-btn"
+                    [disabled]="going"
+                    (click)="tryPrompt(i, shown)"
+                  >
+                    @if (going) {
+                      <span class="home-tile-spin" aria-hidden="true"></span>
+                      {{ "homepage.hero.opening" | transloco }}
+                    } @else {
+                      {{ "homepage.hero.try" | transloco }}
+                    }
+                  </button>
+                  <button
+                    type="button"
+                    class="hd-btn home-back-btn"
+                    [disabled]="going"
+                    (click)="unflip(i)"
+                  >
+                    {{ "homepage.hero.back" | transloco }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </li>
       }
     </ul>

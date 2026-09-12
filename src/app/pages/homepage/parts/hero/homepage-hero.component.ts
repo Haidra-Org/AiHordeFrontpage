@@ -3,8 +3,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   inject,
+  Injector,
   signal,
+  viewChildren,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -93,12 +96,23 @@ export interface MosaicTile {
   imports: [RouterLink, TranslocoPipe],
   templateUrl: './homepage-hero.component.html',
   styleUrl: './homepage-hero.component.css',
+  host: {
+    // Escape belongs to whichever tile is turned over, and the focus is inside
+    // it, so the hero listens once rather than every tile listening for itself.
+    '(keydown.escape)': 'unflipCurrent()',
+  },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageHeroComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly handoff = inject(StudioHandoffService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+
+  private readonly tileButtons =
+    viewChildren<ElementRef<HTMLButtonElement>>('tileButton');
+  private readonly tryButtons =
+    viewChildren<ElementRef<HTMLButtonElement>>('tryButton');
 
   /**
    * Which tiles span more than one cell. A mosaic of nine equal squares reads as
@@ -143,6 +157,13 @@ export class HomepageHeroComponent {
   /** The tile whose press is on its way to the studio, while it is on its way. */
   public readonly going = signal<number | null>(null);
 
+  /**
+   * The tile showing its back face, or null. One at a time: a wall of pictures
+   * that had turned into a wall of text would have stopped being a wall of
+   * pictures, and the reader asked about one of them.
+   */
+  public readonly flipped = signal<number | null>(null);
+
   constructor() {
     afterNextRender(() => {
       // The strip's own scrolling is the phone's motion; a picture changing
@@ -159,6 +180,34 @@ export class HomepageHeroComponent {
 
   public imageUrl(picture: ShowcasePicture): string {
     return showcaseImageUrl(picture);
+  }
+
+  /**
+   * Turn a tile over to what made it. The press is the picture's own, so it
+   * answers where it was asked rather than by leaving the page: the prompt is
+   * what a reader pressing a picture wants to see, and going to the studio is a
+   * second, deliberate press on the face that shows it.
+   */
+  public flip(index: number): void {
+    this.flipped.set(index);
+    afterNextRender(() => this.tryButtons()[index]?.nativeElement.focus(), {
+      injector: this.injector,
+    });
+  }
+
+  /** Escape turns back whatever is turned over, wherever the focus sits. */
+  public unflipCurrent(): void {
+    const open = this.flipped();
+    if (open !== null) this.unflip(open);
+  }
+
+  /** Turn the tile back, and give the press that turned it its focus back. */
+  public unflip(index: number): void {
+    if (this.flipped() !== index) return;
+    this.flipped.set(null);
+    afterNextRender(() => this.tileButtons()[index]?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   /**
@@ -239,7 +288,9 @@ export class HomepageHeroComponent {
     let index = -1;
     for (let step = 0; step < total; step++) {
       const candidate = (this.nextTile + step) % total;
-      if (candidate !== this.held) {
+      // A tile being read is a tile turned over as much as one under the
+      // pointer: either way the reader is looking at that picture.
+      if (candidate !== this.held && candidate !== this.flipped()) {
         index = candidate;
         break;
       }

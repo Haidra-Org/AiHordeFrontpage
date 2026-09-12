@@ -136,21 +136,76 @@
      picture is the whole control and the words under it say what it does. */
   .home-tile {
     position: relative;
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--hd-stage-rim);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-stage);
+    /* A clipping ancestor flattens the 3D transform, so the faces do the
+       clipping and the tile leaves them room to turn. */
+    overflow: visible;
+    perspective: 700px;
+  }
+
+  .home-flip-inner {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transition: transform calc(var(--hd-dur) * 2) var(--hd-ease);
+  }
+
+  .home-tile--flipped .home-flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  .home-flip-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    backface-visibility: hidden;
+    /* Held until the tile is edge-on, so the outgoing face stays drawn for as
+       long as it is the one facing the reader. */
+    transition: visibility 0s linear calc(var(--hd-dur) * 0.9);
+  }
+
+  .home-flip-face--back {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--hd-space-2);
+    background: var(--hd-stage);
+    color: var(--hd-stage-ink);
+    transform: rotateY(180deg);
+    visibility: hidden;
+  }
+
+  .home-tile--flipped .home-flip-face--back {
+    visibility: visible;
+  }
+
+  .home-tile--flipped .home-flip-face--front {
+    visibility: hidden;
+  }
+
+  /* The picture is the whole press: a button wearing nothing of one. */
+  .home-tile-front {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
     padding: 0;
-    overflow: hidden;
-    border: 1px solid var(--hd-stage-rim);
-    border-radius: var(--hd-radius-md);
-    background: var(--hd-stage);
+    border: 0;
+    background: none;
     text-align: left;
     cursor: pointer;
   }
 
-  .home-tile:focus-visible {
+  /* Inset, because the face clips anything drawn outside it. */
+  .home-tile-front:focus-visible {
     outline: 2px solid var(--hd-focus-ring);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   /* Two pictures per tile, one showing: the change between them is a
@@ -186,8 +241,8 @@
     pointer-events: none;
   }
 
-  .home-tile:hover .home-tile-cap,
-  .home-tile:focus-within .home-tile-cap {
+  .home-tile-front:hover .home-tile-cap,
+  .home-tile-front:focus-visible .home-tile-cap {
     opacity: 1;
   }
 
@@ -208,18 +263,67 @@
     white-space: nowrap;
   }
 
-  /* A press says so. The studio is the heaviest page on the site, and a tile
-     that looked the same after being pressed reads as a press that missed. */
-  .home-tile--going .home-tile-img {
-    opacity: 0.35;
+  /* What the back face says, in the plate's own inks. */
+  .home-back-title {
+    flex: none;
+    margin: 0;
+    overflow: hidden;
+    line-height: 1.3;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .home-tile--going .home-tile-cap {
-    opacity: 1;
+  .home-back-model {
+    flex: none;
+    margin: 0;
+    overflow: hidden;
+    line-height: 1.3;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--hd-text-2xs);
+    color: var(--hd-stage-label);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .home-tile:disabled {
-    cursor: default;
+  /* As much of the prompt as the tile has room for, and no scrollbar inside a
+     picture: the whole of it is on the element for anyone who wants it. */
+  .home-back-prompt {
+    display: -webkit-box;
+    flex: 0 1 auto;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    font-size: var(--hd-text-xs);
+    line-height: 1.4;
+    color: var(--hd-stage-ink);
+  }
+
+  /* The tile that takes four cells has the room for a third line. Two is what
+     an ordinary tile holds beside a title, a model and the two presses. */
+  .home-mosaic-cell--wide-tall .home-back-prompt {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .home-back-actions {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    margin-top: auto;
+    padding-top: var(--hd-space-1);
+  }
+
+  /* The control height on a mouse; the button primitive takes both presses to
+     44px on a coarse pointer, which is where the tile has the room for it. */
+  .home-back-btn {
+    width: 100%;
+    min-height: var(--hd-control-h);
   }
 
   .home-tile-spin {
@@ -240,9 +344,16 @@
     }
   }
 
+  /* The turn is the whole affordance, so where motion is not wanted the tile
+     swaps its faces rather than losing the answer altogether. */
   @media (prefers-reduced-motion: reduce) {
     .home-tile-spin {
       animation: none;
+    }
+
+    .home-flip-inner,
+    .home-flip-face {
+      transition: none;
     }
   }
 
@@ -284,6 +395,18 @@
       grid-row: auto;
       aspect-ratio: 1 / 1;
       scroll-snap-align: start;
+    }
+
+    /* A 40vw square cannot hold a title, a model, two lines of prompt and two
+       44px presses, so the tile being read takes the room it needs and the
+       strip reflows around it. */
+    .home-mosaic-cell--flipped {
+      flex-basis: 60vw;
+    }
+
+    .home-back-prompt {
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
     }
   }
 

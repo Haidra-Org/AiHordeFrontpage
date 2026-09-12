@@ -91,8 +91,7 @@ describe('HomepageHeroComponent', () => {
         TranslocoTestingModule.forRoot({
           langs: {
             en: {
-              'homepage.hero.tile_press':
-                '{{title}}: try this prompt in the studio',
+              'homepage.hero.tile_press': '{{title}}: show the prompt',
             },
           },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
@@ -109,6 +108,28 @@ describe('HomepageHeroComponent', () => {
     fixture.detectChanges();
   }
 
+  const tile = (index: number): HTMLElement =>
+    fixture.nativeElement.querySelectorAll('.home-tile')[index] as HTMLElement;
+  const tileFront = (index: number): HTMLButtonElement =>
+    fixture.nativeElement.querySelectorAll('.home-tile-front')[
+      index
+    ] as HTMLButtonElement;
+  const tryButton = (index: number): HTMLButtonElement =>
+    fixture.nativeElement.querySelectorAll('.home-back-btn')[
+      index * 2
+    ] as HTMLButtonElement;
+  const backButton = (index: number): HTMLButtonElement =>
+    fixture.nativeElement.querySelectorAll('.home-back-btn')[
+      index * 2 + 1
+    ] as HTMLButtonElement;
+
+  /** Press a tile's picture, and let the focus move that follows it happen. */
+  function press(index: number): void {
+    tileFront(index).click();
+    fixture.detectChanges();
+    TestBed.tick();
+  }
+
   beforeEach(() => {
     vi.useFakeTimers();
   });
@@ -122,7 +143,7 @@ describe('HomepageHeroComponent', () => {
   it('renders the whole gallery as presses, the mosaic being the first nine', () => {
     setup(false);
 
-    const tiles = fixture.nativeElement.querySelectorAll('.home-tile');
+    const tiles = fixture.nativeElement.querySelectorAll('.home-tile-front');
     // Every picture is in the markup: a phone scrolls the lot as a strip, and
     // a wider screen draws the first nine and hides the rest by rule.
     expect(tiles).toHaveLength(HOME_SHOWCASE.length);
@@ -230,13 +251,89 @@ describe('HomepageHeroComponent', () => {
     expect(fixture.componentInstance.tiles()[0].showBack).toBe(true);
   });
 
-  it('takes the picture prompt to the studio when a tile is pressed', () => {
+  it('turns a tile over to its prompt and puts the reader on the offer', () => {
     setup(false);
 
-    const tile = fixture.nativeElement.querySelectorAll(
-      '.home-tile',
-    )[0] as HTMLButtonElement;
-    tile.click();
+    press(0);
+
+    expect(fixture.componentInstance.flipped()).toBe(0);
+    expect(tileFront(0).getAttribute('aria-expanded')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelectorAll('.home-tile--flipped'),
+    ).toHaveLength(1);
+    expect(document.activeElement).toBe(tryButton(0));
+    // The prompt is on the face, and the whole of it is on the element.
+    const prompt = fixture.nativeElement.querySelectorAll(
+      '.home-back-prompt',
+    )[0] as HTMLElement;
+    expect(prompt.textContent.trim()).toBe(HOME_SHOWCASE_FIRST[0].prompt);
+    expect(prompt.getAttribute('title')).toBe(HOME_SHOWCASE_FIRST[0].prompt);
+  });
+
+  it('turns over just the same where motion is not wanted', () => {
+    setup(true);
+
+    press(0);
+
+    // The turn is the answer, so it happens either way; that it happens without
+    // the rotation is the sheet's own reduced-motion rule over the one
+    // transition, as the studio's tile does it.
+    expect(fixture.componentInstance.flipped()).toBe(0);
+    expect(document.activeElement).toBe(tryButton(0));
+  });
+
+  it('turns the previous tile back when another is pressed', () => {
+    setup(false);
+
+    press(0);
+    press(3);
+
+    expect(fixture.componentInstance.flipped()).toBe(3);
+    expect(tileFront(0).getAttribute('aria-expanded')).toBe('false');
+    expect(
+      fixture.nativeElement.querySelectorAll('.home-tile--flipped'),
+    ).toHaveLength(1);
+  });
+
+  it('turns back on Escape and on Back, the press getting its focus again', () => {
+    setup(false);
+
+    press(2);
+    tile(2).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(fixture.componentInstance.flipped()).toBeNull();
+    expect(document.activeElement).toBe(tileFront(2));
+
+    press(2);
+    backButton(2).click();
+    fixture.detectChanges();
+    TestBed.tick();
+
+    expect(fixture.componentInstance.flipped()).toBeNull();
+    expect(document.activeElement).toBe(tileFront(2));
+  });
+
+  it('never turns a tile whose prompt is open', () => {
+    setup(false);
+
+    press(0);
+    vi.advanceTimersByTime(6000);
+
+    // The first tile's turn passes to the next rather than changing the picture
+    // the reader is reading about.
+    expect(fixture.componentInstance.tiles()[0].showBack).toBe(false);
+    expect(fixture.componentInstance.tiles()[1].showBack).toBe(true);
+  });
+
+  it('takes the picture prompt to the studio from the face', () => {
+    setup(false);
+
+    press(0);
+    tryButton(0).click();
 
     // The studio writes the handed-over prompt into its box on arrival, so what
     // is handed over is the picture's own prompt, exactly as published, and it
@@ -248,21 +345,23 @@ describe('HomepageHeroComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/generate/image']);
   });
 
-  it('says the press landed until the studio opens, and holds the rest', () => {
+  it('says the offer landed until the studio opens', () => {
     setup(false);
     let openStudio: (value: boolean) => void = () => undefined;
     navigate.mockReturnValue(
       new Promise<boolean>((resolve) => (openStudio = resolve)),
     );
 
-    const tiles = fixture.nativeElement.querySelectorAll('.home-tile');
-    (tiles[1] as HTMLButtonElement).click();
+    press(1);
+    tryButton(1).click();
     fixture.detectChanges();
 
-    expect(tiles[1].classList.contains('home-tile--going')).toBe(true);
-    expect(tiles[1].getAttribute('aria-busy')).toBe('true');
-    expect((tiles[0] as HTMLButtonElement).disabled).toBe(true);
-    expect((tiles[1] as HTMLButtonElement).disabled).toBe(false);
+    const face = fixture.nativeElement.querySelectorAll(
+      '.home-flip-face--back',
+    )[1];
+    expect(face.getAttribute('aria-busy')).toBe('true');
+    expect(tryButton(1).disabled).toBe(true);
+    expect(backButton(1).disabled).toBe(true);
 
     openStudio(true);
   });
@@ -281,7 +380,7 @@ describe('HomepageHeroComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.going()).toBeNull();
-    expect(tile.classList.contains('home-tile--going')).toBe(false);
+    expect(tryButton(0).disabled).toBe(false);
   });
 
   it('leaves a tile bare when its picture cannot be loaded', () => {
@@ -289,7 +388,7 @@ describe('HomepageHeroComponent', () => {
     fixture.componentInstance.markFailed(2);
     fixture.detectChanges();
 
-    const tile = fixture.nativeElement.querySelectorAll('.home-tile')[2];
+    const tile = fixture.nativeElement.querySelectorAll('.home-tile-front')[2];
     expect(tile.querySelector('.home-tile-img')).toBeNull();
     expect(tile.querySelector('.home-tile-cap')).toBeNull();
     // The link still says where it goes without a picture to be named by.
