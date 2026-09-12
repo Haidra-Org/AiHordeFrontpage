@@ -227,7 +227,8 @@ function primaryFile(
   return (
     files.find((file) => file.primary === true) ??
     files.find((file) => file.type === 'Model') ??
-    files[0]
+    files.at(0) ??
+    null
   );
 }
 

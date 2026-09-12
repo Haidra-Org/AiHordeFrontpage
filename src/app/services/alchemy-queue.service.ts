@@ -532,12 +532,12 @@ export class AlchemyQueueService {
     const live: UnresolvedImage[] = [];
     const expired: string[] = [];
     for (const image of outstanding) {
-      seenAt[image.key] ??= now;
+      const firstSeenAt = (seenAt[image.key] ??= now);
       // Past the link's own lifetime there is nothing left to fetch, so the
       // form is written off rather than spending a request to discover that.
       // Measured from the link, not the request: a job can wait in the queue
       // for longer than its results will stay reachable.
-      if (now - seenAt[image.key] > IMAGE_URL_LIFETIME_MS) {
+      if (now - firstSeenAt > IMAGE_URL_LIFETIME_MS) {
         expired.push(image.key);
       } else {
         live.push(image);

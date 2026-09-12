@@ -663,7 +663,11 @@ export function evaluateRequestLint(
   const loraLines = lintModelSelections(input).map((selection) =>
     loraBaselineWarning(value, selection.baseline),
   );
-  push(loraLines.every((line) => line !== null) ? loraLines[0] : null);
+  push(
+    loraLines.length > 0 && loraLines.every((line) => line !== null)
+      ? (loraLines.at(0) ?? null)
+      : null,
+  );
   push(mixedBaselineWarning(input));
   push(namedWorkerWarning(input));
 

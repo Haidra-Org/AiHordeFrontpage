@@ -60,7 +60,7 @@ export class AdminOperationsService {
       .cachedGet<
         IPTimeout[]
       >(`${this.baseUrl}/operations/ipaddr/${encodedIP}`, { headers: this.getHeaders() }, { ttl: CacheTTL.SHORT, category: 'admin-ops' })
-      .pipe(map((result) => (result && result.length > 0 ? result[0] : null)));
+      .pipe(map((result) => result?.at(0) ?? null));
   }
 
   /**

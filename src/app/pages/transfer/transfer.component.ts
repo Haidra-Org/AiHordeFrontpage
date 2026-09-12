@@ -176,9 +176,15 @@ export class TransferComponent implements OnInit {
         }
 
         accountId = Number(accountId);
-        const account = this.educatorAccounts()!.filter(
+        const account = this.educatorAccounts()!.find(
           (account) => account.id === accountId,
-        )[0];
+        );
+
+        if (!account) {
+          this.form.controls.targetUser.enable();
+          this.form.patchValue({ targetUser: '' });
+          return;
+        }
 
         this.form.controls.targetUser.disable();
         this.form.patchValue({ targetUser: account.username });

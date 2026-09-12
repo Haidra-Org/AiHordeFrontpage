@@ -96,8 +96,7 @@ export class DataService {
             value.map((item) => {
               const copy = { ...item };
               if (copy.context !== undefined) {
-                for (const key of Object.keys(copy.context)) {
-                  const contextItem = copy.context[key];
+                for (const [key, contextItem] of Object.entries(copy.context)) {
                   let targetContextValue: string;
                   switch (contextItem.valueType) {
                     case 'date':
