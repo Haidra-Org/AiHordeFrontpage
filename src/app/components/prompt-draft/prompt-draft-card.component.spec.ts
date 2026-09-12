@@ -266,6 +266,7 @@ describe('PromptDraftCardComponent', () => {
     const outcome: PromptDraftOutcome = {
       kind: 'done',
       texts: ['a dog on a couch, warm light'],
+      negatives: [],
       model: 'koboldcpp/gemma-4-31B-it-heretic',
       kudos: 2,
       seed: null,
@@ -325,6 +326,7 @@ describe('PromptDraftCardComponent', () => {
     draft.mockResolvedValue({
       kind: 'done',
       texts: ['a dog on a couch, golden hour, 35mm'],
+      negatives: [],
       model: 'm',
       kudos: 1,
       seed: null,
@@ -346,6 +348,33 @@ describe('PromptDraftCardComponent', () => {
       { anonymous: true, origin: 'studio' },
       { style: null, takes: 1 },
     );
+  });
+
+  it('shows the negative line a rewrite came with, and offers it on its own', async () => {
+    draft.mockResolvedValue({
+      kind: 'done',
+      texts: ['a dog on a couch, golden hour'],
+      negatives: ['blurry, extra limbs'],
+      model: 'm',
+      kudos: 1,
+      seed: null,
+      ids: ['draft-3'],
+    });
+    build();
+    await settle();
+    fixture.componentRef.setInput('seed', 'a dog on a couch');
+    fixture.detectChanges();
+    const applied: string[] = [];
+    fixture.componentInstance.applyNegative.subscribe((text) =>
+      applied.push(text),
+    );
+    await fixture.componentInstance.draft();
+    fixture.detectChanges();
+    expect(
+      el().querySelector('.alchemy-draft__negative')?.textContent,
+    ).toContain('blurry, extra limbs');
+    fixture.componentInstance.sendNegative(0);
+    expect(applied).toEqual(['blurry, extra limbs']);
   });
 
   it('prices the draft once the card has settled, and names the balance when there is one', async () => {
@@ -458,6 +487,7 @@ describe('PromptDraftCardComponent', () => {
     draft.mockResolvedValue({
       kind: 'done',
       texts: ['a dog, 35mm'],
+      negatives: [],
       model: 'm',
       kudos: 1,
       seed: null,
@@ -521,6 +551,7 @@ describe('PromptDraftCardComponent', () => {
     draft.mockResolvedValue({
       kind: 'done',
       texts: ['one dog', 'two dogs', 'three dogs'],
+      negatives: [],
       model: 'm',
       kudos: 6,
       seed: null,
@@ -548,6 +579,7 @@ describe('PromptDraftCardComponent', () => {
     draft.mockResolvedValue({
       kind: 'done',
       texts: ['a dog'],
+      negatives: [],
       model: 'm',
       kudos: 1,
       seed: null,
@@ -683,6 +715,7 @@ describe('PromptDraftCardComponent', () => {
     draft.mockResolvedValue({
       kind: 'done',
       texts: ['a dog on a couch, warm light'],
+      negatives: [],
       model: 'm',
       kudos: 1,
       seed: null,

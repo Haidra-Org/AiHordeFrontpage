@@ -73,6 +73,20 @@ export interface StoredJobImageMetadata {
 }
 
 /**
+ * What a finished picture was read back as, kept beside the bytes it was read
+ * from. Only the reading itself is stored: how it compares with the prompt is
+ * worked out again whenever it is shown, so an edited prompt is answered
+ * without asking the horde for another reading.
+ */
+export interface StoredPromptCheck {
+  readAt: number;
+  caption: string | null;
+  tags: string | null;
+  /** A text model's short opinion of the picture against its prompt. */
+  verdict?: { text: string; model: string; at: number };
+}
+
+/**
  * A binary image tied to a job, keyed by `[localId, imageId]` in IndexedDB.
  * Source and mask blobs are written at enqueue time; result and control-map
  * blobs are written when the job finishes.
@@ -90,6 +104,8 @@ export interface StoredJobImage {
    */
   strength?: number;
   metadata?: StoredJobImageMetadata;
+  /** The reading of this picture, once one has been asked for. */
+  promptCheck?: StoredPromptCheck;
 }
 
 /**

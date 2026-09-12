@@ -164,6 +164,8 @@ export class PromptDraftCardComponent {
   public readonly picture = input(false);
   /** The draft, for the prompt box it was written for. */
   public readonly apply = output<string>();
+  /** The negative line written alongside a draft, for the negative box. */
+  public readonly applyNegative = output<string>();
 
   /** Which job the card has: writing from findings, or improving a prompt. */
   public readonly mode = computed<'draft' | 'improve'>(() =>
@@ -794,6 +796,17 @@ export class PromptDraftCardComponent {
   public send(index = 0): void {
     const text = this.draftTexts()[index];
     if (text) this.apply.emit(text);
+  }
+
+  /** The negative line a take came with, empty where the model wrote none. */
+  public negativeFor(index: number): string {
+    const outcome = this.outcome();
+    return outcome?.kind === 'done' ? (outcome.negatives[index] ?? '') : '';
+  }
+
+  public sendNegative(index = 0): void {
+    const negative = this.negativeFor(index);
+    if (negative) this.applyNegative.emit(negative);
   }
 
   public async toggleHistory(): Promise<void> {

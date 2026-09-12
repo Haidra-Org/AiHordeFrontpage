@@ -33,6 +33,14 @@ export type PromptDraftModelPick =
   | { model: string };
 
 /**
+ * What the model is being asked to do. `write` turns a reading into a prompt
+ * and `improve` rewrites one that exists; both answer with a prompt. `judge`
+ * answers with an opinion instead, comparing a prompt with what the finished
+ * picture turned out to be.
+ */
+export type PromptDraftRole = 'write' | 'improve' | 'judge';
+
+/**
  * What a draft is written from. Any part may be empty; not all of them. With
  * a `prompt` the request is to improve what is written; without one it is to
  * write a prompt from what alchemy found.
@@ -48,6 +56,16 @@ export interface PromptDraftInput {
    * them twice.
    */
   styleWords?: string | null;
+  /**
+   * What to ask for. Left unset it follows the material, as it always has: a
+   * prompt in hand is improved, and anything else is written from scratch.
+   */
+  role?: PromptDraftRole;
+}
+
+/** What the request is for, once the material has had its say. */
+export function draftRole(input: PromptDraftInput): PromptDraftRole {
+  return input.role ?? (input.prompt?.trim() ? 'improve' : 'write');
 }
 
 /**
@@ -82,6 +100,11 @@ export type PromptDraftOutcome =
       kind: 'done';
       /** Every take the request came back with, in the order the horde sent them. */
       texts: string[];
+      /**
+       * The negative line each take wrote, positionally alongside `texts`. A
+       * model that answered with a prompt alone leaves its entry empty.
+       */
+      negatives: string[];
       model: string;
       kudos: number;
       seed: number | null;
@@ -260,6 +283,13 @@ export function buildDraftMaterial(input: PromptDraftInput): string {
 }
 
 /**
+ * What a verdict is asked for in. Three lines is the shape a small instruct
+ * build holds to; anything looser comes back as a paragraph of praise.
+ */
+const JUDGE_INSTRUCTION =
+  'You compare an image prompt with a description of the finished picture. In three short lines say what matches, what is missing, and one change to the prompt that would help. No preamble.';
+
+/**
  * The request as an instruction the common instruct tunes follow. Alpaca's
  * markers are the ones the widest range of horde models were trained to see,
  * and a plain text prompt is what the endpoint takes; no chat template is
@@ -270,33 +300,73 @@ export function buildDraftMaterial(input: PromptDraftInput): string {
  * after the prompt is written, and a prompt that repeats them fights them.
  */
 export function buildDraftPrompt(input: PromptDraftInput): string {
-  const prompt = input.prompt?.trim();
   const styled = !!input.styleWords?.trim();
-  const instruction = prompt
-    ? styled
-      ? 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words. Write nothing but the prompt. No quotes, no explanation.'
-      : 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. Write nothing but the prompt. No quotes, no explanation.'
-    : styled
-      ? 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words. Write nothing but the prompt. No quotes, no explanation.'
-      : 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.';
+  const role = draftRole(input);
+  if (role === 'judge') {
+    return `### Instruction:\n${JUDGE_INSTRUCTION}\n\n${buildDraftMaterial(input)}\n\n### Response:\n`;
+  }
+  const instruction =
+    role === 'improve'
+      ? styled
+        ? 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt, then write a negative prompt for it. Answer in exactly two labelled lines:\nPrompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words.\nNegative: a short, comma-separated line naming what should be kept out of the picture. No style words, since a style is applied separately.\nNo quotes, no explanation.'
+        : 'You improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt, then write a negative prompt for it. Answer in exactly two labelled lines:\nPrompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing.\nNegative: a short, comma-separated line naming what should be kept out of the picture.\nNo quotes, no explanation.'
+      : styled
+        ? 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words. Write nothing but the prompt. No quotes, no explanation.'
+        : 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.';
   return `### Instruction:\n${instruction}\n\n${buildDraftMaterial(input)}\n\n### Response:\n`;
 }
 
+/** A line with the quotes and bullet a model sometimes puts round it taken off. */
+function tidyLine(value: string): string {
+  const unquoted = (text: string): string =>
+    text.replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').trim();
+  return unquoted(unquoted(value).replace(/^[-*•]\s*/, '')).replace(
+    /\s+/g,
+    ' ',
+  );
+}
+
 /**
- * A model's answer as a prompt: the first line that says anything, stripped
- * of the label or quotes a model sometimes puts round it.
+ * A model's answer split into the prompt and the negative line.
+ *
+ * The labels are asked for, and read where they turn up. A model that ignores
+ * them still answers with a prompt, so the first line that says anything is
+ * taken as one and the negative is left empty rather than the whole reply
+ * being thrown away.
  */
-export function cleanDraft(text: string): string {
-  const firstLine =
-    text
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .find((line) => line.length > 0) ?? '';
-  const unquoted = (value: string): string =>
-    value.replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').trim();
-  return unquoted(
-    unquoted(firstLine).replace(/^(prompt|image prompt)\s*:\s*/i, ''),
-  ).replace(/\s+/g, ' ');
+export function cleanDraft(text: string): { text: string; negative: string } {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  let prompt: string | null = null;
+  let negative = '';
+  const labelled = /^(prompt|image prompt|positive)\s*:\s*/i;
+  const negativeLabel = /^(negative|negative prompt)\s*:\s*/i;
+  for (const line of lines) {
+    const clean = tidyLine(line);
+    if (negative === '' && negativeLabel.test(clean)) {
+      negative = tidyLine(clean.replace(negativeLabel, ''));
+      continue;
+    }
+    if (prompt === null && labelled.test(clean)) {
+      prompt = tidyLine(clean.replace(labelled, ''));
+    }
+  }
+  if (prompt === null) {
+    const first = lines.map(tidyLine).find((line) => !negativeLabel.test(line));
+    prompt = first ?? '';
+  }
+  return { text: prompt, negative };
+}
+
+/** A verdict is kept as the model wrote it; only the blank edges go. */
+export function cleanJudgement(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .join('\n')
+    .trim();
 }
 
 /** How often the answer is asked for, and for how long. */
@@ -421,20 +491,28 @@ export class PromptDraftService {
         slow_workers: true,
       };
     }
+    // One line comes back for a written prompt, two for an improved one and
+    // three for a verdict. Room nothing uses is paid for all the same, so the
+    // allowance follows what was asked for, and only the single-line job can
+    // be held to a single line.
+    const role = draftRole(input);
+    const lineBound =
+      role === 'write'
+        ? { max_length: 96, singleline: true, stop_sequence: ['\n\n', '###'] }
+        : {
+            max_length: role === 'judge' ? 200 : 160,
+            stop_sequence: ['###'],
+          };
     return {
       prompt: buildDraftPrompt(input),
       params: {
         ...(takes > 1 ? { n: takes } : {}),
-        // The material is a caption, some tags and a note, and one line comes
-        // back. Asking for room nothing uses is paid for all the same.
         max_context_length: 1024,
-        max_length: 96,
         temperature: 0.7,
         top_p: 0.92,
         min_p: 0.05,
         rep_pen: 1.1,
-        singleline: true,
-        stop_sequence: ['\n\n', '###'],
+        ...lineBound,
       },
       ...(chosen.models ? { models: chosen.models } : {}),
       slow_workers: true,
@@ -523,10 +601,15 @@ export class PromptDraftService {
       if (!status) continue;
       if (status.faulted) return { kind: 'faulted' };
       if (status.done) {
+        // A verdict is prose, not a prompt: it is kept as the model wrote it
+        // rather than being cut down to its first line.
+        const judging = draftRole(input) === 'judge';
         const takes = status.generations
           .map((generation) => ({
             generation,
-            text: cleanDraft(generation.text),
+            ...(judging
+              ? { text: cleanJudgement(generation.text), negative: '' }
+              : cleanDraft(generation.text)),
           }))
           .filter((take) => take.text.length > 0);
         if (takes.length === 0) return { kind: 'faulted' };
@@ -542,6 +625,7 @@ export class PromptDraftService {
           kudos: status.kudos,
           anonymous: options.anonymous,
           text: take.text,
+          ...(take.negative ? { negative: take.negative } : {}),
           requestId: submitted.response.id,
           takeIndex: index,
           ...(style ? { style: style.id } : {}),
@@ -560,6 +644,7 @@ export class PromptDraftService {
         return {
           kind: 'done',
           texts: records.map((record) => record.text),
+          negatives: records.map((record) => record.negative ?? ''),
           model: firstRecord.model,
           kudos: firstRecord.kudos,
           seed: firstRecord.seed,

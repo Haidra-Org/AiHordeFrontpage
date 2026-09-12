@@ -573,6 +573,27 @@
                     }}
                   </button>
                 </div>
+                <!-- The rewrite is asked for a negative line as well, so what
+                     to keep out of the picture arrives with what to put in it
+                     and goes to its own box. -->
+                @if (negativeFor($index); as negative) {
+                  <p class="gs-sublabel alchemy-draft__negative-label">
+                    {{ "prompt_draft.negative_label" | transloco }}
+                  </p>
+                  <blockquote class="alchemy-caption alchemy-draft__negative">
+                    {{ negative }}
+                  </blockquote>
+                  <div class="alchemy-draft__actions">
+                    <button
+                      type="button"
+                      class="gs-btn gs-btn--dense"
+                      (click)="sendNegative($index)"
+                    >
+                      <app-icon name="no-symbol" class="gs-ico-sm" />
+                      {{ "prompt_draft.negative_use" | transloco }}
+                    </button>
+                  </div>
+                }
               </div>
             }
             <p class="gs-sublabel alchemy-draft__meta">

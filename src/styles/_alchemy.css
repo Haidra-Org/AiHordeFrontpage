@@ -379,6 +379,15 @@
 .gen-studio .alchemy-draft__meta {
   margin: 0;
 }
+/* The negative line stands under the prompt it belongs to, quieter than it:
+   it is the other half of one answer, not a second answer. */
+.gen-studio .alchemy-draft__negative-label {
+  margin: 0;
+}
+.gen-studio .alchemy-draft__negative {
+  align-self: stretch;
+  opacity: 0.85;
+}
 .gen-studio .alchemy-draft__actions {
   display: flex;
   flex-wrap: wrap;

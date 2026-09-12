@@ -65,6 +65,7 @@ import { CivitaiPickerComponent } from '../../../components/civitai-picker/civit
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
 import { GsGroupComponent } from './gs-group/gs-group.component';
 import { ResultControlAction } from '../result-control-action';
+import { negativeHasPhrase } from '../../../helper/prompt-check';
 import {
   FACE_FIXERS,
   FormLoraEntry,
@@ -3306,6 +3307,24 @@ export class GenerateFormComponent implements OnInit {
       controls.negativePrompt.markAsDirty();
     }
     this.focusPrompt();
+  }
+
+  /**
+   * Add a line to the negative prompt. An empty box takes it whole; one with
+   * words in it keeps them and the line joins the end, because what is already
+   * there was written on purpose.
+   */
+  public addNegative(negative: string): void {
+    const text = negative.trim();
+    if (!text) return;
+    const control = this.form().controls.negativePrompt;
+    const current = control.value.trim();
+    if (!negativeHasPhrase(current, text)) {
+      control.setValue(current ? `${current}, ${text}` : text);
+      control.markAsDirty();
+      control.markAsTouched();
+    }
+    this.goToField('prompt');
   }
 
   /** Open the full-screen editor on one of the two prompt fields. */

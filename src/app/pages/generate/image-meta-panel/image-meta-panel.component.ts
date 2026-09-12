@@ -13,6 +13,7 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
 import { GenerateFormValue, requestToFormValue } from '../generate-form.model';
+import { PromptCheckReport } from '../../../helper/prompt-check';
 import {
   ImageMetaProvenance,
   imageErrorFieldKey,
@@ -29,6 +30,37 @@ import {
 
 /** How unchecked parameters are treated when the selection is applied. */
 export type MetaApplyMode = 'replace' | 'overlay';
+
+/**
+ * What the panel knows about the picture having been read back and compared
+ * with its prompt. The host owns the reading and the comparison; the panel is
+ * handed the answer and draws it.
+ */
+export interface PromptCheckView {
+  /** The comparison, or null while the picture has not been read. */
+  report: PromptCheckReport | null;
+  /** A reading is on its way. */
+  reading: boolean;
+  /** A text model is being asked for its opinion. */
+  judging: boolean;
+  /** Why the last reading produced nothing, as a line to show. */
+  failedKey: string | null;
+  /** The opinion a text model gave, once there is one. */
+  verdict: { text: string; model: string } | null;
+  /** What asking for an opinion would cost, where the horde has quoted it. */
+  verdictPrice: number | null;
+}
+
+/** Which of the prompt check's three buttons was pressed. */
+export interface PromptCheckAction {
+  kind: 'check' | 'judge' | 'again';
+}
+
+/** A change to the prompt the reader asked for from the comparison. */
+export interface PromptEditRequest {
+  kind: 'emphasize' | 'negative';
+  text: string;
+}
 
 /** What the panel asks the studio to write back into the form. */
 /** The three things to do with a finished image, wherever it is shown. */
@@ -108,6 +140,13 @@ export class ImageMetaPanelComponent {
    */
   public readonly quickActions = input(false);
 
+  /**
+   * The picture read back against its prompt. Null leaves the block out
+   * altogether, which is the answer for a picture whose prompt this browser
+   * never held.
+   */
+  public readonly promptCheckView = input<PromptCheckView | null>(null);
+
   public readonly apply = output<MetaApplyEvent>();
   public readonly closed = output<void>();
   /** Ask the host to open the raw JSON view of the full metadata export. */
@@ -115,6 +154,10 @@ export class ImageMetaPanelComponent {
   public readonly pinToggle = output<void>();
   /** One of the three whole-image actions; the host owns what each one does. */
   public readonly quickAction = output<ImageQuickAction>();
+  /** Ask the host to read the picture, ask for an opinion, or read it again. */
+  public readonly promptCheck = output<PromptCheckAction>();
+  /** Ask the host to change the prompt the comparison was made against. */
+  public readonly promptEdit = output<PromptEditRequest>();
 
   public readonly mode = linkedSignal(() => this.defaultMode());
 
@@ -376,6 +419,14 @@ export class ImageMetaPanelComponent {
       }
       return next;
     });
+  }
+
+  /** The mark a phrase wears, so the three answers differ by shape as well. */
+  public stateIcon(
+    state: PromptCheckReport['phrases'][number]['state'],
+  ): string {
+    if (state === 'found') return 'check-circle';
+    return state === 'partly' ? 'info-circle' : 'x-circle';
   }
 
   public setMode(mode: MetaApplyMode): void {

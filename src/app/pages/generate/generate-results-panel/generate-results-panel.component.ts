@@ -55,7 +55,14 @@ import {
   ImageQuickAction,
   MetaApplyEvent,
   MetaApplyMode,
+  PromptCheckAction,
+  PromptCheckView,
+  PromptEditRequest,
 } from '../image-meta-panel/image-meta-panel.component';
+import {
+  PromptCheckService,
+  PromptCheckTarget,
+} from '../../../services/prompt-check.service';
 import {
   GenerateFormValue,
   splitCombinedPrompt,
@@ -360,6 +367,7 @@ export class GenerateResultsPanelComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly handoff = inject(StudioHandoffService);
   private readonly describeService = inject(StudioDescribeService);
+  private readonly promptChecks = inject(PromptCheckService);
   private readonly router = inject(Router);
   private readonly tutorial = inject(TutorialEngineService);
   private readonly helpDock = inject(GsHelpDockService);
@@ -389,6 +397,9 @@ export class GenerateResultsPanelComponent {
 
   /** Ask the parent to put a prompt in the form (the empty state's starters). */
   public readonly usePrompt = output<string>();
+
+  /** Ask the parent to change the prompt, from the prompt check's follow-through. */
+  public readonly promptEdit = output<PromptEditRequest>();
 
   /**
    * Whether the empty state (and with it the starter prompts) is shown: only
@@ -1198,6 +1209,19 @@ export class GenerateResultsPanelComponent {
       }
     });
 
+    // The panel opens on a picture that may already have been read, so the
+    // reading is fetched before anything is drawn and the price of an opinion
+    // is asked for once there is something to have an opinion about.
+    effect(() => {
+      const target = this.checkTarget();
+      if (!target) return;
+      const prompt = this.metaTile()?.prompt ?? null;
+      const stored = this.promptChecks.reading(target);
+      void (stored
+        ? this.promptChecks.priceVerdict(target, prompt)
+        : this.promptChecks.load(target));
+    });
+
     effect(() => {
       for (const job of this.finishedJobs()) {
         if (job.status === 'done' && !this.loaded.has(job.localId)) {
@@ -1841,6 +1865,49 @@ export class GenerateResultsPanelComponent {
     if (await copyToClipboard(address)) {
       this.toast.success('generate.link.copied', { transloco: true });
     }
+  }
+
+  // --- Checking a picture against its prompt --------------------------------
+
+  /**
+   * The picture the prompt check is about: the one the metadata panel is
+   * showing, as long as it is a finished result with a prompt behind it. An
+   * adopted job has neither, so the block is left out for it.
+   */
+  private readonly checkTarget = computed<PromptCheckTarget | null>(() => {
+    const tile = this.metaTile();
+    const imageId = tile?.thumb?.imageId;
+    if (!tile || imageId === undefined) return null;
+    return tile.prompt?.trim() ? { localId: tile.jobLocalId, imageId } : null;
+  });
+
+  /** What the panel draws for the picture it is showing. */
+  public readonly promptCheckView = computed<PromptCheckView | null>(() => {
+    const target = this.checkTarget();
+    if (!target) return null;
+    const prompt = this.metaTile()?.prompt ?? null;
+    return {
+      report: this.promptChecks.report(target, prompt),
+      reading: this.promptChecks.isReading(target),
+      judging: this.promptChecks.isJudging(target),
+      failedKey: this.promptChecks.failure()?.key ?? null,
+      verdict: this.promptChecks.reading(target)?.verdict ?? null,
+      verdictPrice: this.promptChecks.verdictPrice(),
+    };
+  });
+
+  /** The block's three buttons, on the picture the panel is showing. */
+  public onPromptCheck(action: PromptCheckAction): void {
+    const target = this.checkTarget();
+    if (!target) return;
+    const prompt = this.metaTile()?.prompt ?? null;
+    if (action.kind === 'judge') {
+      void this.promptChecks.judge(target, prompt);
+      return;
+    }
+    void (action.kind === 'again'
+      ? this.promptChecks.readAgain(target)
+      : this.promptChecks.check(target));
   }
 
   /** The metadata panel's three actions, on the image the panel is showing. */

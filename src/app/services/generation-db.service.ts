@@ -6,6 +6,7 @@ import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
   StoredJobImage,
+  StoredPromptCheck,
   StoredSourceDraft,
 } from '../types/generation-job';
 
@@ -186,6 +187,34 @@ export class GenerationDbService {
     }
     const db = await this.db();
     return db.get(IMAGES_STORE, [localId, imageId]);
+  }
+
+  /**
+   * Write a reading onto one stored picture. The record is read and written in
+   * one transaction because the bytes are the largest thing in the store and a
+   * read-modify-write around them would otherwise be a chance to lose them.
+   * Answers the record as it now stands, or undefined when there is none.
+   */
+  public async updateImagePromptCheck(
+    localId: string,
+    imageId: string,
+    promptCheck: StoredPromptCheck,
+  ): Promise<StoredJobImage | undefined> {
+    if (!this.isBrowser) {
+      return undefined;
+    }
+    const db = await this.db();
+    const tx = db.transaction(IMAGES_STORE, 'readwrite');
+    const store = tx.objectStore(IMAGES_STORE);
+    const image = await store.get([localId, imageId]);
+    if (!image) {
+      await tx.done;
+      return undefined;
+    }
+    const updated: StoredJobImage = { ...image, promptCheck };
+    await store.put(updated);
+    await tx.done;
+    return updated;
   }
 
   public async getImagesForJob(localId: string): Promise<StoredJobImage[]> {

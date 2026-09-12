@@ -13,6 +13,7 @@ import {
   buildDraftMaterial,
   buildDraftPrompt,
   cleanDraft,
+  cleanJudgement,
   curatedRank,
   modelCostTier,
   modelParameterCount,
@@ -212,8 +213,48 @@ describe('the draft prompt and its answer', () => {
   it('keeps the first line the model wrote, without label or quotes', () => {
     expect(
       cleanDraft('\n"Prompt: a dog on a couch, soft light"\n\nMore.'),
-    ).toBe('a dog on a couch, soft light');
-    expect(cleanDraft('   ')).toBe('');
+    ).toEqual({ text: 'a dog on a couch, soft light', negative: '' });
+    expect(cleanDraft('   ')).toEqual({ text: '', negative: '' });
+  });
+
+  it('reads the two labelled lines an improved prompt comes back as', () => {
+    expect(
+      cleanDraft(
+        'Prompt: a dog on a couch, soft light\nNegative: blurry, extra limbs',
+      ),
+    ).toEqual({
+      text: 'a dog on a couch, soft light',
+      negative: 'blurry, extra limbs',
+    });
+  });
+
+  it('takes the prompt alone when the model ignored the labels', () => {
+    expect(cleanDraft('a dog on a couch\nsomething else')).toEqual({
+      text: 'a dog on a couch',
+      negative: '',
+    });
+  });
+
+  it('asks the improve instruction for a negative line as well', () => {
+    const prompt = buildDraftPrompt({ prompt: 'a dog' });
+    expect(prompt).toContain('Prompt:');
+    expect(prompt).toContain('Negative:');
+  });
+
+  it('asks a judge to compare the prompt with what the picture became', () => {
+    const prompt = buildDraftPrompt({
+      role: 'judge',
+      prompt: 'a dog',
+      caption: 'a cat on a couch',
+      tags: 'cat, couch',
+    });
+    expect(prompt).toContain('You compare an image prompt');
+    expect(prompt).toContain('Prompt: a dog');
+    expect(prompt).toContain('Description: a cat on a couch');
+  });
+
+  it('keeps every line of a verdict', () => {
+    expect(cleanJudgement('  one\n\n two \nthree  ')).toBe('one\n\ntwo\nthree');
   });
 });
 
@@ -288,6 +329,64 @@ describe('PromptDraftService', () => {
       texts: ['a dog on a couch, warm light'],
       model: 'koboldcpp/gemma-4-31B-it-heretic',
       kudos: 3,
+    });
+  });
+
+  it('keeps the negative line an improved prompt came back with', async () => {
+    const pending = service.draft({ prompt: 'a dog' }, 'any', []);
+    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+    // Two lines are asked for, so the answer is not held to one.
+    expect(submit.request.body.params.singleline).toBeUndefined();
+    submit.flush({ id: 'text-n', kudos: 4 });
+
+    await vi.advanceTimersByTimeAsync(2_500);
+    http.expectOne(`${API_BASE_URL}/generate/text/status/text-n`).flush({
+      done: true,
+      faulted: false,
+      kudos: 4,
+      generations: [
+        {
+          text: 'Prompt: a dog on a couch\nNegative: blurry, extra limbs',
+          model: 'm/1',
+        },
+      ],
+    });
+
+    await expect(pending).resolves.toMatchObject({
+      kind: 'done',
+      texts: ['a dog on a couch'],
+      negatives: ['blurry, extra limbs'],
+    });
+    const stored = await TestBed.inject(PromptDraftDbService).list(10);
+    expect(stored.at(0)?.negative).toBe('blurry, extra limbs');
+  });
+
+  it('stores a verdict as the model wrote it, line breaks and all', async () => {
+    const pending = service.draft(
+      { role: 'judge', prompt: 'a dog', caption: 'a cat' },
+      'any',
+      [],
+    );
+    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+    expect(submit.request.body.prompt).toContain('You compare an image prompt');
+    submit.flush({ id: 'text-j', kudos: 5 });
+
+    await vi.advanceTimersByTimeAsync(2_500);
+    http.expectOne(`${API_BASE_URL}/generate/text/status/text-j`).flush({
+      done: true,
+      faulted: false,
+      kudos: 5,
+      generations: [
+        {
+          text: ' Matches: nothing.\nMissing: the dog.\nTry: say dog. ',
+          model: 'm/1',
+        },
+      ],
+    });
+
+    await expect(pending).resolves.toMatchObject({
+      kind: 'done',
+      texts: ['Matches: nothing.\nMissing: the dog.\nTry: say dog.'],
     });
   });
 

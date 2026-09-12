@@ -4,7 +4,11 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import {
   ImageMetaPanelComponent,
   MetaApplyEvent,
+  PromptCheckAction,
+  PromptCheckView,
+  PromptEditRequest,
 } from './image-meta-panel.component';
+import { buildPromptCheck } from '../../../helper/prompt-check';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
 import { ImageMetaProvenance } from '../image-metadata';
@@ -443,5 +447,79 @@ describe('ImageMetaPanelComponent', () => {
     fixture.detectChanges();
 
     expect(component.selectedKeys()).toContain('steps');
+  });
+  it('leaves the prompt check out until the host hands it one', () => {
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.gs-check')).toBeNull();
+
+    fixture.componentRef.setInput('promptCheckView', {
+      report: null,
+      reading: false,
+      judging: false,
+      failedKey: null,
+      verdict: null,
+      verdictPrice: null,
+    } satisfies PromptCheckView);
+    fixture.detectChanges();
+
+    const actions: PromptCheckAction[] = [];
+    component.promptCheck.subscribe((action) => actions.push(action));
+    host.querySelector<HTMLButtonElement>('.gs-check-run')?.click();
+
+    expect(actions).toEqual([{ kind: 'check' }]);
+  });
+
+  it('counts the phrases and offers a follow-through for each answer', () => {
+    fixture.componentRef.setInput('promptCheckView', {
+      report: buildPromptCheck('a lighthouse, a red boat', {
+        caption: 'a lighthouse on a cliff',
+        tags: 'cliff:0.8',
+      }),
+      reading: false,
+      judging: false,
+      failedKey: null,
+      verdict: null,
+      verdictPrice: 7,
+    } satisfies PromptCheckView);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.gs-check-counts')?.textContent).toContain(
+      'en.generate.prompt_check.counts',
+    );
+    const edits: PromptEditRequest[] = [];
+    component.promptEdit.subscribe((edit) => edits.push(edit));
+    host
+      .querySelectorAll<HTMLButtonElement>('.gs-check-phrase .gs-check-act')
+      .forEach((button) => button.click());
+    host
+      .querySelector<HTMLButtonElement>('.gs-check-extra .gs-check-act')
+      ?.click();
+
+    expect(edits).toEqual([
+      { kind: 'emphasize', text: 'a red boat' },
+      { kind: 'negative', text: 'cliff' },
+    ]);
+  });
+
+  it('shows the verdict in place of the button that asks for one', () => {
+    fixture.componentRef.setInput('promptCheckView', {
+      report: buildPromptCheck('a lighthouse', {
+        caption: 'a lighthouse',
+        tags: null,
+      }),
+      reading: false,
+      judging: false,
+      failedKey: null,
+      verdict: { text: 'Matches.\nMissing nothing.', model: 'm/1' },
+      verdictPrice: null,
+    } satisfies PromptCheckView);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.gs-check-judge')).toBeNull();
+    expect(host.querySelector('.gs-check-verdict')?.textContent).toContain(
+      'Missing nothing.',
+    );
   });
 });

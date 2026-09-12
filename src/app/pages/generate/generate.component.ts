@@ -145,7 +145,9 @@ import {
   ImageMetaPanelComponent,
   MetaApplyEvent,
   MetaApplyMode,
+  PromptEditRequest,
 } from './image-meta-panel/image-meta-panel.component';
+import { emphasizePhrase } from '../../helper/prompt-check';
 import {
   PANEL_SECTION_IDS,
   SECTION_IDENTITIES,
@@ -1916,6 +1918,20 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** Fill the prompt from a results-pane starter chip and focus the box. */
   public onUsePrompt(prompt: string): void {
     this.formRef()?.fillPrompt(prompt);
+  }
+
+  /**
+   * A change the prompt check asked for: push harder on a phrase the picture
+   * did not come back with, or keep out something it came back with anyway.
+   * Nothing is submitted; the reader is put in front of the edit.
+   */
+  public onPromptEdit(edit: PromptEditRequest): void {
+    if (edit.kind === 'negative') {
+      this.formRef()?.addNegative(edit.text);
+      return;
+    }
+    const prompt = this.form.controls.prompt.value;
+    this.formRef()?.fillPrompt(emphasizePhrase(prompt, edit.text));
   }
 
   /** Scroll the results pane into view without moving focus. */

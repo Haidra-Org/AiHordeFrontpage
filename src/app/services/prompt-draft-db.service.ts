@@ -31,6 +31,11 @@ export interface StoredPromptDraft {
   anonymous: boolean;
   text: string;
   /**
+   * The negative line written alongside the prompt, where the model answered
+   * with one. Absent on drafts kept before it was asked for.
+   */
+  negative?: string;
+  /**
    * The horde request the draft came out of. Several takes of one request each
    * keep their own record, and this is what says they are the same ask.
    */

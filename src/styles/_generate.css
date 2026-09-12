@@ -7654,6 +7654,102 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .dark .gen-studio .gs-meta-val--danger {
   color: #f87171;
 }
+/* The picture read back against its prompt. It sits among the settings groups
+   but is none of them: no checkbox column, so its rows start where the group
+   titles do. */
+.gen-studio .gs-check {
+  padding-bottom: 8px;
+}
+.gen-studio .gs-check-lead,
+.gen-studio .gs-check-counts,
+.gen-studio .gs-check-extra-lead,
+.gen-studio .gs-check-price,
+.gen-studio .gs-check-verdict-by {
+  margin: 4px 8px 6px;
+  color: var(--gs-muted);
+  font-size: 11px;
+}
+.gen-studio .gs-check-counts {
+  color: var(--gs-ink);
+  font-weight: 600;
+}
+.gen-studio .gs-check-list {
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.gen-studio .gs-check-phrase,
+.gen-studio .gs-check-extra {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.gen-studio .gs-check-glyph {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+.gen-studio .gs-check-glyph--found {
+  color: var(--gs-green);
+}
+.gen-studio .gs-check-glyph--partly {
+  color: var(--gs-blue-text);
+}
+.gen-studio .gs-check-glyph--missing {
+  color: var(--gs-muted);
+}
+.gen-studio .gs-check-text {
+  flex: 1;
+  min-width: 0;
+  color: var(--gs-ink);
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-check-act,
+.gen-studio .gs-check-judge,
+.gen-studio .gs-check-run {
+  flex: none;
+}
+.gen-studio .gs-check-judge,
+.gen-studio .gs-check-run {
+  margin: 2px 8px 6px;
+}
+.gen-studio .gs-check-verdict {
+  margin: 6px 8px;
+  padding-left: 8px;
+  border-left: 2px solid var(--gs-border);
+  color: var(--gs-ink);
+  font-size: 12px;
+  white-space: pre-line;
+}
+.gen-studio .gs-check-again {
+  margin: 0 8px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--gs-blue-text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.gen-studio .gs-check-again:hover {
+  text-decoration: underline;
+}
+.gen-studio .gs-check-warn {
+  margin: 4px 8px;
+  font-size: 11px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-check-act,
+  .gen-studio .gs-check-judge,
+  .gen-studio .gs-check-run {
+    min-height: 44px;
+  }
+  .gen-studio .gs-check-again {
+    min-height: 44px;
+  }
+}
 .gen-studio .gs-meta-foot {
   flex: none;
   display: flex;

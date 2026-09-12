@@ -91,6 +91,143 @@
         }
       </div>
     }
+    <!-- What the picture turned out to be, against what was asked for. It is
+         not a settings group: nothing here is applied with the selection, so
+         it carries no checkbox and takes no part in Replace or Overlay. -->
+    @if (promptCheckView(); as check) {
+      <div class="gs-meta-group gs-check">
+        <div class="gs-meta-group-head gs-meta-group-head--info">
+          <span class="gs-meta-group-title">
+            {{ "generate.prompt_check.title" | transloco }}
+          </span>
+        </div>
+        @if (check.report; as report) {
+          <p class="gs-check-counts">
+            {{
+              "generate.prompt_check.counts"
+                | transloco
+                  : {
+                      found: report.counts.found,
+                      partly: report.counts.partly,
+                      missing: report.counts.missing,
+                    }
+            }}
+          </p>
+          <ul class="gs-check-list">
+            @for (phrase of report.phrases; track $index) {
+              <li class="gs-check-phrase">
+                <app-icon
+                  [name]="stateIcon(phrase.state)"
+                  class="gs-check-glyph"
+                  [class.gs-check-glyph--found]="phrase.state === 'found'"
+                  [class.gs-check-glyph--partly]="phrase.state === 'partly'"
+                  [class.gs-check-glyph--missing]="phrase.state === 'missing'"
+                  [ariaLabel]="
+                    (phrase.state === 'found'
+                      ? 'generate.prompt_check.state_found'
+                      : phrase.state === 'partly'
+                        ? 'generate.prompt_check.state_partly'
+                        : 'generate.prompt_check.state_missing'
+                    ) | transloco
+                  "
+                />
+                <span class="gs-check-text">{{ phrase.text }}</span>
+                @if (phrase.state !== "found") {
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense gs-check-act"
+                    (click)="
+                      promptEdit.emit({ kind: 'emphasize', text: phrase.text })
+                    "
+                  >
+                    {{ "generate.prompt_check.emphasize" | transloco }}
+                  </button>
+                }
+              </li>
+            }
+          </ul>
+          @if (report.extra.length > 0) {
+            <p class="gs-check-extra-lead">
+              {{ "generate.prompt_check.also_seen" | transloco }}
+            </p>
+            <ul class="gs-check-list gs-check-extras">
+              @for (tag of report.extra; track tag) {
+                <li class="gs-check-extra">
+                  <span class="gs-check-text">{{ tag }}</span>
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense gs-check-act"
+                    (click)="promptEdit.emit({ kind: 'negative', text: tag })"
+                  >
+                    {{ "generate.prompt_check.add_negative" | transloco }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+          @if (check.verdict; as verdict) {
+            <blockquote class="gs-check-verdict">{{ verdict.text }}</blockquote>
+            <p class="gs-check-verdict-by">
+              {{
+                "generate.prompt_check.verdict_by"
+                  | transloco: { model: verdict.model }
+              }}
+            </p>
+          } @else if (check.judging) {
+            <p class="gs-describe-pending">
+              <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+              {{ "generate.prompt_check.judging" | transloco }}
+            </p>
+          } @else {
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense gs-check-judge"
+              (click)="promptCheck.emit({ kind: 'judge' })"
+            >
+              {{ "generate.prompt_check.judge" | transloco }}
+            </button>
+            @if (check.verdictPrice !== null) {
+              <p class="gs-check-price">
+                {{
+                  "generate.prompt_check.price"
+                    | transloco: { kudos: check.verdictPrice }
+                }}
+              </p>
+            }
+          }
+          <button
+            type="button"
+            class="gs-check-again"
+            [disabled]="check.reading"
+            (click)="promptCheck.emit({ kind: 'again' })"
+          >
+            {{ "generate.prompt_check.again" | transloco }}
+          </button>
+        } @else if (check.reading) {
+          <p class="gs-describe-pending">
+            <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+            {{ "generate.prompt_check.reading" | transloco }}
+          </p>
+        } @else {
+          <p class="gs-check-lead">
+            {{ "generate.prompt_check.lead" | transloco }}
+          </p>
+          <button
+            type="button"
+            class="gs-btn gs-btn--dense gs-check-run"
+            (click)="promptCheck.emit({ kind: 'check' })"
+          >
+            {{ "generate.prompt_check.run" | transloco }}
+          </button>
+        }
+        @if (check.failedKey; as failed) {
+          <p class="gs-warn gs-check-warn">
+            <app-icon name="warning-triangle" class="gs-ico-sm" />
+            {{ failed | transloco }}
+          </p>
+        }
+      </div>
+    }
     @if (infoRows().length > 0) {
       <div class="gs-meta-group">
         <div class="gs-meta-group-head gs-meta-group-head--info">
