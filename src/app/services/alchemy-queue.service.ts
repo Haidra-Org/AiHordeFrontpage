@@ -38,6 +38,7 @@ import {
   storedAnnotationDetectors,
   toAlchemyJob,
 } from '../helper/alchemy-job-view';
+import { randomUuid } from '../helper/random-uuid';
 import { base64ToBlob } from '../helper/blob-base64';
 import {
   inferImageMimeType,
@@ -314,7 +315,7 @@ export class AlchemyQueueService {
     const now = Date.now();
     const sourceMode = isUrlSource(input.source);
     const job: StoredAlchemyJob = {
-      localId: crypto.randomUUID(),
+      localId: randomUuid(),
       jobId: response.id,
       createdAt: now,
       updatedAt: now,
@@ -360,7 +361,7 @@ export class AlchemyQueueService {
       known.add(jobId);
       const now = Date.now();
       const job: StoredAlchemyJob = {
-        localId: crypto.randomUUID(),
+        localId: randomUuid(),
         jobId,
         createdAt: now,
         updatedAt: now,
@@ -823,7 +824,7 @@ export class AlchemyQueueService {
   }
 
   private async importLegacyJob(entry: LegacyStoredJob): Promise<void> {
-    const localId = crypto.randomUUID();
+    const localId = randomUuid();
     const thumb =
       typeof entry.sourceThumb === 'string' ? entry.sourceThumb : null;
     const sourceMode: AlchemySourceMode =

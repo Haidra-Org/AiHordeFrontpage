@@ -639,6 +639,30 @@ describe('AlchemyQueueService', () => {
     });
   });
 
+  it('tracks submitted and adopted requests when crypto.randomUUID is unavailable', async () => {
+    const cryptoRef = crypto as { randomUUID?: () => string };
+    const original = cryptoRef.randomUUID;
+    // A plain-HTTP LAN address is not a secure context, so randomUUID is not
+    // exposed there and the getRandomValues fallback must take over.
+    cryptoRef.randomUUID = undefined;
+    try {
+      await submit('job-a');
+      await service.adoptActive(['elsewhere-1']);
+
+      expect(service.jobs().map((job) => job.id)).toEqual([
+        'elsewhere-1',
+        'job-a',
+      ]);
+      for (const job of service.jobs()) {
+        expect(job.localId).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+        );
+      }
+    } finally {
+      cryptoRef.randomUUID = original;
+    }
+  });
+
   describe('deletion', () => {
     it('drops a job and its blobs', async () => {
       const localId = await submit('job-d');

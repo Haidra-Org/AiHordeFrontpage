@@ -78,6 +78,7 @@ import { GsTryItService, TryItHost } from '../../services/gs-try-it.service';
 import { GsParamEntryComponent } from '../../components/gs-param-entry/gs-param-entry.component';
 import { GsSheetComponent } from '../../components/gs-sheet/gs-sheet.component';
 import { blobToBase64 } from '../../helper/blob-base64';
+import { randomUuid } from '../../helper/random-uuid';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import {
   GenerateFormComponent,
@@ -1751,7 +1752,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   ): StudioControlCheckpoint {
     const source = this.sourceState();
     return {
-      id: crypto.randomUUID(),
+      id: randomUuid(),
       createdAt: Date.now(),
       action,
       form: structuredClone(this.form.getRawValue()),
