@@ -6028,6 +6028,10 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-result-flow > [data-size="tall"] {
   flex: 1 1 100%;
+  /* A tall entry holds lines that do not wrap (a draft's one-line prompt, a
+     model id); without this their full length becomes the entry's minimum and
+     pushes it past the pane. */
+  min-width: 0;
 }
 /* In the flow a result is its own card, since its neighbours are beside it
    as often as under it and a top rule would not separate them. */

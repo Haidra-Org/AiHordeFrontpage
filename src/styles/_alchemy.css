@@ -504,8 +504,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A model id is one unbroken word, often longer than the row, so it may break
+   anywhere rather than run past the card's edge. */
 .gen-studio .alchemy-draft__history-meta {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .gen-studio .alchemy-draft__history-actions {
   display: flex;
