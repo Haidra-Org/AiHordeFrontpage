@@ -64,7 +64,11 @@ export class JsonInspectorComponent {
     }
 
     const activeId = this.activeSectionId();
-    return sections.find((section) => section.id === activeId) ?? sections[0];
+    return (
+      sections.find((section) => section.id === activeId) ??
+      sections.at(0) ??
+      null
+    );
   });
 
   public readonly hasMultipleSections = computed(
@@ -82,7 +86,7 @@ export class JsonInspectorComponent {
       }
 
       if (!activeId || !sections.some((section) => section.id === activeId)) {
-        this.activeSectionId.set(sections[0].id);
+        this.activeSectionId.set(sections.at(0)?.id ?? '');
       }
     });
 

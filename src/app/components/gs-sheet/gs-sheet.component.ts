@@ -538,9 +538,10 @@ export class GsSheetComponent {
       viewport > 0 && Math.abs(offset) >= viewport * LONG_DRAG_FRACTION ? 2 : 1;
     const direction = offset < 0 ? 1 : -1;
     const index = STOPS.indexOf(this.startedAt) + direction * steps;
-    this.setStop(
-      this.landed(STOPS[Math.max(0, Math.min(STOPS.length - 1, index))]),
-    );
+    const stop = STOPS.at(Math.max(0, Math.min(STOPS.length - 1, index)));
+    if (stop) {
+      this.setStop(this.landed(stop));
+    }
   }
 
   /**

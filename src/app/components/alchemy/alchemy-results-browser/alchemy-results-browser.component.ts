@@ -512,10 +512,14 @@ export class AlchemyResultsBrowserComponent {
         next = count - 1;
         break;
       case 'Enter':
-      case ' ':
+      case ' ': {
         event.preventDefault();
-        this.activate(jobs[index]);
+        const job = jobs.at(index);
+        if (job) {
+          this.activate(job);
+        }
         return;
+      }
       default:
         return;
     }

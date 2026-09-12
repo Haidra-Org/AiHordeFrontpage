@@ -182,8 +182,8 @@ export class CivitaiSelectionComponent {
       'linear-gradient(135deg,#e9d5ff,#c4b5fd)',
       'linear-gradient(135deg,#bfdbfe,#93c5fd)',
       'linear-gradient(135deg,#fbcfe8,#f0abfc)',
-    ];
-    return grads[index % grads.length];
+    ] as const;
+    return grads[index % grads.length] ?? grads[0];
   }
 
   public fill(value: number): number {
@@ -244,25 +244,30 @@ export class CivitaiSelectionComponent {
       return;
     }
     const target = index + delta;
-    const swap = <T>(list: readonly T[]): T[] => {
+    const swap = <T>(list: readonly T[]): { next: T[]; moved: T } | null => {
       const next = [...list];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
+      const moved = next.at(index);
+      const displaced = next.at(target);
+      if (moved === undefined || displaced === undefined) {
+        return null;
+      }
+      next[index] = displaced;
+      next[target] = moved;
+      return { next, moved };
     };
 
     if (kind === 'lora') {
-      const next = swap(this.loras());
+      const swapped = swap(this.loras());
+      if (!swapped) return;
+      const { next, moved } = swapped;
       this.lorasChange.emit(next);
-      this.announce(
-        next[target],
-        target,
-        next.length,
-        activeLoras(next).length,
-      );
+      this.announce(moved, target, next.length, activeLoras(next).length);
     } else {
-      const next = swap(this.tis());
+      const swapped = swap(this.tis());
+      if (!swapped) return;
+      const { next, moved } = swapped;
       this.tisChange.emit(next);
-      this.announce(next[target], target, next.length, activeTis(next).length);
+      this.announce(moved, target, next.length, activeTis(next).length);
     }
     this.restoreFocus(kind, target, delta);
   }

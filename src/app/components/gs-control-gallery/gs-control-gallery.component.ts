@@ -884,8 +884,12 @@ export class GsControlGalleryComponent {
       return;
     }
     const next = (at + delta + pictures.length) % pictures.length;
+    const picture = pictures.at(next);
+    if (!picture) {
+      return;
+    }
     this.enlarged.set(next);
-    this.chosen.set(pictures[next].worldIndex);
+    this.chosen.set(picture.worldIndex);
   }
 
   public closeShot(): void {
@@ -923,7 +927,11 @@ export class GsControlGalleryComponent {
     }
     event.preventDefault();
     event.stopPropagation();
-    this.chosenSubject.set(options[next].subject);
+    const subject = options.at(next)?.subject;
+    if (!subject) {
+      return;
+    }
+    this.chosenSubject.set(subject);
     const option = this.subjectOptionButtons()[next]?.nativeElement;
     if (option) {
       option.focus();
@@ -982,8 +990,11 @@ export class GsControlGalleryComponent {
       event.preventDefault();
       return;
     }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
+    const first = focusables.at(0);
+    const last = focusables.at(-1);
+    if (!first || !last) {
+      return;
+    }
     const active = document.activeElement;
     if (event.shiftKey && (active === first || active === panel)) {
       event.preventDefault();
@@ -1015,10 +1026,10 @@ export class GsControlGalleryComponent {
     if (takes.length === 0) {
       return null;
     }
-    const named = anchor ?? this.sweeps.stripById(takes[0].stripId);
+    const named = anchor ?? this.sweeps.stripById(takes.at(0)?.stripId ?? '');
     return {
       stripId: source.anchor,
-      sceneShort: (named?.scene.label ?? '').split(',')[0].trim(),
+      sceneShort: (named?.scene.label ?? '').split(',', 1).at(0)?.trim() ?? '',
       takes,
     };
   }

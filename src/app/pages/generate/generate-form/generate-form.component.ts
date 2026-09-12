@@ -1357,8 +1357,8 @@ export class GenerateFormComponent implements OnInit {
       'linear-gradient(135deg,#e9d5ff,#c4b5fd)',
       'linear-gradient(135deg,#bfdbfe,#93c5fd)',
       'linear-gradient(135deg,#fbcfe8,#f0abfc)',
-    ];
-    return grads[index % grads.length];
+    ] as const;
+    return grads[index % grads.length] ?? grads[0];
   }
 
   /** How many models one request may name, counting the primary. */

@@ -120,9 +120,7 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
   );
   public readonly contributeTooltip = computed(() => {
     const items = this.contributeNotifications();
-    return items.length > 0
-      ? ((items[0].tooltipParams?.['types'] as string) ?? '')
-      : '';
+    return (items.at(0)?.tooltipParams?.['types'] as string) ?? '';
   });
   public readonly hasMobileIndicator = computed(() =>
     this.navNotifications.hasPendingMobileIndicator(),

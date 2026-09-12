@@ -912,6 +912,9 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       return;
     }
     const next = keys[(index + delta + keys.length) % keys.length];
+    if (next === undefined) {
+      return;
+    }
     this.expandedKey.set(next);
     this.preloadNeighbours(next);
   }
@@ -932,6 +935,9 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
     const variant = this.expandedVariantSignal();
     for (const delta of [-1, 1]) {
       const neighbour = keys[(index + delta + keys.length) % keys.length];
+      if (neighbour === undefined) {
+        continue;
+      }
       for (const shot of this.shots(neighbour, variant)) {
         new Image().src = shot.url;
       }

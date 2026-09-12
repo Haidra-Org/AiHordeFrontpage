@@ -713,10 +713,10 @@ export class GenerateResultsPanelComponent {
         ? this.waitInsights.forJob(job, requirement, feasibility)
         : undefined;
       const kinds = pendingTileKinds(job);
-      for (let i = 0; i < kinds.length; i++) {
+      for (const [i, kind] of kinds.entries()) {
         tiles.push({
           key: `${job.localId}-p${i}`,
-          kind: kinds[i],
+          kind,
           jobLocalId: job.localId,
           aspect,
           dims,
@@ -1607,7 +1607,10 @@ export class GenerateResultsPanelComponent {
       return;
     }
     const next = (index + delta + tiles.length) % tiles.length;
-    this.viewerKey.set(tiles[next].key);
+    const tile = tiles.at(next);
+    if (tile) {
+      this.viewerKey.set(tile.key);
+    }
   }
 
   public onViewerPointerDown(event: PointerEvent): void {
@@ -1718,14 +1721,19 @@ export class GenerateResultsPanelComponent {
     if (!panel) {
       return;
     }
-    const focusable = panel.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    const focusable = Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
     );
     if (focusable.length === 0) {
       return;
     }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable.at(0);
+    const last = focusable.at(-1);
+    if (!first || !last) {
+      return;
+    }
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();

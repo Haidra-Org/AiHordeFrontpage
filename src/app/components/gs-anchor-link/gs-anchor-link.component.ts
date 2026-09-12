@@ -163,7 +163,7 @@ export class GsAnchorLinkComponent {
 
   /** The current address without the fragment, for a link that is the page. */
   private pathOnly(): string {
-    return this.router.url.split('#')[0];
+    return this.router.url.split('#', 1).at(0) ?? '';
   }
 
   private clearTimer(): void {

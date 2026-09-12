@@ -290,7 +290,7 @@ export class AlchemyPicturesComponent {
       step === null ? asked === null : asked !== null && near(step, asked),
     );
     const next = steps[Math.min(steps.length - 1, Math.max(0, at + direction))];
-    if (next !== steps[at]) this.zoomTo(next);
+    if (next !== undefined && next !== steps[at]) this.zoomTo(next);
   }
 
   /**

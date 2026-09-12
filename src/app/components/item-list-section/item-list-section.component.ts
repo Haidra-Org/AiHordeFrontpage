@@ -143,8 +143,10 @@ export class ItemListSectionComponent {
       // Fallback: extract domain without TLD
       const parts = hostname.split('.');
       if (parts.length >= 2) {
-        const domain = parts[parts.length - 2];
-        return domain.charAt(0).toUpperCase() + domain.slice(1);
+        const domain = parts.at(-2);
+        if (domain) {
+          return domain.charAt(0).toUpperCase() + domain.slice(1);
+        }
       }
 
       return 'Source';

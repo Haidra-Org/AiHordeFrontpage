@@ -233,11 +233,11 @@ export class GsHelpComponent {
     }
     const strip = this.subject()?.strip;
     const stops = (strip && this.sweeps.strip(strip)?.stops) || [];
-    return stops.length === 0
-      ? []
-      : [stops[0], stops[stops.length - 1]].map((stop) =>
-          this.sweeps.imageUrl(stop),
-        );
+    const first = stops.at(0);
+    const last = stops.at(-1);
+    return first && last
+      ? [this.sweeps.imageUrl(first), this.sweeps.imageUrl(last)]
+      : [];
   });
 
   constructor() {

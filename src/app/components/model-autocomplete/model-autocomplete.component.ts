@@ -231,9 +231,10 @@ export class ModelAutocompleteComponent implements ControlValueAccessor {
 
     if (event.key === 'Enter' && this.dropdownOpen()) {
       const current = this.activeOptionIndex();
-      if (current >= 0 && current < options.length) {
+      const option = options.at(current);
+      if (current >= 0 && option) {
         event.preventDefault();
-        this.selectModel(options[current].name);
+        this.selectModel(option.name);
       }
     }
   }

@@ -162,7 +162,7 @@ export class NavDropdownComponent {
     }
 
     event.preventDefault();
-    items[next].focus();
+    items.at(next)?.focus();
   }
 
   public onDocumentEscape(): void {

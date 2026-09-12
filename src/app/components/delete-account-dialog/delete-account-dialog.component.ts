@@ -272,14 +272,17 @@ export class DeleteAccountDialogComponent implements OnDestroy {
     const panel = this.dialogPanel();
     if (!panel) return;
 
-    const focusableElements = panel.nativeElement.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    const focusableElements = Array.from(
+      panel.nativeElement.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
     );
 
     if (focusableElements.length === 0) return;
 
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
+    const firstElement = focusableElements.at(0);
+    const lastElement = focusableElements.at(-1);
+    if (!firstElement || !lastElement) return;
 
     if (event.shiftKey) {
       // Shift+Tab: if on first element, go to last

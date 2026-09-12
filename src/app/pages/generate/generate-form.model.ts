@@ -269,7 +269,7 @@ export type PanelSize = (typeof PANEL_SIZES)[number];
  */
 export function cyclePanelSize(size: PanelSize): PanelSize {
   const index = PANEL_SIZES.indexOf(size);
-  return PANEL_SIZES[(index + 1) % PANEL_SIZES.length];
+  return PANEL_SIZES[(index + 1) % PANEL_SIZES.length] ?? PANEL_SIZES[0];
 }
 
 /**

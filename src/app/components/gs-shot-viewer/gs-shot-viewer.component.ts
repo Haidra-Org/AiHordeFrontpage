@@ -255,7 +255,7 @@ export class GsShotViewerComponent {
     const at = buttons.indexOf(document.activeElement as HTMLElement);
     const step = event.shiftKey ? -1 : 1;
     const next = at < 0 ? 0 : (at + step + buttons.length) % buttons.length;
-    buttons[next].focus();
+    buttons.at(next)?.focus();
   }
 
   /**

@@ -572,7 +572,7 @@ export class CivitaiPickerComponent implements OnInit {
       'linear-gradient(135deg,#10b981,#34d399)',
       'linear-gradient(135deg,#ec4899,#f472b6)',
       'linear-gradient(135deg,#8b5cf6,#6366f1)',
-    ];
-    return grads[index % grads.length];
+    ] as const;
+    return grads[index % grads.length] ?? grads[0];
   }
 }

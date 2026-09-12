@@ -317,7 +317,7 @@ export class GsSettingChipComponent {
     const declared = this.docsPage.returnLabelKey();
     const origin: ReferenceOrigin = {
       url,
-      title: this.pageTitle.getTitle().split(' | ')[0],
+      title: this.pageTitle.getTitle().split(' | ', 1).at(0) ?? '',
       ...(declared ? { returnLabelKey: declared } : {}),
     };
     void this.router.navigateByUrl(docsSettingLink(id), {
