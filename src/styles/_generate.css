@@ -11658,6 +11658,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   content: "";
   position: absolute;
   inset: -6px -8px;
+  /* A dialog opened from inside the pointed field (the refinement card under the
+   prompt opens its own prompt library) is fixed to the screen, but isolation
+   would hold its z-index inside the field, and the pane, the panel foot and the
+   site nav would paint through it. While one is open the backdrop hides the
+   halo anyway, so the field gives its stacking context up. */
+  .gen-studio .gs-tut-target:has([aria-modal="true"]) {
+    isolation: auto;
+  }
   z-index: -1;
   border-radius: 12px;
   pointer-events: none;
