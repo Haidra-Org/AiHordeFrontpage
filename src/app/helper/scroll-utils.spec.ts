@@ -1,4 +1,8 @@
-import { scrollToElement, scrollToElementCentered } from './scroll-utils';
+import {
+  scrollIntoBand,
+  scrollToElement,
+  scrollToElementCentered,
+} from './scroll-utils';
 
 describe('scroll-utils', () => {
   function makeElement(rect: Partial<DOMRect>): HTMLElement {
@@ -76,6 +80,79 @@ describe('scroll-utils', () => {
       const options = scrollSpy.mock.calls.at(-1)![0] as ScrollToOptions;
       expect(options.top).toBe(0);
       expect(options.behavior).toBe('smooth');
+    });
+  });
+
+  describe('scrollIntoBand', () => {
+    /** A panel that scrolls its own content, on the screen from 100 to 700. */
+    function panel(scrollHeight: number, clientHeight: number): HTMLElement {
+      const container = document.createElement('div');
+      container.style.overflowY = 'auto';
+      Object.defineProperty(container, 'scrollHeight', { value: scrollHeight });
+      Object.defineProperty(container, 'clientHeight', { value: clientHeight });
+      container.scrollTop = 250;
+      container.scrollTo = vi.fn();
+      container.getBoundingClientRect = () =>
+        ({ top: 100, bottom: 700, height: 600 }) as DOMRect;
+      document.body.appendChild(container);
+      return container;
+    }
+
+    function child(container: HTMLElement, top: number, height: number) {
+      const element = document.createElement('div');
+      element.getBoundingClientRect = () =>
+        ({ top, bottom: top + height, height }) as DOMRect;
+      container.appendChild(element);
+      return element;
+    }
+
+    afterEach(() => {
+      document.body.replaceChildren();
+    });
+
+    it('should centre the element in the band by scrolling the window', () => {
+      const scrollSpy = vi.spyOn(window, 'scrollTo');
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(200);
+      const element = makeElement({ top: 500, height: 100 });
+
+      scrollIntoBand(element, 0, 768);
+
+      // spare = 768 - 100 = 668; inset = 334; top = 500 + 200 - 0 - 334 = 366
+      expect(scrollSpy).toHaveBeenCalled();
+      const options = scrollSpy.mock.calls.at(-1)![0] as ScrollToOptions;
+      expect(options.top).toBe(366);
+      expect(options.behavior).toBe('smooth');
+    });
+
+    it('should scroll the nearest scrolling ancestor within the part of it on screen', () => {
+      const scrollSpy = vi.spyOn(window, 'scrollTo');
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(200);
+      const container = panel(2000, 600);
+      const element = child(container, 900, 100);
+
+      scrollIntoBand(element, 0, 768, 'instant');
+
+      // band narrows to 100..700; spare = 600 - 100 = 500; inset = 250
+      // top = 250 + 900 - 100 - 250 = 800
+      expect(container.scrollTo).toHaveBeenCalledWith({
+        top: 800,
+        behavior: 'instant',
+      });
+      expect(scrollSpy).not.toHaveBeenCalled();
+    });
+
+    it('should scroll the window when the overflow ancestor has nothing to scroll', () => {
+      const scrollSpy = vi.spyOn(window, 'scrollTo');
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(0);
+      const container = panel(600, 600);
+      const element = child(container, 500, 100);
+
+      scrollIntoBand(element, 0, 768);
+
+      expect(container.scrollTo).not.toHaveBeenCalled();
+      expect(scrollSpy).toHaveBeenCalled();
+      const options = scrollSpy.mock.calls.at(-1)![0] as ScrollToOptions;
+      expect(options.top).toBe(166);
     });
   });
 });

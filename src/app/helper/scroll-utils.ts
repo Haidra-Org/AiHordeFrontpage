@@ -40,14 +40,19 @@ export function scrollToElementCentered(
 }
 
 /**
- * Scroll the page so `element` sits inside the band between `top` and `bottom`,
- * both measured down from the top of the viewport.
+ * Bring `element` inside the band between `top` and `bottom`, both measured
+ * down from the top of the viewport.
  *
  * A page with a bottom sheet over it has two edges the reader cannot see past,
  * so the middle of the viewport is the wrong place to put a control a step is
  * about: centring there lands it half under the sheet. The band is centred
  * instead. An element taller than the band is put at the band's top, because a
  * control says more from its label down than from its middle out.
+ *
+ * What moves is the nearest ancestor that scrolls, where there is one, and the
+ * page otherwise. A panel that scrolls itself beside other content leaves the
+ * page nothing to move, so a page scroll there does nothing. Only the part of
+ * that panel on the screen can show the element, so the band shrinks to it.
  */
 export function scrollIntoBand(
   element: HTMLElement,
@@ -56,12 +61,54 @@ export function scrollIntoBand(
   behavior: ScrollBehavior = 'smooth',
 ): void {
   const rect = element.getBoundingClientRect();
+  const container = scrollingAncestor(element);
+  if (container) {
+    const frame = container.getBoundingClientRect();
+    const bandTop = Math.max(top, frame.top);
+    const bandBottom = Math.min(bottom, frame.bottom);
+    const spare = Math.max(0, bandBottom - bandTop) - rect.height;
+    const inset = spare > 0 ? spare / 2 : SCROLL_PADDING;
+    container.scrollTo({
+      top: Math.max(0, container.scrollTop + rect.top - bandTop - inset),
+      behavior,
+    });
+    return;
+  }
   const spare = Math.max(0, bottom - top) - rect.height;
   const inset = spare > 0 ? spare / 2 : SCROLL_PADDING;
   window.scrollTo({
     top: Math.max(0, rect.top + window.scrollY - top - inset),
     behavior,
   });
+}
+
+/**
+ * The nearest ancestor of `element` that scrolls its own content and has
+ * content to scroll. The document's own scrollers end the search, because
+ * moving those is what the window path already does.
+ */
+function scrollingAncestor(element: HTMLElement): HTMLElement | null {
+  const roots = new Set<Element | null>([
+    document.body,
+    document.documentElement,
+    document.scrollingElement,
+  ]);
+  for (
+    let node = element.parentElement;
+    node && !roots.has(node);
+    node = node.parentElement
+  ) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if (
+      (overflowY === 'auto' ||
+        overflowY === 'scroll' ||
+        overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight
+    ) {
+      return node;
+    }
+  }
+  return null;
 }
 
 /**

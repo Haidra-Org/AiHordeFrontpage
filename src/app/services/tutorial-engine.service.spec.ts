@@ -504,6 +504,38 @@ describe('TutorialEngineService', () => {
       expect(scrolls()[0].top).toBe(484);
     });
 
+    it('moves the panel a field scrolls inside, where the page has nothing to move', () => {
+      const anchors = TestBed.inject(TutorialAnchorService);
+      // Beside the results the settings panel scrolls itself: on the screen
+      // from 100 to 700, with 2000 of content and 250 of it already scrolled.
+      const panel = document.createElement('div');
+      panel.style.overflowY = 'auto';
+      Object.defineProperty(panel, 'scrollHeight', { value: 2000 });
+      Object.defineProperty(panel, 'clientHeight', { value: 600 });
+      panel.scrollTop = 250;
+      const moved = vi.fn();
+      panel.scrollTo = moved;
+      panel.getBoundingClientRect = (): DOMRect =>
+        ({ top: 100, bottom: 700, height: 600 }) as DOMRect;
+      const field = placed(900, 100);
+      panel.appendChild(field);
+      document.body.appendChild(panel);
+      anchors.register('steps', field);
+
+      try {
+        engine.goTo(3);
+        engine.focusStep(true);
+
+        // Centred in the part of the panel on the screen: (600 - 100) / 2 = 250
+        // above the field, so the panel moves to 250 + 900 - 100 - 250 = 800.
+        expect(moved).toHaveBeenCalledTimes(1);
+        expect((moved.mock.calls[0][0] as ScrollToOptions).top).toBe(800);
+        expect(scrolls()).toHaveLength(0);
+      } finally {
+        panel.remove();
+      }
+    });
+
     it('points at the row inside a group the page has no room for', () => {
       const anchors = TestBed.inject(TutorialAnchorService);
       document.documentElement.style.setProperty(
