@@ -109,6 +109,19 @@
           </option>
         }
       </select>
+      <button
+        type="button"
+        class="gs-chip gs-pl-starred-chip"
+        [class.gs-chip--active]="starredOnly()"
+        [attr.aria-pressed]="starredOnly()"
+        (click)="toggleStarredOnly()"
+      >
+        <app-icon
+          [name]="starredOnly() ? 'star-filled' : 'star'"
+          class="gs-ico-sm"
+        />
+        {{ "prompt_library.filter_starred" | transloco }}
+      </button>
     </div>
 
     <div class="gs-pl-body">
@@ -261,6 +274,24 @@
                           *ngTemplateOutlet="rowBody; context: { entry: entry }"
                         />
                       </button>
+                    }
+                    <!-- Kept in select mode too, so the reader can see which rows "Select all shown" passed over. -->
+                    <button
+                      type="button"
+                      class="gs-pl-star"
+                      [attr.aria-pressed]="entry.starred"
+                      (click)="toggleStar(entry)"
+                      [attr.aria-label]="
+                        'prompt_library.star_named'
+                          | transloco: { prompt: preview(entry.prompt) }
+                      "
+                    >
+                      <app-icon
+                        [name]="entry.starred ? 'star-filled' : 'star'"
+                        class="gs-ico-sm"
+                      />
+                    </button>
+                    @if (!selectMode()) {
                       <button
                         type="button"
                         class="gs-pl-use"
@@ -270,7 +301,7 @@
                             | transloco: { prompt: preview(entry.prompt) }
                         "
                       >
-                        {{ "prompt_library.use" | transloco }}
+                        {{ useLabelKey() | transloco }}
                       </button>
                     }
                   </li>
@@ -407,7 +438,23 @@
                 class="gs-btn-primary"
                 (click)="useEntry(entry)"
               >
-                {{ "prompt_library.use" | transloco }}
+                {{ useLabelKey() | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-btn gs-pl-star-action"
+                [attr.aria-pressed]="entry.starred"
+                (click)="toggleStar(entry)"
+                [attr.aria-label]="
+                  'prompt_library.star_named'
+                    | transloco: { prompt: preview(entry.prompt) }
+                "
+              >
+                <app-icon
+                  [name]="entry.starred ? 'star-filled' : 'star'"
+                  class="gs-ico-sm"
+                />
+                {{ "prompt_library.star" | transloco }}
               </button>
               <button type="button" class="gs-btn" (click)="copyEntry(entry)">
                 <app-icon name="copy" class="gs-ico-sm" />

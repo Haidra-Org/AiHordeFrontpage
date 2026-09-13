@@ -10010,6 +10010,37 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
+/* A starred prompt is told by the filled glyph; the accent ink only adds to it. */
+.gen-studio .gs-pl-star {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--gs-label);
+  cursor: pointer;
+}
+.gen-studio .gs-pl-star:hover {
+  color: var(--gs-blue-text);
+  border-color: var(--gs-border);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-pl-star:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-pl-star[aria-pressed="true"],
+.gen-studio .gs-pl-star-action[aria-pressed="true"] {
+  color: var(--gs-blue-text);
+}
+.gen-studio .gs-pl-starred-chip {
+  gap: 6px;
+}
 .gen-studio .gs-pl-more {
   display: flex;
   margin: 14px auto 0;
@@ -10097,8 +10128,13 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   .gen-studio .gs-pl-head-btn,
   .gen-studio .gs-pl .gs-seg-opt,
   .gen-studio .gs-pl-model,
+  .gen-studio .gs-pl-starred-chip,
   .gen-studio .gs-pl-actions > button {
     min-height: 44px;
+  }
+  .gen-studio .gs-pl-star {
+    width: 44px;
+    height: 44px;
   }
 }
 @media (max-width: 1023.98px) {

@@ -44,6 +44,7 @@ interface PromptLibraryEntryBase {
   model: string;
   /** When the entry was written, or last sent. */
   at: number;
+  starred: boolean;
 }
 
 export interface PromptLibraryDraftEntry extends PromptLibraryEntryBase {
@@ -69,6 +70,7 @@ export function draftEntry(draft: StoredPromptDraft): PromptLibraryDraftEntry {
     negative: draft.negative ?? '',
     model: draft.model,
     at: draft.createdAt,
+    starred: draft.starred === true,
     record: draft,
   };
 }
@@ -81,6 +83,7 @@ export function sentEntry(sent: StoredSentPrompt): PromptLibrarySentEntry {
     negative: sent.negative,
     model: sent.model,
     at: sent.lastSentAt,
+    starred: sent.starred === true,
     record: sent,
   };
 }
@@ -96,15 +99,33 @@ export function entryUse(entry: PromptLibraryEntry): PromptLibraryUse {
       };
 }
 
+/**
+ * A copy of a stored record with the star set or taken away. Not starred is the
+ * field's absence, so an unstarred record reads as one that was never starred.
+ */
+export function withStar<T extends { starred?: true }>(
+  record: T,
+  starred: boolean,
+): T {
+  if (starred) {
+    return { ...record, starred: true };
+  }
+  const next = { ...record };
+  delete next.starred;
+  return next;
+}
+
 export interface PromptLibraryFilters {
   query: string;
   origin: PromptLibraryOriginFilter;
   /** Empty for every model. */
   model: string;
+  starredOnly: boolean;
 }
 
 /**
- * The entries that survive the search and filters, newest first. The search
+ * The entries that survive the search and filters, newest day first with the
+ * starred entries of each day ahead of the rest, then newest first. The search
  * runs over the prompt, the negative and the model, case-insensitively; the
  * place a prompt was written only narrows drafts, which are the only entries
  * that record one.
@@ -116,6 +137,9 @@ export function filterEntries(
   const query = filters.query.trim().toLowerCase();
   return entries
     .filter((entry) => {
+      if (filters.starredOnly && !entry.starred) {
+        return false;
+      }
       if (filters.model !== '' && entry.model !== filters.model) {
         return false;
       }
@@ -135,7 +159,12 @@ export function filterEntries(
         entry.model.toLowerCase().includes(query)
       );
     })
-    .sort((a, b) => b.at - a.at);
+    .sort(
+      (a, b) =>
+        startOfDay(b.at) - startOfDay(a.at) ||
+        Number(b.starred) - Number(a.starred) ||
+        b.at - a.at,
+    );
 }
 
 /** Every model the entries name, alphabetically, without blanks. */
@@ -163,7 +192,7 @@ function startOfDay(at: number): number {
 }
 
 /**
- * Split entries already in newest-first order into local calendar days. Days
+ * Split entries already ordered newest day first into local calendar days. Days
  * are counted by the reader's clock, so "Yesterday" means the date before
  * today's rather than anything within 48 hours.
  */

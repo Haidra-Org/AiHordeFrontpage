@@ -44,6 +44,8 @@ export interface StoredPromptDraft {
   takeIndex?: number;
   /** The style the horde applied, by id; absent for the built-in instruction. */
   style?: string;
+  /** Present only while the reader keeps the draft starred. */
+  starred?: true;
 }
 
 interface PromptDraftDbSchema extends DBSchema {
@@ -144,6 +146,30 @@ export class PromptDraftDbService {
     const db = await this.db();
     const drafts = await db.getAllFromIndex(DRAFTS_STORE, 'createdAt');
     return drafts.reverse().slice(0, limit);
+  }
+
+  /**
+   * Star or unstar a draft. The record is read inside the write, so a change
+   * made to it elsewhere in the meantime is kept. A draft no longer held is left
+   * absent.
+   */
+  public async setStarred(id: string, starred: boolean): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+    const db = await this.db();
+    const tx = db.transaction(DRAFTS_STORE, 'readwrite');
+    const existing = await tx.store.get(id);
+    if (existing) {
+      const next: StoredPromptDraft = { ...existing };
+      if (starred) {
+        next.starred = true;
+      } else {
+        delete next.starred;
+      }
+      await tx.store.put(next);
+    }
+    await tx.done;
   }
 
   public async remove(id: string): Promise<void> {

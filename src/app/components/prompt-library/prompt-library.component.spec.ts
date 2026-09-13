@@ -11,6 +11,7 @@ import {
   groupByDay,
   sentEntry,
   takeOf,
+  withStar,
 } from './prompt-library.model';
 import {
   PromptDraftDbService,
@@ -71,9 +72,12 @@ describe('prompt library model', () => {
       draftEntry(draft('d', 0, { text: 'a hen' })),
     ];
     const ids = (query: string): string[] =>
-      filterEntries(entries, { query, origin: 'all', model: '' }).map(
-        (entry) => entry.id,
-      );
+      filterEntries(entries, {
+        query,
+        origin: 'all',
+        model: '',
+        starredOnly: false,
+      }).map((entry) => entry.id);
 
     expect(ids('FOX')).toEqual(['a', 'b', 'c']);
     expect(ids('  ')).toEqual(['a', 'b', 'c', 'd']);
@@ -87,11 +91,59 @@ describe('prompt library model', () => {
       draftEntry(draft('c', 1, { origin: 'alchemy', model: 'y' })),
     ];
     const ids = (origin: 'all' | 'studio' | 'alchemy', model: string) =>
-      filterEntries(entries, { query: '', origin, model }).map((e) => e.id);
+      filterEntries(entries, {
+        query: '',
+        origin,
+        model,
+        starredOnly: false,
+      }).map((e) => e.id);
 
     expect(ids('alchemy', '')).toEqual(['a', 'c']);
     expect(ids('all', 'y')).toEqual(['b', 'c']);
     expect(ids('alchemy', 'y')).toEqual(['c']);
+  });
+
+  it('puts starred entries first within their day and keeps the days in date order', () => {
+    const at = (day: number, hour: number): number =>
+      new Date(2026, 8, day, hour).getTime();
+    const entries = [
+      sentEntry(sent('today late', at(12, 20))),
+      sentEntry(sent('today early starred', at(12, 8), { starred: true })),
+      sentEntry(sent('yesterday late', at(11, 22))),
+      sentEntry(sent('yesterday early starred', at(11, 6), { starred: true })),
+      sentEntry(sent('yesterday noon starred', at(11, 12), { starred: true })),
+    ];
+    const prompts = (starredOnly: boolean): string[] =>
+      filterEntries(entries, {
+        query: '',
+        origin: 'all',
+        model: '',
+        starredOnly,
+      }).map((entry) => entry.prompt);
+
+    expect(prompts(false)).toEqual([
+      'today early starred',
+      'today late',
+      'yesterday noon starred',
+      'yesterday early starred',
+      'yesterday late',
+    ]);
+    expect(prompts(true)).toEqual([
+      'today early starred',
+      'yesterday noon starred',
+      'yesterday early starred',
+    ]);
+  });
+
+  it('sets a star and takes it away by removing the field', () => {
+    const record = sent('a fox', 1);
+    const starred = withStar(record, true);
+    expect(starred).toEqual({ ...record, starred: true });
+    expect(record).not.toHaveProperty('starred');
+
+    const cleared = withStar(starred, false);
+    expect(cleared).toEqual(record);
+    expect(cleared).not.toHaveProperty('starred');
   });
 
   it('groups by calendar day with today and yesterday named', () => {
@@ -149,16 +201,19 @@ describe('PromptLibraryComponent', () => {
     listAll: ReturnType<typeof vi.fn>;
     removeMany: ReturnType<typeof vi.fn>;
     putMany: ReturnType<typeof vi.fn>;
+    setStarred: ReturnType<typeof vi.fn>;
   };
   let sentDb: {
     listAll: ReturnType<typeof vi.fn>;
     removeMany: ReturnType<typeof vi.fn>;
     putMany: ReturnType<typeof vi.fn>;
+    setStarred: ReturnType<typeof vi.fn>;
   };
   let toasts: ToastService;
 
   async function create(
     initialTab: 'drafts' | 'sent' = 'drafts',
+    useLabelKey?: string,
   ): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
       imports: [
@@ -177,6 +232,9 @@ describe('PromptLibraryComponent', () => {
     fixture = TestBed.createComponent(PromptLibraryComponent);
     component = fixture.componentInstance;
     fixture.componentRef.setInput('initialTab', initialTab);
+    if (useLabelKey !== undefined) {
+      fixture.componentRef.setInput('useLabelKey', useLabelKey);
+    }
     fixture.detectChanges();
     // The lists are read on init; a macrotask lets both reads settle.
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -193,24 +251,28 @@ describe('PromptLibraryComponent', () => {
   }
 
   beforeEach(() => {
+    // Seconds apart rather than hours, so a run in the small hours still finds
+    // every entry on one calendar day, where starred entries lead.
     const now = Date.now();
     drafts = [
-      draft('d1', now - HOUR, { origin: 'alchemy', model: 'text/b' }),
-      draft('d2', now - 2 * HOUR, { negative: 'washed out' }),
+      draft('d1', now - 1000, { origin: 'alchemy', model: 'text/b' }),
+      draft('d2', now - 2000, { negative: 'washed out' }),
     ];
     sentPrompts = [
-      sent('a castle', now - HOUR, { negative: 'blurry', count: 3 }),
-      sent('a lighthouse', now - 3 * HOUR, { model: 'sdxl' }),
+      sent('a castle', now - 1000, { negative: 'blurry', count: 3 }),
+      sent('a lighthouse', now - 3000, { model: 'sdxl' }),
     ];
     draftDb = {
       listAll: vi.fn(() => Promise.resolve([...drafts])),
       removeMany: vi.fn().mockResolvedValue(undefined),
       putMany: vi.fn().mockResolvedValue(undefined),
+      setStarred: vi.fn().mockResolvedValue(undefined),
     };
     sentDb = {
       listAll: vi.fn(() => Promise.resolve([...sentPrompts])),
       removeMany: vi.fn().mockResolvedValue(undefined),
       putMany: vi.fn().mockResolvedValue(undefined),
+      setStarred: vi.fn().mockResolvedValue(undefined),
     };
   });
 
@@ -372,6 +434,160 @@ describe('PromptLibraryComponent', () => {
       'a castle',
       'a lighthouse',
     ]);
+  });
+
+  it('stars a row from its star press and takes the star away again', async () => {
+    const host = await create('drafts');
+    const stars = (): HTMLButtonElement[] => [
+      ...host.querySelectorAll<HTMLButtonElement>('.gs-pl-star'),
+    ];
+    expect(stars().map((star) => star.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'false',
+    ]);
+    expect(stars()[1].getAttribute('aria-label')).toContain('draft d2');
+
+    stars()[1].click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(draftDb.setStarred).toHaveBeenCalledWith('d2', true);
+    expect(component.drafts().find((d) => d.id === 'd2')?.starred).toBe(true);
+    // The starred draft now leads its day.
+    expect(component.shown().map((entry) => entry.id)).toEqual(['d2', 'd1']);
+    expect(stars()[0].getAttribute('aria-pressed')).toBe('true');
+    expect(stars()[1].getAttribute('aria-pressed')).toBe('false');
+
+    stars()[0].click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(draftDb.setStarred).toHaveBeenLastCalledWith('d2', false);
+    expect(component.drafts().find((d) => d.id === 'd2')).not.toHaveProperty(
+      'starred',
+    );
+    expect(component.shown().map((entry) => entry.id)).toEqual(['d1', 'd2']);
+  });
+
+  it('stars the entry being read from the detail pane', async () => {
+    const host = await create('sent');
+    component.open(component.shown()[1]);
+    fixture.detectChanges();
+
+    const action = host.querySelector<HTMLButtonElement>('.gs-pl-star-action');
+    expect(action?.getAttribute('aria-pressed')).toBe('false');
+    expect(action?.getAttribute('aria-label')).toContain('a lighthouse');
+
+    action?.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(sentDb.setStarred).toHaveBeenCalledWith('k-a lighthouse', true);
+    expect(component.detail()?.starred).toBe(true);
+    expect(
+      host.querySelector('.gs-pl-star-action')?.getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
+  it('lists only starred entries with the Starred filter, on both tabs', async () => {
+    drafts[1] = { ...drafts[1], starred: true };
+    sentPrompts[0] = { ...sentPrompts[0], starred: true };
+    const host = await create('drafts');
+    const chip = (): HTMLButtonElement | null =>
+      host.querySelector<HTMLButtonElement>('.gs-pl-starred-chip');
+
+    expect(chip()?.getAttribute('aria-pressed')).toBe('false');
+    chip()?.click();
+    fixture.detectChanges();
+    expect(chip()?.getAttribute('aria-pressed')).toBe('true');
+    expect(component.shown().map((entry) => entry.id)).toEqual(['d2']);
+
+    component.setTab('sent');
+    fixture.detectChanges();
+    expect(component.starredOnly()).toBe(false);
+    expect(component.shown()).toHaveLength(2);
+
+    chip()?.click();
+    fixture.detectChanges();
+    expect(component.shown().map((entry) => entry.prompt)).toEqual([
+      'a castle',
+    ]);
+  });
+
+  it('leaves starred rows out of Select all shown, but deletes one ticked by hand', async () => {
+    sentPrompts[1] = { ...sentPrompts[1], starred: true };
+    const host = await create('sent');
+    expect(component.shown().map((entry) => entry.prompt)).toEqual([
+      'a lighthouse',
+      'a castle',
+    ]);
+
+    component.toggleSelectMode();
+    fixture.detectChanges();
+    component.markAllShown();
+    expect([...component.marked()]).toEqual(['k-a castle']);
+
+    host.querySelectorAll<HTMLInputElement>('.gs-pl-check')[0].click();
+    expect(component.markedCount()).toBe(2);
+
+    await component.deleteMarked();
+
+    expect(sentDb.removeMany).toHaveBeenCalledWith([
+      'k-a castle',
+      'k-a lighthouse',
+    ]);
+    expect(component.shown()).toEqual([]);
+  });
+
+  it('puts the star back with the entry on Undo', async () => {
+    await create('drafts');
+    await component.toggleStar(component.shown()[1]);
+    const starred = component.shown()[0];
+    expect(starred.id).toBe('d2');
+
+    await component.deleteEntry(starred);
+    expect(component.shown().map((entry) => entry.id)).toEqual(['d1']);
+
+    lastToast().action?.run();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(draftDb.putMany).toHaveBeenCalledWith([
+      { ...drafts[1], starred: true },
+    ]);
+    expect(component.shown().map((entry) => entry.id)).toEqual(['d2', 'd1']);
+    expect(component.shown()[0].starred).toBe(true);
+  });
+
+  it('takes the star back and says so when it cannot be saved', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    sentDb.setStarred.mockRejectedValue(new Error('quota'));
+    await create('sent');
+
+    const pending = component.toggleStar(component.shown()[0]);
+    expect(component.sent()[0].starred).toBe(true);
+    await pending;
+
+    expect(component.sent()[0]).not.toHaveProperty('starred');
+    expect(component.shown()[0].starred).toBe(false);
+    expect(lastToast().type).toBe('error');
+    expect(lastToast().message).toBe('prompt_library.star_failed');
+    warn.mockRestore();
+  });
+
+  it('labels the Use press with the key the page passes', async () => {
+    const host = await create('sent', 'prompt_library.copy');
+    component.open(component.shown()[0]);
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-pl-use')?.textContent?.trim()).toBe(
+      en['prompt_library.copy'],
+    );
+    expect(
+      host.querySelector('.gs-pl-actions .gs-btn-primary')?.textContent?.trim(),
+    ).toBe(en['prompt_library.copy']);
+    expect(host.querySelector('.gs-pl-use')?.getAttribute('aria-label')).toBe(
+      'Use this prompt: a castle',
+    );
   });
 
   it('shows requests still under way ahead of the drafts only', async () => {

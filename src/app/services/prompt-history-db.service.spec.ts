@@ -128,6 +128,29 @@ describe('PromptHistoryDbService', () => {
     expect(all.find((entry) => entry.prompt === 'a fox')?.count).toBe(1);
   });
 
+  it('stars a sent prompt, keeps the star through a later send, and clears it', async () => {
+    await db.record('a fox', 'blurry', 'flux', 100);
+    const key = sentPromptKey('a fox', 'blurry');
+
+    await db.setStarred(key, true);
+    expect((await db.listAll())[0].starred).toBe(true);
+
+    await db.record('a fox', 'blurry', 'sdxl', 200);
+    const resent = (await db.listAll())[0];
+    expect(resent.starred).toBe(true);
+    expect(resent.count).toBe(2);
+
+    await db.setStarred(key, false);
+    const cleared = (await db.listAll())[0];
+    expect('starred' in cleared).toBe(false);
+    expect(cleared.count).toBe(2);
+  });
+
+  it('does not bring back a prompt that is gone when starring it', async () => {
+    await db.setStarred('missing', true);
+    expect(await db.listAll()).toEqual([]);
+  });
+
   it('removes several entries and puts them back whole', async () => {
     await db.record('a', '', 'm', 100);
     await db.record('b', '', 'm', 200);

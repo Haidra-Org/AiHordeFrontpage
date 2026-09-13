@@ -31,6 +31,8 @@ export interface StoredSentPrompt {
   firstSentAt: number;
   lastSentAt: number;
   count: number;
+  /** Present only while the reader keeps the prompt starred. */
+  starred?: true;
 }
 
 interface SeedMarker {
@@ -278,6 +280,30 @@ export class PromptHistoryDbService {
       tx.done,
     ]);
     await this.refreshSize(db);
+  }
+
+  /**
+   * Star or unstar a sent prompt. The record is read inside the write, so a
+   * send counted in the meantime is kept. A prompt no longer held is left
+   * absent.
+   */
+  public async setStarred(key: string, starred: boolean): Promise<void> {
+    if (!this.isBrowser) {
+      return;
+    }
+    const db = await this.db();
+    const tx = db.transaction(SENT_STORE, 'readwrite');
+    const existing = await tx.store.get(key);
+    if (existing) {
+      const next: StoredSentPrompt = { ...existing };
+      if (starred) {
+        next.starred = true;
+      } else {
+        delete next.starred;
+      }
+      await tx.store.put(next);
+    }
+    await tx.done;
   }
 
   /** Remove several records in one transaction. */

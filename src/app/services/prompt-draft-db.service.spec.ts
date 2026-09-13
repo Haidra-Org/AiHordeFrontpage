@@ -90,6 +90,28 @@ describe('PromptDraftDbService', () => {
     expect(restored[2]).toEqual(a);
   });
 
+  it('stars a draft and takes the star away again without touching the rest', async () => {
+    const a = makeDraft('a', 100, { negative: 'blurry' });
+    await db.putMany([a, makeDraft('b', 200)]);
+
+    await db.setStarred('a', true);
+    const starred = (await db.listAll()).find((draft) => draft.id === 'a');
+    expect(starred).toEqual({ ...a, starred: true });
+
+    await db.setStarred('a', false);
+    const unstarred = (await db.listAll()).find((draft) => draft.id === 'a');
+    expect(unstarred).toEqual(a);
+    expect(unstarred && 'starred' in unstarred).toBe(false);
+    expect((await db.listAll()).find((draft) => draft.id === 'b')).toEqual(
+      makeDraft('b', 200),
+    );
+  });
+
+  it('does not bring back a draft that is gone when starring it', async () => {
+    await db.setStarred('missing', true);
+    expect(await db.listAll()).toEqual([]);
+  });
+
   it('clears everything when the reader asks for that', async () => {
     await db.put(makeDraft('a', 100));
     await db.put(makeDraft('b', 200));

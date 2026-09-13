@@ -52,6 +52,7 @@ import {
   modelsOf,
   sentEntry,
   takeOf,
+  withStar,
 } from './prompt-library.model';
 
 /** How long a delete can be taken back. */
@@ -71,7 +72,7 @@ export interface PromptLibraryDayView extends PromptLibraryDay {
  * to image generation, as one full-screen list with the chosen entry read in
  * full beside it (over it, on a phone).
  *
- * It only reads and deletes. Choosing a prompt is announced through `use`, and
+ * It reads, stars and deletes. Choosing a prompt is announced through `use`, and
  * the page that opened the library decides what writing it into a box means.
  */
 @Component({
@@ -98,6 +99,12 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
   public readonly initialTab = input<PromptLibraryTab>('drafts');
   /** Text requests still under way, listed ahead of the drafts. */
   public readonly liveRequests = input<readonly PromptLibraryLiveRequest[]>([]);
+  /**
+   * What the Use press says. The page decides, because using a prompt means
+   * something different where it opened: writing it into the studio's boxes, or
+   * carrying it over to the studio from somewhere else.
+   */
+  public readonly useLabelKey = input('prompt_library.use');
 
   public readonly use = output<PromptLibraryUse>();
   public readonly closed = output<void>();
@@ -125,6 +132,7 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
   public readonly query = signal('');
   public readonly originFilter = signal<PromptLibraryOriginFilter>('all');
   public readonly modelFilter = signal('');
+  public readonly starredOnly = signal(false);
   /** How many pages of the filtered list are drawn. */
   public readonly pages = signal(1);
   public readonly selectedId = signal<string | null>(null);
@@ -152,6 +160,7 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
       query: this.query(),
       origin: this.tab() === 'drafts' ? this.originFilter() : 'all',
       model: this.modelFilter(),
+      starredOnly: this.starredOnly(),
     }),
   );
 
@@ -267,6 +276,7 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
     this.tab.set(tab);
     this.originFilter.set('all');
     this.modelFilter.set('');
+    this.starredOnly.set(false);
     this.resetView();
   }
 
@@ -282,6 +292,11 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
 
   public setModelFilter(model: string): void {
     this.modelFilter.set(model);
+    this.pages.set(1);
+  }
+
+  public toggleStarredOnly(): void {
+    this.starredOnly.update((on) => !on);
     this.pages.set(1);
   }
 
@@ -340,6 +355,41 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
     await this.deleteEntries([entry]);
   }
 
+  // --- Starring ---------------------------------------------------------------
+
+  /** The star moves at once; a write that fails puts it back and says so. */
+  public async toggleStar(entry: PromptLibraryEntry): Promise<void> {
+    const starred = !entry.starred;
+    this.applyStar(entry, starred);
+    try {
+      if (entry.source === 'draft') {
+        await this.draftDb.setStarred(entry.id, starred);
+      } else {
+        await this.sentDb.setStarred(entry.id, starred);
+      }
+    } catch (error) {
+      console.warn('Failed to save a star:', error);
+      this.applyStar(entry, !starred);
+      this.toast.error('prompt_library.star_failed', { transloco: true });
+    }
+  }
+
+  private applyStar(entry: PromptLibraryEntry, starred: boolean): void {
+    if (entry.source === 'draft') {
+      this.drafts.update((current) =>
+        current.map((draft) =>
+          draft.id === entry.id ? withStar(draft, starred) : draft,
+        ),
+      );
+    } else {
+      this.sent.update((current) =>
+        current.map((record) =>
+          record.key === entry.id ? withStar(record, starred) : record,
+        ),
+      );
+    }
+  }
+
   // --- Select mode ------------------------------------------------------------
 
   public toggleSelectMode(): void {
@@ -363,11 +413,15 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Starred rows are left out, so a sweep of the list never takes a prompt the
+   * reader chose to keep; ticking one by hand still marks it.
+   */
   public markAllShown(): void {
-    this.marked.update(
-      (current) =>
-        new Set([...current, ...this.shown().map((entry) => entry.id)]),
-    );
+    const unstarred = this.shown()
+      .filter((entry) => !entry.starred)
+      .map((entry) => entry.id);
+    this.marked.update((current) => new Set([...current, ...unstarred]));
   }
 
   public async deleteMarked(): Promise<void> {
