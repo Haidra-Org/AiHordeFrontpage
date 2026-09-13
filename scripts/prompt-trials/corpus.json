@@ -1,0 +1,30 @@
+[
+  {
+    "id": "alchemy-caption",
+    "caption": "a lighthouse on a rocky headland with waves breaking against it under a heavy sky",
+    "tags": "lighthouse, storm, sea spray, cliffs, overcast, dusk, long exposure",
+    "note": "keep it moody"
+  },
+  {
+    "id": "studio-long-improve",
+    "prompt": "a woman standing in a greenhouse full of ferns and hanging plants, morning light coming through dusty glass, wearing a linen apron, holding a watering can, freckles, soft focus background, warm tones, 35mm, shallow depth of field, film grain, highly detailed, masterpiece",
+    "note": "she should be looking at the camera"
+  },
+  {
+    "id": "quoted-label",
+    "prompt": "a cluttered writing desk, an open notebook whose page reads \"Prompt: buy more coffee\", a cold mug, evening lamplight",
+    "note": "the writing on the page has to stay readable"
+  },
+  {
+    "id": "billboard-text",
+    "prompt": "a rain-slick city street at night, a billboard above the crossing reading \"FREE BEER TOMORROW\", neon reflections in the puddles, a lone cyclist",
+    "styleWords": "cinematic, anamorphic lens, teal and orange grade, volumetric light"
+  },
+  {
+    "id": "judge-verdict",
+    "role": "judge",
+    "prompt": "a red fox asleep in a bed of autumn leaves, golden hour, telephoto, shallow depth of field",
+    "caption": "a fox standing in a forest clearing in daylight, looking towards the camera, green undergrowth",
+    "tags": "fox, forest, daylight, standing, green leaves"
+  }
+]

@@ -2,7 +2,7 @@
   {
     "name": "Image prompt: describe",
     "info": "Writes an image prompt from what alchemy found in a picture: the caption, the strongest tags and a note from the reader. One line of comma-separated phrases, subject first. For the Image prompt cards in the AI Horde frontpage.",
-    "prompt": "### Instruction:\nYou write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "prompt": "{{{{[SYSTEM]}}}}\nYou write prompts for an AI image generator. Turn the material below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. A label with nothing after it was not given; ignore it. Write nothing but the prompt. No quotes, no explanation.\n{{{{[INPUT]}}}}\nPrompt: {prompt}\nDescription: {caption}\nTags: {tags}\nNotes from the user: {note}\nRendering style applied separately (do not repeat these words): {style_words}\n{p}\n{{{{[OUTPUT]}}}}\n",
     "params": {
       "max_context_length": 1024,
       "max_length": 96,
@@ -10,9 +10,40 @@
       "top_p": 0.92,
       "min_p": 0.05,
       "rep_pen": 1.1,
-      "singleline": true,
-      "stop_sequence": ["\n\n", "###"]
+      "stop_sequence": ["\n\n", "{{[INPUT]}}", "### Instruction:"]
     },
+    "parameter_policy": {
+      "override": "listed",
+      "overridable": ["max_length", "max_context_length"],
+      "ceilings": { "max_length": 512, "max_context_length": 4096, "n": 5 }
+    },
+    "template_fields": [
+      {
+        "name": "caption",
+        "description": "What the picture shows, as alchemy read it.",
+        "required": false
+      },
+      {
+        "name": "tags",
+        "description": "The strongest tags alchemy found, comma separated.",
+        "required": false
+      },
+      {
+        "name": "note",
+        "description": "What the reader asked for, in their own words.",
+        "required": false
+      },
+      {
+        "name": "prompt",
+        "description": "A prompt already in hand, where there is one to work from.",
+        "required": false
+      },
+      {
+        "name": "style_words",
+        "description": "Words a rendering style already contributes, so the prompt does not say them twice.",
+        "required": false
+      }
+    ],
     "public": true,
     "nsfw": false,
     "tags": ["image-prompt", "image-prompt:describe"],
@@ -25,7 +56,7 @@
   {
     "name": "Image prompt: describe, photographic",
     "info": "As 'Image prompt: describe', steered towards a photograph: camera, lens, film or sensor character, natural light. For the Image prompt cards in the AI Horde frontpage.",
-    "prompt": "### Instruction:\nYou write prompts for an AI image generator. Turn the description below into one prompt for a photograph: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, then the camera and lens, the light and the time of day, and photographic quality words. No painting or illustration words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "prompt": "{{{{[SYSTEM]}}}}\nYou write prompts for an AI image generator. Turn the material below into one prompt for a photograph: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, then the camera and lens, the light and the time of day, and photographic quality words. No painting or illustration words. A label with nothing after it was not given; ignore it. Write nothing but the prompt. No quotes, no explanation.\n{{{{[INPUT]}}}}\nPrompt: {prompt}\nDescription: {caption}\nTags: {tags}\nNotes from the user: {note}\nRendering style applied separately (do not repeat these words): {style_words}\n{p}\n{{{{[OUTPUT]}}}}\n",
     "params": {
       "max_context_length": 1024,
       "max_length": 96,
@@ -33,9 +64,40 @@
       "top_p": 0.92,
       "min_p": 0.05,
       "rep_pen": 1.1,
-      "singleline": true,
-      "stop_sequence": ["\n\n", "###"]
+      "stop_sequence": ["\n\n", "{{[INPUT]}}", "### Instruction:"]
     },
+    "parameter_policy": {
+      "override": "listed",
+      "overridable": ["max_length", "max_context_length"],
+      "ceilings": { "max_length": 512, "max_context_length": 4096, "n": 5 }
+    },
+    "template_fields": [
+      {
+        "name": "caption",
+        "description": "What the picture shows, as alchemy read it.",
+        "required": false
+      },
+      {
+        "name": "tags",
+        "description": "The strongest tags alchemy found, comma separated.",
+        "required": false
+      },
+      {
+        "name": "note",
+        "description": "What the reader asked for, in their own words.",
+        "required": false
+      },
+      {
+        "name": "prompt",
+        "description": "A prompt already in hand, where there is one to work from.",
+        "required": false
+      },
+      {
+        "name": "style_words",
+        "description": "Words a rendering style already contributes, so the prompt does not say them twice.",
+        "required": false
+      }
+    ],
     "public": true,
     "nsfw": false,
     "tags": ["image-prompt", "image-prompt:describe", "photographic"],
@@ -48,7 +110,7 @@
   {
     "name": "Image prompt: describe, painterly",
     "info": "As 'Image prompt: describe', steered towards a painting or illustration: medium, brushwork, palette, a named movement where it fits. For the Image prompt cards in the AI Horde frontpage.",
-    "prompt": "### Instruction:\nYou write prompts for an AI image generator. Turn the description below into one prompt for a painting or illustration: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, then the medium and brushwork, the palette, and one art movement or illustration tradition where it fits. No camera or photograph words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "prompt": "{{{{[SYSTEM]}}}}\nYou write prompts for an AI image generator. Turn the material below into one prompt for a painting or illustration: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, then the medium and brushwork, the palette, and one art movement or illustration tradition where it fits. No camera or photograph words. A label with nothing after it was not given; ignore it. Write nothing but the prompt. No quotes, no explanation.\n{{{{[INPUT]}}}}\nPrompt: {prompt}\nDescription: {caption}\nTags: {tags}\nNotes from the user: {note}\nRendering style applied separately (do not repeat these words): {style_words}\n{p}\n{{{{[OUTPUT]}}}}\n",
     "params": {
       "max_context_length": 1024,
       "max_length": 96,
@@ -56,9 +118,40 @@
       "top_p": 0.92,
       "min_p": 0.05,
       "rep_pen": 1.1,
-      "singleline": true,
-      "stop_sequence": ["\n\n", "###"]
+      "stop_sequence": ["\n\n", "{{[INPUT]}}", "### Instruction:"]
     },
+    "parameter_policy": {
+      "override": "listed",
+      "overridable": ["max_length", "max_context_length"],
+      "ceilings": { "max_length": 512, "max_context_length": 4096, "n": 5 }
+    },
+    "template_fields": [
+      {
+        "name": "caption",
+        "description": "What the picture shows, as alchemy read it.",
+        "required": false
+      },
+      {
+        "name": "tags",
+        "description": "The strongest tags alchemy found, comma separated.",
+        "required": false
+      },
+      {
+        "name": "note",
+        "description": "What the reader asked for, in their own words.",
+        "required": false
+      },
+      {
+        "name": "prompt",
+        "description": "A prompt already in hand, where there is one to work from.",
+        "required": false
+      },
+      {
+        "name": "style_words",
+        "description": "Words a rendering style already contributes, so the prompt does not say them twice.",
+        "required": false
+      }
+    ],
     "public": true,
     "nsfw": false,
     "tags": ["image-prompt", "image-prompt:describe", "painterly"],
@@ -71,7 +164,7 @@
   {
     "name": "Image prompt: improve",
     "info": "Rewrites an image prompt as a stronger one, keeping every subject and detail the writer asked for and adding setting, style, lighting and quality words only where they are missing. For the Image prompt cards in the AI Horde frontpage.",
-    "prompt": "### Instruction:\nYou improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. If the notes name a rendering style that will be applied separately, do not repeat its words; write the subject and scene only. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "prompt": "{{{{[SYSTEM]}}}}\nYou improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt: a single line of comma-separated phrases, concrete and visual, keeping every subject and detail the writer asked for, adding setting, style, lighting and quality words only where they are missing. Where a rendering style is named as applied separately, do not repeat its words; write the subject and the scene only. A label with nothing after it was not given; ignore it. Write nothing but the prompt. No quotes, no explanation.\n{{{{[INPUT]}}}}\nPrompt: {prompt}\nDescription: {caption}\nTags: {tags}\nNotes from the user: {note}\nRendering style applied separately (do not repeat these words): {style_words}\n{p}\n{{{{[OUTPUT]}}}}\n",
     "params": {
       "max_context_length": 1024,
       "max_length": 96,
@@ -79,9 +172,40 @@
       "top_p": 0.92,
       "min_p": 0.05,
       "rep_pen": 1.1,
-      "singleline": true,
-      "stop_sequence": ["\n\n", "###"]
+      "stop_sequence": ["\n\n", "{{[INPUT]}}", "### Instruction:"]
     },
+    "parameter_policy": {
+      "override": "listed",
+      "overridable": ["max_length", "max_context_length"],
+      "ceilings": { "max_length": 512, "max_context_length": 4096, "n": 5 }
+    },
+    "template_fields": [
+      {
+        "name": "caption",
+        "description": "What the picture shows, as alchemy read it.",
+        "required": false
+      },
+      {
+        "name": "tags",
+        "description": "The strongest tags alchemy found, comma separated.",
+        "required": false
+      },
+      {
+        "name": "note",
+        "description": "What the reader asked for, in their own words.",
+        "required": false
+      },
+      {
+        "name": "prompt",
+        "description": "The prompt to rewrite, as the writer has it.",
+        "required": false
+      },
+      {
+        "name": "style_words",
+        "description": "Words a rendering style already contributes, so the prompt does not say them twice.",
+        "required": false
+      }
+    ],
     "public": true,
     "nsfw": false,
     "tags": ["image-prompt", "image-prompt:improve"],
@@ -94,7 +218,7 @@
   {
     "name": "Image prompt: improve, cinematic",
     "info": "As 'Image prompt: improve', steered towards a film still: framing, lens, colour grade, dramatic light. For the Image prompt cards in the AI Horde frontpage.",
-    "prompt": "### Instruction:\nYou improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt for a film still: a single line of comma-separated phrases, keeping every subject and detail the writer asked for, adding the framing and lens, a colour grade, and dramatic light where they are missing. If the notes name a rendering style that will be applied separately, do not repeat its words. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "prompt": "{{{{[SYSTEM]}}}}\nYou improve prompts for an AI image generator. Rewrite the prompt below as one stronger prompt for a film still: a single line of comma-separated phrases, keeping every subject and detail the writer asked for, adding the framing and lens, a colour grade, and dramatic light where they are missing. Where a rendering style is named as applied separately, do not repeat its words. A label with nothing after it was not given; ignore it. Write nothing but the prompt. No quotes, no explanation.\n{{{{[INPUT]}}}}\nPrompt: {prompt}\nDescription: {caption}\nTags: {tags}\nNotes from the user: {note}\nRendering style applied separately (do not repeat these words): {style_words}\n{p}\n{{{{[OUTPUT]}}}}\n",
     "params": {
       "max_context_length": 1024,
       "max_length": 96,
@@ -102,9 +226,40 @@
       "top_p": 0.92,
       "min_p": 0.05,
       "rep_pen": 1.1,
-      "singleline": true,
-      "stop_sequence": ["\n\n", "###"]
+      "stop_sequence": ["\n\n", "{{[INPUT]}}", "### Instruction:"]
     },
+    "parameter_policy": {
+      "override": "listed",
+      "overridable": ["max_length", "max_context_length"],
+      "ceilings": { "max_length": 512, "max_context_length": 4096, "n": 5 }
+    },
+    "template_fields": [
+      {
+        "name": "caption",
+        "description": "What the picture shows, as alchemy read it.",
+        "required": false
+      },
+      {
+        "name": "tags",
+        "description": "The strongest tags alchemy found, comma separated.",
+        "required": false
+      },
+      {
+        "name": "note",
+        "description": "What the reader asked for, in their own words.",
+        "required": false
+      },
+      {
+        "name": "prompt",
+        "description": "The prompt to rewrite, as the writer has it.",
+        "required": false
+      },
+      {
+        "name": "style_words",
+        "description": "Words a rendering style already contributes, so the prompt does not say them twice.",
+        "required": false
+      }
+    ],
     "public": true,
     "nsfw": false,
     "tags": ["image-prompt", "image-prompt:improve", "cinematic"],
@@ -117,7 +272,7 @@
   {
     "name": "Image prompt: improve, minimal",
     "info": "As 'Image prompt: improve', but tighter: removes filler and repeated quality words, keeps the subject and the few details that matter, under twenty words. For the Image prompt cards in the AI Horde frontpage.",
-    "prompt": "### Instruction:\nYou tighten prompts for an AI image generator. Rewrite the prompt below as one shorter, sharper prompt of at most twenty words: keep the subject and the details that change the picture, drop filler and repeated quality words, and add nothing new. Write nothing but the prompt. No quotes, no explanation.\n\n{p}\n\n### Response:\n",
+    "prompt": "{{{{[SYSTEM]}}}}\nYou tighten prompts for an AI image generator. Rewrite the prompt below as one shorter, sharper prompt of at most twenty words: keep the subject and the details that change the picture, drop filler and repeated quality words, and add nothing new. A label with nothing after it was not given; ignore it. Write nothing but the prompt. No quotes, no explanation.\n{{{{[INPUT]}}}}\nPrompt: {prompt}\nDescription: {caption}\nTags: {tags}\nNotes from the user: {note}\nRendering style applied separately (do not repeat these words): {style_words}\n{p}\n{{{{[OUTPUT]}}}}\n",
     "params": {
       "max_context_length": 1024,
       "max_length": 60,
@@ -125,9 +280,40 @@
       "top_p": 0.9,
       "min_p": 0.05,
       "rep_pen": 1.1,
-      "singleline": true,
-      "stop_sequence": ["\n\n", "###"]
+      "stop_sequence": ["\n\n", "{{[INPUT]}}", "### Instruction:"]
     },
+    "parameter_policy": {
+      "override": "listed",
+      "overridable": ["max_length", "max_context_length"],
+      "ceilings": { "max_length": 512, "max_context_length": 4096, "n": 5 }
+    },
+    "template_fields": [
+      {
+        "name": "caption",
+        "description": "What the picture shows, as alchemy read it.",
+        "required": false
+      },
+      {
+        "name": "tags",
+        "description": "The strongest tags alchemy found, comma separated.",
+        "required": false
+      },
+      {
+        "name": "note",
+        "description": "What the reader asked for, in their own words.",
+        "required": false
+      },
+      {
+        "name": "prompt",
+        "description": "The prompt to rewrite, as the writer has it.",
+        "required": false
+      },
+      {
+        "name": "style_words",
+        "description": "Words a rendering style already contributes, so the prompt does not say them twice.",
+        "required": false
+      }
+    ],
     "public": true,
     "nsfw": false,
     "tags": ["image-prompt", "image-prompt:improve", "minimal"],

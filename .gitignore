@@ -52,8 +52,9 @@ venv/
 **/__pycache__/
 
 
-# raw output of prompt trial runs; the written-up results stay tracked
+# raw output of prompt trial runs
 scripts/prompt-trials/runs/
 
 # local secrets
 .env
+scripts/prompt-trials/styles-out/
