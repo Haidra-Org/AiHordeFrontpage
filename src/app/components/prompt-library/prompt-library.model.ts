@@ -36,6 +36,25 @@ export interface PromptLibraryLiveRequest {
   createdAt: number;
 }
 
+/**
+ * A text request that ended with nothing to use. They are listed under a fold
+ * of their own rather than among the requests still coming, and each one can be
+ * read, sent again or taken off the list.
+ */
+export interface PromptLibraryFailedRequest {
+  id: string;
+  /** Translation key for what became of it ("The horde gave up on this request"). */
+  stateKey: string;
+  /** What the state line interpolates, the worker that answered among it. */
+  stateParams?: Record<string, string>;
+  /** A second line saying why nothing came back, where there is one. */
+  reasonKey?: string;
+  /** The start of what was asked for, so the reader can tell requests apart. */
+  preview: string;
+  /** When the request was sent. */
+  at: number;
+}
+
 interface PromptLibraryEntryBase {
   /** The draft's id or the sent prompt's key. */
   id: string;

@@ -16,13 +16,17 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import {
+  PromptDraftChange,
   PromptDraftInput,
   PromptDraftModelPick,
   PromptDraftOrigin,
   PromptDraftService,
   PromptDraftShape,
+  TextRequestSizing,
+  TextWorkerLimits,
   curatedRank,
   modelCostTier,
+  pickTextModel,
 } from '../../services/prompt-draft.service';
 import { PromptDraftDbService } from '../../services/prompt-draft-db.service';
 import {
@@ -36,6 +40,7 @@ import type {
 } from '../../services/text-generation-db.service';
 import { PromptLibraryComponent } from '../prompt-library/prompt-library.component';
 import type {
+  PromptLibraryFailedRequest,
   PromptLibraryLiveRequest,
   PromptLibraryUse,
 } from '../prompt-library/prompt-library.model';
@@ -46,6 +51,8 @@ import {
 import {
   TextRequestProgressComponent,
   TextRequestRepick,
+  emptyReasonKey,
+  settledStateKey,
 } from './text-request-progress.component';
 import { AuthService } from '../../services/auth.service';
 import {
@@ -99,10 +106,10 @@ const COSTLY_DRAFT_KUDOS = 25;
 const ESTIMATE_DEBOUNCE_MS = 600;
 
 /**
- * The line each request not yet landed as a draft wears in the list of drafts.
- * A finished or cancelled request is not listed, because its takes are drafts
- * already, and neither is one the horde refused, which never became a request
- * to wait on and whose reason only reads well on the card that sent it.
+ * The line each request still under way wears in the list of drafts. Only a
+ * request the horde may still change is listed there: one that has ended
+ * without an answer is listed under its own heading, and one that ended with
+ * answers is its takes, which are drafts already.
  */
 function liveRequestStateKey(request: StoredTextRequest): string | null {
   switch (request.state) {
@@ -112,16 +119,19 @@ function liveRequestStateKey(request: StoredTextRequest): string | null {
       return 'prompt_draft.queue.queued_plain';
     case 'writing':
       return 'prompt_draft.library_open_writing';
-    case 'expired':
-      return 'prompt_draft.queue.expired';
-    case 'empty':
-    case 'faulted':
-      return request.errorKey ?? 'prompt_draft.faulted';
-    case 'refused':
-    case 'done':
-    case 'cancelled':
+    default:
       return null;
   }
+}
+
+/** Which endings leave the reader with nothing to use and something to redo. */
+function isUnfinished(request: StoredTextRequest): boolean {
+  return (
+    request.state === 'expired' ||
+    request.state === 'empty' ||
+    request.state === 'faulted' ||
+    request.state === 'cancelled'
+  );
 }
 
 /** Enough of what was asked for to tell one request from another. */
@@ -302,6 +312,21 @@ export class PromptDraftCardComponent {
   /** Estimates run one after another so a slow answer cannot outrank a newer one. */
   private estimateChain: Promise<void> = Promise.resolve();
 
+  /** Whether the two sizes and their overrides are showing. */
+  public readonly advancedOpen = signal(false);
+  /** Whether the note saying what held a size down is showing. */
+  public readonly sizingWhyOpen = signal(false);
+  /** The reader's own answer allowance, or null to use the worked-out one. */
+  public readonly maxLengthOverride = signal<number | null>(null);
+  /** The reader's own room for the request, or null for the worked-out one. */
+  public readonly maxContextOverride = signal<number | null>(null);
+  /** What the chosen model's workers advertise, or null before they are read. */
+  public readonly workerLimits = signal<TextWorkerLimits | null>(null);
+  /** Which take has its list of edits open. */
+  public readonly changesOpen = signal<number | null>(null);
+  /** The request whose body and answer are being read, or null for none. */
+  public readonly detailsRequest = signal<StoredTextRequest | null>(null);
+
   /** Whether the list of every draft is open over the page. */
   public readonly libraryOpen = signal(false);
   /** How many drafts this browser keeps, or null before they are counted. */
@@ -340,6 +365,13 @@ export class PromptDraftCardComponent {
         untracked(() => this.styleId.set(null));
       }
     });
+    // What the workers running the chosen model will take is read whenever the
+    // pick changes: the sizes are held to it, and a request above every
+    // eligible worker's ceiling is picked up by nobody.
+    effect(() => {
+      const model = this.chosenModel();
+      untracked(() => void this.loadWorkerLimits(model));
+    });
     // Everything the price depends on is read here so a change to any of it
     // reschedules the one pending estimate.
     effect(() => {
@@ -353,6 +385,9 @@ export class PromptDraftCardComponent {
       this.styleId();
       this.takes();
       this.anonymous();
+      this.workerLimits();
+      this.maxLengthOverride();
+      this.maxContextOverride();
       untracked(() => this.scheduleEstimate(ready));
     });
     // An open card is what the reader is looking at, so its requests are
@@ -832,7 +867,79 @@ export class PromptDraftCardComponent {
   }
 
   private shape(): PromptDraftShape {
-    return { style: this.chosenStyle(), takes: this.takes() };
+    const length = this.maxLengthOverride();
+    const context = this.maxContextOverride();
+    return {
+      style: this.chosenStyle(),
+      takes: this.takes(),
+      limits: this.workerLimits(),
+      ...(length !== null ? { maxLength: length } : {}),
+      ...(context !== null ? { maxContextLength: context } : {}),
+    };
+  }
+
+  /**
+   * The model the request would go out on, where the pick names one. The
+   * workers carrying it are what the sizes are held to; asking for any model
+   * at all names none, and the sizes then follow the material alone.
+   */
+  public readonly chosenModel = computed<string | null>(
+    () => pickTextModel(this.onlineModels(), this.modelPick()).label,
+  );
+
+  private async loadWorkerLimits(model: string | null): Promise<void> {
+    this.workerLimits.set(await this.drafts.workerLimitsFor(model));
+  }
+
+  /** The two sizes the request would go out with, and the figures behind them. */
+  public readonly sizing = computed<TextRequestSizing>(() =>
+    this.drafts.sizing(this.material(), this.shape()),
+  );
+
+  /**
+   * A style supplies its own sampling parameters, so the sizes the card works
+   * out are neither sent nor worth showing beside a style's price.
+   */
+  public readonly showSizing = computed(
+    () => this.chosenStyle() === null && this.hasMaterial(),
+  );
+
+  /** The note behind the sizes, naming what held the answer allowance down. */
+  public readonly sizingWhyKey = computed<string | null>(() => {
+    switch (this.sizing().limitedBy) {
+      case 'workers':
+        return 'prompt_draft.sizing_why_workers';
+      case 'style':
+        return 'prompt_draft.sizing_why_style';
+      default:
+        return null;
+    }
+  });
+
+  public toggleSizingWhy(): void {
+    this.sizingWhyOpen.update((open) => !open);
+  }
+
+  public toggleAdvanced(): void {
+    this.advancedOpen.update((open) => !open);
+  }
+
+  /**
+   * A figure the reader typed stands as typed, up to what the workers
+   * advertise; an empty field goes back to the size the card works out.
+   */
+  public onMaxLengthInput(value: string): void {
+    this.maxLengthOverride.set(this.readSize(value));
+  }
+
+  public onMaxContextInput(value: string): void {
+    this.maxContextOverride.set(this.readSize(value));
+  }
+
+  private readSize(value: string): number | null {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < 1) return null;
+    return parsed;
   }
 
   /** The body the button would send, and the call that would send it. */
@@ -844,14 +951,7 @@ export class PromptDraftCardComponent {
         this.models() ?? [],
         this.shape(),
       );
-      const key = this.anonymous() ? ANONYMOUS_API_KEY : KEY_PLACEHOLDER;
-      const curl = [
-        `curl -X POST "${this.apiBase}/generate/text/async"`,
-        `  -H "apikey: ${key}"`,
-        '  -H "Content-Type: application/json"',
-        '  -H "Client-Agent: AiHordeFrontpage:generate"',
-        `  -d '${stringifyAsJson(body)}'`,
-      ].join(' \\\n');
+      const curl = this.curlFor(body, this.anonymous());
       return [
         {
           id: 'request',
@@ -867,12 +967,63 @@ export class PromptDraftCardComponent {
     },
   );
 
+  /**
+   * The call that sends a body, for a reader who wants to run it themselves.
+   * The reader's own key is never written onto a page, so a request sent on it
+   * shows a placeholder where the anonymous key is shown outright.
+   */
+  private curlFor(body: unknown, anonymous: boolean): string {
+    const key = anonymous ? ANONYMOUS_API_KEY : KEY_PLACEHOLDER;
+    return [
+      `curl -X POST "${this.apiBase}/generate/text/async"`,
+      `  -H "apikey: ${key}"`,
+      '  -H "Content-Type: application/json"',
+      '  -H "Client-Agent: AiHordeFrontpage:generate"',
+      `  -d '${stringifyAsJson(body)}'`,
+    ].join(' \\\n');
+  }
+
   public openPreview(): void {
     this.previewOpen.set(true);
   }
 
   public closePreview(): void {
     this.previewOpen.set(false);
+  }
+
+  /** Everything a finished request was sent with and everything it came back with. */
+  public readonly detailSections = computed<readonly JsonInspectorSection[]>(
+    () => {
+      const request = this.detailsRequest();
+      if (!request) return [];
+      return [
+        {
+          id: 'request',
+          label: this.transloco.translate('prompt_draft.details_request'),
+          value: request.request,
+        },
+        {
+          id: 'response',
+          label: this.transloco.translate('prompt_draft.details_response'),
+          value:
+            request.response ??
+            this.transloco.translate('prompt_draft.details_response_none'),
+        },
+        {
+          id: 'curl',
+          label: this.transloco.translate('prompt_draft.preview_curl'),
+          value: this.curlFor(request.request, request.anonymous),
+        },
+      ];
+    },
+  );
+
+  public openDetails(request: StoredTextRequest | null): void {
+    if (request) this.detailsRequest.set(request);
+  }
+
+  public closeDetails(): void {
+    this.detailsRequest.set(null);
   }
 
   private cancelEstimate(): void {
@@ -1064,6 +1215,40 @@ export class PromptDraftCardComponent {
   }
 
   /**
+   * Hand a take over as the worker wrote it, edits and all. The negative is
+   * left alone: the raw answer is one piece of text, and any negative line in
+   * it is part of what the reader asked to see.
+   */
+  public sendRaw(index: number): void {
+    const take = this.takesShown().at(index);
+    if (!take?.rawText) return;
+    this.use.emit({ prompt: take.rawText, negative: null, source: 'draft' });
+  }
+
+  /** What cleaning altered in a take, in the order the service reports it. */
+  public changesOf(take: TextRequestTake): readonly PromptDraftChange[] {
+    return take.changes ?? [];
+  }
+
+  /** The line describing one edit, in the reader's words. */
+  public changeKey(change: PromptDraftChange): string {
+    return `prompt_draft.change_${change}`;
+  }
+
+  /**
+   * An answer that repeats its own instruction is not a prompt. It is shown
+   * with a warning instead of a press that would write it into the box, and
+   * the reader can still take it as written.
+   */
+  public isEcho(take: TextRequestTake): boolean {
+    return this.changesOf(take).includes('instruction_echo');
+  }
+
+  public toggleChanges(index: number): void {
+    this.changesOpen.update((open) => (open === index ? null : index));
+  }
+
+  /**
    * Requests that have not landed as drafts, from every card and every job,
    * so the list of drafts shows what is still coming wherever it was asked.
    */
@@ -1082,6 +1267,87 @@ export class PromptDraftCardComponent {
           ];
     }),
   );
+
+  /**
+   * Requests that ended with nothing to use, from every card and every job.
+   * They are listed apart from the ones still coming: a reader scanning for a
+   * prompt that is on its way should not have to read past the ones that are
+   * not coming at all.
+   */
+  public readonly failedRequests = computed<PromptLibraryFailedRequest[]>(() =>
+    this.queue.requests().flatMap((request) => {
+      const stateKey = isUnfinished(request) ? settledStateKey(request) : null;
+      if (stateKey === null) return [];
+      const worker = request.results?.find(
+        (take) => take.workerName ?? take.workerId,
+      );
+      const reasonKey = emptyReasonKey(request);
+      return [
+        {
+          id: request.localId,
+          stateKey,
+          stateParams: {
+            worker: worker?.workerName ?? worker?.workerId ?? '',
+          },
+          ...(reasonKey ? { reasonKey } : {}),
+          preview: liveRequestPreview(request),
+          at: request.createdAt,
+        },
+      ];
+    }),
+  );
+
+  /** Show what one of the listed requests was sent with and came back with. */
+  public detailsFor(localId: string): void {
+    this.openDetails(
+      this.queue.requests().find((request) => request.localId === localId) ??
+        null,
+    );
+  }
+
+  /**
+   * Send a listed request again. It goes out with the material it was asked
+   * with rather than whatever the card holds now, and the service keeps it off
+   * any worker that has already answered this visit with nothing.
+   */
+  public async retryFailed(localId: string): Promise<void> {
+    const request = this.queue
+      .requests()
+      .find((candidate) => candidate.localId === localId);
+    if (!request || this.busy()) return;
+    this.busy.set(true);
+    try {
+      const style =
+        this.styles()?.find((candidate) => candidate.id === request.styleId) ??
+        null;
+      await this.drafts.submit(
+        request.input,
+        request.pick,
+        this.models() ?? undefined,
+        {
+          anonymous: request.anonymous,
+          origin: request.origin,
+          context: request.context,
+          replace: true,
+          quotedKudos: null,
+        },
+        { style, takes: request.takes },
+      );
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Take a listed request off the list for good. */
+  public dismissFailed(localId: string): void {
+    void this.queue.remove(localId);
+  }
+
+  public clearFailed(): void {
+    for (const row of this.failedRequests()) {
+      void this.queue.remove(row.id);
+    }
+  }
 
   public openLibrary(): void {
     this.libraryOpen.set(true);

@@ -1894,6 +1894,57 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
 }
 
+/* What a text request is paying for, beside its price: the answer it asks for,
+   the room it takes, and the two fields that override either. The fields hold
+   four figures where the settings panel's hold three, so they are wider than
+   the slider twins above. */
+.gen-studio .gs-size {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-size-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-size-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-3);
+}
+.gen-studio .gs-size-field {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+}
+.gen-studio .gs-size-field .gs-numfield {
+  width: 7ch;
+  text-align: left;
+}
+
+/* The mark on an answer this client edited, and the list of what it changed.
+   The list is prose rather than a table: each line is one sentence, and there
+   are never more than a handful. */
+.gen-studio .gs-take-tidy {
+  display: flex;
+  align-items: center;
+  gap: var(--gs-space-2);
+  margin: var(--gs-space-1) 0 0;
+}
+.gen-studio .gs-take-changes {
+  margin: var(--gs-space-1) 0 0;
+  padding-left: var(--gs-space-4);
+  list-style: disc;
+  color: var(--gs-ink-2);
+  font-size: var(--gs-text-xs);
+  line-height: 1.5;
+}
+.gen-studio .gs-take-changes li + li {
+  margin-top: var(--gs-space-1);
+}
+
 /* A field that will not submit as typed. The edge is the second signal: every
    place this is set also renders the hint line that says what is wrong. It
    follows the fields it modifies so it wins over their own focus edge. */
@@ -10299,6 +10350,58 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-pl-live-state {
   font-weight: 700;
   color: var(--gs-blue-text);
+}
+/* The requests that did not finish. The heading is the press that opens them,
+   so the section costs one line while it is folded. */
+.gen-studio .gs-pl-failed-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gs-ink-2);
+  font-size: var(--gs-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-pl-failed-toggle:hover {
+  color: var(--gs-ink);
+}
+.gen-studio .gs-pl-failed-toggle:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-pl-failed-chevron {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  transition: transform var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-pl-failed-chevron--open {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-pl-failed-chevron {
+    transition: none;
+  }
+}
+.gen-studio .gs-pl-failed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 10px 8px;
+}
+/* A request that has ended is not a request in progress, so its line drops the
+   blue the live rows wear; the words say which it is either way. */
+.gen-studio .gs-pl-failed .gs-pl-live-state {
+  color: var(--gs-ink-2);
+  font-weight: 600;
 }
 .gen-studio .gs-pl-check {
   flex: none;

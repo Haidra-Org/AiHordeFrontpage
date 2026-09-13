@@ -610,6 +610,58 @@ describe('PromptLibraryComponent', () => {
     expect(host.querySelector('.gs-pl-row--live')).toBeNull();
   });
 
+  it('keeps the requests that did not finish folded, and hands each press on', async () => {
+    const host = await create('drafts');
+    fixture.componentRef.setInput('failedRequests', [
+      {
+        id: 'gone-1',
+        stateKey: 'prompt_draft.queue.expired',
+        reasonKey: 'prompt_draft.empty_blank',
+        preview: 'a fox in snow',
+        at: Date.now(),
+      },
+    ]);
+    fixture.detectChanges();
+    const toggle = host.querySelector(
+      '.gs-pl-failed-toggle',
+    ) as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(host.querySelector('.gs-pl-failed .gs-pl-row')).toBeNull();
+
+    toggle.click();
+    fixture.detectChanges();
+    const row = host.querySelector('.gs-pl-failed .gs-pl-row') as HTMLElement;
+    expect(row.textContent).toContain('a fox in snow');
+    expect(row.textContent).toContain(en['prompt_draft.queue.expired']);
+    expect(row.textContent).toContain(en['prompt_draft.empty_blank']);
+
+    const events: string[] = [];
+    component.requestRetry.subscribe((id) => events.push(`retry:${id}`));
+    component.requestDetails.subscribe((id) => events.push(`details:${id}`));
+    component.requestDismiss.subscribe((id) => events.push(`dismiss:${id}`));
+    component.requestClear.subscribe(() => events.push('clear'));
+    const press = (label: string): void => {
+      const button = [...host.querySelectorAll('.gs-pl-failed button')].find(
+        (candidate) => (candidate.textContent ?? '').includes(label),
+      ) as HTMLButtonElement;
+      button.click();
+    };
+    press(en['prompt_library.failed_retry']);
+    press(en['prompt_library.failed_details']);
+    press(en['prompt_library.failed_dismiss']);
+    press(en['prompt_library.failed_clear']);
+    expect(events).toEqual([
+      'retry:gone-1',
+      'details:gone-1',
+      'dismiss:gone-1',
+      'clear',
+    ]);
+
+    component.setTab('sent');
+    fixture.detectChanges();
+    expect(host.querySelector('.gs-pl-failed')).toBeNull();
+  });
+
   it('closes on Escape', async () => {
     const host = await create('drafts');
     const closed = vi.fn();

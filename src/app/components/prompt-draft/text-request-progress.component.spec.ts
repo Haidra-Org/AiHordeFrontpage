@@ -123,12 +123,114 @@ describe('TextRequestProgressComponent', () => {
     expect(events).toEqual(['repick:auto', 'repick:any', 'cancel', 'retry']);
   });
 
-  it('holds the repick presses while the card is still sending', () => {
+  it('holds the presses that send while the card is still sending', () => {
     build(request({ state: 'expired' }));
     fixture.componentRef.setInput('busy', true);
     fixture.detectChanges();
     const buttons = [...el().querySelectorAll('button')];
     expect(buttons.length).toBeGreaterThan(0);
-    expect(buttons.every((button) => button.disabled)).toBe(true);
+    const sending = buttons.filter(
+      (button) => !(button.textContent ?? '').includes('prompt_draft.details'),
+    );
+    expect(sending.length).toBeGreaterThan(0);
+    expect(sending.every((button) => button.disabled)).toBe(true);
+    // Reading what was sent asks the horde for nothing, so it stays open.
+    const details = buttons.find((button) =>
+      (button.textContent ?? '').includes('prompt_draft.details'),
+    );
+    expect(details?.disabled).toBe(false);
+  });
+
+  it('names the worker behind an answer with nothing in it, and why', () => {
+    build(
+      request({
+        state: 'empty',
+        results: [
+          {
+            draftId: 'text-1-0',
+            text: '',
+            negative: '',
+            rawText: '   ',
+            reason: 'blank',
+            model: 'm',
+            seed: null,
+            workerId: 'worker-1',
+            workerName: 'a friendly worker',
+          },
+        ],
+      }),
+    );
+    expect(fixture.componentInstance.worker()).toBe('a friendly worker');
+    expect(el().textContent).toContain('prompt_draft.empty');
+    expect(el().textContent).toContain('prompt_draft.empty_blank');
+    expect(el().textContent).toContain('prompt_draft.empty_next');
+  });
+
+  it('promises a different worker only when one is being kept off', () => {
+    const take = {
+      draftId: 'text-1-0',
+      text: '',
+      negative: '',
+      rawText: '',
+      reason: 'blank' as const,
+      model: 'm',
+      seed: null,
+    };
+    build(
+      request({
+        state: 'empty',
+        results: [{ ...take, workerId: 'worker-1' }],
+      }),
+    );
+    expect(fixture.componentInstance.avoided()).toBe(true);
+    expect(el().textContent).toContain('prompt_draft.empty_next');
+
+    build(
+      request({
+        state: 'empty',
+        results: [{ ...take, workerName: 'a friendly worker' }],
+      }),
+    );
+    expect(fixture.componentInstance.avoided()).toBe(false);
+    expect(el().textContent).toContain('prompt_draft.empty');
+    expect(el().textContent).not.toContain('prompt_draft.empty_next');
+  });
+
+  it('leaves the reason off when the takes do not agree on one', () => {
+    build(
+      request({
+        state: 'empty',
+        results: [
+          {
+            draftId: 'a',
+            text: '',
+            negative: '',
+            rawText: '',
+            reason: 'blank',
+            model: 'm',
+            seed: null,
+          },
+          {
+            draftId: 'b',
+            text: '',
+            negative: '',
+            rawText: '',
+            reason: 'censored',
+            model: 'm',
+            seed: null,
+          },
+        ],
+      }),
+    );
+    expect(fixture.componentInstance.emptyReason()).toBeNull();
+    expect(el().textContent).toContain('prompt_draft.empty_unknown');
+  });
+
+  it('hands the details press to the card', () => {
+    build(request({ state: 'faulted' }));
+    const events: string[] = [];
+    fixture.componentInstance.details.subscribe(() => events.push('details'));
+    press('prompt_draft.details');
+    expect(events).toEqual(['details']);
   });
 });

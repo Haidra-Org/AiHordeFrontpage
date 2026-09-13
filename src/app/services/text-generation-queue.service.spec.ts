@@ -737,6 +737,26 @@ describe('TextGenerationQueueService', () => {
     ).toEqual(['fresh-expired', 'old-live']);
   });
 
+  it('forgets a request that has ended, and keeps a live one', async () => {
+    await textDb.put(kept({ localId: 'gone-1', state: 'expired' }));
+    await textDb.put(kept({ localId: 'live-1', state: 'queued' }));
+    const queue = await createQueue();
+
+    await queue.remove('gone-1');
+    expect(queue.requests().map((request) => request.localId)).toEqual([
+      'live-1',
+    ]);
+    expect([...textDb.requests.keys()]).toEqual(['live-1']);
+
+    // A request the horde may still change would only be written back on the
+    // next check, so the press does nothing to it.
+    await queue.remove('live-1');
+    expect(queue.requests().map((request) => request.localId)).toEqual([
+      'live-1',
+    ]);
+    expect([...textDb.requests.keys()]).toEqual(['live-1']);
+  });
+
   it('resolves a settled wait once the request finishes', async () => {
     aiHorde.checkTextGenerationResult.mockReturnValue(
       checked({ done: true, generations: [take('a dog')] }),

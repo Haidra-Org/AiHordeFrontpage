@@ -210,6 +210,87 @@
             </section>
           }
 
+          <!-- Folded, because a request that did not finish is worth keeping
+               and worth acting on, and worth neither the reader's attention
+               every time they come looking for a prompt. -->
+          @if (tab() === "drafts" && failedRequests().length > 0) {
+            <section class="gs-pl-day gs-pl-failed">
+              <button
+                type="button"
+                class="gs-pl-failed-toggle"
+                [attr.aria-expanded]="failedOpen()"
+                (click)="toggleFailed()"
+              >
+                <app-icon
+                  name="chevron-right"
+                  class="gs-pl-failed-chevron"
+                  [class.gs-pl-failed-chevron--open]="failedOpen()"
+                />
+                {{
+                  "prompt_library.failed_title"
+                    | transloco: { count: failedRequests().length }
+                }}
+              </button>
+              @if (failedOpen()) {
+                <ul class="gs-pl-list">
+                  @for (request of failedRequests(); track request.id) {
+                    <li class="gs-pl-row gs-pl-row--live">
+                      <div class="gs-pl-row-body">
+                        <span class="gs-pl-row-text">{{
+                          request.preview
+                        }}</span>
+                        <span class="gs-pl-meta">
+                          <span class="gs-pl-live-state">
+                            {{
+                              request.stateKey | transloco: request.stateParams
+                            }}
+                            @if (request.reasonKey; as reason) {
+                              {{ reason | transloco }}
+                            }
+                          </span>
+                          <span>{{ request.at | date: "shortTime" }}</span>
+                        </span>
+                      </div>
+                      <div class="gs-pl-failed-actions">
+                        <button
+                          type="button"
+                          class="gs-btn gs-btn--dense"
+                          (click)="requestRetry.emit(request.id)"
+                        >
+                          {{ "prompt_library.failed_retry" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-btn gs-btn--dense"
+                          (click)="requestDetails.emit(request.id)"
+                        >
+                          {{ "prompt_library.failed_details" | transloco }}
+                        </button>
+                        <button
+                          type="button"
+                          class="gs-btn gs-btn--dense"
+                          (click)="requestDismiss.emit(request.id)"
+                        >
+                          {{ "prompt_library.failed_dismiss" | transloco }}
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+                <div class="gs-pl-failed-actions">
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense gs-pl-danger"
+                    (click)="requestClear.emit()"
+                  >
+                    <app-icon name="trash-modern" class="gs-ico-sm" />
+                    {{ "prompt_library.failed_clear" | transloco }}
+                  </button>
+                </div>
+              }
+            </section>
+          }
+
           @if (loadFailed()) {
             <p class="gs-modal-state">
               {{ "prompt_library.load_failed" | transloco }}

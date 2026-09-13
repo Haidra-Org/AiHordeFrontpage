@@ -414,6 +414,111 @@
         </p>
       }
 
+      <!-- What the price is buying: how much answer is asked for, and how much
+           room the whole request takes. Both are worked out from the job and
+           the material, and both can be overridden. -->
+      @if (showSizing()) {
+        @let sizes = sizing();
+        <div class="gs-size">
+          <p class="gs-sublabel gs-size-line">
+            {{
+              "prompt_draft.sizing"
+                | transloco
+                  : { length: sizes.maxLength, context: sizes.maxContextLength }
+            }}
+            @if (sizingWhyKey(); as why) {
+              <button
+                type="button"
+                class="gs-help-btn"
+                [attr.aria-expanded]="sizingWhyOpen()"
+                (click)="toggleSizingWhy()"
+              >
+                <span aria-hidden="true">?</span>
+                <span class="sr-only">
+                  {{ "prompt_draft.sizing_why" | transloco }}
+                </span>
+              </button>
+              @if (sizingWhyOpen()) {
+                <span class="gs-help-note" role="note">
+                  {{
+                    why
+                      | transloco
+                        : {
+                            length: sizes.maxLength,
+                            asked: sizes.askedLength,
+                          }
+                  }}
+                </span>
+              }
+            }
+          </p>
+          <button
+            type="button"
+            class="alchemy-draft__options-toggle"
+            [attr.aria-expanded]="advancedOpen()"
+            (click)="toggleAdvanced()"
+          >
+            <app-icon
+              name="chevron-right"
+              class="alchemy-result__chevron"
+              [class.alchemy-result__chevron--open]="advancedOpen()"
+            />
+            {{ "prompt_draft.advanced" | transloco }}
+          </button>
+          @if (advancedOpen()) {
+            @let limits = workerLimits();
+            <div class="gs-size-fields">
+              <label class="gs-size-field">
+                <span class="alchemy-draft__label">
+                  {{ "prompt_draft.advanced_length_label" | transloco }}
+                </span>
+                <input
+                  type="number"
+                  class="gs-numfield gs-mono"
+                  min="1"
+                  step="1"
+                  [attr.max]="limits?.maxLength ?? null"
+                  [value]="maxLengthOverride() ?? ''"
+                  [placeholder]="sizes.maxLength"
+                  [disabled]="busy()"
+                  (input)="onMaxLengthInput($any($event.target).value)"
+                />
+              </label>
+              <label class="gs-size-field">
+                <span class="alchemy-draft__label">
+                  {{ "prompt_draft.advanced_context_label" | transloco }}
+                </span>
+                <input
+                  type="number"
+                  class="gs-numfield gs-mono"
+                  min="1"
+                  step="1"
+                  [attr.max]="limits?.maxContextLength ?? null"
+                  [value]="maxContextOverride() ?? ''"
+                  [placeholder]="sizes.maxContextLength"
+                  [disabled]="busy()"
+                  (input)="onMaxContextInput($any($event.target).value)"
+                />
+              </label>
+            </div>
+            <p class="gs-sublabel">
+              @if (limits) {
+                {{
+                  "prompt_draft.advanced_limits"
+                    | transloco
+                      : {
+                          length: limits.maxLength,
+                          context: limits.maxContextLength,
+                        }
+                }}
+              } @else {
+                {{ "prompt_draft.advanced_limits_unknown" | transloco }}
+              }
+            </p>
+          }
+        </div>
+      }
+
       <!-- Everything that steers the request rather than starting it. Folded
            by default so the card is a field and a button; the fold remembers
            the reader's answer, and opens itself when the card has changed one
@@ -599,6 +704,7 @@
             (cancelRequest)="cancelCurrent()"
             (repick)="repick($event)"
             (retry)="draft()"
+            (details)="openDetails(request)"
           />
         }
         @let takes = takesShown();
@@ -616,20 +722,63 @@
               <blockquote class="alchemy-caption alchemy-draft__text">
                 {{ take.text }}
               </blockquote>
+              <!-- An answer that gives the instruction back is not a prompt,
+                   so it is not offered as one; the words the worker wrote are
+                   still there to take. -->
+              @if (isEcho(take)) {
+                <p class="gs-warn">
+                  <app-icon name="warning-triangle" class="gs-ico-sm" />
+                  {{ "prompt_draft.echo_warning" | transloco }}
+                </p>
+              }
+              <!-- Every edit made between the worker writing the answer and
+                   the reader seeing it, and the way back to the original. -->
+              @let changes = changesOf(take);
+              @if (changes.length > 0) {
+                <p class="gs-sublabel gs-take-tidy">
+                  <button
+                    type="button"
+                    class="gs-chip"
+                    [attr.aria-expanded]="changesOpen() === $index"
+                    (click)="toggleChanges($index)"
+                  >
+                    <app-icon name="pencil-square" class="gs-ico-sm" />
+                    {{ "prompt_draft.tidied" | transloco }}
+                  </button>
+                </p>
+                @if (changesOpen() === $index) {
+                  <ul class="gs-take-changes">
+                    @for (change of changes; track change) {
+                      <li>{{ changeKey(change) | transloco }}</li>
+                    }
+                  </ul>
+                }
+              }
               <div class="alchemy-draft__actions">
-                <button
-                  type="button"
-                  class="gs-btn gs-btn--dense"
-                  (click)="send($index)"
-                >
-                  <app-icon name="photo" class="gs-ico-sm" />
-                  {{
-                    (mode() === "improve"
-                      ? "prompt_draft.use"
-                      : "prompt_draft.send"
-                    ) | transloco
-                  }}
-                </button>
+                @if (!isEcho(take)) {
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense"
+                    (click)="send($index)"
+                  >
+                    <app-icon name="photo" class="gs-ico-sm" />
+                    {{
+                      (mode() === "improve"
+                        ? "prompt_draft.use"
+                        : "prompt_draft.send"
+                      ) | transloco
+                    }}
+                  </button>
+                }
+                @if (changes.length > 0) {
+                  <button
+                    type="button"
+                    class="gs-btn gs-btn--dense"
+                    (click)="sendRaw($index)"
+                  >
+                    {{ "prompt_draft.use_raw" | transloco }}
+                  </button>
+                }
                 <button
                   type="button"
                   class="gs-btn gs-btn--dense"
@@ -680,6 +829,14 @@
               >
                 {{ "prompt_draft.again" | transloco }}
               </button>
+              <button
+                type="button"
+                class="gs-btn gs-btn--dense"
+                (click)="openDetails(request)"
+              >
+                <app-icon name="code-bracket" class="gs-ico-sm" />
+                {{ "prompt_draft.details" | transloco }}
+              </button>
             </div>
           }
         }
@@ -711,7 +868,12 @@
           mode() === 'improve' ? 'prompt_library.use' : 'prompt_draft.send'
         "
         [liveRequests]="liveRequests()"
+        [failedRequests]="failedRequests()"
         (use)="useFromLibrary($event)"
+        (requestDetails)="detailsFor($event)"
+        (requestRetry)="retryFailed($event)"
+        (requestDismiss)="dismissFailed($event)"
+        (requestClear)="clearFailed()"
         (closed)="closeLibrary()"
       />
     }
@@ -723,6 +885,17 @@
       downloadFilePrefix="prompt-draft-request"
       [sections]="previewSections()"
       (closed)="closePreview()"
+    />
+
+    <!-- What one request was sent with and what came back from it, for a
+         reader working out why an answer is missing or wrong. -->
+    <app-json-inspector
+      [open]="detailsRequest() !== null"
+      [title]="'prompt_draft.details_title' | transloco"
+      [closeLabel]="'prompt_draft.preview_close' | transloco"
+      downloadFilePrefix="prompt-draft-details"
+      [sections]="detailSections()"
+      (closed)="closeDetails()"
     />
   }
 </section>

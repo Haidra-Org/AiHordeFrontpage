@@ -41,6 +41,7 @@ import {
   PROMPT_LIBRARY_PAGE_SIZE,
   PromptLibraryDay,
   PromptLibraryEntry,
+  PromptLibraryFailedRequest,
   PromptLibraryLiveRequest,
   PromptLibraryOriginFilter,
   PromptLibraryTab,
@@ -99,6 +100,10 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
   public readonly initialTab = input<PromptLibraryTab>('drafts');
   /** Text requests still under way, listed ahead of the drafts. */
   public readonly liveRequests = input<readonly PromptLibraryLiveRequest[]>([]);
+  /** Text requests that ended with nothing to use, listed under a fold. */
+  public readonly failedRequests = input<readonly PromptLibraryFailedRequest[]>(
+    [],
+  );
   /**
    * What the Use press says. The page decides, because using a prompt means
    * something different where it opened: writing it into the studio's boxes, or
@@ -108,6 +113,20 @@ export class PromptLibraryComponent implements OnInit, OnDestroy {
 
   public readonly use = output<PromptLibraryUse>();
   public readonly closed = output<void>();
+  /** Read everything one listed request was sent with and came back with. */
+  public readonly requestDetails = output<string>();
+  /** Send one listed request again, as it was asked. */
+  public readonly requestRetry = output<string>();
+  /** Take one listed request off the list, or all of them. */
+  public readonly requestDismiss = output<string>();
+  public readonly requestClear = output<void>();
+
+  /** Whether the requests that did not finish are showing. */
+  public readonly failedOpen = signal(false);
+
+  public toggleFailed(): void {
+    this.failedOpen.update((open) => !open);
+  }
 
   private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
   private readonly searchInput =

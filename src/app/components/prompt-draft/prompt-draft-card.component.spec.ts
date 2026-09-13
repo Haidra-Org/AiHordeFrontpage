@@ -4,7 +4,10 @@ import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PromptDraftCardComponent } from './prompt-draft-card.component';
-import { PromptDraftService } from '../../services/prompt-draft.service';
+import {
+  PromptDraftService,
+  TextRequestSizing,
+} from '../../services/prompt-draft.service';
 import {
   PromptDraftDbService,
   StoredPromptDraft,
@@ -97,12 +100,25 @@ function doneRequest(
       draftId: `text-1-${index}`,
       text,
       negative: negatives[index] ?? '',
+      rawText: text,
       model: 'koboldcpp/gemma-4-31B-it-heretic',
       seed: null,
     })),
     ...extra,
   });
 }
+
+/** What the workers running the chosen model advertise, as the card reads them. */
+const WORKER_LIMITS = { maxLength: 512, maxContextLength: 4096 };
+
+/** The sizes the service works out, as the card shows them beside the price. */
+const SIZES: TextRequestSizing = {
+  maxLength: 96,
+  maxContextLength: 1024,
+  promptTokens: 120,
+  askedLength: 96,
+  limitedBy: null,
+};
 
 describe('PromptDraftCardComponent', () => {
   let fixture: ComponentFixture<PromptDraftCardComponent>;
@@ -120,6 +136,9 @@ describe('PromptDraftCardComponent', () => {
     });
   };
   let estimate: ReturnType<typeof vi.fn>;
+  let sizing: ReturnType<typeof vi.fn>;
+  let workerLimitsFor: ReturnType<typeof vi.fn>;
+  let remove: ReturnType<typeof vi.fn>;
   let listAll: ReturnType<typeof vi.fn>;
   let imagePromptStyles: ReturnType<typeof vi.fn>;
   let previewRequest: ReturnType<typeof vi.fn>;
@@ -170,6 +189,9 @@ describe('PromptDraftCardComponent', () => {
       return list;
     };
     estimate = vi.fn().mockResolvedValue(null);
+    sizing = vi.fn().mockReturnValue(SIZES);
+    workerLimitsFor = vi.fn().mockResolvedValue(WORKER_LIMITS);
+    remove = vi.fn().mockResolvedValue(undefined);
     listAll = vi.fn().mockResolvedValue([]);
     imagePromptStyles = vi.fn().mockResolvedValue([]);
     previewRequest = vi
@@ -202,6 +224,8 @@ describe('PromptDraftCardComponent', () => {
             estimate,
             imagePromptStyles,
             previewRequest,
+            sizing,
+            workerLimitsFor,
             textModels: vi.fn().mockResolvedValue([
               { name: 'koboldcpp/L3-8B-Stheno-v3.2', count: 4 },
               { name: 'koboldcpp/gemma-4-31B-it-heretic', count: 1 },
@@ -224,6 +248,7 @@ describe('PromptDraftCardComponent', () => {
             watch,
             cancel,
             cancelling,
+            remove,
             clock: signal(NOW),
           },
         },
@@ -387,7 +412,7 @@ describe('PromptDraftCardComponent', () => {
         replace: false,
         quotedKudos: null,
       },
-      { style: null, takes: 1 },
+      { style: null, takes: 1, limits: WORKER_LIMITS },
     );
     expect(
       el().querySelector('.alchemy-draft__text')?.textContent?.trim(),
@@ -460,7 +485,7 @@ describe('PromptDraftCardComponent', () => {
       'auto',
       expect.anything(),
       expect.objectContaining({ anonymous: true, origin: 'studio' }),
-      { style: null, takes: 1 },
+      { style: null, takes: 1, limits: WORKER_LIMITS },
     );
   });
 
@@ -709,7 +734,11 @@ describe('PromptDraftCardComponent', () => {
       'auto',
       expect.anything(),
       expect.anything(),
-      { style: expect.objectContaining({ id: 's1' }), takes: 1 },
+      {
+        style: expect.objectContaining({ id: 's1' }),
+        takes: 1,
+        limits: WORKER_LIMITS,
+      },
     );
   });
 
@@ -734,6 +763,7 @@ describe('PromptDraftCardComponent', () => {
     expect(estimate.mock.calls.at(-1)?.[4]).toEqual({
       style: expect.objectContaining({ id: 's1' }),
       takes: 1,
+      limits: WORKER_LIMITS,
     });
   });
 
@@ -745,7 +775,11 @@ describe('PromptDraftCardComponent', () => {
     await fixture.componentInstance.draft();
     fixture.detectChanges();
 
-    expect(submit.mock.calls.at(-1)?.[4]).toEqual({ style: null, takes: 3 });
+    expect(submit.mock.calls.at(-1)?.[4]).toEqual({
+      style: null,
+      takes: 3,
+      limits: WORKER_LIMITS,
+    });
     const takes = [...el().querySelectorAll('.alchemy-draft__take')];
     expect(takes).toHaveLength(3);
     expect(
@@ -782,7 +816,7 @@ describe('PromptDraftCardComponent', () => {
       expect.objectContaining({ caption: 'a dog on a couch' }),
       'auto',
       expect.any(Array),
-      { style: null, takes: 1 },
+      { style: null, takes: 1, limits: WORKER_LIMITS },
     );
     // Logged out, the card is anonymous, and the curl line says which key that is.
     expect(sections[1].value).toContain('apikey: 0000000000');
@@ -1378,6 +1412,249 @@ describe('PromptDraftCardComponent', () => {
       fixture.detectChanges();
       await settle();
       expect(listAll.mock.calls.length).toBeGreaterThan(calls);
+    });
+
+    it('names the worker that answered with nothing, and why', async () => {
+      await show(
+        makeRequest({
+          state: 'empty',
+          results: [
+            {
+              draftId: 'text-1-0',
+              text: '',
+              negative: '',
+              rawText: '',
+              reason: 'censored',
+              model: 'm',
+              seed: null,
+              workerId: 'worker-1',
+              workerName: 'a friendly worker',
+            },
+          ],
+        }),
+      );
+      expect(live()).toContain('prompt_draft.empty');
+      expect(live()).toContain('prompt_draft.empty_censored');
+      expect(progress()?.textContent).toContain('prompt_draft.empty_next');
+      expect(progress()?.textContent).toContain('prompt_draft.again');
+    });
+
+    it('shows what was sent and what came back on a press', async () => {
+      await show(
+        makeRequest({
+          state: 'faulted',
+          request: { prompt: 'the body sent' },
+          anonymous: true,
+        }),
+      );
+      pressIn(progress(), 'prompt_draft.details');
+      fixture.detectChanges();
+      const sections = fixture.componentInstance.detailSections();
+      expect(sections.map((section) => section.id)).toEqual([
+        'request',
+        'response',
+        'curl',
+      ]);
+      expect(sections[0].value).toEqual({ prompt: 'the body sent' });
+      // Nothing came back, so the section says so rather than showing nothing.
+      expect(sections[1].value).toBe('en.prompt_draft.details_response_none');
+      expect(String(sections[2].value)).toContain('apikey: 0000000000');
+    });
+  });
+
+  describe('the sizes a request goes out with', () => {
+    const sizeText = (): string =>
+      el().querySelector('.gs-size')?.textContent ?? '';
+
+    it('says how much answer is asked for and how much room it takes', async () => {
+      build();
+      await settle();
+      expect(sizeText()).toContain('prompt_draft.sizing');
+      expect(sizing).toHaveBeenCalled();
+      expect(sizing.mock.calls.at(-1)?.[1]).toMatchObject({
+        limits: { maxLength: 512, maxContextLength: 4096 },
+      });
+    });
+
+    it('says what held the answer down, only where something did', async () => {
+      build();
+      await settle();
+      expect(sizeText()).not.toContain('prompt_draft.sizing_why_workers');
+
+      sizing.mockReturnValue({ ...SIZES, maxLength: 48, limitedBy: 'workers' });
+      // The sizes follow the material and the shape, so the note appears once
+      // one of them changes rather than on the mock alone.
+      fixture.componentInstance.takes.set(2);
+      fixture.detectChanges();
+      await settle();
+      fixture.componentInstance.toggleSizingWhy();
+      fixture.detectChanges();
+      expect(sizeText()).toContain('prompt_draft.sizing_why_workers');
+    });
+
+    it('sends the sizes the reader typed in place of the worked-out ones', async () => {
+      build();
+      await settle();
+      fixture.componentInstance.toggleAdvanced();
+      fixture.detectChanges();
+      const fields = [
+        ...el().querySelectorAll('.gs-size-fields input'),
+      ] as HTMLInputElement[];
+      expect(fields).toHaveLength(2);
+      expect(fields[0].placeholder).toBe(String(SIZES.maxLength));
+
+      fields[0].value = '200';
+      fields[0].dispatchEvent(new Event('input'));
+      fields[1].value = '2048';
+      fields[1].dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.componentInstance.draft();
+      await settle();
+      expect(submit.mock.calls.at(-1)?.[4]).toMatchObject({
+        maxLength: 200,
+        maxContextLength: 2048,
+      });
+
+      // An emptied field goes back to the size the card works out.
+      fields[0].value = '';
+      fields[0].dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.maxLengthOverride()).toBeNull();
+    });
+  });
+
+  describe('a take that was tidied', () => {
+    const tidied = (text: string): StoredTextRequest =>
+      doneRequest(['a tidy prompt'], [], {
+        results: [
+          {
+            draftId: 'text-1-0',
+            text: 'a tidy prompt',
+            negative: '',
+            rawText: text,
+            changes: ['label_stripped', 'quotes_stripped'],
+            model: 'm',
+            seed: null,
+          },
+        ],
+      });
+
+    it('lists what was changed, and hands the original over on a press', async () => {
+      requests.set([tidied('Prompt: "a tidy prompt"')]);
+      build();
+      await settle();
+      const take = el().querySelector('.alchemy-draft__take') as HTMLElement;
+      expect(take.textContent).toContain('prompt_draft.tidied');
+      expect(take.querySelector('.gs-take-changes')).toBeNull();
+
+      fixture.componentInstance.toggleChanges(0);
+      fixture.detectChanges();
+      const lines = [...el().querySelectorAll('.gs-take-changes li')].map(
+        (line) => line.textContent?.trim(),
+      );
+      expect(lines).toEqual([
+        'en.prompt_draft.change_label_stripped',
+        'en.prompt_draft.change_quotes_stripped',
+      ]);
+
+      const button = [...el().querySelectorAll('button')].find((candidate) =>
+        (candidate.textContent ?? '').includes('prompt_draft.use_raw'),
+      ) as HTMLButtonElement;
+      button.click();
+      expect(sent).toEqual({
+        prompt: 'Prompt: "a tidy prompt"',
+        negative: null,
+        source: 'draft',
+      });
+    });
+
+    it('offers an answer that repeats the instruction as written only', async () => {
+      requests.set([
+        doneRequest(['You write prompts for'], [], {
+          results: [
+            {
+              draftId: 'text-1-0',
+              text: 'You write prompts for',
+              negative: '',
+              rawText: 'You write prompts for pictures.',
+              changes: ['instruction_echo'],
+              model: 'm',
+              seed: null,
+            },
+          ],
+        }),
+      ]);
+      build();
+      await settle();
+      const take = el().querySelector('.alchemy-draft__take') as HTMLElement;
+      expect(take.textContent).toContain('prompt_draft.echo_warning');
+      expect(take.textContent).not.toContain('prompt_draft.send');
+      expect(take.textContent).toContain('prompt_draft.use_raw');
+    });
+  });
+
+  describe('the requests that did not finish', () => {
+    const failed = makeRequest({
+      localId: 'gone-1',
+      state: 'expired',
+      input: { prompt: 'a dog on a couch' },
+    });
+
+    it('lists them apart from the ones still coming', async () => {
+      requests.set([
+        failed,
+        makeRequest({ localId: 'live-1', state: 'queued' }),
+      ]);
+      build();
+      await settle();
+      expect(fixture.componentInstance.liveRequests()).toHaveLength(1);
+      expect(fixture.componentInstance.liveRequests()[0].id).toBe('live-1');
+      const rows = fixture.componentInstance.failedRequests();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        id: 'gone-1',
+        stateKey: 'prompt_draft.queue.expired',
+        preview: 'a dog on a couch',
+      });
+    });
+
+    it('sends one again as it was asked, and forgets one that is dismissed', async () => {
+      requests.set([failed]);
+      build();
+      await settle();
+
+      await fixture.componentInstance.retryFailed('gone-1');
+      expect(submit).toHaveBeenCalledWith(
+        { prompt: 'a dog on a couch' },
+        'auto',
+        expect.anything(),
+        {
+          anonymous: true,
+          origin: 'alchemy',
+          context: { kind: 'studio' },
+          replace: true,
+          quotedKudos: null,
+        },
+        { style: null, takes: 1 },
+      );
+
+      fixture.componentInstance.dismissFailed('gone-1');
+      expect(remove).toHaveBeenCalledWith('gone-1');
+
+      fixture.componentInstance.clearFailed();
+      expect(remove).toHaveBeenCalledTimes(2);
+    });
+
+    it('opens the details of a listed request', async () => {
+      requests.set([failed]);
+      build();
+      await settle();
+      fixture.componentInstance.detailsFor('gone-1');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.detailsRequest()?.localId).toBe(
+        'gone-1',
+      );
+      expect(fixture.componentInstance.detailSections()).toHaveLength(3);
     });
   });
 });

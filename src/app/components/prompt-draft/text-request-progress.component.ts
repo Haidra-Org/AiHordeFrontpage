@@ -18,6 +18,64 @@ export type TextRequestRepick = 'auto' | 'any';
 const MINUTE_THRESHOLD_SECONDS = 60;
 
 /**
+ * The worker that answered, where the horde named one. An answer with nothing
+ * in it is the one failure a reader can act on: the worker is named so they
+ * know which one it was, and the retry goes to another.
+ */
+export function answeringWorker(request: StoredTextRequest): string | null {
+  for (const take of request.results ?? []) {
+    const name = take.workerName ?? take.workerId;
+    if (name) return name;
+  }
+  return null;
+}
+
+/**
+ * Whether a later request will keep this one's worker off. The queue avoids
+ * workers by id, so an answer the horde attached a name to but no id leaves
+ * nobody avoided, and the retry may go back to the same worker.
+ */
+export function avoidsWorker(request: StoredTextRequest): boolean {
+  return (request.results ?? []).some((take) => !!take.workerId);
+}
+
+/**
+ * Why an answer had nothing in it, where every take gives the same reason.
+ * Takes that disagree leave the line off rather than picking one of them.
+ */
+export function emptyReasonKey(request: StoredTextRequest): string | null {
+  const reasons = new Set(
+    (request.results ?? []).flatMap((take) =>
+      take.reason ? [take.reason] : [],
+    ),
+  );
+  if (reasons.size !== 1) return null;
+  return reasons.has('censored')
+    ? 'prompt_draft.empty_censored'
+    : 'prompt_draft.empty_blank';
+}
+
+/** What became of a request that ended without an answer to show. */
+export function settledStateKey(request: StoredTextRequest): string | null {
+  switch (request.state) {
+    case 'empty':
+      return answeringWorker(request)
+        ? 'prompt_draft.empty'
+        : 'prompt_draft.empty_unknown';
+    case 'faulted':
+      return request.errorKey ?? 'prompt_draft.faulted';
+    case 'expired':
+      return 'prompt_draft.queue.expired';
+    case 'cancelled':
+      return request.anonymous
+        ? 'prompt_draft.queue.cancelled_anonymous'
+        : 'prompt_draft.queue.cancelled';
+    default:
+      return null;
+  }
+}
+
+/**
  * Where a text request stands, in a line or two, with the presses that apply
  * to it. The request's own words (the takes) are drawn by the card; this is
  * only what happened on the way to them.
@@ -49,6 +107,17 @@ export class TextRequestProgressComponent {
   public readonly cancelRequest = output();
   public readonly repick = output<TextRequestRepick>();
   public readonly retry = output();
+  /** Show everything that was sent and everything that came back. */
+  public readonly details = output();
+
+  /** The worker that wrote the empty answer, where the horde named one. */
+  public readonly worker = computed(() => answeringWorker(this.request()));
+
+  /** Whether the next try goes to a different worker. */
+  public readonly avoided = computed(() => avoidsWorker(this.request()));
+
+  /** The second sentence of an empty answer's line, where there is one. */
+  public readonly emptyReason = computed(() => emptyReasonKey(this.request()));
 
   public readonly live = computed(() => {
     const state = this.request().state;

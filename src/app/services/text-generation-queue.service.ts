@@ -449,6 +449,28 @@ export class TextGenerationQueueService {
     }
   }
 
+  /**
+   * Forget a request that has ended. The reader has seen what became of it and
+   * asked for it to go, so it leaves the list and the store rather than waiting
+   * out the day the pruning gives it. A request the horde may still change is
+   * left alone: the next check would only write it back.
+   */
+  public async remove(localId: string): Promise<void> {
+    const request = this.find(localId);
+    if (!request || isLiveTextRequest(request)) return;
+    this._requests.update((current) =>
+      current.filter((candidate) => candidate.localId !== localId),
+    );
+    this.waitInsights.clear(localId);
+    try {
+      await this.db.remove(localId);
+    } catch (error) {
+      // The row is gone from the list either way; a store that will not delete
+      // brings it back on the next visit rather than failing the press.
+      console.warn('Failed to forget a text request:', error);
+    }
+  }
+
   /** Take a worker off the avoided list, for a reader who wants it back. */
   public allowWorker(workerId: string): void {
     this._avoidedWorkers.update((current) => {
