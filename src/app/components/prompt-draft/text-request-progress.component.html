@@ -1,0 +1,154 @@
+@let current = request();
+@let figures = current.figures;
+<div class="alchemy-draft__progress-status" aria-live="polite">
+  @switch (current.state) {
+    @case ("sending") {
+      <p class="gs-sublabel alchemy-draft__progress-line">
+        <app-icon name="spinner" class="gs-spin gs-ico-sm" />
+        {{ "prompt_draft.queue.sending" | transloco }}
+      </p>
+    }
+    @case ("queued") {
+      <!-- Said above the figures: a position means little while nothing online
+           can take the request at all. -->
+      @if (noWorker()) {
+        <p class="gs-warn alchemy-draft__progress-line">
+          <app-icon name="warning-triangle" class="gs-ico-sm" />
+          {{ "prompt_draft.queue.no_worker" | transloco }}
+        </p>
+      }
+      <p class="gs-sublabel alchemy-draft__progress-line">
+        <app-icon name="spinner" class="gs-spin gs-ico-sm" />
+        @if (!figures) {
+          {{ "prompt_draft.queue.queued_plain" | transloco }}
+        } @else if (figures.waitTime > 0) {
+          {{
+            "prompt_draft.queue.queued"
+              | transloco
+                : {
+                    position: figures.queuePosition,
+                    wait: duration(figures.waitTime),
+                  }
+          }}
+        } @else {
+          {{
+            "prompt_draft.queue.queued_position"
+              | transloco: { position: figures.queuePosition }
+          }}
+        }
+      </p>
+      @if (figures?.mightStall) {
+        <p class="gs-sublabel alchemy-draft__progress-line">
+          {{ "prompt_draft.queue.might_stall" | transloco }}
+        </p>
+      }
+      @if (trendKey(); as key) {
+        <p class="gs-sublabel alchemy-draft__progress-line">
+          {{ key | transloco }}
+        </p>
+      }
+    }
+    @case ("writing") {
+      <p class="gs-sublabel alchemy-draft__progress-line">
+        <app-icon name="spinner" class="gs-spin gs-ico-sm" />
+        {{
+          "prompt_draft.queue.writing"
+            | transloco: { done: figures?.finished ?? 0, total: current.takes }
+        }}
+      </p>
+    }
+    @case ("cancelled") {
+      <p class="gs-sublabel alchemy-draft__progress-line">
+        {{
+          (current.anonymous
+            ? "prompt_draft.queue.cancelled_anonymous"
+            : "prompt_draft.queue.cancelled"
+          ) | transloco
+        }}
+      </p>
+    }
+    @case ("expired") {
+      <p class="gs-warn alchemy-draft__progress-line">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ "prompt_draft.queue.expired" | transloco }}
+      </p>
+    }
+    @case ("refused") {
+      <p class="gs-warn alchemy-draft__progress-line">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{
+          "prompt_draft.refused"
+            | transloco: { reason: current.refusal?.message ?? "" }
+        }}
+      </p>
+    }
+    @case ("faulted") {
+      <p class="gs-warn alchemy-draft__progress-line">
+        <app-icon name="warning-triangle" class="gs-ico-sm" />
+        {{ current.errorKey ?? "prompt_draft.faulted" | transloco }}
+      </p>
+    }
+  }
+</div>
+
+@if (current.state === "queued" || current.state === "writing") {
+  <p class="gs-sublabel alchemy-draft__progress-line">
+    {{ "prompt_draft.queue.waited" | transloco: { elapsed: waited() } }}
+  </p>
+}
+
+@if (offerRepick()) {
+  <div class="alchemy-draft__actions">
+    <button
+      type="button"
+      class="gs-btn gs-btn--dense"
+      [disabled]="busy()"
+      (click)="repick.emit('auto')"
+    >
+      {{ "prompt_draft.queue.use_value" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-btn gs-btn--dense"
+      [disabled]="busy()"
+      (click)="repick.emit('any')"
+    >
+      {{ "prompt_draft.queue.use_any" | transloco }}
+    </button>
+  </div>
+}
+
+@if (current.state === "queued" || current.state === "writing") {
+  <div class="alchemy-draft__actions">
+    <button
+      type="button"
+      class="gs-btn gs-btn--dense"
+      [disabled]="cancelling()"
+      (click)="cancelRequest.emit()"
+    >
+      @if (cancelling()) {
+        <app-icon name="spinner" class="gs-spin gs-ico-sm" />
+        {{ "prompt_draft.queue.cancelling" | transloco }}
+      } @else {
+        <app-icon name="x-mark" class="gs-ico-sm" />
+        {{ "prompt_draft.queue.cancel" | transloco }}
+      }
+    </button>
+  </div>
+} @else if (
+  current.state === "refused" ||
+  current.state === "expired" ||
+  current.state === "faulted" ||
+  current.state === "cancelled"
+) {
+  <div class="alchemy-draft__actions">
+    <button
+      type="button"
+      class="gs-btn gs-btn--dense"
+      [disabled]="busy()"
+      (click)="retry.emit()"
+    >
+      {{ "prompt_draft.again" | transloco }}
+    </button>
+  </div>
+}

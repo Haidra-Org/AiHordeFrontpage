@@ -373,8 +373,16 @@ export interface TextGenerationStatusResponse {
   queue_position: number;
   kudos: number;
   is_possible: boolean;
+  eligible_workers?: number;
+  eligible_worker_threads?: number;
+  might_stall?: boolean;
   generations: TextGenerationOutput[];
 }
+
+export type CheckTextResult =
+  | { kind: 'success'; status: TextGenerationStatusResponse }
+  | { kind: 'not_found' }
+  | { kind: 'error'; error: HordeApiError };
 
 /** The sampling knobs a text request carries; the horde's own names. */
 export interface TextGenerationParams {

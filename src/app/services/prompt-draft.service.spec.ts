@@ -21,7 +21,11 @@ import {
 } from './prompt-draft.service';
 import { AuthService } from './auth.service';
 import { StyleService } from './style.service';
-import { PromptDraftDbService } from './prompt-draft-db.service';
+import {
+  TextGenerationQueueService,
+  TextRequestSubmission,
+} from './text-generation-queue.service';
+import type { StoredTextRequest } from './text-generation-db.service';
 import { ActiveModel } from '../types/active-model';
 import { ImagePromptStyle, TextStyle } from '../types/style';
 import { API_BASE as API_BASE_URL } from '../testing/api-test-helpers';
@@ -263,14 +267,47 @@ describe('PromptDraftService', () => {
   let http: HttpTestingController;
   let storedKey: string | null;
   let getTextStyles: ReturnType<typeof vi.fn>;
+  let submit: ReturnType<typeof vi.fn>;
+  let settled: ReturnType<typeof vi.fn>;
+  let watch: ReturnType<typeof vi.fn>;
+  let release: ReturnType<typeof vi.fn>;
+
+  /** What the service handed the queue on its last send. */
+  const submitted = (): TextRequestSubmission => {
+    const call = submit.mock.calls.at(-1);
+    if (!call) throw new Error('nothing was submitted');
+    return call[0] as TextRequestSubmission;
+  };
+
+  /** A request as the queue hands it back once it has settled. */
+  const settledRequest = (
+    overrides: Partial<StoredTextRequest>,
+  ): StoredTextRequest => ({
+    localId: 'local-1',
+    hordeId: 'text-1',
+    createdAt: 1,
+    updatedAt: 2,
+    context: { kind: 'awaited' },
+    origin: 'studio',
+    input: { caption: 'a dog' },
+    pick: 'any',
+    takes: 1,
+    anonymous: true,
+    modelLabel: null,
+    request: { prompt: 'the body' },
+    state: 'done',
+    acknowledged: true,
+    ...overrides,
+  });
 
   beforeEach(() => {
     getTextStyles = vi.fn().mockReturnValue(of([]));
-    // Only the poll's own delay is faked: fake-indexeddb drives its requests off
-    // the other timer families, and a history write has to complete for real.
-    vi.useFakeTimers({ toFake: ['setTimeout'] });
     globalThis.indexedDB = new IDBFactory();
     storedKey = null;
+    submit = vi.fn().mockResolvedValue({ kind: 'sent', localId: 'local-1' });
+    settled = vi.fn();
+    release = vi.fn();
+    watch = vi.fn().mockReturnValue(release);
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -280,6 +317,10 @@ describe('PromptDraftService', () => {
           useValue: { getStoredApiKey: () => storedKey },
         },
         { provide: StyleService, useValue: { getTextStyles } },
+        {
+          provide: TextGenerationQueueService,
+          useValue: { submit, settled, watch },
+        },
       ],
     });
     service = TestBed.inject(PromptDraftService);
@@ -287,134 +328,74 @@ describe('PromptDraftService', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
     http.verify();
   });
 
-  it('submits an anonymous text request for the picked model and returns the cleaned answer', async () => {
+  it('sends a request for the picked model on the anonymous key, filed under the card that asked', async () => {
     const models = [model('koboldcpp/gemma-4-31B-it-heretic', 1)];
-    const pending = service.draft({ caption: 'a dog' }, 'auto', models);
-
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.headers.get('apikey')).toBe('0000000000');
-    expect(submit.request.body.models).toEqual([
-      'koboldcpp/gemma-4-31B-it-heretic',
-    ]);
-    expect(submit.request.body.params.singleline).toBe(true);
-    expect(submit.request.body.prompt).toContain('Description: a dog');
-    submit.flush({ id: 'text-1', kudos: 3 });
-
-    await vi.advanceTimersByTimeAsync(2_500);
-    http.expectOne(`${API_BASE_URL}/generate/text/status/text-1`).flush({
-      done: false,
-      faulted: false,
-      generations: [],
-      kudos: 3,
-    });
-    await vi.advanceTimersByTimeAsync(2_500);
-    http.expectOne(`${API_BASE_URL}/generate/text/status/text-1`).flush({
-      done: true,
-      faulted: false,
-      kudos: 3,
-      generations: [
-        {
-          text: ' "a dog on a couch, warm light"\n',
-          model: 'koboldcpp/gemma-4-31B-it-heretic',
-        },
-      ],
+    const sent = await service.submit({ caption: 'a dog' }, 'auto', models, {
+      anonymous: true,
+      origin: 'alchemy',
+      context: { kind: 'alchemy', jobId: 'job-1' },
+      quotedKudos: 4,
     });
 
-    await expect(pending).resolves.toMatchObject({
-      kind: 'done',
-      texts: ['a dog on a couch, warm light'],
-      model: 'koboldcpp/gemma-4-31B-it-heretic',
-      kudos: 3,
+    expect(sent).toEqual({ kind: 'sent', localId: 'local-1' });
+    const body = submitted();
+    expect(body).toMatchObject({
+      context: { kind: 'alchemy', jobId: 'job-1' },
+      origin: 'alchemy',
+      input: { caption: 'a dog' },
+      pick: 'auto',
+      styleId: null,
+      takes: 1,
+      anonymous: true,
+      modelLabel: 'koboldcpp/gemma-4-31B-it-heretic',
+      apiKey: '0000000000',
+      quotedKudos: 4,
     });
+    expect(body.request.models).toEqual(['koboldcpp/gemma-4-31B-it-heretic']);
+    expect(body.request.params?.singleline).toBe(true);
+    expect(body.request.prompt).toContain('Description: a dog');
+    expect(submit.mock.calls.at(-1)?.[1]).toEqual({ replace: false });
   });
 
-  it('keeps the negative line an improved prompt came back with', async () => {
-    const pending = service.draft({ prompt: 'a dog' }, 'any', []);
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
+  it('asks the queue to replace a waiting request only when told to', async () => {
+    await service.submit({ caption: 'a dog' }, 'any', [], {
+      anonymous: true,
+      origin: 'studio',
+      context: { kind: 'studio' },
+      replace: true,
+    });
+    expect(submit.mock.calls.at(-1)?.[1]).toEqual({ replace: true });
+    expect(submitted().quotedKudos).toBeNull();
+  });
+
+  it('does not hold an improved prompt to a single line', async () => {
+    await service.submit({ prompt: 'a dog' }, 'any', [], {
+      anonymous: true,
+      origin: 'studio',
+      context: { kind: 'studio' },
+    });
     // Two lines are asked for, so the answer is not held to one.
-    expect(submit.request.body.params.singleline).toBeUndefined();
-    submit.flush({ id: 'text-n', kudos: 4 });
-
-    await vi.advanceTimersByTimeAsync(2_500);
-    http.expectOne(`${API_BASE_URL}/generate/text/status/text-n`).flush({
-      done: true,
-      faulted: false,
-      kudos: 4,
-      generations: [
-        {
-          text: 'Prompt: a dog on a couch\nNegative: blurry, extra limbs',
-          model: 'm/1',
-        },
-      ],
-    });
-
-    await expect(pending).resolves.toMatchObject({
-      kind: 'done',
-      texts: ['a dog on a couch'],
-      negatives: ['blurry, extra limbs'],
-    });
-    const stored = await TestBed.inject(PromptDraftDbService).list(10);
-    expect(stored.at(0)?.negative).toBe('blurry, extra limbs');
-  });
-
-  it('stores a verdict as the model wrote it, line breaks and all', async () => {
-    const pending = service.draft(
-      { role: 'judge', prompt: 'a dog', caption: 'a cat' },
-      'any',
-      [],
-    );
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.body.prompt).toContain('You compare an image prompt');
-    submit.flush({ id: 'text-j', kudos: 5 });
-
-    await vi.advanceTimersByTimeAsync(2_500);
-    http.expectOne(`${API_BASE_URL}/generate/text/status/text-j`).flush({
-      done: true,
-      faulted: false,
-      kudos: 5,
-      generations: [
-        {
-          text: ' Matches: nothing.\nMissing: the dog.\nTry: say dog. ',
-          model: 'm/1',
-        },
-      ],
-    });
-
-    await expect(pending).resolves.toMatchObject({
-      kind: 'done',
-      texts: ['Matches: nothing.\nMissing: the dog.\nTry: say dog.'],
-    });
+    expect(submitted().request.params?.singleline).toBeUndefined();
   });
 
   it('sends on the account key unless the request is asked for anonymously', async () => {
     storedKey = 'a-real-key';
-    const pending = service.draft({ caption: 'a dog' }, 'any', [], {
+    await service.submit({ caption: 'a dog' }, 'any', [], {
       anonymous: false,
       origin: 'studio',
+      context: { kind: 'studio' },
     });
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.headers.get('apikey')).toBe('a-real-key');
-    submit.flush(
-      { message: 'nope', rc: 'Nope' },
-      { status: 400, statusText: 'Bad Request' },
-    );
-    await pending;
+    expect(submitted().apiKey).toBe('a-real-key');
 
-    const anon = service.draft({ caption: 'a dog' }, 'any', [], {
+    await service.submit({ caption: 'a dog' }, 'any', [], {
       anonymous: true,
       origin: 'studio',
+      context: { kind: 'studio' },
     });
-    const anonSubmit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(anonSubmit.request.headers.get('apikey')).toBe('0000000000');
-    anonSubmit.flush(
-      { message: 'nope', rc: 'Nope' },
-      { status: 400, statusText: 'Bad Request' },
-    );
-    await anon;
+    expect(submitted().apiKey).toBe('0000000000');
   });
 
   it('prices a draft with a dry run that queues nothing', async () => {
@@ -425,6 +406,7 @@ describe('PromptDraftService', () => {
     expect(priced.request.headers.get('apikey')).toBe('a-real-key');
     priced.flush({ kudos: 7 });
     await expect(pending).resolves.toBe(7);
+    expect(submit).not.toHaveBeenCalled();
   });
 
   it('prices anonymously when asked to, and reports a refusal as no price', async () => {
@@ -437,41 +419,6 @@ describe('PromptDraftService', () => {
       { status: 400, statusText: 'Bad Request' },
     );
     await expect(pending).resolves.toBeNull();
-  });
-
-  it('keeps a finished draft in the browser history', async () => {
-    const pending = service.draft({ caption: 'a dog' }, 'any', [], {
-      anonymous: true,
-      origin: 'studio',
-    });
-    http
-      .expectOne(`${API_BASE_URL}/generate/text/async`)
-      .flush({ id: 'text-9', kudos: 4 });
-    await vi.advanceTimersByTimeAsync(2_500);
-    http.expectOne(`${API_BASE_URL}/generate/text/status/text-9`).flush({
-      done: true,
-      faulted: false,
-      kudos: 4,
-      generations: [{ text: 'a dog on a couch', model: 'm/1', seed: 12 }],
-    });
-
-    const outcome = await pending;
-    expect(outcome.kind).toBe('done');
-    const stored = await TestBed.inject(PromptDraftDbService).list(10);
-    expect(stored).toHaveLength(1);
-    expect(stored[0]).toMatchObject({
-      id: outcome.kind === 'done' ? outcome.ids[0] : '',
-      requestId: 'text-9',
-      takeIndex: 0,
-      origin: 'studio',
-      anonymous: true,
-      model: 'm/1',
-      seed: 12,
-      kudos: 4,
-      text: 'a dog on a couch',
-      input: { caption: 'a dog' },
-      pick: 'any',
-    });
   });
 
   it('keeps only the tagged styles, and reads a role and a direction off them', async () => {
@@ -527,85 +474,45 @@ describe('PromptDraftService', () => {
 
   it('sends a chosen style as the whole instruction, without params or models', async () => {
     const models = [model('koboldcpp/gemma-4-31B-it-heretic', 1)];
-    const pending = service.draft(
+    await service.submit(
       { caption: 'a dog', note: 'at night' },
       'auto',
       models,
-      { anonymous: true, origin: 'alchemy' },
+      { anonymous: true, origin: 'alchemy', context: { kind: 'studio' } },
       { style: chosenStyle('s1', ['koboldcpp/gemma-4-31B-it-heretic']) },
     );
 
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.body).toEqual({
+    expect(submitted().request).toEqual({
       prompt: 'Description: a dog\nNotes from the user: at night',
       style: 's1',
       slow_workers: true,
     });
-    submit.flush(
-      { message: 'nope', rc: 'Nope' },
-      { status: 400, statusText: 'Bad Request' },
-    );
-    await pending;
+    expect(submitted().styleId).toBe('s1');
   });
 
   it('writes its own instruction and model list when no style is chosen', async () => {
     const models = [model('koboldcpp/gemma-4-31B-it-heretic', 1)];
-    const pending = service.draft({ caption: 'a dog' }, 'auto', models, {
+    await service.submit({ caption: 'a dog' }, 'auto', models, {
       anonymous: true,
       origin: 'alchemy',
+      context: { kind: 'studio' },
     });
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.body.style).toBeUndefined();
-    expect(submit.request.body.models).toEqual([
-      'koboldcpp/gemma-4-31B-it-heretic',
-    ]);
-    expect(submit.request.body.prompt).toContain('### Instruction:');
-    submit.flush(
-      { message: 'nope', rc: 'Nope' },
-      { status: 400, statusText: 'Bad Request' },
-    );
-    await pending;
+    const body = submitted().request;
+    expect(body.style).toBeUndefined();
+    expect(body.models).toEqual(['koboldcpp/gemma-4-31B-it-heretic']);
+    expect(body.prompt).toContain('### Instruction:');
   });
 
-  it('asks for three takes and keeps each of them', async () => {
-    const pending = service.draft(
+  it('asks for three takes', async () => {
+    await service.submit(
       { caption: 'a dog' },
       'any',
       [],
-      { anonymous: true, origin: 'studio' },
+      { anonymous: true, origin: 'studio', context: { kind: 'studio' } },
       { takes: 3 },
     );
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.body.params.n).toBe(3);
-    submit.flush({ id: 'text-3', kudos: 9 });
-
-    await vi.advanceTimersByTimeAsync(2_500);
-    http.expectOne(`${API_BASE_URL}/generate/text/status/text-3`).flush({
-      done: true,
-      faulted: false,
-      kudos: 9,
-      generations: [
-        { text: 'one dog', model: 'm/1', seed: 1 },
-        { text: 'two dogs', model: 'm/1', seed: 2 },
-        { text: 'three dogs', model: 'm/1', seed: 3 },
-      ],
-    });
-
-    const outcome = await pending;
-    expect(outcome).toMatchObject({
-      kind: 'done',
-      texts: ['one dog', 'two dogs', 'three dogs'],
-    });
-    const stored = await TestBed.inject(PromptDraftDbService).list(10);
-    expect(stored).toHaveLength(3);
-    expect(stored.map((draft) => draft.requestId)).toEqual([
-      'text-3',
-      'text-3',
-      'text-3',
-    ]);
-    expect([...stored].map((draft) => draft.takeIndex).sort()).toEqual([
-      0, 1, 2,
-    ]);
+    expect(submitted().request.params?.n).toBe(3);
+    expect(submitted().takes).toBe(3);
   });
 
   it('previews the body a press would send, down to the last field', async () => {
@@ -614,33 +521,95 @@ describe('PromptDraftService', () => {
     const shape = { takes: 3 };
     const preview = service.previewRequest(input, 'auto', models, shape);
 
-    const pending = service.draft(
+    await service.submit(
       input,
       'auto',
       models,
-      { anonymous: true, origin: 'alchemy' },
+      { anonymous: true, origin: 'alchemy', context: { kind: 'studio' } },
       shape,
     );
-    const submit = http.expectOne(`${API_BASE_URL}/generate/text/async`);
-    expect(submit.request.body).toEqual(preview);
-    submit.flush(
-      { message: 'nope', rc: 'Nope' },
-      { status: 400, statusText: 'Bad Request' },
-    );
-    await pending;
+    expect(submitted().request).toEqual(preview);
   });
 
-  it('reports the refusal as the horde worded it', async () => {
-    const pending = service.draft({ caption: 'a dog' }, 'any', []);
-    http
-      .expectOne(`${API_BASE_URL}/generate/text/async`)
-      .flush(
-        { message: 'No workers', rc: 'NoWorkers' },
-        { status: 400, statusText: 'Bad Request' },
+  describe('waiting for one answer', () => {
+    it('files the request apart from every card, replacing one still waiting, and hands back the takes', async () => {
+      settled.mockResolvedValue(
+        settledRequest({
+          chargedKudos: 5,
+          results: [
+            {
+              draftId: 'text-1-0',
+              text: 'Matches: nothing.\nMissing: the dog.',
+              negative: '',
+              model: 'm/1',
+              seed: 7,
+            },
+          ],
+        }),
       );
-    await expect(pending).resolves.toMatchObject({
-      kind: 'refused',
-      error: { status: 400, message: 'No workers' },
+
+      const outcome = await service.draft(
+        { role: 'judge', prompt: 'a dog', caption: 'a cat' },
+        'any',
+        [],
+        { anonymous: true, origin: 'studio' },
+      );
+
+      expect(submitted().context).toEqual({ kind: 'awaited' });
+      expect(submitted().request.prompt).toContain(
+        'You compare an image prompt',
+      );
+      expect(submit.mock.calls.at(-1)?.[1]).toEqual({ replace: true });
+      expect(settled).toHaveBeenCalledWith('local-1');
+      expect(outcome).toEqual({
+        kind: 'done',
+        texts: ['Matches: nothing.\nMissing: the dog.'],
+        negatives: [''],
+        model: 'm/1',
+        kudos: 5,
+        seed: 7,
+        ids: ['text-1-0'],
+      });
+    });
+
+    it('is checked at the quicker pace while it waits', async () => {
+      const deferred: { resolve?: (request: StoredTextRequest) => void } = {};
+      settled.mockReturnValue(
+        new Promise<StoredTextRequest>((resolve) => {
+          deferred.resolve = resolve;
+        }),
+      );
+
+      const pending = service.draft({ caption: 'a dog' }, 'any', []);
+      await vi.waitFor(() => expect(watch).toHaveBeenCalled());
+      expect(watch).toHaveBeenCalledWith({ kind: 'awaited' });
+      expect(release).not.toHaveBeenCalled();
+
+      deferred.resolve?.(settledRequest({ state: 'expired' }));
+      await expect(pending).resolves.toEqual({ kind: 'expired' });
+      expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports the refusal as the horde worded it', async () => {
+      settled.mockResolvedValue(
+        settledRequest({
+          state: 'refused',
+          refusal: { status: 400, message: 'No workers', rc: 'NoWorkers' },
+        }),
+      );
+      await expect(
+        service.draft({ caption: 'a dog' }, 'any', []),
+      ).resolves.toMatchObject({
+        kind: 'refused',
+        error: { status: 400, message: 'No workers' },
+      });
+    });
+
+    it('reports a request that finished with no usable take as faulted', async () => {
+      settled.mockResolvedValue(settledRequest({ state: 'done', results: [] }));
+      await expect(
+        service.draft({ caption: 'a dog' }, 'any', []),
+      ).resolves.toEqual({ kind: 'faulted' });
     });
   });
 });

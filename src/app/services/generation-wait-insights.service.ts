@@ -280,6 +280,16 @@ export class GenerationWaitInsightsService {
     };
   }
 
+  /**
+   * How the horde-wide position has moved for a request, read from the checks
+   * recorded under its id. A text request has no image job to hand to
+   * {@link forJob}, and its trend is all of the insight that applies to it.
+   */
+  public trendFor(localId: string): QueueTrend {
+    this.revision();
+    return this.queueTrend(this.histories.get(localId)?.samples ?? []);
+  }
+
   private queueTrend(samples: readonly StatusSample[]): QueueTrend {
     let improved = false;
     let worsened = false;

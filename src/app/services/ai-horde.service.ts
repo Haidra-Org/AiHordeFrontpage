@@ -34,6 +34,7 @@ import {
   SubmitImageResult,
   SubmitInterrogationResult,
   CheckImageResult,
+  CheckTextResult,
   HordeApiError,
 } from '../types/generation';
 import { extractApiErrorField } from '../helper/extract-api-error';
@@ -498,6 +499,45 @@ export class AiHordeService {
   > {
     return this.httpClient
       .get<TextGenerationStatusResponse>(
+        `${this.baseUrl}/generate/text/status/${encodeURIComponent(id)}`,
+      )
+      .pipe(catchError((err: unknown) => this.catchNotFound(err)));
+  }
+
+  /**
+   * Poll a text request, surfacing whether the failure was a 404 (the request
+   * expired) or some other status, such as a 429 the queue should back off from.
+   */
+  public checkTextGenerationResult(id: string): Observable<CheckTextResult> {
+    return this.httpClient
+      .get<TextGenerationStatusResponse>(
+        `${this.baseUrl}/generate/text/status/${encodeURIComponent(id)}`,
+      )
+      .pipe(
+        map((status) => ({ kind: 'success' as const, status })),
+        catchError((err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.status === 404) {
+            return of({ kind: 'not_found' as const });
+          }
+          return of({
+            kind: 'error' as const,
+            error: this.toHordeApiError(err),
+          });
+        }),
+      );
+  }
+
+  /**
+   * Cancel a text request. The horde answers with the full status, every take
+   * already written included; a 404 means it was already gone.
+   */
+  public cancelTextGeneration(
+    id: string,
+  ): Observable<
+    TextGenerationStatusResponse | typeof GENERATION_NOT_FOUND | null
+  > {
+    return this.httpClient
+      .delete<TextGenerationStatusResponse>(
         `${this.baseUrl}/generate/text/status/${encodeURIComponent(id)}`,
       )
       .pipe(catchError((err: unknown) => this.catchNotFound(err)));

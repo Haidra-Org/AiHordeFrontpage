@@ -35,15 +35,21 @@
       @if (!isOpen()) {
         <span class="alchemy-result__summary">
           <span class="alchemy-result__summary-text">
-            {{
-              draftText() ??
-                ((picture()
-                  ? "prompt_draft.summary_help"
-                  : mode() === "improve"
-                    ? "prompt_draft.summary_improve"
-                    : "prompt_draft.summary"
-                ) | transloco)
-            }}
+            <!-- A request still waiting outlives the fold and the page, so a
+                 folded card says so rather than reading as idle. -->
+            @if (live()) {
+              {{ "prompt_draft.queue.folded_live" | transloco }}
+            } @else {
+              {{
+                draftText() ??
+                  ((picture()
+                    ? "prompt_draft.summary_help"
+                    : mode() === "improve"
+                      ? "prompt_draft.summary_improve"
+                      : "prompt_draft.summary"
+                  ) | transloco)
+              }}
+            }
           </span>
         </span>
       }
@@ -351,18 +357,40 @@
           [disabled]="busy() || !hasMaterial()"
           (click)="draft()"
         >
-          @if (busy()) {
-            <app-icon name="spinner" class="gs-spin gs-ico-sm" />
-            {{ "prompt_draft.busy" | transloco }}
-          } @else {
-            <app-icon name="pencil-square" class="gs-ico-sm" />
-            {{
-              (improving() ? "prompt_draft.go_improve" : "prompt_draft.go")
-                | transloco
-            }}
-          }
+          <app-icon name="pencil-square" class="gs-ico-sm" />
+          {{
+            (improving() ? "prompt_draft.go_improve" : "prompt_draft.go")
+              | transloco
+          }}
         </button>
       </div>
+
+      <!-- A press while a request still waits would otherwise leave two on the
+           horde for one card, so the card asks which the reader wants. -->
+      @if (confirmReplace()) {
+        <div class="alchemy-draft__replace" role="group">
+          <p class="gs-sublabel alchemy-draft__replace-text">
+            {{ "prompt_draft.queue.replace_ask" | transloco }}
+          </p>
+          <div class="alchemy-draft__actions">
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense"
+              [disabled]="busy()"
+              (click)="confirmReplaceSend()"
+            >
+              {{ "prompt_draft.queue.replace_yes" | transloco }}
+            </button>
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense"
+              (click)="declineReplace()"
+            >
+              {{ "prompt_draft.queue.replace_no" | transloco }}
+            </button>
+          </div>
+        </div>
+      }
 
       @let price = estimatedKudos();
       @let held = balance();
@@ -383,12 +411,6 @@
           @if (flippedForCost()) {
             {{ "prompt_draft.cost_flipped" | transloco }}
           }
-        </p>
-      }
-
-      @if (busy()) {
-        <p class="gs-sublabel" aria-live="polite">
-          {{ "prompt_draft.waiting" | transloco }}
         </p>
       }
 
@@ -563,81 +585,100 @@
         }
       </div>
 
-      @let result = outcome();
-      @if (result) {
-        @switch (result.kind) {
-          @case ("done") {
-            @for (take of result.texts; track $index) {
-              <div class="alchemy-draft__take">
-                @if (result.texts.length > 1) {
-                  <p class="gs-sublabel alchemy-draft__take-label">
-                    {{
-                      "prompt_draft.take_number"
-                        | transloco: { number: $index + 1 }
-                    }}
-                  </p>
-                }
-                <blockquote class="alchemy-caption alchemy-draft__text">
-                  {{ take }}
+      @let request = current();
+      @if (request) {
+        <!-- The newest request asked from this card. A finished one keeps its
+             takes below; everything before that is the progress line. -->
+        @if (request.state !== "done") {
+          <app-text-request-progress
+            [request]="request"
+            [now]="now()"
+            [trend]="trend()"
+            [cancelling]="cancellingCurrent()"
+            [busy]="busy()"
+            (cancelRequest)="cancelCurrent()"
+            (repick)="repick($event)"
+            (retry)="draft()"
+          />
+        }
+        @let takes = takesShown();
+        @if (takes.length > 0) {
+          @for (take of takes; track take.draftId) {
+            <div class="alchemy-draft__take">
+              @if (takes.length > 1) {
+                <p class="gs-sublabel alchemy-draft__take-label">
+                  {{
+                    "prompt_draft.take_number"
+                      | transloco: { number: $index + 1 }
+                  }}
+                </p>
+              }
+              <blockquote class="alchemy-caption alchemy-draft__text">
+                {{ take.text }}
+              </blockquote>
+              <div class="alchemy-draft__actions">
+                <button
+                  type="button"
+                  class="gs-btn gs-btn--dense"
+                  (click)="send($index)"
+                >
+                  <app-icon name="photo" class="gs-ico-sm" />
+                  {{
+                    (mode() === "improve"
+                      ? "prompt_draft.use"
+                      : "prompt_draft.send"
+                    ) | transloco
+                  }}
+                </button>
+                <button
+                  type="button"
+                  class="gs-btn gs-btn--dense"
+                  (click)="copy($index)"
+                >
+                  <app-icon
+                    [name]="copiedTake() === $index ? 'check' : 'copy'"
+                    class="gs-ico-sm"
+                  />
+                  {{
+                    (copiedTake() === $index
+                      ? "prompt_draft.copied"
+                      : "prompt_draft.copy"
+                    ) | transloco
+                  }}
+                </button>
+              </div>
+              <!-- The rewrite is asked for a negative line as well, so what
+                     to keep out of the picture arrives with what to put in it
+                     and goes to its own box. -->
+              @if (negativeFor($index); as negative) {
+                <p class="gs-sublabel alchemy-draft__negative-label">
+                  {{ "prompt_draft.negative_label" | transloco }}
+                </p>
+                <blockquote class="alchemy-caption alchemy-draft__negative">
+                  {{ negative }}
                 </blockquote>
                 <div class="alchemy-draft__actions">
                   <button
                     type="button"
                     class="gs-btn gs-btn--dense"
-                    (click)="send($index)"
+                    (click)="sendNegative($index)"
                   >
-                    <app-icon name="photo" class="gs-ico-sm" />
-                    {{
-                      (mode() === "improve"
-                        ? "prompt_draft.use"
-                        : "prompt_draft.send"
-                      ) | transloco
-                    }}
-                  </button>
-                  <button
-                    type="button"
-                    class="gs-btn gs-btn--dense"
-                    (click)="copy($index)"
-                  >
-                    <app-icon
-                      [name]="copiedTake() === $index ? 'check' : 'copy'"
-                      class="gs-ico-sm"
-                    />
-                    {{
-                      (copiedTake() === $index
-                        ? "prompt_draft.copied"
-                        : "prompt_draft.copy"
-                      ) | transloco
-                    }}
+                    <app-icon name="no-symbol" class="gs-ico-sm" />
+                    {{ "prompt_draft.negative_use" | transloco }}
                   </button>
                 </div>
-                <!-- The rewrite is asked for a negative line as well, so what
-                     to keep out of the picture arrives with what to put in it
-                     and goes to its own box. -->
-                @if (negativeFor($index); as negative) {
-                  <p class="gs-sublabel alchemy-draft__negative-label">
-                    {{ "prompt_draft.negative_label" | transloco }}
-                  </p>
-                  <blockquote class="alchemy-caption alchemy-draft__negative">
-                    {{ negative }}
-                  </blockquote>
-                  <div class="alchemy-draft__actions">
-                    <button
-                      type="button"
-                      class="gs-btn gs-btn--dense"
-                      (click)="sendNegative($index)"
-                    >
-                      <app-icon name="no-symbol" class="gs-ico-sm" />
-                      {{ "prompt_draft.negative_use" | transloco }}
-                    </button>
-                  </div>
-                }
-              </div>
-            }
+              }
+            </div>
+          }
+          @if (request.state === "done") {
             <p class="gs-sublabel alchemy-draft__meta">
               {{
                 "prompt_draft.written_by"
-                  | transloco: { model: result.model, kudos: result.kudos }
+                  | transloco
+                    : {
+                        model: takes.at(0)?.model ?? "",
+                        kudos: request.chargedKudos ?? 0,
+                      }
               }}
             </p>
             <div class="alchemy-draft__actions">
@@ -650,27 +691,6 @@
                 {{ "prompt_draft.again" | transloco }}
               </button>
             </div>
-          }
-          @case ("refused") {
-            <p class="gs-warn">
-              <app-icon name="warning-triangle" class="gs-ico-sm" />
-              {{
-                "prompt_draft.refused"
-                  | transloco: { reason: result.error.message }
-              }}
-            </p>
-          }
-          @case ("faulted") {
-            <p class="gs-warn">
-              <app-icon name="warning-triangle" class="gs-ico-sm" />
-              {{ "prompt_draft.faulted" | transloco }}
-            </p>
-          }
-          @case ("timeout") {
-            <p class="gs-warn">
-              <app-icon name="warning-triangle" class="gs-ico-sm" />
-              {{ "prompt_draft.timeout" | transloco }}
-            </p>
           }
         }
       }

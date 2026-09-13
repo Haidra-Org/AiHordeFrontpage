@@ -4,16 +4,15 @@ import { AiHordeService } from './ai-horde.service';
 import { AuthService } from './auth.service';
 import { StyleService } from './style.service';
 import {
-  PromptDraftDbService,
-  StoredPromptDraft,
-} from './prompt-draft-db.service';
+  TextGenerationQueueService,
+  TextSubmitResult,
+} from './text-generation-queue.service';
+import type {
+  StoredTextRequest,
+  TextRequestContext,
+} from './text-generation-db.service';
 import { ActiveModel } from '../types/active-model';
-import { randomUuid } from '../helper/random-uuid';
-import {
-  GENERATION_NOT_FOUND,
-  HordeApiError,
-  TextGenerationRequest,
-} from '../types/generation';
+import { HordeApiError, TextGenerationRequest } from '../types/generation';
 import {
   IMAGE_PROMPT_TAG,
   ImagePromptStyle,
@@ -95,6 +94,16 @@ export interface PromptDraftOptions {
   origin: PromptDraftOrigin;
 }
 
+/** How a request is sent through the queue, beyond whose account pays. */
+export interface PromptDraftSubmitOptions extends PromptDraftOptions {
+  /** Which card asked, so the card can find the request again. */
+  context: TextRequestContext;
+  /** Cancel the live request this context already has, and send anyway. */
+  replace?: boolean;
+  /** The price the card was shown, kept with the request. */
+  quotedKudos?: number | null;
+}
+
 export type PromptDraftOutcome =
   | {
       kind: 'done';
@@ -113,7 +122,42 @@ export type PromptDraftOutcome =
     }
   | { kind: 'refused'; error: HordeApiError }
   | { kind: 'faulted' }
-  | { kind: 'timeout' };
+  | { kind: 'expired' }
+  | { kind: 'cancelled' };
+
+/** Where a request waited on in code is filed, apart from every card. */
+const AWAITED_CONTEXT: TextRequestContext = { kind: 'awaited' };
+
+/** What a settled request means to a caller that waited for one answer. */
+function outcomeOf(request: StoredTextRequest): PromptDraftOutcome {
+  switch (request.state) {
+    case 'done': {
+      const results = request.results ?? [];
+      const first = results.at(0);
+      if (!first) return { kind: 'faulted' };
+      return {
+        kind: 'done',
+        texts: results.map((take) => take.text),
+        negatives: results.map((take) => take.negative),
+        model: first.model,
+        kudos: request.chargedKudos ?? 0,
+        seed: first.seed,
+        ids: results.map((take) => take.draftId),
+      };
+    }
+    case 'refused':
+      return {
+        kind: 'refused',
+        error: request.refusal ?? { status: 0, message: '' },
+      };
+    case 'expired':
+      return { kind: 'expired' };
+    case 'cancelled':
+      return { kind: 'cancelled' };
+    default:
+      return { kind: 'faulted' };
+  }
+}
 
 /**
  * Text models on the horde worth asking for a prompt, best first. The pool is
@@ -369,10 +413,6 @@ export function cleanJudgement(text: string): string {
     .trim();
 }
 
-/** How often the answer is asked for, and for how long. */
-const POLL_INTERVAL_MS = 2_500;
-const POLL_LIMIT = 48;
-
 /** The horde pages styles twenty-five at a time. */
 const STYLE_PAGE_SIZE = 25;
 
@@ -393,7 +433,7 @@ export class PromptDraftService {
   private readonly aiHorde = inject(AiHordeService);
   private readonly auth = inject(AuthService);
   private readonly styles = inject(StyleService);
-  private readonly history = inject(PromptDraftDbService);
+  private readonly queue = inject(TextGenerationQueueService);
 
   /** Fetched once a session: the class changes on the horde, not in a visit. */
   private stylesPromise: Promise<ImagePromptStyle[]> | null = null;
@@ -569,9 +609,45 @@ export class PromptDraftService {
   }
 
   /**
-   * Ask for a prompt and wait for it. The request queues like any other on
-   * the horde, behind whatever the account's priority buys it, so this can
-   * take a minute; the caller shows that rather than hiding it.
+   * Send a draft request through the saved queue. The answer is not waited
+   * for: the queue follows the request until the horde finishes, cancels or
+   * expires it, lands its takes in the drafts store, and the card that asked
+   * reads its progress from there.
+   */
+  public async submit(
+    input: PromptDraftInput,
+    pick: PromptDraftModelPick,
+    models: readonly ActiveModel[] | undefined,
+    options: PromptDraftSubmitOptions,
+    shape: PromptDraftShape = {},
+  ): Promise<TextSubmitResult> {
+    const pool = models ?? (await this.textModels());
+    const style = shape.style ?? null;
+    const chosen = this.chooseModels(pool, pick, style);
+    const request = this.buildRequest(input, chosen, shape);
+    return this.queue.submit(
+      {
+        context: options.context,
+        origin: options.origin,
+        input,
+        pick,
+        styleId: style?.id ?? null,
+        takes: Math.max(1, Math.trunc(shape.takes ?? 1)),
+        anonymous: options.anonymous,
+        modelLabel: chosen.label,
+        apiKey: this.apiKeyFor(options.anonymous),
+        request,
+        quotedKudos: options.quotedKudos ?? null,
+      },
+      { replace: options.replace ?? false },
+    );
+  }
+
+  /**
+   * Ask for an answer and wait for it, for a caller that has nowhere to show
+   * progress. The request still goes through the queue, so it is kept, checked
+   * and landed like any other; it is filed apart from every card, and a second
+   * call replaces one that is still waiting.
    */
   public async draft(
     input: PromptDraftInput,
@@ -580,78 +656,21 @@ export class PromptDraftService {
     options: PromptDraftOptions = { anonymous: false, origin: 'alchemy' },
     shape: PromptDraftShape = {},
   ): Promise<PromptDraftOutcome> {
-    const pool = models ?? (await this.textModels());
-    const chosen = this.chooseModels(pool, pick, shape.style ?? null);
-    const request = this.buildRequest(input, chosen, shape);
-    const submitted = await firstValueFrom(
-      this.aiHorde.submitTextGeneration(
-        this.apiKeyFor(options.anonymous),
-        request,
-      ),
+    const sent = await this.submit(
+      input,
+      pick,
+      models,
+      { ...options, context: AWAITED_CONTEXT, replace: true },
+      shape,
     );
-    if (submitted.kind === 'error') {
-      return { kind: 'refused', error: submitted.error };
+    if (sent.kind === 'busy') return { kind: 'faulted' };
+    // The caller is waiting on this answer, so it is checked at the pace of
+    // an open card.
+    const release = this.queue.watch(AWAITED_CONTEXT);
+    try {
+      return outcomeOf(await this.queue.settled(sent.localId));
+    } finally {
+      release();
     }
-    for (let attempt = 0; attempt < POLL_LIMIT; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
-      const status = await firstValueFrom(
-        this.aiHorde.getTextGenerationStatus(submitted.response.id),
-      );
-      if (status === GENERATION_NOT_FOUND) return { kind: 'faulted' };
-      if (!status) continue;
-      if (status.faulted) return { kind: 'faulted' };
-      if (status.done) {
-        // A verdict is prose, not a prompt: it is kept as the model wrote it
-        // rather than being cut down to its first line.
-        const judging = draftRole(input) === 'judge';
-        const takes = status.generations
-          .map((generation) => ({
-            generation,
-            ...(judging
-              ? { text: cleanJudgement(generation.text), negative: '' }
-              : cleanDraft(generation.text)),
-          }))
-          .filter((take) => take.text.length > 0);
-        if (takes.length === 0) return { kind: 'faulted' };
-        const style = shape.style ?? null;
-        const records: StoredPromptDraft[] = takes.map((take, index) => ({
-          id: randomUuid(),
-          createdAt: Date.now(),
-          origin: options.origin,
-          input,
-          pick,
-          model: take.generation.model ?? chosen.label ?? '',
-          seed: take.generation.seed ?? null,
-          kudos: status.kudos,
-          anonymous: options.anonymous,
-          text: take.text,
-          ...(take.negative ? { negative: take.negative } : {}),
-          requestId: submitted.response.id,
-          takeIndex: index,
-          ...(style ? { style: style.id } : {}),
-        }));
-        const firstRecord = records.at(0);
-        if (!firstRecord) return { kind: 'faulted' };
-        for (const record of records) {
-          try {
-            await this.history.put(record);
-          } catch {
-            // The history is a convenience beside the draft. A store that will
-            // not take the record must not cost the reader the words they
-            // waited for.
-          }
-        }
-        return {
-          kind: 'done',
-          texts: records.map((record) => record.text),
-          negatives: records.map((record) => record.negative ?? ''),
-          model: firstRecord.model,
-          kudos: firstRecord.kudos,
-          seed: firstRecord.seed,
-          ids: records.map((record) => record.id),
-        };
-      }
-    }
-    return { kind: 'timeout' };
   }
 }

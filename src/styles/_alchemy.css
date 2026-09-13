@@ -396,6 +396,29 @@
 .gen-studio .alchemy-draft__anon {
   align-self: flex-start;
 }
+/* Where a sent request stands, as a short column of lines and its presses. */
+.gen-studio .alchemy-draft__progress,
+.gen-studio .alchemy-draft__progress-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+}
+.gen-studio .alchemy-draft__progress-line {
+  margin: 0;
+}
+/* The question stands apart from the button that raised it, so the two
+   answers read as a choice rather than more of the card's controls. */
+.gen-studio .alchemy-draft__replace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-md);
+}
+.gen-studio .alchemy-draft__replace-text {
+  margin: 0;
+}
 .gen-studio .alchemy-draft__cost {
   margin: 0;
 }

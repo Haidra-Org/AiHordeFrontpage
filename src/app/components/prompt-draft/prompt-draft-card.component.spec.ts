@@ -1,17 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { Signal, computed, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PromptDraftCardComponent } from './prompt-draft-card.component';
-import {
-  PromptDraftOutcome,
-  PromptDraftService,
-} from '../../services/prompt-draft.service';
+import { PromptDraftService } from '../../services/prompt-draft.service';
 import {
   PromptDraftDbService,
   StoredPromptDraft,
 } from '../../services/prompt-draft-db.service';
+import {
+  TextGenerationQueueService,
+  TextSubmitResult,
+} from '../../services/text-generation-queue.service';
+import {
+  StoredTextRequest,
+  TextRequestContext,
+  textRequestContextKey,
+} from '../../services/text-generation-db.service';
 import { AuthService } from '../../services/auth.service';
 import {
   DescribeFindings,
@@ -52,9 +58,65 @@ function makeStored(id: string, text: string): StoredPromptDraft {
   };
 }
 
+/** The clock the card's time waited is drawn against. */
+const NOW = 1_700_000_100_000;
+
+/** A request as the queue keeps it, finished unless told otherwise. */
+function makeRequest(overrides: Partial<StoredTextRequest>): StoredTextRequest {
+  return {
+    localId: 'local-1',
+    hordeId: 'text-1',
+    createdAt: NOW - 42_000,
+    updatedAt: NOW,
+    context: { kind: 'studio' },
+    origin: 'alchemy',
+    input: { caption: 'a dog on a couch', tags: 'dog, couch', note: '' },
+    pick: 'auto',
+    takes: 1,
+    anonymous: true,
+    modelLabel: 'm',
+    request: { prompt: 'the body' },
+    state: 'done',
+    acknowledged: true,
+    ...overrides,
+  };
+}
+
+/** A finished request carrying these takes. */
+function doneRequest(
+  texts: string[],
+  negatives: string[] = [],
+  extra: Partial<StoredTextRequest> = {},
+): StoredTextRequest {
+  return makeRequest({
+    state: 'done',
+    chargedKudos: 2,
+    results: texts.map((text, index) => ({
+      draftId: `text-1-${index}`,
+      text,
+      negative: negatives[index] ?? '',
+      model: 'koboldcpp/gemma-4-31B-it-heretic',
+      seed: null,
+    })),
+    ...extra,
+  });
+}
+
 describe('PromptDraftCardComponent', () => {
   let fixture: ComponentFixture<PromptDraftCardComponent>;
-  let draft: ReturnType<typeof vi.fn>;
+  let submit: Mock<(...args: unknown[]) => Promise<TextSubmitResult>>;
+  let requests: ReturnType<typeof signal<StoredTextRequest[]>>;
+  let cancel: ReturnType<typeof vi.fn>;
+  let watch: ReturnType<typeof vi.fn>;
+  let release: ReturnType<typeof vi.fn>;
+  let cancelling: ReturnType<typeof signal<ReadonlySet<string>>>;
+  /** Answer the next press with a request that has already come back. */
+  const answerWith = (request: StoredTextRequest): void => {
+    submit.mockImplementation(() => {
+      requests.set([request]);
+      return Promise.resolve({ kind: 'sent', localId: request.localId });
+    });
+  };
   let estimate: ReturnType<typeof vi.fn>;
   let list: ReturnType<typeof vi.fn>;
   let remove: ReturnType<typeof vi.fn>;
@@ -82,7 +144,30 @@ describe('PromptDraftCardComponent', () => {
     URL.revokeObjectURL = vi.fn((url: string) => {
       revokedUrls.push(url);
     });
-    draft = vi.fn();
+    submit = vi
+      .fn<(...args: unknown[]) => Promise<TextSubmitResult>>()
+      .mockResolvedValue({ kind: 'sent', localId: 'local-1' });
+    requests = signal<StoredTextRequest[]>([]);
+    cancel = vi.fn().mockResolvedValue(undefined);
+    release = vi.fn();
+    watch = vi.fn().mockReturnValue(release);
+    cancelling = signal<ReadonlySet<string>>(new Set());
+    const lists = new Map<string, Signal<readonly StoredTextRequest[]>>();
+    const requestsFor = (
+      context: TextRequestContext,
+    ): Signal<readonly StoredTextRequest[]> => {
+      const key = textRequestContextKey(context);
+      let list = lists.get(key);
+      if (!list) {
+        list = computed(() =>
+          requests().filter(
+            (request) => textRequestContextKey(request.context) === key,
+          ),
+        );
+        lists.set(key, list);
+      }
+      return list;
+    };
     estimate = vi.fn().mockResolvedValue(null);
     list = vi.fn().mockResolvedValue([]);
     remove = vi.fn().mockResolvedValue(undefined);
@@ -113,7 +198,7 @@ describe('PromptDraftCardComponent', () => {
         {
           provide: PromptDraftService,
           useValue: {
-            draft,
+            submit,
             estimate,
             imagePromptStyles,
             previewRequest,
@@ -126,6 +211,16 @@ describe('PromptDraftCardComponent', () => {
         {
           provide: PromptDraftDbService,
           useValue: { list, remove, put: vi.fn(), clear: vi.fn() },
+        },
+        {
+          provide: TextGenerationQueueService,
+          useValue: {
+            requestsFor,
+            watch,
+            cancel,
+            cancelling,
+            clock: signal(NOW),
+          },
         },
         {
           provide: AuthService,
@@ -264,16 +359,7 @@ describe('PromptDraftCardComponent', () => {
   });
 
   it('asks for a draft from the material and the pick, then offers it to the studio', async () => {
-    const outcome: PromptDraftOutcome = {
-      kind: 'done',
-      texts: ['a dog on a couch, warm light'],
-      negatives: [],
-      model: 'koboldcpp/gemma-4-31B-it-heretic',
-      kudos: 2,
-      seed: null,
-      ids: ['draft-1'],
-    };
-    draft.mockResolvedValue(outcome);
+    answerWith(doneRequest(['a dog on a couch, warm light']));
     build();
     await settle();
     fixture.componentInstance.onNoteInput('make it painterly');
@@ -281,7 +367,7 @@ describe('PromptDraftCardComponent', () => {
     await fixture.componentInstance.draft();
     fixture.detectChanges();
 
-    expect(draft).toHaveBeenCalledWith(
+    expect(submit).toHaveBeenCalledWith(
       {
         caption: 'a dog on a couch',
         tags: 'dog, couch',
@@ -289,23 +375,49 @@ describe('PromptDraftCardComponent', () => {
       },
       { model: 'x/y' },
       expect.any(Array),
-      { anonymous: true, origin: 'alchemy' },
+      {
+        anonymous: true,
+        origin: 'alchemy',
+        context: { kind: 'studio' },
+        replace: false,
+        quotedKudos: null,
+      },
       { style: null, takes: 1 },
     );
     expect(
       el().querySelector('.alchemy-draft__text')?.textContent?.trim(),
     ).toBe('a dog on a couch, warm light');
+    expect(el().querySelector('.alchemy-draft__meta')?.textContent).toContain(
+      'prompt_draft.written_by',
+    );
     (
       el().querySelector('.alchemy-draft__actions button') as HTMLButtonElement
     ).click();
     expect(sent).toBe('a dog on a couch, warm light');
   });
 
-  it('shows the refusal as the horde worded it', async () => {
-    draft.mockResolvedValue({
-      kind: 'refused',
-      error: { status: 400, message: 'No workers', rc: 'NoWorkers' },
+  it('files a card under an alchemy job with that job, apart from the studio', async () => {
+    requests.set([doneRequest(['the studio take'])]);
+    build();
+    fixture.componentRef.setInput('jobId', 'job-7');
+    fixture.detectChanges();
+    await settle();
+    // The studio's request is not this card's.
+    expect(el().querySelector('.alchemy-draft__text')).toBeNull();
+
+    await fixture.componentInstance.draft();
+    expect(submit.mock.calls.at(-1)?.[3]).toMatchObject({
+      context: { kind: 'alchemy', jobId: 'job-7' },
     });
+  });
+
+  it('shows the refusal as the horde worded it', async () => {
+    answerWith(
+      makeRequest({
+        state: 'refused',
+        refusal: { status: 400, message: 'No workers', rc: 'NoWorkers' },
+      }),
+    );
     build();
     await fixture.componentInstance.draft();
     fixture.detectChanges();
@@ -320,19 +432,11 @@ describe('PromptDraftCardComponent', () => {
     fixture.componentRef.setInput('tags', null);
     fixture.detectChanges();
     await fixture.componentInstance.draft();
-    expect(draft).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
   });
 
   it('improves a prompt when given one, and asks for that rather than findings', async () => {
-    draft.mockResolvedValue({
-      kind: 'done',
-      texts: ['a dog on a couch, golden hour, 35mm'],
-      negatives: [],
-      model: 'm',
-      kudos: 1,
-      seed: null,
-      ids: ['draft-2'],
-    });
+    answerWith(doneRequest(['a dog on a couch, golden hour, 35mm']));
     build();
     await settle();
     fixture.componentRef.setInput('caption', null);
@@ -342,25 +446,19 @@ describe('PromptDraftCardComponent', () => {
     expect(fixture.componentInstance.mode()).toBe('improve');
     expect(fixture.componentInstance.hasMaterial()).toBe(true);
     await fixture.componentInstance.draft();
-    expect(draft).toHaveBeenCalledWith(
+    expect(submit).toHaveBeenCalledWith(
       { prompt: 'a dog on a couch', note: '' },
       'auto',
       expect.anything(),
-      { anonymous: true, origin: 'studio' },
+      expect.objectContaining({ anonymous: true, origin: 'studio' }),
       { style: null, takes: 1 },
     );
   });
 
   it('shows the negative line a rewrite came with, and offers it on its own', async () => {
-    draft.mockResolvedValue({
-      kind: 'done',
-      texts: ['a dog on a couch, golden hour'],
-      negatives: ['blurry, extra limbs'],
-      model: 'm',
-      kudos: 1,
-      seed: null,
-      ids: ['draft-3'],
-    });
+    answerWith(
+      doneRequest(['a dog on a couch, golden hour'], ['blurry, extra limbs']),
+    );
     build();
     await settle();
     fixture.componentRef.setInput('seed', 'a dog on a couch');
@@ -573,15 +671,7 @@ describe('PromptDraftCardComponent', () => {
         models: [],
       },
     ]);
-    draft.mockResolvedValue({
-      kind: 'done',
-      texts: ['a dog, 35mm'],
-      negatives: [],
-      model: 'm',
-      kudos: 1,
-      seed: null,
-      ids: ['d1'],
-    });
+    answerWith(doneRequest(['a dog, 35mm']));
     build();
     await settle();
     await openOptions();
@@ -603,7 +693,7 @@ describe('PromptDraftCardComponent', () => {
     expect(el().querySelector('select')).toBeNull();
 
     await fixture.componentInstance.draft();
-    expect(draft).toHaveBeenCalledWith(
+    expect(submit).toHaveBeenCalledWith(
       expect.anything(),
       'auto',
       expect.anything(),
@@ -637,22 +727,14 @@ describe('PromptDraftCardComponent', () => {
   });
 
   it('asks for as many takes as the number says, and shows each of them', async () => {
-    draft.mockResolvedValue({
-      kind: 'done',
-      texts: ['one dog', 'two dogs', 'three dogs'],
-      negatives: [],
-      model: 'm',
-      kudos: 6,
-      seed: null,
-      ids: ['d1', 'd2', 'd3'],
-    });
+    answerWith(doneRequest(['one dog', 'two dogs', 'three dogs']));
     build();
     await settle();
     fixture.componentInstance.onTakesInput('3');
     await fixture.componentInstance.draft();
     fixture.detectChanges();
 
-    expect(draft.mock.calls.at(-1)?.[4]).toEqual({ style: null, takes: 3 });
+    expect(submit.mock.calls.at(-1)?.[4]).toEqual({ style: null, takes: 3 });
     const takes = [...el().querySelectorAll('.alchemy-draft__take')];
     expect(takes).toHaveLength(3);
     expect(
@@ -665,21 +747,13 @@ describe('PromptDraftCardComponent', () => {
   });
 
   it('names the rendering style the studio already applies', async () => {
-    draft.mockResolvedValue({
-      kind: 'done',
-      texts: ['a dog'],
-      negatives: [],
-      model: 'm',
-      kudos: 1,
-      seed: null,
-      ids: ['d1'],
-    });
+    answerWith(doneRequest(['a dog']));
     build();
     fixture.componentRef.setInput('styleWords', 'oil painting, impasto');
     fixture.detectChanges();
     await settle();
     await fixture.componentInstance.draft();
-    expect(draft.mock.calls.at(-1)?.[0]).toMatchObject({
+    expect(submit.mock.calls.at(-1)?.[0]).toMatchObject({
       styleWords: 'oil painting, impasto',
     });
   });
@@ -801,15 +875,7 @@ describe('PromptDraftCardComponent', () => {
   });
 
   it('says in the head that a picture was read, and writes from it as well', async () => {
-    draft.mockResolvedValue({
-      kind: 'done',
-      texts: ['a dog on a couch, warm light'],
-      negatives: [],
-      model: 'm',
-      kudos: 1,
-      seed: null,
-      ids: ['d1'],
-    });
+    answerWith(doneRequest(['a dog on a couch, warm light']));
     build();
     fixture.componentRef.setInput('caption', null);
     fixture.componentRef.setInput('tags', null);
@@ -829,7 +895,7 @@ describe('PromptDraftCardComponent', () => {
     ).toContain('prompt_draft.with_findings');
 
     await fixture.componentInstance.draft();
-    expect(draft.mock.calls.at(-1)?.[0]).toEqual({
+    expect(submit.mock.calls.at(-1)?.[0]).toEqual({
       prompt: 'a dog',
       note: '',
       caption: 'a dog on a couch',
@@ -981,5 +1047,237 @@ describe('PromptDraftCardComponent', () => {
     expect(el().querySelector('.gs-describe-text')?.textContent).toContain(
       'a dog on a couch',
     );
+  });
+
+  describe('a request on its way', () => {
+    const progress = (): HTMLElement | null =>
+      el().querySelector('app-text-request-progress');
+    const live = (): string =>
+      progress()?.querySelector('[aria-live="polite"]')?.textContent ?? '';
+    const pressIn = (root: HTMLElement | null, key: string): void => {
+      const button = [...(root?.querySelectorAll('button') ?? [])].find(
+        (candidate) => (candidate.textContent ?? '').includes(key),
+      );
+      if (!button) throw new Error(`no button for ${key}`);
+      button.click();
+    };
+    const show = async (request: StoredTextRequest): Promise<void> => {
+      requests.set([request]);
+      build();
+      await settle();
+    };
+
+    it('says it is sending, and offers nothing to press yet', async () => {
+      await show(makeRequest({ state: 'sending', hordeId: undefined }));
+      expect(live()).toContain('prompt_draft.queue.sending');
+      expect(progress()?.querySelectorAll('button')).toHaveLength(0);
+    });
+
+    it('gives the queue figures as a guide, and the time waited outside the announced line', async () => {
+      await show(
+        makeRequest({
+          state: 'queued',
+          figures: {
+            finished: 0,
+            processing: 0,
+            waiting: 1,
+            restarted: 0,
+            queuePosition: 12,
+            waitTime: 180,
+            isPossible: true,
+            eligibleWorkers: 3,
+          },
+        }),
+      );
+      expect(live()).toContain('prompt_draft.queue.queued');
+      expect(live()).not.toContain('prompt_draft.queue.no_worker');
+      expect(live()).not.toContain('prompt_draft.queue.waited');
+      expect(progress()?.textContent).toContain('prompt_draft.queue.waited');
+      expect(progress()?.textContent).not.toContain(
+        'prompt_draft.queue.use_value',
+      );
+    });
+
+    it('cancels the request on show when Cancel is pressed', async () => {
+      await show(makeRequest({ state: 'queued', localId: 'live-9' }));
+      pressIn(progress(), 'prompt_draft.queue.cancel');
+      expect(cancel).toHaveBeenCalledWith('live-9');
+
+      cancelling.set(new Set(['live-9']));
+      fixture.detectChanges();
+      expect(progress()?.textContent).toContain(
+        'prompt_draft.queue.cancelling',
+      );
+    });
+
+    it('says a worker is writing it, and how many takes are done', async () => {
+      await show(
+        makeRequest({
+          state: 'writing',
+          takes: 3,
+          figures: {
+            finished: 1,
+            processing: 1,
+            waiting: 1,
+            restarted: 0,
+            queuePosition: 0,
+            waitTime: 20,
+            isPossible: true,
+          },
+        }),
+      );
+      expect(live()).toContain('prompt_draft.queue.writing');
+      expect(progress()?.textContent).toContain('prompt_draft.queue.cancel');
+    });
+
+    it('says when no worker can run it, and sends it again with the pick pressed', async () => {
+      const waiting = makeRequest({
+        state: 'queued',
+        input: { prompt: 'a dog', note: 'at night' },
+        takes: 2,
+        anonymous: false,
+        origin: 'studio',
+        figures: {
+          finished: 0,
+          processing: 0,
+          waiting: 2,
+          restarted: 0,
+          queuePosition: 3,
+          waitTime: 0,
+          isPossible: false,
+          eligibleWorkers: 0,
+          mightStall: true,
+        },
+      });
+      await show(waiting);
+      expect(live()).toContain('prompt_draft.queue.no_worker');
+      expect(live()).toContain('prompt_draft.queue.queued_position');
+      expect(live()).toContain('prompt_draft.queue.might_stall');
+
+      pressIn(progress(), 'prompt_draft.queue.use_any');
+      await settle();
+      expect(submit).toHaveBeenCalledWith(
+        { prompt: 'a dog', note: 'at night' },
+        'any',
+        expect.anything(),
+        {
+          anonymous: false,
+          origin: 'studio',
+          context: { kind: 'studio' },
+          replace: true,
+          quotedKudos: null,
+        },
+        { style: null, takes: 2 },
+      );
+      expect(fixture.componentInstance.pick()).toBe('any');
+
+      pressIn(progress(), 'prompt_draft.queue.use_value');
+      await settle();
+      expect(submit.mock.calls.at(-1)?.[1]).toBe('auto');
+    });
+
+    it('shows what was written before a cancel, and says what it cost', async () => {
+      await show(
+        doneRequest(['a dog on a couch'], [], {
+          state: 'cancelled',
+          anonymous: false,
+        }),
+      );
+      expect(live()).toContain('prompt_draft.queue.cancelled');
+      expect(
+        el().querySelector('.alchemy-draft__text')?.textContent?.trim(),
+      ).toBe('a dog on a couch');
+      // The line naming the writer and price belongs to a finished request.
+      expect(el().querySelector('.alchemy-draft__meta')).toBeNull();
+      pressIn(progress(), 'prompt_draft.again');
+      await settle();
+      expect(submit).toHaveBeenCalledTimes(1);
+    });
+
+    it('says an anonymous cancel cost the reader nothing', async () => {
+      await show(makeRequest({ state: 'cancelled', results: [] }));
+      expect(live()).toContain('prompt_draft.queue.cancelled_anonymous');
+    });
+
+    it('says the horde gave up, and offers the other model choices', async () => {
+      await show(makeRequest({ state: 'expired' }));
+      expect(live()).toContain('prompt_draft.queue.expired');
+      expect(progress()?.textContent).toContain('prompt_draft.queue.use_value');
+      expect(progress()?.textContent).toContain('prompt_draft.again');
+      expect(progress()?.textContent).not.toContain(
+        'prompt_draft.queue.cancel',
+      );
+    });
+
+    it('says a request failed on the worker, or was lost with the page', async () => {
+      await show(makeRequest({ state: 'faulted' }));
+      expect(live()).toContain('prompt_draft.faulted');
+
+      requests.set([
+        makeRequest({ state: 'faulted', errorKey: 'prompt_draft.queue.lost' }),
+      ]);
+      fixture.detectChanges();
+      expect(live()).toContain('prompt_draft.queue.lost');
+    });
+
+    it('asks before cancelling a waiting request to send another', async () => {
+      await show(makeRequest({ state: 'queued' }));
+      const ask = (): HTMLElement | null =>
+        el().querySelector('.alchemy-draft__replace');
+
+      await fixture.componentInstance.draft();
+      fixture.detectChanges();
+      expect(submit).not.toHaveBeenCalled();
+      expect(ask()?.textContent).toContain('prompt_draft.queue.replace_ask');
+
+      pressIn(ask(), 'prompt_draft.queue.replace_no');
+      fixture.detectChanges();
+      expect(ask()).toBeNull();
+      expect(submit).not.toHaveBeenCalled();
+
+      await fixture.componentInstance.draft();
+      fixture.detectChanges();
+      pressIn(ask(), 'prompt_draft.queue.replace_yes');
+      await settle();
+      expect(submit.mock.calls.at(-1)?.[3]).toMatchObject({ replace: true });
+      expect(ask()).toBeNull();
+    });
+
+    it('checks its requests at the quicker pace only while open', async () => {
+      requests.set([]);
+      build();
+      await settle();
+      expect(watch).toHaveBeenCalledWith({ kind: 'studio' });
+      expect(release).not.toHaveBeenCalled();
+
+      fixture.componentInstance.toggleOpen();
+      fixture.detectChanges();
+      await settle();
+      expect(release).toHaveBeenCalledTimes(1);
+    });
+
+    it('says a request is still waiting when the card is folded', async () => {
+      requests.set([makeRequest({ state: 'queued' })]);
+      build();
+      await settle();
+      fixture.componentInstance.toggleOpen();
+      fixture.detectChanges();
+      const summary = (): string =>
+        el().querySelector('.alchemy-result__summary')?.textContent ?? '';
+      expect(summary()).toContain('prompt_draft.queue.folded_live');
+
+      requests.set([doneRequest(['a dog on a couch'])]);
+      fixture.detectChanges();
+      expect(summary()).not.toContain('prompt_draft.queue.folded_live');
+    });
+
+    it('reads the past drafts again once the request on show lands', async () => {
+      await show(makeRequest({ state: 'writing' }));
+      const calls = list.mock.calls.length;
+      requests.set([doneRequest(['a dog'])]);
+      fixture.detectChanges();
+      await settle();
+      expect(list.mock.calls.length).toBeGreaterThan(calls);
+    });
   });
 });

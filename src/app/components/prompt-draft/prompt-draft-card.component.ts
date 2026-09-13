@@ -19,7 +19,6 @@ import {
   PromptDraftInput,
   PromptDraftModelPick,
   PromptDraftOrigin,
-  PromptDraftOutcome,
   PromptDraftService,
   PromptDraftShape,
   curatedRank,
@@ -29,6 +28,23 @@ import {
   PromptDraftDbService,
   StoredPromptDraft,
 } from '../../services/prompt-draft-db.service';
+import {
+  TextGenerationQueueService,
+  isLiveTextRequest,
+} from '../../services/text-generation-queue.service';
+import type {
+  StoredTextRequest,
+  TextRequestContext,
+  TextRequestTake,
+} from '../../services/text-generation-db.service';
+import {
+  GenerationWaitInsightsService,
+  QueueTrend,
+} from '../../services/generation-wait-insights.service';
+import {
+  TextRequestProgressComponent,
+  TextRequestRepick,
+} from './text-request-progress.component';
 import { AuthService } from '../../services/auth.service';
 import {
   DescribeOrigin,
@@ -123,6 +139,7 @@ const ANONYMOUS_API_KEY = '0000000000';
     RouterLink,
     JsonInspectorComponent,
     GsPixelBadgeComponent,
+    TextRequestProgressComponent,
   ],
   templateUrl: './prompt-draft-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -133,6 +150,8 @@ const ANONYMOUS_API_KEY = '0000000000';
 export class PromptDraftCardComponent {
   private readonly drafts = inject(PromptDraftService);
   private readonly store = inject(PromptDraftDbService);
+  private readonly queue = inject(TextGenerationQueueService);
+  private readonly waitInsights = inject(GenerationWaitInsightsService);
   private readonly auth = inject(AuthService);
   private readonly toast = inject(ToastService);
   private readonly units = inject(UnitConversionService);
@@ -169,6 +188,11 @@ export class PromptDraftCardComponent {
    * the caption and tags.
    */
   public readonly picture = input(false);
+  /**
+   * The alchemy job the card sits under, when it sits under one. Each job's
+   * card follows its own requests; without a job the card is the studio's.
+   */
+  public readonly jobId = input<string | null>(null);
   /** The draft, for the prompt box it was written for. */
   public readonly apply = output<string>();
   /** The negative line written alongside a draft, for the negative box. */
@@ -183,8 +207,13 @@ export class PromptDraftCardComponent {
   public readonly note = signal('');
   public readonly pick = signal<PickValue>('auto');
   public readonly models = signal<ActiveModel[] | null>(null);
+  /** Whether a send is on its way to the queue, so a second press waits for it. */
   public readonly busy = signal(false);
-  public readonly outcome = signal<PromptDraftOutcome | null>(null);
+  /**
+   * Set when a press would send while a request is still waiting, so the card
+   * asks before cancelling that one.
+   */
+  public readonly confirmReplace = signal(false);
   /** Which take was last put on the clipboard, so only its button says so. */
   public readonly copiedTake = signal<number | null>(null);
   /** The styles this card can be asked on, or null before they are fetched. */
@@ -288,7 +317,78 @@ export class PromptDraftCardComponent {
       this.anonymous();
       untracked(() => this.scheduleEstimate(ready));
     });
+    // An open card is what the reader is looking at, so its requests are
+    // checked at the quicker pace; a folded one leaves them to the slower one.
+    effect((onCleanup) => {
+      if (!this.isOpen() || !this.isBrowser) return;
+      const release = this.queue.watch(this.requestContext());
+      onCleanup(release);
+    });
+    // Takes are written to the drafts store by the queue, so the strip of past
+    // drafts is read again when the request on show lands.
+    effect(() => {
+      const request = this.current();
+      const seen = request ? `${request.localId}:${request.state}` : null;
+      const landed =
+        seen !== null &&
+        this.lastSeenRequest !== null &&
+        seen !== this.lastSeenRequest &&
+        (request?.state === 'done' || request?.state === 'cancelled');
+      this.lastSeenRequest = seen;
+      if (landed) untracked(() => void this.loadHistory());
+    });
   }
+
+  /** The request on show and its state at the last look, to spot a landing. */
+  private lastSeenRequest: string | null = null;
+
+  /** Which requests are this card's. */
+  public readonly requestContext = computed<TextRequestContext>(() => {
+    const jobId = this.jobId();
+    return jobId ? { kind: 'alchemy', jobId } : { kind: 'studio' };
+  });
+
+  /**
+   * The request the card shows: the newest one asked from here. Older ones stay
+   * in the queue's list, which is what a card drawing several would read.
+   */
+  public readonly current = computed<StoredTextRequest | null>(
+    () => this.queue.requestsFor(this.requestContext())().at(0) ?? null,
+  );
+
+  /** Whether the request on show may still change. */
+  public readonly live = computed(() => {
+    const request = this.current();
+    return request !== null && isLiveTextRequest(request);
+  });
+
+  /** The takes the request on show came back with, done or cancelled. */
+  public readonly takesShown = computed<readonly TextRequestTake[]>(() => {
+    const request = this.current();
+    if (request?.state !== 'done' && request?.state !== 'cancelled') return [];
+    return request.results ?? [];
+  });
+
+  /** Whether the request on show is being cancelled right now. */
+  public readonly cancellingCurrent = computed(() => {
+    const request = this.current();
+    return request !== null && this.queue.cancelling().has(request.localId);
+  });
+
+  /**
+   * How the horde-wide position has moved while the request waits. Only a
+   * movement is worth a line; a position that has not moved says nothing the
+   * figures do not.
+   */
+  public readonly trend = computed<QueueTrend | null>(() => {
+    const request = this.current();
+    if (request?.state !== 'queued') return null;
+    const trend = this.waitInsights.trendFor(request.localId);
+    return trend === 'steady' ? null : trend;
+  });
+
+  /** The clock the time waited is drawn against. */
+  public readonly now = computed(() => this.queue.clock());
 
   public readonly isOpen = computed(() => {
     const override = this.openOverride();
@@ -581,10 +681,9 @@ export class PromptDraftCardComponent {
   }
 
   /** Every answer the last request came back with. */
-  public readonly draftTexts = computed<string[]>(() => {
-    const outcome = this.outcome();
-    return outcome?.kind === 'done' ? outcome.texts : [];
-  });
+  public readonly draftTexts = computed<string[]>(() =>
+    this.takesShown().map((take) => take.text),
+  );
 
   public readonly draftText = computed<string | null>(
     () => this.draftTexts().at(0) ?? null,
@@ -794,24 +893,89 @@ export class PromptDraftCardComponent {
     }
   }
 
+  /**
+   * Send the card's material. While a request from this card is still waiting
+   * the press asks first, and only {@link confirmReplaceSend} cancels that one
+   * and sends.
+   */
   public async draft(): Promise<void> {
     if (this.busy() || !this.hasMaterial()) return;
+    if (this.live()) {
+      this.confirmReplace.set(true);
+      return;
+    }
+    await this.sendMaterial(false);
+  }
+
+  public async confirmReplaceSend(): Promise<void> {
+    this.confirmReplace.set(false);
+    if (this.busy() || !this.hasMaterial()) return;
+    await this.sendMaterial(true);
+  }
+
+  public declineReplace(): void {
+    this.confirmReplace.set(false);
+  }
+
+  private async sendMaterial(replace: boolean): Promise<void> {
     this.busy.set(true);
-    this.outcome.set(null);
     this.copiedTake.set(null);
     try {
-      const outcome = await this.drafts.draft(
+      const sent = await this.drafts.submit(
         this.material(),
         this.modelPick(),
         this.models() ?? undefined,
         {
           anonymous: this.anonymous(),
           origin: this.origin() ?? this.defaultOrigin(),
+          context: this.requestContext(),
+          replace,
+          quotedKudos: this.estimatedKudos(),
         },
         this.shape(),
       );
-      this.outcome.set(outcome);
-      if (outcome.kind === 'done') await this.loadHistory();
+      // Another press got a request in first; ask rather than drop this one.
+      if (sent.kind === 'busy') this.confirmReplace.set(true);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Stop the request on show. Any take already written is kept. */
+  public cancelCurrent(): void {
+    const request = this.current();
+    if (request) void this.queue.cancel(request.localId);
+  }
+
+  /**
+   * Send the request on show again with another model choice, cancelling it
+   * first while it still waits. It goes out with the material it was asked
+   * with, not whatever the card holds now, since it is the same ask pointed at
+   * other workers.
+   */
+  public async repick(pick: TextRequestRepick): Promise<void> {
+    const request = this.current();
+    if (!request || this.busy()) return;
+    this.pick.set(pick);
+    this.busy.set(true);
+    this.copiedTake.set(null);
+    try {
+      const style =
+        this.styles()?.find((candidate) => candidate.id === request.styleId) ??
+        null;
+      await this.drafts.submit(
+        request.input,
+        pick,
+        this.models() ?? undefined,
+        {
+          anonymous: request.anonymous,
+          origin: request.origin,
+          context: request.context,
+          replace: true,
+          quotedKudos: null,
+        },
+        { style, takes: request.takes },
+      );
     } finally {
       this.busy.set(false);
     }
@@ -835,8 +999,7 @@ export class PromptDraftCardComponent {
 
   /** The negative line a take came with, empty where the model wrote none. */
   public negativeFor(index: number): string {
-    const outcome = this.outcome();
-    return outcome?.kind === 'done' ? (outcome.negatives[index] ?? '') : '';
+    return this.takesShown().at(index)?.negative ?? '';
   }
 
   public sendNegative(index = 0): void {
