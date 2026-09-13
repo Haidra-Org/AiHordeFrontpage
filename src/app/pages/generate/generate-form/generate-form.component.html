@@ -272,11 +272,11 @@
               <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
             </button>
           </div>
-          <div class="gs-prompt-wrap" #historyContainer>
+          <div class="gs-prompt-wrap">
             <textarea
               #promptInput
               class="gs-textarea gs-textarea--resize"
-              [class.gs-textarea--history]="promptHistory().length > 0"
+              [class.gs-textarea--history]="hasPromptHistory()"
               formControlName="prompt"
               rows="2"
               appRememberedHeight="aihorde.generate.prompt_height"
@@ -285,86 +285,17 @@
               (keydown.control.enter)="onSubmitShortcut()"
               (keydown.meta.enter)="onSubmitShortcut()"
             ></textarea>
-            @if (promptHistory().length > 0) {
+            @if (hasPromptHistory()) {
               <button
-                #historyBtn
                 type="button"
                 class="gs-prompt-hist-btn"
-                (click)="toggleHistory()"
-                [attr.aria-expanded]="historyOpen()"
+                (click)="openPromptLibrary()"
+                aria-haspopup="dialog"
                 [attr.aria-label]="'generate.form.history' | transloco"
                 [title]="'generate.form.history' | transloco"
               >
                 <app-icon name="clock" class="gs-ico-sm" />
               </button>
-              @if (historyOpen()) {
-                <div
-                  class="gs-hist-menu"
-                  role="group"
-                  [attr.aria-label]="'generate.form.history' | transloco"
-                >
-                  <div class="gs-presets-label">
-                    {{ "generate.form.history" | transloco }}
-                  </div>
-                  @for (entry of promptHistory(); track $index) {
-                    <div
-                      class="gs-hist-row"
-                      [class.gs-hist-row--open]="historyDetail() === $index"
-                    >
-                      <button
-                        type="button"
-                        class="gs-hist-item"
-                        (click)="pickHistory(entry)"
-                      >
-                        <span class="gs-hist-text">{{ entry.prompt }}</span>
-                        @if (entry.negativePrompt) {
-                          <span class="gs-hist-neg">
-                            {{
-                              "generate.form.history_negative"
-                                | transloco: { negative: entry.negativePrompt }
-                            }}
-                          </span>
-                        }
-                      </button>
-                      <button
-                        type="button"
-                        class="gs-hist-expand"
-                        (click)="toggleHistoryDetail($index)"
-                        [attr.aria-expanded]="historyDetail() === $index"
-                        [attr.aria-controls]="'gs-hist-detail-' + $index"
-                        [attr.aria-label]="
-                          'generate.form.history_expand' | transloco
-                        "
-                        [title]="'generate.form.history_expand' | transloco"
-                      >
-                        <app-icon name="chevron-down" class="gs-ico-sm" />
-                      </button>
-                      <div
-                        class="gs-hist-detail"
-                        [id]="'gs-hist-detail-' + $index"
-                      >
-                        <div class="gs-hist-detail-inner">
-                          <p class="gs-hist-detail-label">
-                            {{ "generate.form.prompt_label" | transloco }}
-                          </p>
-                          <p class="gs-hist-detail-text">{{ entry.prompt }}</p>
-                          @if (entry.negativePrompt) {
-                            <p class="gs-hist-detail-label">
-                              {{
-                                "generate.form.negative_prompt_label"
-                                  | transloco
-                              }}
-                            </p>
-                            <p class="gs-hist-detail-neg">
-                              {{ entry.negativePrompt }}
-                            </p>
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
             }
           </div>
           <!-- The one thing a reader meeting the panel has to be told: every
@@ -3089,6 +3020,14 @@
     [styleRecords]="styleRecords()"
     (styleFound)="styleFound.emit($event)"
     (closed)="closeStyleBrowser()"
+  />
+}
+
+@if (promptLibraryOpen()) {
+  <app-prompt-library
+    initialTab="sent"
+    (use)="usePromptFromLibrary($event)"
+    (closed)="closePromptLibrary()"
   />
 }
 

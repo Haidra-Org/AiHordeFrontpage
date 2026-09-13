@@ -46,6 +46,7 @@ import {
 } from './studio-link';
 import { webpFile } from '../../testing/webp-fixture';
 import { StudioControlHistoryService } from './studio-control-history.service';
+import { PromptHistoryDbService } from '../../services/prompt-history-db.service';
 import {
   LicensingService,
   type LicensingFact,
@@ -70,6 +71,9 @@ describe('GenerateComponent', () => {
   let historyRemove: ReturnType<typeof vi.fn>;
   let imageModels: () => Observable<ActiveModel[]>;
   let lastAccepted: WritableSignal<{ localId: string; at: number } | null>;
+  let sentRecord: ReturnType<typeof vi.fn>;
+  let sentSeed: ReturnType<typeof vi.fn>;
+  let queueReady: () => void;
 
   beforeEach(async () => {
     estimateKudos = vi.fn().mockResolvedValue(42);
@@ -87,6 +91,11 @@ describe('GenerateComponent', () => {
     historyRemove = vi.fn().mockResolvedValue(undefined);
     imageModels = () => of([]);
     lastAccepted = signal<{ localId: string; at: number } | null>(null);
+    sentRecord = vi.fn().mockResolvedValue(undefined);
+    sentSeed = vi.fn().mockResolvedValue(undefined);
+    const ready = new Promise<void>((resolve) => {
+      queueReady = resolve;
+    });
     localStorage.clear();
 
     await TestBed.configureTestingModule({
@@ -156,9 +165,14 @@ describe('GenerateComponent', () => {
             getJobImages,
             lastAccepted,
             clock: signal(0),
+            whenReady: () => ready,
           },
         },
         { provide: StyleUsageService, useValue: { increment: styleIncrement } },
+        {
+          provide: PromptHistoryDbService,
+          useValue: { record: sentRecord, seedOnce: sentSeed },
+        },
         {
           provide: StudioControlHistoryService,
           useValue: {
@@ -1451,6 +1465,48 @@ describe('GenerateComponent', () => {
         { prompt: 'a fox', negativePrompt: '' },
       ]);
     });
+
+    it('carries the saved jobs over to the sent prompts once the queue is ready', async () => {
+      fixture.detectChanges();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(sentSeed).not.toHaveBeenCalled();
+
+      jobs.set([job('a castle', 100)]);
+      queueReady();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(sentSeed).toHaveBeenCalledTimes(1);
+      expect(sentSeed).toHaveBeenCalledWith([job('a castle', 100)]);
+    });
+
+    it('records each send under its prompt, negative and model', async () => {
+      fixture.detectChanges();
+      component.form.patchValue({
+        prompt: 'a castle',
+        negativePrompt: 'blurry',
+        model: 'flux',
+      });
+
+      await component.onCreate();
+
+      expect(enqueue).toHaveBeenCalledTimes(1);
+      const request = enqueue.mock.calls[0][0] as ImageGenerationRequest;
+      expect(sentRecord).toHaveBeenCalledWith(
+        'a castle',
+        'blurry',
+        request.models?.[0] ?? '',
+      );
+    });
+
+    it('records nothing when the send fails', async () => {
+      fixture.detectChanges();
+      enqueue.mockRejectedValueOnce(new Error('quota'));
+      component.form.controls.prompt.setValue('a castle');
+
+      await component.onCreate();
+
+      expect(sentRecord).not.toHaveBeenCalled();
+    });
   });
 
   describe('horde rejections', () => {
@@ -2403,6 +2459,7 @@ async function createPaneOnlyStudio(): Promise<void> {
           getJobImages: vi.fn().mockResolvedValue([]),
           lastAccepted: signal(null),
           clock: signal(0),
+          whenReady: () => Promise.resolve(),
         },
       },
       { provide: StyleUsageService, useValue: { increment: vi.fn() } },
@@ -2472,6 +2529,7 @@ async function createWholeStudio(
           getJobImages: vi.fn().mockResolvedValue([]),
           lastAccepted: signal(null),
           clock: signal(0),
+          whenReady: () => Promise.resolve(),
         },
       },
       { provide: StyleUsageService, useValue: { increment: vi.fn() } },
@@ -2822,6 +2880,7 @@ async function createStudioWithLicensing(
           getJobImages: vi.fn().mockResolvedValue([]),
           lastAccepted: signal(null),
           clock: signal(0),
+          whenReady: () => Promise.resolve(),
         },
       },
       { provide: StyleUsageService, useValue: { increment: vi.fn() } },

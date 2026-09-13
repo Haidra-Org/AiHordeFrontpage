@@ -65,6 +65,31 @@ describe('PromptDraftDbService', () => {
     expect((await db.list(10)).map((draft) => draft.id)).toEqual(['b']);
   });
 
+  it('lists every draft newest first, however many there are', async () => {
+    for (let i = 0; i < 60; i++) {
+      await db.put(makeDraft(`d${i}`, i));
+    }
+    const all = await db.listAll();
+    expect(all).toHaveLength(60);
+    expect(all[0].id).toBe('d59');
+    expect(all[59].id).toBe('d0');
+  });
+
+  it('removes several drafts at once and puts them back whole', async () => {
+    const a = makeDraft('a', 100, { negative: 'blurry', requestId: 'r1' });
+    const b = makeDraft('b', 200);
+    const c = makeDraft('c', 300);
+    await db.putMany([a, b, c]);
+
+    await db.removeMany(['a', 'c']);
+    expect((await db.listAll()).map((draft) => draft.id)).toEqual(['b']);
+
+    await db.putMany([a, c]);
+    const restored = await db.listAll();
+    expect(restored.map((draft) => draft.id)).toEqual(['c', 'b', 'a']);
+    expect(restored[2]).toEqual(a);
+  });
+
   it('clears everything when the reader asks for that', async () => {
     await db.put(makeDraft('a', 100));
     await db.put(makeDraft('b', 200));

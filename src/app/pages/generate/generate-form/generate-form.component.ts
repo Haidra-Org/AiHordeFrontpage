@@ -63,6 +63,9 @@ import {
 } from '../../../services/style-record';
 import { CivitaiPickerComponent } from '../../../components/civitai-picker/civitai-picker.component';
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
+import { PromptLibraryComponent } from '../../../components/prompt-library/prompt-library.component';
+import type { PromptLibraryUse } from '../../../components/prompt-library/prompt-library.model';
+import { PromptHistoryDbService } from '../../../services/prompt-history-db.service';
 import { GsGroupComponent } from './gs-group/gs-group.component';
 import { ResultControlAction } from '../result-control-action';
 import { negativeHasPhrase } from '../../../helper/prompt-check';
@@ -573,6 +576,7 @@ const SUMMARY_SEPARATOR = ' · ';
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
     StyleBrowserComponent,
+    PromptLibraryComponent,
     GsGroupComponent,
     RouterLink,
     GsSheetComponent,
@@ -781,20 +785,17 @@ export class GenerateFormComponent implements OnInit {
   private readonly styleSelect =
     viewChild<ElementRef<HTMLSelectElement>>('styleSelect');
 
-  /** Whether the prompt-history quick-pick popover is open. */
-  public readonly historyOpen = signal(false);
+  private readonly sentPrompts = inject(PromptHistoryDbService);
+  /** Whether the prompts library is open over the studio. */
+  public readonly promptLibraryOpen = signal(false);
   /**
-   * Which history row has its full text pinned open, by position. Hover and
-   * focus reveal the same block in CSS; this is the explicit toggle, which is
-   * the only route available on touch.
+   * Whether there is a sent prompt to go back to. The job list answers before
+   * the sent store has been read, and the store answers once the results have
+   * been cleared.
    */
-  public readonly historyDetail = signal<number | null>(null);
-  /** The history popover's anchor, used to detect click-away dismissals. */
-  private readonly historyRef =
-    viewChild<ElementRef<HTMLElement>>('historyContainer');
-  /** The history toggle, so dismissing with a key hands focus back to it. */
-  private readonly historyBtn =
-    viewChild<ElementRef<HTMLButtonElement>>('historyBtn');
+  public readonly hasPromptHistory = computed(
+    () => this.promptHistory().length > 0 || this.sentPrompts.size() > 0,
+  );
   /** Whether the estimate's breakdown popover is open. */
   public readonly kudosOpen = signal(false);
   /** The breakdown popover's anchor, used to detect click-away dismissals. */
@@ -3143,19 +3144,13 @@ export class GenerateFormComponent implements OnInit {
     this.presetsOpen.set(false);
   }
 
-  /** Dismiss the presets/history popovers when a press lands outside them. */
+  /** Dismiss the popovers when a press lands outside them. */
   public onDocumentPointerDown(event: PointerEvent): void {
     const target = event.target as Node;
     if (this.presetsOpen()) {
       const anchor = this.presetsRef()?.nativeElement;
       if (anchor && !anchor.contains(target)) {
         this.closePresets();
-      }
-    }
-    if (this.historyOpen()) {
-      const anchor = this.historyRef()?.nativeElement;
-      if (anchor && !anchor.contains(target)) {
-        this.closeHistory();
       }
     }
     if (this.resetConfirmOpen()) {
@@ -3248,46 +3243,27 @@ export class GenerateFormComponent implements OnInit {
     if (this.optionsOpen() && !this.narrow()) {
       this.closeOptionsAndFocus();
     }
-    if (!this.historyOpen()) {
-      return;
-    }
-    // An expanded row is dismissed first: escape backs out one layer at a time
-    // rather than taking the whole popover with it.
-    if (this.historyDetail() !== null) {
-      this.historyDetail.set(null);
-      return;
-    }
-    this.closeHistory();
-    this.historyBtn()?.nativeElement.focus();
   }
 
-  // --- Prompt history quick-pick -------------------------------------------
+  // --- Prompts library -----------------------------------------------------
 
-  public toggleHistory(): void {
-    this.historyOpen.update((open) => !open);
-    if (!this.historyOpen()) {
-      this.historyDetail.set(null);
-    }
+  /** The clock press asks what was sent before, so the library opens there. */
+  public openPromptLibrary(): void {
+    this.promptLibraryOpen.set(true);
   }
 
-  public closeHistory(): void {
-    this.historyOpen.set(false);
-    this.historyDetail.set(null);
-  }
-
-  /** Pin or unpin one row's full prompt; only one is ever open. */
-  public toggleHistoryDetail(index: number): void {
-    this.historyDetail.update((open) => (open === index ? null : index));
+  public closePromptLibrary(): void {
+    this.promptLibraryOpen.set(false);
   }
 
   /**
-   * Reuse a past prompt: both halves are written, so picking an entry that had
-   * no negative prompt clears whatever negative the form holds rather than
-   * silently pairing an old negative with a new positive.
+   * Reuse a prompt from the library. A sent prompt carries its negative, empty
+   * or not, so an old negative is never left paired with a new positive; a
+   * draft without one leaves the negative box as it is.
    */
-  public pickHistory(entry: PromptHistoryEntry): void {
-    this.closeHistory();
-    this.fillPrompt(entry.prompt, entry.negativePrompt);
+  public usePromptFromLibrary(use: PromptLibraryUse): void {
+    this.closePromptLibrary();
+    this.fillPrompt(use.prompt, use.negative);
   }
 
   /**

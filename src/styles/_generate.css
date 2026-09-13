@@ -8248,71 +8248,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   outline: 2px solid var(--gs-focus-ring);
   outline-offset: 2px;
 }
-.gen-studio .gs-hist-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  /* Above the model autocomplete panel (z 30): both are absolute in the same
-     stacking context, and at a tie the model area wins on DOM order, putting
-     an open dropdown over this menu where the two overlap. */
-  z-index: 40;
-  width: min(360px, calc(100vw - 24px));
-  max-height: min(64vh, 420px);
-  overflow-y: auto;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  background: var(--gs-pop-surface);
-  border: 1px solid var(--gs-pop-border);
-  border-radius: 11px;
-  box-shadow: var(--gs-pop-shadow);
-}
-.gen-studio .gs-hist-item {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  min-height: 36px;
-  padding: 7px 9px;
-  border: 0;
-  border-radius: 7px;
-  background: none;
-  color: var(--gs-ink-2);
-  font-family: inherit;
-  font-size: 11.5px;
-  text-align: left;
-  cursor: pointer;
-}
-/* Colour only: the row underneath now carries the surface, and painting the
-   summary's own box would both hide its stripe and drop --gs-label under AA. */
-.gen-studio .gs-hist-item:hover {
-  color: var(--gs-ink);
-}
-.gen-studio .gs-hist-item:focus-visible {
-  outline: 2px solid var(--gs-focus-ring);
-  outline-offset: -2px;
-}
-/* Two lines is enough to recognise a prompt by. */
-.gen-studio .gs-hist-text {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-}
-/* Label rather than muted, which the smaller type needs more than the summary
-   line does. Holds AA on both stripes: 4.8:1 / 4.5:1 light, 5.7:1 / 5.1:1 dark.
-   The light figures are the floor the stripe token is chosen against. */
-.gen-studio .gs-hist-neg {
-  color: var(--gs-label);
-  font-size: 11px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ------- starter prompts (results empty state) ---------------------- */
 .gen-studio .gs-starters {
   margin-top: 14px;
@@ -9013,9 +8948,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     min-height: 40px;
     min-width: 40px;
   }
-  .gen-studio .gs-hist-item {
-    min-height: 44px;
-  }
   .gen-studio .gs-chip--starter {
     min-height: 40px;
   }
@@ -9050,164 +8982,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     min-height: 44px;
     align-items: center;
     justify-content: center;
-  }
-}
-
-/* ------- prompt history: full-text reveal ---------------------------- */
-/* The row keeps its two-line summary and carries the whole prompt with it,
-   out of the way until it is wanted. Pointers get it on hover, keyboards on
-   focus, and the per-row toggle covers touch, where neither exists.
-
-   Rows are banded so each entry reads as one bounded unit rather than a run of
-   coequal lines. The row owns both surfaces: its own, and the opposite one for
-   the detail plate nested inside it, so the plate never matches the band it
-   sits on and can never be misread as the next entry. Passing them down as
-   custom properties keeps the parity selector out of the descendant's
-   cascade. */
-.gen-studio .gs-hist-row {
-  --gs-hist-row-bg: var(--gs-pop-surface);
-  --gs-hist-detail-bg: var(--gs-pop-stripe);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  border-radius: 7px;
-  background: var(--gs-hist-row-bg);
-  /* The enclosure runs on the detail's schedule so a ring never draws itself
-     around nothing for the length of the hover dwell. */
-  transition: box-shadow 0.15s ease;
-  transition-delay: 0.15s;
-}
-.gen-studio .gs-hist-row:nth-child(even) {
-  --gs-hist-row-bg: var(--gs-pop-stripe);
-  --gs-hist-detail-bg: var(--gs-pop-surface);
-}
-@media (hover: hover) and (pointer: fine) {
-  .gen-studio .gs-hist-row:hover {
-    box-shadow:
-      inset 0 0 0 1px var(--gs-pop-border),
-      inset 3px 0 0 var(--gs-pop-accent);
-    transition-delay: 0.4s;
-  }
-}
-/* After the hover rule, as with the detail itself, so a row opened by its
-   toggle or reached by keyboard wins the tie and encloses with no dwell. */
-.gen-studio .gs-hist-row.gs-hist-row--open,
-.gen-studio .gs-hist-row:focus-within {
-  box-shadow:
-    inset 0 0 0 1px var(--gs-pop-border),
-    inset 3px 0 0 var(--gs-pop-accent);
-  transition-delay: 0s;
-}
-.gen-studio .gs-hist-expand {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  min-height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: 7px;
-  background: none;
-  color: var(--gs-label);
-  cursor: pointer;
-}
-.gen-studio .gs-hist-expand:hover {
-  background: var(--gs-pop-hover);
-  color: var(--gs-blue-text);
-}
-.gen-studio .gs-hist-expand:focus-visible {
-  outline: 2px solid var(--gs-focus-ring);
-  outline-offset: -2px;
-}
-.gen-studio .gs-hist-row--open .gs-hist-expand app-icon {
-  transform: rotate(180deg);
-}
-/* A collapsed grid track rather than `display: none`, because the pointer route
-   has to be delayable: a cursor crossing the list on its way somewhere else
-   should not unfold every row it touches. */
-.gen-studio .gs-hist-detail {
-  display: grid;
-  grid-template-rows: 0fr;
-  flex-basis: 100%;
-  overflow: hidden;
-  visibility: hidden;
-  transition-property: grid-template-rows, visibility;
-  transition-duration: 0.18s, 0s;
-  transition-timing-function: ease;
-  /* Closing keeps a shorter grace than opening, so a slip off the row does not
-     snap it shut; visibility trails the collapse so the text is not cut mid-way. */
-  transition-delay: 0.15s, 0.33s;
-}
-/* Inset on all four sides and given the opposite band: a plate nested inside
-   its entry. The left margin clears the open row's accent. */
-.gen-studio .gs-hist-detail-inner {
-  min-height: 0;
-  max-height: min(38vh, 220px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  margin: 0 7px 7px 10px;
-  padding: 7px 9px;
-  border: 1px solid var(--gs-pop-border);
-  border-radius: 6px;
-  background: var(--gs-hist-detail-bg);
-  color: var(--gs-ink);
-  font-size: 12px;
-  line-height: 1.5;
-  /* A prompt is one long comma-run: without this it has nothing to break on. */
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
-}
-@media (hover: hover) and (pointer: fine) {
-  .gen-studio .gs-hist-row:hover .gs-hist-detail {
-    grid-template-rows: 1fr;
-    visibility: visible;
-    transition-delay: 0.4s;
-  }
-}
-/* After the hover rule so a row opened by its toggle, or reached by keyboard,
-   wins the tie and opens with no dwell. */
-.gen-studio .gs-hist-row--open .gs-hist-detail,
-.gen-studio .gs-hist-row:focus-within .gs-hist-detail {
-  grid-template-rows: 1fr;
-  visibility: visible;
-  transition-delay: 0s;
-}
-@media (prefers-reduced-motion: reduce) {
-  /* The dwell is the point and stays; only the growth animation goes. */
-  .gen-studio .gs-hist-detail {
-    transition-duration: 0s;
-    transition-delay: 0.15s;
-  }
-  .gen-studio .gs-hist-row {
-    transition-duration: 0s;
-  }
-}
-/* Which half of the pair is which, without competing with the text for weight.
-   Label rather than muted: muted sits near 4.6:1 on the light bands, under AA for
-   type this small. */
-.gen-studio .gs-hist-detail-label {
-  margin: 0 0 1px;
-  color: var(--gs-label);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.gen-studio .gs-hist-detail-label:not(:first-child) {
-  margin-top: 7px;
-}
-.gen-studio .gs-hist-detail-text,
-.gen-studio .gs-hist-detail-neg {
-  margin: 0;
-}
-.gen-studio .gs-hist-detail-neg {
-  color: var(--gs-label);
-}
-@media (max-width: 1023.98px) {
-  .gen-studio .gs-hist-expand {
-    min-width: 44px;
-    min-height: 44px;
   }
 }
 
@@ -10044,6 +9818,340 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   .gen-studio .gs-sb-mature {
     min-height: 38px;
     padding: 5px 12px;
+  }
+}
+
+/* ------- prompts library -------------------------------------------- */
+/* The style browser's frame (overlay, panel, header, search row) around a list
+   and the chosen prompt read in full beside it. The panel holds one height on a
+   wide screen, so choosing a shorter entry never makes the dialog jump. */
+.gen-studio .gs-pl {
+  width: 1100px;
+  height: 84vh;
+}
+.gen-studio .gs-pl-title {
+  margin: 0;
+}
+.gen-studio .gs-pl-close {
+  min-width: 44px;
+  min-height: 44px;
+}
+.gen-studio .gs-pl-bar {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gen-studio .gs-pl-search {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.gen-studio .gs-pl-search input {
+  min-width: 0;
+}
+.gen-studio .gs-pl-model {
+  flex: 0 1 220px;
+  width: auto;
+  min-width: 0;
+}
+.gen-studio .gs-pl-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 42%);
+}
+.gen-studio .gs-pl-list-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-pl-head {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+}
+.gen-studio .gs-pl-count {
+  margin: 0 auto 0 0;
+  font-size: var(--gs-text-sm);
+  color: var(--gs-label);
+}
+/* The day rail in its bar form, as the style browser holds its categories. */
+.gen-studio .gs-pl-rail {
+  flex: none;
+}
+.gen-studio .gs-pl-rail .gs-index-rail-nav {
+  padding-inline: 8px;
+  scroll-padding-inline: 8px;
+}
+.gen-studio .gs-pl-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 20px 20px;
+}
+.gen-studio .gs-pl-day {
+  scroll-margin-top: 8px;
+}
+.gen-studio .gs-pl-day + .gs-pl-day {
+  margin-top: 18px;
+}
+.gen-studio .gs-pl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* The container stays flat and the hairline sits on the rows, as in the
+   published-styles list. */
+.gen-studio .gs-pl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-pl-row:last-child {
+  border-bottom: 0;
+}
+.gen-studio .gs-pl-row-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--gs-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.gen-studio .gs-pl-row-open:hover {
+  background: var(--gs-field-soft);
+}
+.gen-studio .gs-pl-row-open:focus-visible,
+.gen-studio .gs-pl-row-pick:focus-within {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: -2px;
+}
+/* The bar as well as the tint, so the chosen row is not told by colour alone. */
+.gen-studio .gs-pl-row--active .gs-pl-row-open,
+.gen-studio .gs-pl-row--marked .gs-pl-row-open {
+  background: var(--gs-blue-tint);
+  box-shadow: inset 3px 0 0 var(--gs-blue);
+}
+.gen-studio .gs-pl-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+/* Two lines is enough to recognise a prompt by; the detail has the rest. */
+.gen-studio .gs-pl-row-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+/* Label rather than muted: the small type needs the stronger ink to hold AA on
+   the tinted row as well as the panel. */
+.gen-studio .gs-pl-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  font-size: 11px;
+  color: var(--gs-label);
+}
+.gen-studio .gs-pl-meta-model {
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-pl-row--live .gs-pl-row-body {
+  padding: 8px 10px;
+}
+.gen-studio .gs-pl-live-state {
+  font-weight: 700;
+  color: var(--gs-blue-text);
+}
+.gen-studio .gs-pl-check {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--gs-blue);
+}
+.gen-studio .gs-pl-use {
+  flex: none;
+  min-height: 30px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--gs-blue-text);
+  border: 1px solid var(--gs-border);
+  border-radius: 999px;
+  background: var(--gs-panel);
+  cursor: pointer;
+}
+.gen-studio .gs-pl-use:hover {
+  border-color: var(--gs-blue);
+  background: var(--gs-blue-tint);
+}
+.gen-studio .gs-pl-use:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .gs-pl-more {
+  display: flex;
+  margin: 14px auto 0;
+}
+.gen-studio .gs-pl-detail-col {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.gen-studio .gs-pl-detail {
+  padding: 16px 20px 20px;
+}
+/* Beside the list there is nothing to go back to; the press is for a phone. */
+.gen-studio .gs-pl-back {
+  display: none;
+}
+.gen-studio .gs-pl-label {
+  margin: 14px 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gs-label);
+}
+.gen-studio .gs-pl-detail > .gs-pl-label:first-of-type {
+  margin-top: 0;
+}
+/* A prompt is one long comma-run: without anywhere it has nothing to break on. */
+.gen-studio .gs-pl-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--gs-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-pl-text--neg {
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-pl-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.gen-studio .gs-pl-facts dt {
+  font-weight: 600;
+  color: var(--gs-label);
+}
+.gen-studio .gs-pl-facts dd {
+  margin: 0;
+  color: var(--gs-ink);
+  overflow-wrap: anywhere;
+}
+.gen-studio .gs-pl-facts--about {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gs-border-soft);
+}
+.gen-studio .gs-pl-sent {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--gs-ink-2);
+}
+.gen-studio .gs-pl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+.gen-studio .gs-pl-danger {
+  color: var(--gs-danger);
+}
+.gen-studio .gs-pl-danger:hover:not(:disabled) {
+  border-color: var(--gs-danger);
+  background: var(--gs-danger-tint);
+}
+.gen-studio .gs-pl-placeholder {
+  padding: 40px 20px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-pl-use,
+  .gen-studio .gs-pl-head-btn,
+  .gen-studio .gs-pl .gs-seg-opt,
+  .gen-studio .gs-pl-model,
+  .gen-studio .gs-pl-actions > button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 1023.98px) {
+  /* Full screen here, as the style browser is. */
+  .gen-studio .gs-pl {
+    width: 100%;
+    height: 100%;
+  }
+}
+@media (max-width: 767.98px) {
+  /* One column: the entry being read opens over the list, and Back returns. */
+  .gen-studio .gs-pl-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gen-studio .gs-pl-list-col {
+    border-right: 0;
+  }
+  .gen-studio .gs-pl-detail-col,
+  .gen-studio .gs-pl--reading .gs-pl-list-col,
+  .gen-studio .gs-pl--reading .gs-pl-bar {
+    display: none;
+  }
+  .gen-studio .gs-pl--reading .gs-pl-detail-col {
+    display: block;
+  }
+  .gen-studio .gs-pl-back {
+    display: inline-flex;
+    min-height: 44px;
+    margin: 0 0 12px -8px;
+  }
+  .gen-studio .gs-pl-bar {
+    padding: 10px 16px;
+  }
+  .gen-studio .gs-pl-tabs,
+  .gen-studio .gs-pl-origin {
+    flex: 1 1 100%;
+    display: flex;
+  }
+  .gen-studio .gs-pl-tabs .gs-seg-opt,
+  .gen-studio .gs-pl-origin .gs-seg-opt {
+    flex: 1 1 0;
+  }
+  .gen-studio .gs-pl-model {
+    flex: 1 1 100%;
+  }
+  .gen-studio .gs-pl-head {
+    padding-inline: 16px;
+  }
+  .gen-studio .gs-pl-scroll {
+    padding-inline: 16px;
+  }
+  .gen-studio .gs-pl-detail {
+    padding: 12px 16px 20px;
   }
 }
 

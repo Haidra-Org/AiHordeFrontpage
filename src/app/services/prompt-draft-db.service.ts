@@ -113,6 +113,29 @@ export class PromptDraftDbService {
     await db.put(DRAFTS_STORE, draft);
   }
 
+  /**
+   * Write several drafts in one transaction, so putting back what a delete took
+   * away lands whole or not at all.
+   */
+  public async putMany(drafts: readonly StoredPromptDraft[]): Promise<void> {
+    if (!this.isBrowser || drafts.length === 0) {
+      return;
+    }
+    const db = await this.db();
+    const tx = db.transaction(DRAFTS_STORE, 'readwrite');
+    await Promise.all([...drafts.map((draft) => tx.store.put(draft)), tx.done]);
+  }
+
+  /** Every draft, newest first. */
+  public async listAll(): Promise<StoredPromptDraft[]> {
+    if (!this.isBrowser) {
+      return [];
+    }
+    const db = await this.db();
+    const drafts = await db.getAllFromIndex(DRAFTS_STORE, 'createdAt');
+    return drafts.reverse();
+  }
+
   /** The most recent drafts, newest first. */
   public async list(limit: number): Promise<StoredPromptDraft[]> {
     if (!this.isBrowser || limit <= 0) {
@@ -129,6 +152,16 @@ export class PromptDraftDbService {
     }
     const db = await this.db();
     await db.delete(DRAFTS_STORE, id);
+  }
+
+  /** Remove several drafts in one transaction. */
+  public async removeMany(ids: readonly string[]): Promise<void> {
+    if (!this.isBrowser || ids.length === 0) {
+      return;
+    }
+    const db = await this.db();
+    const tx = db.transaction(DRAFTS_STORE, 'readwrite');
+    await Promise.all([...ids.map((id) => tx.store.delete(id)), tx.done]);
   }
 
   public async clear(): Promise<void> {

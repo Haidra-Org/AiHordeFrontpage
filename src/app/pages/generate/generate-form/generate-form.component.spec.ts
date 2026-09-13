@@ -46,6 +46,8 @@ import {
 import type { ActiveModel } from '../../../types/active-model';
 import type { HordeWorker } from '../../../types/horde-worker';
 import { ToastService } from '../../../services/toast.service';
+import { PromptDraftDbService } from '../../../services/prompt-draft-db.service';
+import { PromptHistoryDbService } from '../../../services/prompt-history-db.service';
 import { DatabaseService } from '../../../services/database.service';
 import { FullscreenService } from '../../../services/fullscreen.service';
 import { DOCS_IMAGE_SETTINGS } from '../../../content/docs-links';
@@ -453,13 +455,12 @@ describe('GenerateFormComponent shortcuts', () => {
 
 describe('GenerateFormComponent prompt history', () => {
   /**
-   * The history popover needs its anchor and the prompt box itself, so this
-   * stands in a minimal template holding just those two refs.
+   * Filling the prompt focuses the box, so this stands in a minimal template
+   * holding just that ref.
    */
   async function createWithPromptBox(): Promise<{
     component: GenerateFormComponent;
     form: GenerateFormGroup;
-    anchor: HTMLElement;
     promptBox: HTMLTextAreaElement;
   }> {
     await TestBed.configureTestingModule({
@@ -473,8 +474,7 @@ describe('GenerateFormComponent prompt history', () => {
     })
       .overrideComponent(GenerateFormComponent, {
         set: {
-          template:
-            '<div #historyContainer><textarea #promptInput></textarea></div>',
+          template: '<div><textarea #promptInput></textarea></div>',
         },
       })
       .compileComponents();
@@ -494,26 +494,98 @@ describe('GenerateFormComponent prompt history', () => {
     return {
       component: fixture.componentInstance,
       form,
-      anchor: root.querySelector('div') as HTMLElement,
       promptBox: root.querySelector('textarea') as HTMLTextAreaElement,
     };
   }
 
-  it('fills both prompt halves from a picked entry and closes the popover', async () => {
-    const { component, form } = await createWithPromptBox();
-    component.toggleHistory();
+  /** The real template, with the stores the library reads stubbed out. */
+  async function renderWithHistory(): Promise<{
+    fixture: ComponentFixture<GenerateFormComponent>;
+    host: HTMLElement;
+    form: GenerateFormGroup;
+  }> {
+    const empty = (): Promise<never[]> => Promise.resolve([]);
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateFormComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: PromptDraftDbService,
+          useValue: { listAll: empty },
+        },
+        {
+          provide: PromptHistoryDbService,
+          useValue: {
+            size: signal(1),
+            listAll: () =>
+              Promise.resolve([
+                {
+                  key: 'k',
+                  prompt: 'a castle',
+                  negative: 'washed out',
+                  model: 'flux',
+                  firstSentAt: 1,
+                  lastSentAt: Date.now(),
+                  count: 2,
+                },
+              ]),
+          },
+        },
+      ],
+    }).compileComponents();
 
-    component.pickHistory({ prompt: 'a castle', negativePrompt: 'washed out' });
+    const fixture = TestBed.createComponent(GenerateFormComponent);
+    const form = createGenerateForm({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'a fox',
+      negativePrompt: 'blurry',
+    });
+    fixture.componentRef.setInput('form', form);
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+    return { fixture, host: fixture.nativeElement as HTMLElement, form };
+  }
+
+  it('fills both prompt halves from a sent prompt and closes the library', async () => {
+    const { component, form } = await createWithPromptBox();
+    component.openPromptLibrary();
+
+    component.usePromptFromLibrary({
+      prompt: 'a castle',
+      negative: 'washed out',
+      source: 'sent',
+    });
 
     expect(form.controls.prompt.value).toBe('a castle');
     expect(form.controls.negativePrompt.value).toBe('washed out');
-    expect(component.historyOpen()).toBe(false);
+    expect(component.promptLibraryOpen()).toBe(false);
   });
 
-  it('clears the negative prompt when the picked entry had none', async () => {
+  it('clears the negative prompt when the sent prompt had none', async () => {
     const { component, form } = await createWithPromptBox();
-    component.pickHistory({ prompt: 'a castle', negativePrompt: '' });
+    component.usePromptFromLibrary({
+      prompt: 'a castle',
+      negative: '',
+      source: 'sent',
+    });
     expect(form.controls.negativePrompt.value).toBe('');
+  });
+
+  it('leaves the negative prompt alone for a draft without one', async () => {
+    const { component, form } = await createWithPromptBox();
+    component.usePromptFromLibrary({
+      prompt: 'a lighthouse',
+      negative: null,
+      source: 'draft',
+    });
+    expect(form.controls.prompt.value).toBe('a lighthouse');
+    expect(form.controls.negativePrompt.value).toBe('blurry');
   });
 
   it('leaves the negative prompt alone when only a prompt is supplied', async () => {
@@ -529,56 +601,63 @@ describe('GenerateFormComponent prompt history', () => {
     expect(document.activeElement).toBe(promptBox);
   });
 
-  it('pins one row open at a time', async () => {
+  it('offers the clock press once a prompt has been sent', async () => {
     const { component } = await createWithPromptBox();
-
-    component.toggleHistoryDetail(1);
-    expect(component.historyDetail()).toBe(1);
-    component.toggleHistoryDetail(0);
-    expect(component.historyDetail()).toBe(0);
-    component.toggleHistoryDetail(0);
-    expect(component.historyDetail()).toBeNull();
+    expect(component.hasPromptHistory()).toBe(true);
   });
 
-  it('backs escape out of an expanded row before the popover', async () => {
-    const { component } = await createWithPromptBox();
-    component.toggleHistory();
-    component.toggleHistoryDetail(0);
+  it('opens the library on the Sent tab from the clock press', async () => {
+    const { fixture, host } = await renderWithHistory();
+    expect(host.querySelector('app-prompt-library')).toBeNull();
 
-    component.onDocumentEscape();
-    expect(component.historyDetail()).toBeNull();
-    expect(component.historyOpen()).toBe(true);
+    host.querySelector<HTMLButtonElement>('.gs-prompt-hist-btn')?.click();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
 
-    component.onDocumentEscape();
-    expect(component.historyOpen()).toBe(false);
+    const library = host.querySelector('app-prompt-library');
+    expect(library).not.toBeNull();
+    const tabs = [
+      ...(library?.querySelectorAll<HTMLButtonElement>(
+        '.gs-pl-tabs .gs-seg-opt',
+      ) ?? []),
+    ];
+    expect(tabs.map((tab) => tab.getAttribute('aria-pressed'))).toEqual([
+      'false',
+      'true',
+    ]);
+    expect(library?.querySelector('.gs-pl-row-text')?.textContent).toBe(
+      'a castle',
+    );
   });
 
-  it('drops any expanded row when the popover closes', async () => {
-    const { component } = await createWithPromptBox();
-    component.toggleHistory();
-    component.toggleHistoryDetail(0);
+  it('fills the prompt from the library and closes it', async () => {
+    const { fixture, host, form } = await renderWithHistory();
+    host.querySelector<HTMLButtonElement>('.gs-prompt-hist-btn')?.click();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
 
-    component.toggleHistory();
+    host.querySelector<HTMLButtonElement>('.gs-pl-use')?.click();
+    fixture.detectChanges();
 
-    expect(component.historyDetail()).toBeNull();
+    expect(form.controls.prompt.value).toBe('a castle');
+    expect(form.controls.negativePrompt.value).toBe('washed out');
+    expect(host.querySelector('app-prompt-library')).toBeNull();
   });
 
-  it('dismisses on escape and on a press outside the anchor', async () => {
-    const { component, anchor } = await createWithPromptBox();
+  it('closes the library on Escape', async () => {
+    const { fixture, host } = await renderWithHistory();
+    host.querySelector<HTMLButtonElement>('.gs-prompt-hist-btn')?.click();
+    fixture.detectChanges();
 
-    component.toggleHistory();
-    component.onDocumentEscape();
-    expect(component.historyOpen()).toBe(false);
+    host
+      .querySelector('app-prompt-library .gs-modal-overlay')
+      ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
 
-    component.toggleHistory();
-    component.onDocumentPointerDown(new PointerEvent('pointerdown'));
-    expect(component.historyOpen()).toBe(false);
-
-    component.toggleHistory();
-    const inside = new PointerEvent('pointerdown');
-    Object.defineProperty(inside, 'target', { value: anchor });
-    component.onDocumentPointerDown(inside);
-    expect(component.historyOpen()).toBe(true);
+    expect(fixture.componentInstance.promptLibraryOpen()).toBe(false);
+    expect(host.querySelector('app-prompt-library')).toBeNull();
   });
 });
 

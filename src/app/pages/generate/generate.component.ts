@@ -22,6 +22,7 @@ import { AiHordeService } from '../../services/ai-horde.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
+import { PromptHistoryDbService } from '../../services/prompt-history-db.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { DatabaseService } from '../../services/database.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
@@ -132,6 +133,7 @@ import {
   requestModelNames,
   requestToFormValue,
   resetFormValue,
+  splitCombinedPrompt,
   stripEphemeralExtras,
   UPSCALERS,
   workerRequirementForRequest,
@@ -324,6 +326,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly styleApi = inject(StyleService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly presets = inject(GeneratePresetsService);
+  private readonly sentPrompts = inject(PromptHistoryDbService);
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
   private readonly licensing = inject(LicensingService);
@@ -984,6 +987,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       // Anything already running under this key belongs in the results grid,
       // including what another device started.
       this.activeGenerations.start();
+      // The saved jobs are only in memory once the queue has read them, and
+      // seeding from an empty list would mark the store seeded with nothing.
+      void this.queue
+        .whenReady()
+        .then(() => this.sentPrompts.seedOnce(this.queue.jobs()));
       this.fetchModels();
       this.fetchStyles();
       this.modelReference.load();
@@ -2158,6 +2166,16 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       }
       // Keep the submitted settings in the recent-history list for quick reload.
       this.presets.pushRecent(this.form.getRawValue());
+      // Split back out of the request rather than read off the form, so a send
+      // counts under the same prompt the saved jobs carried over as.
+      const [sentPrompt, sentNegative] = splitCombinedPrompt(
+        request.prompt.trim(),
+      );
+      void this.sentPrompts.record(
+        sentPrompt,
+        sentNegative,
+        request.models?.[0] ?? '',
+      );
       // On a phone the panes stack, so a press that only raised a toast would
       // leave the reader looking at the button while the job runs below the
       // fold: the results pane comes up to meet them.

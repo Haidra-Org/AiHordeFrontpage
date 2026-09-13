@@ -1,0 +1,452 @@
+<div
+  class="gs-modal-overlay gs-modal-overlay--browser"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="onClose()"
+  role="dialog"
+  aria-modal="true"
+  tabindex="0"
+  [attr.aria-label]="'prompt_library.title' | transloco"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-modal-panel--browser gs-pl gs-fadeup"
+    [class.gs-pl--reading]="detail() !== null"
+    tabindex="-1"
+    cdkTrapFocus
+  >
+    <div class="gs-modal-header">
+      <h2 class="gs-modal-title gs-pl-title">
+        {{ "prompt_library.title" | transloco }}
+      </h2>
+      <button
+        type="button"
+        class="gs-modal-close gs-pl-close"
+        (click)="onClose()"
+        [attr.aria-label]="'prompt_library.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+
+    <div class="gs-modal-search-bar gs-pl-bar">
+      <div
+        class="gs-seg gs-seg--xs gs-pl-tabs"
+        role="group"
+        [attr.aria-label]="'prompt_library.tabs_label' | transloco"
+      >
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="tab() === 'drafts'"
+          (click)="setTab('drafts')"
+        >
+          {{ "prompt_library.tab_drafts" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="gs-seg-opt"
+          [attr.aria-pressed]="tab() === 'sent'"
+          (click)="setTab('sent')"
+        >
+          {{ "prompt_library.tab_sent" | transloco }}
+        </button>
+      </div>
+      <div class="gs-modal-search gs-pl-search">
+        <app-icon name="search" class="gs-ico-sm gs-muted" />
+        <input
+          #searchInput
+          type="search"
+          [value]="query()"
+          (input)="setQuery($any($event.target).value)"
+          [placeholder]="'prompt_library.search' | transloco"
+          [attr.aria-label]="'prompt_library.search' | transloco"
+        />
+      </div>
+      @if (tab() === "drafts") {
+        <div
+          class="gs-seg gs-seg--xs gs-pl-origin"
+          role="group"
+          [attr.aria-label]="'prompt_library.origin_label' | transloco"
+        >
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="originFilter() === 'all'"
+            (click)="setOriginFilter('all')"
+          >
+            {{ "prompt_library.origin_all" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="originFilter() === 'studio'"
+            (click)="setOriginFilter('studio')"
+          >
+            {{ "prompt_library.origin_studio" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="originFilter() === 'alchemy'"
+            (click)="setOriginFilter('alchemy')"
+          >
+            {{ "prompt_library.origin_alchemy" | transloco }}
+          </button>
+        </div>
+      }
+      <select
+        class="gs-native-select gs-pl-model"
+        [value]="modelFilter()"
+        (change)="setModelFilter($any($event.target).value)"
+        [attr.aria-label]="'prompt_library.model_label' | transloco"
+      >
+        <option value="" [selected]="modelFilter() === ''">
+          {{ "prompt_library.model_all" | transloco }}
+        </option>
+        @for (model of modelOptions(); track model) {
+          <option [value]="model" [selected]="modelFilter() === model">
+            {{ model }}
+          </option>
+        }
+      </select>
+    </div>
+
+    <div class="gs-pl-body">
+      <div #listColumn class="gs-pl-list-col">
+        <div class="gs-pl-head">
+          <p class="gs-pl-count" aria-live="polite">
+            @if (loaded()) {
+              {{
+                (filtered().length === 1
+                  ? "prompt_library.count_one"
+                  : "prompt_library.count_other"
+                ) | transloco: { count: filtered().length }
+              }}
+            }
+          </p>
+          @if (selectMode()) {
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense gs-pl-head-btn"
+              (click)="markAllShown()"
+            >
+              {{ "prompt_library.select_all_shown" | transloco }}
+            </button>
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense gs-pl-head-btn gs-pl-danger"
+              (click)="deleteMarked()"
+              [disabled]="markedCount() === 0"
+            >
+              <app-icon name="trash-modern" class="gs-ico-sm" />
+              {{
+                "prompt_library.delete_marked"
+                  | transloco: { count: markedCount() }
+              }}
+            </button>
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense gs-pl-head-btn"
+              (click)="toggleSelectMode()"
+            >
+              {{ "prompt_library.select_done" | transloco }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="gs-btn gs-btn--dense gs-pl-head-btn"
+              (click)="toggleSelectMode()"
+              [disabled]="shown().length === 0"
+            >
+              <app-icon name="check-circle" class="gs-ico-sm" />
+              {{ "prompt_library.select" | transloco }}
+            </button>
+          }
+        </div>
+
+        @if (days().length > 1) {
+          <app-gs-index-rail
+            class="gs-pl-rail"
+            [entries]="railEntries()"
+            [barForm]="true"
+            labelKey="prompt_library.days_label"
+          />
+        }
+
+        <div class="gs-pl-scroll">
+          @if (tab() === "drafts" && liveRequests().length > 0) {
+            <section class="gs-pl-day">
+              <h3 class="gs-sb-section-title">
+                {{ "prompt_library.live_title" | transloco }}
+              </h3>
+              <ul class="gs-pl-list">
+                @for (request of liveRequests(); track request.id) {
+                  <li class="gs-pl-row gs-pl-row--live">
+                    <div class="gs-pl-row-body">
+                      <span class="gs-pl-row-text">{{ request.preview }}</span>
+                      <span class="gs-pl-meta">
+                        <span class="gs-pl-live-state">{{
+                          request.stateKey | transloco
+                        }}</span>
+                        <span>{{ request.createdAt | date: "shortTime" }}</span>
+                      </span>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (loadFailed()) {
+            <p class="gs-modal-state">
+              {{ "prompt_library.load_failed" | transloco }}
+            </p>
+          } @else if (loaded() && sourceEmpty()) {
+            <p class="gs-modal-state">
+              {{
+                (tab() === "drafts"
+                  ? "prompt_library.empty_drafts"
+                  : "prompt_library.empty_sent"
+                ) | transloco
+              }}
+            </p>
+          } @else if (loaded() && filtered().length === 0) {
+            <p class="gs-modal-state">
+              {{ "prompt_library.no_match" | transloco }}
+            </p>
+          }
+
+          @for (day of days(); track day.id) {
+            <section class="gs-pl-day" [id]="day.id">
+              <h3 class="gs-sb-section-title">
+                @if (day.labelKey; as labelKey) {
+                  {{ labelKey | transloco }}
+                } @else {
+                  {{ day.label }}
+                }
+              </h3>
+              <ul class="gs-pl-list">
+                @for (entry of day.entries; track entry.id) {
+                  <li
+                    class="gs-pl-row"
+                    [class.gs-pl-row--active]="
+                      !selectMode() && selectedId() === entry.id
+                    "
+                    [class.gs-pl-row--marked]="
+                      selectMode() && isMarked(entry.id)
+                    "
+                  >
+                    @if (selectMode()) {
+                      <label class="gs-pl-row-open gs-pl-row-pick">
+                        <input
+                          type="checkbox"
+                          class="gs-pl-check"
+                          [checked]="isMarked(entry.id)"
+                          (change)="toggleMarked(entry.id)"
+                        />
+                        <ng-container
+                          *ngTemplateOutlet="rowBody; context: { entry: entry }"
+                        />
+                      </label>
+                    } @else {
+                      <button
+                        type="button"
+                        class="gs-pl-row-open"
+                        [attr.aria-current]="
+                          selectedId() === entry.id ? 'true' : null
+                        "
+                        (click)="open(entry, $event)"
+                      >
+                        <ng-container
+                          *ngTemplateOutlet="rowBody; context: { entry: entry }"
+                        />
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-pl-use"
+                        (click)="useEntry(entry)"
+                        [attr.aria-label]="
+                          'prompt_library.use_named'
+                            | transloco: { prompt: preview(entry.prompt) }
+                        "
+                      >
+                        {{ "prompt_library.use" | transloco }}
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (hasMore()) {
+            <button
+              type="button"
+              class="gs-btn gs-pl-more"
+              (click)="showMore()"
+            >
+              {{ "prompt_library.show_more" | transloco }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="gs-pl-detail-col">
+        @if (detail(); as entry) {
+          <div class="gs-pl-detail">
+            <button
+              #backButton
+              type="button"
+              class="gs-btn-ghost gs-pl-back"
+              (click)="closeDetail()"
+            >
+              <app-icon name="arrow-left" class="gs-ico-sm" />
+              {{ "prompt_library.back" | transloco }}
+            </button>
+
+            <h3 class="gs-pl-label">
+              {{ "prompt_library.detail_prompt" | transloco }}
+            </h3>
+            <p class="gs-pl-text">{{ entry.prompt }}</p>
+            @if (entry.negative) {
+              <h3 class="gs-pl-label">
+                {{ "prompt_library.detail_negative" | transloco }}
+              </h3>
+              <p class="gs-pl-text gs-pl-text--neg">{{ entry.negative }}</p>
+            }
+
+            @if (entry.source === "draft") {
+              @let material = entry.record.input;
+              @if (material.caption || material.tags || material.note) {
+                <h3 class="gs-pl-label">
+                  {{ "prompt_library.detail_written_from" | transloco }}
+                </h3>
+                <dl class="gs-pl-facts">
+                  @if (material.caption) {
+                    <dt>{{ "prompt_library.detail_caption" | transloco }}</dt>
+                    <dd>{{ material.caption }}</dd>
+                  }
+                  @if (material.tags) {
+                    <dt>{{ "prompt_library.detail_tags" | transloco }}</dt>
+                    <dd>{{ material.tags }}</dd>
+                  }
+                  @if (material.note) {
+                    <dt>{{ "prompt_library.detail_note" | transloco }}</dt>
+                    <dd>{{ material.note }}</dd>
+                  }
+                </dl>
+              }
+              @if (material.prompt) {
+                <h3 class="gs-pl-label">
+                  {{ "prompt_library.detail_improved_from" | transloco }}
+                </h3>
+                <p class="gs-pl-text gs-pl-text--neg">{{ material.prompt }}</p>
+              }
+              <dl class="gs-pl-facts gs-pl-facts--about">
+                @if (entry.model) {
+                  <dt>{{ "prompt_library.detail_model" | transloco }}</dt>
+                  <dd>{{ entry.model }}</dd>
+                }
+                <dt>{{ "prompt_library.detail_kudos" | transloco }}</dt>
+                <dd>{{ entry.record.kudos }}</dd>
+                @if (detailTake(); as take) {
+                  <dt>{{ "prompt_library.detail_take" | transloco }}</dt>
+                  <dd>
+                    {{
+                      "prompt_library.detail_take_value"
+                        | transloco: { index: take.index, total: take.total }
+                    }}
+                  </dd>
+                }
+                <dt>{{ "prompt_library.detail_written" | transloco }}</dt>
+                <dd>
+                  {{
+                    (entry.record.origin === "alchemy"
+                      ? "prompt_library.detail_written_alchemy"
+                      : "prompt_library.detail_written_studio"
+                    )
+                      | transloco
+                        : { when: (entry.record.createdAt | date: "medium") }
+                  }}
+                </dd>
+              </dl>
+            } @else {
+              <dl class="gs-pl-facts gs-pl-facts--about">
+                @if (entry.model) {
+                  <dt>{{ "prompt_library.detail_model" | transloco }}</dt>
+                  <dd>{{ entry.model }}</dd>
+                }
+              </dl>
+              <p class="gs-pl-sent">
+                {{
+                  (entry.record.count === 1
+                    ? "prompt_library.detail_sent_one"
+                    : "prompt_library.detail_sent_other"
+                  )
+                    | transloco
+                      : {
+                          count: entry.record.count,
+                          when: (entry.record.lastSentAt | date: "medium"),
+                        }
+                }}
+              </p>
+              @if (entry.record.count > 1) {
+                <p class="gs-pl-sent">
+                  {{
+                    "prompt_library.detail_first_sent"
+                      | transloco
+                        : { when: (entry.record.firstSentAt | date: "medium") }
+                  }}
+                </p>
+              }
+            }
+
+            <div class="gs-pl-actions">
+              <button
+                type="button"
+                class="gs-btn-primary"
+                (click)="useEntry(entry)"
+              >
+                {{ "prompt_library.use" | transloco }}
+              </button>
+              <button type="button" class="gs-btn" (click)="copyEntry(entry)">
+                <app-icon name="copy" class="gs-ico-sm" />
+                {{ "prompt_library.copy" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="gs-btn gs-pl-danger"
+                (click)="deleteEntry(entry)"
+              >
+                <app-icon name="trash-modern" class="gs-ico-sm" />
+                {{ "prompt_library.delete" | transloco }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <p class="gs-modal-state gs-pl-placeholder">
+            {{ "prompt_library.detail_none" | transloco }}
+          </p>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The two lines of a row, shared by the reading press and the select check. -->
+<ng-template #rowBody let-entry="entry">
+  <span class="gs-pl-row-body">
+    <span class="gs-pl-row-text">{{ entry.prompt }}</span>
+    <span class="gs-pl-meta">
+      @if (entry.model) {
+        <span class="gs-pl-meta-model">{{ entry.model }}</span>
+      }
+      @if (entry.source === "draft") {
+        <span>{{
+          "prompt_library.row_kudos" | transloco: { kudos: entry.record.kudos }
+        }}</span>
+      }
+      <span>{{ entry.at | date: "shortTime" }}</span>
+    </span>
+  </span>
+</ng-template>
