@@ -370,16 +370,120 @@ function tidyLine(value: string): string {
   );
 }
 
+/** Whether tidying a line took anything off it beyond repeated blanks. */
+function wasWrapped(value: string): boolean {
+  return tidyLine(value) !== value.replace(/\s+/g, ' ').trim();
+}
+
 /**
- * A model's answer split into the prompt and the negative line.
- *
- * The labels are asked for, and read where they turn up. A model that ignores
- * them still answers with a prompt, so the first line that says anything is
- * taken as one and the negative is left empty rather than the whole reply
- * being thrown away.
+ * What cleaning did to an answer between the model writing it and the reader
+ * seeing it. Every one of these is reversible: the take keeps the text as it
+ * arrived, so a reader who disagrees can put it back.
  */
-export function cleanDraft(text: string): { text: string; negative: string } {
-  const lines = text
+export type PromptDraftChange =
+  | 'think_removed'
+  | 'quotes_stripped'
+  | 'label_stripped'
+  | 'negative_reshaped'
+  | 'trimmed_to_sentence'
+  | 'instruction_echo';
+
+/** The order changes are reported in, whatever order they were found in. */
+const CHANGE_ORDER: readonly PromptDraftChange[] = [
+  'think_removed',
+  'label_stripped',
+  'quotes_stripped',
+  'negative_reshaped',
+  'trimmed_to_sentence',
+  'instruction_echo',
+];
+
+/** An answer as it is used, and what was done to it on the way. */
+export interface CleanedDraft {
+  text: string;
+  /** Empty where the model wrote no negative line. */
+  negative: string;
+  changes: PromptDraftChange[];
+}
+
+/**
+ * The answer with any reasoning the model showed taken out. Small builds tuned
+ * for thinking write it whether or not the instruction leaves room, and an
+ * allowance spent on it can run out before the block closes, so a tail that
+ * opens and never closes counts as reasoning to the end.
+ */
+export function stripThinkBlocks(text: string): string {
+  return text
+    .replace(/<think(?:ing)?>[\s\S]*?<\/think(?:ing)?>/gi, ' ')
+    .replace(/<think(?:ing)?>[\s\S]*$/i, ' ')
+    .trim();
+}
+
+/**
+ * The text cut back to the last sentence it finished. A model stopped at its
+ * allowance leaves a fragment, and a half-written clause is worse than none.
+ *
+ * Only prose is cut. A line with no sentence break in it is left whole: a list
+ * of comma-separated phrases ends on a word because it is finished, not
+ * because it was cut off.
+ */
+export function trimToSentence(text: string): string {
+  const trimmed = text.trim();
+  if (trimmed === '' || /[.!?]["'“”‘’]?$/.test(trimmed)) return trimmed;
+  const ends = [...trimmed.matchAll(/[.!?]["'“”‘’]?(?=\s)/g)];
+  const last = ends.at(-1);
+  if (!last || last.index === undefined) return trimmed;
+  return trimmed.slice(0, last.index + last[0].length).trim();
+}
+
+/** Whether a negative line was written as sentences rather than as a list. */
+function isProseNegative(value: string): boolean {
+  return /[.!?]/.test(value) || /^(no|avoid|without|don'?t)\s/i.test(value);
+}
+
+/**
+ * A negative line written as prose turned into the list an image generator
+ * reads. A model asked for "a short, comma-separated line" often answers "No
+ * blood, gore or violence. No nudity." instead, where the words are right and
+ * only the shape is wrong.
+ */
+function reshapeNegative(value: string): string {
+  const words = value
+    .split(/[.!?]+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0)
+    .map((sentence) =>
+      sentence.replace(/^(no|avoid|without|don'?t(?:\s+include)?|not)\s+/i, ''),
+    )
+    .flatMap((sentence) => sentence.split(/\s*,\s*|\s+(?:or|and)\s+/i))
+    .map((word) => word.trim())
+    .filter((word) => word.length > 0);
+  return [...new Set(words)].join(', ');
+}
+
+/**
+ * An answer that repeats the instruction back instead of following it. The
+ * words are the instruction's own opening, which no prompt for a picture would
+ * begin with.
+ */
+const INSTRUCTION_ECHO =
+  /^(you (write|improve) prompts?\b|you compare an image prompt\b|turn the description below\b|answer in exactly two labelled lines\b|rewrite the prompt below\b)/i;
+
+/**
+ * A model's answer split into the prompt and the negative line, with what was
+ * done to it on the way.
+ *
+ * The labels are asked for, and read where they turn up, at the start of a
+ * line only: a prompt may well describe a sign reading `Prompt: free beer`. A
+ * model that ignores the labels still answers with a prompt, so the first line
+ * that says anything is taken as one and the negative is left empty rather
+ * than the whole reply being thrown away.
+ */
+export function cleanDraft(text: string): CleanedDraft {
+  const changes = new Set<PromptDraftChange>();
+  const thought = stripThinkBlocks(text);
+  if (thought !== text.trim()) changes.add('think_removed');
+  const lines = thought
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
@@ -390,18 +494,42 @@ export function cleanDraft(text: string): { text: string; negative: string } {
   for (const line of lines) {
     const clean = tidyLine(line);
     if (negative === '' && negativeLabel.test(clean)) {
+      if (wasWrapped(line)) changes.add('quotes_stripped');
+      changes.add('label_stripped');
       negative = tidyLine(clean.replace(negativeLabel, ''));
       continue;
     }
     if (prompt === null && labelled.test(clean)) {
+      if (wasWrapped(line)) changes.add('quotes_stripped');
+      changes.add('label_stripped');
       prompt = tidyLine(clean.replace(labelled, ''));
     }
   }
   if (prompt === null) {
-    const first = lines.map(tidyLine).find((line) => !negativeLabel.test(line));
-    prompt = first ?? '';
+    const first = lines.find((line) => !negativeLabel.test(tidyLine(line)));
+    if (first !== undefined && wasWrapped(first)) {
+      changes.add('quotes_stripped');
+    }
+    prompt = first === undefined ? '' : tidyLine(first);
   }
-  return { text: prompt, negative };
+  if (negative !== '' && isProseNegative(negative)) {
+    const listed = reshapeNegative(negative);
+    if (listed !== '' && listed !== negative) {
+      negative = listed;
+      changes.add('negative_reshaped');
+    }
+  }
+  const trimmed = trimToSentence(prompt);
+  if (trimmed !== prompt && trimmed !== '') {
+    prompt = trimmed;
+    changes.add('trimmed_to_sentence');
+  }
+  if (INSTRUCTION_ECHO.test(prompt)) changes.add('instruction_echo');
+  return {
+    text: prompt,
+    negative,
+    changes: CHANGE_ORDER.filter((change) => changes.has(change)),
+  };
 }
 
 /** A verdict is kept as the model wrote it; only the blank edges go. */

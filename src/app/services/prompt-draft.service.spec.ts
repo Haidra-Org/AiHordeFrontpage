@@ -18,6 +18,8 @@ import {
   modelCostTier,
   modelParameterCount,
   pickTextModel,
+  stripThinkBlocks,
+  trimToSentence,
 } from './prompt-draft.service';
 import { AuthService } from './auth.service';
 import { StyleService } from './style.service';
@@ -217,8 +219,16 @@ describe('the draft prompt and its answer', () => {
   it('keeps the first line the model wrote, without label or quotes', () => {
     expect(
       cleanDraft('\n"Prompt: a dog on a couch, soft light"\n\nMore.'),
-    ).toEqual({ text: 'a dog on a couch, soft light', negative: '' });
-    expect(cleanDraft('   ')).toEqual({ text: '', negative: '' });
+    ).toEqual({
+      text: 'a dog on a couch, soft light',
+      negative: '',
+      changes: ['label_stripped', 'quotes_stripped'],
+    });
+    expect(cleanDraft('   ')).toEqual({
+      text: '',
+      negative: '',
+      changes: [],
+    });
   });
 
   it('reads the two labelled lines an improved prompt comes back as', () => {
@@ -229,6 +239,7 @@ describe('the draft prompt and its answer', () => {
     ).toEqual({
       text: 'a dog on a couch, soft light',
       negative: 'blurry, extra limbs',
+      changes: ['label_stripped'],
     });
   });
 
@@ -236,6 +247,77 @@ describe('the draft prompt and its answer', () => {
     expect(cleanDraft('a dog on a couch\nsomething else')).toEqual({
       text: 'a dog on a couch',
       negative: '',
+      changes: [],
+    });
+  });
+
+  it('leaves a label inside the prompt alone, since only a line start is one', () => {
+    expect(
+      cleanDraft('a sign reading "Prompt: free beer", neon, night'),
+    ).toEqual({
+      text: 'a sign reading "Prompt: free beer", neon, night',
+      negative: '',
+      changes: [],
+    });
+  });
+
+  it('drops a thinking block, closed or left open at the allowance', () => {
+    expect(
+      stripThinkBlocks('<think>hmm, a dog</think>\na dog, soft light'),
+    ).toBe('a dog, soft light');
+    expect(stripThinkBlocks('<think>hmm, the allowance ran out')).toBe('');
+    expect(stripThinkBlocks('a dog, soft light')).toBe('a dog, soft light');
+    expect(
+      cleanDraft('<think>weighing it up</think>\na dog, soft light'),
+    ).toEqual({
+      text: 'a dog, soft light',
+      negative: '',
+      changes: ['think_removed'],
+    });
+  });
+
+  it('cuts prose back to the last sentence it finished, and leaves a list whole', () => {
+    expect(trimToSentence('One thing. Another thing. A third thi')).toBe(
+      'One thing. Another thing.',
+    );
+    expect(trimToSentence('One thing. Another thing.')).toBe(
+      'One thing. Another thing.',
+    );
+    expect(trimToSentence('a dog on a couch, soft light')).toBe(
+      'a dog on a couch, soft light',
+    );
+    expect(trimToSentence('')).toBe('');
+  });
+
+  it('marks a prompt it had to cut back', () => {
+    expect(
+      cleanDraft('The dog sits. The light is soft. The couch is gre'),
+    ).toEqual({
+      text: 'The dog sits. The light is soft.',
+      negative: '',
+      changes: ['trimmed_to_sentence'],
+    });
+  });
+
+  it('reshapes a negative written as sentences into the list that was asked for', () => {
+    expect(
+      cleanDraft(
+        'Prompt: a dog on a couch\nNegative: No blood, gore or violence. No nudity.',
+      ),
+    ).toEqual({
+      text: 'a dog on a couch',
+      negative: 'blood, gore, violence, nudity',
+      changes: ['label_stripped', 'negative_reshaped'],
+    });
+  });
+
+  it('marks an answer that repeats the instruction instead of following it', () => {
+    expect(
+      cleanDraft('You write prompts for an AI image generator. Turn the'),
+    ).toEqual({
+      text: 'You write prompts for an AI image generator.',
+      negative: '',
+      changes: ['trimmed_to_sentence', 'instruction_echo'],
     });
   });
 
