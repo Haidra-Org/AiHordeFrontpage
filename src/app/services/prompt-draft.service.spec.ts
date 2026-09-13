@@ -350,6 +350,14 @@ describe('the draft prompt and its answer', () => {
       negative: 'modern clothing',
       changes: ['label_stripped'],
     });
+    // The same heading without the comparative, which is what some builds write.
+    expect(
+      cleanDraft('Strong Prompt: a lighthouse at dusk, long exposure'),
+    ).toEqual({
+      text: 'a lighthouse at dusk, long exposure',
+      negative: '',
+      changes: ['label_stripped'],
+    });
   });
 
   it('reads a labelled negative under a prompt the model left unlabelled', () => {

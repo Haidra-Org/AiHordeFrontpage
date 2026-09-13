@@ -563,7 +563,7 @@ function reshapeNegative(value: string): string {
  * for. Longest wording first, so `negative prompt` is read whole.
  */
 const PROMPT_LABEL_WORDS =
-  'improved prompt|stronger prompt|revised prompt|final prompt|image prompt|prompt|positive';
+  'improved prompt|stronger prompt|strong prompt|revised prompt|final prompt|image prompt|prompt|positive';
 const NEGATIVE_LABEL_WORDS = 'negative prompt|negative';
 
 /** A label with the answer behind it on the same line. */
