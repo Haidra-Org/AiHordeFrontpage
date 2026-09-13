@@ -101,6 +101,10 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `GenerationDbService`  | IndexedDB persistence for generation jobs and their image blobs                  |
 | `AlchemyQueueService`  | Client-side alchemy queue: submission, polling, result-image capture             |
 | `AlchemyDbService`     | IndexedDB persistence for alchemy jobs, results and their image blobs            |
+| `TextGenerationQueueService` | Client-side text request queue for prompt drafts: submission, polling, cancel, landing takes as drafts |
+| `TextGenerationDbService` | IndexedDB persistence for text requests while they run and for a day after     |
+| `PromptDraftDbService` | IndexedDB persistence for drafts a text model wrote, with stars                  |
+| `PromptHistoryDbService` | IndexedDB persistence for prompts sent to image generation, with counts and stars |
 | `ToastService`         | Signal-based notification system with auto-dismiss                              |
 | `ThemeService`         | Theme management (`'light' \| 'dark' \| 'system'`)                              |
 | `IconRegistryService`  | Register and retrieve SVG icon paths by name                                    |
@@ -192,11 +196,11 @@ Template reads signal()  →  OnPush detects change  →  render
 ## Studio Persistence and Queues
 
 Both studios keep their work in the browser and keep it advancing while the
-reader is elsewhere in the app. Four root-provided, browser-only services do
-this. On the server all four are inert: the database services no-op and the
+reader is elsewhere in the app. Root-provided, browser-only queue and database
+services do this. On the server they are inert: the database services no-op and the
 queues start no loops, so injecting them during SSR is safe.
 
-### The two databases
+### The databases
 
 Each studio owns its own IndexedDB database, opened through the shared
 `openStudioDb` helper in `services/idb-open.ts`:
@@ -205,6 +209,9 @@ Each studio owns its own IndexedDB database, opened through the shared
 |---|---|---|
 | `ai-horde-frontpage` | 2 | `generationJobs` (key `localId`, indexes `status`, `createdAt`), `generationImages` (key `[localId, imageId]`, index `localId`) |
 | `ai-horde-frontpage-alchemy` | 1 | `alchemyJobs` (key `localId`, indexes `createdAt`, `jobId`), `alchemyImages` (key `[localId, imageId]`, index `localId`) |
+| `ai-horde-frontpage-text-requests` | 1 | `requests` (key `localId`, index `createdAt`) |
+| `ai-horde-frontpage-prompt-drafts` | 1 | `drafts` (key `id`, index `createdAt`) |
+| `ai-horde-frontpage-prompt-history` | 1 | `sent` (key: hash of prompt and negative, index `lastSentAt`), `meta` (the one-time seed marker) |
 
 Alchemy is separate rather than two more stores in the existing database. Adding
 stores there would mean opening it at a higher version, and an older bundle that
@@ -239,6 +246,12 @@ paths that remove stored work are a per-job delete and `/generate/storage`, whic
 is the reader's own explicit action. The direct consequence is that a heavy user
 can exhaust the origin quota; the alchemy queue reports that once and keeps
 running rather than making room for itself.
+
+The one exception is `ai-horde-frontpage-text-requests`. A text request record is
+bookkeeping for a request in flight, not the reader's work: its takes are written
+to `ai-horde-frontpage-prompt-drafts` as soon as it finishes, and those drafts are
+never pruned. Finished request records older than a day are removed when the queue
+starts.
 
 ### Generation queue
 
@@ -307,7 +320,30 @@ thumbnails come across; the result links they carried are long dead, so those
 forms are written off without a request. The key is removed only once the
 imports resolve, so a failure retries on the next load.
 
-The `/generate` page (`pages/generate/`) is the canonical UI over this queue. It
+### Text queue and the prompts library
+
+`TextGenerationQueueService` carries the prompt draft card's text requests. It
+keeps each request from the moment it is sent, checks live ones on one loop (3s
+while a card showing them is open, 10s otherwise, nothing while the tab is
+hidden, 15s back-off after a 429) and has no time limit of its own: the horde
+expires a request nobody picks up about 20 minutes after its last refresh, and the
+404 that follows marks it expired. Saved live requests resume after a reload.
+`cancel` sends the text status DELETE and keeps any takes its answer carries.
+Finished takes land in `PromptDraftDbService` under ids derived from the horde id
+and take, so landing twice overwrites. `requestsFor(context)` lists any number of
+requests per card; `MAX_LIVE_PER_CONTEXT` is the single place the one-at-a-time
+rule lives. `PromptDraftService` keeps pricing, model choice and request building,
+and `draft()` remains an awaited wrapper over the queue for `PromptCheckService`.
+
+`app-prompt-library` (`components/prompt-library/`) is the reader's view over the
+drafts store and `PromptHistoryDbService`, on Drafts and Sent tabs. The studio
+records each send beside `presets.pushRecent`. The sent store is separate from the
+job list so clearing results keeps prompt history, and it seeds once from the
+saved image jobs. A prompt chosen from the library, a draft, or words handed over
+from another page reach the prompt box through `GenerateFormComponent.applyPrompt`,
+which asks before losing the reader's words and offers Undo after every change.
+
+The `/generate` page (`pages/generate/`) is the canonical UI over the generation queue. It
 is prerendered as the empty studio so a link preview reads its title, description
 and card; the queue and stored results arrive after hydration. Bare `/generate`
 and `/docs` are in-app redirects that build no document, so `src/_redirects`
