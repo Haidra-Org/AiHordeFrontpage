@@ -248,6 +248,75 @@ describe('the draft prompt and its answer', () => {
     });
   });
 
+  it('passes over a heading and reads the line under it', () => {
+    expect(
+      cleanDraft(
+        '**Improved Prompt**\ncity street at night, neon reflections in puddles\n\n**Negative Prompt**\npeople, cars',
+      ),
+    ).toEqual({
+      text: 'city street at night, neon reflections in puddles',
+      negative: 'people, cars',
+      changes: ['label_stripped'],
+    });
+    expect(
+      cleanDraft(
+        '**Stronger Prompt:** \na cluttered writing desk, warm lamplight\n\n**Negative Prompt:** \ncoffee cups',
+      ),
+    ).toEqual({
+      text: 'a cluttered writing desk, warm lamplight',
+      negative: 'coffee cups',
+      changes: ['label_stripped'],
+    });
+  });
+
+  it('passes over a bare label line and reads the line under it', () => {
+    expect(
+      cleanDraft(
+        'Stronger Prompt:\na dog on a couch, soft light\n\nNegative Prompt:\nblurry, extra limbs',
+      ),
+    ).toEqual({
+      text: 'a dog on a couch, soft light',
+      negative: 'blurry, extra limbs',
+      changes: ['label_stripped'],
+    });
+  });
+
+  it('reads the wordings a model names its answer with, label and line together', () => {
+    expect(
+      cleanDraft(
+        'Stronger Prompt: a woman in a greenhouse, morning light\nNegative Prompt: modern clothing',
+      ),
+    ).toEqual({
+      text: 'a woman in a greenhouse, morning light',
+      negative: 'modern clothing',
+      changes: ['label_stripped'],
+    });
+  });
+
+  it('reads a labelled negative under a prompt the model left unlabelled', () => {
+    expect(
+      cleanDraft(
+        'city street, rainy night, lone cyclist\n\nNegative: daylight, crowds',
+      ),
+    ).toEqual({
+      text: 'city street, rainy night, lone cyclist',
+      negative: 'daylight, crowds',
+      changes: ['label_stripped'],
+    });
+  });
+
+  it('leaves a label the picture itself is meant to show alone', () => {
+    expect(
+      cleanDraft(
+        'a cluttered writing desk, an open notebook whose page reads "Prompt: buy more coffee", a cold mug',
+      ),
+    ).toEqual({
+      text: 'a cluttered writing desk, an open notebook whose page reads "Prompt: buy more coffee", a cold mug',
+      negative: '',
+      changes: [],
+    });
+  });
+
   it('takes the prompt alone when the model ignored the labels', () => {
     expect(cleanDraft('a dog on a couch\nsomething else')).toEqual({
       text: 'a dog on a couch',

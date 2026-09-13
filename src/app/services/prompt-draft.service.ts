@@ -500,6 +500,42 @@ function reshapeNegative(value: string): string {
 }
 
 /**
+ * The words a model puts in front of the prompt it wrote, and in front of the
+ * negative line. Small builds name the answer their own way, so the two sets
+ * cover the wordings they use rather than only the two the instruction asks
+ * for. Longest wording first, so `negative prompt` is read whole.
+ */
+const PROMPT_LABEL_WORDS =
+  'improved prompt|stronger prompt|revised prompt|final prompt|image prompt|prompt|positive';
+const NEGATIVE_LABEL_WORDS = 'negative prompt|negative';
+
+/** A label with the answer behind it on the same line. */
+function labelledWith(words: string): RegExp {
+  return new RegExp(`^(?:${words})\\s*:\\s*`, 'i');
+}
+
+/**
+ * A line that is a label and nothing else. The answer is on the line after it,
+ * so the label line is passed over rather than read as the answer.
+ */
+function labelAlone(words: string): RegExp {
+  return new RegExp(`^(?:${words})\\s*:?$`, 'i');
+}
+
+/**
+ * A line with the markdown emphasis a model wraps a whole line in taken off,
+ * so a heading such as `**Improved Prompt**` is read as the label it is. The
+ * markers are only taken where they sit against the text, which leaves a
+ * bulleted line for the tidying that handles bullets.
+ */
+function unemphasised(line: string): string {
+  return line
+    .replace(/^(?:\*{1,2}|_{1,2})(?=\S)/, '')
+    .replace(/(?<=\S)(?:\*{1,2}|_{1,2})$/, '')
+    .trim();
+}
+
+/**
  * An answer that repeats the instruction back instead of following it. The
  * words are the instruction's own opening, which no prompt for a picture would
  * begin with.
@@ -513,9 +549,11 @@ const INSTRUCTION_ECHO =
  *
  * The labels are asked for, and read where they turn up, at the start of a
  * line only: a prompt may well describe a sign reading `Prompt: free beer`. A
- * model that ignores the labels still answers with a prompt, so the first line
- * that says anything is taken as one and the negative is left empty rather
- * than the whole reply being thrown away.
+ * label may stand alone on its line, as a heading or a bare label, with the
+ * answer on the line below it; that line is passed over and the line under it
+ * is read as what the label announced. A model that ignores the labels still
+ * answers with a prompt, so the first line that says anything is taken as one
+ * and the negative is left empty rather than the whole reply being thrown away.
  */
 export function cleanDraft(text: string): CleanedDraft {
   const changes = new Set<PromptDraftChange>();
@@ -523,28 +561,55 @@ export function cleanDraft(text: string): CleanedDraft {
   if (thought !== text.trim()) changes.add('think_removed');
   const lines = thought
     .split(/\r?\n/)
-    .map((line) => line.trim())
+    .map((line) => unemphasised(line.trim()))
     .filter((line) => line.length > 0);
   let prompt: string | null = null;
   let negative = '';
-  const labelled = /^(prompt|image prompt|positive)\s*:\s*/i;
-  const negativeLabel = /^(negative|negative prompt)\s*:\s*/i;
+  const labelled = labelledWith(PROMPT_LABEL_WORDS);
+  const negativeLabel = labelledWith(NEGATIVE_LABEL_WORDS);
+  const promptAlone = labelAlone(PROMPT_LABEL_WORDS);
+  const negativeAlone = labelAlone(NEGATIVE_LABEL_WORDS);
+  /** What a label on a line of its own said the next line would be. */
+  let announced: 'prompt' | 'negative' | null = null;
   for (const line of lines) {
     const clean = tidyLine(line);
+    if (negativeAlone.test(clean) || promptAlone.test(clean)) {
+      announced = negativeAlone.test(clean) ? 'negative' : 'prompt';
+      changes.add('label_stripped');
+      continue;
+    }
     if (negative === '' && negativeLabel.test(clean)) {
       if (wasWrapped(line)) changes.add('quotes_stripped');
       changes.add('label_stripped');
       negative = tidyLine(clean.replace(negativeLabel, ''));
+      announced = null;
       continue;
     }
     if (prompt === null && labelled.test(clean)) {
       if (wasWrapped(line)) changes.add('quotes_stripped');
       changes.add('label_stripped');
       prompt = tidyLine(clean.replace(labelled, ''));
+      announced = null;
+      continue;
     }
+    if (announced === 'negative' && negative === '') {
+      if (wasWrapped(line)) changes.add('quotes_stripped');
+      negative = clean;
+    } else if (announced === 'prompt' && prompt === null) {
+      if (wasWrapped(line)) changes.add('quotes_stripped');
+      prompt = clean;
+    }
+    announced = null;
   }
   if (prompt === null) {
-    const first = lines.find((line) => !negativeLabel.test(tidyLine(line)));
+    const first = lines.find((line) => {
+      const clean = tidyLine(line);
+      return (
+        !negativeLabel.test(clean) &&
+        !negativeAlone.test(clean) &&
+        !promptAlone.test(clean)
+      );
+    });
     if (first !== undefined && wasWrapped(first)) {
       changes.add('quotes_stripped');
     }
