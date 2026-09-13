@@ -79,6 +79,20 @@ export interface PromptDraftShape {
   style?: ImagePromptStyle | null;
   /** How many answers to ask for at once; one when unset. */
   takes?: number;
+  /**
+   * What the chosen model's workers will take. Unset, the sizes follow the
+   * material alone and a worker with a small ceiling may not pick the request
+   * up.
+   */
+  limits?: TextWorkerLimits | null;
+  /** Ceilings the style sets on the two sizes, where it sets any. */
+  ceilings?: TextSizeCeilings | null;
+  /** The reader's own answer allowance, in place of the one the job works out. */
+  maxLength?: number;
+  /** The reader's own room for the request, in place of the worked-out one. */
+  maxContextLength?: number;
+  /** Workers to keep off the request; every other eligible worker may take it. */
+  avoidWorkers?: readonly string[];
 }
 
 /** Which surface asked for a draft, kept with it in the history. */
@@ -340,10 +354,24 @@ const JUDGE_INSTRUCTION =
   'You compare an image prompt with a description of the finished picture. In three short lines say what matches, what is missing, and one change to the prompt that would help. No preamble.';
 
 /**
- * The request as an instruction the common instruct tunes follow. Alpaca's
- * markers are the ones the widest range of horde models were trained to see,
- * and a plain text prompt is what the endpoint takes; no chat template is
- * applied on the way.
+ * Where the instruction starts and where the answer begins. Most of the text
+ * workers on the horde run koboldcpp, which swaps these for whatever start and
+ * end sequences the loaded build was trained on, and falls back to Alpaca's
+ * markers for a build it does not recognise. Writing Alpaca's markers outright
+ * gets the fallback and never the build's own.
+ */
+const INPUT_PLACEHOLDER = '{{[INPUT]}}';
+const OUTPUT_PLACEHOLDER = '{{[OUTPUT]}}';
+
+/** An instruction and its material, marked up for the worker to template. */
+function asInstruction(instruction: string, material: string): string {
+  return `${INPUT_PLACEHOLDER}\n${instruction}\n\n${material}\n${OUTPUT_PLACEHOLDER}\n`;
+}
+
+/**
+ * The request as an instruction the common instruct tunes follow. A plain text
+ * prompt is what the endpoint takes; no chat template is applied on the way,
+ * so the markers carry the shape.
  *
  * Where a rendering style is already applied to the picture, the instruction
  * asks for the subject and the scene alone: the style's own words are added
@@ -353,7 +381,7 @@ export function buildDraftPrompt(input: PromptDraftInput): string {
   const styled = !!input.styleWords?.trim();
   const role = draftRole(input);
   if (role === 'judge') {
-    return `### Instruction:\n${JUDGE_INSTRUCTION}\n\n${buildDraftMaterial(input)}\n\n### Response:\n`;
+    return asInstruction(JUDGE_INSTRUCTION, buildDraftMaterial(input));
   }
   const instruction =
     role === 'improve'
@@ -363,7 +391,7 @@ export function buildDraftPrompt(input: PromptDraftInput): string {
       : styled
         ? 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting. Write the subject and the scene only: a rendering style is applied separately, so add no style, medium or quality words. Write nothing but the prompt. No quotes, no explanation.'
         : 'You write prompts for an AI image generator. Turn the description below into one prompt: a single line of comma-separated phrases, concrete and visual, the subject first, then the setting, the style, the lighting and quality words. Write nothing but the prompt. No quotes, no explanation.';
-  return `### Instruction:\n${instruction}\n\n${buildDraftMaterial(input)}\n\n### Response:\n`;
+  return asInstruction(instruction, buildDraftMaterial(input));
 }
 
 /** A line with the quotes and bullet a model sometimes puts round it taken off. */
@@ -547,6 +575,150 @@ export function cleanJudgement(text: string): string {
     .trim();
 }
 
+/**
+ * What the workers carrying a model will take, as the largest figure any one
+ * of them advertises. A request above every eligible worker's ceiling is one
+ * no worker can pick up, and it waits until the horde expires it.
+ */
+export interface TextWorkerLimits {
+  maxLength: number;
+  maxContextLength: number;
+}
+
+/** The ceilings a style sets on the two sizes, where it sets any. */
+export interface TextSizeCeilings {
+  maxLength?: number;
+  maxContextLength?: number;
+}
+
+/** The two sizes a request goes out with, and what they were worked out from. */
+export interface TextRequestSizing {
+  /** How much answer is paid for. */
+  maxLength: number;
+  /** How much room the request asks for, the material and the answer together. */
+  maxContextLength: number;
+  /** The estimate of what the material costs to read. */
+  promptTokens: number;
+  /** The answer the job wants, before any ceiling is applied. */
+  askedLength: number;
+  /** What brought the answer allowance down, where anything did. */
+  limitedBy: 'workers' | 'style' | null;
+}
+
+/**
+ * How many characters a token is worth. Tokenisers differ by build and by
+ * language; between three and four is the usual range for English prose, and
+ * the low end of it is the safe end for an allowance.
+ */
+const CHARS_PER_TOKEN = 3.5;
+
+/** How much the estimate is padded, since paying for a truncated prompt is waste. */
+const TOKEN_MARGIN = 1.2;
+
+/** What a piece of text costs to read, as near as a client can tell. */
+export function estimateTokens(text: string): number {
+  return Math.ceil((text.length / CHARS_PER_TOKEN) * TOKEN_MARGIN);
+}
+
+/** The sizes workers are used to being asked for, smallest first. */
+const LARGEST_CONTEXT = 4096;
+const CONTEXT_STEPS: readonly number[] = [512, 1024, 2048, LARGEST_CONTEXT];
+
+/** What a written prompt is worth asking for, in tokens. */
+const WRITE_MIN_LENGTH = 48;
+const WRITE_MAX_LENGTH = 160;
+/** What an improved prompt adds to the one it was given. */
+const IMPROVE_HEADROOM = 64;
+const IMPROVE_MIN_LENGTH = 64;
+const IMPROVE_MAX_LENGTH = 256;
+/** A verdict is three short lines whatever it is about. */
+const JUDGE_LENGTH = 200;
+
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
+
+/** The answer allowance the job wants, before any ceiling is applied. */
+function askedLength(role: PromptDraftRole, input: PromptDraftInput): number {
+  if (role === 'judge') return JUDGE_LENGTH;
+  if (role === 'improve') {
+    return clamp(
+      estimateTokens(input.prompt ?? '') + IMPROVE_HEADROOM,
+      IMPROVE_MIN_LENGTH,
+      IMPROVE_MAX_LENGTH,
+    );
+  }
+  // A longer reading has more in it to turn into a prompt, so the allowance
+  // follows the material rather than sitting at one figure for every picture.
+  return clamp(
+    estimateTokens(buildDraftMaterial(input)),
+    WRITE_MIN_LENGTH,
+    WRITE_MAX_LENGTH,
+  );
+}
+
+/**
+ * The two sizes a request goes out with.
+ *
+ * Room nothing uses is still paid for, and room the answer needed and did not
+ * get is paid for twice, so the allowance follows what was asked for: a line
+ * of phrases for a written prompt, a little more than the prompt it was given
+ * for an improved one, three short lines for a verdict. The room asked for is
+ * the smallest standard size that holds the material and the answer together.
+ *
+ * Both are held to what the model's workers advertise, since a request above
+ * every eligible worker's ceiling waits until it expires, and to a style's own
+ * ceilings where it sets them.
+ */
+export function sizeRequest(
+  role: PromptDraftRole,
+  input: PromptDraftInput,
+  limits?: TextWorkerLimits | null,
+  ceilings?: TextSizeCeilings | null,
+): TextRequestSizing {
+  const promptTokens = estimateTokens(buildDraftPrompt(input));
+  const asked = askedLength(role, input);
+  const lengthCaps = {
+    workers: limits?.maxLength ?? Infinity,
+    style: ceilings?.maxLength ?? Infinity,
+  };
+  const maxLength = Math.max(
+    1,
+    Math.min(asked, lengthCaps.workers, lengthCaps.style),
+  );
+  const wanted = promptTokens + maxLength;
+  const contextCap = Math.min(
+    limits?.maxContextLength ?? Infinity,
+    ceilings?.maxContextLength ?? Infinity,
+  );
+  const step = CONTEXT_STEPS.find((size) => size >= wanted) ?? LARGEST_CONTEXT;
+  const maxContextLength = Math.min(step, contextCap);
+  return {
+    maxLength,
+    maxContextLength,
+    promptTokens,
+    askedLength: asked,
+    limitedBy:
+      maxLength >= asked
+        ? null
+        : lengthCaps.style < lengthCaps.workers
+          ? 'style'
+          : 'workers',
+  };
+}
+
+/**
+ * Where an answer is cut short. The placeholders are swapped out by workers
+ * that understand them, and left standing by workers that do not, so a model
+ * carrying on into the next instruction is stopped either way. A written
+ * prompt is one line and ends at the blank line after it; the other two jobs
+ * answer in several lines and cannot be held to that.
+ */
+function stopSequencesFor(role: PromptDraftRole): string[] {
+  const shared = [INPUT_PLACEHOLDER, '### Instruction:'];
+  return role === 'write' ? ['\n\n', ...shared] : shared;
+}
+
 /** The horde pages styles twenty-five at a time. */
 const STYLE_PAGE_SIZE = 25;
 
@@ -657,39 +829,62 @@ export class PromptDraftService {
   ): TextGenerationRequest {
     const takes = Math.max(1, Math.trunc(shape.takes ?? 1));
     const style = shape.style ?? null;
+    const avoided = shape.avoidWorkers ?? [];
+    const routing =
+      avoided.length > 0
+        ? { workers: [...avoided], worker_blacklist: true }
+        : {};
     if (style) {
       return {
         prompt: buildDraftMaterial(input),
         style: style.id,
         ...(takes > 1 ? { params: { n: takes } } : {}),
+        ...routing,
         slow_workers: true,
       };
     }
-    // One line comes back for a written prompt, two for an improved one and
-    // three for a verdict. Room nothing uses is paid for all the same, so the
-    // allowance follows what was asked for, and only the single-line job can
-    // be held to a single line.
     const role = draftRole(input);
-    const lineBound =
-      role === 'write'
-        ? { max_length: 96, singleline: true, stop_sequence: ['\n\n', '###'] }
-        : {
-            max_length: role === 'judge' ? 200 : 160,
-            stop_sequence: ['###'],
-          };
+    const sizing = this.sizing(input, shape);
     return {
       prompt: buildDraftPrompt(input),
       params: {
         ...(takes > 1 ? { n: takes } : {}),
-        max_context_length: 1024,
+        max_length: sizing.maxLength,
+        max_context_length: sizing.maxContextLength,
         temperature: 0.7,
         top_p: 0.92,
         min_p: 0.05,
         rep_pen: 1.1,
-        ...lineBound,
+        stop_sequence: stopSequencesFor(role),
       },
       ...(chosen.models ? { models: chosen.models } : {}),
+      ...routing,
       slow_workers: true,
+    };
+  }
+
+  /**
+   * The sizes a request would go out with, and the figures behind them, so a
+   * card can show what is being paid for and offer to change it.
+   */
+  public sizing(
+    input: PromptDraftInput,
+    shape: PromptDraftShape = {},
+  ): TextRequestSizing {
+    const worked = sizeRequest(
+      draftRole(input),
+      input,
+      shape.limits ?? null,
+      shape.ceilings ?? null,
+    );
+    // A figure the reader set is the figure sent, ceilings and all: they can
+    // see what the workers advertise and are entitled to disagree with it.
+    return {
+      ...worked,
+      ...(shape.maxLength !== undefined ? { maxLength: shape.maxLength } : {}),
+      ...(shape.maxContextLength !== undefined
+        ? { maxContextLength: shape.maxContextLength }
+        : {}),
     };
   }
 

@@ -436,7 +436,6 @@ export interface TextGenerationParams {
   top_k?: number;
   min_p?: number;
   rep_pen?: number;
-  singleline?: boolean;
   stop_sequence?: string[];
 }
 
@@ -445,6 +444,13 @@ export interface TextGenerationRequest {
   params?: TextGenerationParams;
   /** Models allowed to answer; absent means any. */
   models?: string[];
+  /**
+   * Workers named by id: the only ones allowed to answer, or with
+   * `worker_blacklist`, the only ones not allowed to.
+   */
+  workers?: string[];
+  /** Read `workers` as the list to keep off the request. */
+  worker_blacklist?: boolean;
   slow_workers?: boolean;
   trusted_workers?: boolean;
   /** Price the request and queue nothing; the answer is the kudos alone. */

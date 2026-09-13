@@ -15,9 +15,11 @@ import {
   cleanDraft,
   cleanJudgement,
   curatedRank,
+  estimateTokens,
   modelCostTier,
   modelParameterCount,
   pickTextModel,
+  sizeRequest,
   stripThinkBlocks,
   trimToSentence,
 } from './prompt-draft.service';
@@ -183,11 +185,14 @@ describe('the draft prompt and its answer', () => {
       tags: 'dog, couch',
       note: null,
     });
-    expect(prompt.startsWith('### Instruction:\n')).toBe(true);
+    // The markers a worker templates for the build it is running, rather than
+    // Alpaca's, which is only what it falls back to.
+    expect(prompt.startsWith('{{[INPUT]}}\n')).toBe(true);
     expect(prompt).toContain('Description: a dog');
     expect(prompt).toContain('Tags: dog, couch');
     expect(prompt).not.toContain('Notes from the user');
-    expect(prompt.endsWith('### Response:\n')).toBe(true);
+    expect(prompt).not.toContain('### Instruction:');
+    expect(prompt.endsWith('{{[OUTPUT]}}\n')).toBe(true);
   });
 
   it('asks for a rewrite when given a prompt, keeping the note', () => {
@@ -344,6 +349,108 @@ describe('the draft prompt and its answer', () => {
   });
 });
 
+describe('sizing a request', () => {
+  const workerLimits = { maxLength: 512, maxContextLength: 4096 };
+
+  it('pays for a line of phrases when a prompt is written from a short reading', () => {
+    const sizing = sizeRequest('write', { caption: 'a dog' }, workerLimits);
+    expect(sizing.maxLength).toBe(48);
+    expect(sizing.askedLength).toBe(48);
+    expect(sizing.limitedBy).toBeNull();
+    expect(sizing.maxContextLength).toBe(512);
+  });
+
+  it('pays for more where there is more to turn into a prompt', () => {
+    const sizing = sizeRequest(
+      'write',
+      { caption: 'a dog on a couch, '.repeat(30) },
+      workerLimits,
+    );
+    expect(sizing.maxLength).toBeGreaterThan(48);
+    expect(sizing.maxLength).toBeLessThanOrEqual(160);
+    expect(sizing.maxContextLength).toBe(512);
+  });
+
+  it('never pays for more than a written prompt is worth', () => {
+    const sizing = sizeRequest(
+      'write',
+      { caption: 'a dog on a couch, '.repeat(200) },
+      workerLimits,
+    );
+    expect(sizing.maxLength).toBe(160);
+  });
+
+  it('gives an improved prompt room for the one it was given and a little more', () => {
+    const short = sizeRequest('improve', { prompt: 'a dog' }, workerLimits);
+    expect(short.maxLength).toBe(66);
+    const long = sizeRequest(
+      'improve',
+      { prompt: 'a dog on a couch, '.repeat(20) },
+      workerLimits,
+    );
+    expect(long.maxLength).toBeGreaterThan(64);
+    expect(long.maxLength).toBeLessThanOrEqual(256);
+  });
+
+  it('gives a verdict the same three lines whatever it is about', () => {
+    expect(
+      sizeRequest('judge', { prompt: 'a dog', caption: 'a cat' }, workerLimits)
+        .maxLength,
+    ).toBe(200);
+  });
+
+  it('holds both sizes to what the model’s workers advertise', () => {
+    const sizing = sizeRequest(
+      'judge',
+      { prompt: 'a dog' },
+      {
+        maxLength: 80,
+        maxContextLength: 512,
+      },
+    );
+    expect(sizing.maxLength).toBe(80);
+    expect(sizing.askedLength).toBe(200);
+    expect(sizing.limitedBy).toBe('workers');
+    expect(sizing.maxContextLength).toBe(512);
+  });
+
+  it('holds them to a style’s ceilings as well, and says which one bound', () => {
+    const sizing = sizeRequest(
+      'judge',
+      { prompt: 'a dog' },
+      { maxLength: 512, maxContextLength: 4096 },
+      { maxLength: 64, maxContextLength: 1024 },
+    );
+    expect(sizing.maxLength).toBe(64);
+    expect(sizing.limitedBy).toBe('style');
+    expect(sizing.maxContextLength).toBe(512);
+    // A ceiling below the room the material needs binds that too.
+    expect(
+      sizeRequest(
+        'improve',
+        { prompt: 'a dog on a couch, '.repeat(120) },
+        { maxLength: 512, maxContextLength: 4096 },
+        { maxContextLength: 1024 },
+      ).maxContextLength,
+    ).toBe(1024);
+  });
+
+  it('asks for the room the material needs, in the sizes workers expect', () => {
+    const roomy = sizeRequest(
+      'improve',
+      { prompt: 'a dog on a couch, '.repeat(120) },
+      workerLimits,
+    );
+    expect(roomy.promptTokens).toBeGreaterThan(512);
+    expect([1024, 2048, 4096]).toContain(roomy.maxContextLength);
+  });
+
+  it('reads a reading as costing about a token every three and a half letters', () => {
+    expect(estimateTokens('')).toBe(0);
+    expect(estimateTokens('a'.repeat(350))).toBe(120);
+  });
+});
+
 describe('PromptDraftService', () => {
   let service: PromptDraftService;
   let http: HttpTestingController;
@@ -437,7 +544,13 @@ describe('PromptDraftService', () => {
       quotedKudos: 4,
     });
     expect(body.request.models).toEqual(['koboldcpp/gemma-4-31B-it-heretic']);
-    expect(body.request.params?.singleline).toBe(true);
+    expect(body.request.params?.max_length).toBe(48);
+    expect(body.request.params?.max_context_length).toBe(512);
+    expect(body.request.params?.stop_sequence).toEqual([
+      '\n\n',
+      '{{[INPUT]}}',
+      '### Instruction:',
+    ]);
     expect(body.request.prompt).toContain('Description: a dog');
     expect(submit.mock.calls.at(-1)?.[1]).toEqual({ replace: false });
   });
@@ -453,14 +566,40 @@ describe('PromptDraftService', () => {
     expect(submitted().quotedKudos).toBeNull();
   });
 
-  it('does not hold an improved prompt to a single line', async () => {
+  it('does not stop an improved prompt at its first blank line', async () => {
     await service.submit({ prompt: 'a dog' }, 'any', [], {
       anonymous: true,
       origin: 'studio',
       context: { kind: 'studio' },
     });
-    // Two lines are asked for, so the answer is not held to one.
-    expect(submitted().request.params?.singleline).toBeUndefined();
+    // Two lines are asked for, so the answer is not cut off after one.
+    expect(submitted().request.params?.stop_sequence).toEqual([
+      '{{[INPUT]}}',
+      '### Instruction:',
+    ]);
+  });
+
+  it('keeps the workers an empty answer earned off the retry', async () => {
+    await service.submit(
+      { caption: 'a dog' },
+      'any',
+      [],
+      { anonymous: true, origin: 'studio', context: { kind: 'studio' } },
+      { avoidWorkers: ['w-1', 'w-2'] },
+    );
+    expect(submitted().request).toMatchObject({
+      workers: ['w-1', 'w-2'],
+      worker_blacklist: true,
+    });
+  });
+
+  it('sends the sizes the reader set in place of the ones worked out', () => {
+    const body = service.previewRequest({ caption: 'a dog' }, 'any', [], {
+      maxLength: 300,
+      maxContextLength: 2048,
+    });
+    expect(body.params?.max_length).toBe(300);
+    expect(body.params?.max_context_length).toBe(2048);
   });
 
   it('sends on the account key unless the request is asked for anonymously', async () => {
@@ -582,7 +721,7 @@ describe('PromptDraftService', () => {
     const body = submitted().request;
     expect(body.style).toBeUndefined();
     expect(body.models).toEqual(['koboldcpp/gemma-4-31B-it-heretic']);
-    expect(body.prompt).toContain('### Instruction:');
+    expect(body.prompt).toContain('{{[INPUT]}}');
   });
 
   it('asks for three takes', async () => {
