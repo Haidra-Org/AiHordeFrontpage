@@ -8,8 +8,7 @@ account's own style of that name is the one a second run updates.
 With `--probe` it reads a style back and asks the horde for a dry run that uses it, with the
 template fields filled and `context_fit: reject`, and keeps the `resolved` body the horde answers
 with: the prompt after templating, the params after the policy, and the token estimate. That is the
-only way to see whether the koboldcpp placeholders survived `str.format_map`, which is why the
-templates carry them doubled.
+only way to see whether the koboldcpp placeholders came through the template intact.
 
 Aimed at a local horde. Pass `--allow-remote` to talk to anything that is not loopback.
 

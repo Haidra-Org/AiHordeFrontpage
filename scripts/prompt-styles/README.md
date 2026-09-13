@@ -42,11 +42,11 @@ sizing and the placeholders were written against.
 
 ### Two things about the template that are easy to get wrong
 
-The horde fills a text style's template with `str.format_map`, so a pair of braces in the stored
-template comes out as one. A koboldcpp placeholder has to be stored doubled again to survive:
-`{{{{[INPUT]}}}}` in the file reaches the worker as `{{[INPUT]}}`. Stop sequences are not formatted,
-so they carry the placeholder as written. `styles.py --probe` reads the resolved prompt back and says
-whether the placeholders came through intact; check it after any edit to a template.
+The horde keeps a koboldcpp placeholder such as `{{[INPUT]}}` as written in a text template; any
+other brace follows Python's `str.format_map` rules, so a literal brace is written doubled. Stop
+sequences are not formatted, so they carry the placeholder as written. `styles.py --probe` reads the
+resolved prompt back and says whether the placeholders came through intact; check it after any edit
+to a template.
 
 A placeholder nothing fills formats to an empty string, and the label in front of it stays. A style
 whose request carries only a caption therefore sends `Tags:` and `Notes from the user:` with nothing
