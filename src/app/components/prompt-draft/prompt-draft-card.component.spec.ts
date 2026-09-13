@@ -19,6 +19,8 @@ import {
   textRequestContextKey,
 } from '../../services/text-generation-db.service';
 import { AuthService } from '../../services/auth.service';
+import { PromptHistoryDbService } from '../../services/prompt-history-db.service';
+import type { PromptLibraryUse } from '../prompt-library/prompt-library.model';
 import {
   DescribeFindings,
   DescribeOrigin,
@@ -118,13 +120,12 @@ describe('PromptDraftCardComponent', () => {
     });
   };
   let estimate: ReturnType<typeof vi.fn>;
-  let list: ReturnType<typeof vi.fn>;
-  let remove: ReturnType<typeof vi.fn>;
+  let listAll: ReturnType<typeof vi.fn>;
   let imagePromptStyles: ReturnType<typeof vi.fn>;
   let previewRequest: ReturnType<typeof vi.fn>;
   let loggedIn: ReturnType<typeof signal<boolean>>;
   let kudos: ReturnType<typeof signal<number | null>>;
-  let sent: string | null;
+  let sent: PromptLibraryUse | null;
   let findings: ReturnType<typeof signal<DescribeFindings>>;
   let describePicture: ReturnType<typeof vi.fn>;
   let preparePicture: ReturnType<typeof vi.fn>;
@@ -169,8 +170,7 @@ describe('PromptDraftCardComponent', () => {
       return list;
     };
     estimate = vi.fn().mockResolvedValue(null);
-    list = vi.fn().mockResolvedValue([]);
-    remove = vi.fn().mockResolvedValue(undefined);
+    listAll = vi.fn().mockResolvedValue([]);
     imagePromptStyles = vi.fn().mockResolvedValue([]);
     previewRequest = vi
       .fn()
@@ -210,11 +210,16 @@ describe('PromptDraftCardComponent', () => {
         },
         {
           provide: PromptDraftDbService,
-          useValue: { list, remove, put: vi.fn(), clear: vi.fn() },
+          useValue: { listAll, put: vi.fn(), clear: vi.fn() },
+        },
+        {
+          provide: PromptHistoryDbService,
+          useValue: { size: signal(0), listAll: vi.fn().mockResolvedValue([]) },
         },
         {
           provide: TextGenerationQueueService,
           useValue: {
+            requests,
             requestsFor,
             watch,
             cancel,
@@ -258,7 +263,7 @@ describe('PromptDraftCardComponent', () => {
     fixture.componentRef.setInput('tags', 'dog, couch');
     fixture.componentRef.setInput('defaultOpen', true);
     sent = null;
-    fixture.componentInstance.apply.subscribe((text) => (sent = text));
+    fixture.componentInstance.use.subscribe((use) => (sent = use));
     fixture.detectChanges();
   };
 
@@ -393,7 +398,11 @@ describe('PromptDraftCardComponent', () => {
     (
       el().querySelector('.alchemy-draft__actions button') as HTMLButtonElement
     ).click();
-    expect(sent).toBe('a dog on a couch, warm light');
+    expect(sent).toEqual({
+      prompt: 'a dog on a couch, warm light',
+      negative: null,
+      source: 'draft',
+    });
   });
 
   it('files a card under an alchemy job with that job, apart from the studio', async () => {
@@ -455,7 +464,7 @@ describe('PromptDraftCardComponent', () => {
     );
   });
 
-  it('shows the negative line a rewrite came with, and offers it on its own', async () => {
+  it('shows the negative line a rewrite came with, and hands it over with the take', async () => {
     answerWith(
       doneRequest(['a dog on a couch, golden hour'], ['blurry, extra limbs']),
     );
@@ -463,17 +472,19 @@ describe('PromptDraftCardComponent', () => {
     await settle();
     fixture.componentRef.setInput('seed', 'a dog on a couch');
     fixture.detectChanges();
-    const applied: string[] = [];
-    fixture.componentInstance.applyNegative.subscribe((text) =>
-      applied.push(text),
-    );
     await fixture.componentInstance.draft();
     fixture.detectChanges();
     expect(
       el().querySelector('.alchemy-draft__negative')?.textContent,
     ).toContain('blurry, extra limbs');
-    fixture.componentInstance.sendNegative(0);
-    expect(applied).toEqual(['blurry, extra limbs']);
+    (
+      el().querySelector('.alchemy-draft__actions button') as HTMLButtonElement
+    ).click();
+    expect(sent).toEqual({
+      prompt: 'a dog on a couch, golden hour',
+      negative: 'blurry, extra limbs',
+      source: 'draft',
+    });
   });
 
   it('prices the draft once the card has settled, and names the balance when there is one', async () => {
@@ -743,7 +754,7 @@ describe('PromptDraftCardComponent', () => {
       ),
     ).toEqual(['one dog', 'two dogs', 'three dogs']);
     (takes[2].querySelector('button') as HTMLButtonElement).click();
-    expect(sent).toBe('three dogs');
+    expect(sent?.prompt).toBe('three dogs');
   });
 
   it('names the rendering style the studio already applies', async () => {
@@ -779,27 +790,98 @@ describe('PromptDraftCardComponent', () => {
     expect(sections[1].value).not.toContain('<your key>');
   });
 
-  it('offers a past draft back to the prompt box, and deletes one on request', async () => {
-    list.mockResolvedValue([makeStored('p1', 'an older draft')]);
-    build();
-    await settle();
-    await fixture.componentInstance.toggleHistory();
-    fixture.detectChanges();
+  describe('the Drafts press', () => {
+    const press = (): HTMLButtonElement | null =>
+      el().querySelector<HTMLButtonElement>('.alchemy-draft__library-open');
+    const openLibrary = async (): Promise<void> => {
+      press()?.click();
+      fixture.detectChanges();
+      await settle();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+    };
 
-    const row = el().querySelector('.alchemy-draft__history-row');
-    expect(row?.textContent).toContain('an older draft');
-    const buttons = [
-      ...(row?.querySelectorAll('button') ?? []),
-    ] as HTMLButtonElement[];
-    buttons[0].click();
-    expect(sent).toBe('an older draft');
+    it('says how many drafts are kept', async () => {
+      listAll.mockResolvedValue([
+        makeStored('p1', 'an older draft'),
+        makeStored('p2', 'another draft'),
+      ]);
+      build();
+      await settle();
+      expect(press()?.textContent).toContain('prompt_draft.library_open_count');
+      expect(fixture.componentInstance.draftCount()).toBe(2);
+    });
 
-    list.mockResolvedValue([]);
-    buttons[2].click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await settle();
-    expect(remove).toHaveBeenCalledWith('p1');
-    expect(el().querySelector('.alchemy-draft__history-row')).toBeNull();
+    it('opens every draft on the Drafts list, with the requests still coming', async () => {
+      listAll.mockResolvedValue([makeStored('p1', 'an older draft')]);
+      requests.set([
+        makeRequest({
+          localId: 'live-1',
+          state: 'writing',
+          context: { kind: 'alchemy', jobId: 'job-2' },
+          input: { caption: 'a cat on a wall' },
+        }),
+        doneRequest(['a dog']),
+      ]);
+      build();
+      await settle();
+      expect(el().querySelector('app-prompt-library')).toBeNull();
+
+      await openLibrary();
+
+      const library = el().querySelector('app-prompt-library');
+      expect(library).not.toBeNull();
+      expect(
+        library?.querySelector('.gs-pl-tabs [aria-pressed="true"]')
+          ?.textContent,
+      ).toContain('prompt_library.tab_drafts');
+      // Only the request that has not landed is listed ahead of the drafts.
+      expect(fixture.componentInstance.liveRequests()).toEqual([
+        {
+          id: 'live-1',
+          stateKey: 'prompt_draft.library_open_writing',
+          preview: 'a cat on a wall',
+          createdAt: NOW - 42_000,
+        },
+      ]);
+      expect(library?.querySelector('.gs-pl-row--live')?.textContent).toContain(
+        'a cat on a wall',
+      );
+    });
+
+    it('hands a draft chosen in the list on as it came, and closes the list', async () => {
+      const stored = {
+        ...makeStored('p1', 'an older draft'),
+        negative: 'blurry',
+      };
+      listAll.mockResolvedValue([stored]);
+      build();
+      await settle();
+      await openLibrary();
+
+      el().querySelector<HTMLButtonElement>('.gs-pl-use')?.click();
+      fixture.detectChanges();
+
+      expect(sent).toEqual({
+        prompt: 'an older draft',
+        negative: 'blurry',
+        source: 'draft',
+      });
+      expect(el().querySelector('app-prompt-library')).toBeNull();
+    });
+
+    it('counts the drafts again when the list closes', async () => {
+      listAll.mockResolvedValue([makeStored('p1', 'an older draft')]);
+      build();
+      await settle();
+      await openLibrary();
+      listAll.mockResolvedValue([]);
+
+      fixture.componentInstance.closeLibrary();
+      await settle();
+
+      expect(fixture.componentInstance.draftCount()).toBe(0);
+    });
   });
   it('shows only the note, the button and the price until Options is opened', async () => {
     build();
@@ -1271,13 +1353,13 @@ describe('PromptDraftCardComponent', () => {
       expect(summary()).not.toContain('prompt_draft.queue.folded_live');
     });
 
-    it('reads the past drafts again once the request on show lands', async () => {
+    it('counts the drafts again once the request on show lands', async () => {
       await show(makeRequest({ state: 'writing' }));
-      const calls = list.mock.calls.length;
+      const calls = listAll.mock.calls.length;
       requests.set([doneRequest(['a dog'])]);
       fixture.detectChanges();
       await settle();
-      expect(list.mock.calls.length).toBeGreaterThan(calls);
+      expect(listAll.mock.calls.length).toBeGreaterThan(calls);
     });
   });
 });

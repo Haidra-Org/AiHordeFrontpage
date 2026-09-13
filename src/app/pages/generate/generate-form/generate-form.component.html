@@ -323,8 +323,7 @@
             [seed]="form().controls.prompt.value"
             [styleWords]="appliedStyleWords()"
             origin="studio"
-            (apply)="fillPrompt($event)"
-            (applyNegative)="addNegative($event)"
+            (use)="applyPrompt($event, $event.source)"
           />
         </section>
 
@@ -2933,6 +2932,27 @@
       ) | transloco
     }}</span>
   </button>
+  <button
+    type="button"
+    class="gs-opt-row gs-opt-row--switch"
+    [class.gs-opt-row--on]="confirmPromptApply()"
+    [attr.aria-pressed]="confirmPromptApply()"
+    (click)="toggleConfirmPromptApply()"
+  >
+    <app-icon name="pencil" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{ "prompt_apply.setting" | transloco }}</span>
+      <span class="gs-opt-hint">{{
+        "prompt_apply.setting_hint" | transloco
+      }}</span>
+    </span>
+    <span class="gs-opt-state" aria-hidden="true">{{
+      (confirmPromptApply()
+        ? "generate.form.options_on"
+        : "generate.form.options_off"
+      ) | transloco
+    }}</span>
+  </button>
   @if (resultUndoAction(); as action) {
     <button
       type="button"
@@ -3025,9 +3045,20 @@
 
 @if (promptLibraryOpen()) {
   <app-prompt-library
-    initialTab="sent"
+    [initialTab]="promptLibraryTab()"
     (use)="usePromptFromLibrary($event)"
     (closed)="closePromptLibrary()"
+  />
+}
+
+<!-- After the library, so a library closing in the same pass has handed focus
+     back to its opener before the dialog notes where to return it. -->
+@if (pendingPromptApply(); as pending) {
+  <app-prompt-apply-confirm
+    [current]="form().controls.prompt.value"
+    [incoming]="pending.incoming.prompt"
+    (confirmed)="confirmPendingPrompt($event)"
+    (cancelled)="cancelPendingPrompt()"
   />
 }
 

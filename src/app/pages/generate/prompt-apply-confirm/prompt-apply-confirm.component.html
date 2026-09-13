@@ -1,0 +1,85 @@
+<div
+  class="gs-modal-overlay"
+  (click)="onBackdrop($event)"
+  (keydown.escape)="cancel()"
+  tabindex="-1"
+>
+  <div
+    #panel
+    class="gs-modal-panel gs-modal-panel--sm gs-fadeup"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="gs-prompt-apply-title"
+    aria-describedby="gs-prompt-apply-body"
+    tabindex="-1"
+  >
+    <div class="gs-modal-header">
+      <div id="gs-prompt-apply-title" class="gs-modal-title">
+        <app-icon name="pencil" class="gs-ico-sm" />
+        {{ "prompt_apply.title" | transloco }}
+      </div>
+      <button
+        type="button"
+        class="gs-modal-close"
+        (click)="cancel()"
+        [attr.aria-label]="'prompt_apply.close' | transloco"
+      >
+        <app-icon name="x-mark" class="gs-ico-sm" />
+      </button>
+    </div>
+    <div class="gs-modal-body gs-result-action-confirm-body">
+      <!-- A long prompt scrolls inside its block, so each block takes focus
+           for a reader scrolling it from the keyboard. -->
+      <div id="gs-prompt-apply-body" class="gs-prompt-apply-compare">
+        <div class="gs-prompt-apply-side">
+          <p id="gs-prompt-apply-current" class="gs-prompt-apply-label">
+            {{ "prompt_apply.current" | transloco }}
+          </p>
+          <div
+            class="gs-prompt-apply-text"
+            role="region"
+            tabindex="0"
+            aria-labelledby="gs-prompt-apply-current"
+          >
+            {{ current() }}
+          </div>
+        </div>
+        <div class="gs-prompt-apply-side">
+          <p id="gs-prompt-apply-incoming" class="gs-prompt-apply-label">
+            {{ "prompt_apply.incoming" | transloco }}
+          </p>
+          <div
+            class="gs-prompt-apply-text"
+            role="region"
+            tabindex="0"
+            aria-labelledby="gs-prompt-apply-incoming"
+          >
+            {{ incoming() }}
+          </div>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="gs-result-action-checkbox gs-prompt-apply-checkbox"
+        role="checkbox"
+        [attr.aria-checked]="dontAskAgain()"
+        (click)="toggleDontAskAgain()"
+      >
+        <span class="gs-result-action-check" aria-hidden="true">
+          @if (dontAskAgain()) {
+            <app-icon name="check" />
+          }
+        </span>
+        {{ "prompt_apply.dont_ask" | transloco }}
+      </button>
+    </div>
+    <div class="gs-modal-footer">
+      <button type="button" class="gs-tile-btn" (click)="cancel()">
+        {{ "prompt_apply.cancel" | transloco }}
+      </button>
+      <button type="button" class="gs-modal-done" (click)="confirm()">
+        {{ "prompt_apply.replace" | transloco }}
+      </button>
+    </div>
+  </div>
+</div>

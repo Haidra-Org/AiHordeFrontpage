@@ -11,7 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { DatePipe, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
@@ -24,10 +24,7 @@ import {
   curatedRank,
   modelCostTier,
 } from '../../services/prompt-draft.service';
-import {
-  PromptDraftDbService,
-  StoredPromptDraft,
-} from '../../services/prompt-draft-db.service';
+import { PromptDraftDbService } from '../../services/prompt-draft-db.service';
 import {
   TextGenerationQueueService,
   isLiveTextRequest,
@@ -37,6 +34,11 @@ import type {
   TextRequestContext,
   TextRequestTake,
 } from '../../services/text-generation-db.service';
+import { PromptLibraryComponent } from '../prompt-library/prompt-library.component';
+import type {
+  PromptLibraryLiveRequest,
+  PromptLibraryUse,
+} from '../prompt-library/prompt-library.model';
 import {
   GenerationWaitInsightsService,
   QueueTrend,
@@ -96,8 +98,38 @@ const COSTLY_DRAFT_KUDOS = 25;
 /** Long enough that a typed note is priced once, not on every keystroke. */
 const ESTIMATE_DEBOUNCE_MS = 600;
 
-/** How many past drafts the strip offers. */
-const HISTORY_LIMIT = 10;
+/**
+ * The line each request not yet landed as a draft wears in the list of drafts.
+ * A finished or cancelled request is not listed, because its takes are drafts
+ * already, and neither is one the horde refused, which never became a request
+ * to wait on and whose reason only reads well on the card that sent it.
+ */
+function liveRequestStateKey(request: StoredTextRequest): string | null {
+  switch (request.state) {
+    case 'sending':
+      return 'prompt_draft.queue.sending';
+    case 'queued':
+      return 'prompt_draft.queue.queued_plain';
+    case 'writing':
+      return 'prompt_draft.library_open_writing';
+    case 'expired':
+      return 'prompt_draft.queue.expired';
+    case 'faulted':
+      return request.errorKey ?? 'prompt_draft.faulted';
+    case 'refused':
+    case 'done':
+    case 'cancelled':
+      return null;
+  }
+}
+
+/** Enough of what was asked for to tell one request from another. */
+function liveRequestPreview(request: StoredTextRequest): string {
+  const { prompt, caption, note, tags } = request.input;
+  return (
+    prompt?.trim() || caption?.trim() || note?.trim() || tags?.trim() || ''
+  );
+}
 
 /** The range of answers one request may ask for. */
 const MIN_TAKES = 1;
@@ -135,11 +167,11 @@ const ANONYMOUS_API_KEY = '0000000000';
   imports: [
     TranslocoPipe,
     IconComponent,
-    DatePipe,
     RouterLink,
     JsonInspectorComponent,
     GsPixelBadgeComponent,
     TextRequestProgressComponent,
+    PromptLibraryComponent,
   ],
   templateUrl: './prompt-draft-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -193,10 +225,13 @@ export class PromptDraftCardComponent {
    * card follows its own requests; without a job the card is the studio's.
    */
   public readonly jobId = input<string | null>(null);
-  /** The draft, for the prompt box it was written for. */
-  public readonly apply = output<string>();
-  /** The negative line written alongside a draft, for the negative box. */
-  public readonly applyNegative = output<string>();
+  /**
+   * A prompt chosen for the box it was written for: a take, the caption a
+   * picture was read for, or an entry picked from the list of prompts. The
+   * list also holds prompts already sent, which say so, because a sent prompt
+   * brings its negative back as it was rather than adding to the box.
+   */
+  public readonly use = output<PromptLibraryUse>();
 
   /** Which job the card has: writing from findings, or improving a prompt. */
   public readonly mode = computed<'draft' | 'improve'>(() =>
@@ -266,8 +301,10 @@ export class PromptDraftCardComponent {
   /** Estimates run one after another so a slow answer cannot outrank a newer one. */
   private estimateChain: Promise<void> = Promise.resolve();
 
-  public readonly historyOpen = signal(false);
-  public readonly history = signal<StoredPromptDraft[]>([]);
+  /** Whether the list of every draft is open over the page. */
+  public readonly libraryOpen = signal(false);
+  /** How many drafts this browser keeps, or null before they are counted. */
+  public readonly draftCount = signal<number | null>(null);
 
   constructor() {
     this.chosenAnonymous.set(this.storedAnonymous());
@@ -324,8 +361,19 @@ export class PromptDraftCardComponent {
       const release = this.queue.watch(this.requestContext());
       onCleanup(release);
     });
-    // Takes are written to the drafts store by the queue, so the strip of past
-    // drafts is read again when the request on show lands.
+    // The drafts are counted once the card is open, where the count is shown;
+    // a folded card under every alchemy job reads nothing.
+    effect(() => {
+      if (
+        this.isOpen() &&
+        this.isBrowser &&
+        untracked(() => this.draftCount()) === null
+      ) {
+        untracked(() => void this.countDrafts());
+      }
+    });
+    // Takes are written to the drafts store by the queue, so the drafts are
+    // counted again when the request on show lands.
     effect(() => {
       const request = this.current();
       const seen = request ? `${request.localId}:${request.state}` : null;
@@ -335,7 +383,7 @@ export class PromptDraftCardComponent {
         seen !== this.lastSeenRequest &&
         (request?.state === 'done' || request?.state === 'cancelled');
       this.lastSeenRequest = seen;
-      if (landed) untracked(() => void this.loadHistory());
+      if (landed) untracked(() => void this.countDrafts());
     });
   }
 
@@ -670,7 +718,9 @@ export class PromptDraftCardComponent {
   /** Put alchemy's caption in the prompt box, as the reading worded it. */
   public useDescribeCaption(): void {
     const caption = this.describe.findings().caption;
-    if (caption) this.apply.emit(caption);
+    if (caption) {
+      this.use.emit({ prompt: caption, negative: null, source: 'draft' });
+    }
   }
 
   /** Take one of the findings away for use elsewhere. */
@@ -992,9 +1042,19 @@ export class PromptDraftCardComponent {
     this.copiedTake.set(index);
   }
 
+  /**
+   * Hand a take to the prompt box. Its negative line goes with it, because the
+   * model wrote the two as one answer.
+   */
   public send(index = 0): void {
     const text = this.draftTexts()[index];
-    if (text) this.apply.emit(text);
+    if (!text) return;
+    const negative = this.negativeFor(index);
+    this.use.emit({
+      prompt: text,
+      negative: negative === '' ? null : negative,
+      source: 'draft',
+    });
   }
 
   /** The negative line a take came with, empty where the model wrote none. */
@@ -1002,36 +1062,47 @@ export class PromptDraftCardComponent {
     return this.takesShown().at(index)?.negative ?? '';
   }
 
-  public sendNegative(index = 0): void {
-    const negative = this.negativeFor(index);
-    if (negative) this.applyNegative.emit(negative);
+  /**
+   * Requests that have not landed as drafts, from every card and every job,
+   * so the list of drafts shows what is still coming wherever it was asked.
+   */
+  public readonly liveRequests = computed<PromptLibraryLiveRequest[]>(() =>
+    this.queue.requests().flatMap((request) => {
+      const stateKey = liveRequestStateKey(request);
+      return stateKey === null
+        ? []
+        : [
+            {
+              id: request.localId,
+              stateKey,
+              preview: liveRequestPreview(request),
+              createdAt: request.createdAt,
+            },
+          ];
+    }),
+  );
+
+  public openLibrary(): void {
+    this.libraryOpen.set(true);
   }
 
-  public async toggleHistory(): Promise<void> {
-    const open = !this.historyOpen();
-    this.historyOpen.set(open);
-    if (open) await this.loadHistory();
+  /** A draft deleted in the list changes the count the press shows. */
+  public closeLibrary(): void {
+    this.libraryOpen.set(false);
+    void this.countDrafts();
   }
 
-  public usePast(draft: StoredPromptDraft): void {
-    this.apply.emit(draft.text);
+  public useFromLibrary(use: PromptLibraryUse): void {
+    this.closeLibrary();
+    this.use.emit(use);
   }
 
-  public async copyPast(draft: StoredPromptDraft): Promise<void> {
-    await copyToClipboard(draft.text);
-  }
-
-  public async deletePast(draft: StoredPromptDraft): Promise<void> {
-    await this.store.remove(draft.id);
-    await this.loadHistory();
-  }
-
-  private async loadHistory(): Promise<void> {
+  private async countDrafts(): Promise<void> {
     try {
-      this.history.set(await this.store.list(HISTORY_LIMIT));
+      this.draftCount.set((await this.store.listAll()).length);
     } catch {
-      // A history that will not open leaves the strip empty, nothing more.
-      this.history.set([]);
+      // A store that will not open leaves the press without a number.
+      this.draftCount.set(null);
     }
   }
 

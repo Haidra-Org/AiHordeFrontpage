@@ -1921,32 +1921,49 @@ describe('GenerateComponent', () => {
       const handoff = TestBed.inject(StudioHandoffService);
       component.form.controls.prompt.setValue('a portrait');
       handoff.set({ prompt: 'grey hair, sunglasses' });
-      const fillPrompt = vi.fn();
+      const applyPrompt = vi.fn();
       Object.defineProperty(component, 'formRef', {
-        value: () => ({ fillPrompt }),
+        value: () => ({ applyPrompt }),
       });
 
       fixture.detectChanges();
       await fixture.whenStable();
 
-      expect(fillPrompt).toHaveBeenCalledWith(
-        'a portrait, grey hair, sunglasses',
+      // The box changes under the reader, so the words go the way every
+      // prompt from elsewhere goes: asked about, and undoable.
+      expect(applyPrompt).toHaveBeenCalledWith(
+        { prompt: 'a portrait, grey hair, sunglasses', negative: null },
+        'handoff',
       );
       expect(handoff.has()).toBe(false);
-      expect(toastSuccess).toHaveBeenCalledWith(
-        'generate.source.prompt_attached',
-        { transloco: true },
-      );
       expect(component.form.getRawValue().sourceMode).toBe('none');
+    });
+
+    it('takes the words whole into an empty prompt', async () => {
+      const handoff = TestBed.inject(StudioHandoffService);
+      component.form.controls.prompt.setValue('  ');
+      handoff.set({ prompt: 'grey hair, sunglasses' });
+      const applyPrompt = vi.fn();
+      Object.defineProperty(component, 'formRef', {
+        value: () => ({ applyPrompt }),
+      });
+
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(applyPrompt).toHaveBeenCalledWith(
+        { prompt: 'grey hair, sunglasses', negative: null },
+        'handoff',
+      );
     });
 
     it('replaces the prompt where the words are the prompt themselves', async () => {
       const handoff = TestBed.inject(StudioHandoffService);
       component.form.controls.prompt.setValue('a portrait');
       handoff.set({ prompt: 'a snail cathedral', promptMode: 'set' });
-      const fillPrompt = vi.fn();
+      const applyPrompt = vi.fn();
       Object.defineProperty(component, 'formRef', {
-        value: () => ({ fillPrompt }),
+        value: () => ({ applyPrompt }),
       });
 
       fixture.detectChanges();
@@ -1954,11 +1971,11 @@ describe('GenerateComponent', () => {
 
       // A picture chosen off the home page brings the prompt that made it, so
       // nothing of the box's own words survives into it.
-      expect(fillPrompt).toHaveBeenCalledWith('a snail cathedral');
+      expect(applyPrompt).toHaveBeenCalledWith(
+        { prompt: 'a snail cathedral', negative: null },
+        'handoff',
+      );
       expect(handoff.has()).toBe(false);
-      expect(toastSuccess).toHaveBeenCalledWith('generate.source.prompt_set', {
-        transloco: true,
-      });
     });
 
     it('leaves the form alone when nothing was sent', async () => {

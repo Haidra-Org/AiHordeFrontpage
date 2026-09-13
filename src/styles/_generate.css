@@ -7368,6 +7368,47 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-field);
   color: var(--gs-blue-text);
 }
+/* The replace-your-prompt dialog puts the two prompts one above the other, so
+   they read as before and after at any width. A long prompt scrolls inside its
+   own block and keeps the buttons on screen. */
+.gen-studio .gs-prompt-apply-compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-3);
+}
+.gen-studio .gs-prompt-apply-side {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-result-action-confirm-body .gs-prompt-apply-label {
+  margin: 0;
+  color: var(--gs-label);
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+}
+.gen-studio .gs-result-action-confirm-body .gs-prompt-apply-text {
+  max-height: 9.5em;
+  overflow-y: auto;
+  padding: var(--gs-space-2);
+  border: 1px solid var(--gs-field-border);
+  border-radius: var(--gs-radius-sm);
+  background: var(--gs-field);
+  color: var(--gs-ink);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.gen-studio .gs-result-action-confirm-body .gs-prompt-apply-text:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-prompt-apply-checkbox {
+    min-height: 44px;
+  }
+}
 @media (min-width: 1024px) and (pointer: coarse) {
   .gen-studio .gs-quick-acts--tile .gs-quick-act {
     min-height: 44px;

@@ -64,8 +64,13 @@ import {
 import { CivitaiPickerComponent } from '../../../components/civitai-picker/civitai-picker.component';
 import { StyleBrowserComponent } from '../style-browser/style-browser.component';
 import { PromptLibraryComponent } from '../../../components/prompt-library/prompt-library.component';
-import type { PromptLibraryUse } from '../../../components/prompt-library/prompt-library.model';
+import type {
+  PromptLibraryTab,
+  PromptLibraryUse,
+} from '../../../components/prompt-library/prompt-library.model';
 import { PromptHistoryDbService } from '../../../services/prompt-history-db.service';
+import { PromptDraftDbService } from '../../../services/prompt-draft-db.service';
+import { PromptApplyConfirmComponent } from '../prompt-apply-confirm/prompt-apply-confirm.component';
 import { GsGroupComponent } from './gs-group/gs-group.component';
 import { ResultControlAction } from '../result-control-action';
 import { negativeHasPhrase } from '../../../helper/prompt-check';
@@ -536,6 +541,20 @@ const LEDGER_SECTION_TITLE_KEY: Readonly<Record<LedgerSection, string>> = {
 const GROUPS_OPEN_KEY = 'aihorde.generate.groups_open';
 /** Set once the first-visit line under the prompt has been dismissed. */
 const PROMPT_HINT_KEY = 'aihorde.generate.prompt_hint_done';
+/** False once the reader has asked not to be asked before a prompt replaces theirs. */
+const PROMPT_APPLY_CONFIRM_KEY = 'aihorde.generate.prompt_apply_confirm';
+/** How long the offer to undo a replaced prompt stays on screen. */
+const PROMPT_APPLY_UNDO_MS = 10_000;
+
+/** Where a prompt being put in the box came from. */
+export type PromptApplySource = 'draft' | 'sent' | 'handoff';
+
+/** A prompt to put in the box, with the negative that goes alongside it. */
+export interface PromptApplication {
+  prompt: string;
+  /** Null leaves the negative box as it is. */
+  negative: string | null;
+}
 /** Results after which the first-visit line goes away on its own. */
 const PROMPT_HINT_RESULTS = 2;
 
@@ -577,6 +596,7 @@ const SUMMARY_SEPARATOR = ' · ';
     CivitaiPickerComponent,
     StyleBrowserComponent,
     PromptLibraryComponent,
+    PromptApplyConfirmComponent,
     GsGroupComponent,
     RouterLink,
     GsSheetComponent,
@@ -786,16 +806,46 @@ export class GenerateFormComponent implements OnInit {
     viewChild<ElementRef<HTMLSelectElement>>('styleSelect');
 
   private readonly sentPrompts = inject(PromptHistoryDbService);
+  private readonly draftPrompts = inject(PromptDraftDbService);
   /** Whether the prompts library is open over the studio. */
   public readonly promptLibraryOpen = signal(false);
+  /** The prompt help card, whose own count is fresher once it has one. */
+  private readonly draftCard = viewChild(PromptDraftCardComponent);
+  /** How many drafts were kept when the studio last counted them. */
+  private readonly storedDraftCount = signal(0);
+  /**
+   * Whether there are drafts to go back to. The card counts again when a
+   * request lands, which the studio's own count taken on arrival cannot see.
+   */
+  private readonly hasDrafts = computed(
+    () => (this.draftCard()?.draftCount() ?? this.storedDraftCount()) > 0,
+  );
   /**
    * Whether there is a sent prompt to go back to. The job list answers before
    * the sent store has been read, and the store answers once the results have
    * been cleared.
    */
-  public readonly hasPromptHistory = computed(
+  private readonly hasSentPrompts = computed(
     () => this.promptHistory().length > 0 || this.sentPrompts.size() > 0,
   );
+  /** Whether the clock press has anything to open: a sent prompt or a draft. */
+  public readonly hasPromptHistory = computed(
+    () => this.hasSentPrompts() || this.hasDrafts(),
+  );
+  /** A reader with drafts and nothing sent is sent where the prompts are. */
+  public readonly promptLibraryTab = computed<PromptLibraryTab>(() =>
+    this.hasSentPrompts() ? 'sent' : 'drafts',
+  );
+
+  /** Whether a prompt from elsewhere asks before replacing the reader's own. */
+  public readonly confirmPromptApply = signal(
+    this.db.get(PROMPT_APPLY_CONFIRM_KEY) !== false,
+  );
+  /** The prompt waiting on the reader's answer, or null while nothing asks. */
+  public readonly pendingPromptApply = signal<{
+    incoming: PromptApplication;
+    source: PromptApplySource;
+  } | null>(null);
   /** Whether the estimate's breakdown popover is open. */
   public readonly kudosOpen = signal(false);
   /** The breakdown popover's anchor, used to detect click-away dismissals. */
@@ -1602,6 +1652,7 @@ export class GenerateFormComponent implements OnInit {
 
   public ngOnInit(): void {
     this.restoreGroupsOpen();
+    void this.countDrafts();
     this.value.set(this.form().getRawValue());
     this.form()
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
@@ -3104,6 +3155,16 @@ export class GenerateFormComponent implements OnInit {
     this.confirmResultActionsChange.emit(!this.confirmResultActions());
   }
 
+  public toggleConfirmPromptApply(): void {
+    this.setConfirmPromptApply(!this.confirmPromptApply());
+  }
+
+  /** Remember whether a prompt from elsewhere asks before replacing the box. */
+  public setConfirmPromptApply(on: boolean): void {
+    this.confirmPromptApply.set(on);
+    this.db.store(PROMPT_APPLY_CONFIRM_KEY, on);
+  }
+
   public undoResultActionFromOptions(): void {
     this.closeOptionsAndFocus();
     this.undoResultAction.emit();
@@ -3252,18 +3313,109 @@ export class GenerateFormComponent implements OnInit {
     this.promptLibraryOpen.set(true);
   }
 
+  /** A draft deleted in the library may have been the last one. */
   public closePromptLibrary(): void {
     this.promptLibraryOpen.set(false);
+    void this.countDrafts();
+  }
+
+  /** Reuse a prompt from the library, asking first where it would replace one. */
+  public usePromptFromLibrary(use: PromptLibraryUse): void {
+    this.closePromptLibrary();
+    this.applyPrompt(use, use.source);
+  }
+
+  private async countDrafts(): Promise<void> {
+    try {
+      this.storedDraftCount.set((await this.draftPrompts.listAll()).length);
+    } catch {
+      // A store that will not open leaves the clock press to the sent prompts.
+      this.storedDraftCount.set(0);
+    }
   }
 
   /**
-   * Reuse a prompt from the library. A sent prompt carries its negative, empty
-   * or not, so an old negative is never left paired with a new positive; a
-   * draft without one leaves the negative box as it is.
+   * Put a prompt chosen elsewhere in the box: a draft, a prompt sent before, or
+   * words handed over from another page. An empty box, one already holding the
+   * same prompt, or incoming words that keep what the reader wrote and add to
+   * it take effect at once; anything that would lose the reader's words is
+   * shown beside the incoming prompt first, unless they have asked not to be
+   * asked. Either way the change can be undone from the toast that follows it.
    */
-  public usePromptFromLibrary(use: PromptLibraryUse): void {
-    this.closePromptLibrary();
-    this.fillPrompt(use.prompt, use.negative);
+  public applyPrompt(
+    incoming: PromptApplication,
+    source: PromptApplySource,
+  ): void {
+    const current = this.form().controls.prompt.value.trim();
+    if (
+      !this.confirmPromptApply() ||
+      current === '' ||
+      incoming.prompt.trim().startsWith(current)
+    ) {
+      this.writeAppliedPrompt(incoming, source);
+      return;
+    }
+    this.pendingPromptApply.set({ incoming, source });
+  }
+
+  public confirmPendingPrompt(event: { dontAskAgain: boolean }): void {
+    const pending = this.pendingPromptApply();
+    this.pendingPromptApply.set(null);
+    if (event.dontAskAgain) {
+      this.setConfirmPromptApply(false);
+    }
+    if (pending) {
+      this.writeAppliedPrompt(pending.incoming, pending.source);
+    }
+  }
+
+  public cancelPendingPrompt(): void {
+    this.pendingPromptApply.set(null);
+  }
+
+  /**
+   * A sent prompt comes back with the negative it was sent with, empty or not,
+   * so an old negative is never left paired with a new positive. Any other
+   * negative joins what the box holds, because that was written on purpose.
+   */
+  private writeAppliedPrompt(
+    incoming: PromptApplication,
+    source: PromptApplySource,
+  ): void {
+    const controls = this.form().controls;
+    const before = {
+      prompt: controls.prompt.value,
+      negative: controls.negativePrompt.value,
+    };
+    controls.prompt.setValue(incoming.prompt);
+    controls.prompt.markAsDirty();
+    if (incoming.negative !== null) {
+      if (source === 'sent') {
+        controls.negativePrompt.setValue(incoming.negative);
+        controls.negativePrompt.markAsDirty();
+      } else {
+        this.addNegative(incoming.negative);
+      }
+    }
+    this.focusPrompt();
+    if (
+      controls.prompt.value === before.prompt &&
+      controls.negativePrompt.value === before.negative
+    ) {
+      return;
+    }
+    this.toast.success('prompt_apply.replaced', {
+      transloco: true,
+      autoDismissMs: PROMPT_APPLY_UNDO_MS,
+      action: {
+        label: 'prompt_apply.undo',
+        run: () => {
+          controls.prompt.setValue(before.prompt);
+          controls.negativePrompt.setValue(before.negative);
+          this.focusPrompt();
+        },
+      },
+    });
   }
 
   /**

@@ -477,20 +477,17 @@
   font-weight: 600;
   cursor: pointer;
 }
-/* The past drafts sit below a rule so the card reads as the draft first and
-   the archive second. */
-.gen-studio .alchemy-draft__history {
+/* The way to every kept draft sits below a rule so the card reads as the
+   draft first and the archive second. */
+.gen-studio .alchemy-draft__library {
   display: flex;
-  flex-direction: column;
-  gap: var(--gs-space-1);
   padding-top: var(--gs-space-2);
   border-top: 1px solid var(--gs-border);
 }
-.gen-studio .alchemy-draft__history-toggle {
+.gen-studio .alchemy-draft__library-open {
   display: flex;
   align-items: center;
   gap: 6px;
-  align-self: flex-start;
   min-height: 44px;
   padding: 0;
   border: 0;
@@ -501,43 +498,12 @@
   font-weight: 600;
   cursor: pointer;
 }
-.gen-studio .alchemy-draft__history-note {
-  margin: 0;
+.gen-studio .alchemy-draft__library-open:hover {
+  color: var(--gs-ink);
 }
-.gen-studio .alchemy-draft__history-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gs-space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.gen-studio .alchemy-draft__history-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--gs-space-1) var(--gs-space-2);
-  min-width: 0;
-}
-/* One line each: the row is a way back to a draft, not a place to read it. */
-.gen-studio .alchemy-draft__history-text {
-  flex: 1 1 220px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-/* A model id is one unbroken word, often longer than the row, so it may break
-   anywhere rather than run past the card's edge. */
-.gen-studio .alchemy-draft__history-meta {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.gen-studio .alchemy-draft__history-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gs-space-1);
+.gen-studio .alchemy-draft__library-open:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
 }
 
 /* --- words read out of a picture ---------------------------------- */

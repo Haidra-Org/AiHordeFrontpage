@@ -45,8 +45,11 @@ import {
 } from '../../../services/licensing.service';
 import type { ActiveModel } from '../../../types/active-model';
 import type { HordeWorker } from '../../../types/horde-worker';
-import { ToastService } from '../../../services/toast.service';
-import { PromptDraftDbService } from '../../../services/prompt-draft-db.service';
+import { ToastService, type Toast } from '../../../services/toast.service';
+import {
+  PromptDraftDbService,
+  type StoredPromptDraft,
+} from '../../../services/prompt-draft-db.service';
 import { PromptHistoryDbService } from '../../../services/prompt-history-db.service';
 import { DatabaseService } from '../../../services/database.service';
 import { FullscreenService } from '../../../services/fullscreen.service';
@@ -498,13 +501,34 @@ describe('GenerateFormComponent prompt history', () => {
     };
   }
 
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   /** The real template, with the stores the library reads stubbed out. */
-  async function renderWithHistory(): Promise<{
+  async function renderWithHistory(
+    kept: { sent: boolean; drafts: StoredPromptDraft[] } = {
+      sent: true,
+      drafts: [],
+    },
+  ): Promise<{
     fixture: ComponentFixture<GenerateFormComponent>;
     host: HTMLElement;
     form: GenerateFormGroup;
   }> {
-    const empty = (): Promise<never[]> => Promise.resolve([]);
+    const sent = kept.sent
+      ? [
+          {
+            key: 'k',
+            prompt: 'a castle',
+            negative: 'washed out',
+            model: 'flux',
+            firstSentAt: 1,
+            lastSentAt: Date.now(),
+            count: 2,
+          },
+        ]
+      : [];
     await TestBed.configureTestingModule({
       imports: [
         GenerateFormComponent,
@@ -517,24 +541,13 @@ describe('GenerateFormComponent prompt history', () => {
         provideRouter([]),
         {
           provide: PromptDraftDbService,
-          useValue: { listAll: empty },
+          useValue: { listAll: () => Promise.resolve(kept.drafts) },
         },
         {
           provide: PromptHistoryDbService,
           useValue: {
-            size: signal(1),
-            listAll: () =>
-              Promise.resolve([
-                {
-                  key: 'k',
-                  prompt: 'a castle',
-                  negative: 'washed out',
-                  model: 'flux',
-                  firstSentAt: 1,
-                  lastSentAt: Date.now(),
-                  count: 2,
-                },
-              ]),
+            size: signal(sent.length),
+            listAll: () => Promise.resolve(sent),
           },
         },
       ],
@@ -552,6 +565,9 @@ describe('GenerateFormComponent prompt history', () => {
     return { fixture, host: fixture.nativeElement as HTMLElement, form };
   }
 
+  const replace = (component: GenerateFormComponent): void =>
+    component.confirmPendingPrompt({ dontAskAgain: false });
+
   it('fills both prompt halves from a sent prompt and closes the library', async () => {
     const { component, form } = await createWithPromptBox();
     component.openPromptLibrary();
@@ -561,10 +577,11 @@ describe('GenerateFormComponent prompt history', () => {
       negative: 'washed out',
       source: 'sent',
     });
+    expect(component.promptLibraryOpen()).toBe(false);
+    replace(component);
 
     expect(form.controls.prompt.value).toBe('a castle');
     expect(form.controls.negativePrompt.value).toBe('washed out');
-    expect(component.promptLibraryOpen()).toBe(false);
   });
 
   it('clears the negative prompt when the sent prompt had none', async () => {
@@ -574,6 +591,7 @@ describe('GenerateFormComponent prompt history', () => {
       negative: '',
       source: 'sent',
     });
+    replace(component);
     expect(form.controls.negativePrompt.value).toBe('');
   });
 
@@ -584,8 +602,178 @@ describe('GenerateFormComponent prompt history', () => {
       negative: null,
       source: 'draft',
     });
+    replace(component);
     expect(form.controls.prompt.value).toBe('a lighthouse');
     expect(form.controls.negativePrompt.value).toBe('blurry');
+  });
+
+  describe('applying a prompt from elsewhere', () => {
+    const lastToast = (): Toast | undefined =>
+      TestBed.inject(ToastService).toasts().at(-1);
+
+    it('fills an empty box at once and offers an undo', async () => {
+      const { component, form, promptBox } = await createWithPromptBox();
+      form.controls.prompt.setValue('');
+
+      component.applyPrompt(
+        { prompt: 'a lighthouse', negative: null },
+        'draft',
+      );
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a lighthouse');
+      expect(document.activeElement).toBe(promptBox);
+      expect(lastToast()).toMatchObject({
+        message: 'prompt_apply.replaced',
+        transloco: true,
+        action: { label: 'prompt_apply.undo' },
+      });
+    });
+
+    it('asks nothing and says nothing when the box already holds the prompt', async () => {
+      const { component, form } = await createWithPromptBox();
+
+      component.applyPrompt({ prompt: 'a fox', negative: null }, 'draft');
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a fox');
+      expect(lastToast()).toBeUndefined();
+    });
+
+    it('asks before replacing other words, and Replace puts the prompt in', async () => {
+      const { component, form } = await createWithPromptBox();
+
+      component.applyPrompt(
+        { prompt: 'a lighthouse', negative: 'grain' },
+        'draft',
+      );
+
+      expect(component.pendingPromptApply()).toEqual({
+        incoming: { prompt: 'a lighthouse', negative: 'grain' },
+        source: 'draft',
+      });
+      expect(form.controls.prompt.value).toBe('a fox');
+
+      replace(component);
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a lighthouse');
+    });
+
+    it('leaves both boxes as they were on Cancel', async () => {
+      const { component, form } = await createWithPromptBox();
+      component.applyPrompt(
+        { prompt: 'a lighthouse', negative: 'grain' },
+        'draft',
+      );
+
+      component.cancelPendingPrompt();
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a fox');
+      expect(form.controls.negativePrompt.value).toBe('blurry');
+      expect(lastToast()).toBeUndefined();
+    });
+
+    it('adds a draft negative to the negative box rather than replacing it', async () => {
+      const { component, form } = await createWithPromptBox();
+      form.controls.prompt.setValue('');
+
+      component.applyPrompt(
+        { prompt: 'a lighthouse', negative: 'extra limbs' },
+        'draft',
+      );
+
+      expect(form.controls.negativePrompt.value).toBe('blurry, extra limbs');
+    });
+
+    it('puts back the prompt and the negative on Undo', async () => {
+      const { component, form } = await createWithPromptBox();
+      component.applyPrompt(
+        { prompt: 'a lighthouse', negative: 'extra limbs' },
+        'draft',
+      );
+      replace(component);
+      expect(form.controls.negativePrompt.value).toBe('blurry, extra limbs');
+
+      lastToast()?.action?.run();
+
+      expect(form.controls.prompt.value).toBe('a fox');
+      expect(form.controls.negativePrompt.value).toBe('blurry');
+    });
+
+    it('remembers "Don\'t ask again" and replaces without asking after it', async () => {
+      const { component, form } = await createWithPromptBox();
+      component.applyPrompt(
+        { prompt: 'a lighthouse', negative: null },
+        'draft',
+      );
+
+      component.confirmPendingPrompt({ dontAskAgain: true });
+
+      expect(component.confirmPromptApply()).toBe(false);
+      expect(
+        TestBed.inject(DatabaseService).get(
+          'aihorde.generate.prompt_apply_confirm',
+        ),
+      ).toBe(false);
+
+      component.applyPrompt({ prompt: 'a castle', negative: null }, 'sent');
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a castle');
+    });
+
+    it('starts without asking on a visit after "Don\'t ask again"', async () => {
+      localStorage.setItem('aihorde.generate.prompt_apply_confirm', 'false');
+      const { component, form } = await createWithPromptBox();
+
+      component.applyPrompt({ prompt: 'a castle', negative: null }, 'draft');
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a castle');
+    });
+
+    it('adds words that keep the prompt without asking, and still offers an undo', async () => {
+      const { component, form } = await createWithPromptBox();
+
+      component.applyPrompt(
+        { prompt: 'a fox, grey hair', negative: null },
+        'handoff',
+      );
+
+      expect(component.pendingPromptApply()).toBeNull();
+      expect(form.controls.prompt.value).toBe('a fox, grey hair');
+      lastToast()?.action?.run();
+      expect(form.controls.prompt.value).toBe('a fox');
+    });
+
+    it('asks through the dialog for words handed over from another page', async () => {
+      const { fixture, host, form } = await renderWithHistory();
+
+      fixture.componentInstance.applyPrompt(
+        { prompt: 'an old man with grey hair', negative: null },
+        'handoff',
+      );
+      fixture.detectChanges();
+
+      const dialog = host.querySelector('app-prompt-apply-confirm');
+      expect(dialog).not.toBeNull();
+      expect(
+        [...(dialog?.querySelectorAll('.gs-prompt-apply-text') ?? [])].map(
+          (node) => node.textContent?.trim(),
+        ),
+      ).toEqual(['a fox', 'an old man with grey hair']);
+
+      dialog
+        ?.querySelector<HTMLButtonElement>('.gs-modal-footer .gs-tile-btn')
+        ?.click();
+      fixture.detectChanges();
+
+      expect(host.querySelector('app-prompt-apply-confirm')).toBeNull();
+      expect(form.controls.prompt.value).toBe('a fox');
+      expect(form.controls.negativePrompt.value).toBe('blurry');
+    });
   });
 
   it('leaves the negative prompt alone when only a prompt is supplied', async () => {
@@ -641,9 +829,68 @@ describe('GenerateFormComponent prompt history', () => {
     host.querySelector<HTMLButtonElement>('.gs-pl-use')?.click();
     fixture.detectChanges();
 
+    expect(host.querySelector('app-prompt-library')).toBeNull();
+    // The box held other words, so the prompt waits on the reader's answer.
+    expect(form.controls.prompt.value).toBe('a fox');
+    host
+      .querySelector<HTMLButtonElement>(
+        'app-prompt-apply-confirm .gs-modal-done',
+      )
+      ?.click();
+    fixture.detectChanges();
+
     expect(form.controls.prompt.value).toBe('a castle');
     expect(form.controls.negativePrompt.value).toBe('washed out');
-    expect(host.querySelector('app-prompt-library')).toBeNull();
+    expect(host.querySelector('app-prompt-apply-confirm')).toBeNull();
+  });
+
+  it('offers the clock press with drafts kept and nothing sent, opening on Drafts', async () => {
+    const draft: StoredPromptDraft = {
+      id: 'd1',
+      createdAt: Date.now(),
+      origin: 'studio',
+      input: { prompt: 'a fox' },
+      pick: 'auto',
+      model: 'm/1',
+      seed: null,
+      kudos: 3,
+      anonymous: true,
+      text: 'a fox in morning fog',
+    };
+    const { fixture, host } = await renderWithHistory({
+      sent: false,
+      drafts: [draft],
+    });
+    expect(host.querySelector('.gs-prompt-hist-btn')).toBeNull();
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.hasPromptHistory()).toBe(true);
+    host.querySelector<HTMLButtonElement>('.gs-prompt-hist-btn')?.click();
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    const tabs = [
+      ...(host.querySelectorAll<HTMLButtonElement>(
+        'app-prompt-library .gs-pl-tabs .gs-seg-opt',
+      ) ?? []),
+    ];
+    expect(tabs.map((tab) => tab.getAttribute('aria-pressed'))).toEqual([
+      'true',
+      'false',
+    ]);
+  });
+
+  it('offers no clock press with nothing sent and no drafts', async () => {
+    const { fixture, host } = await renderWithHistory({
+      sent: false,
+      drafts: [],
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelector('.gs-prompt-hist-btn')).toBeNull();
   });
 
   it('closes the library on Escape', async () => {

@@ -649,7 +649,7 @@
               </div>
               <!-- The rewrite is asked for a negative line as well, so what
                      to keep out of the picture arrives with what to put in it
-                     and goes to its own box. -->
+                     and goes to its own box with the same press. -->
               @if (negativeFor($index); as negative) {
                 <p class="gs-sublabel alchemy-draft__negative-label">
                   {{ "prompt_draft.negative_label" | transloco }}
@@ -657,16 +657,6 @@
                 <blockquote class="alchemy-caption alchemy-draft__negative">
                   {{ negative }}
                 </blockquote>
-                <div class="alchemy-draft__actions">
-                  <button
-                    type="button"
-                    class="gs-btn gs-btn--dense"
-                    (click)="sendNegative($index)"
-                  >
-                    <app-icon name="no-symbol" class="gs-ico-sm" />
-                    {{ "prompt_draft.negative_use" | transloco }}
-                  </button>
-                </div>
               }
             </div>
           }
@@ -694,74 +684,32 @@
           }
         }
       }
-      <div class="alchemy-draft__history">
+      <div class="alchemy-draft__library">
         <button
           type="button"
-          class="alchemy-draft__history-toggle"
-          [attr.aria-expanded]="historyOpen()"
-          (click)="toggleHistory()"
+          class="alchemy-draft__library-open"
+          aria-haspopup="dialog"
+          (click)="openLibrary()"
         >
-          <app-icon
-            name="chevron-right"
-            class="alchemy-result__chevron"
-            [class.alchemy-result__chevron--open]="historyOpen()"
-          />
-          {{ "prompt_draft.history_title" | transloco }}
-        </button>
-        @if (historyOpen()) {
-          <p class="gs-sublabel alchemy-draft__history-note">
-            {{ "prompt_draft.history_note" | transloco }}
-          </p>
-          @if (history().length === 0) {
-            <p class="gs-sublabel">
-              {{ "prompt_draft.history_empty" | transloco }}
-            </p>
+          <app-icon name="document-text" class="gs-ico-sm" />
+          @let count = draftCount();
+          @if (count !== null) {
+            {{ "prompt_draft.library_open_count" | transloco: { count } }}
           } @else {
-            <ul class="alchemy-draft__history-list">
-              @for (past of history(); track past.id) {
-                <li class="alchemy-draft__history-row">
-                  <span class="alchemy-draft__history-text" [title]="past.text">
-                    {{ past.text }}
-                  </span>
-                  <span class="gs-sublabel alchemy-draft__history-meta">
-                    {{
-                      "prompt_draft.history_meta"
-                        | transloco: { model: past.model, kudos: past.kudos }
-                    }}
-                    <span [title]="past.createdAt | date: 'medium'">{{
-                      past.createdAt | date: "short"
-                    }}</span>
-                  </span>
-                  <span class="alchemy-draft__history-actions">
-                    <button
-                      type="button"
-                      class="gs-btn gs-btn--dense"
-                      (click)="usePast(past)"
-                    >
-                      {{ "prompt_draft.history_use" | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-btn gs-btn--dense"
-                      (click)="copyPast(past)"
-                    >
-                      {{ "prompt_draft.history_copy" | transloco }}
-                    </button>
-                    <button
-                      type="button"
-                      class="gs-btn gs-btn--dense gs-btn--danger"
-                      (click)="deletePast(past)"
-                    >
-                      {{ "prompt_draft.history_delete" | transloco }}
-                    </button>
-                  </span>
-                </li>
-              }
-            </ul>
+            {{ "prompt_draft.library_open" | transloco }}
           }
-        }
+        </button>
       </div>
     </div>
+
+    @if (libraryOpen()) {
+      <app-prompt-library
+        initialTab="drafts"
+        [liveRequests]="liveRequests()"
+        (use)="useFromLibrary($event)"
+        (closed)="closeLibrary()"
+      />
+    }
 
     <app-json-inspector
       [open]="previewOpen()"

@@ -1876,23 +1876,18 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     // with something in hand has asked for the studio, not for the offer.
     this.welcomeClosed.set(true);
     if (pending.prompt) {
-      if (pending.promptMode === 'set') {
-        // A picture the reader chose comes with the prompt that made it, and
-        // what they asked for is that prompt rather than a mixture of it and
-        // whatever was in the box.
-        this.onUsePrompt(pending.prompt);
-        this.toast.success('generate.source.prompt_set', { transloco: true });
-      } else {
-        // Words sent over join what is already written rather than replacing
-        // it: a caption is material for the prompt, not the prompt.
-        const current = this.form.controls.prompt.value.trim();
-        this.onUsePrompt(
-          current ? `${current}, ${pending.prompt}` : pending.prompt,
-        );
-        this.toast.success('generate.source.prompt_attached', {
-          transloco: true,
-        });
-      }
+      // A picture the reader chose comes with the prompt that made it, and what
+      // they asked for is that prompt rather than a mixture of it and whatever
+      // was in the box. Other words sent over join what is already written: a
+      // caption is material for the prompt, not the prompt. Either way the box
+      // changes under the reader, so it asks and offers an undo like any other
+      // prompt put there from elsewhere.
+      const current = this.form.controls.prompt.value.trim();
+      const prompt =
+        pending.promptMode === 'set' || !current
+          ? pending.prompt
+          : `${current}, ${pending.prompt}`;
+      this.formRef()?.applyPrompt({ prompt, negative: null }, 'handoff');
     }
     if (!pending.blob) {
       return;

@@ -561,7 +561,7 @@
         [tags]="material.tags"
         [foldPin]="draftPinFor(job.id)"
         [jobId]="job.id"
-        (apply)="sendToPrompt.emit($event)"
+        (use)="sendToPrompt.emit($event.prompt)"
       />
     }
     @for (card of cards; track card.key) {
