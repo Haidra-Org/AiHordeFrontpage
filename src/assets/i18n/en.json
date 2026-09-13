@@ -2573,6 +2573,7 @@
   "prompt_draft.details_request": "Request sent",
   "prompt_draft.details_response": "Answer received",
   "prompt_draft.details_response_none": "Nothing came back.",
+  "prompt_draft.details_resolved": "What the horde will send",
   "prompt_draft.tidied": "Tidied",
   "prompt_draft.use_raw": "Use as written",
   "prompt_draft.echo_warning": "This answer repeats the instruction it was given instead of writing a prompt. Try again, or use it as the worker wrote it.",

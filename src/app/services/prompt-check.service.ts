@@ -218,19 +218,18 @@ export class PromptCheckService {
     if (asked === this.pricedFor) return;
     this.pricedFor = asked;
     try {
-      this.verdictPrice.set(
-        await this.drafts.estimate(
-          {
-            role: 'judge',
-            prompt,
-            caption: stored.caption,
-            tags: stored.tags,
-          },
-          'auto',
-          undefined,
-          !this.auth.isLoggedIn(),
-        ),
+      const priced = await this.drafts.estimate(
+        {
+          role: 'judge',
+          prompt,
+          caption: stored.caption,
+          tags: stored.tags,
+        },
+        'auto',
+        undefined,
+        !this.auth.isLoggedIn(),
       );
+      this.verdictPrice.set(priced.kudos);
     } catch {
       // A price that cannot be fetched leaves the line off; the button works.
       this.verdictPrice.set(null);

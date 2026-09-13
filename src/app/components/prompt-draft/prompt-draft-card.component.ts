@@ -22,6 +22,7 @@ import {
   PromptDraftOrigin,
   PromptDraftService,
   PromptDraftShape,
+  TextDraftEstimate,
   TextRequestSizing,
   TextWorkerLimits,
   curatedRank,
@@ -64,6 +65,7 @@ import { ToastService } from '../../services/toast.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { API_BASE_URL } from '../../services/api-config';
 import { ActiveModel } from '../../types/active-model';
+import type { ResolvedTextRequest } from '../../types/generation';
 import { ImagePromptStyle, imagePromptStyleLabel } from '../../types/style';
 import { copyToClipboard } from '../../helper/copy-to-clipboard';
 import { stringifyAsJson } from '../../helper/json-formatter';
@@ -306,6 +308,11 @@ export class PromptDraftCardComponent {
   private flipSpent = false;
 
   public readonly estimatedKudos = signal<number | null>(null);
+  /**
+   * The request as the last dry run says the horde reads it. A horde that does
+   * not report one leaves this null, and the request shown is the body alone.
+   */
+  public readonly resolvedRequest = signal<ResolvedTextRequest | null>(null);
   public readonly estimating = signal(false);
   private estimateTimer: ReturnType<typeof setTimeout> | null = null;
   private estimateToken = 0;
@@ -958,6 +965,7 @@ export class PromptDraftCardComponent {
           label: this.transloco.translate('prompt_draft.preview_body'),
           value: body,
         },
+        ...this.resolvedSections(),
         {
           id: 'curl',
           label: this.transloco.translate('prompt_draft.preview_curl'),
@@ -966,6 +974,24 @@ export class PromptDraftCardComponent {
       ];
     },
   );
+
+  /**
+   * The request as the horde says it reads it, where the price it quoted came
+   * back with one. The body this card writes is not the whole of what goes: a
+   * style's template, its parameters and its models are filled in at the horde,
+   * and only the horde can say what they came out as.
+   */
+  private resolvedSections(): readonly JsonInspectorSection[] {
+    const resolved = this.resolvedRequest();
+    if (!resolved) return [];
+    return [
+      {
+        id: 'resolved',
+        label: this.transloco.translate('prompt_draft.details_resolved'),
+        value: resolved,
+      },
+    ];
+  }
 
   /**
    * The call that sends a body, for a reader who wants to run it themselves.
@@ -1009,6 +1035,7 @@ export class PromptDraftCardComponent {
             request.response ??
             this.transloco.translate('prompt_draft.details_response_none'),
         },
+        ...this.resolvedSections(),
         {
           id: 'curl',
           label: this.transloco.translate('prompt_draft.preview_curl'),
@@ -1040,6 +1067,7 @@ export class PromptDraftCardComponent {
       // A price shown beside material that has since changed is worse than none.
       this.estimateToken += 1;
       this.estimatedKudos.set(null);
+      this.resolvedRequest.set(null);
       this.estimating.set(false);
       return;
     }
@@ -1055,9 +1083,9 @@ export class PromptDraftCardComponent {
 
   private async runEstimate(token: number): Promise<void> {
     if (token !== this.estimateToken) return;
-    let kudos: number | null;
+    let priced: TextDraftEstimate;
     try {
-      kudos = await this.drafts.estimate(
+      priced = await this.drafts.estimate(
         this.material(),
         this.modelPick(),
         this.models() ?? undefined,
@@ -1066,12 +1094,13 @@ export class PromptDraftCardComponent {
       );
     } catch {
       // A price that cannot be fetched leaves the line off; the button works.
-      kudos = null;
+      priced = { kudos: null, resolved: null };
     }
     if (token !== this.estimateToken) return;
-    this.estimatedKudos.set(kudos);
+    this.estimatedKudos.set(priced.kudos);
+    this.resolvedRequest.set(priced.resolved);
     this.estimating.set(false);
-    this.flipIfUnaffordable(kudos);
+    this.flipIfUnaffordable(priced.kudos);
   }
 
   /**

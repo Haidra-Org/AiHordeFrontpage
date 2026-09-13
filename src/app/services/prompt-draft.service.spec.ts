@@ -773,8 +773,30 @@ describe('PromptDraftService', () => {
     expect(priced.request.body.dry_run).toBe(true);
     expect(priced.request.headers.get('apikey')).toBe('a-real-key');
     priced.flush({ kudos: 7 });
-    await expect(pending).resolves.toBe(7);
+    await expect(pending).resolves.toEqual({ kudos: 7, resolved: null });
     expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('keeps the request the horde says it will send, where the horde says', async () => {
+    const pending = service.estimate({ caption: 'a dog' }, 'any', [], true);
+    http.expectOne(`${API_BASE_URL}/generate/text/async`).flush({
+      kudos: 7,
+      resolved: {
+        prompt: '### Instruction:\na dog',
+        params: { max_length: 48, max_context_length: 512 },
+        models: ['koboldcpp/gemma'],
+        style: null,
+        estimated_prompt_tokens: 24,
+        context_fit: 'ignore',
+      },
+    });
+    const estimate = await pending;
+    expect(estimate.kudos).toBe(7);
+    expect(estimate.resolved).toMatchObject({
+      models: ['koboldcpp/gemma'],
+      estimated_prompt_tokens: 24,
+      context_fit: 'ignore',
+    });
   });
 
   it('prices anonymously when asked to, and reports a refusal as no price', async () => {
@@ -786,7 +808,7 @@ describe('PromptDraftService', () => {
       { message: 'No workers', rc: 'NoWorkers' },
       { status: 400, statusText: 'Bad Request' },
     );
-    await expect(pending).resolves.toBeNull();
+    await expect(pending).resolves.toEqual({ kudos: null, resolved: null });
   });
 
   it('keeps only the tagged styles, and reads a role and a direction off them', async () => {

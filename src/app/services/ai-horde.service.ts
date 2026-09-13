@@ -538,14 +538,18 @@ export class AiHordeService {
   }
 
   /**
-   * What a text request would cost, without queueing it. A refusal is answered
-   * with no price rather than an error: the caller is showing a hint beside a
-   * button, and has nothing useful to say about a rejected dry run.
+   * What a text request would cost, without queueing it, and what the horde
+   * makes of the request while it is pricing it. A refusal is answered with
+   * nothing rather than an error: the caller is showing a hint beside a button,
+   * and has nothing useful to say about a rejected dry run.
+   *
+   * The whole body comes back rather than the price alone, because a horde new
+   * enough to report the resolved request reports it here and nowhere else.
    */
   public dryRunTextGeneration(
     apiKey: string,
     request: TextGenerationRequest,
-  ): Observable<number | null> {
+  ): Observable<TextGenerationDryRunResponse | null> {
     return this.httpClient
       .post<TextGenerationDryRunResponse>(
         `${this.baseUrl}/generate/text/async`,
@@ -557,7 +561,7 @@ export class AiHordeService {
       )
       .pipe(
         map((response) =>
-          typeof response?.kudos === 'number' ? response.kudos : null,
+          typeof response?.kudos === 'number' ? response : null,
         ),
         catchError(() => of(null)),
       );

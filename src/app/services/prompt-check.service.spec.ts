@@ -51,7 +51,7 @@ describe('PromptCheckService', () => {
     getImage = vi.fn(() => Promise.resolve(storedImage()));
     updateImagePromptCheck = vi.fn(() => Promise.resolve(undefined));
     draft = vi.fn();
-    estimate = vi.fn(() => Promise.resolve(7));
+    estimate = vi.fn(() => Promise.resolve({ kudos: 7, resolved: null }));
 
     TestBed.configureTestingModule({
       providers: [

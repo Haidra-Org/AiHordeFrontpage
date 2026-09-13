@@ -450,6 +450,13 @@ export interface TextGenerationParams {
   stop_sequence?: string[];
 }
 
+/**
+ * What the horde does with a request whose material and answer together will
+ * not fit the room asked for: leave it to the worker, refuse the request, or
+ * raise the room until it holds.
+ */
+export type TextContextFit = 'ignore' | 'reject' | 'grow';
+
 export interface TextGenerationRequest {
   prompt: string;
   params?: TextGenerationParams;
@@ -471,6 +478,25 @@ export interface TextGenerationRequest {
    * template, the sampling parameters and the models itself.
    */
   style?: string;
+  /** What to do when the material and the answer will not fit the room asked for. */
+  context_fit?: TextContextFit;
+  /** Values for the named fields a style's template leaves for the caller. */
+  template_fields?: Record<string, string>;
+}
+
+/**
+ * A request as the horde reads it: the prompt with a style's template filled
+ * in, the parameters and models the style supplied, and what the horde makes of
+ * the room asked for. It is what actually goes to a worker, which is not always
+ * what the client wrote.
+ */
+export interface ResolvedTextRequest {
+  prompt: string;
+  params: TextGenerationParams;
+  models: string[];
+  style: { id: string; name: string } | null;
+  estimated_prompt_tokens: number;
+  context_fit: TextContextFit;
 }
 
 /**
@@ -481,6 +507,11 @@ export interface TextGenerationRequest {
 export interface TextGenerationDryRunResponse {
   kudos: number;
   message?: string;
+  /**
+   * The request as the horde read it. Only hordes new enough to report it send
+   * it, so a client asks for it and does without where it is absent.
+   */
+  resolved?: ResolvedTextRequest;
 }
 
 export interface TextGenerationResponse {

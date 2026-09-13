@@ -14,6 +14,7 @@ import type {
 import { ActiveModel } from '../types/active-model';
 import {
   HordeApiError,
+  ResolvedTextRequest,
   TextGenerationRequest,
   TextWorker,
 } from '../types/generation';
@@ -97,6 +98,18 @@ export interface PromptDraftShape {
   maxContextLength?: number;
   /** Workers to keep off the request; every other eligible worker may take it. */
   avoidWorkers?: readonly string[];
+}
+
+/**
+ * What a dry run answers with: the price, and the request as the horde read it
+ * where the horde says. The two travel together because one call fetches both,
+ * and a caller showing a price is the caller that can show the rest of it.
+ */
+export interface TextDraftEstimate {
+  /** What the request would cost, or null where the horde would not take it. */
+  kudos: number | null;
+  /** What would actually go to a worker; null where the horde does not report it. */
+  resolved: ResolvedTextRequest | null;
 }
 
 /** Which surface asked for a draft, kept with it in the history. */
@@ -1040,7 +1053,7 @@ export class PromptDraftService {
   }
 
   /**
-   * What the draft would cost, asked before the reader commits to it. Null
+   * What the draft would cost, asked before the reader commits to it. No price
    * when the horde would not take the request at all, which is a hint worth
    * nothing rather than a failure worth reporting.
    */
@@ -1050,15 +1063,20 @@ export class PromptDraftService {
     models: readonly ActiveModel[] | undefined,
     anonymous: boolean,
     shape: PromptDraftShape = {},
-  ): Promise<number | null> {
+  ): Promise<TextDraftEstimate> {
     const pool = models ?? (await this.textModels());
-    const chosen = this.chooseModels(pool, pick, shape.style ?? null);
-    return firstValueFrom(
+    const shaped = this.avoiding(shape);
+    const chosen = this.chooseModels(pool, pick, shaped.style ?? null);
+    const priced = await firstValueFrom(
       this.aiHorde.dryRunTextGeneration(
         this.apiKeyFor(anonymous),
-        this.buildRequest(input, chosen, this.avoiding(shape)),
+        this.buildRequest(input, chosen, shaped),
       ),
     );
+    return {
+      kudos: priced?.kudos ?? null,
+      resolved: priced?.resolved ?? null,
+    };
   }
 
   /**

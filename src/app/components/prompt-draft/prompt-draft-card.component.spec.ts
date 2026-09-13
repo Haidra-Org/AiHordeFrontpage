@@ -188,7 +188,7 @@ describe('PromptDraftCardComponent', () => {
       }
       return list;
     };
-    estimate = vi.fn().mockResolvedValue(null);
+    estimate = vi.fn().mockResolvedValue({ kudos: null, resolved: null });
     sizing = vi.fn().mockReturnValue(SIZES);
     workerLimitsFor = vi.fn().mockResolvedValue(WORKER_LIMITS);
     remove = vi.fn().mockResolvedValue(undefined);
@@ -378,7 +378,7 @@ describe('PromptDraftCardComponent', () => {
   });
 
   it('prices whichever pick the reader chooses', async () => {
-    estimate.mockResolvedValue(9);
+    estimate.mockResolvedValue({ kudos: 9, resolved: null });
     build();
     await settle();
     await openOptions();
@@ -515,7 +515,7 @@ describe('PromptDraftCardComponent', () => {
   it('prices the draft once the card has settled, and names the balance when there is one', async () => {
     loggedIn.set(true);
     kudos.set(1_234);
-    estimate.mockResolvedValue(12);
+    estimate.mockResolvedValue({ kudos: 12, resolved: null });
     build();
     await settlePrice();
     expect(estimate).toHaveBeenCalled();
@@ -570,7 +570,7 @@ describe('PromptDraftCardComponent', () => {
   it('moves a draft the balance cannot pay for onto the anonymous key, and says why', async () => {
     loggedIn.set(true);
     kudos.set(5);
-    estimate.mockResolvedValue(50);
+    estimate.mockResolvedValue({ kudos: 50, resolved: null });
     build();
     await settlePrice();
     expect(fixture.componentInstance.anonymous()).toBe(true);
@@ -644,14 +644,14 @@ describe('PromptDraftCardComponent', () => {
     });
 
     it('marks a price above 25 kudos', async () => {
-      estimate.mockResolvedValue(26);
+      estimate.mockResolvedValue({ kudos: 26, resolved: null });
       build();
       await settlePrice();
       expect(price()?.classList).toContain('alchemy-draft__price--high');
     });
 
     it('leaves a price of 25 kudos or less unmarked', async () => {
-      estimate.mockResolvedValue(25);
+      estimate.mockResolvedValue({ kudos: 25, resolved: null });
       build();
       await settlePrice();
       expect(price()).not.toBeNull();
@@ -660,7 +660,7 @@ describe('PromptDraftCardComponent', () => {
 
     it('leaves the price unmarked when the reader asks anonymously', async () => {
       localStorage.setItem('aihorde.prompt-draft.anonymous', 'true');
-      estimate.mockResolvedValue(26);
+      estimate.mockResolvedValue({ kudos: 26, resolved: null });
       build();
       await settlePrice();
       expect(price()).not.toBeNull();
@@ -752,7 +752,7 @@ describe('PromptDraftCardComponent', () => {
         models: [],
       },
     ]);
-    estimate.mockResolvedValue(4);
+    estimate.mockResolvedValue({ kudos: 4, resolved: null });
     build();
     await settlePrice();
     const calls = estimate.mock.calls.length;
@@ -977,7 +977,7 @@ describe('PromptDraftCardComponent', () => {
   it('opens the fold when it moves a draft onto the anonymous key by itself', async () => {
     loggedIn.set(true);
     kudos.set(5);
-    estimate.mockResolvedValue(50);
+    estimate.mockResolvedValue({ kudos: 50, resolved: null });
     build();
     await settlePrice();
     expect(fixture.componentInstance.optionsOpen()).toBe(true);
@@ -1459,6 +1459,48 @@ describe('PromptDraftCardComponent', () => {
       // Nothing came back, so the section says so rather than showing nothing.
       expect(sections[1].value).toBe('en.prompt_draft.details_response_none');
       expect(String(sections[2].value)).toContain('apikey: 0000000000');
+    });
+
+    it('shows the request the horde says it will send, where the price came back with one', async () => {
+      const resolved = {
+        prompt: '### Instruction:\na dog on a couch',
+        params: { max_length: 96, max_context_length: 1024 },
+        models: ['koboldcpp/gemma'],
+        style: { id: 's-1', name: 'Image prompt: plain' },
+        estimated_prompt_tokens: 120,
+        context_fit: 'grow' as const,
+      };
+      estimate.mockResolvedValue({ kudos: 5, resolved });
+      build();
+      await settlePrice();
+
+      expect(fixture.componentInstance.resolvedRequest()).toEqual(resolved);
+      expect(
+        fixture.componentInstance
+          .previewSections()
+          .map((section) => section.id),
+      ).toEqual(['request', 'resolved', 'curl']);
+      fixture.componentInstance.openDetails(makeRequest({ state: 'done' }));
+      fixture.detectChanges();
+      const sections = fixture.componentInstance.detailSections();
+      expect(sections.map((section) => section.id)).toEqual([
+        'request',
+        'response',
+        'resolved',
+        'curl',
+      ]);
+      expect(sections[2].value).toEqual(resolved);
+    });
+
+    it('shows no such section against a horde that reports no resolved request', async () => {
+      estimate.mockResolvedValue({ kudos: 5, resolved: null });
+      build();
+      await settlePrice();
+      expect(
+        fixture.componentInstance
+          .previewSections()
+          .map((section) => section.id),
+      ).toEqual(['request', 'curl']);
     });
   });
 

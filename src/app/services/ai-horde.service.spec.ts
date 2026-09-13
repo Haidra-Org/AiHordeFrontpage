@@ -349,6 +349,58 @@ describe('AiHordeService', () => {
   });
 
   // -----------------------------------------------------------------------
+  // dryRunTextGeneration
+  // -----------------------------------------------------------------------
+  describe('dryRunTextGeneration', () => {
+    it('hands back the whole priced body, resolved request and all', async () => {
+      const promise = firstValueFrom(
+        service.dryRunTextGeneration('a-key', { prompt: 'a dog' }),
+      );
+
+      const req = http.expectOne(`${API_BASE}/generate/text/async`);
+      expect(req.request.body).toEqual({ prompt: 'a dog', dry_run: true });
+      expect(req.request.headers.get('apikey')).toBe('a-key');
+      req.flush({
+        kudos: 7,
+        resolved: {
+          prompt: '### Instruction:\na dog',
+          params: { max_length: 48 },
+          models: ['koboldcpp/gemma'],
+          style: { id: 's-1', name: 'Image prompt: plain' },
+          estimated_prompt_tokens: 24,
+          context_fit: 'grow',
+        },
+      });
+
+      expect(await promise).toMatchObject({
+        kudos: 7,
+        resolved: { context_fit: 'grow', estimated_prompt_tokens: 24 },
+      });
+    });
+
+    it('prices a horde that reports no resolved request all the same', async () => {
+      const promise = firstValueFrom(
+        service.dryRunTextGeneration('a-key', { prompt: 'a dog' }),
+      );
+      http.expectOne(`${API_BASE}/generate/text/async`).flush({ kudos: 3 });
+      expect(await promise).toEqual({ kudos: 3 });
+    });
+
+    it('answers a refusal with nothing', async () => {
+      const promise = firstValueFrom(
+        service.dryRunTextGeneration('a-key', { prompt: 'a dog' }),
+      );
+      http
+        .expectOne(`${API_BASE}/generate/text/async`)
+        .flush(
+          { message: 'No workers' },
+          { status: 400, statusText: 'Bad Request' },
+        );
+      expect(await promise).toBeNull();
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // getAlchemyStatus
   // -----------------------------------------------------------------------
   describe('getAlchemyStatus', () => {
