@@ -3,11 +3,16 @@ import { isPlatformBrowser } from '@angular/common';
 import { DBSchema, IDBPDatabase } from 'idb';
 import { StudioUpgradeTransaction, openStudioDb } from './idb-open';
 import type {
+  PromptDraftChange,
   PromptDraftInput,
   PromptDraftModelPick,
   PromptDraftOrigin,
 } from './prompt-draft.service';
-import type { HordeApiError, TextGenerationRequest } from '../types/generation';
+import type {
+  HordeApiError,
+  TextGenerationRequest,
+  TextGenerationStatusResponse,
+} from '../types/generation';
 
 /**
  * Text requests keep a database of their own, apart from the drafts they land
@@ -16,7 +21,13 @@ import type { HordeApiError, TextGenerationRequest } from '../types/generation';
  * other.
  */
 const DB_NAME = 'ai-horde-frontpage-text-requests';
-const DB_VERSION = 1;
+/**
+ * Version two adds fields to the record and none to the layout: the body a
+ * request came back with, the text each take arrived as, and why a take is
+ * empty. They are all optional, so a record written by version one is read as
+ * it stands and the upgrade provisions nothing new.
+ */
+const DB_VERSION = 2;
 const REQUESTS_STORE = 'requests';
 
 /**
@@ -37,6 +48,12 @@ export function textRequestContextKey(context: TextRequestContext): string {
 /**
  * Where a request stands. `sending`, `queued` and `writing` are live: the horde
  * may still change them. The rest are final.
+ *
+ * `empty` and `faulted` part along the line of whose trouble it was. The horde
+ * raises its own fault flag, and that is `faulted`; a request that came back
+ * with nothing to read, whether the worker wrote blank text or a filter held it
+ * back, is `empty`, and the reader is told which worker answered so the retry
+ * can go elsewhere.
  */
 export type TextRequestState =
   | 'sending'
@@ -46,6 +63,7 @@ export type TextRequestState =
   | 'done'
   | 'cancelled'
   | 'expired'
+  | 'empty'
   | 'faulted';
 
 /** The horde's latest numbers for a request, as the status last reported them. */
@@ -66,13 +84,28 @@ export interface TextRequestFigures {
 
 /** One answer a request came back with, as it was cleaned and kept. */
 export interface TextRequestTake {
-  /** The drafts-store record the take was written to. */
+  /**
+   * The id the take's draft record carries. A take that cleaned to nothing is
+   * not written to the drafts store, and nothing answers to its id.
+   */
   draftId: string;
   text: string;
   /** Empty where the model wrote no negative line. */
   negative: string;
+  /**
+   * The answer as the worker wrote it. Every edit made on the way to `text` is
+   * listed in `changes`, and this is what putting one back reads from.
+   */
+  rawText: string;
+  /** What cleaning altered or removed; absent where it changed nothing. */
+  changes?: PromptDraftChange[];
+  /** Why a take carries no text: the worker wrote none, or a filter held it back. */
+  reason?: 'blank' | 'censored';
   model: string;
   seed: number | null;
+  /** The worker that wrote the take, where the horde reported one. */
+  workerId?: string;
+  workerName?: string;
 }
 
 /** A text request as it is kept between visits. */
@@ -106,8 +139,14 @@ export interface StoredTextRequest {
   errorKey?: string;
   /** Why the horde would not take the request, as it worded it. */
   refusal?: HordeApiError;
-  /** The takes that came back, once the request is done or cancelled. */
+  /** The takes that came back, once the request is done, cancelled or empty. */
   results?: TextRequestTake[];
+  /**
+   * The last status body the horde answered with, word for word, kept on every
+   * request that ended with one. A reader who wants to see what came back gets
+   * the answer itself rather than this client's reading of it.
+   */
+  response?: TextGenerationStatusResponse;
   /** Set once every take has been written to the drafts store. */
   acknowledged: boolean;
 }

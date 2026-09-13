@@ -687,11 +687,19 @@ describe('PromptDraftService', () => {
       });
     });
 
-    it('reports a request that finished with no usable take as faulted', async () => {
+    it('reports a request that came back with nothing to read as empty', async () => {
+      settled.mockResolvedValue(
+        settledRequest({ state: 'empty', results: [] }),
+      );
+      await expect(
+        service.draft({ caption: 'a dog' }, 'any', []),
+      ).resolves.toEqual({ kind: 'empty' });
+      // A finished request holding only takes that cleaned to nothing reads
+      // the same way, whichever state it was filed under.
       settled.mockResolvedValue(settledRequest({ state: 'done', results: [] }));
       await expect(
         service.draft({ caption: 'a dog' }, 'any', []),
-      ).resolves.toEqual({ kind: 'faulted' });
+      ).resolves.toEqual({ kind: 'empty' });
     });
   });
 });

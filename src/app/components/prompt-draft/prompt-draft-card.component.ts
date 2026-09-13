@@ -114,6 +114,7 @@ function liveRequestStateKey(request: StoredTextRequest): string | null {
       return 'prompt_draft.library_open_writing';
     case 'expired':
       return 'prompt_draft.queue.expired';
+    case 'empty':
     case 'faulted':
       return request.errorKey ?? 'prompt_draft.faulted';
     case 'refused':

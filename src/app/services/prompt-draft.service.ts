@@ -121,6 +121,8 @@ export type PromptDraftOutcome =
       ids: string[];
     }
   | { kind: 'refused'; error: HordeApiError }
+  /** The request ran and came back with nothing to read. */
+  | { kind: 'empty' }
   | { kind: 'faulted' }
   | { kind: 'expired' }
   | { kind: 'cancelled' };
@@ -132,9 +134,11 @@ const AWAITED_CONTEXT: TextRequestContext = { kind: 'awaited' };
 function outcomeOf(request: StoredTextRequest): PromptDraftOutcome {
   switch (request.state) {
     case 'done': {
-      const results = request.results ?? [];
+      const results = (request.results ?? []).filter(
+        (take) => take.text.length > 0,
+      );
       const first = results.at(0);
-      if (!first) return { kind: 'faulted' };
+      if (!first) return { kind: 'empty' };
       return {
         kind: 'done',
         texts: results.map((take) => take.text),
@@ -154,6 +158,8 @@ function outcomeOf(request: StoredTextRequest): PromptDraftOutcome {
       return { kind: 'expired' };
     case 'cancelled':
       return { kind: 'cancelled' };
+    case 'empty':
+      return { kind: 'empty' };
     default:
       return { kind: 'faulted' };
   }

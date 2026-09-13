@@ -321,7 +321,7 @@ describe('TextGenerationQueueService', () => {
     );
   });
 
-  it('marks a request that came back with nothing usable as faulted', async () => {
+  it('files a request that came back with nothing as empty, with the reason and the worker', async () => {
     aiHorde.checkTextGenerationResult.mockReturnValue(
       checked({ done: true, generations: [take('   ')] }),
     );
@@ -329,8 +329,94 @@ describe('TextGenerationQueueService', () => {
     await queue.submit(submission());
     await vi.advanceTimersByTimeAsync(TICK_MS);
 
-    expect(only(queue).state).toBe('faulted');
+    const request = only(queue);
+    expect(request.state).toBe('empty');
+    expect(request.results).toEqual([
+      {
+        draftId: 'h1-0',
+        text: '',
+        negative: '',
+        rawText: '   ',
+        reason: 'blank',
+        model: 'm/1',
+        seed: 1,
+        workerId: 'w',
+        workerName: 'W',
+      },
+    ]);
     expect(draftsDb.drafts.size).toBe(0);
+  });
+
+  it('tells an answer a filter held back from one a worker left blank', async () => {
+    aiHorde.checkTextGenerationResult.mockReturnValue(
+      checked({
+        done: true,
+        generations: [{ ...take(''), state: 'censored' }],
+      }),
+    );
+    const queue = await createQueue();
+    await queue.submit(submission());
+    await vi.advanceTimersByTimeAsync(TICK_MS);
+
+    expect(only(queue).state).toBe('empty');
+    expect(only(queue).results?.at(0)?.reason).toBe('censored');
+  });
+
+  it('keeps the answer the horde sent, word for word, on every request that got one', async () => {
+    const answer = status({
+      done: true,
+      finished: 1,
+      kudos: 6,
+      generations: [take('a dog on a couch')],
+    });
+    aiHorde.checkTextGenerationResult.mockReturnValue(
+      of<CheckTextResult>({ kind: 'success', status: answer }),
+    );
+    const queue = await createQueue();
+    await queue.submit(submission());
+    await vi.advanceTimersByTimeAsync(TICK_MS);
+
+    const request = only(queue);
+    expect(request.response).toEqual(answer);
+    expect(request.results?.at(0)).toMatchObject({
+      text: 'a dog on a couch',
+      rawText: 'a dog on a couch',
+      workerId: 'w',
+    });
+  });
+
+  it('keeps the answer on a faulted request too', async () => {
+    aiHorde.checkTextGenerationResult.mockReturnValue(
+      checked({ faulted: true, kudos: 2 }),
+    );
+    const queue = await createQueue();
+    await queue.submit(submission());
+    await vi.advanceTimersByTimeAsync(TICK_MS);
+
+    expect(only(queue)).toMatchObject({
+      state: 'faulted',
+      response: { faulted: true, kudos: 2 },
+    });
+  });
+
+  it('lists what cleaning changed on a take', async () => {
+    aiHorde.checkTextGenerationResult.mockReturnValue(
+      checked({
+        done: true,
+        generations: [
+          take('<think>hmm</think>\nPrompt: a dog on a couch, soft light'),
+        ],
+      }),
+    );
+    const queue = await createQueue();
+    await queue.submit(submission());
+    await vi.advanceTimersByTimeAsync(TICK_MS);
+
+    expect(only(queue).results?.at(0)).toMatchObject({
+      text: 'a dog on a couch, soft light',
+      rawText: '<think>hmm</think>\nPrompt: a dog on a couch, soft light',
+      changes: ['think_removed', 'label_stripped'],
+    });
   });
 
   it('marks a request the horde no longer knows as expired', async () => {

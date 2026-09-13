@@ -24,6 +24,7 @@ import {
   textRequestContextKey,
 } from './text-generation-db.service';
 import {
+  PromptDraftChange,
   PromptDraftInput,
   PromptDraftModelPick,
   PromptDraftOrigin,
@@ -34,6 +35,7 @@ import {
 import { randomUuid } from '../helper/random-uuid';
 import {
   GENERATION_NOT_FOUND,
+  TextGenerationOutput,
   TextGenerationRequest,
   TextGenerationStatusResponse,
 } from '../types/generation';
@@ -71,6 +73,38 @@ const LIVE_STATES: ReadonlySet<TextRequestState> = new Set([
   'queued',
   'writing',
 ]);
+
+/** The states the horde reports for an answer it held back rather than sent. */
+const HELD_BACK_STATES: ReadonlySet<string> = new Set(['censored', 'csam']);
+
+/** Which worker answered, where the horde said. */
+function workerOf(generation: TextGenerationOutput): {
+  workerId?: string;
+  workerName?: string;
+} {
+  return {
+    ...(generation.worker_id ? { workerId: generation.worker_id } : {}),
+    ...(generation.worker_name ? { workerName: generation.worker_name } : {}),
+  };
+}
+
+/** A take that cleaned to nothing, kept for what it says about the answer. */
+function emptyTake(
+  generation: TextGenerationOutput,
+  draftId: string,
+  request: StoredTextRequest,
+): TextRequestTake {
+  return {
+    draftId,
+    text: '',
+    negative: '',
+    rawText: generation.text,
+    reason: HELD_BACK_STATES.has(generation.state) ? 'censored' : 'blank',
+    model: generation.model ?? request.modelLabel ?? '',
+    seed: generation.seed ?? null,
+    ...workerOf(generation),
+  };
+}
 
 /** Whether the horde may still change what a request says. */
 export function isLiveTextRequest(request: StoredTextRequest): boolean {
@@ -494,6 +528,7 @@ export class TextGenerationQueueService {
         figures: figuresOf(status),
         chargedKudos: status.kudos,
         lastCheckedAt: now,
+        response: status,
         acknowledged: true,
       });
       this.waitInsights.clear(request.localId);
@@ -528,22 +563,32 @@ export class TextGenerationQueueService {
     // A verdict is prose, not a prompt: it is kept as the model wrote it
     // rather than being cut down to its first line.
     const judging = draftRole(request.input) === 'judge';
-    const cleaned = status.generations
-      .map((generation) => ({
-        generation,
-        ...(judging
-          ? { text: cleanJudgement(generation.text), negative: '' }
-          : cleanDraft(generation.text)),
-      }))
-      .filter((take) => take.text.length > 0);
+    const read = status.generations.map((generation) => ({
+      generation,
+      ...(judging
+        ? {
+            text: cleanJudgement(generation.text),
+            negative: '',
+            changes: [] as PromptDraftChange[],
+          }
+        : cleanDraft(generation.text)),
+    }));
+    const cleaned = read.filter((take) => take.text.length > 0);
 
     if (state === 'done' && cleaned.length === 0) {
+      // Nothing came back to read. That is neither the horde's own fault flag
+      // nor a request that went wrong: a worker can answer with blank text,
+      // and a filter can hold an answer back. Either way what did arrive is
+      // kept, so the reason can be shown and a retry can go elsewhere.
       await this.patch(request.localId, {
-        state: 'faulted',
+        state: 'empty',
         figures: figuresOf(status),
         chargedKudos: status.kudos,
         lastCheckedAt: now,
-        results: [],
+        results: read.map((take, index) =>
+          emptyTake(take.generation, `${hordeId}-${index}`, request),
+        ),
+        response: status,
         acknowledged: true,
       });
       this.waitInsights.clear(request.localId);
@@ -581,8 +626,11 @@ export class TextGenerationQueueService {
         draftId,
         text: take.text,
         negative: take.negative,
+        rawText: take.generation.text,
+        ...(take.changes.length > 0 ? { changes: take.changes } : {}),
         model,
         seed,
+        ...workerOf(take.generation),
       });
     }
     await this.patch(request.localId, {
@@ -591,6 +639,7 @@ export class TextGenerationQueueService {
       chargedKudos: status.kudos,
       lastCheckedAt: now,
       results: takes,
+      response: status,
       acknowledged: true,
     });
     this.waitInsights.clear(request.localId);
