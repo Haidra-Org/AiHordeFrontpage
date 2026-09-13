@@ -357,6 +357,20 @@ requests per card; `MAX_LIVE_PER_CONTEXT` is the single place the one-at-a-time
 rule lives. `PromptDraftService` keeps pricing, model choice and request building,
 and `draft()` remains an awaited wrapper over the queue for `PromptCheckService`.
 
+A stored request keeps the body it was sent with and, once the horde has answered
+with one, `response`: the final status body word for word, on a request that
+finished, was cancelled, faulted or came back empty. Each take carries the text as
+the worker wrote it beside the cleaned version and a list of what cleaning
+changed, so a card can show both and put the original back. A request whose every
+take cleans to nothing is `empty` rather than `faulted`: the horde's fault flag is
+the horde's own trouble, while blank text and an answer a filter held back are the
+worker's, and each take says which by its `reason`. The worker behind an empty
+answer joins the queue's `avoidedWorkers` for the rest of the visit, and every
+body the draft service builds after that keeps it off with `workers` and
+`worker_blacklist`. Request sizes are worked out by `sizeRequest` from the role
+and the material, held to what the chosen model's workers advertise through
+`workerLimitsFor`.
+
 `app-prompt-library` (`components/prompt-library/`) is the reader's view over the
 drafts store and `PromptHistoryDbService`, on Drafts and Sent tabs. The studio
 records each send beside `presets.pushRecent`. The sent store is separate from the
