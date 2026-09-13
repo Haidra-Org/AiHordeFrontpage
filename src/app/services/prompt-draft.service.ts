@@ -12,7 +12,11 @@ import type {
   TextRequestContext,
 } from './text-generation-db.service';
 import { ActiveModel } from '../types/active-model';
-import { HordeApiError, TextGenerationRequest } from '../types/generation';
+import {
+  HordeApiError,
+  TextGenerationRequest,
+  TextWorker,
+} from '../types/generation';
 import {
   IMAGE_PROMPT_TAG,
   ImagePromptStyle,
@@ -754,6 +758,46 @@ export class PromptDraftService {
     }
   }
 
+  /** The text workers online now, for what a model's workers will take. */
+  public async textWorkers(): Promise<TextWorker[]> {
+    try {
+      return await firstValueFrom(this.aiHorde.getTextWorkers());
+    } catch {
+      // Without the listing the sizes follow the material alone, which is what
+      // they did before any worker advertised a ceiling.
+      return [];
+    }
+  }
+
+  /**
+   * The largest job any online worker carrying this model will take. It is the
+   * largest rather than the smallest on purpose: one worker able to do the work
+   * is enough for the request to be picked up, and holding every request to the
+   * smallest ceiling on the list would cut answers short for no one's benefit.
+   *
+   * Null where no worker carrying the model says what it will take.
+   */
+  public async workerLimitsFor(
+    model: string | null,
+  ): Promise<TextWorkerLimits | null> {
+    if (!model) return null;
+    const carrying = (await this.textWorkers()).filter(
+      (worker) => worker.online && (worker.models ?? []).includes(model),
+    );
+    const largest = (
+      pick: (worker: TextWorker) => number | undefined,
+    ): number | null => {
+      const figures = carrying
+        .map(pick)
+        .filter((figure): figure is number => !!figure && figure > 0);
+      return figures.length > 0 ? Math.max(...figures) : null;
+    };
+    const maxLength = largest((worker) => worker.max_length);
+    const maxContextLength = largest((worker) => worker.max_context_length);
+    if (maxLength === null || maxContextLength === null) return null;
+    return { maxLength, maxContextLength };
+  }
+
   /**
    * The published text styles that write image prompts, by the tag convention
    * in `scripts/prompt-styles/README.md`. An empty list is the ordinary answer:
@@ -786,6 +830,21 @@ export class PromptDraftService {
       return [];
     }
     return found;
+  }
+
+  /**
+   * The shape with the workers this visit has already had silence from added
+   * to it. Every body the service builds goes through this, so the price the
+   * reader is quoted and the body they are shown are the ones that go.
+   */
+  private avoiding(shape: PromptDraftShape): PromptDraftShape {
+    const avoided = [
+      ...new Set([
+        ...(shape.avoidWorkers ?? []),
+        ...this.queue.avoidedWorkers(),
+      ]),
+    ];
+    return avoided.length > 0 ? { ...shape, avoidWorkers: avoided } : shape;
   }
 
   /**
@@ -901,7 +960,7 @@ export class PromptDraftService {
     return this.buildRequest(
       input,
       this.chooseModels(models, pick, shape.style ?? null),
-      shape,
+      this.avoiding(shape),
     );
   }
 
@@ -932,7 +991,7 @@ export class PromptDraftService {
     return firstValueFrom(
       this.aiHorde.dryRunTextGeneration(
         this.apiKeyFor(anonymous),
-        this.buildRequest(input, chosen, shape),
+        this.buildRequest(input, chosen, this.avoiding(shape)),
       ),
     );
   }
@@ -953,7 +1012,7 @@ export class PromptDraftService {
     const pool = models ?? (await this.textModels());
     const style = shape.style ?? null;
     const chosen = this.chooseModels(pool, pick, style);
-    const request = this.buildRequest(input, chosen, shape);
+    const request = this.buildRequest(input, chosen, this.avoiding(shape));
     return this.queue.submit(
       {
         context: options.context,

@@ -30,6 +30,7 @@ import {
   TextGenerationRequest,
   TextGenerationResponse,
   TextGenerationStatusResponse,
+  TextWorker,
   AlchemyStatusResponse,
   InterrogationRequest,
   InterrogationResponse,
@@ -285,6 +286,19 @@ export class AiHordeService {
     modelState: 'known' | 'custom' | 'all' = 'all',
   ): Observable<ActiveModel[]> {
     return this.getModels('text', modelState);
+  }
+
+  /**
+   * The text workers the horde knows, carrying the models each one runs and
+   * the largest job it will take. Workers come and go within the hour, so the
+   * listing is held only briefly.
+   */
+  public getTextWorkers(): Observable<TextWorker[]> {
+    return this.cache.cachedGet<TextWorker[]>(
+      `${this.baseUrl}/workers?type=text`,
+      undefined,
+      { ttl: CacheTTL.SHORT, category: 'workers' },
+    );
   }
 
   /**

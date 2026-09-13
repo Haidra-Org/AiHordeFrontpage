@@ -347,6 +347,30 @@ describe('TextGenerationQueueService', () => {
     expect(draftsDb.drafts.size).toBe(0);
   });
 
+  it('keeps the worker that answered with nothing off later requests, until it is allowed back', async () => {
+    aiHorde.checkTextGenerationResult.mockReturnValue(
+      checked({ done: true, generations: [take('   ')] }),
+    );
+    const queue = await createQueue();
+    await queue.submit(submission());
+    await vi.advanceTimersByTimeAsync(TICK_MS);
+
+    expect([...queue.avoidedWorkers()]).toEqual(['w']);
+    queue.allowWorker('w');
+    expect([...queue.avoidedWorkers()]).toEqual([]);
+  });
+
+  it('holds nothing against a worker whose answer could be read', async () => {
+    aiHorde.checkTextGenerationResult.mockReturnValue(
+      checked({ done: true, generations: [take('a dog on a couch')] }),
+    );
+    const queue = await createQueue();
+    await queue.submit(submission());
+    await vi.advanceTimersByTimeAsync(TICK_MS);
+
+    expect([...queue.avoidedWorkers()]).toEqual([]);
+  });
+
   it('tells an answer a filter held back from one a worker left blank', async () => {
     aiHorde.checkTextGenerationResult.mockReturnValue(
       checked({

@@ -6,6 +6,7 @@ import {
   StyleTextualInversionConfig,
 } from './style';
 import type { ImageSchedulerName } from './sampler-constraints';
+import type { HordeWorker } from './horde-worker';
 
 // ============================================================================
 // Image Generation Request Types
@@ -419,6 +420,16 @@ export interface TextGenerationStatusResponse {
   might_stall?: boolean;
   generations: TextGenerationOutput[];
 }
+
+/**
+ * A worker answering text requests, in the part a request has to know about:
+ * what it is carrying and how much of a job it will take. Taken from the full
+ * worker record rather than restated, so the two cannot drift apart.
+ */
+export type TextWorker = Pick<
+  HordeWorker,
+  'id' | 'name' | 'online' | 'models' | 'max_length' | 'max_context_length'
+>;
 
 export type CheckTextResult =
   | { kind: 'success'; status: TextGenerationStatusResponse }

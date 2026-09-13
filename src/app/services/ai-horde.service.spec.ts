@@ -634,6 +634,15 @@ describe('AiHordeService', () => {
     });
   });
 
+  describe('getTextWorkers', () => {
+    it('should request the text workers', () => {
+      service.getTextWorkers().subscribe();
+
+      const req = http.expectOne(`${API_BASE}/workers?type=text`);
+      expect(req.request.method).toBe('GET');
+    });
+  });
+
   // -----------------------------------------------------------------------
   // transferKudos
   // -----------------------------------------------------------------------

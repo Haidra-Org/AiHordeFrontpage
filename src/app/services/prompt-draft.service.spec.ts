@@ -460,6 +460,7 @@ describe('PromptDraftService', () => {
   let settled: ReturnType<typeof vi.fn>;
   let watch: ReturnType<typeof vi.fn>;
   let release: ReturnType<typeof vi.fn>;
+  let avoided: ReadonlySet<string>;
 
   /** What the service handed the queue on its last send. */
   const submitted = (): TextRequestSubmission => {
@@ -497,6 +498,7 @@ describe('PromptDraftService', () => {
     settled = vi.fn();
     release = vi.fn();
     watch = vi.fn().mockReturnValue(release);
+    avoided = new Set();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -508,7 +510,12 @@ describe('PromptDraftService', () => {
         { provide: StyleService, useValue: { getTextStyles } },
         {
           provide: TextGenerationQueueService,
-          useValue: { submit, settled, watch },
+          useValue: {
+            submit,
+            settled,
+            watch,
+            avoidedWorkers: () => avoided,
+          },
         },
       ],
     });
@@ -591,6 +598,77 @@ describe('PromptDraftService', () => {
       workers: ['w-1', 'w-2'],
       worker_blacklist: true,
     });
+  });
+
+  it('takes the largest job any worker carrying the model will do', async () => {
+    const pending = service.workerLimitsFor('koboldcpp/gemma');
+    http.expectOne(`${API_BASE_URL}/workers?type=text`).flush([
+      {
+        id: 'w-1',
+        name: 'One',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 80,
+        max_context_length: 2048,
+      },
+      {
+        id: 'w-2',
+        name: 'Two',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 512,
+        max_context_length: 4096,
+      },
+      {
+        id: 'w-3',
+        name: 'Offline',
+        online: false,
+        models: ['koboldcpp/gemma'],
+        max_length: 2048,
+        max_context_length: 8192,
+      },
+      {
+        id: 'w-4',
+        name: 'Other model',
+        online: true,
+        models: ['some/other'],
+        max_length: 4096,
+        max_context_length: 8192,
+      },
+    ]);
+
+    await expect(pending).resolves.toEqual({
+      maxLength: 512,
+      maxContextLength: 4096,
+    });
+  });
+
+  it('reports no limits when nothing online carries the model or says what it takes', async () => {
+    const pending = service.workerLimitsFor('koboldcpp/gemma');
+    http
+      .expectOne(`${API_BASE_URL}/workers?type=text`)
+      .flush([
+        { id: 'w-1', name: 'One', online: true, models: ['koboldcpp/gemma'] },
+      ]);
+    await expect(pending).resolves.toBeNull();
+    await expect(service.workerLimitsFor(null)).resolves.toBeNull();
+  });
+
+  it('keeps a worker that answered with nothing off the next request it builds', async () => {
+    avoided = new Set(['w-silent']);
+    await service.submit({ caption: 'a dog' }, 'any', [], {
+      anonymous: true,
+      origin: 'studio',
+      context: { kind: 'studio' },
+    });
+    expect(submitted().request).toMatchObject({
+      workers: ['w-silent'],
+      worker_blacklist: true,
+    });
+    // The price quoted and the body shown are the ones that go.
+    expect(
+      service.previewRequest({ caption: 'a dog' }, 'any', []),
+    ).toMatchObject({ workers: ['w-silent'], worker_blacklist: true });
   });
 
   it('sends the sizes the reader set in place of the ones worked out', () => {

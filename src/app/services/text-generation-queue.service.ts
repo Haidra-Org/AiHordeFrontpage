@@ -183,6 +183,7 @@ export class TextGenerationQueueService {
   private readonly _requests = signal<StoredTextRequest[]>([]);
   private readonly _clock = signal(Date.now());
   private readonly _cancelling = signal<ReadonlySet<string>>(new Set());
+  private readonly _avoidedWorkers = signal<ReadonlySet<string>>(new Set());
 
   /** Every kept request, newest first. */
   public readonly requests = this._requests.asReadonly();
@@ -193,6 +194,13 @@ export class TextGenerationQueueService {
   public readonly clock = this._clock.asReadonly();
   /** The requests a cancel has been sent for and not yet answered. */
   public readonly cancelling = this._cancelling.asReadonly();
+  /**
+   * The workers that answered with nothing this visit. A later request keeps
+   * them off rather than paying a second time for the same silence. The list
+   * is not kept between visits: a worker is as likely to have been restarted
+   * by then as to still be broken.
+   */
+  public readonly avoidedWorkers = this._avoidedWorkers.asReadonly();
 
   private readonly byContext = new Map<
     string,
@@ -441,6 +449,16 @@ export class TextGenerationQueueService {
     }
   }
 
+  /** Take a worker off the avoided list, for a reader who wants it back. */
+  public allowWorker(workerId: string): void {
+    this._avoidedWorkers.update((current) => {
+      if (!current.has(workerId)) return current;
+      const next = new Set(current);
+      next.delete(workerId);
+      return next;
+    });
+  }
+
   /** Resolves with the request once it is no longer live. */
   public settled(localId: string): Promise<StoredTextRequest> {
     const request = this.find(localId);
@@ -576,6 +594,7 @@ export class TextGenerationQueueService {
     const cleaned = read.filter((take) => take.text.length > 0);
 
     if (state === 'done' && cleaned.length === 0) {
+      this.avoidWorkers(read.map((take) => take.generation.worker_id));
       // Nothing came back to read. That is neither the horde's own fault flag
       // nor a request that went wrong: a worker can answer with blank text,
       // and a filter can hold an answer back. Either way what did arrive is
@@ -689,6 +708,16 @@ export class TextGenerationQueueService {
       // The request carries on in memory; only a reload would lose it.
       console.warn('Failed to keep a text request:', error);
     }
+  }
+
+  /** Keep these workers off later requests for the rest of the visit. */
+  private avoidWorkers(ids: readonly (string | undefined)[]): void {
+    const found = ids.filter((id): id is string => !!id);
+    if (found.length === 0) return;
+    this._avoidedWorkers.update((current) => {
+      if (found.every((id) => current.has(id))) return current;
+      return new Set([...current, ...found]);
+    });
   }
 
   private setCancelling(localId: string, on: boolean): void {
