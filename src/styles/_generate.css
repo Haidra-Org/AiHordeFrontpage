@@ -5167,15 +5167,183 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink-2);
 }
 
-/* Docked operation detail: a fixed slot under the panel header. Its height is
-   pinned and the description clamps to two lines so hovering operations with
-   longer blurbs swaps the text without resizing the box (which used to push the
-   whole operation list). */
+/* Docked operation detail: a thin rail under the panel header, with the
+   description in a sheet that comes out from under it. Unpinned, the sheet lies
+   over the operation list, because a list that moved would slide a different
+   row under the pointer and change what is being described; where it would
+   cover the source step it pushes the list down instead. Pinned, the sheet sits
+   in the flow at its fixed height. */
 .gen-studio .gs-focus-dock {
+  position: relative;
+  /* The scroll pane after it is positioned too, and later in the order, so
+     without a level of its own the sheet would open underneath it. */
+  z-index: 5;
   flex: none;
-  /* Its sides line up with the panel body's padding, so the docked detail sits
-     on the same column as the operations it describes. */
-  padding: var(--gs-space-1) var(--gs-space-4) var(--gs-space-2-5);
+}
+.gen-studio .gs-focus-rail {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-height: 22px;
+  padding-right: var(--gs-space-3);
+  border-bottom: 1px solid var(--gs-blue-tint-border);
+  background: var(--gs-blue-tint);
+}
+/* The whole rail beside the pin is the press that shows or hides the sheet, so
+   the target is as wide as the mark that suggests it. */
+.gen-studio .gs-focus-peek {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+/* Inset, because the rail is thinner than the ring's usual offset and the
+   header and the sheet sit tight against both of its edges. */
+.gen-studio .gs-focus-peek:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: -2px;
+}
+/* The grip and the caret are one mark, centred on the rail as a pair; the caret
+   says which way the next press moves the sheet. */
+.gen-studio .gs-focus-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gs-space-1);
+  color: var(--gs-blue-text);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.gen-studio .gs-focus-grip {
+  width: 28px;
+  height: 3px;
+  border-radius: var(--gs-radius-pill);
+  background: var(--gs-label);
+}
+.gen-studio .gs-focus-peek:hover + .gs-focus-mark .gs-focus-grip {
+  background: var(--gs-blue-text);
+}
+.gen-studio .gs-focus-pin {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  margin: 1px 0 1px auto;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-blue-text);
+  cursor: pointer;
+  transition:
+    border-color var(--gs-dur-fast) var(--gs-ease),
+    background-color var(--gs-dur-fast) var(--gs-ease);
+}
+/* A tilted pin reads as one lying loose and an upright one as pushed in, so the
+   pressed state is carried by the mark's shape as well as the frame around it. */
+.gen-studio .gs-focus-pin app-icon {
+  transform: rotate(45deg);
+  transition: transform var(--gs-dur-fast) var(--gs-ease);
+}
+.gen-studio .gs-focus-pin:hover {
+  background: var(--gs-field);
+}
+.gen-studio .gs-focus-pin[aria-pressed="true"] {
+  border-color: var(--gs-blue-text);
+  background: var(--gs-field);
+}
+.gen-studio .gs-focus-pin[aria-pressed="true"] app-icon {
+  transform: none;
+}
+.gen-studio .gs-focus-pin:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 1px;
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-focus-rail {
+    min-height: 44px;
+  }
+  .gen-studio .gs-focus-pin {
+    width: 44px;
+    margin: 0 0 0 auto;
+  }
+}
+/* The drawer clips the sheet at the rail's lower edge, so the sheet appears to
+   come out from under the rail rather than over the header. Its foot leaves room
+   for the sheet's shadow, and it never takes a press itself: only the open sheet
+   does. */
+.gen-studio .gs-focus-drawer {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  overflow: hidden;
+  padding-bottom: var(--gs-space-4);
+  pointer-events: none;
+}
+/* Folded, the sheet is moved out of view rather than hidden, so the description
+   stays in the accessibility tree and its live region keeps speaking. The move
+   includes the drawer's foot so no shadow is left showing under the rail. */
+.gen-studio .gs-focus-sheet {
+  /* Its sides line up with the panel body's padding, so the detail sits on the
+     same column as the operations it describes. */
+  padding: var(--gs-space-2) var(--gs-space-4) var(--gs-space-2-5);
+  background: var(--gs-panel);
+  box-shadow: var(--gs-elev-2);
+  transform: translateY(calc(-100% - var(--gs-space-4)));
+  pointer-events: none;
+  transition: transform var(--gs-dur) var(--gs-ease);
+}
+.gen-studio .gs-focus-dock--open .gs-focus-sheet {
+  transform: none;
+  pointer-events: auto;
+}
+.gen-studio .gs-focus-dock--pinned .gs-focus-drawer {
+  position: static;
+  overflow: visible;
+  padding-bottom: 0;
+}
+/* Pinning moves the sheet into the flow in one step: sliding it there would
+   draw it over the rail and the header on the way. */
+.gen-studio .gs-focus-dock--pinned .gs-focus-sheet {
+  box-shadow: none;
+  transition: none;
+}
+/* A push is room made in the flow under the sheet, which still slides out as it
+   does over the list. The room grows at the pace of the slide, so the list
+   moves down with the sheet rather than jumping, and closes the same way. Its
+   height is the sheet's own, measured as it comes out. */
+.gen-studio .gs-focus-push {
+  flex: none;
+  transition: height var(--gs-dur) var(--gs-ease);
+}
+/* Pinning takes over the room with the sheet itself in one step, so the two
+   never stand in the flow together. */
+.gen-studio .gs-focus-dock--pinned + .gs-focus-push {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gen-studio .gs-focus-push {
+    transition: none;
+  }
+  .gen-studio .gs-focus-sheet {
+    opacity: 0;
+    transform: none;
+    /* The motion tokens drop to zero here, and a fade is the one change of
+       state that is still wanted, so it keeps a short duration of its own. */
+    transition: opacity 150ms var(--gs-ease);
+  }
+  .gen-studio .gs-focus-dock--open .gs-focus-sheet {
+    opacity: 1;
+  }
+  .gen-studio .gs-focus-pin app-icon {
+    transition: none;
+  }
 }
 .gen-studio .gs-focus-example {
   margin-top: var(--gs-space-1);
@@ -5187,7 +5355,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   height: 112px;
 }
 /* Clamp the two variable-length lines so swapping operations changes the text
-   but never the box height (which used to push the operation list around). */
+   but never the sheet's height, which would otherwise push the list about while
+   pinned and grow the overlay over it while not. */
 .gen-studio .gs-focus--fixed .gs-focus-desc {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -5429,7 +5598,8 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     width: 19px;
     height: 19px;
   }
-  .gen-studio .gs-focus-dock {
+  .gen-studio .gs-focus-dock,
+  .gen-studio .gs-focus-push {
     display: none;
   }
 }

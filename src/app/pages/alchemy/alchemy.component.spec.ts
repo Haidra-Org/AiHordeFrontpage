@@ -27,6 +27,8 @@ import {
 import { referenceTopic } from '../../content/reference-topics';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
+import { By } from '@angular/platform-browser';
+import { IconComponent } from '../../components/icon/icon.component';
 
 /**
  * Stands in for the root queue so the page can be exercised without a database
@@ -984,6 +986,437 @@ describe('AlchemyComponent developer surface (rendered)', () => {
     ]) {
       expect(text()).toContain(key);
     }
+  });
+
+  describe('description rail', () => {
+    const dockEl = (f = fixture): HTMLElement =>
+      f.nativeElement.querySelector('.gs-focus-dock') as HTMLElement;
+    const isOpen = (f = fixture): boolean => {
+      f.detectChanges();
+      return dockEl(f).classList.contains('gs-focus-dock--open');
+    };
+    const sheet = (): HTMLElement =>
+      fixture.nativeElement.querySelector('.gs-focus-sheet') as HTMLElement;
+    const pin = (f = fixture): HTMLButtonElement =>
+      f.nativeElement.querySelector('.gs-focus-pin') as HTMLButtonElement;
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('starts folded, with the description still in the page', () => {
+      expect(isOpen()).toBe(false);
+      expect(
+        fixture.nativeElement.querySelector('.gs-focus--fixed').textContent,
+      ).toContain('alchemy.form_meta.caption.desc');
+      expect(pin().getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('comes out when an operation is previewed', () => {
+      vi.useFakeTimers();
+      component.previewForm('caption');
+      expect(isOpen()).toBe(true);
+    });
+
+    it('folds back ten seconds after it was asked for', () => {
+      vi.useFakeTimers();
+      component.previewDetector('depth');
+      vi.advanceTimersByTime(9_999);
+      expect(isOpen()).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(isOpen()).toBe(false);
+    });
+
+    it('starts the ten seconds again on each new ask', () => {
+      vi.useFakeTimers();
+      component.previewForm('caption');
+      vi.advanceTimersByTime(9_000);
+      component.previewImageToPrompt();
+      vi.advanceTimersByTime(9_000);
+      expect(isOpen()).toBe(true);
+      vi.advanceTimersByTime(1_000);
+      expect(isOpen()).toBe(false);
+    });
+
+    it('holds the clock while the pointer rests on it', () => {
+      vi.useFakeTimers();
+      component.toggleForm('caption');
+      vi.advanceTimersByTime(4_000);
+      expect(isOpen()).toBe(true);
+
+      sheet().dispatchEvent(new Event('pointerenter'));
+      vi.advanceTimersByTime(30_000);
+      expect(isOpen()).toBe(true);
+
+      sheet().dispatchEvent(new Event('pointerleave'));
+      vi.advanceTimersByTime(5_999);
+      expect(isOpen()).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(isOpen()).toBe(false);
+    });
+
+    it('gets out of the way when pressed, to reach what it covers', () => {
+      vi.useFakeTimers();
+      component.previewForm('caption');
+      expect(isOpen()).toBe(true);
+
+      sheet().dispatchEvent(new Event('pointerdown'));
+      expect(isOpen()).toBe(false);
+    });
+
+    it('comes out from a press on the rail', () => {
+      vi.useFakeTimers();
+      const peek = fixture.nativeElement.querySelector(
+        '.gs-focus-peek',
+      ) as HTMLButtonElement;
+      expect(peek.getAttribute('aria-label')).toContain('alchemy.focus.show');
+
+      peek.click();
+      expect(isOpen()).toBe(true);
+    });
+
+    it('stays out once pinned, and remembers it', () => {
+      vi.useFakeTimers();
+      pin().click();
+      expect(isOpen()).toBe(true);
+      expect(dockEl().classList.contains('gs-focus-dock--pinned')).toBe(true);
+      expect(pin().getAttribute('aria-pressed')).toBe('true');
+      expect(localStorage.getItem('aihorde.alchemy.focus_pinned')).toBe('true');
+
+      component.previewForm('caption');
+      vi.advanceTimersByTime(20_000);
+      expect(isOpen()).toBe(true);
+
+      sheet().dispatchEvent(new Event('pointerdown'));
+      expect(isOpen()).toBe(true);
+    });
+
+    it('folds straight away when unpinned', () => {
+      vi.useFakeTimers();
+      pin().click();
+      expect(isOpen()).toBe(true);
+
+      pin().click();
+      expect(isOpen()).toBe(false);
+      expect(pin().getAttribute('aria-pressed')).toBe('false');
+      expect(localStorage.getItem('aihorde.alchemy.focus_pinned')).toBe(
+        'false',
+      );
+    });
+
+    it('starts pinned when the reader pinned it before', () => {
+      localStorage.setItem('aihorde.alchemy.focus_pinned', 'true');
+      const pinned = TestBed.createComponent(AlchemyComponent);
+      pinned.detectChanges();
+
+      expect(isOpen(pinned)).toBe(true);
+      expect(dockEl(pinned).classList.contains('gs-focus-dock--pinned')).toBe(
+        true,
+      );
+      expect(pin(pinned).getAttribute('aria-pressed')).toBe('true');
+      pinned.destroy();
+    });
+
+    describe('after a press folds it, and under keyboard focus', () => {
+      const descText = (): string =>
+        (fixture.nativeElement.querySelector('.gs-focus--fixed') as HTMLElement)
+          .textContent ?? '';
+      /** An operation row other than caption, and the description key it shows. */
+      const otherRow = (): { label: HTMLElement; descKey: string } => {
+        const label = (
+          [
+            ...fixture.nativeElement.querySelectorAll(
+              'label.gs-op:not(.gs-op--chip)',
+            ),
+          ] as HTMLElement[]
+        ).find(
+          (row) => !row.getAttribute('title')?.includes('caption.desc'),
+        ) as HTMLElement;
+        const descKey = /alchemy\.form_meta\.\w+\.desc/.exec(
+          label.getAttribute('title') ?? '',
+        )?.[0] as string;
+        return { label, descKey };
+      };
+      const foldByPress = (): void => {
+        component.previewForm('caption');
+        expect(isOpen()).toBe(true);
+        sheet().dispatchEvent(new Event('pointerdown'));
+        expect(isOpen()).toBe(false);
+      };
+      /**
+       * jsdom lays nothing out, so the rail's lower edge, the sheet's height and
+       * the focused control's box are given here.
+       */
+      const stubFootprint = (): void => {
+        const rail = fixture.nativeElement.querySelector(
+          '.gs-focus-rail',
+        ) as HTMLElement;
+        vi.spyOn(rail, 'getBoundingClientRect').mockReturnValue({
+          top: 78,
+          bottom: 100,
+        } as DOMRect);
+        Object.defineProperty(sheet(), 'offsetHeight', {
+          configurable: true,
+          value: 130,
+        });
+      };
+      /** Where the source step lies; the footprint runs from 100 to 230. */
+      let sourceBox: { top: number; bottom: number };
+      const stubSource = (top: number, bottom: number): void => {
+        sourceBox = { top, bottom };
+        const source = (
+          fixture.nativeElement.querySelector(
+            '#alchemy-source-step',
+          ) as HTMLElement
+        ).parentElement as HTMLElement;
+        vi.spyOn(source, 'getBoundingClientRect').mockImplementation(
+          () => sourceBox as DOMRect,
+        );
+      };
+      const layOut = (focusedTop: number): HTMLInputElement => {
+        stubFootprint();
+        const input = otherRow().label.querySelector(
+          'input',
+        ) as HTMLInputElement;
+        vi.spyOn(input, 'getBoundingClientRect').mockReturnValue({
+          top: focusedTop,
+          bottom: focusedTop + 20,
+        } as DOMRect);
+        // jsdom only marks focus as visible after its focus events have run,
+        // where a browser marks it before, so keyboard focus is stood in for.
+        vi.spyOn(input, 'matches').mockImplementation(
+          (selector: string) =>
+            selector === ':focus-visible' ||
+            Element.prototype.matches.call(input, selector),
+        );
+        return input;
+      };
+
+      it('keeps folded when the pointer lands on a row, but follows it in the text', () => {
+        vi.useFakeTimers();
+        foldByPress();
+        const { label, descKey } = otherRow();
+
+        label.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(isOpen()).toBe(false);
+        expect(descText()).toContain(descKey);
+
+        (label.querySelector('input') as HTMLInputElement).click();
+        expect(isOpen()).toBe(false);
+      });
+
+      it('lets the pointer bring it out again once it leaves the panel', () => {
+        vi.useFakeTimers();
+        foldByPress();
+
+        (
+          fixture.nativeElement.querySelector('.gs-panel') as HTMLElement
+        ).dispatchEvent(new Event('pointerleave'));
+        otherRow().label.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(isOpen()).toBe(true);
+      });
+
+      it('lets the pointer bring it out again after a press on the rail', () => {
+        vi.useFakeTimers();
+        foldByPress();
+
+        (
+          fixture.nativeElement.querySelector('.gs-focus-peek') as HTMLElement
+        ).click();
+        expect(isOpen()).toBe(true);
+        vi.advanceTimersByTime(10_000);
+        expect(isOpen()).toBe(false);
+
+        otherRow().label.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(isOpen()).toBe(true);
+      });
+
+      it('stays folded for keyboard focus it would cover, and folds if out', () => {
+        vi.useFakeTimers();
+        const input = layOut(150);
+        const { descKey } = otherRow();
+
+        input.focus();
+        expect(isOpen()).toBe(false);
+        expect(descText()).toContain(descKey);
+
+        input.blur();
+        component.previewForm('caption');
+        expect(isOpen()).toBe(true);
+        input.focus();
+        expect(isOpen()).toBe(false);
+      });
+
+      it('comes out for keyboard focus below where it would lie', () => {
+        vi.useFakeTimers();
+        const input = layOut(300);
+
+        input.focus();
+        expect(isOpen()).toBe(true);
+      });
+
+      const peek = (): HTMLButtonElement =>
+        fixture.nativeElement.querySelector(
+          '.gs-focus-peek',
+        ) as HTMLButtonElement;
+      const caret = (): string =>
+        (
+          fixture.debugElement.query(By.css('.gs-focus-mark app-icon'))
+            .componentInstance as IconComponent
+        ).name();
+      const pushHeight = (): string =>
+        (fixture.nativeElement.querySelector('.gs-focus-push') as HTMLElement)
+          .style.height;
+      const panel = (): HTMLElement =>
+        fixture.nativeElement.querySelector('.gs-panel') as HTMLElement;
+      const body = (): HTMLElement =>
+        fixture.nativeElement.querySelector('.gs-body') as HTMLElement;
+
+      it('shows, hides and unpins from the rail, saying which it will do', () => {
+        vi.useFakeTimers();
+        fixture.detectChanges();
+        expect(peek().getAttribute('aria-label')).toContain(
+          'alchemy.focus.show',
+        );
+        expect(caret()).toBe('chevron-down');
+
+        peek().click();
+        expect(isOpen()).toBe(true);
+        expect(peek().getAttribute('aria-label')).toContain(
+          'alchemy.focus.hide',
+        );
+        expect(caret()).toBe('chevron-up');
+
+        peek().click();
+        expect(isOpen()).toBe(false);
+        expect(caret()).toBe('chevron-down');
+
+        pin().click();
+        expect(isOpen()).toBe(true);
+        expect(peek().getAttribute('aria-label')).toContain(
+          'alchemy.focus.hide',
+        );
+        expect(caret()).toBe('chevron-up');
+
+        peek().click();
+        expect(isOpen()).toBe(false);
+        expect(pin().getAttribute('aria-pressed')).toBe('false');
+        expect(localStorage.getItem('aihorde.alchemy.focus_pinned')).toBe(
+          'false',
+        );
+        vi.advanceTimersByTime(20_000);
+        expect(isOpen()).toBe(false);
+      });
+
+      it('holds hover back after a hide on the rail, until the pointer leaves the panel', () => {
+        vi.useFakeTimers();
+        peek().click();
+        peek().click();
+        const { label, descKey } = otherRow();
+
+        label.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(isOpen()).toBe(false);
+        expect(descText()).toContain(descKey);
+
+        panel().dispatchEvent(new Event('pointerleave'));
+        label.dispatchEvent(new MouseEvent('mouseenter'));
+        expect(isOpen()).toBe(true);
+      });
+
+      it('pushes the list where it would cover the source step, and lies over it where not', () => {
+        vi.useFakeTimers();
+        stubFootprint();
+        stubSource(110, 400);
+
+        component.previewForm('caption');
+        expect(isOpen()).toBe(true);
+        expect(component.focusPushed()).toBe(true);
+        expect(pushHeight()).toBe('130px');
+
+        peek().click();
+        expect(isOpen()).toBe(false);
+        expect(pushHeight()).toBe('0px');
+
+        stubSource(-500, -20);
+        panel().dispatchEvent(new Event('pointerleave'));
+        component.previewForm('caption');
+        expect(isOpen()).toBe(true);
+        expect(component.focusPushed()).toBe(false);
+        expect(pushHeight()).toBe('0px');
+      });
+
+      it('keeps a pushed sheet out when it is pressed', () => {
+        vi.useFakeTimers();
+        stubFootprint();
+        stubSource(110, 400);
+        component.previewForm('caption');
+        expect(component.focusPushed()).toBe(true);
+
+        sheet().dispatchEvent(new Event('pointerdown'));
+        expect(isOpen()).toBe(true);
+      });
+
+      it('folds the overlay when a scroll brings the source step under it, without holding back', () => {
+        vi.useFakeTimers();
+        stubFootprint();
+        stubSource(-500, -20);
+        component.previewForm('caption');
+        expect(isOpen()).toBe(true);
+        expect(component.focusPushed()).toBe(false);
+
+        stubSource(110, 400);
+        body().dispatchEvent(new Event('scroll'));
+        expect(isOpen()).toBe(false);
+
+        otherRow().label.dispatchEvent(
+          new MouseEvent('mouseenter', { clientX: 40, clientY: 60 }),
+        );
+        expect(isOpen()).toBe(true);
+        expect(component.focusPushed()).toBe(true);
+      });
+
+      it('ignores a row that arrives under a still pointer until the pointer moves', () => {
+        vi.useFakeTimers();
+        const { label, descKey } = otherRow();
+        panel().dispatchEvent(
+          new MouseEvent('pointermove', { clientX: 40, clientY: 60 }),
+        );
+        body().dispatchEvent(new Event('scroll'));
+
+        label.dispatchEvent(
+          new MouseEvent('mouseenter', { clientX: 40, clientY: 60 }),
+        );
+        expect(isOpen()).toBe(false);
+        expect(descText()).not.toContain(descKey);
+
+        panel().dispatchEvent(
+          new MouseEvent('pointermove', { clientX: 40, clientY: 60 }),
+        );
+        label.dispatchEvent(
+          new MouseEvent('mouseenter', { clientX: 40, clientY: 60 }),
+        );
+        expect(isOpen()).toBe(false);
+
+        panel().dispatchEvent(
+          new MouseEvent('pointermove', { clientX: 41, clientY: 60 }),
+        );
+        label.dispatchEvent(
+          new MouseEvent('mouseenter', { clientX: 41, clientY: 60 }),
+        );
+        expect(isOpen()).toBe(true);
+        expect(descText()).toContain(descKey);
+      });
+
+      it('comes out for keyboard focus inside the footprint when it would push', () => {
+        vi.useFakeTimers();
+        const input = layOut(150);
+        stubSource(110, 400);
+
+        input.focus();
+        expect(isOpen()).toBe(true);
+        expect(component.focusPushed()).toBe(true);
+      });
+    });
   });
 
   it('describes the detector under the pointer in the dock, then hands it back', () => {

@@ -100,6 +100,15 @@ const VIEW_MODE_DEFAULT: AlchemyViewMode = 'detail';
 
 type AlchemyViewMode = (typeof VIEW_MODE_OPTIONS)[number];
 
+/** Whether the operation description stays open in the panel, persisted. */
+const FOCUS_PINNED_KEY = 'aihorde.alchemy.focus_pinned';
+
+/**
+ * How long an unpinned description stays out after the last thing that asked
+ * for it. Long enough to read a three-line description and its example.
+ */
+const FOCUS_RETRACT_MS = 10_000;
+
 /** The two surfaces of the page: the tool itself, and the API documentation. */
 type AlchemyTab = 'tool' | 'developers';
 
@@ -339,6 +348,62 @@ export class AlchemyComponent {
   public readonly activeDetector = signal<AnnotationControlType | null>(null);
   /** Whether the dock is describing the image-to-prompt press. */
   public readonly imageToPromptFocused = signal(false);
+
+  /**
+   * Whether the reader has asked for the description to stay in the panel.
+   * Pinned, it holds a slot in the flow and never retracts; unpinned, it comes
+   * out over or into the list and folds back into its rail on a timer.
+   */
+  public readonly focusPinned = signal(this.db.get(FOCUS_PINNED_KEY) === true);
+  /** Whether the description is out of its rail, pinned or not. */
+  public readonly focusOpen = signal(this.focusPinned());
+  /**
+   * Whether the unpinned description came out in the flow, pushing the list
+   * down, rather than over it. It does when it would otherwise cover the
+   * source step, the one part of the panel a reader has to see to use the
+   * rest. Decided as it comes out and kept until it folds, so the sheet never
+   * changes mode under the reader.
+   */
+  public readonly focusPushed = signal(false);
+  /** How far a push moves the list: the sheet's own height as it came out. */
+  public readonly focusPushHeight = signal(0);
+
+  private focusRetractTimer: ReturnType<typeof setTimeout> | null = null;
+  private focusRetractAt = 0;
+  /**
+   * The time left on the retract timer while the pointer rests on the open
+   * description, or null while it is not held. The reader is reading it then,
+   * so the clock stops rather than taking the text away mid-sentence.
+   */
+  private focusHeldRemaining: number | null = null;
+  /**
+   * Set when the reader put the sheet away: a hide on the rail, or a press on
+   * the open overlay. Hover and clicks then only change the text until the
+   * pointer leaves the panel, because the reader was reaching for something
+   * the sheet covered, or said they did not want it, and bringing it out as
+   * the pointer crosses the list would undo that.
+   */
+  private focusHeldBack = false;
+  /**
+   * The pointer's last position over the panel, and where it was when the
+   * list last moved under it. A row that arrives under a still pointer, by a
+   * push, a pin or a scroll, gets a boundary event from the browser as if the
+   * pointer had entered it; that is not the reader pointing at the row, so
+   * hover counts again only once the pointer has actually moved.
+   */
+  private pointerX = Number.NaN;
+  private pointerY = Number.NaN;
+  private pointerStill: { x: number; y: number } | null = null;
+  private readonly focusRail = viewChild<ElementRef<HTMLElement>>('focusRail');
+  private readonly focusSheet =
+    viewChild<ElementRef<HTMLElement>>('focusSheet');
+  /** The source step, head to picker: what a push keeps in view. */
+  private readonly focusSource =
+    viewChild<ElementRef<HTMLElement>>('focusSource');
+  private readonly alchemyPanel =
+    viewChild<ElementRef<HTMLElement>>('alchemyPanel');
+  private readonly alchemyBody =
+    viewChild<ElementRef<HTMLElement>>('alchemyBody');
 
   /**
    * The operation whose info modal is open, or null. On mobile there is no
@@ -731,6 +796,7 @@ export class AlchemyComponent {
     });
 
     this.destroyRef.onDestroy(() => this.revokeAllSourceUrls());
+    this.destroyRef.onDestroy(() => this.clearFocusRetract());
 
     // The dock is page-wide state and the image studio mounts it too, so an
     // entry left open here would follow the reader across the tab bar.
@@ -743,6 +809,24 @@ export class AlchemyComponent {
       void this.selectNewestJob();
       this.watchViewport();
       void this.consumeHandoff();
+    });
+
+    // Listened to directly rather than through the template: both fire on
+    // every frame of a gesture, and neither changes what the page shows unless
+    // the sheet has to fold.
+    effect((onCleanup) => {
+      const panel = this.alchemyPanel()?.nativeElement;
+      const body = this.alchemyBody()?.nativeElement;
+      if (!panel || !body || !isPlatformBrowser(this.platformId)) return;
+      const onMove = (event: PointerEvent): void =>
+        this.onPanelPointerMove(event.clientX, event.clientY);
+      const onScroll = (): void => this.onFocusBodyScroll();
+      panel.addEventListener('pointermove', onMove, { passive: true });
+      body.addEventListener('scroll', onScroll, { passive: true });
+      onCleanup(() => {
+        panel.removeEventListener('pointermove', onMove);
+        body.removeEventListener('scroll', onScroll);
+      });
     });
   }
 
@@ -1010,10 +1094,11 @@ export class AlchemyComponent {
     return this.selectedForms().has(form);
   }
 
-  public toggleForm(form: AlchemyFormName): void {
+  public toggleForm(form: AlchemyFormName, event?: Event): void {
     this.activeDetector.set(null);
     this.imageToPromptFocused.set(false);
     this.activeOperation.set(form);
+    this.revealFocus(event);
     this.selectedForms.update((current) => {
       const next = new Set(current);
       if (next.has(form)) {
@@ -1034,8 +1119,8 @@ export class AlchemyComponent {
    * Take the pair the draft is written from, leaving every other pick alone,
    * and remember that this is what the reader came for.
    */
-  public pickImageToPrompt(): void {
-    this.previewImageToPrompt();
+  public pickImageToPrompt(event?: Event): void {
+    this.previewImageToPrompt(event);
     this.selectedForms.update((current) => {
       const next = new Set(current);
       for (const form of this.promptForms) next.add(form);
@@ -1048,20 +1133,261 @@ export class AlchemyComponent {
    * The dock describes the pair as the one press it is, rather than as the
    * caption operation that happens to be its first half.
    */
-  public previewImageToPrompt(): void {
+  public previewImageToPrompt(event?: Event): void {
+    if (this.isStillPointerHover(event)) return;
     this.activeDetector.set(null);
     this.imageToPromptFocused.set(true);
+    this.revealFocus(event);
   }
 
-  public previewForm(form: AlchemyFormName): void {
+  public previewForm(form: AlchemyFormName, event?: Event): void {
+    if (this.isStillPointerHover(event)) return;
     this.activeDetector.set(null);
     this.imageToPromptFocused.set(false);
     this.activeOperation.set(form);
+    this.revealFocus(event);
   }
 
-  public previewDetector(type: AnnotationControlType): void {
+  public previewDetector(type: AnnotationControlType, event?: Event): void {
+    if (this.isStillPointerHover(event)) return;
     this.imageToPromptFocused.set(false);
     this.activeDetector.set(type);
+    this.revealFocus(event);
+  }
+
+  /**
+   * The rail's own press shows or hides the description. Hiding a pinned one
+   * unpins it too, since a pin that no longer shows anything would be a
+   * setting with no visible effect.
+   */
+  public toggleFocusRail(): void {
+    if (this.focusOpen()) {
+      if (this.focusPinned()) {
+        this.focusPinned.set(false);
+        this.db.store(FOCUS_PINNED_KEY, false);
+      }
+      this.retractFocus();
+      this.focusHeldBack = true;
+      return;
+    }
+    this.focusHeldBack = false;
+    this.openFocus();
+  }
+
+  /**
+   * Leaving the panel ends whatever reach or refusal held the sheet back, so
+   * the pointer may bring it out again from here on.
+   */
+  public onFocusPanelPointerLeave(): void {
+    this.focusHeldBack = false;
+  }
+
+  /**
+   * Pinning brings the description out into the flow, which moves the list
+   * once; that is a deliberate press, unlike a hover, so the shift is not a
+   * surprise. Unpinning folds it straight back rather than leaving an overlay
+   * the reader just said they did not want.
+   */
+  public toggleFocusPin(): void {
+    this.focusHeldBack = false;
+    const pinned = !this.focusPinned();
+    this.focusPinned.set(pinned);
+    this.db.store(FOCUS_PINNED_KEY, pinned);
+    this.notePointerStill();
+    if (pinned) {
+      this.clearFocusRetract();
+      this.focusHeldRemaining = null;
+      this.focusPushed.set(false);
+      this.focusOpen.set(true);
+    } else {
+      this.retractFocus();
+    }
+  }
+
+  public onFocusPointerEnter(): void {
+    if (this.focusPinned() || this.focusRetractTimer === null) return;
+    this.focusHeldRemaining = Math.max(0, this.focusRetractAt - Date.now());
+    this.clearFocusRetract();
+  }
+
+  public onFocusPointerLeave(): void {
+    const remaining = this.focusHeldRemaining;
+    this.focusHeldRemaining = null;
+    if (remaining === null || this.focusPinned() || !this.focusOpen()) return;
+    this.scheduleFocusRetract(remaining);
+  }
+
+  /**
+   * The open overlay holds nothing to press, so a press on it is a reach for
+   * whatever it covers: it gets out of the way at once. A pushed sheet covers
+   * nothing, and a press there may be the start of selecting its text.
+   */
+  public onFocusPointerDown(): void {
+    if (this.focusPinned() || !this.focusOpen() || this.focusPushed()) return;
+    this.retractFocus();
+    this.focusHeldBack = true;
+  }
+
+  /**
+   * Scrolling the list back up can bring the source step under an open
+   * overlay. The overlay folds rather than covering it, and does not hold
+   * back, so the next hover brings it out again, pushing this time.
+   */
+  public onFocusBodyScroll(): void {
+    this.notePointerStill();
+    if (!this.focusOpen() || this.focusPinned() || this.focusPushed()) return;
+    if (this.sourceUnderFootprint()) this.retractFocus();
+  }
+
+  public onPanelPointerMove(x: number, y: number): void {
+    this.pointerX = x;
+    this.pointerY = y;
+    if (this.pointerStill && !this.isAtStillPoint(x, y)) {
+      this.pointerStill = null;
+    }
+  }
+
+  /**
+   * Within a pixel, because a pointer event carries fractional coordinates
+   * and the mouse event the browser sends for the same position after a
+   * layout change carries them truncated.
+   */
+  private isAtStillPoint(x: number, y: number): boolean {
+    const still = this.pointerStill;
+    return (
+      still !== null && Math.abs(still.x - x) < 1 && Math.abs(still.y - y) < 1
+    );
+  }
+
+  /**
+   * Coordinates are compared rather than any move being trusted, because a
+   * browser may send a move of its own at the old position after the layout
+   * under the pointer changes.
+   */
+  private notePointerStill(): void {
+    this.pointerStill = { x: this.pointerX, y: this.pointerY };
+  }
+
+  /**
+   * The entering event's own position is checked as well as the moves seen,
+   * and recorded, because a browser sends the boundary events of a move before
+   * the move itself: without it the first row a real move crosses into would
+   * be lost, and a push it starts would take its still point from where the
+   * pointer was before that move.
+   */
+  private isStillPointerHover(event?: Event): boolean {
+    if (!(event instanceof MouseEvent)) return false;
+    if (event.type === 'mouseenter' && this.pointerStill) {
+      if (this.isAtStillPoint(event.clientX, event.clientY)) return true;
+      this.pointerStill = null;
+    }
+    this.pointerX = event.clientX;
+    this.pointerY = event.clientY;
+    return false;
+  }
+
+  /**
+   * Bring the unpinned sheet out for whatever asked. With no event the caller
+   * is asking outright. Keyboard focus is told apart from the focus a mouse
+   * press also moves by `:focus-visible`; everything else came from the
+   * pointer, which is held back after a press folded the sheet, because the
+   * row that press was reaching for sits under it.
+   */
+  private revealFocus(event?: Event): void {
+    if (this.focusPinned()) return;
+    const target = event?.target;
+    if (
+      event?.type !== 'mouseenter' &&
+      target instanceof HTMLElement &&
+      target.matches(':focus-visible')
+    ) {
+      this.revealFocusForKeyboard(target);
+      return;
+    }
+    if (event && this.focusHeldBack) return;
+    this.openFocus();
+  }
+
+  /**
+   * Keyboard focus on something the open overlay would lie over keeps it
+   * folded, and folds it if it is out, so the focused control is never hidden.
+   * A sheet that would push, or already has, covers nothing, so focus
+   * anywhere brings it out.
+   */
+  private revealFocusForKeyboard(target: HTMLElement): void {
+    const pushes = this.focusOpen()
+      ? this.focusPushed()
+      : this.sourceUnderFootprint();
+    const footprint = this.focusFootprint();
+    if (!pushes && footprint) {
+      const focused = target.getBoundingClientRect();
+      if (focused.bottom > footprint.top && focused.top < footprint.bottom) {
+        if (this.focusOpen()) this.retractFocus();
+        return;
+      }
+    }
+    this.openFocus();
+  }
+
+  /**
+   * Where the open sheet lies: from the rail's lower edge down by the sheet's
+   * height. The height is read from its layout box, which the slide transform
+   * leaves alone, so the footprint is the same folded or open. Null where the
+   * dock is not laid out at all, as on a narrow screen.
+   */
+  private focusFootprint(): { top: number; bottom: number } | null {
+    const rail = this.focusRail()?.nativeElement;
+    const sheet = this.focusSheet()?.nativeElement;
+    if (!rail || !sheet || sheet.offsetHeight === 0) return null;
+    const top = rail.getBoundingClientRect().bottom;
+    return { top, bottom: top + sheet.offsetHeight };
+  }
+
+  private sourceUnderFootprint(): boolean {
+    const footprint = this.focusFootprint();
+    const source = this.focusSource()?.nativeElement;
+    if (!footprint || !source) return false;
+    const box = source.getBoundingClientRect();
+    return box.bottom > footprint.top && box.top < footprint.bottom;
+  }
+
+  private openFocus(): void {
+    if (!this.focusOpen()) {
+      const pushes = this.sourceUnderFootprint();
+      this.focusPushed.set(pushes);
+      if (pushes) {
+        this.focusPushHeight.set(
+          this.focusSheet()?.nativeElement.offsetHeight ?? 0,
+        );
+        this.notePointerStill();
+      }
+      this.focusOpen.set(true);
+    }
+    if (this.focusHeldRemaining !== null) {
+      this.focusHeldRemaining = FOCUS_RETRACT_MS;
+      return;
+    }
+    this.scheduleFocusRetract(FOCUS_RETRACT_MS);
+  }
+
+  private retractFocus(): void {
+    this.clearFocusRetract();
+    this.focusHeldRemaining = null;
+    if (this.focusPushed()) this.notePointerStill();
+    this.focusPushed.set(false);
+    this.focusOpen.set(false);
+  }
+
+  private scheduleFocusRetract(ms: number): void {
+    this.clearFocusRetract();
+    this.focusRetractAt = Date.now() + ms;
+    this.focusRetractTimer = setTimeout(() => this.retractFocus(), ms);
+  }
+
+  private clearFocusRetract(): void {
+    if (this.focusRetractTimer === null) return;
+    clearTimeout(this.focusRetractTimer);
+    this.focusRetractTimer = null;
   }
 
   public hasExample(form: AlchemyFormName): boolean {

@@ -19,7 +19,11 @@
   </a>
 
   <!-- ============ CONTROL PANEL ============ -->
-  <section class="gs-panel">
+  <section
+    #alchemyPanel
+    class="gs-panel"
+    (pointerleave)="onFocusPanelPointerLeave()"
+  >
     <div class="flex min-h-0 flex-1 flex-col">
       <!-- header -->
       <header class="gs-panel-header">
@@ -112,80 +116,141 @@
            the reader to send an operation into nothing. -->
       <app-network-status variant="studio" (retry)="retryConnection()" />
 
-      <!-- Operation detail: docked at a fixed height directly under the header
-           so it stays on-screen while the operation list scrolls below it, and
-           a 1–2 line description can no longer grow and shove the layout. -->
+      <!-- Operation detail: a rail under the header that the description comes
+           out of when an operation is hovered, focused or picked, or the rail
+           is pressed, and folds back into after a while. Unpinned it lies over
+           the list rather than pushing it, because a list that moved would
+           slide a different row under the pointer; only where it would cover
+           the source step does it push, through the room after the dock.
+           Pinned, it holds a fixed slot in the flow so it stays on-screen
+           while the list scrolls below it. The text stays in the page while
+           folded, so the live region still speaks. -->
       @let activeForm = activeOperation();
-      <div class="gs-focus-dock">
-        <div class="gs-focus gs-focus--fixed" aria-live="polite">
-          @if (activeDetector(); as detector) {
-            <div class="mb-1 flex items-center gap-2">
-              <span class="gs-focus-name gs-mono">{{ detector }}</span>
-              <span class="gs-focus-badge">
-                {{ "alchemy.annotation.detector_badge" | transloco }}
-              </span>
-            </div>
-            <div class="gs-focus-desc">
-              {{ detectorDescriptionKey(detector) | transloco }}
-            </div>
-          } @else if (imageToPromptFocused()) {
-            <div class="mb-1 flex items-center gap-2">
-              <span class="gs-focus-name">
-                {{ "alchemy.quick.image_to_prompt" | transloco }}
-              </span>
-            </div>
-            <div class="gs-focus-desc">
-              {{ "alchemy.quick.image_to_prompt_desc" | transloco }}
-            </div>
-            <div class="gs-focus-example">
-              {{ "alchemy.quick.image_to_prompt_example" | transloco }}
-            </div>
-          } @else {
-            <div class="mb-1 flex items-center gap-2">
-              <span class="gs-focus-name">
-                {{ "alchemy.form_names." + activeForm | transloco }}
-              </span>
-              @if (isUpscalerForm(activeForm)) {
-                <span class="gs-focus-badge">
-                  {{ "alchemy.form_meta." + activeForm + ".badge" | transloco }}
-                </span>
+      <div
+        class="gs-focus-dock"
+        [class.gs-focus-dock--open]="focusOpen()"
+        [class.gs-focus-dock--pushed]="focusPushed()"
+        [class.gs-focus-dock--pinned]="focusPinned()"
+      >
+        @let focusRailKey =
+          focusOpen() ? "alchemy.focus.hide" : "alchemy.focus.show";
+        <div #focusRail class="gs-focus-rail">
+          <button
+            type="button"
+            class="gs-focus-peek"
+            (click)="toggleFocusRail()"
+            [attr.aria-label]="focusRailKey | transloco"
+            [title]="focusRailKey | transloco"
+          ></button>
+          <span class="gs-focus-mark" aria-hidden="true">
+            <span class="gs-focus-grip"></span>
+            <app-icon
+              [name]="focusOpen() ? 'chevron-up' : 'chevron-down'"
+              class="gs-ico-sm"
+            />
+          </span>
+          <button
+            type="button"
+            class="gs-focus-pin"
+            [attr.aria-pressed]="focusPinned()"
+            (click)="toggleFocusPin()"
+            [attr.aria-label]="'alchemy.focus.pin' | transloco"
+            [title]="'alchemy.focus.pin' | transloco"
+          >
+            <app-icon name="pin" class="gs-ico-sm" aria-hidden="true" />
+          </button>
+        </div>
+        <div class="gs-focus-drawer">
+          <div
+            #focusSheet
+            class="gs-focus-sheet"
+            (pointerenter)="onFocusPointerEnter()"
+            (pointerleave)="onFocusPointerLeave()"
+            (pointerdown)="onFocusPointerDown()"
+          >
+            <div class="gs-focus gs-focus--fixed" aria-live="polite">
+              @if (activeDetector(); as detector) {
+                <div class="mb-1 flex items-center gap-2">
+                  <span class="gs-focus-name gs-mono">{{ detector }}</span>
+                  <span class="gs-focus-badge">
+                    {{ "alchemy.annotation.detector_badge" | transloco }}
+                  </span>
+                </div>
+                <div class="gs-focus-desc">
+                  {{ detectorDescriptionKey(detector) | transloco }}
+                </div>
+              } @else if (imageToPromptFocused()) {
+                <div class="mb-1 flex items-center gap-2">
+                  <span class="gs-focus-name">
+                    {{ "alchemy.quick.image_to_prompt" | transloco }}
+                  </span>
+                </div>
+                <div class="gs-focus-desc">
+                  {{ "alchemy.quick.image_to_prompt_desc" | transloco }}
+                </div>
+                <div class="gs-focus-example">
+                  {{ "alchemy.quick.image_to_prompt_example" | transloco }}
+                </div>
+              } @else {
+                <div class="mb-1 flex items-center gap-2">
+                  <span class="gs-focus-name">
+                    {{ "alchemy.form_names." + activeForm | transloco }}
+                  </span>
+                  @if (isUpscalerForm(activeForm)) {
+                    <span class="gs-focus-badge">
+                      {{
+                        "alchemy.form_meta." + activeForm + ".badge" | transloco
+                      }}
+                    </span>
+                  }
+                </div>
+                <div class="gs-focus-desc">
+                  {{ "alchemy.form_meta." + activeForm + ".desc" | transloco }}
+                </div>
+                <div class="gs-focus-example">
+                  {{
+                    "alchemy.form_meta." + activeForm + ".example" | transloco
+                  }}
+                </div>
               }
             </div>
-            <div class="gs-focus-desc">
-              {{ "alchemy.form_meta." + activeForm + ".desc" | transloco }}
-            </div>
-            <div class="gs-focus-example">
-              {{ "alchemy.form_meta." + activeForm + ".example" | transloco }}
-            </div>
-          }
+          </div>
         </div>
       </div>
+      <div
+        class="gs-focus-push"
+        aria-hidden="true"
+        [style.height.px]="focusPushed() ? focusPushHeight() : 0"
+      ></div>
 
       <!-- body -->
-      <div class="gs-body">
+      <div #alchemyBody class="gs-body">
         <div class="flex flex-col gap-3.5">
-          <!-- STEP 1: source -->
-          <div class="gs-step-head" id="alchemy-source-step" tabindex="-1">
-            <span
-              class="gs-step-num"
-              [class.gs-step-num--done]="hasSource()"
-              aria-hidden="true"
-            >
-              @if (hasSource()) {
-                <app-icon name="check" class="gs-ico-sm" />
-              } @else {
-                1
-              }
-            </span>
-            <span class="gs-step-title">
-              {{ "alchemy.steps.source" | transloco }}
-            </span>
-          </div>
+          <!-- STEP 1: source. Wrapped so the description can tell whether it
+               would lie over the step, head to picker. -->
+          <div #focusSource class="flex flex-col gap-3.5">
+            <div class="gs-step-head" id="alchemy-source-step" tabindex="-1">
+              <span
+                class="gs-step-num"
+                [class.gs-step-num--done]="hasSource()"
+                aria-hidden="true"
+              >
+                @if (hasSource()) {
+                  <app-icon name="check" class="gs-ico-sm" />
+                } @else {
+                  1
+                }
+              </span>
+              <span class="gs-step-title">
+                {{ "alchemy.steps.source" | transloco }}
+              </span>
+            </div>
 
-          <app-alchemy-image-input
-            [disabled]="isSubmitting()"
-            (sourceImage)="onSourceImage($event)"
-          />
+            <app-alchemy-image-input
+              [disabled]="isSubmitting()"
+              (sourceImage)="onSourceImage($event)"
+            />
+          </div>
 
           <!-- STEP 2: operations -->
           <div class="gs-step-head mt-1.5">
@@ -249,9 +314,9 @@
               type="button"
               class="gs-op-quick-btn"
               [class.gs-op-quick-btn--on]="promptFormsPicked()"
-              (click)="pickImageToPrompt()"
-              (mouseenter)="previewImageToPrompt()"
-              (focusin)="previewImageToPrompt()"
+              (click)="pickImageToPrompt($event)"
+              (mouseenter)="previewImageToPrompt($event)"
+              (focusin)="previewImageToPrompt($event)"
             >
               <app-icon
                 [name]="promptFormsPicked() ? 'check' : 'sec-prompt'"
@@ -394,8 +459,8 @@
                                 [attr.title]="
                                   detectorDescriptionKey(type) | transloco
                                 "
-                                (mouseenter)="previewDetector(type)"
-                                (focusin)="previewDetector(type)"
+                                (mouseenter)="previewDetector(type, $event)"
+                                (focusin)="previewDetector(type, $event)"
                               >
                                 <input
                                   type="checkbox"
@@ -437,15 +502,15 @@
           [class.gs-op--selected]="isFormSelected(form)"
           [class.gs-op--wide]="wide"
           [attr.title]="'alchemy.form_meta.' + form + '.desc' | transloco"
-          (mouseenter)="previewForm(form)"
-          (focusin)="previewForm(form)"
+          (mouseenter)="previewForm(form, $event)"
+          (focusin)="previewForm(form, $event)"
         >
           <input
             type="checkbox"
             class="sr-only"
             [checked]="isFormSelected(form)"
             [disabled]="isSubmitting()"
-            (change)="toggleForm(form)"
+            (change)="toggleForm(form, $event)"
           />
           <span class="gs-op-check" aria-hidden="true">
             <app-icon name="check" />
