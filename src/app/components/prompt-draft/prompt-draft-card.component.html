@@ -703,8 +703,13 @@
     </div>
 
     @if (libraryOpen()) {
+      <!-- Named like the take's own press: under an alchemy job a prompt is
+           sent to the image studio rather than used where it stands. -->
       <app-prompt-library
         initialTab="drafts"
+        [useLabelKey]="
+          mode() === 'improve' ? 'prompt_library.use' : 'prompt_draft.send'
+        "
         [liveRequests]="liveRequests()"
         (use)="useFromLibrary($event)"
         (closed)="closeLibrary()"

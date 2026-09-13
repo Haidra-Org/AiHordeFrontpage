@@ -812,6 +812,24 @@ describe('PromptDraftCardComponent', () => {
       expect(fixture.componentInstance.draftCount()).toBe(2);
     });
 
+    it('names the use press after where the prompt goes', async () => {
+      listAll.mockResolvedValue([makeStored('p1', 'an older draft')]);
+      build();
+      await settle();
+      await openLibrary();
+      expect(
+        el().querySelector('app-prompt-library .gs-pl-use')?.textContent,
+      ).toContain('prompt_draft.send');
+
+      fixture.componentInstance.closeLibrary();
+      fixture.componentRef.setInput('seed', 'a dog');
+      fixture.detectChanges();
+      await openLibrary();
+      expect(
+        el().querySelector('app-prompt-library .gs-pl-use')?.textContent,
+      ).toContain('prompt_library.use');
+    });
+
     it('opens every draft on the Drafts list, with the requests still coming', async () => {
       listAll.mockResolvedValue([makeStored('p1', 'an older draft')]);
       requests.set([
