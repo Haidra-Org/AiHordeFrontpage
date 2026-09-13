@@ -98,6 +98,12 @@ export interface PromptDraftShape {
   maxContextLength?: number;
   /** Workers to keep off the request; every other eligible worker may take it. */
   avoidWorkers?: readonly string[];
+  /**
+   * The text workers online now. With them the pick can tell which models the
+   * avoided workers were the whole of, and pass those over; without them it
+   * may choose a model no one left is running.
+   */
+  workers?: readonly TextWorker[];
 }
 
 /**
@@ -314,6 +320,39 @@ function bestOfTiers(
 }
 
 /**
+ * Who is left to answer: the text workers online now, and the ones a request is
+ * keeping off. A pick made without it cannot tell a model with workers from one
+ * whose workers are all being avoided.
+ */
+export interface TextModelReach {
+  workers: readonly TextWorker[];
+  avoided: ReadonlySet<string> | readonly string[];
+}
+
+/**
+ * The models something can still answer on. A model whose every online worker
+ * is one the request is keeping off has nobody left to write on it, so a retry
+ * asking for it waits until the horde gives up on it.
+ *
+ * A model no listed worker carries is left in: the worker listing is a hint
+ * about who is up, not a roster of who may answer.
+ */
+export function reachableModels(
+  models: readonly ActiveModel[],
+  reach: TextModelReach | null | undefined,
+): readonly ActiveModel[] {
+  if (!reach) return models;
+  const avoided = new Set(reach.avoided);
+  if (avoided.size === 0) return models;
+  return models.filter((model) => {
+    const carrying = reach.workers.filter(
+      (worker) => worker.online && (worker.models ?? []).includes(model.name),
+    );
+    return carrying.length === 0 || !carrying.every((w) => avoided.has(w.id));
+  });
+}
+
+/**
  * The model list a request goes out with, and the name to show for it.
  *
  * `auto` takes the cheapest tier that has a curated model online, ranked
@@ -322,17 +361,22 @@ function bestOfTiers(
  * other way for a reader who asks for the biggest model on the day. Neither
  * finds anything when nothing curated is online, and the request then asks for
  * any model rather than nothing.
+ *
+ * A model with nobody left to answer on it is passed over. A model the reader
+ * named outright is not: they asked for that one, and a pick that quietly
+ * answered with another would be worse than a request that waits.
  */
 export function pickTextModel(
   models: readonly ActiveModel[],
   pick: PromptDraftModelPick,
+  reach?: TextModelReach | null,
 ): { models: string[] | null; label: string | null } {
   if (pick === 'any') return { models: null, label: null };
   if (pick !== 'auto' && pick !== 'quality') {
     return { models: [pick.model], label: pick.model };
   }
   const best = bestOfTiers(
-    rankedCurated(models),
+    rankedCurated(reachableModels(models, reach)),
     pick === 'quality' ? QUALITY_TIER_ORDER : VALUE_TIER_ORDER,
   );
   return best
@@ -853,14 +897,22 @@ export class PromptDraftService {
    * is enough for the request to be picked up, and holding every request to the
    * smallest ceiling on the list would cut answers short for no one's benefit.
    *
+   * A worker this visit is keeping off the request is left out of the reckoning:
+   * it will not be answering, so sizing a request to fit its ceiling would let
+   * through one that no worker still eligible can pick up.
+   *
    * Null where no worker carrying the model says what it will take.
    */
   public async workerLimitsFor(
     model: string | null,
   ): Promise<TextWorkerLimits | null> {
     if (!model) return null;
+    const avoided = this.queue.avoidedWorkers();
     const carrying = (await this.textWorkers()).filter(
-      (worker) => worker.online && (worker.models ?? []).includes(model),
+      (worker) =>
+        worker.online &&
+        !avoided.has(worker.id) &&
+        (worker.models ?? []).includes(model),
     );
     const largest = (
       pick: (worker: TextWorker) => number | undefined,
@@ -925,26 +977,40 @@ export class PromptDraftService {
     return avoided.length > 0 ? { ...shape, avoidWorkers: avoided } : shape;
   }
 
+  /** Who is left to answer, once the shape's avoided workers are taken off. */
+  private reachFor(shape: PromptDraftShape): TextModelReach | null {
+    const avoided = shape.avoidWorkers ?? [];
+    if (avoided.length === 0 || !shape.workers) return null;
+    return { workers: shape.workers, avoided };
+  }
+
   /**
    * The model list a request goes out with, and the name to show for it. A
    * style names its own models and the horde routes on them, so the pick is
    * narrowed to the ones the style allows and reports a label only.
+   *
+   * The shape is the one the request goes out with, avoided workers and all, so
+   * a model left with nobody to write on it is passed over here rather than
+   * asked for and waited on.
    */
   private chooseModels(
     models: readonly ActiveModel[],
     pick: PromptDraftModelPick,
-    style: ImagePromptStyle | null,
+    shape: PromptDraftShape,
   ): { models: string[] | null; label: string | null } {
-    if (!style) return pickTextModel(models, pick);
+    const style = shape.style ?? null;
+    const reach = this.reachFor(shape);
+    if (!style) return pickTextModel(models, pick, reach);
     if (pick !== 'auto' && pick !== 'quality') {
-      return pickTextModel(models, pick);
+      return pickTextModel(models, pick, reach);
     }
     if (style.models.length === 0) return { models: null, label: null };
     const allowed = new Set(style.models);
-    const pool = models.filter(
-      (model) => model.count > 0 && allowed.has(model.name),
+    const pool = reachableModels(
+      models.filter((model) => model.count > 0 && allowed.has(model.name)),
+      reach,
     );
-    const picked = pickTextModel(pool, pick);
+    const picked = pickTextModel(pool, pick, reach);
     if (picked.models) return picked;
     const first = pool.at(0);
     return first
@@ -1035,10 +1101,11 @@ export class PromptDraftService {
     models: readonly ActiveModel[],
     shape: PromptDraftShape = {},
   ): TextGenerationRequest {
+    const shaped = this.avoiding(shape);
     return this.buildRequest(
       input,
-      this.chooseModels(models, pick, shape.style ?? null),
-      this.avoiding(shape),
+      this.chooseModels(models, pick, shaped),
+      shaped,
     );
   }
 
@@ -1066,7 +1133,7 @@ export class PromptDraftService {
   ): Promise<TextDraftEstimate> {
     const pool = models ?? (await this.textModels());
     const shaped = this.avoiding(shape);
-    const chosen = this.chooseModels(pool, pick, shaped.style ?? null);
+    const chosen = this.chooseModels(pool, pick, shaped);
     const priced = await firstValueFrom(
       this.aiHorde.dryRunTextGeneration(
         this.apiKeyFor(anonymous),
@@ -1094,8 +1161,9 @@ export class PromptDraftService {
   ): Promise<TextSubmitResult> {
     const pool = models ?? (await this.textModels());
     const style = shape.style ?? null;
-    const chosen = this.chooseModels(pool, pick, style);
-    const request = this.buildRequest(input, chosen, this.avoiding(shape));
+    const shaped = this.avoiding(shape);
+    const chosen = this.chooseModels(pool, pick, shaped);
+    const request = this.buildRequest(input, chosen, shaped);
     return this.queue.submit(
       {
         context: options.context,

@@ -31,6 +31,7 @@ import {
 } from './text-generation-queue.service';
 import type { StoredTextRequest } from './text-generation-db.service';
 import { ActiveModel } from '../types/active-model';
+import type { TextWorker } from '../types/generation';
 import { ImagePromptStyle, TextStyle } from '../types/style';
 import { API_BASE as API_BASE_URL } from '../testing/api-test-helpers';
 
@@ -174,6 +175,64 @@ describe('picking a text model', () => {
     expect(pickTextModel(pool, { model: 'x/y' })).toEqual({
       models: ['x/y'],
       label: 'x/y',
+    });
+  });
+
+  describe('when some workers are being kept off the request', () => {
+    const worker = (
+      id: string,
+      models: string[],
+      online = true,
+    ): TextWorker => ({ id, name: id, online, models });
+
+    it('passes over a model whose every online worker is being avoided', () => {
+      const workers = [
+        worker('w-silent', [
+          'koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
+        ]),
+        worker('w-ok', ['koboldcpp/gemma-4-31B-it-heretic']),
+      ];
+      expect(
+        pickTextModel(pool, 'auto', { workers, avoided: ['w-silent'] }).models,
+      ).toEqual(['koboldcpp/gemma-4-31B-it-heretic']);
+    });
+
+    it('keeps a model that has a worker left, and one no listed worker carries', () => {
+      const workers = [
+        worker('w-silent', [
+          'koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
+        ]),
+        worker('w-ok', ['koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic']),
+        // Offline, so it is nobody's last worker either way.
+        worker(
+          'w-off',
+          ['koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic'],
+          false,
+        ),
+      ];
+      expect(
+        pickTextModel(pool, 'auto', { workers, avoided: ['w-silent'] }).models,
+      ).toEqual(['koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic']);
+      // No worker in the listing carries the big one, so the listing says
+      // nothing about it and it stays eligible.
+      expect(
+        pickTextModel(pool, 'quality', { workers, avoided: ['w-silent'] })
+          .models,
+      ).toEqual(['aphrodite/TheDrummer/Behemoth-X-123B-v2.1']);
+    });
+
+    it('leaves a model the reader named outright alone', () => {
+      const workers = [worker('w-silent', ['x/y'])];
+      expect(
+        pickTextModel(
+          pool,
+          { model: 'x/y' },
+          {
+            workers,
+            avoided: ['w-silent'],
+          },
+        ).models,
+      ).toEqual(['x/y']);
     });
   });
 });
@@ -738,6 +797,70 @@ describe('PromptDraftService', () => {
     expect(
       service.previewRequest({ caption: 'a dog' }, 'any', []),
     ).toMatchObject({ workers: ['w-silent'], worker_blacklist: true });
+  });
+
+  it('asks on a model a kept-off worker was not the whole of', async () => {
+    avoided = new Set(['w-silent']);
+    const models = [
+      model('koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic', 1),
+      model('koboldcpp/gemma-4-31B-it-heretic', 1),
+    ];
+    const workers: TextWorker[] = [
+      {
+        id: 'w-silent',
+        name: 'Silent',
+        online: true,
+        models: ['koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic'],
+      },
+      {
+        id: 'w-ok',
+        name: 'Ok',
+        online: true,
+        models: ['koboldcpp/gemma-4-31B-it-heretic'],
+      },
+    ];
+
+    await service.submit(
+      { caption: 'a dog' },
+      'auto',
+      models,
+      { anonymous: true, origin: 'studio', context: { kind: 'studio' } },
+      { workers },
+    );
+    // The cheaper model would have been the pick, but nobody is left to write
+    // on it, so the request would have waited out its life in the queue.
+    expect(submitted().request.models).toEqual([
+      'koboldcpp/gemma-4-31B-it-heretic',
+    ]);
+    expect(submitted().modelLabel).toBe('koboldcpp/gemma-4-31B-it-heretic');
+  });
+
+  it('sizes a request on the workers that can still answer it', async () => {
+    avoided = new Set(['w-big']);
+    const pending = service.workerLimitsFor('koboldcpp/gemma');
+    http.expectOne(`${API_BASE_URL}/workers?type=text`).flush([
+      {
+        id: 'w-big',
+        name: 'Big',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 512,
+        max_context_length: 8192,
+      },
+      {
+        id: 'w-ok',
+        name: 'Ok',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 80,
+        max_context_length: 2048,
+      },
+    ]);
+    // The avoided worker's ceiling is not one this request can use.
+    await expect(pending).resolves.toEqual({
+      maxLength: 80,
+      maxContextLength: 2048,
+    });
   });
 
   it('sends the sizes the reader set in place of the ones worked out', () => {

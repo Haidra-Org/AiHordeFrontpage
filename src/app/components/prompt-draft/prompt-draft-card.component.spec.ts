@@ -128,6 +128,8 @@ describe('PromptDraftCardComponent', () => {
   let watch: ReturnType<typeof vi.fn>;
   let release: ReturnType<typeof vi.fn>;
   let cancelling: ReturnType<typeof signal<ReadonlySet<string>>>;
+  /** The workers this visit has had silence from, as the queue keeps them. */
+  let avoidedWorkers: ReturnType<typeof signal<ReadonlySet<string>>>;
   /** Answer the next press with a request that has already come back. */
   const answerWith = (request: StoredTextRequest): void => {
     submit.mockImplementation(() => {
@@ -138,6 +140,7 @@ describe('PromptDraftCardComponent', () => {
   let estimate: ReturnType<typeof vi.fn>;
   let sizing: ReturnType<typeof vi.fn>;
   let workerLimitsFor: ReturnType<typeof vi.fn>;
+  let textWorkers: ReturnType<typeof vi.fn>;
   let remove: ReturnType<typeof vi.fn>;
   let listAll: ReturnType<typeof vi.fn>;
   let imagePromptStyles: ReturnType<typeof vi.fn>;
@@ -172,6 +175,7 @@ describe('PromptDraftCardComponent', () => {
     release = vi.fn();
     watch = vi.fn().mockReturnValue(release);
     cancelling = signal<ReadonlySet<string>>(new Set());
+    avoidedWorkers = signal<ReadonlySet<string>>(new Set());
     const lists = new Map<string, Signal<readonly StoredTextRequest[]>>();
     const requestsFor = (
       context: TextRequestContext,
@@ -191,6 +195,7 @@ describe('PromptDraftCardComponent', () => {
     estimate = vi.fn().mockResolvedValue({ kudos: null, resolved: null });
     sizing = vi.fn().mockReturnValue(SIZES);
     workerLimitsFor = vi.fn().mockResolvedValue(WORKER_LIMITS);
+    textWorkers = vi.fn().mockResolvedValue([]);
     remove = vi.fn().mockResolvedValue(undefined);
     listAll = vi.fn().mockResolvedValue([]);
     imagePromptStyles = vi.fn().mockResolvedValue([]);
@@ -230,6 +235,7 @@ describe('PromptDraftCardComponent', () => {
               { name: 'koboldcpp/L3-8B-Stheno-v3.2', count: 4 },
               { name: 'koboldcpp/gemma-4-31B-it-heretic', count: 1 },
             ]),
+            textWorkers,
           },
         },
         {
@@ -249,6 +255,7 @@ describe('PromptDraftCardComponent', () => {
             cancel,
             cancelling,
             remove,
+            avoidedWorkers,
             clock: signal(NOW),
           },
         },
@@ -412,7 +419,7 @@ describe('PromptDraftCardComponent', () => {
         replace: false,
         quotedKudos: null,
       },
-      { style: null, takes: 1, limits: WORKER_LIMITS },
+      { style: null, takes: 1, limits: WORKER_LIMITS, workers: [] },
     );
     expect(
       el().querySelector('.alchemy-draft__text')?.textContent?.trim(),
@@ -485,7 +492,7 @@ describe('PromptDraftCardComponent', () => {
       'auto',
       expect.anything(),
       expect.objectContaining({ anonymous: true, origin: 'studio' }),
-      { style: null, takes: 1, limits: WORKER_LIMITS },
+      { style: null, takes: 1, limits: WORKER_LIMITS, workers: [] },
     );
   });
 
@@ -738,6 +745,7 @@ describe('PromptDraftCardComponent', () => {
         style: expect.objectContaining({ id: 's1' }),
         takes: 1,
         limits: WORKER_LIMITS,
+        workers: [],
       },
     );
   });
@@ -764,6 +772,7 @@ describe('PromptDraftCardComponent', () => {
       style: expect.objectContaining({ id: 's1' }),
       takes: 1,
       limits: WORKER_LIMITS,
+      workers: [],
     });
   });
 
@@ -779,6 +788,7 @@ describe('PromptDraftCardComponent', () => {
       style: null,
       takes: 3,
       limits: WORKER_LIMITS,
+      workers: [],
     });
     const takes = [...el().querySelectorAll('.alchemy-draft__take')];
     expect(takes).toHaveLength(3);
@@ -816,7 +826,7 @@ describe('PromptDraftCardComponent', () => {
       expect.objectContaining({ caption: 'a dog on a couch' }),
       'auto',
       expect.any(Array),
-      { style: null, takes: 1, limits: WORKER_LIMITS },
+      { style: null, takes: 1, limits: WORKER_LIMITS, workers: [] },
     );
     // Logged out, the card is anonymous, and the curl line says which key that is.
     expect(sections[1].value).toContain('apikey: 0000000000');

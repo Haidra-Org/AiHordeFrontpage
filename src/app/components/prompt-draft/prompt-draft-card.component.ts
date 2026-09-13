@@ -65,7 +65,7 @@ import { ToastService } from '../../services/toast.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { API_BASE_URL } from '../../services/api-config';
 import { ActiveModel } from '../../types/active-model';
-import type { ResolvedTextRequest } from '../../types/generation';
+import type { ResolvedTextRequest, TextWorker } from '../../types/generation';
 import { ImagePromptStyle, imagePromptStyleLabel } from '../../types/style';
 import { copyToClipboard } from '../../helper/copy-to-clipboard';
 import { stringifyAsJson } from '../../helper/json-formatter';
@@ -329,6 +329,8 @@ export class PromptDraftCardComponent {
   public readonly maxContextOverride = signal<number | null>(null);
   /** What the chosen model's workers advertise, or null before they are read. */
   public readonly workerLimits = signal<TextWorkerLimits | null>(null);
+  /** The text workers online now, so a model nobody left runs is passed over. */
+  public readonly textWorkers = signal<readonly TextWorker[]>([]);
   /** Which take has its list of edits open. */
   public readonly changesOpen = signal<number | null>(null);
   /** The request whose body and answer are being read, or null for none. */
@@ -880,6 +882,7 @@ export class PromptDraftCardComponent {
       style: this.chosenStyle(),
       takes: this.takes(),
       limits: this.workerLimits(),
+      workers: this.textWorkers(),
       ...(length !== null ? { maxLength: length } : {}),
       ...(context !== null ? { maxContextLength: context } : {}),
     };
@@ -891,7 +894,11 @@ export class PromptDraftCardComponent {
    * at all names none, and the sizes then follow the material alone.
    */
   public readonly chosenModel = computed<string | null>(
-    () => pickTextModel(this.onlineModels(), this.modelPick()).label,
+    () =>
+      pickTextModel(this.onlineModels(), this.modelPick(), {
+        workers: this.textWorkers(),
+        avoided: this.queue.avoidedWorkers(),
+      }).label,
   );
 
   private async loadWorkerLimits(model: string | null): Promise<void> {
@@ -1404,6 +1411,9 @@ export class PromptDraftCardComponent {
 
   private async loadModels(): Promise<void> {
     this.models.set(await this.drafts.textModels());
+    // Who is running what decides which models a retry can still land on, so
+    // the listing is read beside the models rather than only when a size is.
+    this.textWorkers.set(await this.drafts.textWorkers());
   }
 
   private async loadStyles(): Promise<void> {
