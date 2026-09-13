@@ -419,12 +419,14 @@
            the material, and both can be overridden. -->
       @if (showSizing()) {
         @let sizes = sizing();
+        <!-- The line under the price is in words; the fold below it is in the
+             tokens the request is written in. -->
+        @let words = sizingWords();
         <div class="gs-size">
           <p class="gs-sublabel gs-size-line">
             {{
               "prompt_draft.sizing"
-                | transloco
-                  : { length: sizes.maxLength, context: sizes.maxContextLength }
+                | transloco: { length: words.length, context: words.context }
             }}
             @if (sizingWhyKey(); as why) {
               <button
@@ -444,8 +446,8 @@
                     why
                       | transloco
                         : {
-                            length: sizes.maxLength,
-                            asked: sizes.askedLength,
+                            length: words.length,
+                            asked: words.asked,
                           }
                   }}
                 </span>

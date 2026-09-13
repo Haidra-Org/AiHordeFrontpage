@@ -22,6 +22,7 @@ import {
   sizeRequest,
   stripThinkBlocks,
   trimToSentence,
+  wordsForTokens,
 } from './prompt-draft.service';
 import { AuthService } from './auth.service';
 import { StyleService } from './style.service';
@@ -584,6 +585,12 @@ describe('sizing a request', () => {
   it('reads a reading as costing about a token every three and a half letters', () => {
     expect(estimateTokens('')).toBe(0);
     expect(estimateTokens('a'.repeat(350))).toBe(120);
+  });
+
+  it('says a size in words, rounded to read as the approximation it is', () => {
+    expect(wordsForTokens(96)).toBe(70);
+    expect(wordsForTokens(1024)).toBe(770);
+    expect(wordsForTokens(0)).toBe(0);
   });
 });
 

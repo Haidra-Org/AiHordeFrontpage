@@ -746,6 +746,20 @@ export function estimateTokens(text: string): number {
   return Math.ceil((text.length / CHARS_PER_TOKEN) * TOKEN_MARGIN);
 }
 
+/**
+ * Roughly how many words a token allowance is worth. Tokens are what the horde
+ * counts and what a request is written in, but they are not a unit anyone
+ * writes in, so a size shown to a reader is converted. English prose runs about
+ * three words to four tokens, and the figure is rounded to five to read as the
+ * approximation it is.
+ */
+const WORDS_PER_TOKEN = 0.75;
+const WORD_STEP = 5;
+
+export function wordsForTokens(tokens: number): number {
+  return Math.round((tokens * WORDS_PER_TOKEN) / WORD_STEP) * WORD_STEP;
+}
+
 /** The sizes workers are used to being asked for, smallest first. */
 const LARGEST_CONTEXT = 4096;
 const CONTEXT_STEPS: readonly number[] = [512, 1024, 2048, LARGEST_CONTEXT];

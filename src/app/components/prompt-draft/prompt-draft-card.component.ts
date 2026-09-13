@@ -28,6 +28,7 @@ import {
   curatedRank,
   modelCostTier,
   pickTextModel,
+  wordsForTokens,
 } from '../../services/prompt-draft.service';
 import { PromptDraftDbService } from '../../services/prompt-draft-db.service';
 import {
@@ -909,6 +910,21 @@ export class PromptDraftCardComponent {
   public readonly sizing = computed<TextRequestSizing>(() =>
     this.drafts.sizing(this.material(), this.shape()),
   );
+
+  /**
+   * The same sizes in words. The request is written in tokens because that is
+   * what the horde counts, but nobody writing a prompt thinks in them, so the
+   * line under the price is converted and the Advanced fold, where the figures
+   * are typed, is left in the unit that goes out.
+   */
+  public readonly sizingWords = computed(() => {
+    const sizes = this.sizing();
+    return {
+      length: wordsForTokens(sizes.maxLength),
+      context: wordsForTokens(sizes.maxContextLength),
+      asked: wordsForTokens(sizes.askedLength),
+    };
+  });
 
   /**
    * A style supplies its own sampling parameters, so the sizes the card works

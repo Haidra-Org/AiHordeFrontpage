@@ -1518,13 +1518,20 @@ describe('PromptDraftCardComponent', () => {
     const sizeText = (): string =>
       el().querySelector('.gs-size')?.textContent ?? '';
 
-    it('says how much answer is asked for and how much room it takes', async () => {
+    it('says how much answer is asked for and how much room it takes, in words', async () => {
       build();
       await settle();
       expect(sizeText()).toContain('prompt_draft.sizing');
       expect(sizing).toHaveBeenCalled();
       expect(sizing.mock.calls.at(-1)?.[1]).toMatchObject({
         limits: { maxLength: 512, maxContextLength: 4096 },
+      });
+      // The sizes go out in tokens; the line beside the price is in words, so
+      // the reader is not asked to think in a unit they never write in.
+      expect(fixture.componentInstance.sizingWords()).toEqual({
+        length: 70,
+        context: 770,
+        asked: 70,
       });
     });
 
