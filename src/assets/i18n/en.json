@@ -2772,6 +2772,7 @@
   "status.last_checked": "Last checked",
   "status.active_issues": "Active issues",
   "status.resolved_issues": "Recently resolved",
+  "status.incident_history": "Incident history",
   "status.maintenance": "Scheduled maintenance",
   "status.in_progress": "In progress",
   "status.services": "Services",

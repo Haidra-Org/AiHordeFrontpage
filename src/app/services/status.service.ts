@@ -35,7 +35,7 @@ export class StatusService {
   public getIncidents(): Observable<PublicIncidentsResponse | null> {
     return this.cache
       .cachedGet<PublicIncidentsResponse>(
-        `${this.baseUrl}/public/incidents`,
+        `${this.baseUrl}/public/incidents?include_resolved_count=20`,
         undefined,
         { ttl: CacheTTL.SHORT, category: 'status' },
       )

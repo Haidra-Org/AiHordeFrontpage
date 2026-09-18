@@ -65,6 +65,12 @@ interface StatusView {
   icon: string;
 }
 
+/** Resolved incidents sharing the same local calendar day. */
+interface ResolvedIncidentGroup {
+  date: string;
+  incidents: PublicIncident[];
+}
+
 const STATUS_VIEWS: Record<ComponentStatusValue, StatusView> = {
   operational: {
     labelKey: 'status.state.operational',
@@ -142,8 +148,36 @@ export class StatusComponent {
   );
 
   public readonly hasResolvedIncidents = computed(
-    () => this.resolvedIncidents().length > 0,
+    () => this.recentResolvedIncidents().length > 0,
   );
+
+  public readonly recentResolvedIncidents = computed(() =>
+    this.resolvedIncidents().filter((incident) =>
+      this.isRecentResolvedIncident(incident),
+    ),
+  );
+
+  public readonly hasHistoricalIncidents = computed(
+    () => this.resolvedIncidentGroups().length > 0,
+  );
+
+  public readonly resolvedIncidentGroups = computed(() => {
+    const groups = new Map<string, ResolvedIncidentGroup>();
+    for (const incident of this.resolvedIncidents()) {
+      if (this.isRecentResolvedIncident(incident)) continue;
+      const date = incident.resolved_at ?? incident.started_at;
+      const day = this.localDateKey(date);
+      const group = groups.get(day);
+      if (group) {
+        group.incidents.push(incident);
+      } else {
+        groups.set(day, { date, incidents: [incident] });
+      }
+    }
+    return [...groups.entries()]
+      .sort(([firstDay], [secondDay]) => secondDay.localeCompare(firstDay))
+      .map(([, group]) => group);
+  });
 
   /** Gates the inline moderator console; only AI Horde moderators see it. */
   public readonly isModerator = computed(
@@ -183,16 +217,7 @@ export class StatusComponent {
       .subscribe((response) => {
         if (!response) return;
         this.activeIncidents.set(response.active);
-        this.resolvedIncidents.set(
-          response.recent_resolved.filter((incident) => {
-            if (!incident.resolved_at) return true;
-            const resolvedAt = Date.parse(incident.resolved_at);
-            return (
-              Number.isNaN(resolvedAt) ||
-              resolvedAt >= Date.now() - RESOLVED_INCIDENT_MAX_AGE_MS
-            );
-          }),
-        );
+        this.resolvedIncidents.set(response.recent_resolved);
       });
 
     this.status
@@ -239,6 +264,24 @@ export class StatusComponent {
 
   public historyFor(componentId: string): PublicHistoryDay[] {
     return this.histories()[componentId] ?? [];
+  }
+
+  private localDateKey(date: string): string {
+    const parsed = new Date(date);
+    return [
+      parsed.getFullYear(),
+      String(parsed.getMonth() + 1).padStart(2, '0'),
+      String(parsed.getDate()).padStart(2, '0'),
+    ].join('-');
+  }
+
+  private isRecentResolvedIncident(incident: PublicIncident): boolean {
+    if (!incident.resolved_at) return false;
+    const resolvedAt = Date.parse(incident.resolved_at);
+    return (
+      !Number.isNaN(resolvedAt) &&
+      resolvedAt >= Date.now() - RESOLVED_INCIDENT_MAX_AGE_MS
+    );
   }
 
   /**

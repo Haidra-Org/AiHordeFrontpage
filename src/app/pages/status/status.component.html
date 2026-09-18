@@ -191,7 +191,7 @@
             {{ "status.resolved_issues" | transloco }}
           </h2>
           <div class="status-incidents">
-            @for (inc of resolvedIncidents(); track inc.id) {
+            @for (inc of recentResolvedIncidents(); track inc.id) {
               <article class="status-incident status-incident--resolved">
                 <header class="status-incident__head">
                   <div>
@@ -413,6 +413,89 @@
       </section>
 
       <p class="status-note">{{ "status.tbd_note" | transloco }}</p>
+      @if (hasHistoricalIncidents()) {
+        <section class="status-section">
+          <h2 class="heading-section-lg">
+            {{ "status.incident_history" | transloco }}
+          </h2>
+          <div class="status-resolved-groups">
+            @for (group of resolvedIncidentGroups(); track group.date) {
+              <section class="status-resolved-group">
+                <h3 class="status-resolved-group__date">
+                  {{ group.date | date: "fullDate" }}
+                </h3>
+                <div class="status-incidents">
+                  @for (inc of group.incidents; track inc.id) {
+                    <article class="status-incident status-incident--resolved">
+                      <header class="status-incident__head">
+                        <div>
+                          <div class="status-incident__tags">
+                            <span
+                              class="badge {{
+                                severityBadgeClass(inc.severity)
+                              }}"
+                            >
+                              {{
+                                "status.severity." + inc.severity | transloco
+                              }}
+                            </span>
+                            <span class="status-incident__state">
+                              ·
+                              {{
+                                "status.incident_status." + inc.status
+                                  | transloco
+                              }}
+                            </span>
+                          </div>
+                          <h4 class="status-incident__title">
+                            {{ inc.title }}
+                          </h4>
+                          @if (inc.affects_names.length > 0) {
+                            <div class="status-incident__affects">
+                              {{ "status.affects" | transloco }}:
+                              {{ inc.affects_names.join(", ") }}
+                            </div>
+                          }
+                        </div>
+                        @if (inc.resolved_at; as resolvedAt) {
+                          <div class="status-incident__started">
+                            <div>{{ "status.resolved" | transloco }}</div>
+                            <div class="status-incident__started-value">
+                              {{ resolvedAt | date: "short" }}
+                            </div>
+                          </div>
+                        }
+                      </header>
+                      @if (inc.updates.length > 0) {
+                        <div class="status-incident__timeline">
+                          @for (update of inc.updates; track update.posted_at) {
+                            <div class="status-incident__update">
+                              <div class="status-incident__update-meta">
+                                <div class="status-incident__update-status">
+                                  {{
+                                    "status.incident_status." + update.status
+                                      | transloco
+                                  }}
+                                </div>
+                                <div class="status-incident__update-time">
+                                  {{ update.posted_at | date: "short" }}
+                                </div>
+                              </div>
+                              <div class="status-incident__update-body">
+                                {{ update.body }}
+                              </div>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </article>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        </section>
+      }
     }
   </div>
 </section>

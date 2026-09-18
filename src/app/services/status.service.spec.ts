@@ -8,7 +8,10 @@ import { firstValueFrom } from 'rxjs';
 import { StatusService } from './status.service';
 import { clientAgentInterceptor } from './interceptors/client-agent.interceptor';
 import { STATUS_API_BASE } from '../testing/api-test-helpers';
-import { PublicComponentsResponse } from '../types/status';
+import {
+  PublicComponentsResponse,
+  PublicIncidentsResponse,
+} from '../types/status';
 
 describe('StatusService', () => {
   let service: StatusService;
@@ -58,6 +61,23 @@ describe('StatusService', () => {
       .flush('boom', { status: 503, statusText: 'Service Unavailable' });
 
     expect(await promise).toBeNull();
+  });
+
+  it('requests the maximum bounded resolved incident history', async () => {
+    const response: PublicIncidentsResponse = {
+      active: [],
+      recent_resolved: [],
+      generated_at: '2026-06-20T00:00:00Z',
+    };
+
+    const promise = firstValueFrom(service.getIncidents());
+    http
+      .expectOne(
+        `${STATUS_API_BASE}/public/incidents?include_resolved_count=20`,
+      )
+      .flush(response);
+
+    expect(await promise).toEqual(response);
   });
 
   it('requests history for a single component with day count', async () => {

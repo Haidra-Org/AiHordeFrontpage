@@ -224,12 +224,20 @@ describe('StatusComponent resolved incidents', () => {
       active: [],
       recent_resolved: [
         incident('recent', '2026-06-20T12:00:00Z'),
-        incident('expired', '2026-06-18T11:59:59Z'),
+        incident('same-day', '2026-06-20T09:00:00Z'),
+        incident('historic-same-day', '2026-06-18T11:00:00Z'),
+        incident('historic-newer', '2026-06-18T11:59:59Z'),
+        incident('historic-older', '2026-06-17T12:00:00Z'),
       ],
       generated_at: '2026-06-20T12:00:00Z',
     };
     const statusMock: Partial<StatusService> = {
-      getComponents: () => of(null),
+      getComponents: () =>
+        of({
+          components: [],
+          overall: 'operational',
+          generated_at: '2026-06-20T12:00:00Z',
+        }),
       getIncidents: () => of(response),
       getMaintenance: () => of(null),
       getHistory: () => of(null),
@@ -267,7 +275,27 @@ describe('StatusComponent resolved incidents', () => {
 
     expect(
       fixture.componentInstance.resolvedIncidents().map(({ id }) => id),
-    ).toEqual(['recent']);
+    ).toEqual([
+      'recent',
+      'same-day',
+      'historic-same-day',
+      'historic-newer',
+      'historic-older',
+    ]);
+    expect(
+      fixture.componentInstance.recentResolvedIncidents().map(({ id }) => id),
+    ).toEqual(['recent', 'same-day']);
+    expect(
+      fixture.componentInstance
+        .resolvedIncidentGroups()
+        .map(({ incidents }) => incidents.map(({ id }) => id)),
+    ).toEqual([['historic-same-day', 'historic-newer'], ['historic-older']]);
+    expect(
+      fixture.nativeElement.querySelectorAll('.status-resolved-group'),
+    ).toHaveLength(2);
+    expect(
+      fixture.nativeElement.querySelectorAll('.status-incident--resolved'),
+    ).toHaveLength(5);
     vi.useRealTimers();
   });
 });
