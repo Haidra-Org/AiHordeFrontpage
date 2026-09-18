@@ -39,6 +39,7 @@ const BAR_MAJOR_DOWN_FLOOR_S = 300;
 const BAR_MAJOR_DOWN_FRACTION = 0.01;
 const BAR_MINOR_DEGRADED_FLOOR_S = 600;
 const BAR_MINOR_DEGRADED_FRACTION = 0.05;
+const RESOLVED_INCIDENT_MAX_AGE_MS = 2 * 24 * 60 * 60 * 1000;
 
 /** A history day's rendered bar: its colour modifier, label, and flap marker. */
 interface DayBar {
@@ -182,7 +183,16 @@ export class StatusComponent {
       .subscribe((response) => {
         if (!response) return;
         this.activeIncidents.set(response.active);
-        this.resolvedIncidents.set(response.recent_resolved);
+        this.resolvedIncidents.set(
+          response.recent_resolved.filter((incident) => {
+            if (!incident.resolved_at) return true;
+            const resolvedAt = Date.parse(incident.resolved_at);
+            return (
+              Number.isNaN(resolvedAt) ||
+              resolvedAt >= Date.now() - RESOLVED_INCIDENT_MAX_AGE_MS
+            );
+          }),
+        );
       });
 
     this.status

@@ -16,6 +16,8 @@ import {
   PublicComponentsResponse,
   PublicHistoryDay,
   PublicHistoryResponse,
+  PublicIncident,
+  PublicIncidentsResponse,
 } from '../../types/status';
 
 function moderatorUser(): HordeUser {
@@ -198,5 +200,74 @@ describe('StatusComponent service sparkline', () => {
   it('omits the sparkline when there is too little history to draw a line', () => {
     const fixture = setup([day('2026-06-21', 86400)]);
     expect(fixture.nativeElement.querySelector('.status-sparkline')).toBeNull();
+  });
+});
+
+describe('StatusComponent resolved incidents', () => {
+  function incident(id: string, resolvedAt: string): PublicIncident {
+    return {
+      id,
+      slug: id,
+      title: id,
+      severity: 'minor',
+      status: 'resolved',
+      started_at: '2026-06-18T12:00:00Z',
+      resolved_at: resolvedAt,
+      affects: [],
+      affects_names: [],
+      updates: [],
+    };
+  }
+
+  it('only keeps incidents resolved within the last two days', () => {
+    const response: PublicIncidentsResponse = {
+      active: [],
+      recent_resolved: [
+        incident('recent', '2026-06-20T12:00:00Z'),
+        incident('expired', '2026-06-18T11:59:59Z'),
+      ],
+      generated_at: '2026-06-20T12:00:00Z',
+    };
+    const statusMock: Partial<StatusService> = {
+      getComponents: () => of(null),
+      getIncidents: () => of(response),
+      getMaintenance: () => of(null),
+      getHistory: () => of(null),
+    };
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-20T12:00:00Z'));
+    TestBed.configureTestingModule({
+      imports: [
+        StatusComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en: {} },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(withInterceptors([clientAgentInterceptor])),
+        provideHttpClientTesting(),
+        { provide: StatusService, useValue: statusMock },
+        {
+          provide: StatusAdminService,
+          useValue: { getComponents: () => of([]) },
+        },
+        {
+          provide: NetworkStatusService,
+          useValue: { performance: signal(null) },
+        },
+        { provide: AuthService, useValue: { currentUser: signal(null) } },
+        { provide: TranslatorService, useValue: { get: () => of('') } },
+      ],
+    });
+
+    const fixture = TestBed.createComponent(StatusComponent);
+    fixture.detectChanges();
+
+    expect(
+      fixture.componentInstance.resolvedIncidents().map(({ id }) => id),
+    ).toEqual(['recent']);
+    vi.useRealTimers();
   });
 });
