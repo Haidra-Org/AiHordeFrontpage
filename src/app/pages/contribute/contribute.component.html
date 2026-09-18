@@ -9,72 +9,84 @@
         <p>{{ "contribute.subtitle" | transloco }}</p>
       </div>
 
-      <div class="contribute-network" aria-hidden="true">
-        <span
-          class="contribute-network-line contribute-network-line--one"
-        ></span>
-        <span
-          class="contribute-network-line contribute-network-line--two"
-        ></span>
-        <span
-          class="contribute-network-line contribute-network-line--three"
-        ></span>
-        <span
-          class="contribute-network-line contribute-network-line--four"
-        ></span>
-        <span
-          class="contribute-network-packet contribute-network-packet--one"
-        ></span>
-        <span
-          class="contribute-network-packet contribute-network-packet--two"
-        ></span>
-        <span
-          class="contribute-network-packet contribute-network-packet--three"
-        ></span>
-        <span
-          class="contribute-network-packet contribute-network-packet--four"
-        ></span>
-        <span class="contribute-network-node contribute-network-node--one"
-          ><app-icon name="server"
-        /></span>
-        <span class="contribute-network-node contribute-network-node--two"
-          ><app-icon name="code-bracket"
-        /></span>
-        <span class="contribute-network-node contribute-network-node--three"
-          ><app-icon name="users"
-        /></span>
-        <span class="contribute-network-node contribute-network-node--four"
-          ><app-icon name="currency-circle"
-        /></span>
-        <span class="contribute-network-core"><app-icon name="heart" /></span>
-      </div>
+      <nav
+        class="contribute-network"
+        [attr.aria-label]="'contribute.paths.label' | transloco"
+      >
+        <a
+          routerLink="workers"
+          fragment="workers-intro"
+          class="contribute-path"
+        >
+          <app-icon name="server" />
+          <span
+            ><strong>{{ "contribute.paths.compute" | transloco }}</strong
+            ><small>{{
+              "contribute.paths.compute_hint" | transloco
+            }}</small></span
+          >
+          <app-icon name="arrow-right" />
+        </a>
+        <a href="https://github.com/Haidra-Org" class="contribute-path">
+          <app-icon name="code-bracket" />
+          <span
+            ><strong>{{ "contribute.paths.develop" | transloco }}</strong
+            ><small>{{
+              "contribute.paths.develop_hint" | transloco
+            }}</small></span
+          >
+          <app-icon name="arrow-right" />
+        </a>
+        <a href="https://discord.gg/3DxrhksKzn" class="contribute-path">
+          <app-icon name="users" />
+          <span
+            ><strong>{{ "contribute.paths.community" | transloco }}</strong
+            ><small>{{
+              "contribute.paths.community_hint" | transloco
+            }}</small></span
+          >
+          <app-icon name="arrow-right" />
+        </a>
+        <a routerLink="donate" fragment="donate-intro" class="contribute-path">
+          <app-icon name="heart" />
+          <span
+            ><strong>{{ "contribute.tabs.donate" | transloco }}</strong
+            ><small>{{
+              "contribute.paths.donate_hint" | transloco
+            }}</small></span
+          >
+          <app-icon name="arrow-right" />
+        </a>
+      </nav>
     </div>
   </section>
 
+  <nav
+    class="hd-subtabs contribute-tabs"
+    [attr.aria-label]="'contribute.title' | transloco"
+  >
+    <div class="hd-subtabs-scroll">
+      <a
+        routerLink="workers"
+        class="hd-subtab"
+        routerLinkActive="hd-subtab--active"
+        ariaCurrentWhenActive="page"
+      >
+        <app-icon name="server" />
+        {{ "contribute.tabs.workers" | transloco }}
+      </a>
+      <a
+        routerLink="donate"
+        class="hd-subtab"
+        routerLinkActive="hd-subtab--active"
+        ariaCurrentWhenActive="page"
+      >
+        <app-icon name="heart" />
+        {{ "contribute.tabs.donate" | transloco }}
+      </a>
+    </div>
+  </nav>
   <div class="contribute-shell">
-    <app-scroll-fade class="hd-subtabs contribute-tabs" [appStickyHeader]="10">
-      <div class="hd-subtabs-scroll">
-        <a
-          routerLink="workers"
-          class="hd-subtab"
-          routerLinkActive="hd-subtab--active"
-          ariaCurrentWhenActive="page"
-        >
-          <app-icon name="server" />
-          {{ "contribute.tabs.workers" | transloco }}
-        </a>
-        <a
-          routerLink="donate"
-          class="hd-subtab"
-          routerLinkActive="hd-subtab--active"
-          ariaCurrentWhenActive="page"
-        >
-          <app-icon name="heart" />
-          {{ "contribute.tabs.donate" | transloco }}
-        </a>
-      </div>
-    </app-scroll-fade>
-
     <div class="contribute-content">
       <router-outlet />
     </div>

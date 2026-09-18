@@ -1,5 +1,5 @@
 <div class="workers-page">
-  <section class="workers-intro" scrollReveal>
+  <section id="workers-intro" class="workers-intro" scrollReveal>
     <div class="workers-intro-copy">
       <p class="contribute-section-kicker">
         {{ "contribute.tabs.workers" | transloco }}
@@ -47,11 +47,9 @@
         "
       >
         <div class="worker-card-visual" aria-hidden="true">
-          <span class="worker-card-orbit"></span>
-          <span class="worker-card-glyph"><app-icon name="photo" /></span>
-          <span class="worker-card-job worker-card-job--one"></span>
-          <span class="worker-card-job worker-card-job--two"></span>
-          <span class="worker-card-job worker-card-job--three"></span>
+          <span class="worker-image-frame"
+            ><app-icon name="photo" /><span class="worker-image-scan"></span
+          ></span>
         </div>
         <div class="worker-card-copy">
           @if (ns.imageNeedsHelp()) {
@@ -99,13 +97,10 @@
         "
       >
         <div class="worker-card-visual" aria-hidden="true">
-          <span class="worker-card-orbit"></span>
-          <span class="worker-card-glyph"
-            ><app-icon name="document-text"
-          /></span>
-          <span class="worker-card-job worker-card-job--one"></span>
-          <span class="worker-card-job worker-card-job--two"></span>
-          <span class="worker-card-job worker-card-job--three"></span>
+          <span class="worker-text-sheet"
+            ><span></span><span></span><span></span
+            ><span class="worker-text-cursor"></span
+          ></span>
         </div>
         <div class="worker-card-copy">
           @if (ns.textNeedsHelp()) {
@@ -180,13 +175,11 @@
         "
       >
         <div class="worker-card-visual" aria-hidden="true">
-          <span class="worker-card-orbit"></span>
-          <span class="worker-card-glyph"
-            ><app-icon name="beaker-classic"
-          /></span>
-          <span class="worker-card-job worker-card-job--one"></span>
-          <span class="worker-card-job worker-card-job--two"></span>
-          <span class="worker-card-job worker-card-job--three"></span>
+          <span class="worker-alchemy-pair"
+            ><span><app-icon name="photo" /></span
+            ><app-icon name="arrow-right" /><span
+              ><app-icon name="photo" /></span
+          ></span>
         </div>
         <div class="worker-card-copy">
           @if (ns.alchemyNeedsHelp()) {

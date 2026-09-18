@@ -1,5 +1,5 @@
 <div class="donate-page">
-  <section class="donate-intro" scrollReveal>
+  <section id="donate-intro" class="donate-intro" scrollReveal>
     <div>
       <p class="contribute-section-kicker">
         {{ "contribute.tabs.donate" | transloco }}
@@ -7,21 +7,22 @@
       <h2>{{ "donate.intro.title" | transloco }}</h2>
       <p>{{ "donate.intro.description" | transloco }}</p>
     </div>
-    <div class="donate-pulse" aria-hidden="true">
-      <span class="donate-pulse-core"><app-icon name="heart" /></span>
-      <span class="donate-pulse-line donate-pulse-line--one"></span>
-      <span class="donate-pulse-line donate-pulse-line--two"></span>
-      <span class="donate-pulse-line donate-pulse-line--three"></span>
-      <span class="donate-pulse-node donate-pulse-node--one"
-        ><app-icon name="server-stack"
+    <a
+      class="donate-support"
+      href="https://haidra.net/donate/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span class="donate-support-mark" aria-hidden="true"
+        ><app-icon name="heart"
       /></span>
-      <span class="donate-pulse-node donate-pulse-node--two"
-        ><app-icon name="code-bracket-alt"
+      <strong>{{ "donate.support.title" | transloco }}</strong>
+      <span>{{ "donate.support.hint" | transloco }}</span>
+      <span class="donate-support-action"
+        >{{ "donate.support.action" | transloco }}
+        <app-icon name="external-link"
       /></span>
-      <span class="donate-pulse-node donate-pulse-node--three"
-        ><app-icon name="users"
-      /></span>
-    </div>
+    </a>
   </section>
 
   <section class="contribute-section" scrollReveal>

@@ -847,8 +847,9 @@
     transform: translateX(2px);
   }
 
-  /* Generate is a small production line. Each outlined frame enters empty,
-     resolves at the next station and keeps its distance downstream. */
+  /* Generate is a small production line. Frames ride one steady belt, so
+     the gap between neighbours never changes; each frame resolves as it
+     passes the middle station. */
   .home-door-production {
     position: relative;
     display: block;
@@ -921,56 +922,62 @@
     opacity: 0;
   }
 
-  /* At rest the five stations are wireframes. In motion every frame passes
-     through empty, resolving and complete states before it leaves the line. */
+  /* Stations sit one pitch (21%) apart. On the belt a frame travels from one
+     pitch before the first station to one pitch past the last over a single
+     cycle, and the six frames are a sixth of a cycle apart. Each delay puts
+     its frame on its resting station, so the line starts without a jump;
+     frame 6 waits off the left edge. */
   .home-door-output--1 {
-    --home-door-output-delay: 0ms;
+    --home-door-output-delay: calc(var(--hd-dur) * -10);
     left: 0;
   }
 
   .home-door-output--2 {
-    --home-door-output-delay: calc(var(--hd-dur) * -10);
+    --home-door-output-delay: calc(var(--hd-dur) * -20);
     left: 21%;
   }
 
   .home-door-output--3 {
-    --home-door-output-delay: calc(var(--hd-dur) * -20);
+    --home-door-output-delay: calc(var(--hd-dur) * -30);
     left: 42%;
   }
 
   .home-door-output--4 {
-    --home-door-output-delay: calc(var(--hd-dur) * -30);
+    --home-door-output-delay: calc(var(--hd-dur) * -40);
     left: 63%;
   }
 
   .home-door-output--5 {
-    --home-door-output-delay: calc(var(--hd-dur) * -40);
+    --home-door-output-delay: calc(var(--hd-dur) * -50);
     left: 84%;
   }
 
   .home-door-output--6 {
-    --home-door-output-delay: calc(var(--hd-dur) * -50);
+    --home-door-output-delay: 0ms;
+    left: -21%;
     opacity: 0;
   }
 
+  /* Shares the middle station's box, so the mark is centred on that frame at
+     any width. */
   .home-door-production-mark {
     position: absolute;
     z-index: 2;
-    top: 25px;
-    left: 50%;
+    top: 7px;
+    left: 42%;
     display: grid;
     place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: var(--hd-radius-sm);
-    background: var(--hd-accent-tint);
-    transform: translateX(-50%);
+    width: 16%;
+    aspect-ratio: 1;
     transition: opacity var(--hd-dur-fast) var(--hd-ease);
   }
 
   .home-door-production-mark app-icon {
-    width: 18px;
-    height: 18px;
+    width: 28px;
+    height: 28px;
+    padding: 5px;
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-accent-tint);
   }
 
   .home-door--generate:is(:hover, :focus-visible) .home-door-production-mark {
@@ -978,135 +985,94 @@
   }
 
   .home-door--generate:is(:hover, :focus-visible) .home-door-output {
-    animation: home-door-output-line calc(var(--hd-dur) * 60) var(--hd-ease)
-      infinite;
+    animation: home-door-output-line calc(var(--hd-dur) * 60) linear infinite;
     animation-delay: var(--home-door-output-delay);
-    transform: none;
   }
 
+  /* The second animation fades in frames that are already past the middle
+     station when the line starts, which would otherwise appear at once. */
   .home-door--generate:is(:hover, :focus-visible) .home-door-output img {
-    animation: home-door-output-develop calc(var(--hd-dur) * 60) steps(9, end)
-      infinite;
-    animation-delay: var(--home-door-output-delay);
+    animation:
+      home-door-output-develop calc(var(--hd-dur) * 60) linear infinite,
+      home-door-output-settle calc(var(--hd-dur) * 3) var(--hd-ease);
+    animation-delay: var(--home-door-output-delay), 0ms;
   }
 
   .home-door--generate:is(:hover, :focus-visible) .home-door-output-pixels {
-    animation: home-door-output-pixels calc(var(--hd-dur) * 60) steps(9, end)
-      infinite;
+    animation: home-door-output-pixels calc(var(--hd-dur) * 60) linear infinite;
     animation-delay: var(--home-door-output-delay);
   }
 
+  /* Station n is reached at n/6 of the cycle; the middle station at 50%. */
   @keyframes home-door-output-line {
     0% {
-      left: 0;
-      border-color: var(--hd-field-border);
-      box-shadow: var(--hd-elev-1);
+      left: -21%;
       opacity: 0;
-      transform: none;
     }
 
-    2% {
-      left: 0;
+    12% {
       opacity: 1;
     }
 
-    5%,
-    15% {
-      left: 0;
+    40%,
+    60% {
       border-color: var(--hd-field-border);
-      box-shadow: var(--hd-elev-1);
     }
 
-    21% {
-      left: 21%;
+    50% {
       border-color: var(--hd-accent-tint-border);
-      box-shadow: none;
     }
 
-    32% {
-      left: 21%;
-      border-color: var(--hd-field-border);
-      box-shadow: var(--hd-elev-1);
-    }
-
-    38% {
-      left: 42%;
-    }
-
-    54.67% {
-      left: 63%;
+    88% {
       opacity: 1;
     }
 
-    71.33% {
-      left: 84%;
-      opacity: 1;
-    }
-
-    88%,
     100% {
-      left: 101%;
+      left: 105%;
       opacity: 0;
     }
   }
 
   @keyframes home-door-output-develop {
     0%,
-    21% {
+    40% {
       clip-path: inset(100% 0 0);
       opacity: 0;
     }
 
-    23% {
-      opacity: 0.25;
-    }
-
-    27% {
-      opacity: 0.55;
-    }
-
-    30% {
-      opacity: 0.8;
-    }
-
-    32%,
-    83% {
+    58%,
+    100% {
       clip-path: inset(0);
       opacity: 1;
-    }
-
-    89%,
-    100% {
-      opacity: 0;
     }
   }
 
   @keyframes home-door-output-pixels {
     0%,
-    21% {
+    38% {
       opacity: 0;
     }
 
-    22% {
-      opacity: 1;
+    46% {
+      opacity: 0.45;
     }
 
-    26% {
-      opacity: 0.72;
-    }
-
-    30% {
-      opacity: 0.38;
-    }
-
-    32%,
+    60%,
     100% {
       opacity: 0;
     }
   }
 
+  @keyframes home-door-output-settle {
+    from {
+      filter: opacity(0);
+    }
+  }
+
   /* Contribute puts the heart at the centre of a service made by many small
-     participants. Lines live behind the nodes so the mark reads in one ink. */
+     participants. Stacking runs lines, packets, nodes, heart: the heart is
+     opaque and on top, so lines and packets pass under it and appear from its
+     rim rather than crossing the icon. */
   .home-door-network {
     position: relative;
     width: 148px;
@@ -1117,19 +1083,23 @@
   .home-door-network::after {
     content: "";
     position: absolute;
-    inset: 47px 12px auto;
+    inset: 48px auto auto 14px;
+    width: 120px;
     height: 1px;
     background: var(--hd-field-border);
+    z-index: 0;
     transform-origin: center;
+    transform: rotate(-30deg);
     transition: background-color var(--hd-dur) var(--hd-ease);
   }
 
   .home-door-network::after {
-    transform: rotate(32deg);
+    transform: rotate(30deg);
   }
 
   .home-door-heart {
     position: absolute;
+    z-index: 3;
     inset: 25px auto auto 51px;
     display: grid;
     place-items: center;
@@ -1137,14 +1107,18 @@
     height: 46px;
     border: 1px solid var(--hd-accent-tint-border);
     border-radius: var(--hd-radius-pill);
-    background: var(--hd-accent-tint);
+    /* The tint is translucent in dark themes. Laying it over the scene's own
+       fill keeps its colour and stops the lines showing through. */
+    background:
+      linear-gradient(var(--hd-accent-tint), var(--hd-accent-tint)),
+      var(--hd-field-soft);
     box-shadow: var(--hd-elev-1);
     transition: transform var(--hd-dur) var(--hd-ease);
   }
 
   .home-door-node {
     position: absolute;
-    z-index: 1;
+    z-index: 2;
     width: 12px;
     height: 12px;
     border: 2px solid var(--hd-muted);
@@ -1159,7 +1133,7 @@
     --home-door-packet-x: 0px;
     --home-door-packet-y: 0px;
     position: absolute;
-    z-index: 2;
+    z-index: 1;
     top: 48px;
     left: 74px;
     width: 6px;
@@ -1170,43 +1144,43 @@
   }
 
   .home-door-packet--one {
-    --home-door-packet-x: -49px;
-    --home-door-packet-y: -34px;
+    --home-door-packet-x: -52px;
+    --home-door-packet-y: -30px;
   }
 
   .home-door-packet--two {
-    --home-door-packet-x: 53px;
+    --home-door-packet-x: 52px;
     --home-door-packet-y: -30px;
   }
 
   .home-door-packet--three {
-    --home-door-packet-x: -62px;
-    --home-door-packet-y: 38px;
+    --home-door-packet-x: -52px;
+    --home-door-packet-y: 30px;
   }
 
   .home-door-packet--four {
-    --home-door-packet-x: 62px;
-    --home-door-packet-y: 34px;
+    --home-door-packet-x: 52px;
+    --home-door-packet-y: 30px;
   }
 
   .home-door-node--one {
-    top: 8px;
-    left: 25px;
+    top: 12px;
+    left: 16px;
   }
 
   .home-door-node--two {
     top: 12px;
-    right: 20px;
+    right: 16px;
   }
 
   .home-door-node--three {
-    bottom: 6px;
-    left: 12px;
+    bottom: 12px;
+    left: 16px;
   }
 
   .home-door-node--four {
-    right: 8px;
-    bottom: 10px;
+    right: 16px;
+    bottom: 12px;
   }
 
   .home-door--contribute:is(:hover, :focus-visible) .home-door-network::before,

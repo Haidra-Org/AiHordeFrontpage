@@ -74,6 +74,13 @@ takes the neutral, deeper charcoal instead, because a hue in the surround biases
 
 ### The worked example
 
+The contribution routes use `_contribute.css` for a canvas-level hero and full-width
+route tabs. Contribution links keep their explanations visible at every viewport;
+hover and keyboard focus add emphasis. Worker illustrations have separate image,
+text and alchemy treatments, with motion enabled only when the reader permits it.
+The homepage's small contribution network uses one symmetric geometry for its
+connecting lines, node centres and packet endpoints.
+
 `src/styles/_models.css` is the first page on HD: the `/details/models` list and the model detail page. It is the shape
 every new page should take.
 
