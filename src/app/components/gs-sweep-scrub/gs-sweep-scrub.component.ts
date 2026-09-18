@@ -3409,6 +3409,13 @@ export class GsSweepScrubComponent {
       this.railDragging = false;
       return;
     }
+    // A mouse press left to its default starts a text selection, or drags one
+    // already there, and the browser cancels the pointer for its own drag.
+    // Holding the default back also holds back focus, which the keys need.
+    event.preventDefault();
+    if (event.currentTarget instanceof HTMLElement) {
+      event.currentTarget.focus({ preventScroll: true });
+    }
     this.railDragging = true;
     this.scrubDrag.set(true);
     this.captureRail(event);

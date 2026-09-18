@@ -13385,9 +13385,12 @@ app-gs-sweep-scrub {
 /* One slit per frame in place of an anonymous range input. A slider says only
    "somewhere between two ends"; the rail says how many frames there are, which
    one this is, and what the ends were rendered at, without being asked. */
+/* A selection left over the rail turns the next press into the browser's own
+   text drag, which cancels the scrub. */
 .gen-studio .gs-tickrail-box {
   min-width: 0;
   padding: var(--gs-space-1) var(--gs-space-4) 0;
+  user-select: none;
 }
 /* The lane the slits sit in. A short strip's few ticks read as decoration
    without it; a visible groove under a thumb is the shape every reader already

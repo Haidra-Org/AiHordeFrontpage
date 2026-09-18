@@ -663,6 +663,23 @@ describe('GsSweepScrubComponent', () => {
       expect(rail().getAttribute('aria-valuenow')).toBe('2');
     });
 
+    it('holds back the text selection a mouse press starts, and still takes focus', async () => {
+      await setUp({ startExpanded: true });
+      railWidth(300);
+
+      const press = new MouseEvent('pointerdown', {
+        clientX: 20,
+        clientY: 22,
+        bubbles: true,
+        cancelable: true,
+      });
+      rail().dispatchEvent(press);
+      fixture.detectChanges();
+
+      expect(press.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(rail());
+    });
+
     it('puts each end number at the position of its own slit', async () => {
       await setUp({ startExpanded: true });
 
