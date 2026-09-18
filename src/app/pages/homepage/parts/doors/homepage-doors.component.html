@@ -1,22 +1,100 @@
-<!-- `gen-studio` is the scope the door's own rules are declared under; the
-     section borrows it so a door looks the same here as where it leads. -->
-<section class="home-section gen-studio" scrollReveal>
+<section class="home-section" scrollReveal>
   <div class="home-section-inner">
     <h2 class="home-section-title">
       {{ "homepage.doors.title" | transloco }}
     </h2>
-    <div class="home-doors">
+    <ul class="home-doors">
       @for (door of doors; track door.id) {
-        <app-gs-door
-          kind="studio"
-          [icon]="door.icon"
-          controlClass="home-door gs-door--mark"
-          [external]="door.external ?? false"
-          [title]="door.titleKey | transloco"
-          [meta]="door.metaKey | transloco"
-          (entered)="enter(door)"
-        />
+        <li class="home-door-item">
+          <a
+            class="home-door home-door--{{ door.id }}"
+            [attr.href]="door.link"
+            [attr.target]="door.external ? '_blank' : null"
+            [attr.rel]="door.external ? 'noopener' : null"
+            (click)="enter($event, door)"
+          >
+            <span class="home-door-scene" aria-hidden="true">
+              @switch (door.id) {
+                @case ("generate") {
+                  <span class="home-door-production">
+                    <span class="home-door-assembly-line"></span>
+                    @for (
+                      preview of generatePreviews;
+                      track preview;
+                      let i = $index
+                    ) {
+                      <span
+                        class="home-door-output home-door-output--{{ i + 1 }}"
+                      >
+                        <img [src]="preview" alt="" />
+                        <span class="home-door-output-pixels"></span>
+                      </span>
+                    }
+                    <span class="home-door-production-mark">
+                      <app-icon [name]="door.icon" />
+                    </span>
+                  </span>
+                }
+                @case ("contribute") {
+                  <span class="home-door-network">
+                    <span class="home-door-packet home-door-packet--one"></span>
+                    <span class="home-door-packet home-door-packet--two"></span>
+                    <span
+                      class="home-door-packet home-door-packet--three"
+                    ></span>
+                    <span
+                      class="home-door-packet home-door-packet--four"
+                    ></span>
+                    <span class="home-door-node home-door-node--one"></span>
+                    <span class="home-door-node home-door-node--two"></span>
+                    <span class="home-door-node home-door-node--three"></span>
+                    <span class="home-door-node home-door-node--four"></span>
+                    <span class="home-door-heart">
+                      <app-icon [name]="door.icon" />
+                    </span>
+                  </span>
+                }
+                @case ("build") {
+                  <span class="home-door-terminal">
+                    <span class="home-door-terminal-bar">
+                      <span></span><span></span><span></span>
+                    </span>
+                    <span
+                      class="home-door-code-line home-door-code-line--one"
+                    ></span>
+                    <span
+                      class="home-door-code-line home-door-code-line--two"
+                    ></span>
+                    <span
+                      class="home-door-code-line home-door-code-line--three"
+                    ></span>
+                    <span class="home-door-cursor"></span>
+                    <app-icon [name]="door.icon" />
+                  </span>
+                }
+              }
+            </span>
+
+            <span class="home-door-copy">
+              <span class="home-door-title">{{
+                door.titleKey | transloco
+              }}</span>
+              <span class="home-door-meta">{{ door.metaKey | transloco }}</span>
+            </span>
+
+            <span class="home-door-go" aria-hidden="true">
+              <app-icon
+                [name]="door.external ? 'external-link' : 'arrow-right'"
+              />
+            </span>
+            @if (door.external) {
+              <span class="sr-only">{{
+                "generate.door.external_suffix" | transloco
+              }}</span>
+            }
+          </a>
+        </li>
       }
-    </div>
+    </ul>
   </div>
 </section>

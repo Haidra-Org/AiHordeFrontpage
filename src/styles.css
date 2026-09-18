@@ -54,6 +54,10 @@
 /* Home page */
 @import "./styles/_home.css";
 
+/* Mission and contribution pages */
+@import "./styles/_mission.css";
+@import "./styles/_contribute.css";
+
 /* Forms */
 @import "./styles/_forms.css";
 

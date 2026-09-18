@@ -21,10 +21,17 @@ import { UnitConversionService } from '../../services/unit-conversion.service';
 import { SingleImageStatPoint } from '../../types/single-image-stat-point';
 import { SingleTextStatPoint } from '../../types/single-text-stat-point';
 import { setPageTitle } from '../../helper/page-title';
+import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
 
 @Component({
   selector: 'app-mission',
-  imports: [TranslocoPipe, RouterLink, DecimalPipe, IconComponent],
+  imports: [
+    TranslocoPipe,
+    RouterLink,
+    DecimalPipe,
+    IconComponent,
+    ScrollRevealDirective,
+  ],
   templateUrl: './mission.component.html',
   styleUrl: './mission.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

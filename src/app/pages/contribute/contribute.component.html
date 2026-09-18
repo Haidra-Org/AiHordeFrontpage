@@ -1,47 +1,82 @@
-<section class="section-primary">
-  <div class="container-page-header">
-    <div class="place-center">
-      <h1 class="heading-hero">
-        {{ "contribute.title" | transloco }}
-      </h1>
-      <p class="text-description mt-4 max-w-3xl">
-        {{ "contribute.subtitle" | transloco }}
-      </p>
-    </div>
-  </div>
-</section>
+<main class="contribute-page">
+  <section class="contribute-hero">
+    <div class="contribute-hero-inner">
+      <div class="contribute-hero-copy">
+        <p class="contribute-eyebrow">
+          {{ "homepage.doors.contribute_title" | transloco }}
+        </p>
+        <h1>{{ "contribute.title" | transloco }}</h1>
+        <p>{{ "contribute.subtitle" | transloco }}</p>
+      </div>
 
-<section class="section-secondary">
-  <div class="container-page-content">
-    <!-- Tab Navigation -->
-    <app-scroll-fade
-      class="details-tabs details-tabs--glass details-tabs--connected tabs-container--centered"
-      role="tablist"
-      [appStickyHeader]="10"
-    >
-      <a
-        routerLink="workers"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon name="server" class="icon-sm" />
-        {{ "contribute.tabs.workers" | transloco }}
-      </a>
-      <a
-        routerLink="donate"
-        class="details-tab"
-        routerLinkActive="details-tab-active"
-        role="tab"
-      >
-        <app-icon name="heart" class="icon-sm" />
-        {{ "contribute.tabs.donate" | transloco }}
-      </a>
+      <div class="contribute-network" aria-hidden="true">
+        <span
+          class="contribute-network-line contribute-network-line--one"
+        ></span>
+        <span
+          class="contribute-network-line contribute-network-line--two"
+        ></span>
+        <span
+          class="contribute-network-line contribute-network-line--three"
+        ></span>
+        <span
+          class="contribute-network-line contribute-network-line--four"
+        ></span>
+        <span
+          class="contribute-network-packet contribute-network-packet--one"
+        ></span>
+        <span
+          class="contribute-network-packet contribute-network-packet--two"
+        ></span>
+        <span
+          class="contribute-network-packet contribute-network-packet--three"
+        ></span>
+        <span
+          class="contribute-network-packet contribute-network-packet--four"
+        ></span>
+        <span class="contribute-network-node contribute-network-node--one"
+          ><app-icon name="server"
+        /></span>
+        <span class="contribute-network-node contribute-network-node--two"
+          ><app-icon name="code-bracket"
+        /></span>
+        <span class="contribute-network-node contribute-network-node--three"
+          ><app-icon name="users"
+        /></span>
+        <span class="contribute-network-node contribute-network-node--four"
+          ><app-icon name="currency-circle"
+        /></span>
+        <span class="contribute-network-core"><app-icon name="heart" /></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="contribute-shell">
+    <app-scroll-fade class="hd-subtabs contribute-tabs" [appStickyHeader]="10">
+      <div class="hd-subtabs-scroll">
+        <a
+          routerLink="workers"
+          class="hd-subtab"
+          routerLinkActive="hd-subtab--active"
+          ariaCurrentWhenActive="page"
+        >
+          <app-icon name="server" />
+          {{ "contribute.tabs.workers" | transloco }}
+        </a>
+        <a
+          routerLink="donate"
+          class="hd-subtab"
+          routerLinkActive="hd-subtab--active"
+          ariaCurrentWhenActive="page"
+        >
+          <app-icon name="heart" />
+          {{ "contribute.tabs.donate" | transloco }}
+        </a>
+      </div>
     </app-scroll-fade>
 
-    <!-- Tab Content -->
-    <div class="tab-content-panel tabs-container--centered">
+    <div class="contribute-content">
       <router-outlet />
     </div>
   </div>
-</section>
+</main>

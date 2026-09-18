@@ -215,6 +215,7 @@
   --gs-seg-track: var(--hd-seg-track);
   --gs-seg-active: var(--hd-seg-active);
   --gs-seg-active-ink: var(--hd-seg-active-ink);
+  --gs-seg-inactive-border: var(--hd-pop-border);
   --gs-switch-off: var(--hd-switch-off);
   /* The tutorials' own hue: a warm amber that belongs to learning alone, so a
      door that starts a tutorial, the dock that runs one and the frame that says
@@ -1320,6 +1321,9 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   background: var(--gs-seg-active);
   color: var(--gs-seg-active-ink);
   box-shadow: var(--gs-elev-1);
+}
+.gen-studio .gs-seg-opt[aria-pressed="false"] {
+  border: 1px solid var(--gs-seg-inactive-border);
 }
 .gen-studio .gs-seg-opt:disabled {
   opacity: 0.55;
@@ -11654,18 +11658,18 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
      letting it drop behind an ancestor's background. */
   isolation: isolate;
 }
-.gen-studio .gs-tut-target::before {
-  content: "";
-  position: absolute;
-  inset: -6px -8px;
-  /* A dialog opened from inside the pointed field (the refinement card under the
+/* A dialog opened from inside the pointed field (the refinement card under the
    prompt opens its own prompt library) is fixed to the screen, but isolation
    would hold its z-index inside the field, and the pane, the panel foot and the
    site nav would paint through it. While one is open the backdrop hides the
    halo anyway, so the field gives its stacking context up. */
-  .gen-studio .gs-tut-target:has([aria-modal="true"]) {
-    isolation: auto;
-  }
+.gen-studio .gs-tut-target:has([aria-modal="true"]) {
+  isolation: auto;
+}
+.gen-studio .gs-tut-target::before {
+  content: "";
+  position: absolute;
+  inset: -6px -8px;
   z-index: -1;
   border-radius: 12px;
   pointer-events: none;
@@ -14574,7 +14578,8 @@ app-gs-compare-wipe {
 .gen-studio .gs-learn-levels--read {
   width: 100%;
   max-width: 72ch;
-  margin-inline: auto;
+  /* margin-inline: auto; */
+  margin-left: var(--gs-space-3);
 }
 .gen-studio .gs-learn-levels-label {
   font-size: 10px;
@@ -18599,7 +18604,8 @@ html:has(app-gs-sheet) {
   margin-top: var(--gs-space-3);
   width: 100%;
   max-width: 72ch;
-  margin-inline: auto;
+  /* margin-inline: auto; */
+  margin-left: var(--gs-space-3);
 }
 /* The measure is the article's, not each section's, so the prose and the
    pictures under it share one column edge. */

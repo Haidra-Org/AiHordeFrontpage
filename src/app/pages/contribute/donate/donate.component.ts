@@ -3,8 +3,8 @@ import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
-import { MissionCalloutComponent } from '../../../components/mission-callout/mission-callout.component';
 import { ThemeService } from '../../../services/theme.service';
+import { ScrollRevealDirective } from '../../../directives/scroll-reveal.directive';
 
 @Component({
   selector: 'app-donate',
@@ -12,8 +12,8 @@ import { ThemeService } from '../../../services/theme.service';
     TranslocoPipe,
     RouterLink,
     IconComponent,
-    MissionCalloutComponent,
     NgOptimizedImage,
+    ScrollRevealDirective,
   ],
   templateUrl: './donate.component.html',
   styleUrl: './donate.component.css',

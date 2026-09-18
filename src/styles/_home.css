@@ -431,6 +431,11 @@
     max-width: var(--max-width-container);
     margin-inline: auto;
   }
+  .home-section-inner--sponsors {
+    display: flex;
+    max-width: var(--max-width-container);
+    margin-inline: auto;
+  }
 
   /* One ledger on the page's own ground: no cards, no fills, nothing but
      rules between the lines. The three domains are columns because the
@@ -728,16 +733,734 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: var(--hd-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  /* A door keeps a column measure inside a panel; given a third of the page it
-     takes the width it is handed, and the three fill their row to the same
-     height. The blue strip narrows through the door's own `gs-door--mark`,
-     declared in the studio sheet: this sheet is layered and would lose. */
-  .home-doors app-gs-door,
+  .home-door-item {
+    min-width: 0;
+  }
+
   .home-door {
-    max-width: none;
+    position: relative;
+    display: grid;
+    grid-template-rows: 136px 1fr auto;
+    gap: var(--hd-space-3);
     height: 100%;
+    min-height: 292px;
+    padding: var(--hd-space-3);
+    overflow: hidden;
+    border: 1px solid var(--hd-card-border);
+    border-top: 2px solid var(--hd-accent-tint-border);
+    border-radius: var(--hd-radius-lg);
+    background: var(--hd-card);
+    box-shadow: var(--hd-elev-1);
+    color: var(--hd-ink);
+    text-decoration: none;
+    transition:
+      border-color var(--hd-dur-fast) var(--hd-ease),
+      box-shadow var(--hd-dur-fast) var(--hd-ease),
+      transform var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .home-door:hover {
+    border-color: var(--hd-accent-tint-border);
+    box-shadow: var(--hd-elev-2);
+    transform: translateY(-2px);
+  }
+
+  .home-door:active {
+    box-shadow: var(--hd-elev-1);
+    transform: translateY(0);
+  }
+
+  .home-door:focus-visible {
+    outline: 2px solid var(--hd-accent-text);
+    outline-offset: 2px;
+  }
+
+  /* The three destinations share one ink and one accent. Their silhouettes do
+     the identifying so none borrows the modality colours used elsewhere. */
+  .home-door-scene {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-field-soft);
+    color: var(--hd-accent-text);
+  }
+
+  .home-door-copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  .home-door-title {
+    font-size: var(--hd-text-xl);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--hd-ink);
+  }
+
+  .home-door-meta {
+    font-size: var(--hd-text-sm);
+    line-height: 1.55;
+    color: var(--hd-ink-2);
+  }
+
+  .home-door-go {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin-left: auto;
+    border: 1px solid var(--hd-border);
+    border-radius: var(--hd-radius-pill);
+    color: var(--hd-muted);
+    transition:
+      border-color var(--hd-dur-fast) var(--hd-ease),
+      color var(--hd-dur-fast) var(--hd-ease),
+      transform var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .home-door-go app-icon,
+  .home-door-scene app-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+  }
+
+  .home-door-go app-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .home-door:hover .home-door-go {
+    border-color: var(--hd-accent-tint-border);
+    color: var(--hd-accent-text);
+    transform: translateX(2px);
+  }
+
+  /* Generate is a small production line. Each outlined frame enters empty,
+     resolves at the next station and keeps its distance downstream. */
+  .home-door-production {
+    position: relative;
+    display: block;
+    width: min(330px, calc(100% - var(--hd-space-4)));
+    height: 88px;
+    overflow: hidden;
+  }
+
+  .home-door-assembly-line {
+    position: absolute;
+    right: 0;
+    bottom: 12px;
+    left: 0;
+    height: 1px;
+    background: var(--hd-field-border);
+  }
+
+  .home-door-assembly-line::before,
+  .home-door-assembly-line::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    width: 7px;
+    height: 7px;
+    border: 1px solid var(--hd-field-border);
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-field-soft);
+  }
+
+  .home-door-assembly-line::before {
+    left: 0;
+  }
+
+  .home-door-assembly-line::after {
+    right: 0;
+  }
+
+  .home-door-output {
+    --home-door-output-delay: 0ms;
+    position: absolute;
+    top: 7px;
+    width: 16%;
+    height: auto;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--hd-field-border);
+    border-radius: calc(var(--hd-radius-sm) / 2);
+    background: var(--hd-panel);
+    box-shadow: var(--hd-elev-1);
+  }
+
+  .home-door-output img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+  }
+
+  .home-door-output-pixels {
+    position: absolute;
+    inset: 0;
+    background: repeating-conic-gradient(
+        from 45deg,
+        var(--hd-panel) 0 25%,
+        transparent 0 50%
+      )
+      0 0 / 10px 10px;
+    opacity: 0;
+  }
+
+  /* At rest the five stations are wireframes. In motion every frame passes
+     through empty, resolving and complete states before it leaves the line. */
+  .home-door-output--1 {
+    --home-door-output-delay: 0ms;
+    left: 0;
+  }
+
+  .home-door-output--2 {
+    --home-door-output-delay: calc(var(--hd-dur) * -10);
+    left: 21%;
+  }
+
+  .home-door-output--3 {
+    --home-door-output-delay: calc(var(--hd-dur) * -20);
+    left: 42%;
+  }
+
+  .home-door-output--4 {
+    --home-door-output-delay: calc(var(--hd-dur) * -30);
+    left: 63%;
+  }
+
+  .home-door-output--5 {
+    --home-door-output-delay: calc(var(--hd-dur) * -40);
+    left: 84%;
+  }
+
+  .home-door-output--6 {
+    --home-door-output-delay: calc(var(--hd-dur) * -50);
+    opacity: 0;
+  }
+
+  .home-door-production-mark {
+    position: absolute;
+    z-index: 2;
+    top: 25px;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-accent-tint);
+    transform: translateX(-50%);
+    transition: opacity var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .home-door-production-mark app-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .home-door--generate:is(:hover, :focus-visible) .home-door-production-mark {
+    opacity: 0;
+  }
+
+  .home-door--generate:is(:hover, :focus-visible) .home-door-output {
+    animation: home-door-output-line calc(var(--hd-dur) * 60) var(--hd-ease)
+      infinite;
+    animation-delay: var(--home-door-output-delay);
+    transform: none;
+  }
+
+  .home-door--generate:is(:hover, :focus-visible) .home-door-output img {
+    animation: home-door-output-develop calc(var(--hd-dur) * 60) steps(9, end)
+      infinite;
+    animation-delay: var(--home-door-output-delay);
+  }
+
+  .home-door--generate:is(:hover, :focus-visible) .home-door-output-pixels {
+    animation: home-door-output-pixels calc(var(--hd-dur) * 60) steps(9, end)
+      infinite;
+    animation-delay: var(--home-door-output-delay);
+  }
+
+  @keyframes home-door-output-line {
+    0% {
+      left: 0;
+      border-color: var(--hd-field-border);
+      box-shadow: var(--hd-elev-1);
+      opacity: 0;
+      transform: none;
+    }
+
+    2% {
+      left: 0;
+      opacity: 1;
+    }
+
+    5%,
+    15% {
+      left: 0;
+      border-color: var(--hd-field-border);
+      box-shadow: var(--hd-elev-1);
+    }
+
+    21% {
+      left: 21%;
+      border-color: var(--hd-accent-tint-border);
+      box-shadow: none;
+    }
+
+    32% {
+      left: 21%;
+      border-color: var(--hd-field-border);
+      box-shadow: var(--hd-elev-1);
+    }
+
+    38% {
+      left: 42%;
+    }
+
+    54.67% {
+      left: 63%;
+      opacity: 1;
+    }
+
+    71.33% {
+      left: 84%;
+      opacity: 1;
+    }
+
+    88%,
+    100% {
+      left: 101%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes home-door-output-develop {
+    0%,
+    21% {
+      clip-path: inset(100% 0 0);
+      opacity: 0;
+    }
+
+    23% {
+      opacity: 0.25;
+    }
+
+    27% {
+      opacity: 0.55;
+    }
+
+    30% {
+      opacity: 0.8;
+    }
+
+    32%,
+    83% {
+      clip-path: inset(0);
+      opacity: 1;
+    }
+
+    89%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes home-door-output-pixels {
+    0%,
+    21% {
+      opacity: 0;
+    }
+
+    22% {
+      opacity: 1;
+    }
+
+    26% {
+      opacity: 0.72;
+    }
+
+    30% {
+      opacity: 0.38;
+    }
+
+    32%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Contribute puts the heart at the centre of a service made by many small
+     participants. Lines live behind the nodes so the mark reads in one ink. */
+  .home-door-network {
+    position: relative;
+    width: 148px;
+    height: 96px;
+  }
+
+  .home-door-network::before,
+  .home-door-network::after {
+    content: "";
+    position: absolute;
+    inset: 47px 12px auto;
+    height: 1px;
+    background: var(--hd-field-border);
+    transform-origin: center;
+    transition: background-color var(--hd-dur) var(--hd-ease);
+  }
+
+  .home-door-network::after {
+    transform: rotate(32deg);
+  }
+
+  .home-door-heart {
+    position: absolute;
+    inset: 25px auto auto 51px;
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border: 1px solid var(--hd-accent-tint-border);
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-accent-tint);
+    box-shadow: var(--hd-elev-1);
+    transition: transform var(--hd-dur) var(--hd-ease);
+  }
+
+  .home-door-node {
+    position: absolute;
+    z-index: 1;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--hd-muted);
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-field-soft);
+    transition:
+      border-color var(--hd-dur) var(--hd-ease),
+      transform var(--hd-dur) var(--hd-ease);
+  }
+
+  .home-door-packet {
+    --home-door-packet-x: 0px;
+    --home-door-packet-y: 0px;
+    position: absolute;
+    z-index: 2;
+    top: 48px;
+    left: 74px;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-accent-text);
+    opacity: 0;
+  }
+
+  .home-door-packet--one {
+    --home-door-packet-x: -49px;
+    --home-door-packet-y: -34px;
+  }
+
+  .home-door-packet--two {
+    --home-door-packet-x: 53px;
+    --home-door-packet-y: -30px;
+  }
+
+  .home-door-packet--three {
+    --home-door-packet-x: -62px;
+    --home-door-packet-y: 38px;
+  }
+
+  .home-door-packet--four {
+    --home-door-packet-x: 62px;
+    --home-door-packet-y: 34px;
+  }
+
+  .home-door-node--one {
+    top: 8px;
+    left: 25px;
+  }
+
+  .home-door-node--two {
+    top: 12px;
+    right: 20px;
+  }
+
+  .home-door-node--three {
+    bottom: 6px;
+    left: 12px;
+  }
+
+  .home-door-node--four {
+    right: 8px;
+    bottom: 10px;
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-network::before,
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-network::after {
+    background: var(--hd-accent-tint-border);
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-heart {
+    animation: home-door-heartbeat calc(var(--hd-dur) * 6) var(--hd-ease)
+      infinite;
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-node {
+    border-color: var(--hd-accent-text);
+    animation: home-door-node-activity calc(var(--hd-dur) * 6) var(--hd-ease)
+      infinite;
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-packet {
+    animation: home-door-network-packet calc(var(--hd-dur) * 6) linear infinite;
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-node--two,
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-packet--two {
+    animation-delay: calc(var(--hd-dur) * -2);
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-node--three,
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-packet--three {
+    animation-delay: calc(var(--hd-dur) * -4);
+  }
+
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-node--four,
+  .home-door--contribute:is(:hover, :focus-visible) .home-door-packet--four {
+    animation-delay: calc(var(--hd-dur) * -5);
+  }
+
+  @keyframes home-door-network-packet {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    18% {
+      opacity: 1;
+    }
+
+    72% {
+      opacity: 1;
+    }
+
+    100% {
+      opacity: 0;
+      transform: translate(
+        calc(-50% + var(--home-door-packet-x)),
+        calc(-50% + var(--home-door-packet-y))
+      );
+    }
+  }
+
+  @keyframes home-door-node-activity {
+    0%,
+    65%,
+    100% {
+      transform: scale(1);
+    }
+
+    82% {
+      transform: scale(1.28);
+    }
+  }
+
+  @keyframes home-door-heartbeat {
+    0%,
+    42%,
+    100% {
+      transform: scale(1);
+    }
+
+    18% {
+      transform: scale(1.08);
+    }
+  }
+
+  /* Build is a small instrument panel. The measured rows give the terminal
+     its character without printing decorative code that a reader could hear. */
+  .home-door-terminal {
+    position: relative;
+    width: 154px;
+    height: 92px;
+    overflow: hidden;
+    border: 1px solid var(--hd-field-border);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-panel);
+    box-shadow: var(--hd-elev-1);
+  }
+
+  .home-door-terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    height: 22px;
+    padding-inline: var(--hd-space-2);
+    border-bottom: 1px solid var(--hd-border);
+    background: var(--hd-card);
+  }
+
+  .home-door-terminal-bar span {
+    width: 5px;
+    height: 5px;
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-muted);
+  }
+
+  .home-door-terminal app-icon {
+    position: absolute;
+    top: 38px;
+    left: 18px;
+  }
+
+  .home-door-code-line {
+    position: absolute;
+    left: 53px;
+    height: 3px;
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-muted);
+    transform-origin: left;
+    transition: transform var(--hd-dur) var(--hd-ease);
+  }
+
+  .home-door-cursor {
+    position: absolute;
+    top: 34px;
+    left: 53px;
+    width: 2px;
+    height: 9px;
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-accent-text);
+    opacity: 0;
+  }
+
+  .home-door-code-line--one {
+    top: 37px;
+    width: 67px;
+  }
+
+  .home-door-code-line--two {
+    top: 50px;
+    width: 48px;
+  }
+
+  .home-door-code-line--three {
+    top: 63px;
+    width: 59px;
+  }
+
+  .home-door--build:is(:hover, :focus-visible) .home-door-code-line {
+    animation: home-door-type-line calc(var(--hd-dur) * 10) steps(7, end)
+      infinite both;
+  }
+
+  .home-door--build:is(:hover, :focus-visible) .home-door-code-line--two {
+    animation-delay: calc(var(--hd-dur) * 2);
+  }
+
+  .home-door--build:is(:hover, :focus-visible) .home-door-code-line--three {
+    animation-delay: calc(var(--hd-dur) * 4);
+  }
+
+  .home-door--build:is(:hover, :focus-visible) .home-door-cursor {
+    animation: home-door-type-cursor calc(var(--hd-dur) * 10) steps(1, end)
+      infinite;
+  }
+
+  @keyframes home-door-type-line {
+    0%,
+    12% {
+      transform: scaleX(0);
+    }
+
+    58%,
+    100% {
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes home-door-type-cursor {
+    0% {
+      top: 34px;
+      left: 53px;
+      opacity: 1;
+    }
+
+    24% {
+      top: 34px;
+      left: 120px;
+    }
+
+    25% {
+      top: 47px;
+      left: 53px;
+    }
+
+    49% {
+      top: 47px;
+      left: 101px;
+    }
+
+    50% {
+      top: 60px;
+      left: 53px;
+    }
+
+    78% {
+      top: 60px;
+      left: 112px;
+      opacity: 1;
+    }
+
+    79%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .home-door:hover,
+    .home-door:hover .home-door-go,
+    .home-door--contribute:hover .home-door-heart,
+    .home-door--contribute:hover .home-door-node,
+    .home-door--build:hover .home-door-code-line {
+      transform: none;
+    }
+
+    .home-door-output,
+    .home-door-output img,
+    .home-door-output-pixels,
+    .home-door-heart,
+    .home-door-node,
+    .home-door-packet,
+    .home-door-code-line,
+    .home-door-cursor {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .home-door,
+    .home-door-scene,
+    .home-door-output,
+    .home-door-heart,
+    .home-door-terminal {
+      border-color: CanvasText;
+    }
   }
 
   /* -----------------------------------------------------------------
@@ -821,6 +1544,7 @@
     align-items: center;
     min-height: 44px;
     margin-top: var(--hd-space-4);
+    margin-left: var(--hd-space-4);
     color: var(--hd-muted);
   }
 

@@ -27,13 +27,9 @@ globalThis.IntersectionObserver ??= class {
 describe('HomepageDoorsComponent', () => {
   let fixture: ComponentFixture<HomepageDoorsComponent>;
   let navigate: ReturnType<typeof vi.fn>;
-  let opened: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     navigate = vi.fn().mockResolvedValue(true);
-    opened = vi.fn();
-    vi.stubGlobal('open', opened);
-
     TestBed.configureTestingModule({
       imports: [
         HomepageDoorsComponent,
@@ -45,23 +41,21 @@ describe('HomepageDoorsComponent', () => {
       ],
     });
     TestBed.inject(Router).navigateByUrl = navigate;
-
     fixture = TestBed.createComponent(HomepageDoorsComponent);
     fixture.detectChanges();
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     TestBed.resetTestingModule();
   });
 
-  it('offers the three doors on the shared door card', () => {
-    const doors = fixture.nativeElement.querySelectorAll('.gs-door');
+  it('offers three distinct doors on one shared chassis', () => {
+    const doors = fixture.nativeElement.querySelectorAll('.home-door');
     expect(doors).toHaveLength(3);
     expect(
       Array.from(doors).map((door) =>
         (door as HTMLElement)
-          .querySelector('.gs-cap-title')!
+          .querySelector('.home-door-title')!
           .textContent.trim(),
       ),
     ).toEqual([
@@ -69,6 +63,20 @@ describe('HomepageDoorsComponent', () => {
       'homepage.doors.contribute_title',
       'homepage.doors.build_title',
     ]);
+    expect(
+      Array.from(doors).map(
+        (door) =>
+          (door as HTMLElement).querySelector('.home-door-scene')
+            ?.firstElementChild?.className,
+      ),
+    ).toEqual([
+      'home-door-production',
+      'home-door-network',
+      'home-door-terminal',
+    ]);
+    expect(
+      (doors[0] as HTMLElement).querySelectorAll('.home-door-output'),
+    ).toHaveLength(6);
   });
 
   it('marks the one door that leaves the site, and only that one', () => {
@@ -81,34 +89,46 @@ describe('HomepageDoorsComponent', () => {
     ]);
     // The door says so where the reader is, too: one appended phrase, on the
     // press that opens a window rather than moving the page.
-    const notes = fixture.nativeElement.querySelectorAll('.gs-door .sr-only');
+    const notes = fixture.nativeElement.querySelectorAll('.home-door .sr-only');
     expect(notes).toHaveLength(1);
     expect(
       (
-        fixture.nativeElement.querySelectorAll('.gs-door')[2] as HTMLElement
+        fixture.nativeElement.querySelectorAll('.home-door')[2] as HTMLElement
       ).querySelector('.sr-only'),
     ).not.toBeNull();
   });
 
-  it('goes where each door says', () => {
+  it('links each door to the place it names', () => {
     const doors = fixture.nativeElement.querySelectorAll(
-      '.gs-door',
-    ) as NodeListOf<HTMLButtonElement>;
+      '.home-door',
+    ) as NodeListOf<HTMLAnchorElement>;
 
-    doors[0].click();
+    expect(doors[0].getAttribute('href')).toBe('/generate/image');
+    expect(doors[1].getAttribute('href')).toBe('/contribute');
+    expect(doors[2].getAttribute('href')).toBe('https://aihorde.net/api/');
+    expect(doors[2].target).toBe('_blank');
+    expect(doors[2].rel).toBe('noopener');
+
+    const internalPress = new MouseEvent('click', {
+      button: 0,
+      cancelable: true,
+    });
+    fixture.componentInstance.enter(
+      internalPress,
+      fixture.componentInstance.doors[0],
+    );
+    expect(internalPress.defaultPrevented).toBe(true);
     expect(navigate).toHaveBeenCalledWith('/generate/image');
 
-    doors[1].click();
-    expect(navigate).toHaveBeenCalledWith('/contribute');
-
-    // The API reference is published outside this site, so that door opens a
-    // window rather than a route.
-    doors[2].click();
-    expect(navigate).toHaveBeenCalledTimes(2);
-    expect(opened).toHaveBeenCalledWith(
-      'https://aihorde.net/api/',
-      '_blank',
-      'noopener',
+    const externalPress = new MouseEvent('click', {
+      button: 0,
+      cancelable: true,
+    });
+    fixture.componentInstance.enter(
+      externalPress,
+      fixture.componentInstance.doors[2],
     );
+    expect(externalPress.defaultPrevented).toBe(false);
+    expect(navigate).toHaveBeenCalledTimes(1);
   });
 });

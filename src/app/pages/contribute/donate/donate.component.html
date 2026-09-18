@@ -1,206 +1,188 @@
-<!-- Donate Introduction -->
-<div class="max-w-4xl mx-auto">
-  <div class="mb-8">
-    <app-mission-callout />
-  </div>
-
-  <div class="callout callout-accent mb-8">
-    <h2 class="callout-title text-xl">
-      {{ "donate.intro.title" | transloco }}
-    </h2>
-    <p class="callout-body text-lg leading-relaxed">
-      {{ "donate.intro.description" | transloco }}
-    </p>
-  </div>
-
-  <!-- What Donations Support -->
-  <div class="prose-content mb-12">
-    <h2 class="heading-section">
-      {{ "donate.what_supports.title" | transloco }}
-    </h2>
-    <p class="text-lead mb-6">
-      {{ "donate.what_supports.description" | transloco }}
-    </p>
-
-    <div class="feature-grid mb-8">
-      <div class="feature-box">
-        <div class="feature-box-icon feature-box-icon-blue">
-          <app-icon name="server-stack" />
-        </div>
-        <h3 class="feature-box-title">
-          {{ "donate.what_supports.servers.title" | transloco }}
-        </h3>
-        <p class="feature-box-description">
-          {{ "donate.what_supports.servers.description" | transloco }}
-        </p>
-      </div>
-
-      <div class="feature-box">
-        <div class="feature-box-icon feature-box-icon-purple">
-          <app-icon name="code-bracket-alt" />
-        </div>
-        <h3 class="feature-box-title">
-          {{ "donate.what_supports.development.title" | transloco }}
-        </h3>
-        <p class="feature-box-description">
-          {{ "donate.what_supports.development.description" | transloco }}
-        </p>
-      </div>
-
-      <div class="feature-box">
-        <div class="feature-box-icon feature-box-icon-green">
-          <app-icon name="globe-alt" />
-        </div>
-        <h3 class="feature-box-title">
-          {{ "donate.what_supports.community.title" | transloco }}
-        </h3>
-        <p class="feature-box-description">
-          {{ "donate.what_supports.community.description" | transloco }}
-        </p>
-      </div>
+<div class="donate-page">
+  <section class="donate-intro" scrollReveal>
+    <div>
+      <p class="contribute-section-kicker">
+        {{ "contribute.tabs.donate" | transloco }}
+      </p>
+      <h2>{{ "donate.intro.title" | transloco }}</h2>
+      <p>{{ "donate.intro.description" | transloco }}</p>
     </div>
-  </div>
-
-  <!-- Ways to Donate -->
-  <div class="prose-content mb-12">
-    <h2 class="heading-section">
-      {{ "donate.ways_to_donate.title" | transloco }}
-    </h2>
-
-    <br />
-    <!-- Haidra (preferred) - full width -->
-    <div class="mb-6">
-      <div class="card card-full card-bg-secondary card-interactive">
-        <a
-          href="https://haidra.net/donate/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center gap-4 mb-4 no-underline text-inherit"
-        >
-          <div class="feature-card-icon">
-            <img
-              ngSrc="./assets/img/logo.png"
-              alt="haidra logo"
-              width="24"
-              height="24"
-            />
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center gap-3 mb-1">
-              <h3 class="card-inline-title">
-                {{ "donate.ways_to_donate.haidra.title" | transloco }}
-              </h3>
-              <span class="badge-base badge-success">{{
-                "donate.ways_to_donate.haidra.preferred" | transloco
-              }}</span>
-            </div>
-            <p class="card-inline-description">
-              {{ "donate.ways_to_donate.haidra.description" | transloco }}
-            </p>
-          </div>
-        </a>
-        <div class="info-note info-note--orange">
-          <p class="m-0">
-            <strong>{{
-              "donate.ways_to_donate.patreon.kudos_note" | transloco
-            }}</strong>
-            <a routerLink="/faq" fragment="kudos" class="pl-1">{{
-              "donate.ways_to_donate.patreon.kudos_link" | transloco
-            }}</a>
-          </p>
-        </div>
-      </div>
+    <div class="donate-pulse" aria-hidden="true">
+      <span class="donate-pulse-core"><app-icon name="heart" /></span>
+      <span class="donate-pulse-line donate-pulse-line--one"></span>
+      <span class="donate-pulse-line donate-pulse-line--two"></span>
+      <span class="donate-pulse-line donate-pulse-line--three"></span>
+      <span class="donate-pulse-node donate-pulse-node--one"
+        ><app-icon name="server-stack"
+      /></span>
+      <span class="donate-pulse-node donate-pulse-node--two"
+        ><app-icon name="code-bracket-alt"
+      /></span>
+      <span class="donate-pulse-node donate-pulse-node--three"
+        ><app-icon name="users"
+      /></span>
     </div>
+  </section>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      <!-- Liberapay -->
+  <section class="contribute-section" scrollReveal>
+    <div class="contribute-section-heading">
+      <div>
+        <h2>{{ "donate.what_supports.title" | transloco }}</h2>
+        <p>{{ "donate.what_supports.description" | transloco }}</p>
+      </div>
+      <span class="contribute-section-rule"></span>
+    </div>
+    <div class="donate-allocation">
+      <article>
+        <span class="donate-allocation-icon"
+          ><app-icon name="server-stack"
+        /></span>
+        <h3>{{ "donate.what_supports.servers.title" | transloco }}</h3>
+        <p>{{ "donate.what_supports.servers.description" | transloco }}</p>
+      </article>
+      <article>
+        <span class="donate-allocation-icon"
+          ><app-icon name="code-bracket-alt"
+        /></span>
+        <h3>{{ "donate.what_supports.development.title" | transloco }}</h3>
+        <p>{{ "donate.what_supports.development.description" | transloco }}</p>
+      </article>
+      <article>
+        <span class="donate-allocation-icon"
+          ><app-icon name="globe-alt"
+        /></span>
+        <h3>{{ "donate.what_supports.community.title" | transloco }}</h3>
+        <p>{{ "donate.what_supports.community.description" | transloco }}</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="contribute-section donate-methods" scrollReveal>
+    <div class="contribute-section-heading">
+      <h2>{{ "donate.ways_to_donate.title" | transloco }}</h2>
+      <span class="contribute-section-rule"></span>
+    </div>
+    <a
+      href="https://haidra.net/donate/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="donate-primary-method"
+    >
+      <span class="donate-method-logo"
+        ><img ngSrc="./assets/img/logo.png" alt="" width="32" height="32"
+      /></span>
+      <span class="donate-method-copy">
+        <span class="donate-method-label">{{
+          "donate.ways_to_donate.haidra.preferred" | transloco
+        }}</span>
+        <strong>{{ "donate.ways_to_donate.haidra.title" | transloco }}</strong>
+        <small>{{
+          "donate.ways_to_donate.haidra.description" | transloco
+        }}</small>
+      </span>
+      <app-icon name="external-link" />
+    </a>
+    <div class="donate-kudos-note">
+      <app-icon name="info-circle" />
+      <p>
+        <strong>{{
+          "donate.ways_to_donate.patreon.kudos_note" | transloco
+        }}</strong>
+        <a routerLink="/faq" fragment="kudos">{{
+          "donate.ways_to_donate.patreon.kudos_link" | transloco
+        }}</a>
+      </p>
+    </div>
+    <div class="donate-secondary-methods">
       <a
         href="https://liberapay.com/db0/"
         target="_blank"
         rel="noopener noreferrer"
-        class="card card-full card-bg-secondary card-interactive"
       >
-        <div class="flex items-center gap-4 mb-4">
-          <div class="feature-card-icon">
-            <app-icon name="liberapay" viewBox="0 0 80 80" />
-          </div>
-          <div>
-            <h3 class="card-inline-title">
-              {{ "donate.ways_to_donate.liberapay.title" | transloco }}
-            </h3>
-            <p class="card-inline-description">
-              {{ "donate.ways_to_donate.liberapay.description" | transloco }}
-            </p>
-          </div>
-        </div>
+        <span class="donate-method-logo"
+          ><app-icon name="liberapay" viewBox="0 0 80 80"
+        /></span>
+        <span class="donate-method-copy"
+          ><strong>{{
+            "donate.ways_to_donate.liberapay.title" | transloco
+          }}</strong
+          ><small>{{
+            "donate.ways_to_donate.liberapay.description" | transloco
+          }}</small></span
+        >
+        <app-icon name="external-link" />
       </a>
-
-      <!-- GitHub Sponsors -->
       <a
         href="https://github.com/sponsors/Haidra-Org"
         target="_blank"
         rel="noopener noreferrer"
-        class="card card-full card-bg-secondary card-interactive"
       >
-        <div class="flex items-center gap-4 mb-4">
-          <div class="feature-card-icon">
-            <img
-              [ngSrc]="
-                themeService.isDark()
-                  ? './assets/img/GitHub_Invertocat_White_Clearspace.svg'
-                  : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'
-              "
-              alt=""
-              width="24"
-              height="24"
-            />
-          </div>
-          <div>
-            <h3 class="card-inline-title">
-              {{ "donate.ways_to_donate.github_sponsors.title" | transloco }}
-            </h3>
-            <p class="card-inline-description">
-              {{
-                "donate.ways_to_donate.github_sponsors.description" | transloco
-              }}
-            </p>
-          </div>
-        </div>
+        <span class="donate-method-logo">
+          <img
+            [ngSrc]="
+              themeService.isDark()
+                ? './assets/img/GitHub_Invertocat_White_Clearspace.svg'
+                : './assets/img/GitHub_Invertocat_Black_Clearspace.svg'
+            "
+            alt=""
+            width="32"
+            height="32"
+          />
+        </span>
+        <span class="donate-method-copy"
+          ><strong>{{
+            "donate.ways_to_donate.github_sponsors.title" | transloco
+          }}</strong
+          ><small>{{
+            "donate.ways_to_donate.github_sponsors.description" | transloco
+          }}</small></span
+        >
+        <app-icon name="external-link" />
       </a>
     </div>
-  </div>
+  </section>
 
-  <!-- Transparency Section -->
-  <div class="prose-content mb-12">
-    <h2 class="heading-section">
-      {{ "donate.transparency.title" | transloco }}
-    </h2>
-    <div class="transparency-box">
-      <p class="text-secondary m-0">
-        {{ "donate.transparency.description" | transloco }}
-      </p>
+  <section class="donate-transparency" scrollReveal>
+    <div class="donate-transparency-heading">
+      <span><app-icon name="shield-check" /></span>
+      <h2>{{ "donate.transparency.title" | transloco }}</h2>
     </div>
-  </div>
+    <ul>
+      <li>
+        <app-icon name="check" />{{
+          "donate.transparency.non_profit" | transloco
+        }}
+      </li>
+      <li>
+        <app-icon name="check" />{{
+          "donate.transparency.volunteer_run" | transloco
+        }}
+      </li>
+      <li>
+        <app-icon name="check" />{{
+          "donate.transparency.open_source" | transloco
+        }}
+      </li>
+    </ul>
+    <p>{{ "donate.transparency.description" | transloco }}</p>
+  </section>
 
-  <!-- Alternative Ways to Help -->
-  <div class="prose-content mb-8">
-    <h2 class="heading-section">
-      {{ "donate.alternatives.title" | transloco }}
-    </h2>
-    <p class="text-lead mb-6">
-      {{ "donate.alternatives.description" | transloco }}
-    </p>
-    <div class="btn-group">
-      <a routerLink="/contribute/joining" class="btn-primary">
-        {{ "donate.alternatives.become_worker" | transloco }}
-      </a>
+  <section class="contribute-final" scrollReveal>
+    <div>
+      <h2>{{ "donate.alternatives.title" | transloco }}</h2>
+      <p>{{ "donate.alternatives.description" | transloco }}</p>
+    </div>
+    <div class="contribute-actions">
+      <a routerLink="/contribute/workers" class="hd-btn hd-btn--primary">{{
+        "donate.alternatives.become_worker" | transloco
+      }}</a>
       <a
         href="https://discord.gg/3DxrhksKzn"
         target="_blank"
-        class="btn-secondary external-link"
+        rel="noopener noreferrer"
+        class="hd-btn"
+        >{{ "donate.alternatives.join_community" | transloco }}</a
       >
-        {{ "donate.alternatives.join_community" | transloco }}
-      </a>
     </div>
-  </div>
+  </section>
 </div>

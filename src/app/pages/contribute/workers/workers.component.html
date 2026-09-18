@@ -1,43 +1,62 @@
-<div class="workers-layout">
-  <!-- Network Status (inline, all screen sizes) -->
-  <div class="workers-inline-stats">
-    <app-network-status variant="compact" />
-  </div>
+<div class="workers-page">
+  <section class="workers-intro" scrollReveal>
+    <div class="workers-intro-copy">
+      <p class="contribute-section-kicker">
+        {{ "contribute.tabs.workers" | transloco }}
+      </p>
+      <h2>{{ "workers.what_are.title" | transloco }}</h2>
+      <div class="workers-intro-text">
+        <p><app-gs-prose key="workers.what_are.description" /></p>
+        <p><app-gs-prose key="workers.what_are.types_intro" /></p>
+      </div>
+    </div>
+    @if (ns.performance(); as stats) {
+      <div class="workers-status-panel">
+        <h3>{{ "workers.stats.title" | transloco }}</h3>
+        <dl class="workers-live-stats">
+          <div>
+            <dt>{{ "workers.stats.image.label" | transloco }}</dt>
+            <dd>{{ stats.worker_count | number }}</dd>
+          </div>
+          <div>
+            <dt>{{ "workers.stats.text.label" | transloco }}</dt>
+            <dd>{{ stats.text_worker_count | number }}</dd>
+          </div>
+          <div>
+            <dt>{{ "workers.stats.alchemy.label" | transloco }}</dt>
+            <dd>{{ stats.interrogator_count | number }}</dd>
+          </div>
+        </dl>
+      </div>
+    }
+  </section>
 
-  <!-- Main Content -->
-  <div class="workers-main">
-    <!-- What Are Workers? -->
-    <div class="prose-content mb-8">
-      <h2 class="heading-section-lg">
-        {{ "workers.what_are.title" | transloco }}
-      </h2>
-      <p class="text-lead">
-        <app-gs-prose key="workers.what_are.description" />
-      </p>
-      <p class="text-secondary">
-        <app-gs-prose key="workers.what_are.types_intro" />
-      </p>
+  <section id="worker-types" class="contribute-section" scrollReveal>
+    <div class="contribute-section-heading">
+      <h2>{{ "workers.types.title" | transloco }}</h2>
+      <span class="contribute-section-rule"></span>
     </div>
 
-    <!-- Worker Types -->
-    <div id="worker-types" class="prose-content mb-12">
-      <h2 class="heading-section-lg text-center mb-8">
-        {{ "workers.types.title" | transloco }}
-      </h2>
-
-      <div class="worker-type-list">
-        <!-- Image Generation (Dreamers) -->
-        <div
-          id="image"
-          class="worker-type-section worker-type-section--image"
-          [class.worker-type-section--needs-help]="ns.imageNeedsHelp()"
-          [class.card--arrival-highlight]="
-            ns.imageNeedsHelp() && arrivalHighlight()
-          "
-        >
+    <div class="worker-type-grid">
+      <article
+        id="image"
+        class="worker-card worker-card--image"
+        [class.worker-card--needs-help]="ns.imageNeedsHelp()"
+        [class.card--arrival-highlight]="
+          ns.imageNeedsHelp() && arrivalHighlight()
+        "
+      >
+        <div class="worker-card-visual" aria-hidden="true">
+          <span class="worker-card-orbit"></span>
+          <span class="worker-card-glyph"><app-icon name="photo" /></span>
+          <span class="worker-card-job worker-card-job--one"></span>
+          <span class="worker-card-job worker-card-job--two"></span>
+          <span class="worker-card-job worker-card-job--three"></span>
+        </div>
+        <div class="worker-card-copy">
           @if (ns.imageNeedsHelp()) {
-            <div class="card-needs-help-banner card-needs-help-banner--amber">
-              <span class="network-status-needs-help-dot"></span>
+            <p class="worker-need">
+              <span class="worker-need-dot"></span>
               @if (ns.performance(); as perf) {
                 {{
                   "workers.types.volunteers_needed_count"
@@ -46,60 +65,52 @@
               } @else {
                 {{ "workers.types.volunteers_needed" | transloco }}
               }
-            </div>
+            </p>
           }
-          <div class="worker-type-header">
-            <div class="feature-card-icon feature-card-icon-purple">
-              <app-icon name="photo" class="w-6 h-6" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3
-                class="text-lg font-semibold text-content-primary dark:text-white m-0"
-              >
-                {{ "workers.types.image.title" | transloco }}
-              </h3>
-              <p
-                class="text-sm text-content-secondary dark:text-gray-400 m-0 mt-0.5"
-              >
-                {{ "workers.types.image.description" | transloco }}
-              </p>
-            </div>
-          </div>
-          <div class="worker-type-body">
-            <h4 class="worker-type-software-heading">
-              {{ "workers.types.recommended_software" | transloco }}
-            </h4>
-            <a
-              href="https://github.com/Haidra-Org/horde-worker-reGen"
-              target="_blank"
-              class="software-link"
-            >
-              <div class="software-icon software-icon-purple">
-                <app-icon name="github" />
-              </div>
-              <div class="software-link-content">
-                <div class="software-link-title">horde-worker-reGen</div>
-                <div class="software-link-description">
-                  {{ "workers.types.image.regen_desc" | transloco }}
-                </div>
-              </div>
-              <app-icon name="external-link" class="software-link-arrow" />
-            </a>
-          </div>
+          <h3>{{ "workers.types.image.title" | transloco }}</h3>
+          <p>{{ "workers.types.image.description" | transloco }}</p>
         </div>
+        <div class="worker-card-software">
+          <span>{{ "workers.types.recommended_software" | transloco }}</span>
+          <a
+            href="https://github.com/Haidra-Org/horde-worker-reGen"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="worker-software-link"
+          >
+            <span class="worker-software-icon"><app-icon name="github" /></span>
+            <span
+              ><strong>{{ "workers.software.regen" | transloco }}</strong
+              ><small>{{
+                "workers.types.image.regen_desc" | transloco
+              }}</small></span
+            >
+            <app-icon name="external-link" />
+          </a>
+        </div>
+      </article>
 
-        <!-- Text Generation (Scribes) -->
-        <div
-          id="text"
-          class="worker-type-section worker-type-section--text"
-          [class.worker-type-section--needs-help]="ns.textNeedsHelp()"
-          [class.card--arrival-highlight]="
-            ns.textNeedsHelp() && arrivalHighlight()
-          "
-        >
+      <article
+        id="text"
+        class="worker-card worker-card--text"
+        [class.worker-card--needs-help]="ns.textNeedsHelp()"
+        [class.card--arrival-highlight]="
+          ns.textNeedsHelp() && arrivalHighlight()
+        "
+      >
+        <div class="worker-card-visual" aria-hidden="true">
+          <span class="worker-card-orbit"></span>
+          <span class="worker-card-glyph"
+            ><app-icon name="document-text"
+          /></span>
+          <span class="worker-card-job worker-card-job--one"></span>
+          <span class="worker-card-job worker-card-job--two"></span>
+          <span class="worker-card-job worker-card-job--three"></span>
+        </div>
+        <div class="worker-card-copy">
           @if (ns.textNeedsHelp()) {
-            <div class="card-needs-help-banner card-needs-help-banner--amber">
-              <span class="network-status-needs-help-dot"></span>
+            <p class="worker-need">
+              <span class="worker-need-dot"></span>
               @if (ns.performance(); as perf) {
                 {{
                   "workers.types.volunteers_needed_count"
@@ -108,92 +119,79 @@
               } @else {
                 {{ "workers.types.volunteers_needed" | transloco }}
               }
-            </div>
+            </p>
           }
-          <div class="worker-type-header">
-            <div class="feature-card-icon feature-card-icon-blue">
-              <app-icon name="document-text" class="w-6 h-6" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3
-                class="text-lg font-semibold text-content-primary dark:text-white m-0"
-              >
-                {{ "workers.types.text.title" | transloco }}
-              </h3>
-              <p
-                class="text-sm text-content-secondary dark:text-gray-400 m-0 mt-0.5"
-              >
-                {{ "workers.types.text.description" | transloco }}
-              </p>
-            </div>
-          </div>
-          <div class="worker-type-body">
-            <h4 class="worker-type-software-heading">
-              {{ "workers.types.compatible_backends" | transloco }}
-            </h4>
-            <div class="space-y-3">
-              <a
-                href="https://github.com/LostRuins/koboldcpp"
-                target="_blank"
-                class="software-link software-link--blue"
-              >
-                <div class="software-icon software-icon-blue">
-                  <app-icon name="github" />
-                </div>
-                <div class="software-link-content">
-                  <div class="software-link-title">KoboldCpp</div>
-                  <div class="software-link-description">
-                    {{ "workers.types.text.koboldcpp_desc" | transloco }}
-                  </div>
-                </div>
-                <app-icon name="external-link" class="software-link-arrow" />
-              </a>
-              <a
-                href="https://github.com/aphrodite-engine/aphrodite-engine"
-                target="_blank"
-                class="software-link software-link--blue"
-              >
-                <div class="software-icon software-icon-blue">
-                  <app-icon name="github" />
-                </div>
-                <div class="software-link-content">
-                  <div class="software-link-title">Aphrodite Engine</div>
-                  <div class="software-link-description">
-                    {{ "workers.types.text.aphrodite_desc" | transloco }}
-                  </div>
-                </div>
-                <app-icon name="external-link" class="software-link-arrow" />
-              </a>
-            </div>
-            <div class="info-note info-note--blue mt-4">
-              <p class="m-0">
-                <strong>{{
-                  "workers.types.text.bridge_note_title" | transloco
-                }}</strong>
-                {{ "workers.types.text.bridge_note" | transloco }}
-                <a
-                  href="https://github.com/Haidra-Org/AI-Horde-Worker"
-                  target="_blank"
-                  class="font-semibold underline hover:no-underline external-link"
-                  >AI-Horde-Worker</a
-                >.
-              </p>
-            </div>
-          </div>
+          <h3>{{ "workers.types.text.title" | transloco }}</h3>
+          <p>{{ "workers.types.text.description" | transloco }}</p>
         </div>
+        <div class="worker-card-software">
+          <span>{{ "workers.types.compatible_backends" | transloco }}</span>
+          <a
+            href="https://github.com/LostRuins/koboldcpp"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="worker-software-link"
+          >
+            <span class="worker-software-icon"><app-icon name="github" /></span>
+            <span
+              ><strong>{{ "workers.software.koboldcpp" | transloco }}</strong
+              ><small>{{
+                "workers.types.text.koboldcpp_desc" | transloco
+              }}</small></span
+            >
+            <app-icon name="external-link" />
+          </a>
+          <a
+            href="https://github.com/aphrodite-engine/aphrodite-engine"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="worker-software-link"
+          >
+            <span class="worker-software-icon"><app-icon name="github" /></span>
+            <span
+              ><strong>{{ "workers.software.aphrodite" | transloco }}</strong
+              ><small>{{
+                "workers.types.text.aphrodite_desc" | transloco
+              }}</small></span
+            >
+            <app-icon name="external-link" />
+          </a>
+          <p class="worker-bridge-note">
+            <strong>{{
+              "workers.types.text.bridge_note_title" | transloco
+            }}</strong>
+            {{ "workers.types.text.bridge_note" | transloco }}
+            <a
+              href="https://github.com/Haidra-Org/AI-Horde-Worker"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ "workers.software.legacy" | transloco }}</a
+            >.
+          </p>
+        </div>
+      </article>
 
-        <!-- Post-Processing (Alchemists) -->
-        <div
-          id="alchemy"
-          class="worker-type-section worker-type-section--alchemy"
-          [class.worker-type-section--needs-help]="ns.alchemyNeedsHelp()"
-          [class.card--arrival-highlight]="
-            ns.alchemyNeedsHelp() && arrivalHighlight()
-          "
-        >
+      <article
+        id="alchemy"
+        class="worker-card worker-card--alchemy"
+        [class.worker-card--needs-help]="ns.alchemyNeedsHelp()"
+        [class.card--arrival-highlight]="
+          ns.alchemyNeedsHelp() && arrivalHighlight()
+        "
+      >
+        <div class="worker-card-visual" aria-hidden="true">
+          <span class="worker-card-orbit"></span>
+          <span class="worker-card-glyph"
+            ><app-icon name="beaker-classic"
+          /></span>
+          <span class="worker-card-job worker-card-job--one"></span>
+          <span class="worker-card-job worker-card-job--two"></span>
+          <span class="worker-card-job worker-card-job--three"></span>
+        </div>
+        <div class="worker-card-copy">
           @if (ns.alchemyNeedsHelp()) {
-            <div class="card-needs-help-banner card-needs-help-banner--amber">
-              <span class="network-status-needs-help-dot"></span>
+            <p class="worker-need">
+              <span class="worker-need-dot"></span>
               @if (ns.performance(); as perf) {
                 {{
                   "workers.types.volunteers_needed_count"
@@ -202,225 +200,139 @@
               } @else {
                 {{ "workers.types.volunteers_needed" | transloco }}
               }
-            </div>
+            </p>
           }
-          <div class="worker-type-header">
-            <div class="feature-card-icon feature-card-icon-green">
-              <app-icon name="beaker-classic" class="w-6 h-6" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3
-                class="text-lg font-semibold text-content-primary dark:text-white m-0"
-              >
-                {{ "workers.types.alchemy.title" | transloco }}
-              </h3>
-              <p
-                class="text-sm text-content-secondary dark:text-gray-400 m-0 mt-0.5"
-              >
-                {{ "workers.types.alchemy.description" | transloco }}
-              </p>
-            </div>
-          </div>
-          <div class="worker-type-body">
-            <h4 class="worker-type-software-heading">
-              {{ "workers.types.recommended_software" | transloco }}
-            </h4>
-            <a
-              href="https://github.com/Haidra-Org/AI-Horde-Worker"
-              target="_blank"
-              class="software-link software-link--green"
+          <h3>{{ "workers.types.alchemy.title" | transloco }}</h3>
+          <p>{{ "workers.types.alchemy.description" | transloco }}</p>
+        </div>
+        <div class="worker-card-software">
+          <span>{{ "workers.types.recommended_software" | transloco }}</span>
+          <a
+            href="https://github.com/Haidra-Org/AI-Horde-Worker"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="worker-software-link"
+          >
+            <span class="worker-software-icon"><app-icon name="github" /></span>
+            <span
+              ><strong>{{ "workers.software.legacy" | transloco }}</strong
+              ><small>{{
+                "workers.types.alchemy.worker_desc" | transloco
+              }}</small></span
             >
-              <div class="software-icon software-icon-green">
-                <app-icon name="github" />
-              </div>
-              <div class="software-link-content">
-                <div class="software-link-title">AI-Horde-Worker</div>
-                <div class="software-link-description">
-                  {{ "workers.types.alchemy.worker_desc" | transloco }}
-                </div>
-              </div>
-              <app-icon name="external-link" class="software-link-arrow" />
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- FAQ Highlights -->
-    <div class="prose-content mb-12">
-      <h2 class="heading-section-lg text-center mb-8">
-        {{ "workers.faq.title" | transloco }}
-      </h2>
-
-      <div class="grid gap-6 md:grid-cols-2">
-        <!-- Privacy -->
-        <div class="callout callout-info">
-          <div class="flex items-center gap-3 mb-2">
-            <app-icon
-              name="lock-closed"
-              class="w-6 h-6 shrink-0 text-blue-500"
-            />
-            <h3 class="callout-title m-0">
-              {{ "workers.faq.privacy.title" | transloco }}
-            </h3>
-          </div>
-          <p class="callout-body m-0">
-            {{ "workers.faq.privacy.description" | transloco }}
-          </p>
-        </div>
-
-        <!-- Security -->
-        <div class="callout callout-info">
-          <div class="flex items-center gap-3 mb-2">
-            <app-icon
-              name="shield-check"
-              class="w-6 h-6 shrink-0 text-green-500"
-            />
-            <h3 class="callout-title m-0">
-              {{ "workers.faq.security.title" | transloco }}
-            </h3>
-          </div>
-          <p class="callout-body m-0">
-            {{ "workers.faq.security.description" | transloco }}
-          </p>
-        </div>
-
-        <!-- Trust -->
-        <div class="callout callout-info">
-          <div class="flex items-center gap-3 mb-2">
-            <app-icon
-              name="badge-check"
-              class="w-6 h-6 shrink-0 text-purple-500"
-            />
-            <h3 class="callout-title m-0">
-              {{ "workers.faq.trust.title" | transloco }}
-            </h3>
-          </div>
-          <p class="callout-body m-0">
-            {{ "workers.faq.trust.description" | transloco }}
-          </p>
-        </div>
-
-        <!-- Cost -->
-        <div class="callout callout-info">
-          <div class="flex items-center gap-3 mb-2">
-            <app-icon
-              name="currency-circle"
-              class="w-6 h-6 shrink-0 text-orange-500"
-            />
-            <h3 class="callout-title m-0">
-              {{ "workers.faq.cost.title" | transloco }}
-            </h3>
-          </div>
-          <p class="callout-body m-0">
-            {{ "workers.faq.cost.description" | transloco }}
-          </p>
-        </div>
-      </div>
-
-      <div class="text-center mt-6">
-        <a routerLink="/faq" fragment="workers" class="link-bold">
-          {{ "workers.faq.see_all" | transloco }}
-        </a>
-      </div>
-    </div>
-
-    <!-- Alternate support note -->
-    <div class="info-note info-note--blue info-note--padded mb-12">
-      <p class="m-0">
-        <strong>{{ "workers.alternative_support.title" | transloco }}</strong>
-        {{ "workers.alternative_support.description" | transloco }}
-        <a
-          routerLink="/contribute/donate"
-          class="font-semibold underline hover:no-underline"
-        >
-          {{ "workers.alternative_support.link" | transloco }}
-        </a>
-      </p>
-    </div>
-
-    <!-- Getting Started -->
-    <div class="prose-content mb-12">
-      <h2 class="heading-section-lg text-center mb-8">
-        {{ "workers.getting_started.title" | transloco }}
-      </h2>
-
-      <div class="step-list">
-        <div class="step-item">
-          <div class="step-number">1</div>
-          <div class="step-content">
-            <h3 class="step-title">
-              {{ "workers.getting_started.step1.title" | transloco }}
-            </h3>
-            <p class="step-description">
-              {{ "workers.getting_started.step1.description" | transloco }}
-            </p>
-          </div>
-        </div>
-
-        <div class="step-item">
-          <div class="step-number">2</div>
-          <div class="step-content">
-            <h3 class="step-title">
-              {{ "workers.getting_started.step2.title" | transloco }}
-            </h3>
-            <p class="step-description">
-              {{ "workers.getting_started.step2.description" | transloco }}
-            </p>
-          </div>
-        </div>
-
-        <div class="step-item">
-          <div class="step-number">3</div>
-          <div class="step-content">
-            <h3 class="step-title">
-              {{ "workers.getting_started.step3.title" | transloco }}
-            </h3>
-            <p class="step-description">
-              {{ "workers.getting_started.step3.description" | transloco }}
-            </p>
-          </div>
-        </div>
-
-        <div class="step-item">
-          <div class="step-number">4</div>
-          <div class="step-content">
-            <h3 class="step-title">
-              {{ "workers.getting_started.step4.title" | transloco }}
-            </h3>
-            <p class="step-description">
-              {{ "workers.getting_started.step4.description" | transloco }}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Call to Action -->
-    <div class="prose-content mb-8">
-      <div class="text-center">
-        <h2 class="heading-section-lg mb-4">
-          {{ "workers.cta.title" | transloco }}
-        </h2>
-        <p class="text-lead mb-8">
-          {{ "workers.cta.description" | transloco }}
-        </p>
-        <div class="btn-group btn-group--center">
-          <a
-            href="https://discord.gg/3DxrhksKzn"
-            target="_blank"
-            class="btn-primary external-link"
-          >
-            {{ "workers.cta.join_discord" | transloco }}
-          </a>
-          <a
-            href="https://github.com/Haidra-Org"
-            target="_blank"
-            class="btn-secondary external-link"
-          >
-            {{ "workers.cta.view_github" | transloco }}
+            <app-icon name="external-link" />
           </a>
         </div>
-      </div>
+      </article>
     </div>
-  </div>
+  </section>
+
+  <section class="contribute-section" scrollReveal>
+    <div class="contribute-section-heading">
+      <h2>{{ "workers.faq.title" | transloco }}</h2>
+      <a routerLink="/faq" fragment="workers">{{
+        "workers.faq.see_all" | transloco
+      }}</a>
+    </div>
+    <div class="worker-assurances">
+      <article>
+        <app-icon name="lock-closed" />
+        <div>
+          <h3>{{ "workers.faq.privacy.title" | transloco }}</h3>
+          <p>{{ "workers.faq.privacy.description" | transloco }}</p>
+        </div>
+      </article>
+      <article>
+        <app-icon name="shield-check" />
+        <div>
+          <h3>{{ "workers.faq.security.title" | transloco }}</h3>
+          <p>{{ "workers.faq.security.description" | transloco }}</p>
+        </div>
+      </article>
+      <article>
+        <app-icon name="badge-check" />
+        <div>
+          <h3>{{ "workers.faq.trust.title" | transloco }}</h3>
+          <p>{{ "workers.faq.trust.description" | transloco }}</p>
+        </div>
+      </article>
+      <article>
+        <app-icon name="currency-circle" />
+        <div>
+          <h3>{{ "workers.faq.cost.title" | transloco }}</h3>
+          <p>{{ "workers.faq.cost.description" | transloco }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <aside class="contribute-crosslink" scrollReveal>
+    <div>
+      <strong>{{ "workers.alternative_support.title" | transloco }}</strong>
+      <p>{{ "workers.alternative_support.description" | transloco }}</p>
+    </div>
+    <a routerLink="/contribute/donate" class="hd-btn hd-btn--tonal">{{
+      "workers.alternative_support.link" | transloco
+    }}</a>
+  </aside>
+
+  <section class="contribute-section" scrollReveal>
+    <div class="contribute-section-heading">
+      <h2>{{ "workers.getting_started.title" | transloco }}</h2>
+      <span class="contribute-section-rule"></span>
+    </div>
+    <ol class="worker-steps">
+      <li>
+        <span>01</span>
+        <div>
+          <h3>{{ "workers.getting_started.step1.title" | transloco }}</h3>
+          <p>{{ "workers.getting_started.step1.description" | transloco }}</p>
+        </div>
+      </li>
+      <li>
+        <span>02</span>
+        <div>
+          <h3>{{ "workers.getting_started.step2.title" | transloco }}</h3>
+          <p>{{ "workers.getting_started.step2.description" | transloco }}</p>
+        </div>
+      </li>
+      <li>
+        <span>03</span>
+        <div>
+          <h3>{{ "workers.getting_started.step3.title" | transloco }}</h3>
+          <p>{{ "workers.getting_started.step3.description" | transloco }}</p>
+        </div>
+      </li>
+      <li>
+        <span>04</span>
+        <div>
+          <h3>{{ "workers.getting_started.step4.title" | transloco }}</h3>
+          <p>{{ "workers.getting_started.step4.description" | transloco }}</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="contribute-final" scrollReveal>
+    <div>
+      <h2>{{ "workers.cta.title" | transloco }}</h2>
+      <p>{{ "workers.cta.description" | transloco }}</p>
+    </div>
+    <div class="contribute-actions">
+      <a
+        href="https://discord.gg/3DxrhksKzn"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hd-btn hd-btn--primary"
+        >{{ "workers.cta.join_discord" | transloco }}</a
+      >
+      <a
+        href="https://github.com/Haidra-Org"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hd-btn"
+        >{{ "workers.cta.view_github" | transloco }}</a
+      >
+    </div>
+  </section>
 </div>

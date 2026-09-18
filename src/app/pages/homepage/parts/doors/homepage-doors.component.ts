@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { GsDoorComponent } from '../../../../components/gs-door/gs-door.component';
+import { IconComponent } from '../../../../components/icon/icon.component';
+import {
+  HOME_SHOWCASE_FIRST,
+  showcaseImageUrl,
+} from '../../../../content/home-showcase';
 import { ScrollRevealDirective } from '../../../../directives/scroll-reveal.directive';
 
 /** One of the three places the home page sends a reader. */
@@ -20,18 +24,24 @@ interface HomeDoor {
  * The three things anybody can do here: make something, help run the service,
  * or build on it.
  *
- * The doors are the same card the installed app and the documentation use, so a
- * reader who has pressed one anywhere has pressed all of them.
+ * Their common chassis makes them one family; the illustration inside each one
+ * says what kind of participation waits behind it without borrowing the
+ * modality colours used elsewhere on the site.
  */
 @Component({
   selector: 'app-homepage-doors',
-  imports: [TranslocoPipe, GsDoorComponent, ScrollRevealDirective],
+  imports: [TranslocoPipe, IconComponent, ScrollRevealDirective],
   templateUrl: './homepage-doors.component.html',
   styleUrl: './homepage-doors.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomepageDoorsComponent {
   private readonly router = inject(Router);
+
+  /** A small run of the same published outputs the hero draws from. */
+  public readonly generatePreviews = HOME_SHOWCASE_FIRST.slice(0, 6).map(
+    showcaseImageUrl,
+  );
 
   public readonly doors: readonly HomeDoor[] = [
     {
@@ -58,11 +68,22 @@ export class HomepageDoorsComponent {
     },
   ];
 
-  public enter(door: HomeDoor): void {
-    if (door.external) {
-      globalThis.open?.(door.link, '_blank', 'noopener');
+  /**
+   * Keep ordinary in-app presses in the client router while leaving modified
+   * presses and the published API link to the browser like any other link.
+   */
+  public enter(event: MouseEvent, door: HomeDoor): void {
+    if (
+      door.external ||
+      event.button !== 0 ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
       return;
     }
+    event.preventDefault();
     void this.router.navigateByUrl(door.link);
   }
 }
