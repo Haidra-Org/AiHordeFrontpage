@@ -338,6 +338,24 @@
   gap: var(--spacing-md);
 }
 
+.status-resolved-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.status-resolved-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.status-resolved-group__date {
+  color: var(--color-content-secondary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
 .status-incident {
   background: var(--color-surface-primary);
   border: 1px solid var(--color-edge-primary);

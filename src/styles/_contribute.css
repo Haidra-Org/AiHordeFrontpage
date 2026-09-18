@@ -996,9 +996,8 @@
     align-items: flex-start;
     gap: var(--hd-space-2);
     padding: var(--hd-space-3) var(--hd-space-4);
-    border-inline: 1px solid var(--hd-accent-tint-border);
-    border-bottom: 1px solid var(--hd-accent-tint-border);
-    border-radius: 0 0 var(--hd-radius-sm) var(--hd-radius-sm);
+    border: 1px solid var(--hd-accent-tint-border);
+    border-radius: var(--hd-radius-sm);
     background: var(--hd-accent-tint);
   }
 

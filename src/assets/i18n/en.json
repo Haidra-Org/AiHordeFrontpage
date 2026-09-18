@@ -4483,8 +4483,8 @@
   "contribute.paths.compute_hint": "Run a worker to process image, text or alchemy requests.",
   "contribute.paths.develop": "Develop the software",
   "contribute.paths.develop_hint": "Explore the code, report bugs or contribute fixes on GitHub.",
-  "contribute.paths.community": "Help the community",
-  "contribute.paths.community_hint": "Join Discord to share knowledge and help other users.",
+  "contribute.paths.community": "Join the community",
+  "contribute.paths.community_hint": "Join Discord to ask questions, share knowledge and help other users.",
   "contribute.paths.donate_hint": "Help cover the costs of running the shared service.",
   "donate.support.title": "Supported by donations",
   "donate.support.hint": "Volunteer computing power and financial support keep AI Horde available.",
@@ -4604,7 +4604,7 @@
   "donate.ways_to_donate.haidra.preferred": "Preferred",
   "donate.ways_to_donate.github_sponsors.title": "GitHub Sponsors",
   "donate.ways_to_donate.github_sponsors.description": "Support development directly via GitHub Sponsors",
-  "donate.ways_to_donate.patreon.kudos_note": "Patrons receive monthly kudos as a thank-you for their support!",
+  "donate.ways_to_donate.patreon.kudos_note": "Supporters receive monthly kudos as a thank-you for their support!",
   "donate.ways_to_donate.patreon.kudos_link": "Learn more about kudos.",
   "donate.ways_to_donate.kofi.title": "Ko-fi",
   "donate.ways_to_donate.kofi.description": "Make a one-time or recurring donation on Ko-fi",
@@ -5003,8 +5003,8 @@
 
   "mission.crowdsourcing.title": "The Power of Crowdsourcing",
   "mission.crowdsourcing.paragraph1": "Crowdsourcing only works when people are willing to give without guaranteed return. Every volunteer who runs a worker is choosing to spend their own electricity, wear on their own hardware, and dedicate their own time, not for payment, but because they believe others should have access to these tools too.",
-  "mission.crowdsourcing.paragraph2": "This is not a business model. It is an act of solidarity. The volunteers who power AI Horde come from all over the world, united by a shared conviction that technology should serve people, not extract from them. Some run workers around the clock. Others contribute during off-hours when their machines would otherwise sit idle. All of them make the service possible.",
-  "mission.crowdsourcing.paragraph3": "The kudos system ensures fairness without introducing money. Workers earn kudos by fulfilling requests, and those kudos grant priority for their own future requests. But kudos can never be bought or sold. They represent contributed effort, and nothing else. Those who leave their kudos unspent are effectively donating their compute to anonymous users and newcomers who have none, ensuring the system remains open even to people who have nothing to give back yet.",
+  "mission.crowdsourcing.paragraph2": "When people contribute without expecting direct compensation, it is an act of solidarity. The volunteers who power AI Horde come from all over the world, united by a shared conviction that technology should serve people, not extract from them. Some run workers around the clock. Others contribute during off-hours when their machines would otherwise sit idle. All of them make the service possible.",
+  "mission.crowdsourcing.paragraph3": "The kudos system ensures fairness without introducing money. Workers earn kudos by fulfilling requests, and those kudos grant priority for their own future requests. Kudos can never be bought or sold; they represent contributed effort, and nothing else. Those who leave their kudos unspent are effectively donating their compute to anonymous users and newcomers who have none, ensuring the system remains open even to people who have nothing to give back yet.",
 
   "mission.free_access.title": "Why Free Access Matters",
   "mission.free_access.paragraph1": "Commercial AI services impose subscriptions, usage caps, and terms that can change without notice. They decide what you can generate, what models you can use, and what happens to your data. When access depends on payment, entire populations are excluded: those in developing nations, students, hobbyists, independent researchers, and anyone living under economic hardship.",
@@ -5014,7 +5014,7 @@
   "mission.hedge.title": "What We Guard Against",
   "mission.hedge.paragraph1": "The centralization of AI behind corporate paywalls poses a real threat to the open ecosystem that made these technologies possible in the first place. Large language models and image generators were built on openly published research, publicly available datasets, and community-driven development. When the resulting tools are locked behind subscription fees, the public effectively pays twice: once through the shared knowledge that trained the models, and again for the privilege of using them.",
   "mission.hedge.paragraph2": "We also guard against the erosion of choice. When a handful of providers control access to generative AI, they also control what content can be created, which use cases are permitted, and whose values are encoded into the system. A decentralized, volunteer-driven alternative ensures that no single entity holds that power.",
-  "mission.hedge.paragraph3": "AI Horde is not opposed to commercial AI services existing. But we believe a non-commercial alternative must also exist: one that is accountable to its community rather than to shareholders, and one that prioritizes public benefit over revenue.",
+  "mission.hedge.paragraph3": "AI Horde is not opposed to commercial AI services existing, but we believe a non-commercial alternative must also exist: one that is accountable to its community rather than to shareholders, and one that prioritizes public benefit over revenue.",
 
   "mission.commitments.title": "Our Commitments",
   "mission.commitments.nonprofit.title": "Non-Profit, Now and Always",
@@ -5029,6 +5029,7 @@
   "mission.haidra.title": "About Haidra",
   "mission.haidra.paragraph1": "Haidra is the volunteer organization behind AI Horde. Registered as a non-profit association in Luxembourg, Haidra's objectives include increasing access to free and open-source machine learning technologies, supporting education, facilitating open development, and promoting the free flow of information. Our articles of association explicitly state that the Association's actions shall never unfairly benefit private interests over public ones.",
   "mission.haidra.paragraph2": "The name reflects what we are: a collective of developers, operators, advocates, and users working together because we believe these tools should exist in the commons. We are not a company. We have no investors, no revenue targets, and no exit strategy. We are here because this work matters.",
+  "mission.haidra.website": "Visit Our Website",
 
   "mission.cta.title": "Join Us",
   "mission.cta.description": "AI Horde is made possible by people who believe technology should serve everyone. Whether you have a spare GPU, a few dollars, or simply want to use what the community has built, you are welcome here.",
