@@ -1,5 +1,35 @@
 [
   {
+    "name": "AI Horde Image Generation",
+    "description": "Generate images here on this site. Pick a model, write a prompt, and watch the picture arrive; your results are kept in the browser so you can come back to them.",
+    "image": "assets/img/guis/ai-horde-image-generation.png",
+    "link": "/generate/image",
+    "downloadButtonText": "Open",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "onThisSite": true,
+    "recommended": true,
+    "easyToUse": true
+  },
+  {
+    "name": "AI Horde Alchemy",
+    "description": "Change pictures you already have, here on this site: make them larger, sharpen faces, cut out backgrounds, or read what is in them.",
+    "image": "assets/img/guis/ai-horde-alchemy.png",
+    "link": "/generate/alchemy",
+    "downloadButtonText": "Open",
+    "categories": ["Web"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web"],
+    "onThisSite": true,
+    "recommended": true,
+    "easyToUse": true
+  },
+  {
     "name": "Artbot",
     "description": "One of the most popular web-based clients. No registration required. Features include an image gallery, pending image tracking, model details browser, worker management, and a JSON payload tool. Has been used to generate over 39 million images.",
     "image": "assets/img/guis/artbot.png",

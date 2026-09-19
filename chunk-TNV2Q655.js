@@ -1,0 +1,1 @@
+import{_ as t,va as n}from"./chunk-TOVVEFP7.js";function i(){let e=t(n).nativeElement;if(!(e instanceof HTMLElement))throw new Error("Directive/component host is not an HTMLElement");return e}export{i as a};

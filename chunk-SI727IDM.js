@@ -1,0 +1,1 @@
+import{V as e}from"./chunk-TOVVEFP7.js";var o=(()=>{class t{constructor(){this.pending=null}set(n){this.pending=n}has(){return this.pending!==null}consume(){let n=this.pending;return this.pending=null,n}static{this.\u0275fac=function(i){return new(i||t)}}static{this.\u0275prov=e({token:t,factory:t.\u0275fac,providedIn:"root"})}}return t})();export{o as a};
