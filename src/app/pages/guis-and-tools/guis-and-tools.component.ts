@@ -14,7 +14,6 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TranslocoModule } from '@jsverse/transloco';
@@ -23,9 +22,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { GuiItem } from '../../types/gui-item';
 import { ToolItem } from '../../types/tool-item';
 import { Platform, FunctionKind } from '../../types/item-types';
-import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
-import { setPageTitle } from '../../helper/page-title';
+import { setPageMeta } from '../../helper/page-meta';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import {
   ItemListSectionComponent,
@@ -73,8 +71,6 @@ export interface SectionInfo {
 })
 export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly title = inject(Title);
-  private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
   private readonly dataService = inject(DataService);
   private readonly destroyRef = inject(DestroyRef);
@@ -481,6 +477,11 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
   private scrollSpyReady = false;
 
   constructor() {
+    setPageMeta({
+      titleKey: 'guis_and_tools_page.title',
+      descriptionKey: 'guis_and_tools_page.meta_description',
+    });
+
     // The section row only moves when the reader has scrolled to a new
     // section, so bringing the current one into view never fights a swipe.
     effect(() => {
@@ -499,12 +500,6 @@ export class GuisAndToolsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(false);
-    setPageTitle(
-      this.translator,
-      this.title,
-      this.destroyRef,
-      'guis_and_tools_page.title',
-    );
   }
 
   ngAfterViewInit(): void {

@@ -9,7 +9,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   FormControl,
@@ -19,9 +18,8 @@ import {
 } from '@angular/forms';
 import { catchError, debounceTime, EMPTY, filter, switchMap, tap } from 'rxjs';
 import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
-import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
-import { setPageTitle } from '../../helper/page-title';
+import { setPageMeta } from '../../helper/page-meta';
 import { ToggleCheckboxComponent } from '../../components/toggle-checkbox/toggle-checkbox.component';
 import { DatabaseService, StorageType } from '../../services/database.service';
 import { AiHordeService } from '../../services/ai-horde.service';
@@ -46,8 +44,6 @@ import { SharedKeyService } from '../../services/shared-key.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TransferComponent implements OnInit {
-  private readonly title = inject(Title);
-  private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
   private readonly database = inject(DatabaseService);
   private readonly aiHorde = inject(AiHordeService);
@@ -78,6 +74,11 @@ export class TransferComponent implements OnInit {
   public targetUserChecking = signal(false);
 
   constructor() {
+    setPageMeta({
+      titleKey: 'transfer.title',
+      descriptionKey: 'transfer.meta_description',
+    });
+
     // Fetch educator accounts only in the browser after rendering completes.
     // This prevents stale prerendered data from appearing during static builds.
     afterNextRender(() => {
@@ -113,13 +114,6 @@ export class TransferComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    setPageTitle(
-      this.translator,
-      this.title,
-      this.destroyRef,
-      'transfer.title',
-    );
-
     this.footerColor.setDarkMode(true);
 
     const remember = this.database.get('remember_api_key', true);

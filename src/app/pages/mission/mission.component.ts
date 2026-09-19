@@ -20,6 +20,7 @@ import { NetworkStatusService } from '../../services/network-status.service';
 import { UnitConversionService } from '../../services/unit-conversion.service';
 import { SingleImageStatPoint } from '../../types/single-image-stat-point';
 import { SingleTextStatPoint } from '../../types/single-text-stat-point';
+import { setPageMeta } from '../../helper/page-meta';
 import { setPageTitle } from '../../helper/page-title';
 import { ScrollRevealDirective } from '../../directives/scroll-reveal.directive';
 
@@ -50,6 +51,12 @@ export class MissionComponent implements OnInit {
   public readonly performance = this.networkStatus.performance;
 
   constructor() {
+    setPageMeta({
+      titleKey: 'mission.page_title',
+      descriptionKey: 'mission.subtitle',
+      ownsTitle: false,
+    });
+
     afterNextRender(() => {
       this.aiHorde.imageStats
         .pipe(takeUntilDestroyed(this.destroyRef))

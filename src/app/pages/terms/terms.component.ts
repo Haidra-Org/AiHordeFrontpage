@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AiHordeService } from '../../services/ai-horde.service';
+import { setPageMeta } from '../../helper/page-meta';
 
 @Component({
   selector: 'app-terms',
@@ -23,6 +24,11 @@ export class TermsComponent {
   public readonly terms = signal('');
 
   constructor() {
+    setPageMeta({
+      titleKey: 'terms_of_service',
+      descriptionKey: 'terms.meta_description',
+    });
+
     // Fetch terms only in the browser after rendering completes.
     // This prevents stale prerendered data from appearing during static builds.
     afterNextRender(() => {

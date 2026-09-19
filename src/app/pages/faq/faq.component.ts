@@ -12,7 +12,6 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
 import {
   KeyValuePipe,
   isPlatformBrowser,
@@ -27,9 +26,8 @@ import { FaqItem } from '../../types/faq-item';
 import { InlineSvgComponent } from '../../components/inline-svg/inline-svg.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
-import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
-import { setPageTitle } from '../../helper/page-title';
+import { setPageMeta } from '../../helper/page-meta';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { scrollToElement as scrollToEl } from '../../helper/scroll-utils';
 import { SortedItems } from '../../types/sorted-items';
@@ -63,8 +61,6 @@ function slugify(text: string): string {
 })
 export class FaqComponent implements OnInit, OnDestroy {
   protected readonly NoSorterKeyValue = NoSorterKeyValue;
-  private readonly title = inject(Title);
-  private readonly translator = inject(TranslatorService);
   private readonly dataService = inject(DataService);
   private readonly footerColor = inject(FooterColorService);
   private readonly route = inject(ActivatedRoute);
@@ -96,6 +92,11 @@ export class FaqComponent implements OnInit, OnDestroy {
   private scrollObserverReady = false;
 
   constructor() {
+    setPageMeta({
+      titleKey: 'frequently_asked_questions',
+      descriptionKey: 'faq.meta_description',
+    });
+
     // Re-observe DOM elements when FAQ items are expanded/collapsed,
     // so the IntersectionObserver tracks newly rendered elements.
     effect(() => {
@@ -174,13 +175,6 @@ export class FaqComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.footerColor.setDarkMode(true);
-    setPageTitle(
-      this.translator,
-      this.title,
-      this.destroyRef,
-      'frequently_asked_questions',
-    );
-
     // Handle initial fragment once data is loaded
     this.dataService.faq
       .pipe(take(1), takeUntilDestroyed(this.destroyRef))

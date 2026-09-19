@@ -14,6 +14,7 @@ import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { VolunteerCtaBannerComponent } from '../../components/volunteer-cta-banner/volunteer-cta-banner.component';
 import { IconComponent } from '../../components/icon/icon.component';
 import { PageIntroComponent } from '../../components/page-intro/page-intro.component';
+import { setPageMeta } from '../../helper/page-meta';
 
 /** One entry in the row of links that opens the areas of this page. */
 interface DetailsTab {
@@ -45,6 +46,15 @@ interface DetailsTab {
 export class DetailsComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  constructor() {
+    // The areas underneath are one page to a reader arriving from outside, and
+    // a record page such as a model's replaces this with its own subject.
+    setPageMeta({
+      titleKey: 'details.title',
+      descriptionKey: 'details.meta_description',
+    });
+  }
 
   /**
    * The areas, in the order they are offered. Each one has its own address, so

@@ -9,10 +9,8 @@ import {
 } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { setPageTitle } from '../../helper/page-title';
-import { TranslatorService } from '../../services/translator.service';
+import { setPageMeta } from '../../helper/page-meta';
 import { StatusService } from '../../services/status.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { AuthService } from '../../services/auth.service';
@@ -121,8 +119,6 @@ export class StatusComponent {
   private readonly status = inject(StatusService);
   public readonly ns = inject(NetworkStatusService);
   private readonly auth = inject(AuthService);
-  private readonly translator = inject(TranslatorService);
-  private readonly title = inject(Title);
   private readonly destroyRef = inject(DestroyRef);
 
   /** Distinguishes "still loading" from "loaded but the backend is down". */
@@ -185,13 +181,12 @@ export class StatusComponent {
   );
 
   constructor() {
+    setPageMeta({
+      titleKey: 'status.title',
+      descriptionKey: 'status.intro',
+    });
+
     afterNextRender(() => {
-      setPageTitle(
-        this.translator,
-        this.title,
-        this.destroyRef,
-        'status.title',
-      );
       this.load();
     });
   }

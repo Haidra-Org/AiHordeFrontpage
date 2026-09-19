@@ -7,7 +7,18 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- The link preview for pages that set no meta of their own; pages that do replace these. -->
+    <!-- What a page says about itself when it sets no meta of its own: a
+         client-rendered route, the not-found page, or anything added before it
+         has copy. Every page that calls setPageMeta replaces all of these. -->
+    <meta
+      name="description"
+      content="Volunteers share their computers so anyone can make images and text here, for free."
+    />
+    <meta property="og:title" content="AI Horde" />
+    <meta
+      property="og:description"
+      content="Volunteers share their computers so anyone can make images and text here, for free."
+    />
     <meta
       property="og:image"
       content="https://assets.aihorde.net/promo/site.jpg"
