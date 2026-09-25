@@ -10,7 +10,10 @@ import { HordePerformance } from '../types/horde-performance';
 import { TextTotalStats } from '../types/text-total-stats';
 import { NewsItem } from '../types/news.types';
 import { SingleInterrogationStatPoint } from '../types/single-interrogation-stat-point';
-import { HtmlHordeDocument } from '../types/horde-document';
+import {
+  HtmlHordeDocument,
+  MarkdownHordeDocument,
+} from '../types/horde-document';
 import { HordeNewsItem } from '../types/horde-news-item';
 import { HordeUser } from '../types/horde-user';
 import { ActiveModel, ModelType } from '../types/active-model';
@@ -113,6 +116,23 @@ export class AiHordeService {
         },
       )
       .pipe(map((response) => response.html));
+  }
+
+  /**
+   * The sponsors document in markdown rather than html: the page reads it into
+   * its own parts, so it wants the source the document is written in.
+   */
+  public get sponsorsDocument(): Observable<string> {
+    return this.cache
+      .cachedGet<MarkdownHordeDocument>(
+        `${this.baseUrl}/documents/sponsors?format=markdown`,
+        undefined,
+        {
+          ttl: CacheTTL.VERY_LONG,
+          category: 'documents',
+        },
+      )
+      .pipe(map((response) => response.markdown));
   }
 
   public getNews(count?: number): Observable<NewsItem[]> {

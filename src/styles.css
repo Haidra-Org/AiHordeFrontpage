@@ -140,6 +140,9 @@
 /* Published picture gallery */
 @import "./styles/_gallery.css";
 
+/* Sponsors page */
+@import "./styles/_sponsors.css";
+
 /* =================================================================
    UTILITY LAYERS
    ================================================================= */

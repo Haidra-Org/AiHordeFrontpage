@@ -131,6 +131,7 @@ src/styles/
 ├── _generate.css           The studio: .gen-studio scope, .gs-* classes, --gs-* aliases, self-hosted fonts
 ├── _civitai.css            CivitAI LoRA and embedding rows; unscoped so the style editor gets them too
 ├── _status.css             Public status page: roll-up banner, incidents, per-service history
+├── _sponsors.css           Sponsors page: sponsor cards, patron run, donate plate, drawn on --hd-*
 ├── _utilities.css          Spinners, skeletons, state containers, code blocks, icon sizing
 ├── _floating-controls.css  Floating control stack and scroll-to-top
 ├── _admin.css              Admin layout: sidebar, admin nav, drawer

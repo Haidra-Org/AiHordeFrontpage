@@ -1,1 +1,87 @@
-<p>sponsors works!</p>
+<section class="section-primary">
+  <div class="container-page-header">
+    <div class="place-center">
+      <h1 class="heading-hero">{{ "sponsors" | transloco }}</h1>
+      <p class="text-description">{{ "sponsors.lead" | transloco }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="section-secondary">
+  <div class="container-content sponsors-body">
+    @if (document(); as doc) {
+      @if (doc.sponsors.length) {
+        <ul class="sponsors-grid">
+          @for (sponsor of doc.sponsors; track sponsor.name) {
+            <li>
+              @if (sponsor.url) {
+                <a
+                  class="sponsors-card sponsors-card--link"
+                  [href]="sponsor.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span class="sponsors-card-name">
+                    {{ sponsor.name }}
+                    <app-icon name="external-link" class="sponsors-card-mark" />
+                  </span>
+                  @if (sponsor.note) {
+                    <span class="sponsors-card-note">{{ sponsor.note }}</span>
+                  }
+                </a>
+              } @else {
+                <div class="sponsors-card">
+                  <span class="sponsors-card-name">{{ sponsor.name }}</span>
+                  @if (sponsor.note) {
+                    <span class="sponsors-card-note">{{ sponsor.note }}</span>
+                  }
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+
+      @if (doc.patrons.length) {
+        <section class="sponsors-patrons">
+          <h2 class="sponsors-patrons-title">
+            {{ "sponsors.patrons_title" | transloco }}
+          </h2>
+          <p class="text-description">
+            {{ "sponsors.patrons_lead" | transloco }}
+          </p>
+          <ul class="sponsors-patron-list">
+            @for (patron of doc.patrons; track patron) {
+              <li>{{ patron }}</li>
+            }
+          </ul>
+        </section>
+      }
+
+      <a
+        class="sponsors-donate"
+        [href]="donateUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span class="sponsors-donate-mark" aria-hidden="true">
+          <app-icon name="heart" />
+        </span>
+        <span class="sponsors-donate-copy">
+          <strong>{{ "sponsors.donate_title" | transloco }}</strong>
+          <span>{{ "sponsors.donate_hint" | transloco }}</span>
+        </span>
+        <span class="sponsors-donate-action">
+          {{ "sponsors.donate_action" | transloco }}
+          <app-icon name="external-link" />
+        </span>
+      </a>
+    } @else {
+      <p class="text-description sponsors-state">
+        {{
+          (failed() ? "sponsors.unavailable" : "sponsors.loading") | transloco
+        }}
+      </p>
+    }
+  </div>
+</section>

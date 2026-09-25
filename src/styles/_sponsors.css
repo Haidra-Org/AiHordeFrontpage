@@ -1,0 +1,205 @@
+/* =================================================================
+   SPONSORS PAGE
+
+   The sponsor cards, the patron run and the donate plate, drawn on the
+   `--hd-*` family. Every rule reads an `--hd-*` token, so both themes
+   come out of the token file and no `.dark` rule belongs in this file.
+   ================================================================= */
+
+@layer components {
+  .sponsors-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-8);
+  }
+
+  /* The content container pads only from the desktop breakpoint up, so below
+     it the cards would sit on the viewport edge. */
+  @media (max-width: 1023.98px) {
+    .sponsors-body {
+      padding-inline: var(--hd-space-4);
+    }
+  }
+
+  /* -----------------------------------------------------------------
+     SPONSOR CARDS
+     ----------------------------------------------------------------- */
+
+  .sponsors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--hd-space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sponsors-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    height: 100%;
+    padding: var(--hd-space-4) var(--hd-space-6);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+    box-shadow: var(--hd-elev-1);
+    color: var(--hd-ink);
+    text-decoration: none;
+    transition:
+      border-color var(--hd-dur) var(--hd-ease),
+      box-shadow var(--hd-dur) var(--hd-ease),
+      transform var(--hd-dur) var(--hd-ease);
+  }
+
+  .sponsors-card--link:hover,
+  .sponsors-card--link:focus-visible {
+    border-color: var(--hd-accent-text);
+    box-shadow: var(--hd-elev-2);
+    transform: translateY(-2px);
+  }
+
+  .sponsors-card--link:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .sponsors-card-name {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    font-size: var(--hd-text-lg);
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  /* The external-link glyph only says where the card leads, so it sits
+     in the muted ink and takes the accent once the card is the target. */
+  .sponsors-card-mark {
+    flex: none;
+    color: var(--hd-muted);
+  }
+
+  .sponsors-card--link:hover .sponsors-card-mark,
+  .sponsors-card--link:focus-visible .sponsors-card-mark {
+    color: var(--hd-accent-text);
+  }
+
+  .sponsors-card-note {
+    font-size: var(--hd-text-md);
+    color: var(--hd-muted);
+  }
+
+  /* -----------------------------------------------------------------
+     PATRONS
+     ----------------------------------------------------------------- */
+
+  .sponsors-patrons-title {
+    margin: 0 0 var(--hd-space-1);
+    font-size: var(--hd-text-xl);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--hd-ink);
+  }
+
+  .sponsors-patron-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1) var(--hd-space-3);
+    margin: var(--hd-space-4) 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--hd-ink);
+  }
+
+  /* The names read as one run, so each carries its own separator rather
+     than sitting in a bordered box of its own. */
+  .sponsors-patron-list li + li::before {
+    content: "·";
+    margin-right: var(--hd-space-3);
+    color: var(--hd-muted);
+  }
+
+  /* -----------------------------------------------------------------
+     DONATE
+     The plate carries the accent tint so the way to give reads as the
+     page's call to action, never as one more card in the grid.
+     ----------------------------------------------------------------- */
+
+  .sponsors-donate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-4);
+    /* The target stays comfortably over the touch floor on a phone. */
+    min-height: 3rem;
+    padding: var(--hd-space-4) var(--hd-space-6);
+    border: 1px solid var(--hd-accent-tint-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-accent-tint);
+    color: var(--hd-ink);
+    text-decoration: none;
+    transition:
+      border-color var(--hd-dur) var(--hd-ease),
+      box-shadow var(--hd-dur) var(--hd-ease);
+  }
+
+  .sponsors-donate:hover,
+  .sponsors-donate:focus-visible {
+    border-color: var(--hd-accent-text);
+    box-shadow: var(--hd-elev-2);
+  }
+
+  .sponsors-donate:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .sponsors-donate-mark {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-accent);
+    color: var(--hd-on-accent);
+  }
+
+  .sponsors-donate-copy {
+    display: flex;
+    flex: 1 1 14rem;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+  }
+
+  .sponsors-donate-copy span {
+    font-size: var(--hd-text-md);
+    color: var(--hd-muted);
+  }
+
+  .sponsors-donate-action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    font-weight: 600;
+    color: var(--hd-accent-text);
+  }
+
+  .sponsors-state {
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sponsors-card,
+    .sponsors-donate {
+      transition: none;
+    }
+
+    .sponsors-card--link:hover,
+    .sponsors-card--link:focus-visible {
+      transform: none;
+    }
+  }
+}

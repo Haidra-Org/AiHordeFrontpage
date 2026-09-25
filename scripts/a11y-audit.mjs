@@ -39,6 +39,7 @@ const ROUTES = [
   "/details/models",
   "/details/styles",
   "/faq",
+  "/sponsors",
 ];
 const WIDTHS = [390, 768, 1280];
 const THEMES = ["light", "dark"];
