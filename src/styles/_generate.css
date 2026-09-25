@@ -4163,6 +4163,68 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   height: 12px;
   display: inline-flex;
 }
+/* The results search takes the find field's shape at the view bar's size. It
+   shrinks before the toggles beside it do, and on a phone it takes a line of
+   its own rather than squeezing the prompt it is searching for. */
+.gen-studio .gs-view-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 340px;
+}
+.gen-studio .gs-view-search .gs-find-row {
+  flex: 1 1 auto;
+  min-width: 120px;
+}
+.gen-studio .gs-view-search app-icon.gs-find-ico {
+  left: 8px;
+}
+.gen-studio .gs-view-search .gs-find-input {
+  min-height: 28px;
+  padding: 3px 28px;
+  font-size: var(--gs-text-xs);
+}
+.gen-studio .gs-view-search .gs-find-clear {
+  right: 2px;
+  width: 24px;
+  height: 24px;
+}
+/* Holds no width while the grid is unfiltered; the element stays mounted so
+   the count is announced when it first appears. */
+.gen-studio .gs-view-search-count {
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gen-studio .gs-empty-clear {
+  margin-top: var(--gs-space-2);
+}
+/* The same breakpoint as the bar's other touch targets below. */
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-view-search .gs-find-input {
+    min-height: 40px;
+    padding-right: 42px;
+  }
+  .gen-studio .gs-view-search .gs-find-clear {
+    width: 40px;
+    height: 40px;
+  }
+}
+/* A field under 16px makes iOS zoom the page on focus. */
+@media (pointer: coarse) {
+  .gen-studio .gs-view-search .gs-find-input {
+    font-size: 16px;
+  }
+}
+@media (max-width: 639.98px) {
+  .gen-studio .gs-view-search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
 
 /* ------- per-tile badges: aesthetic score, NSFW marker, errors ------ */
 .gen-studio .gs-tile-tags {

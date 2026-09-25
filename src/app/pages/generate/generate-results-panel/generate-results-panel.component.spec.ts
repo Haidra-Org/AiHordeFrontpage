@@ -70,6 +70,24 @@ function resultImage(
   };
 }
 
+/** Jobs for the results search: two finished, one still queued. */
+const SEARCH_FINISHED: LocalGenerationJob[] = [
+  {
+    ...job('a', 'done'),
+    request: { prompt: 'a red fox ### blurry', models: ['Deliberate'] },
+  },
+  {
+    ...job('b', 'done'),
+    request: { prompt: 'a lighthouse ### fox', models: ['Flux'] },
+  },
+];
+const SEARCH_PENDING: LocalGenerationJob[] = [
+  {
+    ...job('p', 'queued'),
+    request: { prompt: 'a red barn', models: ['Flux'] },
+  },
+];
+
 describe('GenerateResultsPanelComponent', () => {
   let fixture: ComponentFixture<GenerateResultsPanelComponent>;
   let component: GenerateResultsPanelComponent;
@@ -1108,6 +1126,75 @@ describe('GenerateResultsPanelComponent', () => {
     });
   });
 
+  describe('searching the results', () => {
+    beforeEach(async () => {
+      getJobImages
+        .mockResolvedValueOnce([resultImage('a', 'a-img')])
+        .mockResolvedValueOnce([resultImage('b', 'b-img')]);
+      finishedJobs.set(SEARCH_FINISHED);
+      pendingJobs.set(SEARCH_PENDING);
+      await loadThumbnails();
+    });
+
+    const ids = (): Set<string> =>
+      new Set(component.visibleTiles().map((t) => t.jobLocalId));
+
+    it('hides tiles that do not match, pending ones included', () => {
+      component.query.set('red');
+
+      expect(ids()).toEqual(new Set(['a', 'p']));
+    });
+
+    it('narrows a keyed term to its own place', () => {
+      component.query.set('prompt:fox');
+      expect(ids()).toEqual(new Set(['a']));
+
+      component.query.set('negative:fox');
+      expect(ids()).toEqual(new Set(['b']));
+
+      component.query.set('model:flux');
+      expect(ids()).toEqual(new Set(['b', 'p']));
+    });
+
+    it('applies alongside the error filter rather than instead of it', () => {
+      component.query.set('fox');
+      component.errorsOnly.set(true);
+
+      expect(component.visibleTiles()).toHaveLength(0);
+    });
+
+    it('takes the viewer along with the grid', () => {
+      component.query.set('lighthouse');
+
+      expect(component.viewerTiles().map((t) => t.jobLocalId)).toEqual(['b']);
+    });
+
+    it('reports an empty grid when nothing matches', () => {
+      component.query.set('castle');
+
+      expect(component.visibleTiles()).toHaveLength(0);
+      expect(component.filteredOut()).toBe(true);
+      expect(component.searching()).toBe(true);
+    });
+
+    it('restores every tile when cleared', () => {
+      component.query.set('castle');
+
+      component.clearQuery();
+
+      expect(component.query()).toBe('');
+      expect(component.filteredOut()).toBe(false);
+      expect(component.visibleTiles()).toHaveLength(3);
+    });
+
+    it('does not narrow the grid for a blank query', () => {
+      component.query.set('   ');
+
+      expect(component.searching()).toBe(false);
+      expect(component.visibleTiles()).toHaveLength(3);
+    });
+  });
+
   describe('copying an address for a result', () => {
     let written: string[];
 
@@ -2088,5 +2175,156 @@ describe('GenerateResultsPanelComponent justified rows', () => {
     fixture.detectChanges();
 
     expect(grid().style.getPropertyValue('--gs-cols')).toBe('2');
+  });
+});
+
+describe('GenerateResultsPanelComponent results search field', () => {
+  let fixture: ComponentFixture<GenerateResultsPanelComponent>;
+  let component: GenerateResultsPanelComponent;
+  let host: HTMLElement;
+
+  beforeEach(async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+
+    await TestBed.configureTestingModule({
+      // The field, its clear button and its count are claims about the
+      // rendered markup, so the real template and the real copy are loaded.
+      imports: [
+        GenerateResultsPanelComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            jobs: signal<LocalGenerationJob[]>([
+              ...SEARCH_PENDING,
+              ...SEARCH_FINISHED,
+            ]),
+            pendingJobs: signal<LocalGenerationJob[]>(SEARCH_PENDING),
+            finishedJobs: signal<LocalGenerationJob[]>(SEARCH_FINISHED),
+            cancel: vi.fn(),
+            retry: vi.fn(),
+            deleteJob: vi.fn(),
+            getJobImages: vi.fn((localId: string) =>
+              Promise.resolve([resultImage(localId, `${localId}-img`)]),
+            ),
+          },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+        },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+        {
+          provide: StudioDescribeService,
+          useValue: {
+            describe: vi.fn(),
+            pending: signal(false),
+            readingKudos: signal(8),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+    component = fixture.componentInstance;
+    host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  function field(): HTMLInputElement {
+    return host.querySelector('.gs-view-search .gs-find-input')!;
+  }
+
+  function type(text: string): void {
+    field().value = text;
+    field().dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+  }
+
+  function count(): string {
+    return host.querySelector('.gs-view-search-count')!.textContent.trim();
+  }
+
+  it('names the field and describes how to narrow it', () => {
+    expect(field().getAttribute('aria-label')).toBe(
+      TRANSLATIONS['generate.results.search_label'],
+    );
+    const hintId = field().getAttribute('aria-describedby')!;
+    expect(host.querySelector(`#${hintId}`)?.textContent?.trim()).toBe(
+      TRANSLATIONS['generate.results.search_hint'].replace(
+        '{{ places }}',
+        'prompt:, negative:, model:',
+      ),
+    );
+  });
+
+  it('narrows the grid as the reader types and says by how much', () => {
+    expect(count()).toBe('');
+
+    type('red');
+
+    expect(component.query()).toBe('red');
+    expect(component.visibleTiles()).toHaveLength(2);
+    expect(count()).toBe('2 of 3 shown');
+  });
+
+  it('empties the field from its clear button and keeps the caret there', () => {
+    type('fox');
+    expect(component.visibleTiles()).toHaveLength(2);
+
+    host
+      .querySelector<HTMLButtonElement>('.gs-view-search .gs-find-clear')!
+      .click();
+    fixture.detectChanges();
+
+    expect(component.query()).toBe('');
+    expect(field().value).toBe('');
+    expect(component.visibleTiles()).toHaveLength(3);
+    expect(document.activeElement).toBe(field());
+    expect(host.querySelector('.gs-view-search .gs-find-clear')).toBeNull();
+  });
+
+  it('empties the field on Escape', () => {
+    type('fox');
+
+    field().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(component.query()).toBe('');
+  });
+
+  it('says the search found nothing and offers to clear it', () => {
+    type('castle');
+
+    const empty = host.querySelector('.gs-empty')!;
+    expect(empty.textContent).toContain(
+      TRANSLATIONS['generate.results.filter_empty_search_sub'],
+    );
+
+    empty.querySelector<HTMLButtonElement>('.gs-empty-clear')!.click();
+    fixture.detectChanges();
+
+    expect(component.query()).toBe('');
+    expect(host.querySelector('.gs-empty-clear')).toBeNull();
   });
 });

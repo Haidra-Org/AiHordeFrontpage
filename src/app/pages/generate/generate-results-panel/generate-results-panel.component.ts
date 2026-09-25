@@ -70,6 +70,11 @@ import {
   workerRequirementForRequest,
 } from '../generate-form.model';
 import {
+  matchesResultQuery,
+  parseResultQuery,
+  RESULT_FILTER_PLACES,
+} from '../generate-results-filter.model';
+import {
   WorkerPoolService,
   evaluateWorkerFeasibility,
   type WorkerFeasibility,
@@ -613,6 +618,8 @@ export class GenerateResultsPanelComponent {
   /** Measured width of the tile grid; 0 until a ResizeObserver reports one. */
   public readonly gridWidth = signal(0);
   private readonly tileGrid = viewChild<ElementRef<HTMLElement>>('tileGrid');
+  private readonly queryField =
+    viewChild<ElementRef<HTMLInputElement>>('queryField');
   private gridObserver: ResizeObserver | null = null;
 
   /**
@@ -948,12 +955,32 @@ export class GenerateResultsPanelComponent {
   public readonly styleFilter = signal('');
 
   /**
-   * The tiles actually rendered, after applying the error filter and aesthetic
-   * sort. Pending/status tiles keep their leading position; only finished images
-   * are reordered when sorting by score.
+   * The text in the results search field. Held for the session only: a search
+   * is a question about what is on screen now, and a grid that opens already
+   * narrowed by a forgotten search reads as lost pictures.
+   */
+  public readonly query = signal('');
+  private readonly parsedQuery = computed(() => parseResultQuery(this.query()));
+  /** What the search hint lists as places a keyed term can look. */
+  public readonly searchHintParams = {
+    places: RESULT_FILTER_PLACES.join(', '),
+  };
+  /** Whether the query holds a term; whitespace alone narrows nothing. */
+  public readonly searching = computed(() => this.parsedQuery().length > 0);
+
+  /**
+   * The tiles actually rendered, after applying the search, the style and error
+   * filters and the aesthetic sort. The search applies to pending and status
+   * tiles as well, since they carry a prompt and a reader searching wants only
+   * the matching work. Pending/status tiles keep their leading position; only
+   * finished images are reordered when sorting by score.
    */
   public readonly visibleTiles = computed<ResultTile[]>(() => {
     let list = this.tiles();
+    const terms = this.parsedQuery();
+    if (terms.length > 0) {
+      list = list.filter((tile) => matchesResultQuery(tile, terms));
+    }
     const style = this.styleFilter();
     if (style) {
       list = list.filter((tile) => tile.styleKey === style);
@@ -2360,6 +2387,23 @@ export class GenerateResultsPanelComponent {
 
   public toggleErrorsOnly(): void {
     this.errorsOnly.update((value) => !value);
+  }
+
+  public onQueryInput(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
+  }
+
+  /**
+   * Empty the search and leave the caret in the field, so a reader who
+   * mistyped can carry on typing. From the field's own Escape the key is kept
+   * from the panel's other Escape handlers while there is text to clear.
+   */
+  public clearQuery(event?: Event): void {
+    if (event && this.query()) {
+      event.stopPropagation();
+    }
+    this.query.set('');
+    this.queryField()?.nativeElement.focus();
   }
 
   /** Put the reference entry away and give the pane back to the results. */

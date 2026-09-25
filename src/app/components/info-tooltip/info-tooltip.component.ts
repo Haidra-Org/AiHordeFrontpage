@@ -71,7 +71,7 @@ interface TooltipStyles {
           }}</strong
           ><br />
         }
-        <span>{{ termKey() | transloco }}</span>
+        <span>{{ termKey() | transloco: termParams() }}</span>
         @if (glossaryId()) {
           <br /><button
             type="button"
@@ -96,6 +96,11 @@ export class InfoTooltipComponent implements OnDestroy {
 
   /** Optional i18n key for a bold title line */
   public readonly labelKey = input<string | undefined>(undefined);
+
+  /** Optional interpolation values for the body text */
+  public readonly termParams = input<Record<string, unknown> | undefined>(
+    undefined,
+  );
 
   /** Optional glossary term ID to link to */
   public readonly glossaryId = input<string | undefined>(undefined);

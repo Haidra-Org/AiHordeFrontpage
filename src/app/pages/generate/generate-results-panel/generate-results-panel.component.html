@@ -190,6 +190,57 @@
         </div>
       }
 
+      <!-- Searches every tile, pending ones included, by the words of its
+           prompt. The count beside it is the only sign for a reader who cannot
+           see the grid shrink, so it is announced as well as shown. -->
+      <div class="gs-view-search" role="search">
+        <div class="gs-find-row">
+          <app-icon name="magnifying-glass" class="gs-find-ico" />
+          <input
+            #queryField
+            type="search"
+            class="gs-find-input"
+            autocomplete="off"
+            enterkeyhint="search"
+            [value]="query()"
+            [attr.aria-label]="'generate.results.search_label' | transloco"
+            [attr.placeholder]="
+              'generate.results.search_placeholder' | transloco
+            "
+            aria-describedby="gs-results-search-hint"
+            (input)="onQueryInput($event)"
+            (keydown.escape)="clearQuery($event)"
+          />
+          @if (query()) {
+            <button
+              type="button"
+              class="gs-find-clear"
+              [attr.aria-label]="'generate.results.search_clear' | transloco"
+              (click)="clearQuery()"
+            >
+              <app-icon name="x-mark" class="gs-ico-sm" />
+            </button>
+          }
+        </div>
+        <span id="gs-results-search-hint" class="sr-only">
+          {{ "generate.results.search_hint" | transloco: searchHintParams }}
+        </span>
+        <app-info-tooltip
+          termKey="generate.results.search_hint"
+          labelKey="generate.results.search_hint_title"
+          [termParams]="searchHintParams"
+        />
+        <span class="gs-view-search-count" aria-live="polite">
+          @if (searching()) {
+            {{
+              "generate.results.search_count"
+                | transloco
+                  : { shown: visibleTiles().length, total: tiles().length }
+            }}
+          }
+        </span>
+      </div>
+
       @if (styleOptions().length > 0) {
         <label class="gs-view-ctl">
           <app-icon name="paintbrush" class="gs-ico-sm" />
@@ -491,8 +542,23 @@
             {{ "generate.results.filter_empty_title" | transloco }}
           </div>
           <div class="gs-empty-sub">
-            {{ "generate.results.filter_empty_sub" | transloco }}
+            {{
+              (searching()
+                ? "generate.results.filter_empty_search_sub"
+                : "generate.results.filter_empty_sub"
+              ) | transloco
+            }}
           </div>
+          @if (searching()) {
+            <button
+              type="button"
+              class="gs-view-toggle gs-empty-clear"
+              (click)="clearQuery()"
+            >
+              <app-icon name="x-mark" class="gs-ico-sm" />
+              {{ "generate.results.search_clear" | transloco }}
+            </button>
+          }
         </div>
       </div>
     } @else {
