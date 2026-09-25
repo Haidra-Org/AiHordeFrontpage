@@ -17,6 +17,7 @@ describe('StudioStorageComponent', () => {
   let component: StudioStorageComponent;
   let alchemyCount: ReturnType<typeof vi.fn>;
   let imageCount: ReturnType<typeof vi.fn>;
+  let pictureCount: ReturnType<typeof vi.fn>;
   let clearAlchemy: ReturnType<typeof vi.fn>;
   let clearImages: ReturnType<typeof vi.fn>;
 
@@ -37,7 +38,13 @@ describe('StudioStorageComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AlchemyDbService, useValue: { countJobs: alchemyCount } },
-        { provide: GenerationDbService, useValue: { countJobs: imageCount } },
+        {
+          provide: GenerationDbService,
+          useValue: {
+            countJobs: imageCount,
+            countResultPictures: pictureCount,
+          },
+        },
         {
           provide: AlchemyQueueService,
           useValue: { clearHistory: clearAlchemy },
@@ -64,6 +71,7 @@ describe('StudioStorageComponent', () => {
     TestBed.resetTestingModule();
     alchemyCount = vi.fn().mockResolvedValue(3);
     imageCount = vi.fn().mockResolvedValue(7);
+    pictureCount = vi.fn().mockResolvedValue(12);
     clearAlchemy = vi.fn().mockResolvedValue(undefined);
     clearImages = vi.fn().mockResolvedValue(undefined);
   });
@@ -75,8 +83,24 @@ describe('StudioStorageComponent', () => {
 
     expect(component.alchemyCount()).toBe(3);
     expect(component.imageCount()).toBe(7);
+    expect(component.imagePictureCount()).toBe(12);
     expect(component.usedMb()).toBe(340);
     expect(component.quotaMb()).toBe(2000);
+  });
+
+  it('counts image generations by picture, and offers to clear requests that hold none', async () => {
+    imageCount.mockResolvedValue(2);
+    pictureCount.mockResolvedValue(0);
+    await build();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('studio.storage.picture_count_other');
+    const clearImage = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('button'),
+    ].find((button) =>
+      button.textContent?.includes('studio.storage.clear_image'),
+    );
+    expect(clearImage?.disabled).toBe(false);
   });
 
   it('leaves the usage line out when the browser will not report it', async () => {

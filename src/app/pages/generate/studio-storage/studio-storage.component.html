@@ -32,7 +32,12 @@
         {{ "studio.storage.image_title" | transloco }}
       </h2>
       <p class="gs-sublabel">
-        {{ "studio.storage.count" | transloco: { count: imageCount() ?? 0 } }}
+        {{
+          (imagePictureCount() === 1
+            ? "studio.storage.picture_count_one"
+            : "studio.storage.picture_count_other"
+          ) | transloco: { count: imagePictureCount() ?? 0 }
+        }}
       </p>
     </div>
     <a class="gs-btn gs-btn--dense" routerLink="/generate/image">

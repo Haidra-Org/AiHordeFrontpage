@@ -236,6 +236,46 @@ describe('GenerationDbService', () => {
     expect(await service.countJobs()).toBe(2);
   });
 
+  it('counts stored pictures the way the results grid lays out tiles', async () => {
+    await service.putJob(
+      makeJob({
+        localId: 'done-a',
+        status: 'done',
+        resultImageIds: ['a1', 'a2'],
+        csamCensoredCount: 1,
+      }),
+    );
+    await service.putImage(makeImage('done-a', 'a1'));
+    await service.putImage(makeImage('done-a', 'a2'));
+    await service.putImage(makeImage('done-a', 'src', 'source'));
+    await service.putJob(
+      makeJob({
+        localId: 'done-b',
+        status: 'done',
+        resultImageIds: ['b1'],
+        fetchFailedCount: 2,
+      }),
+    );
+    await service.putImage(makeImage('done-b', 'b1'));
+    // Neither an unfinished nor a failed job has placeholder pictures of its
+    // own, and a job's source picture is not one of its results.
+    await service.putJob(
+      makeJob({
+        localId: 'running',
+        status: 'processing',
+        fetchFailedCount: 3,
+      }),
+    );
+    await service.putJob(makeJob({ localId: 'failed', status: 'error' }));
+    await service.putImage(makeImage('failed', 'mask', 'mask'));
+
+    expect(await service.countResultPictures()).toBe(6);
+  });
+
+  it('counts no pictures in an empty store', async () => {
+    expect(await service.countResultPictures()).toBe(0);
+  });
+
   it('clears every job and image blob', async () => {
     await service.putJob(makeJob({ localId: 'w1' }));
     await service.putImage(makeImage('w1', 'i1'));

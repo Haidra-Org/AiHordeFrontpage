@@ -49,7 +49,14 @@ export class StudioStorageComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   public readonly alchemyCount = signal<number | null>(null);
+  /**
+   * Stored image requests, which is what clearing removes and what its
+   * confirmation counts: a request that failed holds no picture but is still
+   * cleared with the rest.
+   */
   public readonly imageCount = signal<number | null>(null);
+  /** Pictures those requests hold, counted as the results grid shows them. */
+  public readonly imagePictureCount = signal<number | null>(null);
   /** Cached CivitAI model pages; the versions beside them are not counted. */
   public readonly civitaiCount = signal<number | null>(null);
 
@@ -130,6 +137,7 @@ export class StudioStorageComponent {
     }
     this.alchemyCount.set(await this.alchemyDb.countJobs());
     this.imageCount.set(await this.generationDb.countJobs());
+    this.imagePictureCount.set(await this.generationDb.countResultPictures());
     this.civitaiCount.set(await this.civitaiCache.countModels());
 
     const estimate = await navigator.storage?.estimate?.();

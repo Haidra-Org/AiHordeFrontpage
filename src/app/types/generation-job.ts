@@ -197,6 +197,19 @@ export interface LocalGenerationJob {
   /** Keeps a visible result in the grid without retaining the filter image. */
   csamCensoredCount?: number;
   /**
+   * Pictures the horde finished but this browser could not fetch within the
+   * retry window. Each one keeps a placeholder tile so the grid and every
+   * count agree on how many pictures the request produced.
+   */
+  fetchFailedCount?: number;
+  /**
+   * Epoch ms of the first failed picture fetch for a finished job. While set,
+   * the job stays active and the missing pictures are fetched again on later
+   * ticks; the job becomes done once every picture landed or the window ran
+   * out. Cleared on done.
+   */
+  fetchRetryFrom?: number;
+  /**
    * Epoch ms of the last poll, used by the engine to throttle check calls.
    * Not part of the user-facing model but persisted so a resumed job does not
    * hammer the check endpoint immediately after a reload.

@@ -58,11 +58,13 @@ describe('page-title helpers', () => {
 
   describe('useStudioTitle()', () => {
     const pending = signal(0);
+    const finished = signal(0);
     /** Whether the reader is looking at another tab. */
     let hidden = false;
 
-    function start(): void {
+    function start(countFinished = false): void {
       pending.set(0);
+      finished.set(0);
       hidden = false;
       Object.defineProperty(document, 'hidden', {
         configurable: true,
@@ -76,7 +78,11 @@ describe('page-title helpers', () => {
         ],
       });
       TestBed.runInInjectionContext(() =>
-        useStudioTitle('generate.title', pending),
+        useStudioTitle(
+          'generate.title',
+          pending,
+          countFinished ? finished : undefined,
+        ),
       );
       TestBed.tick();
     }
@@ -115,6 +121,30 @@ describe('page-title helpers', () => {
       TestBed.tick();
 
       expect(shown()).toBe('[studio.tab_done:2] | [app_title]');
+    });
+
+    it('counts pictures that arrived while away when the studio counts them', () => {
+      start(true);
+      finished.set(4);
+      pending.set(2);
+      TestBed.tick();
+
+      look(true);
+      pending.set(0);
+      finished.set(9);
+      TestBed.tick();
+
+      expect(shown()).toBe('[studio.tab_done:5] | [app_title]');
+    });
+
+    it('does not count stored history loading while away as arrivals', () => {
+      start(true);
+      look(true);
+
+      finished.set(12);
+      TestBed.tick();
+
+      expect(shown()).toBe('[generate.title] | [app_title]');
     });
 
     it('drops the note as soon as the tab is the one being read', () => {

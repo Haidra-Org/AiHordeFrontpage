@@ -21,6 +21,7 @@ import { debounceTime, zip } from 'rxjs';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { NetworkStatusService } from '../../services/network-status.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
+import { placeholderPictureCount } from '../../services/generation-db.service';
 import { ToastService } from '../../services/toast.service';
 import { PromptHistoryDbService } from '../../services/prompt-history-db.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
@@ -466,6 +467,22 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   /** Generations still to come back, which the tab counts while it is hidden. */
   private readonly pendingCount = computed(
     () => this.queue.pendingJobs().length,
+  );
+
+  /**
+   * Pictures that have come back, counted as the results grid shows them, so
+   * the tab's note of what arrived while away agrees with the grid.
+   */
+  private readonly finishedPictures = computed(() =>
+    this.queue
+      .finishedJobs()
+      .reduce(
+        (sum, job) =>
+          job.status === 'done'
+            ? sum + job.resultImageIds.length + placeholderPictureCount(job)
+            : sum,
+        0,
+      ),
   );
 
   /** Generations that have come back, which retires the first-visit copy. */
@@ -970,7 +987,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private stylesLoaded = false;
 
   constructor() {
-    useStudioTitle('generate.title', this.pendingCount);
+    useStudioTitle('generate.title', this.pendingCount, this.finishedPictures);
     setPageMeta({
       titleKey: 'generate.title',
       descriptionKey: 'generate.intro',

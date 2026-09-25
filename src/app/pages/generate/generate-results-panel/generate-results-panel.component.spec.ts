@@ -351,6 +351,84 @@ describe('GenerateResultsPanelComponent', () => {
     ]);
   });
 
+  it('keeps a placeholder tile for every picture that could not be fetched', () => {
+    finishedJobs.set([{ ...job('u', 'done'), fetchFailedCount: 2 }]);
+    component.errorsOnly.set(true);
+
+    expect(component.hasErrors()).toBe(true);
+    expect(component.visibleTiles().map((tile) => tile.kind)).toEqual([
+      'fetch-failed',
+      'fetch-failed',
+    ]);
+  });
+
+  describe('picture count', () => {
+    /** A finished job with `stored` saved pictures and the given placeholders. */
+    function batch(
+      localId: string,
+      stored: number,
+      placeholders: { csam?: number; unfetched?: number } = {},
+    ): LocalGenerationJob {
+      return {
+        ...job(localId, 'done'),
+        resultImageIds: Array.from(
+          { length: stored },
+          (_, i) => `${localId}-${i}`,
+        ),
+        csamCensoredCount: placeholders.csam,
+        fetchFailedCount: placeholders.unfetched,
+      };
+    }
+
+    beforeEach(() => {
+      // Returned bare rather than as a promise: the panel awaits the read, and
+      // the mock's inferred signature expects a plain value.
+      getJobImages.mockImplementation((localId: string) => {
+        const found = finishedJobs().find((j) => j.localId === localId);
+        return (found?.resultImageIds ?? []).map((id) =>
+          resultImage(localId, id),
+        );
+      });
+    });
+
+    it.each([
+      ['a single picture', [batch('one', 1)], 1],
+      ['a batch of three', [batch('three', 3)], 3],
+      ['a batch of eight', [batch('eight', 8)], 8],
+      [
+        'batches with held-back and unfetched pictures',
+        [
+          batch('mixed', 2, { csam: 1, unfetched: 1 }),
+          batch('lost', 0, { unfetched: 4 }),
+          batch('held', 3, { csam: 2 }),
+        ],
+        13,
+      ],
+    ])(
+      'counts %s the same as the tiles drawn for it',
+      async (_label, jobs, expected) => {
+        finishedJobs.set([...jobs, job('failed', 'error')]);
+        await loadThumbnails();
+
+        const pictureTiles = component
+          .tiles()
+          .filter((tile) => tile.kind !== 'error');
+        expect(pictureTiles).toHaveLength(expected);
+        expect(component.doneCount()).toBe(expected);
+      },
+    );
+
+    it('stops counting a deleted job while its undo is on offer', async () => {
+      finishedJobs.set([batch('keep', 2), batch('gone', 3, { unfetched: 1 })]);
+      await loadThumbnails();
+
+      component.requestDelete(['gone']);
+
+      expect(component.doneCount()).toBe(2);
+      expect(component.tiles()).toHaveLength(2);
+    });
+  });
+
   it('labels a tile with the positive half of the stored prompt', () => {
     // The stored prompt is whatever was submitted, and nothing guarantees the
     // horde separator was written with spaces around it: the tile label has to
@@ -758,6 +836,29 @@ describe('GenerateResultsPanelComponent', () => {
       expect(component.selectMode()).toBe(false);
       expect(component.selectedCount()).toBe(0);
       expect(component.undoPending()).toBe(true);
+    });
+
+    it('says a running request is cancelled as well as removed', () => {
+      pendingJobs.set([{ ...job('run', 'processing'), hordeId: 'h-run' }]);
+
+      component.requestDelete(['run']);
+
+      const [key, options] = toastSuccess.mock.calls[0] as [
+        string,
+        { messageParams?: { count: number } },
+      ];
+      expect(key).toBe('generate.results.cancelled_undo_one');
+      expect(options.messageParams?.count).toBe(1);
+    });
+
+    it('says only removed for a request the horde never took', () => {
+      pendingJobs.set([job('unsent', 'waiting')]);
+
+      component.requestDelete(['unsent']);
+
+      expect(toastSuccess.mock.calls[0][0]).toBe(
+        'generate.results.deleted_undo',
+      );
     });
 
     it('ignores an empty delete request', () => {
@@ -1720,6 +1821,7 @@ describe('GenerateResultsPanelComponent status chip', () => {
 describe('GenerateResultsPanelComponent adopted generations', () => {
   let fixture: ComponentFixture<GenerateResultsPanelComponent>;
   let host: HTMLElement;
+  let finishedJobs: ReturnType<typeof signal<LocalGenerationJob[]>>;
 
   const adopted: LocalGenerationJob = {
     localId: 'adopted-1',
@@ -1735,6 +1837,7 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
   beforeEach(async () => {
     URL.createObjectURL = vi.fn(() => 'blob:test');
     URL.revokeObjectURL = vi.fn();
+    finishedJobs = signal<LocalGenerationJob[]>([adopted]);
 
     await TestBed.configureTestingModule({
       // What the tile says and what it withholds are both claims about the
@@ -1755,13 +1858,13 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
           useValue: {
             jobs: signal<LocalGenerationJob[]>([adopted]),
             pendingJobs: signal<LocalGenerationJob[]>([]),
-            finishedJobs: signal<LocalGenerationJob[]>([adopted]),
+            finishedJobs,
             cancel: vi.fn(),
             retry: vi.fn(),
             deleteJob: vi.fn(),
-            getJobImages: vi
-              .fn()
-              .mockResolvedValue([resultImage('adopted-1', 'out-1')]),
+            getJobImages: vi.fn((localId: string) =>
+              Promise.resolve([resultImage(localId, 'out-1')]),
+            ),
           },
         },
         {
@@ -1827,6 +1930,48 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
     expect(menu!.textContent).toContain(
       TRANSLATIONS['generate.results.delete'],
     );
+  });
+
+  describe('request actions in the viewer', () => {
+    /** Open the viewer on the only picture, at the given width. */
+    function openAt(narrow: boolean): void {
+      const component = fixture.componentInstance;
+      component.viewerNarrow.set(narrow);
+      component.openViewer(component.tiles()[0]);
+      fixture.detectChanges();
+    }
+
+    const group = (): Element | null =>
+      host.querySelector('.gs-viewer-action-group');
+
+    it('leaves the group out when an adopted picture has none on a phone', () => {
+      openAt(true);
+
+      expect(host.querySelector('.gs-viewer-actions')).not.toBeNull();
+      expect(group()).toBeNull();
+    });
+
+    it('keeps the group for an adopted picture where it can be reused', () => {
+      openAt(false);
+
+      expect(group()?.textContent).toContain(
+        TRANSLATIONS['generate.results.reuse'],
+      );
+    });
+
+    it('keeps the group on a phone for a picture made here', async () => {
+      finishedJobs.set([{ ...adopted, localId: 'own-1', adopted: false }]);
+      fixture.detectChanges();
+      await Promise.resolve();
+      await Promise.resolve();
+      fixture.detectChanges();
+
+      openAt(true);
+
+      expect(group()?.textContent).toContain(
+        TRANSLATIONS['generate.results.make_variation'],
+      );
+    });
   });
 });
 

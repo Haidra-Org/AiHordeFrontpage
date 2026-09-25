@@ -39,10 +39,18 @@ export function setPageTitle(
  * page is the answer to that note, so it goes as soon as the tab is the one on
  * screen, and the studio's own name comes back.
  *
+ * What arrived is counted in jobs by default. A studio whose jobs each come back
+ * with several pictures passes `finished`, its running count of what came back,
+ * and the note then counts what that count grew by while the tab was hidden.
+ *
  * Call from a constructor or field initializer, where injection is available.
  * The whole title is set here, so a page using this does not set one elsewhere.
  */
-export function useStudioTitle(pageKey: string, pending: Signal<number>): void {
+export function useStudioTitle(
+  pageKey: string,
+  pending: Signal<number>,
+  finished?: Signal<number>,
+): void {
   const translator = inject(TranslatorService);
   const title = inject(Title);
   const destroyRef = inject(DestroyRef);
@@ -53,6 +61,7 @@ export function useStudioTitle(pageKey: string, pending: Signal<number>): void {
   /** How many came back while the reader was looking at something else. */
   let awayDone = 0;
   let lastPending = 0;
+  let lastFinished: number | null = null;
   /** Which reading is the current one, so a slow one cannot overwrite it. */
   let reading = 0;
 
@@ -96,9 +105,20 @@ export function useStudioTitle(pageKey: string, pending: Signal<number>): void {
 
   effect(() => {
     const running = pending();
+    const came = finished?.();
     untracked(() => {
-      if (isBrowser && document.hidden && running < lastPending) {
-        awayDone += lastPending - running;
+      // Only a job leaving the running set is an arrival. History loading
+      // from storage also raises `finished`, and a deletion lowers it.
+      const arrived = isBrowser && document.hidden && running < lastPending;
+      if (came === undefined) {
+        if (arrived) {
+          awayDone += lastPending - running;
+        }
+      } else {
+        if (arrived && lastFinished !== null && came > lastFinished) {
+          awayDone += came - lastFinished;
+        }
+        lastFinished = came;
       }
       lastPending = running;
       render();
@@ -120,6 +140,7 @@ export function useStudioTitle(pageKey: string, pending: Signal<number>): void {
       // moment the reader leaves it, and the page they land on sets its own.
       awayDone = 0;
       lastPending = 0;
+      lastFinished = null;
       if (names) {
         title.setTitle(`${names.page} | ${names.app}`);
       }

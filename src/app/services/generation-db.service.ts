@@ -85,6 +85,15 @@ function ensureSchema(
 }
 
 /**
+ * Pictures a finished job accounts for without a stored image: each one keeps
+ * a placeholder tile in the results grid, so every count of pictures adds
+ * them to the stored results.
+ */
+export function placeholderPictureCount(job: LocalGenerationJob): number {
+  return (job.csamCensoredCount ?? 0) + (job.fetchFailedCount ?? 0);
+}
+
+/**
  * Whether an opened database carries the stores this service cannot work
  * without. The source-draft store is deliberately not among them: a database
  * adopted from another build can lack it, and an attachment the reader can put
@@ -281,6 +290,38 @@ export class GenerationDbService {
     }
     const db = await this.db();
     return db.count(JOBS_STORE);
+  }
+
+  /**
+   * How many pictures the stored image generations hold, counted the way the
+   * results grid lays out tiles: every saved result image, plus one for each
+   * picture a finished job kept only as a placeholder (held back by the
+   * filter, or finished by the horde but never downloaded). Read in one
+   * transaction so a delete landing between the two stores cannot skew it.
+   */
+  public async countResultPictures(): Promise<number> {
+    if (!this.isBrowser) {
+      return 0;
+    }
+    const db = await this.db();
+    const tx = db.transaction([JOBS_STORE, IMAGES_STORE], 'readonly');
+    let count = 0;
+    let cursor = await tx.objectStore(IMAGES_STORE).openCursor();
+    while (cursor) {
+      if (cursor.value.kind === 'result') {
+        count++;
+      }
+      cursor = await cursor.continue();
+    }
+    const done = await tx
+      .objectStore(JOBS_STORE)
+      .index('status')
+      .getAll('done');
+    for (const job of done) {
+      count += placeholderPictureCount(job);
+    }
+    await tx.done;
+    return count;
   }
 
   /**

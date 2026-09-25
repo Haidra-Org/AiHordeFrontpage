@@ -8,10 +8,12 @@ import {
   signal,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import { AlchemyDbService } from './alchemy-db.service';
 import { AuthService } from './auth.service';
+import { SyncedJobDeletion, TabSyncService } from './tab-sync.service';
 import { ToastService } from './toast.service';
 import {
   ALCHEMY_ANNOTATION_FORMS,
@@ -73,6 +75,14 @@ const MAX_IMAGE_ATTEMPTS = 3;
  */
 const IMAGE_URL_LIFETIME_MS = 30 * 60_000;
 
+/**
+ * How long a deleted job's id keeps refusing writes. A visit or download
+ * already in flight when the job was deleted finishes within this, and the
+ * account's list of active generations stops naming a cancelled request well
+ * within it too.
+ */
+const DELETED_GUARD_MS = 60_000;
+
 /** Where alchemy jobs lived before they moved into IndexedDB. */
 const LEGACY_STORAGE_KEY = 'aihorde.alchemy.recent_jobs';
 
@@ -113,6 +123,14 @@ interface UnresolvedImage {
   /** The form's result key, which carries the detector for a control map. */
   key: string;
   url: string;
+}
+
+/**
+ * Whether a job was stopped for good: cancelled, or let go by the horde. No
+ * later status answer can bring either back.
+ */
+function isStopped(job: StoredAlchemyJob): boolean {
+  return job.cancelled || job.notFound;
 }
 
 function isUrlSource(source: string): AlchemySourceMode {
@@ -190,6 +208,11 @@ function unresolvedImages(job: StoredAlchemyJob): UnresolvedImage[] {
  *
  * Nothing here deletes stored work on its own. Jobs go when the user deletes
  * them or clears the history.
+ *
+ * Every tab runs its own copy of this service over the one shared store. Each
+ * local write is announced through {@link TabSyncService} and peers fold it
+ * into their state without writing it again. A job's visit runs under a
+ * cross-tab lock, so two tabs never both download the same result.
  */
 @Injectable({ providedIn: 'root' })
 export class AlchemyQueueService {
@@ -197,6 +220,7 @@ export class AlchemyQueueService {
   private readonly auth = inject(AuthService);
   private readonly db = inject(AlchemyDbService);
   private readonly toast = inject(ToastService);
+  private readonly tabSync = inject(TabSyncService);
   private readonly ngZone = inject(NgZone);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -228,11 +252,25 @@ export class AlchemyQueueService {
   /** Consecutive download failures, keyed `${localId}::${form}`. */
   private readonly imageAttempts = new Map<string, number>();
   private quotaWarned = false;
+  /**
+   * Jobs deleted within {@link DELETED_GUARD_MS}, with when. Work already in
+   * flight for such a job must not write it back into the store.
+   */
+  private readonly recentlyDeleted = new Map<string, number>();
+  /**
+   * Horde ids of deleted jobs, with when. The account goes on listing a request
+   * for a while after it was cancelled, and a failed cancel would otherwise
+   * bring the deleted job straight back as an adoption.
+   */
+  private readonly droppedJobIds = new Map<string, number>();
 
   constructor() {
     if (!this.isBrowser) {
       return;
     }
+    // Listening starts before the stored jobs load, so nothing a peer writes
+    // while the load is under way is missed.
+    this.listenToPeers();
     this.ready = this.initialize();
   }
 
@@ -243,9 +281,9 @@ export class AlchemyQueueService {
 
   private async initialize(): Promise<void> {
     try {
-      this.stored.set(await this.db.listJobs());
+      this.mergeLoaded(await this.db.listJobs());
       await this.migrateLegacyJobs();
-      this.stored.set(await this.db.listJobs());
+      this.mergeLoaded(await this.db.listJobs());
       await this.reopenRecoverableImages();
     } catch (error) {
       console.warn('Could not restore stored alchemy jobs.', error);
@@ -338,6 +376,7 @@ export class AlchemyQueueService {
 
     await this.db.putJob(job);
     this.stored.update((jobs) => [job, ...jobs]);
+    this.tabSync.publish('alchemy-job.added', job);
     // Off the submit path: a URL source needs no work, and a canvas encode of a
     // multi-megabyte upload should not hold up the job appearing on screen.
     void this.storeSourceImages(job, input);
@@ -350,12 +389,18 @@ export class AlchemyQueueService {
    * landed after a reload took the page away. An adopted job starts with no
    * operations recorded and no source image, and the poll loop visits it like
    * any other. Ids already held are skipped, so this is safe to run on every
-   * read of the account record.
+   * read of the account record. So are ids of jobs deleted here a moment ago.
    */
   public async adoptActive(ids: readonly string[]): Promise<void> {
+    this.pruneDeleted();
     const known = new Set(this.stored().map((job) => job.jobId));
     for (const jobId of ids) {
-      if (known.has(jobId)) {
+      if (known.has(jobId) || this.droppedJobIds.has(jobId)) {
+        continue;
+      }
+      // A peer tab may have taken this id over while an earlier adoption here
+      // was being written.
+      if (this.stored().some((job) => job.jobId === jobId)) {
         continue;
       }
       known.add(jobId);
@@ -381,6 +426,7 @@ export class AlchemyQueueService {
       };
       await this.db.putJob(job);
       this.ngZone.run(() => this.stored.update((jobs) => [job, ...jobs]));
+      this.tabSync.publish('alchemy-job.added', job);
     }
   }
 
@@ -456,10 +502,24 @@ export class AlchemyQueueService {
     this.pollRunning = true;
     try {
       for (const job of this.stored().filter(this.needsVisit)) {
-        await this.visit(job);
+        await this.tabSync.exclusive(`alchemy-visit:${job.localId}`, () =>
+          this.visitIfStillDue(job.localId),
+        );
       }
     } finally {
       this.pollRunning = false;
+    }
+  }
+
+  /**
+   * Visit a job unless the store says there is nothing left to do. The tick
+   * walks a snapshot, and a peer tab may have deleted the job, or settled it
+   * and taken its images, since then.
+   */
+  private async visitIfStillDue(localId: string): Promise<void> {
+    const job = await this.freshRow(localId);
+    if (job && this.needsVisit(job)) {
+      await this.visit(job);
     }
   }
 
@@ -478,7 +538,7 @@ export class AlchemyQueueService {
         });
         return;
       }
-      current = await this.patch(job.localId, {
+      const patched = await this.patch(job.localId, {
         lastPolledAt: Date.now(),
         ...(status
           ? {
@@ -489,6 +549,10 @@ export class AlchemyQueueService {
             }
           : {}),
       });
+      if (!patched) {
+        return;
+      }
+      current = patched;
     }
     await this.harvestResultImages(current);
   }
@@ -548,13 +612,13 @@ export class AlchemyQueueService {
     // Recorded before anything is fetched, so a reload part-way through goes on
     // measuring each link from when it was published rather than restarting the
     // clock.
-    await this.patch(job.localId, {
+    const recorded = await this.patch(job.localId, {
       resultLinkFirstSeenAt: seenAt,
       ...(expired.length
         ? { failedResultForms: [...job.failedResultForms, ...expired] }
         : {}),
     });
-    if (live.length === 0) {
+    if (!recorded || live.length === 0) {
       return;
     }
 
@@ -662,23 +726,72 @@ export class AlchemyQueueService {
     });
     // The cancel response carries the forms that did finish, so their images
     // are collected here rather than lost with the job.
-    await this.harvestResultImages(patched);
+    if (patched) {
+      await this.harvestResultImages(patched);
+    }
   }
 
+  /**
+   * Delete jobs and their stored images. A job the horde is still working on
+   * is cancelled there first, so it stops spending kudos and does not come
+   * back through the account's list of active generations.
+   */
   public async deleteJobs(localIds: readonly string[]): Promise<void> {
     const doomed = new Set(localIds);
     if (doomed.size === 0) {
       return;
     }
-    this.stored.update((jobs) => jobs.filter((j) => !doomed.has(j.localId)));
+    const jobs = this.stored().filter((job) => doomed.has(job.localId));
+    // Marked before anything is awaited, so a visit that lands during the
+    // cancel or the delete cannot write a row back.
+    for (const localId of doomed) {
+      this.markDeleted(localId, this.find(localId)?.jobId);
+    }
+    await Promise.all(jobs.map((job) => this.cancelOnHorde(job)));
+    this.ngZone.run(() =>
+      this.stored.update((held) => held.filter((j) => !doomed.has(j.localId))),
+    );
     await Promise.all([...doomed].map((id) => this.db.deleteJobCascade(id)));
+    for (const localId of doomed) {
+      this.forgetAttempts(localId);
+      const jobId = jobs.find((job) => job.localId === localId)?.jobId;
+      this.tabSync.publish('alchemy-job.deleted', {
+        localId,
+        ...(jobId ? { hordeId: jobId } : {}),
+      });
+    }
   }
 
-  /** Drop every tracked job. Reached only from the storage management surface. */
+  /**
+   * Drop every tracked job, cancelling on the horde any that are still
+   * running. Reached only from the storage management surface.
+   */
   public async clearHistory(): Promise<void> {
+    const jobs = this.stored();
+    for (const job of jobs) {
+      this.markDeleted(job.localId, job.jobId);
+    }
+    await Promise.all(jobs.map((job) => this.cancelOnHorde(job)));
     await this.db.clearAll();
-    this.stored.set([]);
+    this.ngZone.run(() => this.stored.set([]));
     this.imageAttempts.clear();
+    this.tabSync.publish('alchemy-job.cleared', { clearedAt: Date.now() });
+  }
+
+  /**
+   * Cancel an unsettled job's request on the way to deleting it. A failure is
+   * only logged: the delete goes ahead, and the deleted-id guard keeps the
+   * request from being adopted back while the account lists it.
+   */
+  private async cancelOnHorde(job: StoredAlchemyJob): Promise<void> {
+    if (isJobSettled(toAlchemyJob(job))) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.aiHorde.cancelInterrogation(job.jobId));
+    } catch (error) {
+      console.warn('Could not cancel a deleted alchemy request:', error);
+    }
   }
 
   // --- Stored images -------------------------------------------------------
@@ -758,14 +871,25 @@ export class AlchemyQueueService {
     return this.stored().find((job) => job.localId === localId);
   }
 
-  /** Apply a change to a job in memory and on disk, and return the result. */
+  /**
+   * Apply a change to a job in memory and on disk, tell the other tabs, and
+   * return the result. Returns null without writing for a job that is gone or
+   * was deleted, since the caller is work that was already in flight when it
+   * went.
+   */
   private async patch(
     localId: string,
     update: Partial<StoredAlchemyJob>,
-  ): Promise<StoredAlchemyJob> {
+  ): Promise<StoredAlchemyJob | null> {
+    if (this.isDeleted(localId)) {
+      return null;
+    }
     const current = this.find(localId);
+    if (!current) {
+      return null;
+    }
     const next: StoredAlchemyJob = {
-      ...(current as StoredAlchemyJob),
+      ...current,
       ...update,
       updatedAt: Date.now(),
     };
@@ -775,12 +899,218 @@ export class AlchemyQueueService {
       ),
     );
     await this.db.putJob(next);
+    if (this.isDeleted(localId)) {
+      return null;
+    }
+    this.tabSync.publish(
+      next.cancelled && !current.cancelled
+        ? 'alchemy-job.cancelled'
+        : 'alchemy-job.changed',
+      next,
+    );
     return next;
   }
 
   private async putImage(image: StoredAlchemyImage): Promise<void> {
+    if (this.isDeleted(image.localId)) {
+      return;
+    }
     await this.db.putImage(image);
+    if (this.isDeleted(image.localId)) {
+      // Deleted while the bytes were being written, so the delete may have
+      // run before they landed.
+      await this.db.deleteJobCascade(image.localId);
+      return;
+    }
     this.ngZone.run(() => this.imageWrites.update((n) => n + 1));
+  }
+
+  // --- Other tabs ----------------------------------------------------------
+
+  private listenToPeers(): void {
+    const onRow = (job: StoredAlchemyJob): void => this.acceptRow(job);
+    for (const topic of [
+      'alchemy-job.added',
+      'alchemy-job.changed',
+      'alchemy-job.cancelled',
+    ] as const) {
+      this.tabSync
+        .on(topic)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(onRow);
+    }
+    this.tabSync
+      .on('alchemy-job.deleted')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((deletion) => this.acceptDeletion(deletion));
+    this.tabSync
+      .on('alchemy-job.cleared')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        for (const job of this.stored()) {
+          this.markDeleted(job.localId, job.jobId);
+        }
+        this.imageAttempts.clear();
+        this.ngZone.run(() => this.stored.set([]));
+      });
+  }
+
+  /**
+   * Fold a row another tab wrote, or the stored copy of one, into this tab's
+   * state. The store already holds it, so nothing is written back, with one
+   * exception: a row that would reopen a job this tab holds as stopped is
+   * refused, and the stopped row is written again so the store ends on it.
+   * That is a peer's status answer overtaking a cancel it had not yet heard of.
+   */
+  private acceptRow(incoming: StoredAlchemyJob): void {
+    if (this.isDeleted(incoming.localId)) {
+      return;
+    }
+    const held = this.find(incoming.localId);
+    if (held === undefined) {
+      if (this.yieldsToHeldAdoption(incoming)) {
+        return;
+      }
+      this.insertInState(incoming);
+      return;
+    }
+    const heldStopped = isStopped(held);
+    const incomingStopped = isStopped(incoming);
+    if (heldStopped && !incomingStopped) {
+      if (incoming.updatedAt >= held.updatedAt) {
+        void this.patch(held.localId, {});
+      }
+      return;
+    }
+    if (
+      incoming !== held &&
+      ((incomingStopped && !heldStopped) ||
+        incoming.updatedAt >= held.updatedAt)
+    ) {
+      this.ngZone.run(() =>
+        this.stored.update((jobs) =>
+          jobs.map((job) =>
+            job.localId === incoming.localId ? incoming : job,
+          ),
+        ),
+      );
+    }
+  }
+
+  /**
+   * Two tabs reading the account at once can each adopt the same request under
+   * a different local id. Every tab keeps the same one of the pair (a job
+   * submitted here over an adopted one, otherwise the lower id) and the store
+   * loses the other. Returns whether the incoming row is the one dropped.
+   */
+  private yieldsToHeldAdoption(incoming: StoredAlchemyJob): boolean {
+    const twin = this.stored().find(
+      (job) => job.jobId === incoming.jobId && job.localId !== incoming.localId,
+    );
+    if (!twin || (!twin.adopted && !incoming.adopted)) {
+      return false;
+    }
+    const incomingLoses =
+      incoming.adopted === true &&
+      (!twin.adopted || incoming.localId > twin.localId);
+    const loser = incomingLoses ? incoming : twin;
+    this.markDeleted(loser.localId);
+    this.forgetLocally(loser.localId);
+    void this.db.deleteJobCascade(loser.localId);
+    return incomingLoses;
+  }
+
+  private acceptDeletion(deletion: SyncedJobDeletion): void {
+    this.markDeleted(deletion.localId, deletion.hordeId);
+    this.forgetLocally(deletion.localId);
+  }
+
+  /**
+   * The stored copy of a job, folded into this tab's state. Falls back to the
+   * in-memory copy when the store cannot be read, and reports a job gone from
+   * the store as deleted.
+   */
+  private async freshRow(
+    localId: string,
+  ): Promise<StoredAlchemyJob | undefined> {
+    let stored: StoredAlchemyJob | undefined;
+    try {
+      stored = await this.db.getJob(localId);
+    } catch {
+      return this.find(localId);
+    }
+    if (!stored) {
+      this.markDeleted(localId, this.find(localId)?.jobId);
+      this.forgetLocally(localId);
+      return undefined;
+    }
+    this.acceptRow(stored);
+    return this.find(localId);
+  }
+
+  /** Merge the stored jobs into whatever peers announced during the load. */
+  private mergeLoaded(jobs: StoredAlchemyJob[]): void {
+    if (this.stored().length === 0) {
+      this.stored.set(jobs.filter((job) => !this.isDeleted(job.localId)));
+      return;
+    }
+    for (const job of jobs) {
+      this.acceptRow(job);
+    }
+  }
+
+  private markDeleted(localId: string, jobId?: string): void {
+    this.pruneDeleted();
+    const now = Date.now();
+    this.recentlyDeleted.set(localId, now);
+    if (jobId) {
+      this.droppedJobIds.set(jobId, now);
+    }
+  }
+
+  private isDeleted(localId: string): boolean {
+    this.pruneDeleted();
+    return this.recentlyDeleted.has(localId);
+  }
+
+  private pruneDeleted(): void {
+    const cutoff = Date.now() - DELETED_GUARD_MS;
+    for (const guard of [this.recentlyDeleted, this.droppedJobIds]) {
+      for (const [key, at] of guard) {
+        if (at <= cutoff) {
+          guard.delete(key);
+        }
+      }
+    }
+  }
+
+  /** Drop a job from memory along with the download attempts kept for it. */
+  private forgetLocally(localId: string): void {
+    this.forgetAttempts(localId);
+    this.ngZone.run(() =>
+      this.stored.update((jobs) => jobs.filter((j) => j.localId !== localId)),
+    );
+  }
+
+  private forgetAttempts(localId: string): void {
+    const prefix = `${localId}::`;
+    for (const key of this.imageAttempts.keys()) {
+      if (key.startsWith(prefix)) {
+        this.imageAttempts.delete(key);
+      }
+    }
+  }
+
+  /** Place a job among the others, which are held newest first. */
+  private insertInState(job: StoredAlchemyJob): void {
+    this.ngZone.run(() =>
+      this.stored.update((jobs) => {
+        const at = jobs.findIndex((other) => other.createdAt < job.createdAt);
+        return at === -1
+          ? [...jobs, job]
+          : [...jobs.slice(0, at), job, ...jobs.slice(at)];
+      }),
+    );
   }
 
   // --- Migration -----------------------------------------------------------

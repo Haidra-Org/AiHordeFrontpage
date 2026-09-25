@@ -5,6 +5,7 @@ import { signal } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   HttpTestingController,
+  TestRequest,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,6 +16,11 @@ import { ToastService } from './toast.service';
 import { clientAgentInterceptor } from './interceptors/client-agent.interceptor';
 import { API_BASE } from '../testing/api-test-helpers';
 import { AlchemyStatusResponse } from '../types/generation';
+import {
+  FakeBroadcastChannel,
+  openPeerChannel,
+  postFromPeer,
+} from '../testing/fake-broadcast-channel';
 
 const RESULT_URL = 'https://r2.example/out.webp';
 
@@ -42,6 +48,8 @@ describe('AlchemyQueueService', () => {
     toastError = vi.fn();
     fetchMock = vi.fn(() => Promise.resolve(imageResponse()));
     vi.stubGlobal('fetch', fetchMock);
+    FakeBroadcastChannel.reset();
+    vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
 
     TestBed.configureTestingModule({
       providers: [
@@ -84,6 +92,24 @@ describe('AlchemyQueueService', () => {
     return service.jobs().find((job) => job.id === id)?.localId as string;
   }
 
+  /**
+   * The request matching `match`, once the service has sent it. A visit reads
+   * the stored row before asking the horde, and IndexedDB answers on its own
+   * schedule, so a single settle is not always enough.
+   */
+  async function sentRequest(
+    match: Parameters<HttpTestingController['match']>[0],
+  ): Promise<TestRequest> {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const [req] = http.match(match);
+      if (req) {
+        return req;
+      }
+      await settle();
+    }
+    return http.expectOne(match);
+  }
+
   /** Run one poll pass and answer the status request with `status`. */
   async function poll(
     id: string,
@@ -92,10 +118,9 @@ describe('AlchemyQueueService', () => {
     const tick = (
       service as unknown as { pollTick(): Promise<void> }
     ).pollTick();
-    await settle();
-    http
-      .expectOne(`${API_BASE}/interrogate/status/${id}`)
-      .flush(status as unknown as object);
+    (await sentRequest(`${API_BASE}/interrogate/status/${id}`)).flush(
+      status as unknown as object,
+    );
     await tick;
     await settle();
   }
@@ -228,10 +253,10 @@ describe('AlchemyQueueService', () => {
       const tick = (
         service as unknown as { pollTick(): Promise<void> }
       ).pollTick();
-      await settle();
-      http
-        .expectOne(`${API_BASE}/interrogate/status/job-404`)
-        .flush('gone', { status: 404, statusText: 'Not Found' });
+      (await sentRequest(`${API_BASE}/interrogate/status/job-404`)).flush(
+        'gone',
+        { status: 404, statusText: 'Not Found' },
+      );
       await tick;
       await settle();
 
@@ -678,6 +703,129 @@ describe('AlchemyQueueService', () => {
       expect(service.jobs()).toEqual([]);
       expect(await db.getJob(localId)).toBeUndefined();
       expect(await db.getImagesForJob(localId)).toEqual([]);
+    });
+
+    it('cancels an unsettled job on the horde before dropping it', async () => {
+      const localId = await submit('job-r');
+
+      const pending = service.deleteJobs([localId]);
+      await settle();
+      const req = http.expectOne(`${API_BASE}/interrogate/status/job-r`);
+      expect(req.request.method).toBe('DELETE');
+      req.flush({ state: 'cancelled', forms: [] });
+      await pending;
+
+      expect(service.jobs()).toEqual([]);
+      expect(await db.getJob(localId)).toBeUndefined();
+    });
+
+    it('drops an unsettled job even when the horde cancel fails', async () => {
+      const localId = await submit('job-f');
+
+      const pending = service.deleteJobs([localId]);
+      await settle();
+      http
+        .expectOne(`${API_BASE}/interrogate/status/job-f`)
+        .flush('down', { status: 500, statusText: 'Server Error' });
+      await pending;
+
+      expect(service.jobs()).toEqual([]);
+      expect(await db.getJob(localId)).toBeUndefined();
+    });
+
+    it('does not adopt back a request it just deleted', async () => {
+      const localId = await submit('job-g');
+      const pending = service.deleteJobs([localId]);
+      await settle();
+      http.expectOne(`${API_BASE}/interrogate/status/job-g`).flush({});
+      await pending;
+
+      await service.adoptActive(['job-g']);
+
+      expect(service.jobs()).toEqual([]);
+    });
+
+    it('does not write back a job deleted while its status was in flight', async () => {
+      const localId = await submit('job-v');
+      const tick = (
+        service as unknown as { pollTick(): Promise<void> }
+      ).pollTick();
+      const statusReq = await sentRequest(
+        (req) =>
+          req.method === 'GET' &&
+          req.url === `${API_BASE}/interrogate/status/job-v`,
+      );
+
+      const pending = service.deleteJobs([localId]);
+      await settle();
+      http
+        .expectOne(
+          (req) =>
+            req.method === 'DELETE' &&
+            req.url === `${API_BASE}/interrogate/status/job-v`,
+        )
+        .flush({});
+      await pending;
+      statusReq.flush({
+        state: 'done',
+        forms: [
+          { form: 'GFPGAN', state: 'done', result: { GFPGAN: RESULT_URL } },
+        ],
+      });
+      await tick;
+      await settle();
+
+      expect(service.jobs()).toEqual([]);
+      expect(await db.getJob(localId)).toBeUndefined();
+      expect(await db.getImagesForJob(localId)).toEqual([]);
+    });
+  });
+
+  describe('other tabs', () => {
+    it('announces a submitted job and its deletion', async () => {
+      const peer = openPeerChannel();
+      const topics: string[] = [];
+      peer.onmessage = (event) =>
+        topics.push((event.data as { topic: string }).topic);
+
+      const localId = await submit('job-p');
+      const pending = service.deleteJobs([localId]);
+      await settle();
+      http.expectOne(`${API_BASE}/interrogate/status/job-p`).flush({});
+      await pending;
+
+      expect(topics).toEqual(['alchemy-job.added', 'alchemy-job.deleted']);
+    });
+
+    it('shows a job a peer added and drops it when the peer deletes it', async () => {
+      const peer = openPeerChannel();
+      const now = Date.now();
+      postFromPeer(peer, 'alchemy-job.added', {
+        localId: 'peer-job',
+        jobId: 'peer-h',
+        createdAt: now,
+        updatedAt: now,
+        forms: ['caption'],
+        slowWorkers: true,
+        sourceMode: 'none',
+        status: null,
+        done: false,
+        faulted: false,
+        cancelled: false,
+        notFound: false,
+        storedResultForms: [],
+        failedResultForms: [],
+      });
+      expect(service.jobs().map((job) => job.id)).toEqual(['peer-h']);
+
+      postFromPeer(peer, 'alchemy-job.deleted', {
+        localId: 'peer-job',
+        hordeId: 'peer-h',
+      });
+
+      expect(service.jobs()).toEqual([]);
+      await service.adoptActive(['peer-h']);
+      expect(service.jobs()).toEqual([]);
     });
   });
 });

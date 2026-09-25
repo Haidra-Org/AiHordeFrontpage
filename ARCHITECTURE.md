@@ -99,6 +99,7 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |
 | `GenerationQueueService` | Client-side image generation queue: dispatch, polling, result download          |
 | `GenerationDbService`  | IndexedDB persistence for generation jobs and their image blobs                  |
+| `TabSyncService`       | Cross-tab bus (BroadcastChannel, typed topics) and per-job Web Locks            |
 | `AlchemyQueueService`  | Client-side alchemy queue: submission, polling, result-image capture             |
 | `AlchemyDbService`     | IndexedDB persistence for alchemy jobs, results and their image blobs            |
 | `TextGenerationQueueService` | Client-side text request queue for prompt drafts: submission, polling, cancel, landing takes as drafts |
@@ -253,6 +254,27 @@ to `ai-horde-frontpage-prompt-drafts` as soon as it finishes, and those drafts a
 never pruned. Finished request records older than a day are removed when the queue
 starts.
 
+### Cross-tab sync
+
+Every open tab loads the same IndexedDB rows and runs its own loops, so tabs
+talk through `TabSyncService`: a single `BroadcastChannel` with a typed topic
+registry (`TabSyncTopics`). Each queue publishes on every local write (added,
+changed, cancelled, deleted, cleared) and applies peers' rows to its signals
+without writing them back; a row never reopens a job the tab holds as
+finished, and a deleted id is refused by every writer for a minute so an
+in-flight poll or submit cannot resurrect it. Steps that must run once per
+job across tabs (submit, finish and download) take a per-job Web Lock through
+`TabSyncService.exclusive`; a tab that finds the lock held skips the step.
+Any other state that needs to agree across tabs joins the registry rather
+than opening a channel of its own.
+
+Deleting a job the horde is still working on cancels it there first; otherwise
+the account's `active_generations` list would hand it back to `adoptActive` as
+a request from another session. A finished job whose pictures could not be
+fetched stays active and retries for a bounded window (`fetchRetryFrom`),
+then becomes done with a placeholder per missing picture (`fetchFailedCount`).
+Every count the studio shows is a count of pictures: stored results plus
+censored and unfetched placeholders, the same set the grid draws.
 ### Generation queue
 
 `GenerationQueueService` exposes `jobs`, `pendingJobs`, and `finishedJobs`

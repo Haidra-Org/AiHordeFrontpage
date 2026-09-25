@@ -85,7 +85,10 @@
         } @else if (doneCount() > 0) {
           <span class="gs-status gs-status--done">
             {{
-              "generate.results.status_done" | transloco: { count: doneCount() }
+              (doneCount() === 1
+                ? "generate.results.status_done_one"
+                : "generate.results.status_done_other"
+              ) | transloco: { count: doneCount() }
             }}
           </span>
         } @else {
@@ -1460,6 +1463,57 @@
                 </div>
               </div>
             }
+            @case ("fetch-failed") {
+              <div class="gs-tile" [style.--gs-tile-ar]="tile.aspect">
+                <ng-container
+                  [ngTemplateOutlet]="tileTop"
+                  [ngTemplateOutletContext]="{ $implicit: tile }"
+                />
+                <div class="gs-tile-center">
+                  <app-icon
+                    name="warning-triangle"
+                    class="gs-icobtn--censored-large mb-6"
+                  />
+                  <span class="gs-tile-msg">
+                    {{ "generate.results.fetch_failed" | transloco }}
+                    <app-info-tooltip
+                      termKey="generate.results.fetch_failed_explanation"
+                      labelKey="generate.results.fetch_failed_details"
+                    />
+                  </span>
+
+                  <div
+                    class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
+                  >
+                    @if (!tile.adopted) {
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="retryJob(tile.jobLocalId)"
+                      >
+                        <app-icon name="refresh-alt" />
+                        {{ "generate.results.retry" | transloco }}
+                      </button>
+                      <button
+                        type="button"
+                        class="gs-tile-btn"
+                        (click)="openLoadSettings(tile)"
+                      >
+                        <app-icon name="bars-4" />
+                        {{ "generate.results.view_settings" | transloco }}
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="gs-tile-btn gs-tile-btn--danger"
+                      (click)="requestDelete([tile.jobLocalId])"
+                    >
+                      {{ "generate.results.delete" | transloco }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
             @default {
               <div class="gs-tile" [style.--gs-tile-ar]="tile.aspect">
                 <ng-container
@@ -1605,46 +1659,51 @@
              is here; on a phone that is three buttons, and everything else is
              one press away in the list at the end of the row. -->
         <div class="gs-viewer-actions">
-          <div
-            class="gs-viewer-action-group"
-            role="group"
-            [attr.aria-label]="'generate.results.use_in_request' | transloco"
-          >
-            <span class="gs-viewer-action-group-label">{{
-              "generate.results.use_in_request" | transloco
-            }}</span>
-            @if (!view.adopted) {
-              <button
-                type="button"
-                class="gs-viewer-act gs-viewer-act--primary"
-                (click)="makeVariation(view)"
-              >
-                <app-icon name="squares-2x2" />
-                {{ "generate.results.make_variation" | transloco }}
-              </button>
-            }
-            @if (!viewerNarrow()) {
-              <button
-                type="button"
-                class="gs-viewer-act"
-                [disabled]="!view.thumb"
-                (click)="reuseAsSource(view)"
-              >
-                <app-icon name="refresh-alt" />
-                {{ "generate.results.reuse" | transloco }}
-              </button>
+          <!-- The group's label is positioned over its border, so a group left
+               with no buttons collapses beneath it; an adopted result on a
+               phone has none of these actions. -->
+          @if (!view.adopted || !viewerNarrow()) {
+            <div
+              class="gs-viewer-action-group"
+              role="group"
+              [attr.aria-label]="'generate.results.use_in_request' | transloco"
+            >
+              <span class="gs-viewer-action-group-label">{{
+                "generate.results.use_in_request" | transloco
+              }}</span>
               @if (!view.adopted) {
                 <button
                   type="button"
-                  class="gs-viewer-act"
-                  (click)="copySettings(view)"
+                  class="gs-viewer-act gs-viewer-act--primary"
+                  (click)="makeVariation(view)"
                 >
-                  <app-icon name="adjustments-horizontal" />
-                  {{ "generate.results.copy_settings" | transloco }}
+                  <app-icon name="squares-2x2" />
+                  {{ "generate.results.make_variation" | transloco }}
                 </button>
               }
-            }
-          </div>
+              @if (!viewerNarrow()) {
+                <button
+                  type="button"
+                  class="gs-viewer-act"
+                  [disabled]="!view.thumb"
+                  (click)="reuseAsSource(view)"
+                >
+                  <app-icon name="refresh-alt" />
+                  {{ "generate.results.reuse" | transloco }}
+                </button>
+                @if (!view.adopted) {
+                  <button
+                    type="button"
+                    class="gs-viewer-act"
+                    (click)="copySettings(view)"
+                  >
+                    <app-icon name="adjustments-horizontal" />
+                    {{ "generate.results.copy_settings" | transloco }}
+                  </button>
+                }
+              }
+            </div>
+          }
           @if (!viewerNarrow()) {
             <button
               type="button"

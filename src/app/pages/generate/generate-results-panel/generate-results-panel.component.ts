@@ -18,6 +18,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
+import { placeholderPictureCount } from '../../../services/generation-db.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
 import { LocalGenerationJob } from '../../../types/generation-job';
@@ -156,6 +157,7 @@ interface ResultTile {
     | 'queued'
     | 'error'
     | 'censored'
+    | 'fetch-failed'
     | 'cancelled';
   jobLocalId: string;
   /** CSS `aspect-ratio` value (e.g. `1024/1024`) so tiles match the request. */
@@ -531,9 +533,23 @@ export class GenerateResultsPanelComponent {
   public readonly onHordeCount = computed(
     () => this.generatingCount() + this.queuedCount(),
   );
-  public readonly doneCount = computed(
-    () => this.finishedJobs().filter((job) => job.status === 'done').length,
-  );
+  /**
+   * Pictures on show from finished jobs: the same set of tiles the grid draws
+   * for them. Counted from the job records rather than from `tiles`, whose
+   * result tiles appear only once a job's thumbnails have loaded; a job's
+   * `resultImageIds` lists the same stored result images those thumbnails are
+   * read from, so the two agree as soon as loading settles.
+   */
+  public readonly doneCount = computed(() => {
+    const hidden = this.hiddenJobs();
+    let count = 0;
+    for (const job of this.finishedJobs()) {
+      if (job.status === 'done' && !hidden.has(job.localId)) {
+        count += job.resultImageIds.length + placeholderPictureCount(job);
+      }
+    }
+    return count;
+  });
   public readonly isBusy = computed(() => this.pendingJobs().length > 0);
   public readonly hasAnyJobs = computed(
     () => this.pendingJobs().length > 0 || this.finishedJobs().length > 0,
@@ -826,6 +842,23 @@ export class GenerateResultsPanelComponent {
             styleKey: styleKeyOf(job),
           });
         }
+        for (let index = 0; index < (job.fetchFailedCount ?? 0); index++) {
+          tiles.push({
+            key: `${job.localId}-unfetched-${index}`,
+            kind: 'fetch-failed',
+            jobLocalId: job.localId,
+            aspect,
+            dims,
+            prompt,
+            adopted: job.adopted,
+            ...(job.adopted
+              ? {}
+              : { request: job.request, applyRequest: job.request }),
+            retryCount: job.retryCount,
+            styleName: job.styleName,
+            styleKey: styleKeyOf(job),
+          });
+        }
       } else if (job.status === 'error') {
         tiles.push({
           key: `${job.localId}-error`,
@@ -876,6 +909,7 @@ export class GenerateResultsPanelComponent {
       (tile) =>
         tile.kind === 'error' ||
         tile.kind === 'censored' ||
+        tile.kind === 'fetch-failed' ||
         (tile.errors?.length ?? 0) > 0,
     ),
   );
@@ -929,6 +963,7 @@ export class GenerateResultsPanelComponent {
         (tile) =>
           tile.kind === 'error' ||
           tile.kind === 'censored' ||
+          tile.kind === 'fetch-failed' ||
           (tile.kind === 'done' && (tile.errors?.length ?? 0) > 0),
       );
     }
@@ -1350,6 +1385,11 @@ export class GenerateResultsPanelComponent {
     if (ids.length === 0) {
       return;
     }
+    // Deleting a job the horde is still working on also cancels it there, and
+    // the message says so: "deleted" alone reads as tidying a finished result.
+    const cancelsRunning = this.pendingJobs().some(
+      (job) => ids.includes(job.localId) && job.hordeId !== undefined,
+    );
     // Only one Undo can be outstanding, so a new delete settles the previous one.
     void this.commitPendingDelete();
     this.stepViewerPastDeleted(ids);
@@ -1362,7 +1402,10 @@ export class GenerateResultsPanelComponent {
     if (this.viewerKey() === null) {
       this.closeMeta();
     }
-    this.undoToastId = this.toast.success('generate.results.deleted_undo', {
+    const message = cancelsRunning
+      ? `generate.results.cancelled_undo${ids.length === 1 ? '_one' : '_other'}`
+      : 'generate.results.deleted_undo';
+    this.undoToastId = this.toast.success(message, {
       transloco: true,
       messageParams: { count: ids.length },
       autoDismissMs: UNDO_WINDOW_MS,

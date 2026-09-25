@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { GenerationQueueService } from './generation-queue.service';
 import { GenerationDbService } from './generation-db.service';
 import { AiHordeService } from './ai-horde.service';
@@ -11,6 +11,11 @@ import {
   SubmitImageResult,
 } from '../types/generation';
 import { LocalGenerationJob, StoredJobImage } from '../types/generation-job';
+import {
+  FakeBroadcastChannel,
+  openPeerChannel,
+  postFromPeer,
+} from '../testing/fake-broadcast-channel';
 
 const DISPATCH_TICK_MS = 1_000;
 const POLL_TICK_MS = 2_000;
@@ -64,6 +69,11 @@ class FakeGenerationDb {
         this.images.delete(key);
       }
     }
+    return Promise.resolve();
+  }
+  clearAll(): Promise<void> {
+    this.jobs.clear();
+    this.images.clear();
     return Promise.resolve();
   }
   pruneFinishedJobs(): Promise<void> {
@@ -139,6 +149,8 @@ describe('GenerationQueueService', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    FakeBroadcastChannel.reset();
+    vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
     fakeDb = new FakeGenerationDb();
     aiHorde = {
       submitImageGenerationResult: vi.fn(() => of(submitSuccess('horde-id'))),
@@ -160,6 +172,7 @@ describe('GenerationQueueService', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
     setVisibility('visible');
   });
 
@@ -819,5 +832,362 @@ describe('GenerationQueueService', () => {
     } finally {
       cryptoRef.randomUUID = original;
     }
+  });
+
+  describe('deletion', () => {
+    it('cancels a running job on the horde when it is deleted', async () => {
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      expect(queue.jobs()[0].hordeId).toBe('horde-id');
+
+      await queue.deleteJob(localId);
+
+      expect(aiHorde.cancelImageGeneration).toHaveBeenCalledWith('horde-id');
+      expect(queue.jobs()).toEqual([]);
+      expect(fakeDb.jobs.has(localId)).toBe(false);
+    });
+
+    it('deletes a running job even when the horde cancel fails', async () => {
+      aiHorde.cancelImageGeneration.mockReturnValue(
+        throwError(() => new Error('offline')),
+      );
+      const warn = vi
+        .spyOn(console, 'warn')
+        .mockImplementation(() => undefined);
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+      await queue.deleteJob(localId);
+
+      expect(queue.jobs()).toEqual([]);
+      expect(fakeDb.jobs.has(localId)).toBe(false);
+      warn.mockRestore();
+    });
+
+    it('deletes a waiting job without asking the horde', async () => {
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+
+      await queue.deleteJob(localId);
+
+      expect(aiHorde.cancelImageGeneration).not.toHaveBeenCalled();
+      expect(queue.jobs()).toEqual([]);
+    });
+
+    it('does not adopt back a job it just deleted', async () => {
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await queue.deleteJob(localId);
+
+      await queue.adoptActive(['horde-id']);
+
+      expect(queue.jobs()).toEqual([]);
+    });
+
+    it('cancels every running job when the history is cleared', async () => {
+      const queue = await createQueue();
+      await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await queue.enqueue({ prompt: 'a dog' });
+
+      await queue.clearHistory();
+
+      expect(aiHorde.cancelImageGeneration).toHaveBeenCalledTimes(1);
+      expect(aiHorde.cancelImageGeneration).toHaveBeenCalledWith('horde-id');
+      expect(queue.jobs()).toEqual([]);
+      expect(fakeDb.jobs.size).toBe(0);
+    });
+
+    it('cancels the generation of a job deleted while its submit was in flight', async () => {
+      const pending = new Subject<SubmitImageResult>();
+      aiHorde.submitImageGenerationResult.mockReturnValue(
+        pending.asObservable(),
+      );
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+      await queue.deleteJob(localId);
+      pending.next(submitSuccess('h1'));
+      pending.complete();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(aiHorde.cancelImageGeneration).toHaveBeenCalledWith('h1');
+      expect(queue.jobs()).toEqual([]);
+      expect(fakeDb.jobs.has(localId)).toBe(false);
+      await queue.adoptActive(['h1']);
+      expect(queue.jobs()).toEqual([]);
+    });
+
+    it('does not write back a job deleted while its check was in flight', async () => {
+      const pending = new Subject<CheckImageResult>();
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        pending.asObservable(),
+      );
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+      expect(aiHorde.checkImageGenerationResult).toHaveBeenCalledTimes(1);
+
+      await queue.deleteJob(localId);
+      pending.next(checkResult());
+      pending.complete();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(fakeDb.jobs.has(localId)).toBe(false);
+      expect(queue.jobs()).toEqual([]);
+    });
+  });
+
+  describe('pictures that could not be fetched', () => {
+    const MISSING_URL = 'https://r2.example/out-2.webp';
+
+    function twoPictureStatus(): GenerationStatusResponse {
+      const status = doneStatus();
+      return {
+        ...status,
+        finished: 2,
+        generations: [
+          status.generations[0],
+          { ...status.generations[0], id: 'out-2', img: MISSING_URL },
+        ],
+      };
+    }
+
+    beforeEach(() => {
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { done: true, processing: 0, finished: 2 } })),
+      );
+      aiHorde.getImageGenerationStatus.mockReturnValue(of(twoPictureStatus()));
+    });
+
+    it('keeps the job active and fetches only what is missing', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockRejectedValueOnce(new Error('network'))
+        .mockResolvedValue(
+          new Response(new Uint8Array([1, 2]), {
+            status: 200,
+            headers: { 'content-type': 'image/webp' },
+          }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      const putImage = vi.spyOn(fakeDb, 'putImage');
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+      let job = queue.jobs()[0];
+      expect(job.status).toBe('requested');
+      expect(job.resultImageIds).toEqual(['out-1']);
+      expect(job.fetchRetryFrom).toBeDefined();
+
+      await vi.advanceTimersByTimeAsync(30_000);
+
+      job = queue.jobs()[0];
+      expect(job.status).toBe('done');
+      expect(job.resultImageIds).toEqual(['out-1', 'out-2']);
+      expect(job.fetchRetryFrom).toBeUndefined();
+      expect(job.fetchFailedCount).toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const outOneWrites = putImage.mock.calls.filter(
+        ([image]) => image.localId === localId && image.imageId === 'out-1',
+      );
+      expect(outOneWrites).toHaveLength(1);
+    });
+
+    it('marks the job done with the shortfall once the window runs out', async () => {
+      const fetchMock = vi.fn().mockRejectedValue(new Error('network'));
+      vi.stubGlobal('fetch', fetchMock);
+      const queue = await createQueue();
+      await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+      expect(queue.jobs()[0].status).toBe('requested');
+
+      await vi.advanceTimersByTimeAsync(4 * 60_000);
+      expect(queue.jobs()[0].status).toBe('requested');
+
+      await vi.advanceTimersByTimeAsync(90_000);
+
+      const job = queue.jobs()[0];
+      expect(job.status).toBe('done');
+      expect(job.resultImageIds).toEqual(['out-1']);
+      expect(job.fetchFailedCount).toBe(1);
+      expect(job.fetchRetryFrom).toBeUndefined();
+      // Retries are spaced out rather than made on every poll tick.
+      expect(fetchMock.mock.calls.length).toBeLessThan(30);
+    });
+  });
+
+  describe('other tabs', () => {
+    function peerRow(
+      overrides: Partial<LocalGenerationJob> = {},
+    ): LocalGenerationJob {
+      const now = Date.now();
+      return {
+        localId: 'peer-job',
+        status: 'waiting',
+        createdAt: now,
+        updatedAt: now,
+        request: { prompt: 'a peer cat' },
+        resultImageIds: [],
+        ...overrides,
+      };
+    }
+
+    it('announces each write to other tabs', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      const topics: string[] = [];
+      peer.onmessage = (event) =>
+        topics.push((event.data as { topic: string }).topic);
+
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await queue.cancel(localId);
+      await queue.deleteJob(localId);
+
+      expect(topics).toEqual([
+        'generation-job.added',
+        'generation-job.changed',
+        'generation-job.cancelled',
+        'generation-job.deleted',
+      ]);
+    });
+
+    it('shows a job a peer added without storing it again', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      const putJob = vi.spyOn(fakeDb, 'putJob');
+
+      postFromPeer(peer, 'generation-job.added', peerRow());
+
+      expect(queue.jobs().map((job) => job.localId)).toEqual(['peer-job']);
+      expect(putJob).not.toHaveBeenCalled();
+    });
+
+    it('drops a job a peer deleted and stops polling it', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+      postFromPeer(peer, 'generation-job.deleted', {
+        localId,
+        hordeId: 'horde-id',
+      });
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS * 2);
+
+      expect(queue.jobs()).toEqual([]);
+      expect(aiHorde.checkImageGenerationResult).not.toHaveBeenCalled();
+      await queue.adoptActive(['horde-id']);
+      expect(queue.jobs()).toEqual([]);
+    });
+
+    it('ignores a peer row older than the one it holds', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      const held = queue.jobs()[0];
+
+      postFromPeer(
+        peer,
+        'generation-job.changed',
+        peerRow({
+          localId,
+          status: 'queued',
+          updatedAt: held.updatedAt - 1_000,
+        }),
+      );
+
+      expect(queue.jobs()[0].status).toBe('waiting');
+    });
+
+    it('takes a peer cancel over a running row it holds', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      const held = queue.jobs()[0];
+
+      postFromPeer(peer, 'generation-job.cancelled', {
+        ...held,
+        status: 'cancelled',
+        updatedAt: held.updatedAt - 1,
+      });
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS * 2);
+
+      expect(queue.jobs()[0].status).toBe('cancelled');
+      expect(aiHorde.checkImageGenerationResult).not.toHaveBeenCalled();
+    });
+
+    it('rewrites its finished row when a peer write would reopen it', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await queue.cancel(localId);
+      const held = queue.jobs()[0];
+      // A peer that had not heard of the cancel stored a poll answer over it.
+      const stale: LocalGenerationJob = {
+        ...held,
+        status: 'processing',
+        updatedAt: held.updatedAt + 1,
+      };
+      fakeDb.jobs.set(localId, stale);
+
+      postFromPeer(peer, 'generation-job.changed', stale);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(queue.jobs()[0].status).toBe('cancelled');
+      expect(fakeDb.jobs.get(localId)?.status).toBe('cancelled');
+    });
+
+    it('leaves a peer job alone once the store says it was sent', async () => {
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      const row = peerRow();
+      postFromPeer(peer, 'generation-job.added', row);
+      // The peer's submit landed in the shared store before its notice did.
+      fakeDb.jobs.set(row.localId, {
+        ...row,
+        status: 'requested',
+        hordeId: 'peer-h',
+        updatedAt: row.updatedAt + 1,
+      });
+
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+      expect(aiHorde.submitImageGenerationResult).not.toHaveBeenCalled();
+      expect(queue.jobs()[0].status).toBe('requested');
+    });
+
+    it('does not collect results a peer already collected', async () => {
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { done: true, processing: 0 } })),
+      );
+      aiHorde.getImageGenerationStatus.mockReturnValue(of(doneStatus()));
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      const held = fakeDb.jobs.get(localId) as LocalGenerationJob;
+      fakeDb.jobs.set(localId, {
+        ...held,
+        status: 'done',
+        resultImageIds: ['out-1'],
+        updatedAt: held.updatedAt + 1,
+      });
+
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+      expect(aiHorde.getImageGenerationStatus).not.toHaveBeenCalled();
+      expect(queue.jobs()[0].status).toBe('done');
+    });
   });
 });

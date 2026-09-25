@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { AiHordeService } from './ai-horde.service';
 import { AuthService } from './auth.service';
@@ -31,6 +32,7 @@ import {
 import { base64ToBlob, blobToBase64 } from '../helper/blob-base64';
 import { randomUuid } from '../helper/random-uuid';
 import { GenerationWaitInsightsService } from './generation-wait-insights.service';
+import { SyncedJobDeletion, TabSyncService } from './tab-sync.service';
 
 const ANONYMOUS_API_KEY = '0000000000';
 
@@ -60,6 +62,27 @@ const POLL_MIN_INTERVAL_MS = 2_000;
 const DISPATCH_TICK_MS = 1_000;
 const POLL_TICK_MS = 2_000;
 
+/**
+ * How long a finished job keeps asking for pictures it could not fetch before
+ * it is marked done with those pictures counted as lost. It must sit well
+ * inside the time the horde keeps a finished request's results retrievable,
+ * or the later attempts ask for results that are already gone.
+ */
+const FETCH_RETRY_WINDOW_MS = 5 * 60_000;
+/**
+ * Spacing between attempts at a finished job's missing pictures. Each attempt
+ * reads the full status endpoint, which the horde rate-limits far harder than
+ * the check endpoint the ordinary poll cadence is sized for.
+ */
+const FETCH_RETRY_INTERVAL_MS = 15_000;
+/**
+ * How long a deleted job's id keeps refusing writes. A poll, submit or download
+ * already in flight when the job was deleted finishes within this, and the
+ * account's list of active generations stops naming a cancelled one well
+ * within it too.
+ */
+const DELETED_GUARD_MS = 60_000;
+
 const DEFAULT_RESULT_MIME = 'image/webp';
 
 const ACTIVE_STATUSES: ReadonlySet<LocalGenerationJobStatus> = new Set([
@@ -84,6 +107,12 @@ type DispatchOutcome = 'submitted' | 'error' | 'backoff' | 'transient';
  *   cap and a sliding-window submit rate limit,
  * - a poll loop that advances in-flight jobs and downloads finished results.
  *
+ * Every tab runs its own copy of this service over the one shared store. Each
+ * local write is announced through {@link TabSyncService} and peers fold it
+ * into their state without writing it again, so all tabs show the same jobs.
+ * Submitting a job and collecting its results run under a cross-tab lock, so
+ * two tabs following the same job never both do either.
+ *
  * The service is browser-only. During SSR the constructor starts nothing and
  * the persistence layer no-ops, so injecting it on the server is inert.
  */
@@ -93,6 +122,7 @@ export class GenerationQueueService {
   private readonly aiHorde = inject(AiHordeService);
   private readonly auth = inject(AuthService);
   private readonly waitInsights = inject(GenerationWaitInsightsService);
+  private readonly tabSync = inject(TabSyncService);
   private readonly ngZone = inject(NgZone);
   private readonly document = inject(DOCUMENT);
   private readonly destroyRef = inject(DestroyRef);
@@ -131,6 +161,14 @@ export class GenerationQueueService {
   private submitTimestamps: number[] = [];
   private submitBackoffUntil = 0;
   private readonly checkBackoffUntil = new Map<string, number>();
+  /**
+   * Jobs deleted within {@link DELETED_GUARD_MS}, with when. Work already in
+   * flight for such a job must not write it back into the store, and its horde
+   * id must not be adopted again while the account still lists it.
+   */
+  private readonly recentlyDeleted = new Map<string, number>();
+  /** Horde ids of deleted or orphaned generations, with when they were dropped. */
+  private readonly droppedHordeIds = new Map<string, number>();
 
   private dispatchRunning = false;
   private pollRunning = false;
@@ -140,6 +178,9 @@ export class GenerationQueueService {
 
   constructor() {
     if (this.isBrowser) {
+      // Listening starts before the stored jobs load, so nothing a peer writes
+      // while the load is under way is missed.
+      this.listenToPeers();
       this.initPromise = this.initialize();
     }
   }
@@ -152,7 +193,7 @@ export class GenerationQueueService {
   private async initialize(): Promise<void> {
     try {
       const jobs = await this.db.listJobs();
-      this.setState(jobs);
+      this.mergeLoaded(jobs);
     } catch (error) {
       // A persistence failure must not wedge startup: the loops still run and
       // new work can be enqueued against empty in-memory state. The DB layer's
@@ -241,6 +282,7 @@ export class GenerationQueueService {
       }
     }
     this.addToState(job);
+    this.tabSync.publish('generation-job.added', job);
     return localId;
   }
 
@@ -251,16 +293,24 @@ export class GenerationQueueService {
    * under the same key, so an adopted job joins the poll loop as a `queued` job
    * with an id and is driven to done and downloaded like any other. Ids already
    * held are skipped, so this is safe to run on every read of the account
-   * record.
+   * record. So are ids of jobs deleted here a moment ago: the account goes on
+   * listing a generation for a while after it was cancelled, and a failed
+   * cancel would otherwise bring the deleted job straight back.
    */
   public async adoptActive(ids: readonly string[]): Promise<void> {
+    this.pruneDeleted();
     const known = new Set(
       this._jobs()
         .map((job) => job.hordeId)
         .filter((hordeId): hordeId is string => hordeId !== undefined),
     );
     for (const hordeId of ids) {
-      if (known.has(hordeId)) {
+      if (known.has(hordeId) || this.droppedHordeIds.has(hordeId)) {
+        continue;
+      }
+      // A peer tab may have taken this id over while an earlier adoption here
+      // was being written.
+      if (this._jobs().some((job) => job.hordeId === hordeId)) {
         continue;
       }
       known.add(hordeId);
@@ -279,6 +329,7 @@ export class GenerationQueueService {
       };
       await this.db.putJob(job);
       this.addToState(job);
+      this.tabSync.publish('generation-job.added', job);
     }
   }
 
@@ -297,23 +348,62 @@ export class GenerationQueueService {
     await this.patchJob(localId, { status: 'cancelled' });
   }
 
-  /** Delete a job and its stored images. */
+  /**
+   * Delete a job and its stored images. A job the horde is still working on is
+   * cancelled there first, so it stops spending kudos and does not come back
+   * through the account's list of active generations.
+   */
   public async deleteJob(localId: string): Promise<void> {
+    const job = this.findJob(localId);
+    // Marked before anything is awaited, so a poll or submit that lands during
+    // the cancel or the delete cannot write the row back.
+    this.markDeleted(localId, job?.hordeId);
+    if (job) {
+      await this.cancelOnHorde(job);
+    }
     await this.db.deleteJobCascade(localId);
-    this.checkBackoffUntil.delete(localId);
-    this.waitInsights.clear(localId);
-    this.removeFromState(localId);
+    this.forgetLocally(localId);
+    this.tabSync.publish('generation-job.deleted', {
+      localId,
+      ...(job?.hordeId ? { hordeId: job.hordeId } : {}),
+    });
   }
 
   /**
-   * Drop every tracked job and its stored images. Reached only from the storage
-   * management surface; nothing in the app calls this on its own.
+   * Drop every tracked job and its stored images, cancelling on the horde any
+   * that are still running. Reached only from the storage management surface;
+   * nothing in the app calls this on its own.
    */
   public async clearHistory(): Promise<void> {
+    const jobs = this._jobs();
+    for (const job of jobs) {
+      this.markDeleted(job.localId, job.hordeId);
+    }
+    await Promise.all(jobs.map((job) => this.cancelOnHorde(job)));
     await this.db.clearAll();
     this.checkBackoffUntil.clear();
     this.waitInsights.clearAll();
     this.setState([]);
+    this.tabSync.publish('generation-job.cleared', { clearedAt: this.now() });
+  }
+
+  /**
+   * Cancel a running job's horde generation on the way to deleting it. A
+   * failure is only logged: the delete goes ahead, and the deleted-id guard
+   * keeps the generation from being adopted back while the account lists it.
+   */
+  private async cancelOnHorde(job: LocalGenerationJob): Promise<void> {
+    if (!ACTIVE_STATUSES.has(job.status) || !job.hordeId) {
+      return;
+    }
+    try {
+      await firstValueFrom(this.aiHorde.cancelImageGeneration(job.hordeId));
+    } catch (error) {
+      console.warn(
+        'Could not cancel a deleted generation on the horde:',
+        error,
+      );
+    }
   }
 
   public getJobImages(localId: string): Promise<StoredJobImage[]> {
@@ -381,7 +471,12 @@ export class GenerationQueueService {
   public async pruneFinished(keep?: number): Promise<void> {
     await this.db.pruneFinishedJobs(keep);
     const jobs = await this.db.listJobs();
+    const kept = new Set(jobs.map((job) => job.localId));
+    const pruned = this._jobs().filter((job) => !kept.has(job.localId));
     this.setState(jobs);
+    for (const job of pruned) {
+      this.tabSync.publish('generation-job.deleted', { localId: job.localId });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -416,7 +511,11 @@ export class GenerationQueueService {
         ) {
           break;
         }
-        const outcome = await this.submitJob(job);
+        const outcome =
+          (await this.tabSync.exclusive(
+            `generation-submit:${job.localId}`,
+            () => this.submitIfStillWaiting(job),
+          )) ?? 'transient';
         if (outcome === 'submitted') {
           active++;
         } else if (outcome === 'backoff') {
@@ -426,6 +525,21 @@ export class GenerationQueueService {
     } finally {
       this.dispatchRunning = false;
     }
+  }
+
+  /**
+   * Submit a waiting job unless the store says otherwise. Every tab holds the
+   * waiting jobs of every other tab, so the stored row, read under the submit
+   * lock, is the only reliable word on whether a peer already sent it.
+   */
+  private async submitIfStillWaiting(
+    job: LocalGenerationJob,
+  ): Promise<DispatchOutcome> {
+    const current = await this.freshRow(job.localId);
+    if (current?.status !== 'waiting') {
+      return 'transient';
+    }
+    return this.submitJob(current);
   }
 
   private async submitJob(job: LocalGenerationJob): Promise<DispatchOutcome> {
@@ -562,19 +676,26 @@ export class GenerationQueueService {
   }
 
   /**
-   * A submit succeeded for a job the user cancelled mid-flight. Record the id so
-   * the horde generation is traceable, keep the local status 'cancelled', and
-   * cancel the now-orphaned generation so it does not run to completion.
+   * A submit succeeded for a job that stopped waiting while it was in flight:
+   * the user cancelled or deleted it, or it moved on some other way. Nothing
+   * will follow the generation the horde just accepted, so it is cancelled
+   * before it runs to completion and spends kudos. A cancelled job that still
+   * exists records the id so the horde generation stays traceable.
    */
   private async reconcileOrphanedSubmit(
     localId: string,
     hordeId: string,
   ): Promise<void> {
-    if (this.findJob(localId)?.status !== 'cancelled') {
-      return;
+    this.droppedHordeIds.set(hordeId, this.now());
+    const job = this.findJob(localId);
+    if (job?.status === 'cancelled' && !job.hordeId) {
+      await this.patchJob(localId, { hordeId });
     }
-    await this.patchJob(localId, { hordeId });
-    await firstValueFrom(this.aiHorde.cancelImageGeneration(hordeId));
+    try {
+      await firstValueFrom(this.aiHorde.cancelImageGeneration(hordeId));
+    } catch (error) {
+      console.warn('Could not cancel an orphaned generation:', error);
+    }
   }
 
   private async buildSubmitRequest(
@@ -657,7 +778,13 @@ export class GenerationQueueService {
     }
   }
 
-  private async pollJob(job: LocalGenerationJob): Promise<void> {
+  private async pollJob(snapshot: LocalGenerationJob): Promise<void> {
+    // The tick walks a snapshot, and a peer tab may have deleted or finished
+    // the job since it was taken.
+    const job = this.findJob(snapshot.localId);
+    if (!job || !ACTIVE_STATUSES.has(job.status)) {
+      return;
+    }
     const hordeId = job.hordeId;
     if (!hordeId) {
       return;
@@ -668,6 +795,14 @@ export class GenerationQueueService {
     const now = this.now();
 
     if (result.kind === 'not_found') {
+      if (job.fetchRetryFrom !== undefined) {
+        // The horde has let the request go while pictures were still being
+        // fetched again; whatever is missing now stays missing.
+        await this.markDone(job.localId, now, {
+          missing: this.expectedMissing(job, job.finishedCount ?? 0),
+        });
+        return;
+      }
       await this.patchJob(job.localId, {
         status: 'error',
         errorKey: 'generate.results.error_expired',
@@ -694,7 +829,9 @@ export class GenerationQueueService {
       return;
     }
     if (check.done) {
-      await this.finishJob(job, now);
+      await this.tabSync.exclusive(`generation-finish:${job.localId}`, () =>
+        this.finishJob(job.localId, now, check.finished),
+      );
       return;
     }
 
@@ -715,43 +852,157 @@ export class GenerationQueueService {
     });
   }
 
-  private async finishJob(job: LocalGenerationJob, now: number): Promise<void> {
-    const hordeId = job.hordeId;
-    if (!hordeId) {
+  /**
+   * Collect a finished job's pictures and mark it done. A picture that cannot
+   * be fetched keeps the job in its active status with
+   * {@link LocalGenerationJob.fetchRetryFrom} set, and later ticks fetch only
+   * what is still missing. Once {@link FETCH_RETRY_WINDOW_MS} has passed the
+   * job is marked done with the shortfall recorded.
+   *
+   * Runs under the job's finish lock. The stored row is read first because a
+   * peer tab may have finished the job, or fetched some of its pictures, since
+   * this tab last heard about it.
+   */
+  private async finishJob(
+    localId: string,
+    now: number,
+    finished: number,
+  ): Promise<void> {
+    const job = await this.freshRow(localId);
+    if (!job || !ACTIVE_STATUSES.has(job.status) || !job.hordeId) {
       return;
     }
     const status = await firstValueFrom(
-      this.aiHorde.getImageGenerationStatus(hordeId),
+      this.aiHorde.getImageGenerationStatus(job.hordeId),
     );
     if (status === GENERATION_NOT_FOUND || status === null) {
+      if (
+        job.fetchRetryFrom !== undefined &&
+        now - job.fetchRetryFrom >= FETCH_RETRY_WINDOW_MS
+      ) {
+        await this.markDone(localId, now, {
+          missing: this.expectedMissing(job, finished),
+        });
+        return;
+      }
       // Transient status fetch failure; retry on a later tick.
-      await this.patchJob(job.localId, { lastCheckedAt: now });
+      await this.patchJob(localId, { lastCheckedAt: now });
       return;
     }
 
-    const resultImageIds: string[] = [];
+    const held = new Set(job.resultImageIds);
     let csamCensoredCount = 0;
+    let missing = 0;
     for (const generation of status.generations) {
       if (this.isCsamCensored(generation)) {
         csamCensoredCount++;
         continue;
       }
-      const stored = await this.downloadGeneration(job.localId, generation);
+      if (held.has(generation.id)) {
+        continue;
+      }
+      if (this.isDeleted(localId)) {
+        return;
+      }
+      // Stored already by an earlier attempt whose row update was lost, or by
+      // a peer tab: fetching it again would only cost a request.
+      const existing = await this.db.getImage(localId, generation.id);
+      const stored =
+        existing ?? (await this.downloadGeneration(localId, generation));
       if (stored) {
-        resultImageIds.push(stored.imageId);
+        held.add(generation.id);
+      } else {
+        missing++;
+      }
+    }
+    const resultImageIds = status.generations
+      .map((generation) => generation.id)
+      .filter((id) => held.has(id));
+
+    if (missing > 0) {
+      const fetchRetryFrom = job.fetchRetryFrom ?? now;
+      if (now - fetchRetryFrom < FETCH_RETRY_WINDOW_MS) {
+        this.checkBackoffUntil.set(localId, now + FETCH_RETRY_INTERVAL_MS);
+        await this.patchJob(localId, {
+          kudos: status.kudos,
+          finishedCount: finished,
+          resultImageIds,
+          csamCensoredCount,
+          fetchRetryFrom,
+          lastCheckedAt: now,
+        });
+        return;
       }
     }
 
-    this.checkBackoffUntil.delete(job.localId);
-    await this.patchJob(job.localId, {
-      status: 'done',
+    await this.markDone(localId, now, {
+      missing,
       kudos: status.kudos,
-      queuePosition: 0,
-      waitTime: 0,
       resultImageIds,
       csamCensoredCount,
+    });
+  }
+
+  private async markDone(
+    localId: string,
+    now: number,
+    outcome: {
+      missing: number;
+      kudos?: number;
+      resultImageIds?: string[];
+      csamCensoredCount?: number;
+    },
+  ): Promise<void> {
+    this.checkBackoffUntil.delete(localId);
+    await this.patchJob(localId, {
+      status: 'done',
+      ...(outcome.kudos !== undefined ? { kudos: outcome.kudos } : {}),
+      ...(outcome.resultImageIds
+        ? { resultImageIds: outcome.resultImageIds }
+        : {}),
+      ...(outcome.csamCensoredCount !== undefined
+        ? { csamCensoredCount: outcome.csamCensoredCount }
+        : {}),
+      queuePosition: 0,
+      waitTime: 0,
+      fetchFailedCount: outcome.missing > 0 ? outcome.missing : undefined,
+      fetchRetryFrom: undefined,
       lastCheckedAt: now,
     });
+  }
+
+  /**
+   * Pictures the horde finished for a job that it holds neither as a result
+   * nor as a filtered one, for when the status answer listing them is gone.
+   */
+  private expectedMissing(job: LocalGenerationJob, finished: number): number {
+    return Math.max(
+      0,
+      finished - job.resultImageIds.length - (job.csamCensoredCount ?? 0),
+    );
+  }
+
+  /**
+   * The stored copy of a job, folded into this tab's state. Falls back to the
+   * in-memory copy when the store cannot be read, and reports a job gone from
+   * the store as deleted.
+   */
+  private async freshRow(
+    localId: string,
+  ): Promise<LocalGenerationJob | undefined> {
+    let stored: LocalGenerationJob | undefined;
+    try {
+      stored = await this.db.getJob(localId);
+    } catch {
+      return this.findJob(localId);
+    }
+    if (!stored) {
+      this.markDeleted(localId, this.findJob(localId)?.hordeId);
+      this.forgetLocally(localId);
+      return undefined;
+    }
+    this.acceptRow(stored);
+    return this.findJob(localId);
   }
 
   /**
@@ -792,7 +1043,16 @@ export class GenerationQueueService {
         genMetadata: generation.gen_metadata,
       },
     };
+    if (this.isDeleted(localId)) {
+      return null;
+    }
     await this.db.putImage(image);
+    if (this.isDeleted(localId)) {
+      // Deleted while the bytes were being written, so the delete may have
+      // run before they landed.
+      await this.db.deleteJobCascade(localId);
+      return null;
+    }
     return image;
   }
 
@@ -853,12 +1113,29 @@ export class GenerationQueueService {
     return this._jobs().find((job) => job.localId === localId);
   }
 
+  /**
+   * Apply a change to a held job, in the store and in memory, and tell the
+   * other tabs. Refused for a job that is gone or deleted, since the caller is
+   * work that was already in flight when it went, and for a change that would
+   * move a finished job back to another status, which is a poll answer
+   * arriving after a cancel.
+   */
   private async patchJob(
     localId: string,
     patch: Partial<LocalGenerationJob>,
   ): Promise<void> {
+    if (this.isDeleted(localId)) {
+      return;
+    }
     const current = this.findJob(localId);
     if (!current) {
+      return;
+    }
+    if (
+      FINISHED_STATUSES.has(current.status) &&
+      patch.status !== undefined &&
+      patch.status !== current.status
+    ) {
       return;
     }
     const updated: LocalGenerationJob = {
@@ -867,10 +1144,169 @@ export class GenerationQueueService {
       updatedAt: this.now(),
     };
     await this.db.putJob(updated);
+    if (this.isDeleted(localId)) {
+      return;
+    }
     this.replaceInState(updated);
     if (FINISHED_STATUSES.has(updated.status)) {
       this.waitInsights.clear(localId);
     }
+    this.tabSync.publish(
+      updated.status === 'cancelled' && current.status !== 'cancelled'
+        ? 'generation-job.cancelled'
+        : 'generation-job.changed',
+      updated,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Other tabs
+  // ---------------------------------------------------------------------------
+
+  private listenToPeers(): void {
+    const onRow = (job: LocalGenerationJob): void => this.acceptRow(job);
+    for (const topic of [
+      'generation-job.added',
+      'generation-job.changed',
+      'generation-job.cancelled',
+    ] as const) {
+      this.tabSync
+        .on(topic)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(onRow);
+    }
+    this.tabSync
+      .on('generation-job.deleted')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((deletion) => this.acceptDeletion(deletion));
+    this.tabSync
+      .on('generation-job.cleared')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        for (const job of this._jobs()) {
+          this.markDeleted(job.localId, job.hordeId);
+        }
+        this.checkBackoffUntil.clear();
+        this.waitInsights.clearAll();
+        this.setState([]);
+      });
+  }
+
+  /**
+   * Fold a row another tab wrote, or the stored copy of one, into this tab's
+   * state. The store already holds it, so nothing is written back, with one
+   * exception: a row that would reopen a job this tab holds as finished is
+   * refused, and the finished row is written again so the store ends on it.
+   * That is a peer's poll answer overtaking a cancel it had not yet heard of.
+   */
+  private acceptRow(incoming: LocalGenerationJob): void {
+    if (this.isDeleted(incoming.localId)) {
+      return;
+    }
+    const held = this.findJob(incoming.localId);
+    if (held === undefined) {
+      if (this.yieldsToHeldAdoption(incoming)) {
+        return;
+      }
+      this.insertInState(incoming);
+      return;
+    }
+    const heldFinished = FINISHED_STATUSES.has(held.status);
+    const incomingFinished = FINISHED_STATUSES.has(incoming.status);
+    if (heldFinished && !incomingFinished) {
+      if (incoming.updatedAt >= held.updatedAt) {
+        void this.patchJob(held.localId, {});
+      }
+      return;
+    }
+    if (
+      (incomingFinished && !heldFinished) ||
+      incoming.updatedAt >= held.updatedAt
+    ) {
+      if (incoming !== held) {
+        this.replaceInState(incoming);
+      }
+      if (incomingFinished) {
+        this.checkBackoffUntil.delete(incoming.localId);
+        this.waitInsights.clear(incoming.localId);
+      }
+    }
+  }
+
+  /**
+   * Two tabs reading the account at once can each adopt the same generation
+   * under a different local id. Every tab keeps the same one of the pair (a
+   * job submitted here over an adopted one, otherwise the lower id) and the
+   * store loses the other, so the tabs agree without talking it over. Returns
+   * whether the incoming row is the one dropped.
+   */
+  private yieldsToHeldAdoption(incoming: LocalGenerationJob): boolean {
+    if (!incoming.hordeId) {
+      return false;
+    }
+    const twin = this._jobs().find(
+      (job) =>
+        job.hordeId === incoming.hordeId && job.localId !== incoming.localId,
+    );
+    if (!twin || (!twin.adopted && !incoming.adopted)) {
+      return false;
+    }
+    const incomingLoses =
+      incoming.adopted === true &&
+      (!twin.adopted || incoming.localId > twin.localId);
+    const loser = incomingLoses ? incoming : twin;
+    this.markDeleted(loser.localId);
+    this.forgetLocally(loser.localId);
+    void this.db.deleteJobCascade(loser.localId);
+    return incomingLoses;
+  }
+
+  private acceptDeletion(deletion: SyncedJobDeletion): void {
+    this.markDeleted(deletion.localId, deletion.hordeId);
+    this.forgetLocally(deletion.localId);
+  }
+
+  /** Merge the stored jobs into whatever peers announced during the load. */
+  private mergeLoaded(jobs: LocalGenerationJob[]): void {
+    if (this._jobs().length === 0) {
+      this.setState(jobs.filter((job) => !this.isDeleted(job.localId)));
+      return;
+    }
+    for (const job of jobs) {
+      this.acceptRow(job);
+    }
+  }
+
+  private markDeleted(localId: string, hordeId?: string): void {
+    this.pruneDeleted();
+    const now = this.now();
+    this.recentlyDeleted.set(localId, now);
+    if (hordeId) {
+      this.droppedHordeIds.set(hordeId, now);
+    }
+  }
+
+  private isDeleted(localId: string): boolean {
+    this.pruneDeleted();
+    return this.recentlyDeleted.has(localId);
+  }
+
+  private pruneDeleted(): void {
+    const cutoff = this.now() - DELETED_GUARD_MS;
+    for (const guard of [this.recentlyDeleted, this.droppedHordeIds]) {
+      for (const [key, at] of guard) {
+        if (at <= cutoff) {
+          guard.delete(key);
+        }
+      }
+    }
+  }
+
+  /** Drop a job from memory along with every timer and note kept for it. */
+  private forgetLocally(localId: string): void {
+    this.checkBackoffUntil.delete(localId);
+    this.waitInsights.clear(localId);
+    this.removeFromState(localId);
   }
 
   private setState(jobs: LocalGenerationJob[]): void {
@@ -879,6 +1315,18 @@ export class GenerationQueueService {
 
   private addToState(job: LocalGenerationJob): void {
     this.ngZone.run(() => this._jobs.update((jobs) => [job, ...jobs]));
+  }
+
+  /** Place a job among the others, which are held newest first. */
+  private insertInState(job: LocalGenerationJob): void {
+    this.ngZone.run(() =>
+      this._jobs.update((jobs) => {
+        const at = jobs.findIndex((other) => other.createdAt < job.createdAt);
+        return at === -1
+          ? [...jobs, job]
+          : [...jobs.slice(0, at), job, ...jobs.slice(at)];
+      }),
+    );
   }
 
   private removeFromState(localId: string): void {
