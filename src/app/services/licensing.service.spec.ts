@@ -274,6 +274,14 @@ describe('licensingExplorerUrl', () => {
       'https://reference.aihorde.net/categories/controlnet_annotator/model/annotator_mlsd',
     );
   });
+
+  it('encodes parentheses, which the explorer router would read as an outlet', () => {
+    expect(
+      licensingExplorerUrl('image_generation', 'AlbedoBase XL (SDXL)'),
+    ).toBe(
+      'https://reference.aihorde.net/categories/image_generation/model/AlbedoBase%20XL%20%28SDXL%29',
+    );
+  });
 });
 
 describe('worstLicensingFact', () => {

@@ -372,13 +372,18 @@ export function postProcessorCategory(name: string): LicensingCategory {
 
 /**
  * The explorer's page for one asset, where its licence is set out in full
- * alongside everything else the reference publishes about it.
+ * alongside everything else the reference publishes about it. Parentheses are
+ * encoded as well: the explorer is an Angular app whose router reads a bare
+ * `(` in a path as outlet syntax, and this is the form its own links carry.
  */
 export function licensingExplorerUrl(
   category: LicensingCategory,
   name: string,
 ): string {
-  return `${EXPLORER_ROOT}/categories/${category}/model/${encodeURIComponent(name)}`;
+  const segment = encodeURIComponent(name)
+    .replace(/\(/g, '%28')
+    .replace(/\)/g, '%29');
+  return `${EXPLORER_ROOT}/categories/${category}/model/${segment}`;
 }
 
 /**
