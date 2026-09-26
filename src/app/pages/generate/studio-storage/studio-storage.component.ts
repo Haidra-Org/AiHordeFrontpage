@@ -48,7 +48,10 @@ export class StudioStorageComponent {
   private readonly toast = inject(ToastService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  /** Stored alchemy requests, which is what clearing removes. */
   public readonly alchemyCount = signal<number | null>(null);
+  /** Results those requests hold, counted as the alchemy studio counts them. */
+  public readonly alchemyResultCount = signal<number | null>(null);
   /**
    * Stored image requests, which is what clearing removes and what its
    * confirmation counts: a request that failed holds no picture but is still
@@ -136,6 +139,7 @@ export class StudioStorageComponent {
       return;
     }
     this.alchemyCount.set(await this.alchemyDb.countJobs());
+    this.alchemyResultCount.set(await this.alchemyDb.countResults());
     this.imageCount.set(await this.generationDb.countJobs());
     this.imagePictureCount.set(await this.generationDb.countResultPictures());
     this.civitaiCount.set(await this.civitaiCache.countModels());

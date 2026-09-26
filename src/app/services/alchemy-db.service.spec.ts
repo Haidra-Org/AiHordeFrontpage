@@ -135,6 +135,29 @@ describe('AlchemyDbService', () => {
     expect(await service.countJobs()).toBe(2);
   });
 
+  it('counts the results the stored jobs hold', async () => {
+    await service.putJob(
+      makeJob({
+        status: { state: 'done', forms: [{ form: 'caption', state: 'done' }] },
+      }),
+    );
+    await service.putJob(
+      makeJob({
+        status: {
+          state: 'done',
+          forms: [
+            { form: 'RealESRGAN_x4plus', state: 'done' },
+            { form: 'strip_background', state: 'done' },
+            { form: 'GFPGAN', state: 'processing' },
+          ],
+        },
+      }),
+    );
+    await service.putJob(makeJob());
+
+    expect(await service.countResults()).toBe(3);
+  });
+
   it('clears alchemy history without touching generation history', async () => {
     const generation = TestBed.inject(GenerationDbService);
     await generation.putJob({

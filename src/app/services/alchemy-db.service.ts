@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { DBSchema, IDBPDatabase } from 'idb';
 import { StudioUpgradeTransaction, openStudioDb } from './idb-open';
 import { StoredAlchemyImage, StoredAlchemyJob } from '../types/alchemy-job';
+import { jobResultCount } from '../helper/alchemy-job-view';
 
 /**
  * Alchemy lives in its own database rather than alongside generation history.
@@ -192,6 +193,19 @@ export class AlchemyDbService {
     }
     const db = await this.db();
     return db.count(JOBS_STORE);
+  }
+
+  /**
+   * How many results the stored jobs hold, counted as the studio counts them:
+   * every form the horde reported done, text results included.
+   */
+  public async countResults(): Promise<number> {
+    if (!this.isBrowser) {
+      return 0;
+    }
+    const db = await this.db();
+    const jobs = await db.getAll(JOBS_STORE);
+    return jobs.reduce((sum, job) => sum + jobResultCount(job), 0);
   }
 
   /**

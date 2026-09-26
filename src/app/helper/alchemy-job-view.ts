@@ -228,6 +228,19 @@ export function formStatusView(state: string): FormStatusView {
   );
 }
 
+/**
+ * How many results a job has in hand: every form the horde reports done,
+ * whether its result is text (a caption, tags) or a picture. This is the unit
+ * the tab title and the storage page count in, so a caption-only request
+ * counts one like an upscale does.
+ */
+export function jobResultCount(job: {
+  status: AlchemyStatusResponse | null;
+}): number {
+  return (job.status?.forms ?? []).filter((form) => form.state === 'done')
+    .length;
+}
+
 export function isJobSettled(job: AlchemyJob): boolean {
   if (job.notFound || job.cancelled) return true;
   const status = job.status;

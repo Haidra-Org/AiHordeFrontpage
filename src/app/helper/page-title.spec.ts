@@ -137,6 +137,37 @@ describe('page-title helpers', () => {
       expect(shown()).toBe('[studio.tab_done:5] | [app_title]');
     });
 
+    it('counts results stored after their job settled while away', () => {
+      start(true);
+      pending.set(1);
+      TestBed.tick();
+
+      look(true);
+      pending.set(0);
+      TestBed.tick();
+      finished.set(2);
+      TestBed.tick();
+
+      expect(shown()).toBe('[studio.tab_done:2] | [app_title]');
+    });
+
+    it('counts results stored before their job settled once it does', () => {
+      start(true);
+      pending.set(1);
+      TestBed.tick();
+
+      look(true);
+      finished.set(1);
+      TestBed.tick();
+      expect(shown()).toBe('[studio.tab_generating:1] | [app_title]');
+
+      pending.set(0);
+      finished.set(2);
+      TestBed.tick();
+
+      expect(shown()).toBe('[studio.tab_done:2] | [app_title]');
+    });
+
     it('does not count stored history loading while away as arrivals', () => {
       start(true);
       look(true);

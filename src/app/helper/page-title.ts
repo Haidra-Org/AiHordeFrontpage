@@ -42,6 +42,11 @@ export function setPageTitle(
  * What arrived is counted in jobs by default. A studio whose jobs each come back
  * with several pictures passes `finished`, its running count of what came back,
  * and the note then counts what that count grew by while the tab was hidden.
+ * That count can move apart from the running one: a studio that stores a
+ * result's bytes after the job has settled raises it later, and one whose job
+ * settles form by form raises it earlier. Growth while hidden is therefore held
+ * until a job leaves the running set in the same absence, and counted straight
+ * away after one has.
  *
  * Call from a constructor or field initializer, where injection is available.
  * The whole title is set here, so a page using this does not set one elsewhere.
@@ -62,6 +67,10 @@ export function useStudioTitle(
   let awayDone = 0;
   let lastPending = 0;
   let lastFinished: number | null = null;
+  /** Growth in `finished` while hidden that no departing job has vouched for. */
+  let heldFinished = 0;
+  /** Whether a job has left the running set since the tab was hidden. */
+  let departedAway = false;
   /** Which reading is the current one, so a slow one cannot overwrite it. */
   let reading = 0;
 
@@ -108,15 +117,29 @@ export function useStudioTitle(
     const came = finished?.();
     untracked(() => {
       // Only a job leaving the running set is an arrival. History loading
-      // from storage also raises `finished`, and a deletion lowers it.
-      const arrived = isBrowser && document.hidden && running < lastPending;
+      // from storage also raises `finished`, usually alongside the running
+      // count, and a deletion lowers it.
+      const away = isBrowser && document.hidden;
+      const arrived = away && running < lastPending;
       if (came === undefined) {
         if (arrived) {
           awayDone += lastPending - running;
         }
       } else {
-        if (arrived && lastFinished !== null && came > lastFinished) {
-          awayDone += came - lastFinished;
+        if (
+          away &&
+          running <= lastPending &&
+          lastFinished !== null &&
+          came > lastFinished
+        ) {
+          heldFinished += came - lastFinished;
+        }
+        if (arrived) {
+          departedAway = true;
+        }
+        if (departedAway) {
+          awayDone += heldFinished;
+          heldFinished = 0;
         }
         lastFinished = came;
       }
@@ -131,6 +154,8 @@ export function useStudioTitle(
         return;
       }
       awayDone = 0;
+      heldFinished = 0;
+      departedAway = false;
       render();
     };
     document.addEventListener('visibilitychange', onVisible);
@@ -139,6 +164,8 @@ export function useStudioTitle(
       // Whatever the studio was doing stops being this tab's business the
       // moment the reader leaves it, and the page they land on sets its own.
       awayDone = 0;
+      heldFinished = 0;
+      departedAway = false;
       lastPending = 0;
       lastFinished = null;
       if (names) {

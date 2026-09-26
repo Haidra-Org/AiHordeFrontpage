@@ -566,28 +566,97 @@
             ></span>
             {{ "generate.form.slow_workers_label" | transloco }}
           </label>
-          <button
-            type="button"
-            class="gs-genbtn"
-            [disabled]="!canSubmit()"
-            (click)="submit()"
-          >
-            @if (isSubmitting()) {
-              <app-icon name="spinner" class="gs-ico-sm gs-spin" />
-            } @else {
-              <app-icon name="beaker" class="gs-ico-sm" />
+          <div class="flex items-center gap-2">
+            <!-- The price, beside the button as in the image studio, so the
+                 reader can press it to see which operation costs what. Absent
+                 when the request holds something the pricing rule cannot
+                 cover. -->
+            @if (kudosEstimate(); as kudos) {
+              <div class="gs-kudos" #kudosContainer>
+                <button
+                  #kudosBtn
+                  type="button"
+                  class="gs-kudos-btn"
+                  (click)="toggleKudos()"
+                  [attr.aria-expanded]="kudosOpen()"
+                  aria-haspopup="dialog"
+                  [attr.aria-label]="
+                    'generate.form.kudos_why' | transloco: { kudos: kudos }
+                  "
+                  [title]="
+                    'generate.form.kudos_why' | transloco: { kudos: kudos }
+                  "
+                >
+                  <span class="gs-mono" aria-hidden="true">~{{ kudos }}</span>
+                  <span class="gs-kudos-unit" aria-hidden="true">{{
+                    "generate.form.kudos_unit" | transloco
+                  }}</span>
+                </button>
+                @if (kudosOpen()) {
+                  <div
+                    class="gs-kudos-pop"
+                    appEdgeAware
+                    edgeAlign="end"
+                    role="dialog"
+                    [attr.aria-label]="
+                      'generate.form.kudos_why' | transloco: { kudos: kudos }
+                    "
+                  >
+                    <p class="gs-kudos-title">
+                      {{
+                        "generate.form.kudos_why" | transloco: { kudos: kudos }
+                      }}
+                    </p>
+                    <ul class="gs-kudos-list">
+                      @for (line of kudosLines(); track line.id) {
+                        <li class="gs-kudos-item">
+                          @if (line.form) {
+                            {{
+                              line.key
+                                | transloco
+                                  : {
+                                      form:
+                                        ("alchemy.form_names." + line.form
+                                        | transloco),
+                                      kudos: line.kudos,
+                                    }
+                            }}
+                          } @else {
+                            {{ line.key | transloco: { kudos: line.kudos } }}
+                          }
+                        </li>
+                      }
+                    </ul>
+                    <p class="gs-kudos-note">
+                      {{ "generate.form.kudos_horde_owns" | transloco }}
+                    </p>
+                  </div>
+                }
+              </div>
             }
-            @if (selectedCount() === 0) {
-              {{ "alchemy.submit.button_none" | transloco }}
-            } @else {
-              {{
-                (selectedCount() === 1
-                  ? "alchemy.submit.button_one"
-                  : "alchemy.submit.button_other"
-                ) | transloco: { count: selectedCount() }
-              }}
-            }
-          </button>
+            <button
+              type="button"
+              class="gs-genbtn"
+              [disabled]="!canSubmit()"
+              (click)="submit()"
+            >
+              @if (isSubmitting()) {
+                <app-icon name="spinner" class="gs-ico-sm gs-spin" />
+              } @else {
+                <app-icon name="beaker" class="gs-ico-sm" />
+              }
+              @if (selectedCount() === 0) {
+                {{ "alchemy.submit.button_none" | transloco }}
+              } @else {
+                {{
+                  (selectedCount() === 1
+                    ? "alchemy.submit.button_one"
+                    : "alchemy.submit.button_other"
+                  ) | transloco: { count: selectedCount() }
+                }}
+              }
+            </button>
+          </div>
         </div>
         <!-- What the request still needs is said here, once: the button keeps
              the name of what it does. -->

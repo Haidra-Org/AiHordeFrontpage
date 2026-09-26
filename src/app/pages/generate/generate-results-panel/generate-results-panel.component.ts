@@ -1314,14 +1314,19 @@ export class GenerateResultsPanelComponent {
       const grid = this.tileGrid()?.nativeElement ?? null;
       this.observeGrid(grid);
     });
-    // The search field lives in the view bar, which is not drawn until a
-    // picture has finished, while the query still narrows the pending tiles.
-    // Emptying it with the bar keeps a filter the reader cannot see from
-    // hiding work.
+    // The search field, the style filter and the errors-only switch live in
+    // the view bar, which is not drawn until a picture has finished, while
+    // each still narrows the pending tiles. Resetting them with the bar keeps
+    // a filter the reader cannot see from hiding work.
     effect(() => {
-      if (!this.hasFinished() && untracked(this.query)) {
-        this.query.set('');
+      if (this.hasFinished()) {
+        return;
       }
+      untracked(() => {
+        this.query.set('');
+        this.styleFilter.set('');
+        this.errorsOnly.set(false);
+      });
     });
     // A soft delete the user walked away from still means "delete".
     effect(() => this.announceReady(this.readyImageCount()));

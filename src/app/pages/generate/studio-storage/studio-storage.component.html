@@ -18,7 +18,12 @@
         {{ "studio.storage.alchemy_title" | transloco }}
       </h2>
       <p class="gs-sublabel">
-        {{ "studio.storage.count" | transloco: { count: alchemyCount() ?? 0 } }}
+        {{
+          (alchemyResultCount() === 1
+            ? "studio.storage.result_count_one"
+            : "studio.storage.result_count_other"
+          ) | transloco: { count: alchemyResultCount() ?? 0 }
+        }}
       </p>
     </div>
     <a class="gs-btn gs-btn--dense" routerLink="/generate/alchemy">

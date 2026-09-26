@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   IMAGE_RESULT_ALCHEMY_FORMS,
   alchemyImageTiles,
+  alchemyKudosBreakdown,
   estimateAlchemyKudos,
 } from './alchemy-kudos';
 
@@ -132,5 +133,37 @@ describe('estimateAlchemyKudos', () => {
         height: 512,
       }),
     ).toBe(13);
+  });
+});
+
+describe('alchemyKudosBreakdown', () => {
+  it('parts a mixed request into form prices and the per-form adds', () => {
+    const parts = alchemyKudosBreakdown(['caption', 'RealESRGAN_x4plus'], {
+      slowWorkers: true,
+      width: 1024,
+      height: 1024,
+    });
+
+    expect(parts).toEqual({
+      forms: [
+        { form: 'caption', kudos: 1 },
+        { form: 'RealESRGAN_x4plus', kudos: 12 },
+      ],
+      completion: 2,
+      slowWorkers: 2,
+      total: 17,
+    });
+  });
+
+  it('charges nothing for slow workers when they are off', () => {
+    expect(
+      alchemyKudosBreakdown(['caption'], { slowWorkers: false })?.slowWorkers,
+    ).toBe(0);
+  });
+
+  it('is null wherever the estimate is', () => {
+    expect(
+      alchemyKudosBreakdown(['annotation'], { slowWorkers: true }),
+    ).toBeNull();
   });
 });

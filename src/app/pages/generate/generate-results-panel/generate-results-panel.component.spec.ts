@@ -2381,6 +2381,19 @@ describe('GenerateResultsPanelComponent results search field', () => {
     expect(component.visibleTiles()).toEqual(component.tiles());
     expect(component.visibleTiles().map((t) => t.jobLocalId)).toEqual(['p']);
   });
+
+  it('resets the style filter and errors-only switch when the bar goes', () => {
+    component.styleFilter.set('some-style');
+    component.toggleErrorsOnly();
+    fixture.detectChanges();
+
+    finishedJobs.set([]);
+    fixture.detectChanges();
+
+    expect(component.styleFilter()).toBe('');
+    expect(component.errorsOnly()).toBe(false);
+    expect(component.visibleTiles().map((t) => t.jobLocalId)).toEqual(['p']);
+  });
 });
 
 describe('GenerateResultsPanelComponent viewer picture description', () => {

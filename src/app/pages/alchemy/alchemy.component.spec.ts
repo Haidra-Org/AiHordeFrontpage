@@ -19,7 +19,7 @@ import { AlchemyFormName } from '../../types/generation';
 import { AlchemySubmitOutcome } from '../../services/alchemy-queue.service';
 import { AlchemyJob, toAlchemyJob } from '../../helper/alchemy-job-view';
 import { AlchemyQueueService } from '../../services/alchemy-queue.service';
-import { StoredAlchemyJob } from '../../types/alchemy-job';
+import { StoredAlchemyImage, StoredAlchemyJob } from '../../types/alchemy-job';
 import {
   ALCHEMY_USE_CASES,
   alchemyUseCaseForGroup,
@@ -27,7 +27,7 @@ import {
 import { referenceTopic } from '../../content/reference-topics';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
-import { By } from '@angular/platform-browser';
+import { By, Title } from '@angular/platform-browser';
 import { IconComponent } from '../../components/icon/icon.component';
 
 /**
@@ -55,7 +55,9 @@ class FakeAlchemyQueue {
   public readonly getThumbnail = vi.fn(() => Promise.resolve(undefined));
   public readonly getSourceImage = vi.fn(() => Promise.resolve(undefined));
   public readonly getResultImages = vi.fn(() => Promise.resolve([]));
-  public readonly getResultThumbs = vi.fn(() => Promise.resolve([]));
+  public readonly getResultThumbs = vi.fn(() =>
+    Promise.resolve<StoredAlchemyImage[]>([]),
+  );
   public whenReady(): Promise<void> {
     return Promise.resolve();
   }
@@ -87,6 +89,19 @@ class FakeAlchemyQueue {
       },
       ...jobs,
     ]);
+  }
+}
+
+/**
+ * Stands in for the browser's image loader, which jsdom never runs, so a source
+ * reads as a 1024px square as soon as it is set.
+ */
+class SquarePicture {
+  public readonly naturalWidth = 1024;
+  public readonly naturalHeight = 1024;
+  public onload: (() => void) | null = null;
+  public set src(_value: string) {
+    queueMicrotask(() => this.onload?.());
   }
 }
 
@@ -886,6 +901,111 @@ describe('AlchemyComponent', () => {
     });
   });
 
+  describe('tab title', () => {
+    afterEach(() => {
+      Reflect.deleteProperty(document, 'hidden');
+    });
+
+    it('counts the results of jobs that finished while the tab was away', () => {
+      const translator = TestBed.inject(TranslatorService);
+      vi.spyOn(translator, 'get').mockImplementation(
+        (key: string, params?: Record<string, unknown>) =>
+          of(params ? `${key}:${String(params['count'])}` : key),
+      );
+      queue.add('job-a', ['RealESRGAN_x4plus']);
+      queue.add('job-b', ['RealESRGAN_x4plus', 'GFPGAN']);
+      TestBed.tick();
+
+      Object.defineProperty(document, 'hidden', {
+        configurable: true,
+        get: () => true,
+      });
+      queue.stored.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          done: true,
+          status: {
+            state: 'done',
+            forms: job.forms.map((form) => ({ form, state: 'done' })),
+          },
+          storedResultForms: [...job.forms],
+        })),
+      );
+      TestBed.tick();
+
+      expect(component.finishedResultsCount()).toBe(3);
+      expect(TestBed.inject(Title).getTitle()).toMatch(/^studio\.tab_done:3 /);
+    });
+  });
+
+  describe('kudos estimate', () => {
+    beforeEach(() => {
+      vi.stubGlobal('Image', SquarePicture);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    async function withSquareSource(): Promise<void> {
+      component.onSourceImage('https://example.com/i.png');
+      TestBed.tick();
+      await Promise.resolve();
+    }
+
+    it('prices an upscale by the tiles the picture covers', async () => {
+      await withSquareSource();
+      select('RealESRGAN_x4plus');
+
+      // Four 512px tiles at three each, then one for completion and one for
+      // letting slow workers take it.
+      expect(component.kudosEstimate()).toBe(14);
+    });
+
+    it('quotes nothing when a control map is asked for', async () => {
+      await withSquareSource();
+      select('RealESRGAN_x4plus', 'annotation');
+
+      expect(component.kudosEstimate()).toBeNull();
+      expect(component.kudosLines()).toEqual([]);
+    });
+
+    it('quotes nothing for a picture-priced form before the size is known', () => {
+      component.onSourceImage('https://example.com/i.png');
+      select('RealESRGAN_x4plus');
+
+      expect(component.kudosEstimate()).toBeNull();
+    });
+
+    it('breaks the figure into rows that sum to it', async () => {
+      await withSquareSource();
+      select('caption', 'RealESRGAN_x4plus');
+
+      const lines = component.kudosLines();
+      expect(lines.map((line) => line.id)).toEqual([
+        'form:caption',
+        'form:RealESRGAN_x4plus',
+        'completion',
+        'slow-workers',
+      ]);
+      expect(lines.reduce((sum, line) => sum + line.kudos, 0)).toBe(
+        component.kudosEstimate(),
+      );
+    });
+
+    it('drops the slow-worker row when slow workers are off', async () => {
+      await withSquareSource();
+      select('caption');
+      component.toggleSlowWorkers();
+
+      expect(component.kudosLines().map((line) => line.id)).toEqual([
+        'form:caption',
+        'completion',
+      ]);
+      expect(component.kudosEstimate()).toBe(2);
+    });
+  });
+
   describe('cancelJob', () => {
     it('asks the queue to cancel the job behind the shown id', () => {
       queue.add('job-c');
@@ -945,6 +1065,43 @@ describe('AlchemyComponent developer surface (rendered)', () => {
   });
 
   const text = (): string => fixture.nativeElement.textContent ?? '';
+
+  describe('kudos button', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    async function priced(...forms: AlchemyFormName[]): Promise<void> {
+      vi.stubGlobal('Image', SquarePicture);
+      component.onSourceImage('https://example.com/i.png');
+      for (const form of forms) component.toggleForm(form);
+      fixture.detectChanges();
+      await Promise.resolve();
+      fixture.detectChanges();
+    }
+
+    it('quotes the request beside the submit button and lists its parts', async () => {
+      await priced('RealESRGAN_x4plus');
+
+      const button: HTMLButtonElement =
+        fixture.nativeElement.querySelector('.gs-kudos-btn');
+      expect(button.textContent).toContain('~14');
+
+      button.click();
+      fixture.detectChanges();
+      const rows = fixture.nativeElement.querySelectorAll(
+        '.gs-kudos-pop .gs-kudos-item',
+      );
+      expect(rows.length).toBe(3);
+      expect(rows[0].textContent).toContain('alchemy.kudos.line_form');
+    });
+
+    it('renders nothing when a control map is asked for', async () => {
+      await priced('annotation');
+
+      expect(fixture.nativeElement.querySelector('.gs-kudos')).toBeNull();
+    });
+  });
 
   it('costs the tool no standing row for the documentation', () => {
     expect(fixture.nativeElement.querySelector('.gs-devtabs')).toBeNull();

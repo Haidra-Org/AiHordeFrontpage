@@ -77,10 +77,17 @@ import {
 import {
   AlchemyJob,
   isJobSettled,
+  jobResultCount,
   jobStateView,
 } from '../../helper/alchemy-job-view';
 import { StudioImageDropDirective } from '../../helper/studio-image-drop.directive';
 import { PanelSize, cyclePanelSize } from '../generate/generate-form.model';
+import { EdgeAwarePopoverDirective } from '../../directives/edge-aware-popover.directive';
+import {
+  AlchemyKudosBreakdown,
+  alchemyKudosBreakdown,
+} from '../../helper/alchemy-kudos';
+import { toRenderableImageSource } from '../../helper/generation-image';
 
 /** The key the developer surface documents an anonymous call with. */
 const ANONYMOUS_API_KEY = '0000000000';
@@ -97,6 +104,21 @@ const GALLERY_DEFAULT_PER_ROW = 4;
 const VIEW_MODE_OPTIONS = ['detail', 'gallery', 'table'] as const;
 const VIEW_MODE_KEY = 'aihorde.alchemy.view';
 const VIEW_MODE_DEFAULT: AlchemyViewMode = 'detail';
+
+/** A picture's size in pixels. */
+interface PictureSize {
+  width: number;
+  height: number;
+}
+
+/** One row of the price breakdown beside the submit button. */
+export interface AlchemyKudosLine {
+  id: string;
+  key: string;
+  kudos: number;
+  /** The form the row prices, whose name the row carries; null for an add. */
+  form: string | null;
+}
 
 type AlchemyViewMode = (typeof VIEW_MODE_OPTIONS)[number];
 
@@ -179,6 +201,7 @@ interface AlchemyOperationGroup {
     GsSheetComponent,
     FullscreenToggleComponent,
     NetworkStatusComponent,
+    EdgeAwarePopoverDirective,
   ],
   templateUrl: './alchemy.component.html',
   host: {
@@ -548,6 +571,70 @@ export class AlchemyComponent {
   >(['canny']);
   public readonly slowWorkers = signal(true);
 
+  /**
+   * The source picture's size, which the forms priced by area need. The picker
+   * hands over encoded bytes or a link rather than a size, so each source is
+   * loaded once to read it, and this stays null until that load answers.
+   */
+  private readonly sourceSize = signal<PictureSize | null>(null);
+
+  /**
+   * What the request would cost, taken apart by form. The alchemy queue has no
+   * dry run, so the horde's pricing rule is applied here; null when nothing is
+   * selected or the request holds something that rule cannot price, and the
+   * page then quotes nothing rather than a guess.
+   */
+  private readonly kudosBreakdown = computed<AlchemyKudosBreakdown | null>(
+    () => {
+      const forms = [...this.selectedForms()];
+      if (forms.length === 0) {
+        return null;
+      }
+      const size = this.sourceSize();
+      return alchemyKudosBreakdown(forms, {
+        slowWorkers: this.slowWorkers(),
+        width: size?.width,
+        height: size?.height,
+      });
+    },
+  );
+  public readonly kudosEstimate = computed(
+    () => this.kudosBreakdown()?.total ?? null,
+  );
+  /** The breakdown's rows, which sum to {@link kudosEstimate}. */
+  public readonly kudosLines = computed<AlchemyKudosLine[]>(() => {
+    const parts = this.kudosBreakdown();
+    if (!parts) {
+      return [];
+    }
+    const lines: AlchemyKudosLine[] = parts.forms.map((line) => ({
+      id: `form:${line.form}`,
+      key: 'alchemy.kudos.line_form',
+      kudos: line.kudos,
+      form: line.form,
+    }));
+    lines.push({
+      id: 'completion',
+      key: 'alchemy.kudos.line_completion',
+      kudos: parts.completion,
+      form: null,
+    });
+    if (parts.slowWorkers > 0) {
+      lines.push({
+        id: 'slow-workers',
+        key: 'alchemy.kudos.line_slow_workers',
+        kudos: parts.slowWorkers,
+        form: null,
+      });
+    }
+    return lines;
+  });
+  public readonly kudosOpen = signal(false);
+  private readonly kudosRef =
+    viewChild<ElementRef<HTMLElement>>('kudosContainer');
+  private readonly kudosBtn =
+    viewChild<ElementRef<HTMLButtonElement>>('kudosBtn');
+
   public readonly isSubmitting = signal(false);
   /**
    * Tracked requests come from the queue service rather than this page, so a
@@ -685,6 +772,17 @@ export class AlchemyComponent {
   public readonly hasAnyJobs = computed(() => this.jobs().length > 0);
 
   /**
+   * Results the finished jobs hold, which is what the tab title counts
+   * arrivals in: a request for several operations comes back as several
+   * results.
+   */
+  public readonly finishedResultsCount = computed(() =>
+    this.jobs()
+      .filter(isJobSettled)
+      .reduce((sum, job) => sum + jobResultCount(job), 0),
+  );
+
+  /**
    * True below the studio's tablet breakpoint. Drives the responsive split
    * between the desktop rail beside a detail pane and the mobile sticky carousel
    * above an inline detail block. Kept in sync with a media query.
@@ -737,7 +835,11 @@ export class AlchemyComponent {
   );
 
   constructor() {
-    useStudioTitle('alchemy.title', this.pendingJobsCount);
+    useStudioTitle(
+      'alchemy.title',
+      this.pendingJobsCount,
+      this.finishedResultsCount,
+    );
     setPageMeta({
       titleKey: 'alchemy.title',
       descriptionKey: 'alchemy.intro',
@@ -793,6 +895,29 @@ export class AlchemyComponent {
         ? `${job.localId}::${job.storedResultForms.join(',')}`
         : '';
       void this.loadResultImages(job?.localId, key);
+    });
+
+    effect((onCleanup) => {
+      const source = this.sourceImage();
+      this.sourceSize.set(null);
+      if (!source || !isPlatformBrowser(this.platformId)) {
+        return;
+      }
+      const picture = new Image();
+      let current = true;
+      picture.onload = () => {
+        if (current) {
+          this.sourceSize.set({
+            width: picture.naturalWidth,
+            height: picture.naturalHeight,
+          });
+        }
+      };
+      picture.src = toRenderableImageSource(source);
+      onCleanup(() => {
+        current = false;
+        picture.onload = null;
+      });
     });
 
     this.destroyRef.onDestroy(() => this.revokeAllSourceUrls());
@@ -1536,18 +1661,36 @@ export class AlchemyComponent {
    * something to take away on the first tap inside it.
    */
   public onDocumentPointerDown(event: PointerEvent): void {
+    const target = event.target as Element | null;
+    if (this.kudosOpen()) {
+      const anchor = this.kudosRef()?.nativeElement;
+      if (anchor && target && !anchor.contains(target)) {
+        this.closeKudos();
+      }
+    }
     if (!this.viewMenuOpen() || this.isNarrow()) return;
     const host = this.viewMenuHost()?.nativeElement;
-    const target = event.target as Element | null;
     if (host && target && !host.contains(target)) {
       this.closeViewMenu();
     }
   }
 
   public onDocumentEscape(): void {
+    if (this.kudosOpen()) {
+      this.closeKudos();
+      this.kudosBtn()?.nativeElement.focus();
+    }
     if (this.viewMenuOpen()) {
       this.closeViewMenu();
     }
+  }
+
+  public toggleKudos(): void {
+    this.kudosOpen.update((open) => !open);
+  }
+
+  public closeKudos(): void {
+    this.kudosOpen.set(false);
   }
 
   private loadViewMode(): AlchemyViewMode {

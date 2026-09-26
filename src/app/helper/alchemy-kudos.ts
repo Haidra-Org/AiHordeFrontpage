@@ -69,6 +69,65 @@ export function alchemyImageTiles(width: number, height: number): number {
   return Math.ceil(width / TILE_EDGE) * Math.ceil(height / TILE_EDGE);
 }
 
+/** What one form costs before the per-form adds. */
+export interface AlchemyFormKudos {
+  form: string;
+  kudos: number;
+}
+
+/**
+ * A priced request taken apart, so a surface can show the reader which part of
+ * the figure each choice is responsible for. The parts sum to the estimate.
+ */
+export interface AlchemyKudosBreakdown {
+  forms: AlchemyFormKudos[];
+  /** The completion charge, once per form. */
+  completion: number;
+  /** The slow-worker charge, once per form; zero when slow workers are off. */
+  slowWorkers: number;
+  total: number;
+}
+
+/**
+ * The parts of what a set of alchemy forms would cost on one picture, or null
+ * whenever {@link estimateAlchemyKudos} is.
+ */
+export function alchemyKudosBreakdown(
+  forms: readonly string[],
+  options: AlchemyKudosOptions,
+): AlchemyKudosBreakdown | null {
+  const priced: AlchemyFormKudos[] = [];
+  for (const form of forms) {
+    if (UNPRICED_FORMS.has(form)) {
+      return null;
+    }
+    if (IMAGE_RESULT_FORM_SET.has(form)) {
+      if (!isUsableSize(options.width) || !isUsableSize(options.height)) {
+        return null;
+      }
+      priced.push({
+        form,
+        kudos:
+          alchemyImageTiles(options.width, options.height) *
+          IMAGE_RESULT_KUDOS_PER_TILE,
+      });
+    } else {
+      priced.push({ form, kudos: FORM_KUDOS.get(form) ?? DEFAULT_FORM_KUDOS });
+    }
+  }
+  const completion = priced.length * COMPLETION_KUDOS;
+  const slowWorkers = options.slowWorkers
+    ? priced.length * SLOW_WORKER_KUDOS
+    : 0;
+  const base = priced.reduce((sum, line) => sum + line.kudos, 0);
+  return {
+    forms: priced,
+    completion,
+    slowWorkers,
+    total: base + completion + slowWorkers,
+  };
+}
+
 /**
  * What a set of alchemy forms would cost on one picture, or null when the
  * request holds something this cannot price: a control map, or a form charged
@@ -79,24 +138,5 @@ export function estimateAlchemyKudos(
   forms: readonly string[],
   options: AlchemyKudosOptions,
 ): number | null {
-  const perForm =
-    COMPLETION_KUDOS + (options.slowWorkers ? SLOW_WORKER_KUDOS : 0);
-  let total = 0;
-  for (const form of forms) {
-    if (UNPRICED_FORMS.has(form)) {
-      return null;
-    }
-    if (IMAGE_RESULT_FORM_SET.has(form)) {
-      if (!isUsableSize(options.width) || !isUsableSize(options.height)) {
-        return null;
-      }
-      total +=
-        alchemyImageTiles(options.width, options.height) *
-        IMAGE_RESULT_KUDOS_PER_TILE;
-    } else {
-      total += FORM_KUDOS.get(form) ?? DEFAULT_FORM_KUDOS;
-    }
-    total += perForm;
-  }
-  return total;
+  return alchemyKudosBreakdown(forms, options)?.total ?? null;
 }
