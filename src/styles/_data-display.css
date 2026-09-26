@@ -1618,19 +1618,28 @@
     color: var(--hd-muted);
   }
 
-  /* The menu primitive carries the plane; where it opens is the card's
-     business. */
+  /* The menu primitive carries the plane; where it opens, and how wide, is
+     the card's business: a short list of actions at its own width rather
+     than the primitive's reading-width column. */
   .worker-status-dropdown {
     position: absolute;
     top: 100%;
     left: 0;
     z-index: 30;
-    min-width: 10rem;
+    width: max-content;
+    min-width: 12rem;
     margin-top: var(--hd-space-1);
   }
 
+  /* The primitive stacks an item as title over description. These items are
+     one glyph and one label, so they run as a row, with the quieter help
+     press kept on the same line at the far end. */
   .worker-status-dropdown-item {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--hd-space-2);
     width: 100%;
+    white-space: nowrap;
     text-align: left;
   }
 
