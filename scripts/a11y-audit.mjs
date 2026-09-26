@@ -22,6 +22,7 @@ const base = option("--base", "http://localhost:4209");
 const outDir = option("--out", path.join(os.tmpdir(), "aihorde-a11y"));
 
 const ROUTES = [
+  "/",
   "/generate/image",
   "/generate/alchemy",
   "/generate/storage",
@@ -38,6 +39,7 @@ const ROUTES = [
   "/docs/alchemy/enlarge",
   "/details/models",
   "/details/styles",
+  "/details/leaderboard",
   "/faq",
   "/sponsors",
 ];

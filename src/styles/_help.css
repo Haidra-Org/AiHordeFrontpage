@@ -22,13 +22,12 @@
     margin-left: 0.25rem;
   }
 
+  /* The glyph is the only sign that help is there, so it is held to the 3:1
+     graphic floor in both themes: the muted ink token flips with the theme,
+     and fading it with opacity would take it back under the floor. */
   .info-tooltip-icon {
-    @apply w-4 h-4 text-gray-400 transition-all duration-150;
-    opacity: 0.6;
-  }
-
-  .dark .info-tooltip-icon {
-    @apply text-gray-500;
+    @apply w-4 h-4 transition-all duration-150;
+    color: var(--hd-muted);
   }
 
   .info-tooltip-trigger:hover .info-tooltip-icon,
@@ -388,6 +387,15 @@
     cursor: pointer;
     font-size: 1.125rem;
     font-weight: 700;
+  }
+
+  /* The 44px floor for a finger; a mouse keeps the smaller button. The
+     floating band is sized from the 3rem scroll-to-top control, so it still
+     clears this one. */
+  @media (pointer: coarse) {
+    .glossary-fab {
+      @apply w-11 h-11;
+    }
   }
 
   .glossary-fab:hover {

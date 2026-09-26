@@ -185,8 +185,83 @@
       0 0 0 2px var(--color-brand-purple),
       0 0 0 4px rgba(147, 51, 234, 0.1);
   }
-  .github-widget span {
-    height: 20px; /* Match the height of the GitHub logo for vertical balance */
+  /* The star badge keeps the proportions of GitHub's own button, which stood
+     here before: 20px tall beside the 20px logo, small bold text, a bordered
+     label segment and an attached count segment. One link, so a keyboard
+     reader passes it in one stop. */
+  .github-star-badge {
+    @apply inline-flex items-stretch;
+    height: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 14px;
+    color: var(--color-gray-900);
+    text-decoration: none;
+    border-radius: 0.25em;
+    @apply focus:outline-none;
+  }
+  .github-star-badge:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--color-brand-purple),
+      0 0 0 4px rgba(147, 51, 234, 0.1);
+  }
+  .github-star-badge__label,
+  .github-star-badge__count {
+    @apply inline-flex items-center;
+    padding: 2px 5px;
+    border: 1px solid var(--color-gray-300);
+  }
+  .github-star-badge__label {
+    gap: 4px;
+    border-radius: 0.25em;
+    background: linear-gradient(to bottom, #fafbfc, #ebf0f4);
+  }
+  .github-star-badge__count {
+    margin-left: -1px;
+    border-radius: 0 0.25em 0.25em 0;
+    background: white;
+  }
+  .github-star-badge__label + .github-star-badge__count {
+    margin-left: 4px;
+    border-radius: 0.25em;
+    position: relative;
+  }
+  .github-star-badge__label + .github-star-badge__count::before {
+    /* The pointer GitHub draws from the count back to its button. */
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -5px;
+    width: 8px;
+    height: 8px;
+    transform: translateY(-50%) rotate(45deg);
+    border-left: 1px solid var(--color-gray-300);
+    border-bottom: 1px solid var(--color-gray-300);
+    background: inherit;
+  }
+  .github-star-badge__icon {
+    width: 14px;
+    height: 14px;
+  }
+  .github-star-badge:hover .github-star-badge__label {
+    background: linear-gradient(to bottom, #f3f4f6, #e1e4e8);
+  }
+  .dark .github-star-badge {
+    color: var(--color-gray-100);
+  }
+  .dark .github-star-badge__label,
+  .dark .github-star-badge__count,
+  .dark .github-star-badge__label + .github-star-badge__count::before {
+    border-color: rgba(240, 246, 252, 0.15);
+  }
+  .dark .github-star-badge__label {
+    background: #21262d;
+  }
+  .dark .github-star-badge:hover .github-star-badge__label {
+    background: #30363d;
+  }
+  .dark .github-star-badge__count {
+    background: #0d1117;
   }
 }
 

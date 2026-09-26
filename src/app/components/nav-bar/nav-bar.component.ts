@@ -14,7 +14,7 @@ import {
   viewChild,
   viewChildren,
 } from '@angular/core';
-import { DOCUMENT, NgOptimizedImage } from '@angular/common';
+import { DecimalPipe, DOCUMENT, NgOptimizedImage } from '@angular/common';
 import {
   NavigationEnd,
   Router,
@@ -40,6 +40,20 @@ import {
   planNavOverflow,
 } from './nav-items';
 
+const GITHUB_REPO_API = 'https://api.github.com/repos/Haidra-Org/AI-Horde';
+const GITHUB_STARS_STORAGE_KEY = 'aihorde.nav.github_stars';
+
+function readStoredStars(): number | null {
+  try {
+    const raw = sessionStorage.getItem(GITHUB_STARS_STORAGE_KEY);
+    if (raw === null) return null;
+    const stars = Number(raw);
+    return Number.isFinite(stars) ? stars : null;
+  } catch {
+    return null;
+  }
+}
+
 @Component({
   selector: 'app-nav-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +61,7 @@ import {
     RouterLink,
     RouterLinkActive,
     NgOptimizedImage,
+    DecimalPipe,
     TranslocoPipe,
     StickyHeaderDirective,
     IconComponent,
@@ -65,6 +80,21 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
   public readonly themeService = inject(ThemeService);
   public readonly auth = inject(AuthService);
   public readonly navNotifications = inject(NavNotificationService);
+
+  // ── GitHub star link ──
+  /**
+   * The repository's star count, or null until it is known. A plain link
+   * replaces GitHub's buttons script, whose injected iframe put two unlabelled
+   * tab stops ahead of the navigation.
+   */
+  public readonly githubStars = signal<number | null>(null);
+  public readonly githubStarLabelKey = computed(() => {
+    const stars = this.githubStars();
+    if (stars === null) return 'nav.github_star_label';
+    return stars === 1
+      ? 'nav.github_star_label_count_one'
+      : 'nav.github_star_label_count_other';
+  });
 
   public readonly navItems = NAV_ITEMS;
   public readonly overflowDropdownId = NAV_OVERFLOW_DROPDOWN_ID;
@@ -260,10 +290,9 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return !!this.mobileSubmenus()[dropdownId];
   }
 
-  // ── GitHub buttons script ──
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
-      this.loadGitHubButtonsScript();
+      void this.loadGitHubStars();
     }
   }
 
@@ -361,18 +390,33 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private loadGitHubButtonsScript(): void {
-    const scriptId = 'github-buttons-script';
-    if (this.document.getElementById(scriptId)) return;
-    window.setTimeout(() => {
-      if (this.document.getElementById(scriptId)) return;
-      const script = this.document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://buttons.github.io/buttons.js';
-      script.async = true;
-      script.defer = true;
-      this.document.head.appendChild(script);
-    }, 0);
+  /**
+   * Reads the star count once per browser session. The unauthenticated GitHub
+   * API allows sixty requests an hour per address, so the count is kept in
+   * session storage rather than asked for on every page load. Any failure
+   * leaves the count out; the link works without it.
+   */
+  private async loadGitHubStars(): Promise<void> {
+    const cached = readStoredStars();
+    if (cached !== null) {
+      this.githubStars.set(cached);
+      return;
+    }
+    try {
+      const response = await fetch(GITHUB_REPO_API);
+      if (!response.ok) return;
+      const body = (await response.json()) as { stargazers_count?: unknown };
+      const stars = body.stargazers_count;
+      if (typeof stars !== 'number' || !Number.isFinite(stars)) return;
+      this.githubStars.set(stars);
+      try {
+        sessionStorage.setItem(GITHUB_STARS_STORAGE_KEY, String(stars));
+      } catch {
+        // Storage can be unavailable (private modes, blocked site data).
+      }
+    } catch {
+      // Offline or blocked: the link renders without a count.
+    }
   }
 
   private disableBodyScroll(): void {

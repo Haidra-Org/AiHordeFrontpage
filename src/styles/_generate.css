@@ -217,6 +217,11 @@
   --gs-seg-active-ink: var(--hd-seg-active-ink);
   --gs-seg-inactive-border: var(--hd-pop-border);
   --gs-switch-off: var(--hd-switch-off);
+  /* A disabled control's label and fill. Fading the enabled colours with
+     opacity took an already muted label under 3:1; these are chosen to hold
+     3:1 on the canvas, the panel and the card of both dark ramps as well. */
+  --gs-ink-disabled: #7c828c;
+  --gs-fill-disabled: var(--hd-seg-track);
   /* The tutorials' own hue: a warm amber that belongs to learning alone, so a
      door that starts a tutorial, the dock that runs one and the frame that says
      one is running all read as one family, apart from the accent and from any
@@ -318,6 +323,7 @@
 }
 
 .dark .gen-studio {
+  --gs-ink-disabled: #767d88;
   --gs-tut: #fbbf24;
   --gs-tut-fill-ink: #111827;
   --gs-tut-ink: #fcd34d;
@@ -2567,9 +2573,17 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-browse-btn:disabled,
 .gen-studio .gs-genbtn:disabled,
 .gen-studio .gs-batch-btn:disabled {
-  opacity: 0.55;
+  color: var(--gs-ink-disabled);
   cursor: not-allowed;
   box-shadow: none;
+}
+.gen-studio .gs-btn:disabled,
+.gen-studio .gs-btn-primary:disabled,
+.gen-studio .gs-btn-tonal:disabled,
+.gen-studio .gs-browse-btn:disabled,
+.gen-studio .gs-genbtn:disabled {
+  background: var(--gs-fill-disabled);
+  border-color: var(--gs-fill-disabled);
 }
 .gen-studio .gs-btn:focus-visible,
 .gen-studio .gs-btn-primary:focus-visible,
@@ -3648,7 +3662,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink);
 }
 .gen-studio .gs-download-all:disabled {
-  opacity: 0.45;
+  color: var(--gs-ink-disabled);
   cursor: not-allowed;
 }
 /* Justified rows, so mixed shapes do not leave dead space: a row is as tall as
@@ -4044,6 +4058,11 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-download-all--danger:hover:not(:disabled) {
   color: #b91c1c;
+}
+/* Sits after the dark danger rule, which is as specific and would otherwise
+   keep a disabled danger action red. */
+.gen-studio .gs-download-all--danger:disabled {
+  color: var(--gs-ink-disabled);
 }
 
 /* ------- results view bar (density / NSFW / sort / filter) ---------- */
@@ -19641,12 +19660,12 @@ html:has(app-gs-sheet) {
   .gen-studio .gs-se-head-copy .gs-beta-chip {
     display: none;
   }
+  /* The line states what a stroke will do, so it wraps rather than losing
+     its end to an ellipsis on a phone. */
   .gen-studio .gs-se-ink-mode {
     max-width: 100%;
     padding: 2px 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    border-radius: var(--gs-radius-md);
   }
   .gen-studio .gs-se-rail {
     order: 2;

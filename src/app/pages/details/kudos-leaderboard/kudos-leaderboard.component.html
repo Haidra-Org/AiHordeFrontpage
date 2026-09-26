@@ -2,7 +2,7 @@
   <!-- Header with Refresh -->
   <button
     type="button"
-    class="btn-source-control max-w-min align-middle"
+    class="hd-btn hd-btn--dense max-w-min align-middle"
     (click)="loadLeaderboard()"
     [disabled]="loading()"
   >
@@ -53,7 +53,7 @@
     <!-- Top Cards Row: Appreciation + Find My Rank -->
     <div class="leaderboard-top-cards">
       <!-- Appreciation Message -->
-      <div class="card card-bg-secondary">
+      <div class="hd-card">
         <div class="flex items-start gap-3">
           <app-icon
             class="icon-sm text-brand-purple shrink-0 mt-0.5"
@@ -63,7 +63,7 @@
             <h3 class="font-semibold text-primary">
               {{ "details.leaderboard.appreciation_title" | transloco }}
             </h3>
-            <p class="text-secondary text-sm mt-1">
+            <p class="text-(--hd-muted) text-sm mt-1">
               {{ "details.leaderboard.appreciation_message" | transloco }}
             </p>
           </div>
@@ -71,13 +71,13 @@
       </div>
 
       <!-- Find My Rank Section -->
-      <div class="card card-bg-secondary">
+      <div class="hd-card">
         <div class="stack-sm">
           <div class="text-center">
             <h3 class="heading-card">
               {{ "details.leaderboard.find_my_rank" | transloco }}
             </h3>
-            <p class="text-secondary text-sm">
+            <p class="text-(--hd-muted) text-sm">
               {{ "details.leaderboard.find_my_rank_description" | transloco }}
             </p>
           </div>
@@ -186,8 +186,8 @@
         </div>
 
         <!-- Footer Note -->
-        <div class="card card-bg-secondary">
-          <p class="text-secondary text-sm text-center">
+        <div class="hd-card">
+          <p class="text-(--hd-muted) text-sm text-center">
             {{ "details.leaderboard.footer_note" | transloco }}
           </p>
         </div>

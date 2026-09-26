@@ -47,14 +47,24 @@
               />
             </a>
             <a
-              class="github-button"
+              class="github-star-badge"
               href="https://github.com/Haidra-org/AI-Horde"
-              data-color-scheme="no-preference: light; light: light; dark: dark;"
-              data-icon="octicon-star"
-              data-show-count="true"
-              aria-label="Star Haidra-org/AI-Horde on GitHub"
-              >Star</a
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="
+                githubStarLabelKey() | transloco: { count: githubStars() }
+              "
             >
+              <span class="github-star-badge__label" aria-hidden="true">
+                <app-icon name="star" class="github-star-badge__icon" />
+                {{ "nav.github_star" | transloco }}
+              </span>
+              @if (githubStars() !== null) {
+                <span class="github-star-badge__count" aria-hidden="true">{{
+                  githubStars() | number
+                }}</span>
+              }
+            </a>
           </div>
         </div>
       </div>
