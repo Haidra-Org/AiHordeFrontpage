@@ -372,8 +372,10 @@ describe('reference index', () => {
   it('leaves the settings the book has no page for out of the index', () => {
     const grouped = new Set(SETTINGS_INDEX.flatMap((group) => group.ids));
 
-    expect(grouped.has('model')).toBe(false);
     expect(grouped.has('post')).toBe(false);
+    // The model used to be one of these. Its page also carries styles, which
+    // have no control of their own, so the index has to list it.
+    expect(grouped.has('model')).toBe(true);
     // Embeddings used to sit here as an undocumented setting. They have a page
     // now, so the index has to list them like any other.
     expect(grouped.has('tis')).toBe(true);

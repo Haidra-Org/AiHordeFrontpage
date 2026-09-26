@@ -21,7 +21,22 @@ describe('reference topics', () => {
   });
 
   it('reports a setting the book has no page for as having no entry', () => {
-    expect(referenceTopic('model')?.hasEntry).toBe(false);
+    expect(referenceTopic('post')?.hasEntry).toBe(false);
+  });
+
+  it('gives the model a written entry with no strip', () => {
+    // No sweep varies the model: a strip holds the model fixed so that one
+    // setting can move, which leaves nothing to show for the model itself.
+    const topic = referenceTopic('model');
+    expect(topic?.hasEntry).toBe(true);
+    expect(topic?.bodyKey).toBe('generate.reference.model.body');
+    expect(topic?.strip).toBeNull();
+    expect(topic?.alsoStrips).toEqual([]);
+    expect(topic?.links.map((link) => link.routerLink)).toEqual([
+      '/details/models',
+      '/details/styles',
+    ]);
+    expect(topic?.glossaryTerms).toEqual(['baseline', 'style']);
   });
 
   it('answers for an alchemy use case with the alchemy registry', () => {

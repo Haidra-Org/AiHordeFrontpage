@@ -313,6 +313,12 @@ const MODELS_LINK: SettingLink = {
   routerLink: '/details/models',
 };
 
+/** Where a reader goes to see the community styles the horde applies. */
+const STYLES_LINK: SettingLink = {
+  labelKey: 'generate.reference.link_styles',
+  routerLink: '/details/styles',
+};
+
 /**
  * Where the thirty-three guidance modes are shown rather than listed. The
  * choice between them is a comparison, and the entry here is what the picker
@@ -353,8 +359,8 @@ function alchemyLink(useCaseId: string): SettingLink {
  * not already state.
  *
  * A setting with no `reference` is one the studio can name but the book has no
- * page for: the model, the list of textual inversions, the post-processor
- * picker. A setting with no `labelKey` is named by its `?` note's title.
+ * page for, such as the post-processor picker. A setting with no `labelKey` is
+ * named by its `?` note's title.
  *
  * Not every entry is a row of the panel. The prompt and size chapters document
  * what the fields around them are for, so they include ideas the reader can
@@ -414,6 +420,14 @@ export const SETTINGS: readonly SettingEntry[] = [
     id: 'model',
     section: 'model',
     labelKey: 'generate.tutorials.recipe_model',
+    reference: {
+      // Styles have no form control for a page of their own to link back to,
+      // and a style names a model, so the model page carries them.
+      tradeoffs: { speed: 'varies', kudos: 'varies' },
+      related: ['requirements', 'native_resolution', 'loras'],
+      links: [MODELS_LINK, STYLES_LINK],
+      glossaryTerms: ['baseline', 'style'],
+    },
   },
   {
     id: 'loras',

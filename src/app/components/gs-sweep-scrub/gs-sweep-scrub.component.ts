@@ -51,6 +51,7 @@ import {
 } from '../gs-pixel-badge/gs-pixel-badge.component';
 import { docsSettingLink } from '../../content/docs-links';
 import { useScrollLock } from '../../helper/scroll-lock';
+import { baselineLabel } from '../../pages/details/models/model-labels';
 
 /**
  * The nine copies a `tile_repeat_3x3` frame is laid out as. Three across rather
@@ -61,21 +62,6 @@ const TILE_CELLS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 /** Where the whole answer about samplers lives, for the folded note's last line. */
 const SAMPLER_REFERENCE = docsSettingLink('sampler');
-
-/**
- * How a model family reads on the provenance line. The library records the
- * baseline in the API's own vocabulary; a reader gets the name the panel's
- * dimension presets already taught them, and an unlisted family reads as the
- * recorded token rather than being hidden.
- */
-const BASELINE_LABELS: Record<string, string> = {
-  stable_diffusion_1: 'SD 1.5',
-  stable_diffusion_2_512: 'SD 2',
-  stable_diffusion_2_768: 'SD 2 (768)',
-  stable_diffusion_xl: 'SDXL',
-  stable_cascade: 'Stable Cascade',
-  flux_1: 'Flux',
-};
 
 /** What each key does on the stage and the tick rail, in stops or as an end. */
 const STEP_KEYS: Readonly<Record<string, number | 'first' | 'last'>> = {
@@ -2348,7 +2334,7 @@ export class GsSweepScrubComponent {
     if (!model) {
       return null;
     }
-    const family = BASELINE_LABELS[model.baseline] ?? model.baseline;
+    const family = baselineLabel(model.baseline);
     return `${model.name} · ${family}`;
   });
 
