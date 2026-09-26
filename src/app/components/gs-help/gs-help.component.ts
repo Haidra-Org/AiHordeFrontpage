@@ -65,78 +65,82 @@ import { IconComponent } from '../icon/icon.component';
       >
     </button>
     @if (isOpen()) {
-      <p class="gs-help-note gs-fadeup" role="note" [id]="noteId()">
-        {{ bodyKey() | transloco }}
-      </p>
-      <!-- Only where there is something to see. The reference has to have a
+      <!-- One note: the words, the picture offer where there is one, and the
+           pages to read on. Whatever row holds the trigger lays out a single
+           block, so the note reads the same under a card title, a field label
+           and a group head. -->
+      <div class="gs-help-note gs-fadeup" role="note" [id]="noteId()">
+        <p class="gs-help-note-body">{{ bodyKey() | transloco }}</p>
+        <!-- Only where there is something to see. The reference has to have a
            page for the setting, and the library has to have published a picture
            of it changing: "See it in action" is a promise, and an entry with
            nothing but prose in it does not keep it. -->
-      @if (canSeeIt()) {
-        <button
-          type="button"
-          class="gs-help-see"
-          [class]="identityClass()"
-          (click)="seeIt($event)"
-        >
-          <!-- The capsule's grammar, at the only size a field note has room
+        @if (canSeeIt()) {
+          <button
+            type="button"
+            class="gs-help-see"
+            [class]="identityClass()"
+            (click)="seeIt($event)"
+          >
+            <!-- The capsule's grammar, at the only size a field note has room
                for: two of the strip's own frames on the stage, the badge that
                says what kind of thing this is, and the chevron. A full capsule
                would be wider than the row it hangs under. -->
-          @if (peek().length > 0) {
-            <span class="gs-cap-peek" aria-hidden="true">
-              @for (frame of peek(); track $index) {
-                <img
-                  class="gs-cap-peek-frame"
-                  [src]="frame"
-                  alt=""
-                  loading="lazy"
-                />
-              }
+            @if (peek().length > 0) {
+              <span class="gs-cap-peek" aria-hidden="true">
+                @for (frame of peek(); track $index) {
+                  <img
+                    class="gs-cap-peek-frame"
+                    [src]="frame"
+                    alt=""
+                    loading="lazy"
+                  />
+                }
+              </span>
+            }
+            <span class="gs-cap-text">
+              <span class="gs-cap-eyebrow">
+                <span class="gs-cap-dot" aria-hidden="true"></span>
+                @if (sectionLabelKey(); as key) {
+                  {{
+                    'generate.sweeps.badge_explorer'
+                      | transloco: { section: key | transloco }
+                  }}
+                } @else {
+                  {{ 'generate.sweeps.badge_explorer_plain' | transloco }}
+                }
+              </span>
+              <span class="gs-cap-title">
+                {{ 'generate.help.see_it' | transloco }}
+              </span>
             </span>
-          }
-          <span class="gs-cap-text">
-            <span class="gs-cap-eyebrow">
-              <span class="gs-cap-dot" aria-hidden="true"></span>
-              @if (sectionLabelKey(); as key) {
-                {{
-                  'generate.sweeps.badge_explorer'
-                    | transloco: { section: key | transloco }
-                }}
-              } @else {
-                {{ 'generate.sweeps.badge_explorer_plain' | transloco }}
-              }
+            <span class="gs-cap-go" aria-hidden="true">
+              <app-icon name="chevron-right" class="gs-ico-sm" />
             </span>
-            <span class="gs-cap-title">
-              {{ 'generate.help.see_it' | transloco }}
-            </span>
-          </span>
-          <span class="gs-cap-go" aria-hidden="true">
-            <app-icon name="chevron-right" class="gs-ico-sm" />
-          </span>
-        </button>
-      }
-      <!-- Written last so the picture, where there is one, stays the loudest
-           offer under the note, and the pages read as further reading rather
+          </button>
+        }
+        <!-- Written last so the picture, where there is one, stays the loudest
+           offer in the note, and the pages read as further reading rather
            than as competition for it. The subject's own page leads the row,
            because a reader who wants more of this answer wants that one first. -->
-      @if (hasEntry() || links().length > 0) {
-        <p class="gs-help-links">
-          <span class="gs-help-links-head">{{
-            'generate.help.read_more' | transloco
-          }}</span>
-          @if (hasEntry()) {
-            <a class="gs-help-link" [routerLink]="fullLink()">
-              {{ 'generate.help.full_entry' | transloco }}
-            </a>
-          }
-          @for (link of links(); track link.routerLink) {
-            <a class="gs-help-link" [routerLink]="link.routerLink">
-              {{ link.labelKey | transloco }}
-            </a>
-          }
-        </p>
-      }
+        @if (hasEntry() || links().length > 0) {
+          <p class="gs-help-links">
+            <span class="gs-help-links-head">{{
+              'generate.help.read_more' | transloco
+            }}</span>
+            @if (hasEntry()) {
+              <a class="gs-help-link" [routerLink]="fullLink()">
+                {{ 'generate.help.full_entry' | transloco }}
+              </a>
+            }
+            @for (link of links(); track link.routerLink) {
+              <a class="gs-help-link" [routerLink]="link.routerLink">
+                {{ link.labelKey | transloco }}
+              </a>
+            }
+          </p>
+        }
+      </div>
     }
   `,
   host: {

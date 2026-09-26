@@ -1038,13 +1038,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 .gen-studio .gs-group-head:has(.gs-group-actions) .gs-group-toggle {
   min-width: min-content;
 }
-/* The note and the capsule under it take the row below the head and stand in
-   from the card's edge the way the body's own contents do. Ordered last so the
+/* The note takes the row below the head and stands in from the card's edge
+   the way the body's own contents do. Ordered last so the
    full-width note wraps under every action rather than between them: the note
    is written beside the trigger that opens it, and the actions after it would
    otherwise be pushed onto a row of their own. */
-.gen-studio .gs-group-head .gs-help-note,
-.gen-studio .gs-group-head .gs-help-see {
+.gen-studio .gs-group-head .gs-help-note {
   order: 1;
   flex: 1 0 100%;
   max-width: calc(100% - var(--gs-space-3));
@@ -1223,7 +1222,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-blue-text);
 }
 .gen-studio .gs-control-undo button {
-  min-height: 32px;
+  min-height: 34px;
   margin-left: auto;
   padding: var(--gs-space-1) var(--gs-space-2);
   border: 1px solid var(--gs-blue);
@@ -1308,7 +1307,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   align-items: center;
   justify-content: center;
   gap: var(--gs-space-1);
-  min-height: 32px;
+  min-height: 34px;
   cursor: pointer;
   border-radius: var(--gs-radius-sm);
   padding: 0 var(--gs-space-3);
@@ -1706,6 +1705,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    the wrapping rows above holds it. */
 .gen-studio .gs-help-note {
   flex: 1 0 100%;
+  /* The capsule inside has a minimum width of its own (its peek, its longest
+     word, its chevron) that a half-width field column is narrower than. The
+     note contributes no intrinsic width of its own, so the column keeps its
+     share of the grid and the capsule is laid out inside whatever that is. */
+  min-width: 0;
+  container-type: inline-size;
   margin: var(--gs-space-1) 0 0;
   padding: var(--gs-space-3);
   border: 1px solid var(--gs-zone-tint-border, var(--gs-border));
@@ -1714,6 +1719,9 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   color: var(--gs-ink-2);
   font-size: var(--gs-text-sm);
   line-height: 1.5;
+}
+.gen-studio .gs-help-note-body {
+  margin: 0;
 }
 
 /* select-like chips (model row, sampler, control type) */
@@ -2630,7 +2638,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 var(--gs-space-3);
   border: 1px solid var(--gs-sec-tint-border, var(--gs-border));
   border-radius: var(--gs-radius-pill);
@@ -2872,7 +2880,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-size-aspects-head {
   display: flex;
-  min-height: 32px;
+  min-height: 34px;
   align-items: center;
   justify-content: space-between;
   gap: var(--gs-space-2);
@@ -6798,7 +6806,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-blockers-goto {
   flex: none;
-  min-height: 32px;
+  min-height: 34px;
   padding: 5px 12px;
   border: 1px solid var(--gs-border);
   border-radius: 999px;
@@ -11997,7 +12005,7 @@ app-gs-sweep-scrub {
   display: inline-flex;
   align-items: center;
   gap: var(--gs-space-1);
-  min-height: 32px;
+  min-height: 34px;
   margin-top: var(--gs-space-2);
   padding: 0;
   border: 0;
@@ -12640,7 +12648,7 @@ app-gs-sweep-scrub {
   display: inline-flex;
   align-items: center;
   gap: var(--gs-space-1);
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 var(--gs-space-2);
   border: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-sm);
@@ -12952,7 +12960,7 @@ app-gs-sweep-scrub {
   gap: var(--gs-space-1);
 }
 .gen-studio .gs-sweep-scale {
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 var(--gs-space-2);
   border: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-pill);
@@ -13323,7 +13331,7 @@ app-gs-sweep-scrub {
   color: var(--gs-muted);
 }
 .gen-studio .gs-plate-tour-btn {
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 var(--gs-space-3);
   border: 1px solid var(--gs-border);
   border-radius: var(--gs-radius-pill);
@@ -15113,7 +15121,7 @@ app-gs-compare-wipe {
   display: inline-flex;
   align-items: center;
   gap: var(--gs-space-2);
-  min-height: 32px;
+  min-height: 34px;
   padding: 0 var(--gs-space-3);
   border: 1px solid transparent;
   border-radius: 999px;
@@ -15180,7 +15188,7 @@ app-gs-compare-wipe {
   flex: none;
   gap: var(--gs-space-2);
   margin-left: auto;
-  min-height: 32px;
+  min-height: 34px;
   white-space: nowrap;
   padding: 0 var(--gs-space-3);
   border-radius: 999px;
@@ -17022,18 +17030,17 @@ app-gs-compare-wipe {
 
 /* ------- help: the way from a note to the entry --------------------- */
 
-/* The note is `flex: 1 0 100%` in the label row it belongs to, so the offer
-   below it starts a line of its own rather than trailing the prose. */
-/* The field note's own offer, in the capsule family at the only size a `?` note
-   has room for: two frames on the stage, the badge, the chevron. Wider than
-   this and it would be a card inside a row inside the panel. */
+/* The note's own offer, inside the note under its words, in the capsule
+   family at the only size a `?` note has room for: two frames on the stage,
+   the badge, the chevron. Wider than this and it would be a card inside a
+   card inside the panel. */
 .gen-studio .gs-help-see {
   display: flex;
   align-items: stretch;
   gap: 10px;
   width: 100%;
   min-height: 44px;
-  margin-top: 6px;
+  margin-top: var(--gs-space-2-5);
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--gs-border);
@@ -17073,29 +17080,46 @@ app-gs-compare-wipe {
   border: 0;
   margin-right: 8px;
 }
+.gen-studio .gs-help-see .gs-cap-text {
+  min-width: 0;
+}
+/* A note in a half-width field column has no room for the frames beside the
+   words: the capsule keeps its badge, its title and its chevron, and gives
+   the width to them. */
+@container (max-width: 240px) {
+  .gen-studio .gs-help-see .gs-cap-peek {
+    display: none;
+  }
+  .gen-studio .gs-help-see .gs-cap-text {
+    padding-left: 10px;
+  }
+}
 
-/* The pages the note names, in one wrapping line under it. They take the row
-   below the picture offer so the offer stays the loudest way on, and they take
-   the full width for the same reason the note does: whichever row of a wrapping
-   label line opened the note, the reading after it belongs under all of them. */
+/* The pages the note names: the note's foot, one wrapping line under a rule
+   in the note's own tint, after the picture offer so the offer stays the
+   loudest way on. */
 .gen-studio .gs-help-links {
   display: flex;
-  flex: 1 0 100%;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--gs-space-1) var(--gs-space-3);
-  margin: var(--gs-space-1) 0 0;
-  font-size: var(--gs-text-sm);
+  align-items: center;
+  gap: 0 var(--gs-space-3);
+  margin: var(--gs-space-2-5) 0 0;
+  padding-top: var(--gs-space-2);
+  border-top: 1px solid var(--gs-zone-tint-border, var(--gs-border));
+  font-size: var(--gs-text-xs);
 }
 .gen-studio .gs-help-links-head {
   color: var(--gs-ink-2);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .gen-studio .gs-help-link {
   display: inline-flex;
   min-height: 34px;
   align-items: center;
-  color: var(--gs-blue-text);
+  color: var(--gs-zone-text, var(--gs-blue-text));
+  font-size: var(--gs-text-sm);
   font-weight: 600;
   text-decoration: none;
 }
@@ -17137,7 +17161,7 @@ app-gs-compare-wipe {
 /* A try chip is the same object as the chip beside it saying what the typical
    value is, with the one difference that pressing it does something. */
 .gen-studio .gs-ref-chip--try {
-  min-height: 32px;
+  min-height: 34px;
   color: var(--gs-sec, var(--gs-blue));
   background: var(--gs-sec-tint, var(--gs-blue-tint));
   border-color: var(--gs-sec-tint-border, var(--gs-blue-tint-border));
@@ -17690,7 +17714,7 @@ html:has(app-gs-sheet) {
 /* An entry point inside a sentence, so it keeps the line's rhythm rather than
    taking a control's height; it is never the thing the step is asking for. */
 .gen-studio .gs-learn-sheet .gs-setting-chip-btn {
-  min-height: 32px;
+  min-height: 34px;
 }
 
 /* The tutorial's progress along the sheet's top edge: a segment per step, the
