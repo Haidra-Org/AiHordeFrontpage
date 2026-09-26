@@ -215,27 +215,11 @@ const TRADEOFF_ICONS = {
       </div>
     }
 
-    <!-- The routed page has no form to write to: taking one of these numbers is
-         a trip to the panel with the value in hand, which is a door rather than
-         a chip. It carries the arrow every hand-off carries, and says what it
-         will do before it does it.
-
-         It stands under the explanation rather than over it. A reader who has
-         not been told yet what the number does has nothing to take to the panel,
-         and an offer to go and try it is the wrong thing to meet first. -->
-    @if (onPage() && applies().length > 0) {
-      <div class="gs-ref-try-row">
-        @for (option of applies(); track option.display) {
-          <app-gs-door
-            kind="studio"
-            controlClass="gs-ref-try-door"
-            [title]="tryKey() | transloco: { value: option.display }"
-            [meta]="'generate.sweeps.studio_door_note' | transloco"
-            (entered)="runApply(option)"
-          />
-        }
-      </div>
-    }
+    <!-- The routed page offers no door into the studio with one of these
+         values in hand. A single value set in isolation shows a reader little,
+         so the hand-off waits for a shape that carries more of the recipe;
+         the chips above stay for the docked entry, which writes into a form
+         that already holds the rest. -->
 
     <!-- The named members of the subject, where it is a family: which of the
          eleven upscalers, rather than what enlarging is. They are listed under

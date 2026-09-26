@@ -5,7 +5,7 @@ import {
 } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
 import { GsParamEntryComponent } from './gs-param-entry.component';
@@ -224,35 +224,6 @@ describe('GsParamEntryComponent', () => {
       chips[1].click();
 
       expect(host.applyFields).toHaveBeenCalledWith({ steps: 40 }, []);
-    });
-
-    it('arms the value and goes to the studio from the routed page', async () => {
-      await setUp({ topic: 'steps', mode: 'page' });
-      const router = TestBed.inject(Router);
-      const navigate = vi
-        .spyOn(router, 'navigateByUrl')
-        .mockResolvedValue(true);
-
-      // The page has no form to write into, so taking one of these numbers is a
-      // trip to the panel: a door on the evidence chassis rather than a chip,
-      // saying what it is about to do before it does it.
-      const doors = all<HTMLButtonElement>('.gs-ref-try-door');
-      expect(
-        doors.map((door) =>
-          door.querySelector('.gs-cap-title')?.textContent?.trim(),
-        ),
-      ).toEqual(['Try 20 in the studio', 'Try 40 in the studio']);
-      expect(doors[0].querySelector('.gs-cap-meta')?.textContent?.trim()).toBe(
-        translations['generate.sweeps.studio_door_note'],
-      );
-      expect(all('.gs-ref-chip--try')).toHaveLength(0);
-
-      doors[0].click();
-
-      expect(navigate).toHaveBeenCalledWith('/generate/image');
-      expect(TestBed.inject(GsTryItService).consumeArmed()?.fields).toEqual({
-        steps: 20,
-      });
     });
 
     it('offers nothing on an entry with no value worth naming', async () => {

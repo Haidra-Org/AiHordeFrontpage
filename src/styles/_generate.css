@@ -13723,21 +13723,6 @@ app-gs-door + app-gs-sweep-scrub,
 app-gs-sweep-scrub + app-gs-door {
   margin-top: var(--gs-space-2);
 }
-/* Two values to try are one choice, so their doors share a row where there
-   is room and stack only on a phone. */
-.gen-studio .gs-ref-try-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gs-space-2);
-  margin-top: var(--gs-space-4);
-}
-.gen-studio .gs-ref-try-row app-gs-door {
-  flex: 1 1 260px;
-  min-width: 0;
-}
-.gen-studio .gs-ref-try-row app-gs-door + app-gs-door {
-  margin-top: 0;
-}
 .gen-studio .gs-cap:focus-visible,
 .gen-studio .gs-tickrail:focus-visible,
 .gen-studio .gs-plate-x:focus-visible,
@@ -13753,12 +13738,6 @@ app-gs-sweep-scrub + app-gs-door {
 .gen-studio .gs-plate-link:focus-visible {
   outline-color: var(--gs-stage-ink);
 }
-/* The evidence on a reference page is given a measure of its own rather than
-   the page's full width, and the doors under it read as the same column. */
-.gen-studio .gs-ref-entry--page .gs-ref-try-door {
-  max-width: 640px;
-}
-
 /* The frame is the affordance, so the button around it adds nothing but the
    cursor and the focus ring the image cannot carry itself. */
 .gen-studio .gs-sweep-zoom {
