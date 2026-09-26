@@ -12047,10 +12047,10 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate {
   position: relative;
   overflow: hidden;
-  /* Room for the sticky header and a breath below, for the scroll that
-     follows the plate as it unfolds. */
+  /* Room for the sticky header, for the scroll that follows the plate as it
+     unfolds. The room below it is set from the component, which also decides
+     whether the whole plate fits. */
   scroll-margin-top: 96px;
-  scroll-margin-bottom: var(--gs-space-4);
   border: 1px solid var(--gs-stage-rim);
   border-radius: var(--gs-radius-md);
   background: var(--gs-stage);
@@ -12062,8 +12062,9 @@ app-gs-sweep-scrub {
    under a figure; with room beside the picture the reading takes that room,
    so the value, the caption and the sentence the strip is about are level
    with the picture they describe, and the whole plate is short enough to sit
-   on one screen. Areas rather than DOM order, because the reading column is
-   one element wherever it lands. */
+   on one screen. The provenance panel is the last row at every width. Areas
+   rather than DOM order, because the reading column is one element wherever
+   it lands. */
 .gen-studio .gs-plate-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -12071,7 +12072,8 @@ app-gs-sweep-scrub {
     "stage"
     "under"
     "read"
-    "foot";
+    "foot"
+    "details";
   gap: var(--gs-space-2);
   padding: 0 var(--gs-space-3) var(--gs-space-3);
 }
@@ -12102,7 +12104,7 @@ app-gs-sweep-scrub {
   padding-left: 0;
 }
 .gen-studio .gs-plate-details {
-  grid-area: read;
+  grid-area: details;
 }
 /* The value and the size, said beside the picture where the reading column
    has the room; the stage keeps its own pill only where nothing sits beside
@@ -12628,27 +12630,16 @@ app-gs-sweep-scrub {
   outline-offset: 2px;
 }
 /* Provenance is one step down from the picture: what was held, what was asked
-   for, and where to read more. On a phone it rises from the bottom edge over
-   the plate; where there is room it stands beside the stage instead. Same
-   markup either way. */
+   for, and where to read more. It opens as a row under the foot, in the
+   page's flow, so the picture and its caption stay in view while it is read. */
 .gen-studio .gs-plate-details {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  max-height: 78%;
-  padding: var(--gs-space-3);
-  overflow-y: auto;
+  min-width: 0;
+  padding-top: var(--gs-space-3);
   border-top: 1px solid var(--gs-stage-rim);
-  border-radius: var(--gs-radius-md) var(--gs-radius-md) 0 0;
-  background: var(--gs-stage);
-  box-shadow: 0 -18px 44px -14px var(--gs-stage-shade);
-  overscroll-behavior: contain;
 }
 .gen-studio .gs-plate-details:focus-visible {
   outline: 2px solid var(--gs-stage-ink);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 .gen-studio .gs-plate-details-head {
   display: flex;
@@ -12734,14 +12725,88 @@ app-gs-sweep-scrub {
 .gen-studio dialog.gs-sweep-dialog::backdrop {
   background: rgb(0 0 0 / 82%);
 }
+/* The view is three regions: the bar along the top, the picture with the
+   controls that steer it, and what is read about the frame. On a narrow or
+   tall screen they stack, the reading last as a caption sits under a figure;
+   on a wide one the reading stands beside the picture, as on the plate.
+   Areas rather than DOM order, because the reading column is one element
+   wherever it lands. */
 .gen-studio .gs-sweep-dialog-body {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "top"
+    "col"
+    "read";
   gap: var(--gs-space-2);
   height: 100%;
   padding: var(--gs-space-3);
 }
+/* The picture takes the height the column has; the rail, the steps and the
+   compare chips each take their own row under it. */
+.gen-studio .gs-sweep-dialog-col {
+  grid-area: col;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  grid-auto-rows: auto;
+  gap: var(--gs-space-2);
+  min-width: 0;
+  min-height: 0;
+}
+/* Stacked under the picture, the reading is held to part of the screen and
+   scrolls on its own, so an opened note never pushes the picture off it. */
+.gen-studio .gs-sweep-dialog-read {
+  grid-area: read;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-2);
+  min-width: 0;
+  max-height: 40dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* The pill over the picture says the value wherever the reading is stacked
+   under it; the reading column's own head is for the side layout only. */
+.gen-studio .gs-sweep-dialog-head {
+  display: none;
+}
+.gen-studio .gs-sweep-dialog-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gs-space-1);
+}
+.gen-studio .gs-sweep-dialog-controls .gs-sweep-variants {
+  margin-bottom: 0;
+}
+@media (min-width: 900px) and (min-aspect-ratio: 5/4) {
+  .gen-studio .gs-sweep-dialog-body {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "top top"
+      "col read";
+    column-gap: var(--gs-space-4);
+  }
+  .gen-studio .gs-sweep-dialog-read {
+    min-height: 0;
+    max-height: none;
+    padding-top: var(--gs-space-1);
+  }
+  .gen-studio .gs-sweep-dialog-head {
+    display: flex;
+  }
+  .gen-studio .gs-sweep-dialog-read .gs-sweep-caption {
+    margin-top: 0;
+  }
+  /* The reading column says the value; the pill over the picture would say
+     it twice, side by side. */
+  .gen-studio .gs-sweep-dialog .gs-sweep-titles {
+    display: none;
+  }
+}
 .gen-studio .gs-sweep-dialog-top {
+  grid-area: top;
   display: flex;
   align-items: center;
   gap: var(--gs-space-2);
@@ -12949,7 +13014,8 @@ app-gs-sweep-scrub {
     grid-template-areas:
       "stage read"
       "under under"
-      "foot foot";
+      "foot foot"
+      "details details";
     column-gap: var(--gs-space-4);
   }
   .gen-studio .gs-plate-col {
@@ -12967,17 +13033,6 @@ app-gs-sweep-scrub {
      twice, side by side. */
   .gen-studio .gs-plate-col .gs-sweep-titles {
     display: none;
-  }
-  /* With room beside the stage the details are a panel rather than a sheet:
-     provenance read next to the picture it is about, in the reading column's
-     place, instead of over it. */
-  .gen-studio .gs-plate-details {
-    position: static;
-    max-height: none;
-    border-top: 0;
-    border-left: 1px solid var(--gs-stage-rim);
-    border-radius: 0;
-    box-shadow: none;
   }
 }
 
@@ -13376,7 +13431,9 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate .gs-sweep-caption-batch,
 .gen-studio .gs-plate .gs-sweep-loading,
 .gen-studio .gs-plate .gs-sweep-pair-cap,
-.gen-studio .gs-plate .gs-sweep-solo-cap {
+.gen-studio .gs-plate .gs-sweep-solo-cap,
+.gen-studio .gs-sweep-dialog .gs-sweep-caption,
+.gen-studio .gs-sweep-dialog .gs-sweep-pair-cap {
   color: var(--gs-stage-label);
 }
 /* The controls that were quiet blue links on the page are quiet plate ink here:
@@ -13385,26 +13442,34 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate .gs-sweep-why,
 .gen-studio .gs-plate .gs-sweep-why-link,
 .gen-studio .gs-plate .gs-sweep-pair-mode,
+.gen-studio .gs-sweep-dialog .gs-sweep-why,
+.gen-studio .gs-sweep-dialog .gs-sweep-why-link,
 .dark .gen-studio .gs-plate .gs-sweep-why,
 .dark .gen-studio .gs-plate .gs-sweep-why-link,
-.dark .gen-studio .gs-plate .gs-sweep-pair-mode {
+.dark .gen-studio .gs-plate .gs-sweep-pair-mode,
+.dark .gen-studio .gs-sweep-dialog .gs-sweep-why,
+.dark .gen-studio .gs-sweep-dialog .gs-sweep-why-link {
   color: var(--gs-stage-label);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .gen-studio .gs-plate .gs-sweep-why:hover,
 .gen-studio .gs-plate .gs-sweep-why-link:hover,
-.gen-studio .gs-plate .gs-sweep-pair-mode:hover {
+.gen-studio .gs-plate .gs-sweep-pair-mode:hover,
+.gen-studio .gs-sweep-dialog .gs-sweep-why:hover,
+.gen-studio .gs-sweep-dialog .gs-sweep-why-link:hover {
   color: var(--gs-stage-ink);
 }
-.gen-studio .gs-plate .gs-sweep-why-body {
+.gen-studio .gs-plate .gs-sweep-why-body,
+.gen-studio .gs-sweep-dialog .gs-sweep-why-body {
   border-color: var(--gs-stage-rim);
   /* A wash of the plate's ink rather than of white, so the tint lifts the
      dark plate and deepens the light one instead of vanishing on it. */
   background: color-mix(in srgb, var(--gs-stage-ink) 4%, transparent);
   color: var(--gs-stage-label);
 }
-.gen-studio .gs-plate .gs-sweep-why-list {
+.gen-studio .gs-plate .gs-sweep-why-list,
+.gen-studio .gs-sweep-dialog .gs-sweep-why-list {
   color: var(--gs-stage-ink);
 }
 /* The choice of which reading to show sits in the plate's header band, so it is
@@ -13432,11 +13497,13 @@ app-gs-sweep-scrub {
 .gen-studio .gs-plate-head .gs-sweep-pair-mode + .gs-plate-x {
   margin-left: 0;
 }
-.gen-studio .gs-plate .gs-sweep-variant {
+.gen-studio .gs-plate .gs-sweep-variant,
+.gen-studio .gs-sweep-dialog .gs-sweep-variant {
   border-color: var(--gs-stage-rim);
   color: var(--gs-stage-label);
 }
-.gen-studio .gs-plate .gs-sweep-variant.is-on {
+.gen-studio .gs-plate .gs-sweep-variant.is-on,
+.gen-studio .gs-sweep-dialog .gs-sweep-variant.is-on {
   border-color: var(--gs-stage-label);
   background: color-mix(in srgb, var(--gs-stage-ink) 8%, transparent);
   color: var(--gs-stage-ink);

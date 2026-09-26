@@ -181,15 +181,11 @@ const TOUR_BUBBLE_GAP_PX = 10;
 const TOUR_BUBBLE_PX = 320;
 
 /**
- * Where the reader's answer about that is kept, one slot per host shape. The
- * answer on a documentation page and the answer in a phone sheet are different
- * answers, and a single slot would have the last surface visited overwrite the
- * one before it.
+ * How much of the page shows under an unfolded plate when the scroll that
+ * follows it has room to spare. A plate stopped flush with the window's bottom
+ * edge reads as cut off there; a strip of page under it says the plate ends.
  */
-const LAYOUT_KEYS: Readonly<Record<'wide' | 'narrow', string>> = {
-  wide: 'gs-sweep-layout-wide',
-  narrow: 'gs-sweep-layout-narrow',
-};
+const EXPAND_OVERSHOOT_PX = 24;
 
 /**
  * How far outside the filmstrip's own box the active thumbnail may sit before
@@ -700,6 +696,7 @@ const FILM_PAGE_FRACTION = 0.8;
           <div
             #plate
             class="gs-plate"
+            [style.scroll-margin-bottom.px]="expandOvershoot"
             [class.is-wide]="wide()"
             [class.is-touring]="tourStep() !== null"
           >
@@ -733,7 +730,7 @@ const FILM_PAGE_FRACTION = 0.8;
               </div>
             }
 
-            <div class="gs-plate-main" [class.is-detailed]="detailsOpen()">
+            <div class="gs-plate-main">
               <div class="gs-plate-col">
                 <!-- The stage is one focusable region rather than a picture
                      with controls scattered round it: the arrows step, the
@@ -788,69 +785,65 @@ const FILM_PAGE_FRACTION = 0.8;
                    because it is the same at every stop; the comparisons close
                    the column because they are something to do rather than
                    something to read. -->
-              @if (!(wide() && detailsOpen())) {
-                <div class="gs-plate-read">
-                  @if (wide()) {
-                    <span class="gs-plate-read-head">
-                      <span class="gs-plate-read-value">{{ pillText() }}</span>
-                      @if (viewSize(); as size) {
-                        <app-gs-pixel-badge
-                          class="gs-pixels--read"
-                          [width]="size.width"
-                          [height]="size.height"
-                          [shown]="zoomedIn() ? shownPercent() : null"
-                        />
-                      }
-                    </span>
-                  }
-                  <!-- What this value did to the picture. The caption is the
+              <div class="gs-plate-read">
+                @if (wide()) {
+                  <span class="gs-plate-read-head">
+                    <span class="gs-plate-read-value">{{ pillText() }}</span>
+                    @if (viewSize(); as size) {
+                      <app-gs-pixel-badge
+                        class="gs-pixels--read"
+                        [width]="size.width"
+                        [height]="size.height"
+                        [shown]="zoomedIn() ? shownPercent() : null"
+                      />
+                    }
+                  </span>
+                }
+                <!-- What this value did to the picture. The caption is the
                        live region, so a scrub announces the frame it landed on
                        rather than a bare number. Under a contact sheet on a
                        narrow host every stop already carries its own caption,
                        and this one stays in the page for the announcement
                        alone. -->
-                  <p
-                    class="gs-sweep-caption"
-                    [class.is-quiet]="gridOn() && !wide()"
-                    role="status"
-                    aria-live="polite"
-                  >
-                    @if (showsPair()) {
-                      @for (side of pairSides()!; track side.file) {
-                        <span class="gs-sweep-pair-cap">{{
-                          side.caption
-                        }}</span>
-                      }
-                    } @else {
-                      <span class="gs-sweep-caption-text">{{
-                        stop().caption
-                      }}</span>
-                      <!-- Curation is disclosed rather than hidden: a frame
+                <p
+                  class="gs-sweep-caption"
+                  [class.is-quiet]="gridOn() && !wide()"
+                  role="status"
+                  aria-live="polite"
+                >
+                  @if (showsPair()) {
+                    @for (side of pairSides()!; track side.file) {
+                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
+                    }
+                  } @else {
+                    <span class="gs-sweep-caption-text">{{
+                      stop().caption
+                    }}</span>
+                    <!-- Curation is disclosed rather than hidden: a frame
                            picked from a batch says so, because generation is
                            stochastic and pretending the first roll looked like
                            this would teach the wrong lesson. -->
-                      @if ((stop().batch_size ?? 1) > 1) {
-                        <span class="gs-sweep-caption-batch">{{
-                          'generate.sweeps.batch_note'
-                            | transloco: { n: stop().batch_size }
-                        }}</span>
-                      }
+                    @if ((stop().batch_size ?? 1) > 1) {
+                      <span class="gs-sweep-caption-batch">{{
+                        'generate.sweeps.batch_note'
+                          | transloco: { n: stop().batch_size }
+                      }}</span>
                     }
-                  </p>
-                  <!-- What the whole strip is about. It is the same sentence
+                  }
+                </p>
+                <!-- What the whole strip is about. It is the same sentence
                        however far along the reader has scrubbed, and it is the
                        one line that says what all these pictures are, so it
                        stands where the reader can find it rather than behind a
                        fold. -->
-                  <p class="gs-plate-lead">{{ strip()!.caption }}</p>
-                  @if (wide()) {
-                    <ng-container
-                      [ngTemplateOutlet]="compareControls"
-                      [ngTemplateOutletContext]="{ placement: 'read' }"
-                    />
-                  }
-                </div>
-              }
+                <p class="gs-plate-lead">{{ strip()!.caption }}</p>
+                @if (wide()) {
+                  <ng-container
+                    [ngTemplateOutlet]="compareControls"
+                    [ngTemplateOutletContext]="{ placement: 'read' }"
+                  />
+                }
+              </div>
 
               <div class="gs-plate-under">
                 @if (scrubbable()) {
@@ -1154,10 +1147,10 @@ const FILM_PAGE_FRACTION = 0.8;
               </div>
 
               @if (detailsOpen()) {
-                <!-- Provenance, one step down from the picture: a sheet from
-                     the bottom edge where the plate is one column, a panel
-                     beside the stage where there is room for one. Same markup
-                     either way; the shape is the layout's business. -->
+                <!-- Provenance, one step down from the picture: a full-width
+                     row under the foot at every width, so opening it never
+                     covers the picture it describes or takes the caption's
+                     place beside it. -->
                 <aside
                   #details
                   class="gs-plate-details"
@@ -1373,133 +1366,167 @@ const FILM_PAGE_FRACTION = 0.8;
                 </button>
               </div>
 
-              <div
-                #viewerStage
-                class="gs-sweep-stage gs-sweep-stage--big"
-                [class.is-pannable]="pannable()"
-                [style.--gs-sweep-zoom]="zoomFactor()"
-                [style.--gs-sweep-pan-x.px]="panX()"
-                [style.--gs-sweep-pan-y.px]="panY()"
-                [class.is-zoomed]="zoomedIn()"
-                (pointerdown)="onPicturePointerDown($event)"
-                (pointermove)="onPicturePointerMove($event, true)"
-                (pointerup)="onPicturePointerUp($event, true)"
-                (pointercancel)="onPicturePointerUp($event, true)"
-                (pointerleave)="onStageLeave()"
-                (wheel)="onPictureWheel($event, true)"
-                (dblclick)="onPictureDoublePress($event)"
-              >
-                <ng-container
-                  [ngTemplateOutlet]="stageMedia"
-                  [ngTemplateOutletContext]="{ inViewer: true }"
-                />
-                <ng-container
-                  [ngTemplateOutlet]="stageChrome"
-                  [ngTemplateOutletContext]="{ inViewer: true }"
-                />
+              <!-- The picture and the controls that steer it are one column,
+                   so on a wide screen the reading can stand beside all of
+                   them and the rail stays under the picture it moves. -->
+              <div class="gs-sweep-dialog-col">
+                <div
+                  #viewerStage
+                  class="gs-sweep-stage gs-sweep-stage--big"
+                  [class.is-pannable]="pannable()"
+                  [style.--gs-sweep-zoom]="zoomFactor()"
+                  [style.--gs-sweep-pan-x.px]="panX()"
+                  [style.--gs-sweep-pan-y.px]="panY()"
+                  [class.is-zoomed]="zoomedIn()"
+                  (pointerdown)="onPicturePointerDown($event)"
+                  (pointermove)="onPicturePointerMove($event, true)"
+                  (pointerup)="onPicturePointerUp($event, true)"
+                  (pointercancel)="onPicturePointerUp($event, true)"
+                  (pointerleave)="onStageLeave()"
+                  (wheel)="onPictureWheel($event, true)"
+                  (dblclick)="onPictureDoublePress($event)"
+                >
+                  <ng-container
+                    [ngTemplateOutlet]="stageMedia"
+                    [ngTemplateOutletContext]="{ inViewer: true }"
+                  />
+                  <ng-container
+                    [ngTemplateOutlet]="stageChrome"
+                    [ngTemplateOutletContext]="{ inViewer: true }"
+                  />
+                </div>
+
+                @if (!wide()) {
+                  <ng-container
+                    [ngTemplateOutlet]="compareControls"
+                    [ngTemplateOutletContext]="{ placement: 'dock' }"
+                  />
+                }
+
+                @if (scrubbable()) {
+                  <!-- Narrow hosts enter through this viewer instead of opening
+                       the inline plate, so they need the same direct scrub rail
+                       as the desktop instrument rather than only previous/next
+                       buttons. -->
+                  <div class="gs-tickrail-box gs-tickrail-box--viewer">
+                    @let at = index();
+                    <div
+                      class="gs-tickrail"
+                      role="slider"
+                      tabindex="0"
+                      [attr.aria-label]="
+                        'generate.sweeps.slider_label' | transloco
+                      "
+                      aria-valuemin="1"
+                      [attr.aria-valuemax]="frameCount()"
+                      [attr.aria-valuenow]="at + 1"
+                      [attr.aria-valuetext]="valueTextOf(stopAt(at))"
+                      (click)="onRailPress($event)"
+                      (keydown)="onRailKeydown($event, at)"
+                      (pointerdown)="startRailDrag($event)"
+                      (pointermove)="onRailDrag($event)"
+                      (pointerup)="endRailDrag()"
+                      (pointercancel)="endRailDrag()"
+                    >
+                      @for (tick of stops(); track $index) {
+                        <span
+                          class="gs-tickrail-tick"
+                          [class.is-at]="$index === at"
+                          [style.left.%]="tickPercent($index)"
+                          [attr.data-at]="$index"
+                        ></span>
+                      }
+                    </div>
+                    <span class="gs-tickrail-ends">
+                      @if (showsEnds()) {
+                        <span
+                          class="gs-tickrail-end"
+                          [style.left.%]="labelPercent(0)"
+                          >{{ endValues().first }}</span
+                        >
+                      }
+                      <span class="gs-tickrail-hint" aria-hidden="true">{{
+                        'generate.sweeps.rail_hint' | transloco
+                      }}</span>
+                      @if (showsEnds()) {
+                        <span
+                          class="gs-tickrail-end"
+                          [style.left.%]="labelPercent(lastIndex())"
+                          >{{ endValues().last }}</span
+                        >
+                      }
+                    </span>
+                  </div>
+
+                  <div class="gs-sweep-dialog-steps">
+                    <button
+                      type="button"
+                      class="gs-sweep-dialog-step"
+                      [disabled]="index() === 0"
+                      [attr.aria-label]="
+                        'generate.sweeps.stop_prev' | transloco
+                      "
+                      (click)="stepStop(-1)"
+                    >
+                      <app-icon name="chevron-left" class="gs-ico-sm" />
+                    </button>
+                    <span class="gs-sweep-dialog-pos">
+                      {{
+                        'generate.sweeps.position'
+                          | transloco: { at: index() + 1, n: frameCount() }
+                      }}
+                    </span>
+                    <button
+                      type="button"
+                      class="gs-sweep-dialog-step"
+                      [disabled]="index() === lastIndex()"
+                      [attr.aria-label]="
+                        'generate.sweeps.stop_next' | transloco
+                      "
+                      (click)="stepStop(1)"
+                    >
+                      <app-icon name="chevron-right" class="gs-ico-sm" />
+                    </button>
+                  </div>
+                }
               </div>
 
-              @if (!wide()) {
-                <ng-container
-                  [ngTemplateOutlet]="compareControls"
-                  [ngTemplateOutletContext]="{ placement: 'dock' }"
-                />
-              }
-
-              @if (scrubbable()) {
-                <!-- Narrow hosts enter through this viewer instead of opening
-                     the inline plate, so they need the same direct scrub rail
-                     as the desktop instrument rather than only previous/next
-                     buttons. -->
-                <div class="gs-tickrail-box gs-tickrail-box--viewer">
-                  @let at = index();
-                  <div
-                    class="gs-tickrail"
-                    role="slider"
-                    tabindex="0"
-                    [attr.aria-label]="
-                      'generate.sweeps.slider_label' | transloco
-                    "
-                    aria-valuemin="1"
-                    [attr.aria-valuemax]="frameCount()"
-                    [attr.aria-valuenow]="at + 1"
-                    [attr.aria-valuetext]="valueTextOf(stopAt(at))"
-                    (click)="onRailPress($event)"
-                    (keydown)="onRailKeydown($event, at)"
-                    (pointerdown)="startRailDrag($event)"
-                    (pointermove)="onRailDrag($event)"
-                    (pointerup)="endRailDrag()"
-                    (pointercancel)="endRailDrag()"
-                  >
-                    @for (tick of stops(); track $index) {
-                      <span
-                        class="gs-tickrail-tick"
-                        [class.is-at]="$index === at"
-                        [style.left.%]="tickPercent($index)"
-                        [attr.data-at]="$index"
-                      ></span>
-                    }
-                  </div>
-                  <span class="gs-tickrail-ends">
-                    @if (showsEnds()) {
-                      <span
-                        class="gs-tickrail-end"
-                        [style.left.%]="labelPercent(0)"
-                        >{{ endValues().first }}</span
-                      >
-                    }
-                    <span class="gs-tickrail-hint" aria-hidden="true">{{
-                      'generate.sweeps.rail_hint' | transloco
-                    }}</span>
-                    @if (showsEnds()) {
-                      <span
-                        class="gs-tickrail-end"
-                        [style.left.%]="labelPercent(lastIndex())"
-                        >{{ endValues().last }}</span
-                      >
-                    }
-                  </span>
-                </div>
-
-                <div class="gs-sweep-dialog-steps">
-                  <button
-                    type="button"
-                    class="gs-sweep-dialog-step"
-                    [disabled]="index() === 0"
-                    [attr.aria-label]="'generate.sweeps.stop_prev' | transloco"
-                    (click)="stepStop(-1)"
-                  >
-                    <app-icon name="chevron-left" class="gs-ico-sm" />
-                  </button>
-                  <span class="gs-sweep-dialog-pos">
-                    {{
-                      'generate.sweeps.position'
-                        | transloco: { at: index() + 1, n: frameCount() }
-                    }}
-                  </span>
-                  <button
-                    type="button"
-                    class="gs-sweep-dialog-step"
-                    [disabled]="index() === lastIndex()"
-                    [attr.aria-label]="'generate.sweeps.stop_next' | transloco"
-                    (click)="stepStop(1)"
-                  >
-                    <app-icon name="chevron-right" class="gs-ico-sm" />
-                  </button>
-                </div>
-              }
-
-              <p class="gs-sweep-caption" role="status" aria-live="polite">
-                @if (showsPair()) {
-                  @for (side of pairSides()!; track side.file) {
-                    <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
+              <!-- What the frame is and what it shows, beside the picture
+                   on a wide screen and under the controls on a narrow or
+                   tall one, as on the plate. The value leads only beside
+                   the picture, where the pill over it is hidden; the
+                   caption stays the one live region in the view. -->
+              <div class="gs-sweep-dialog-read">
+                <span class="gs-plate-read-head gs-sweep-dialog-head">
+                  <span class="gs-plate-read-value">{{ pillText() }}</span>
+                  @if (viewSize(); as size) {
+                    <app-gs-pixel-badge
+                      class="gs-pixels--read"
+                      [width]="size.width"
+                      [height]="size.height"
+                      [shown]="shownPercent()"
+                    />
                   }
-                } @else {
-                  <span class="gs-sweep-caption-text">{{
-                    stop().caption
-                  }}</span>
+                </span>
+                <p class="gs-sweep-caption" role="status" aria-live="polite">
+                  @if (showsPair()) {
+                    @for (side of pairSides()!; track side.file) {
+                      <span class="gs-sweep-pair-cap">{{ side.caption }}</span>
+                    }
+                  } @else {
+                    <span class="gs-sweep-caption-text">{{
+                      stop().caption
+                    }}</span>
+                  }
+                </p>
+                <p class="gs-plate-lead">{{ strip()!.caption }}</p>
+                @if (hasVariant()) {
+                  <div class="gs-sweep-dialog-controls">
+                    <ng-container [ngTemplateOutlet]="variants" />
+                    <ng-container [ngTemplateOutlet]="variantWhyNote" />
+                  </div>
                 }
-              </p>
+              </div>
             </div>
           }
         </dialog>
@@ -1584,8 +1611,8 @@ export class GsSweepScrubComponent {
   private readonly wipeAsked = signal<boolean | null>(null);
   /**
    * Which way the reader asked for the stops to be laid out, or null while the
-   * host's own default stands. Remembered per host shape: the answer on a
-   * documentation page and the answer in a phone sheet are different answers.
+   * filmstrip default stands. Held for the open plate only: closing it returns
+   * the next opening to the filmstrip.
    */
   private readonly layoutAsked = signal<StopLayout | null>(null);
   /** How wide the surface hosting this explorer is, as its own container. */
@@ -1667,6 +1694,7 @@ export class GsSweepScrubComponent {
   public readonly loupeOn = computed(() => this.loupe() && this.finePointer());
   public readonly lensAt = this.lens.asReadonly();
   public readonly zoomSteps = ZOOM_STEPS;
+  public readonly expandOvershoot = EXPAND_OVERSHOOT_PX;
 
   private readonly viewerRef =
     viewChild<ElementRef<HTMLDialogElement>>('viewer');
@@ -1915,17 +1943,16 @@ export class GsSweepScrubComponent {
   public readonly offersLayoutChoice = computed(() => this.scrubbable());
 
   /**
-   * Whether every stop is laid out at a size that compares. Where the host is
-   * wide that is the default: five frames across at a documentation page's
-   * width are big enough to judge against each other, which is the whole
-   * question a sweep is asked. A narrow host has room for the filmstrip and
-   * offers the grid; either way the reader's own answer is remembered.
+   * Whether every stop is laid out at a size that compares. The filmstrip is
+   * the default at every host width, because it keeps the plate short enough
+   * to read beside the prose around it; the grid is offered and taken only when
+   * the reader asks for it, and is not remembered past the open plate.
    */
   public readonly gridOn = computed(() => {
     if (!this.scrubbable()) {
       return false;
     }
-    return (this.layoutAsked() ?? (this.wide() ? 'grid' : 'strip')) === 'grid';
+    return this.layoutAsked() === 'grid';
   });
 
   /**
@@ -2414,21 +2441,6 @@ export class GsSweepScrubComponent {
       probe.src = against;
     });
 
-    // What the reader last asked for on a host of this shape. Read whenever the
-    // shape changes rather than once, because the same explorer moves between
-    // shapes as its surface resizes.
-    effect(() => {
-      if (this.launcher()) {
-        // A launcher lays no stops out, so it has nothing to remember and no
-        // business reading what another surface remembered.
-        return;
-      }
-      const remembered = this.rememberedLayout(this.wide());
-      if (remembered) {
-        this.layoutAsked.set(remembered);
-      }
-    });
-
     // The record is fetched when the details are opened and again when the
     // reader scrubs to another frame with them open; a reply that arrives after
     // the frame has moved on is dropped rather than shown against the wrong
@@ -2642,18 +2654,26 @@ export class GsSweepScrubComponent {
     } else {
       this.open.set(true);
       // The plate unfolds downward from the card the reader pressed, so its
-      // lower half lands below the fold; the page follows it up so the whole
-      // instrument is on screen, or its top edge is where the plate is taller
-      // than the window. The plate's scroll margin keeps it clear of the
-      // sticky header.
+      // lower half lands below the fold. Where the whole plate fits, the page
+      // moves only as far as it takes to show all of it with a little page
+      // under it; where it does not, its top edge goes to the top of the
+      // window. The plate's scroll margins hold the room under the sticky
+      // header and the room below it.
       afterNextRender(
         () => {
           const plate = this.plateRef()?.nativeElement;
           if (typeof plate?.scrollIntoView !== 'function') {
             return;
           }
+          const headerRoom =
+            parseFloat(getComputedStyle(plate).scrollMarginTop) || 0;
+          const fits =
+            plate.getBoundingClientRect().height +
+              headerRoom +
+              EXPAND_OVERSHOOT_PX <=
+            this.scrollRoom(plate);
           plate.scrollIntoView({
-            block: 'nearest',
+            block: fits ? 'nearest' : 'start',
             behavior: this.reducedMotion() ? 'auto' : 'smooth',
           });
         },
@@ -2666,6 +2686,7 @@ export class GsSweepScrubComponent {
   public collapse(): void {
     this.open.set(false);
     this.details.set(false);
+    this.layoutAsked.set(null);
     this.closeViewer();
   }
 
@@ -2674,11 +2695,9 @@ export class GsSweepScrubComponent {
     this.wipeAsked.set(!this.wiped());
   }
 
-  /** Swap between the grid and the filmstrip, and remember which was asked for. */
+  /** Swap between the grid and the filmstrip for as long as the plate is open. */
   public toggleLayout(): void {
-    const next: StopLayout = this.gridOn() ? 'strip' : 'grid';
-    this.layoutAsked.set(next);
-    this.rememberLayout(next);
+    this.layoutAsked.set(this.gridOn() ? 'strip' : 'grid');
   }
 
   public toggleVariantWhy(): void {
@@ -3440,28 +3459,25 @@ export class GsSweepScrubComponent {
 
   /* ---------- the plumbing ---------- */
 
-  /** The layout remembered for a host of this shape, if one is. */
-  private rememberedLayout(wide: boolean): StopLayout | null {
-    try {
-      const stored = localStorage.getItem(
-        LAYOUT_KEYS[wide ? 'wide' : 'narrow'],
-      );
-      return stored === 'grid' || stored === 'strip' ? stored : null;
-    } catch {
-      // Storage the browser will not hand over simply remembers nothing.
-      return null;
+  /**
+   * How tall the view the plate scrolls in is: the nearest ancestor that
+   * scrolls, where the plate sits in a pane of its own, or else the window.
+   */
+  private scrollRoom(plate: HTMLElement): number {
+    for (
+      let at = plate.parentElement;
+      at && at !== document.body && at !== document.documentElement;
+      at = at.parentElement
+    ) {
+      const overflow = getComputedStyle(at).overflowY;
+      if (
+        (overflow === 'auto' || overflow === 'scroll') &&
+        at.scrollHeight > at.clientHeight
+      ) {
+        return at.clientHeight;
+      }
     }
-  }
-
-  private rememberLayout(layout: StopLayout): void {
-    try {
-      localStorage.setItem(
-        LAYOUT_KEYS[this.wide() ? 'wide' : 'narrow'],
-        layout,
-      );
-    } catch {
-      // Storage the browser will not hand over simply remembers nothing.
-    }
+    return window.innerHeight;
   }
 
   private clampStop(at: number): number {

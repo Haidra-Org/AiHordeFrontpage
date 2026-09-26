@@ -290,8 +290,7 @@ describe('GsSweepScrubComponent', () => {
     );
     try {
       // The view the reader last asked for lasts a session, and one test is not
-      // the next test's session. What is remembered for longer (the layout) is
-      // left alone, because a spec of its own is about exactly that.
+      // the next test's session.
       sessionStorage.clear();
     } catch {
       // A DOM without storage starts with nothing remembered anyway.
@@ -703,6 +702,78 @@ describe('GsSweepScrubComponent', () => {
     });
   });
 
+  describe('the scroll that follows the plate open', () => {
+    /**
+     * Open the plate against a window of the given height, with the plate
+     * measuring the given height once it is drawn, and report what the page
+     * was asked to scroll to. jsdom lays nothing out and has no scrollIntoView.
+     */
+    const openMeasured = async (
+      plateHeight: number,
+      windowHeight: number,
+    ): Promise<ScrollIntoViewOptions[]> => {
+      await setUp();
+      reportWidth(1000);
+      const asked: ScrollIntoViewOptions[] = [];
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+        configurable: true,
+        writable: true,
+        value(options: ScrollIntoViewOptions) {
+          asked.push(options);
+        },
+      });
+      vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(windowHeight);
+      const measure = HTMLElement.prototype.getBoundingClientRect;
+      vi.spyOn(
+        HTMLElement.prototype,
+        'getBoundingClientRect',
+      ).mockImplementation(function (this: HTMLElement) {
+        if (!this.classList.contains('gs-plate')) {
+          return measure.call(this);
+        }
+        return {
+          left: 0,
+          top: 600,
+          width: 900,
+          height: plateHeight,
+          right: 900,
+          bottom: 600 + plateHeight,
+          x: 0,
+          y: 600,
+          toJSON: () => ({}),
+        } as DOMRect;
+      });
+      try {
+        openPlate();
+      } finally {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+      }
+      return asked;
+    };
+
+    it('moves only as far as the whole plate needs where it fits', async () => {
+      const asked = await openMeasured(500, 900);
+
+      expect(asked).toEqual([{ block: 'nearest', behavior: 'smooth' }]);
+      expect(find<HTMLElement>('.gs-plate')!.style.scrollMarginBottom).toBe(
+        '24px',
+      );
+    });
+
+    it('puts the top of a plate taller than the window at the top', async () => {
+      const asked = await openMeasured(1200, 900);
+
+      expect(asked).toEqual([{ block: 'start', behavior: 'smooth' }]);
+    });
+
+    it('counts the overshoot as part of what has to fit', async () => {
+      // 890 of plate in 900 of window leaves no room for the page under it.
+      const asked = await openMeasured(890, 900);
+
+      expect(asked).toEqual([{ block: 'start', behavior: 'smooth' }]);
+    });
+  });
+
   describe('the pictures a frame is held against', () => {
     it('offers the starting picture as a chip and wipes the frame against it', async () => {
       await setUp({ parameter: 'denoising_strength', startExpanded: true });
@@ -883,12 +954,38 @@ describe('GsSweepScrubComponent', () => {
 
       expect(find('.gs-plate-details')).toBeNull();
     });
+
+    it('opens as the row after the foot and leaves the reading column in place', async () => {
+      await setUp({ startExpanded: true });
+      reportWidth(1000);
+      openDetails();
+
+      const details = find('.gs-plate-details')!;
+      expect(find('.gs-plate-foot')!.nextElementSibling).toBe(details);
+      expect(details.parentElement?.classList.contains('gs-plate-main')).toBe(
+        true,
+      );
+      // Beside the picture the caption is still read while provenance is.
+      expect(find('.gs-plate-read .gs-sweep-caption')).not.toBeNull();
+      expect(find('.gs-plate-main')!.classList.contains('is-detailed')).toBe(
+        false,
+      );
+    });
   });
 
   describe('how the stops are laid out', () => {
-    it('leads with the grid where the host is wide enough to compare in it', async () => {
+    it('leads with the filmstrip on a wide host too, and offers the grid', async () => {
       await setUp({ startExpanded: true });
       reportWidth(1000);
+
+      expect(find('.gs-sweep-film')).not.toBeNull();
+      expect(find('.gs-sweep-options')).toBeNull();
+      expect(find('.gs-plate-sheet-go')?.textContent?.trim()).toBe(
+        en['generate.sweeps.layout_grid'],
+      );
+
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
 
       expect(find('.gs-sweep-film')).toBeNull();
       expect(
@@ -922,26 +1019,44 @@ describe('GsSweepScrubComponent', () => {
       ).toHaveLength(3);
     });
 
-    it('collapses the grid to the strip and remembers the answer for that shape', async () => {
-      localStorage.clear();
+    it('keeps the answer out of storage, so the next page starts on the strip', async () => {
       await setUp({ startExpanded: true });
       reportWidth(1000);
+      const written = vi.spyOn(Storage.prototype, 'setItem');
 
       find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
       fixture.detectChanges();
+      expect(find('.gs-sweep-options--frames')).not.toBeNull();
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
       expect(find('.gs-sweep-film')).not.toBeNull();
-      expect(localStorage.getItem('gs-sweep-layout-wide')).toBe('strip');
 
-      await setUp({ startExpanded: true });
+      expect(written).not.toHaveBeenCalled();
+    });
+
+    it('opens on the strip again after the grid was asked for and the plate closed', async () => {
+      await setUp();
       reportWidth(1000);
+      openPlate();
+
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
+      expect(find('.gs-sweep-options--frames')).not.toBeNull();
+
+      find<HTMLButtonElement>('.gs-plate-x')!.click();
+      fixture.detectChanges();
+      expect(find('.gs-plate')).toBeNull();
+
+      openPlate();
       expect(find('.gs-sweep-film')).not.toBeNull();
-      localStorage.clear();
+      expect(find('.gs-sweep-options')).toBeNull();
     });
 
     it('picks a stop from the grid and takes one full size', async () => {
-      localStorage.clear();
       await setUp({ startExpanded: true });
       reportWidth(1000);
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
 
       const cells = all<HTMLButtonElement>(
         '.gs-sweep-options--frames .gs-sweep-plate-cell',
@@ -961,7 +1076,6 @@ describe('GsSweepScrubComponent', () => {
     });
 
     it('holds the filmstrip still while a drag is in flight', async () => {
-      localStorage.clear();
       await setUp({ startExpanded: true });
       reportWidth(500);
       const strip = find<HTMLElement>('.gs-sweep-film')!;
@@ -1086,6 +1200,69 @@ describe('GsSweepScrubComponent', () => {
 
       expect(find('.gs-sweep-dialog-body')).toBeNull();
       expect(document.activeElement).toBe(find('.gs-sweep-expand'));
+    });
+
+    it('reads the value, the caption and the strip in a column of its own', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+
+      const read = find<HTMLElement>('dialog[open] .gs-sweep-dialog-read')!;
+      expect(read).not.toBeNull();
+      expect(
+        read.querySelector('.gs-plate-read-value')?.textContent?.trim(),
+      ).toBe('Steps 12');
+      expect(read.querySelector('.gs-pixels--read')).not.toBeNull();
+      expect(
+        read.querySelector('.gs-sweep-caption-text')?.textContent?.trim(),
+      ).toBe('The face and the light have settled.');
+      expect(read.querySelector('.gs-plate-lead')?.textContent?.trim()).toBe(
+        'How far the sampler gets to run before the picture is handed back.',
+      );
+      // One live region in the view: the caption.
+      expect(all('dialog[open] [role="status"]')).toHaveLength(1);
+      expect(
+        read.querySelector('.gs-sweep-caption')?.getAttribute('role'),
+      ).toBe('status');
+      // The rail and the steps stay under the picture, not in the column.
+      const col = find<HTMLElement>('dialog[open] .gs-sweep-dialog-col')!;
+      expect(col.querySelector('.gs-sweep-stage--big')).not.toBeNull();
+      expect(col.querySelector('.gs-tickrail')).not.toBeNull();
+      expect(col.querySelector('.gs-sweep-dialog-steps')).not.toBeNull();
+      expect(read.querySelector('.gs-tickrail')).toBeNull();
+    });
+
+    it('offers the second reading in the view and swaps it without closing', async () => {
+      await setUp({ startExpanded: true });
+      openViewer();
+
+      const variants = all<HTMLButtonElement>(
+        'dialog[open] .gs-sweep-dialog-read .gs-sweep-variant',
+      );
+      expect(variants).toHaveLength(2);
+      expect(
+        find('dialog[open] .gs-sweep-dialog-read .gs-sweep-why'),
+      ).not.toBeNull();
+
+      variants[1].click();
+      fixture.detectChanges();
+
+      expect(dialog().open).toBe(true);
+      expect(
+        all<HTMLButtonElement>(
+          'dialog[open] .gs-sweep-dialog-read .gs-sweep-variant',
+        )[1].getAttribute('aria-pressed'),
+      ).toBe('true');
+      expect(
+        find<HTMLImageElement>(
+          '.gs-sweep-stage--big .gs-sweep-frame',
+        )?.getAttribute('src'),
+      ).toContain('/steps-converging/');
+      expect(
+        find(
+          'dialog[open] .gs-sweep-dialog-read .gs-sweep-caption-text',
+        )?.textContent?.trim(),
+      ).toBe('Nearly where it is going to end up.');
+      expect(find('.gs-sweep-dialog-pos')?.textContent?.trim()).toBe('2 / 3');
     });
 
     it('holds one position for the plate and the view together', async () => {
@@ -1352,6 +1529,9 @@ describe('GsSweepScrubComponent', () => {
     it('marks only the stops of a different size in the contact sheet', async () => {
       await setUp({ parameter: 'scheduler', startExpanded: true });
       reportWidth(900);
+      // The grid is opt-in at every width.
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
 
       const cells = all('.gs-sweep-options--frames .gs-pixels--cell');
       expect(cells).toHaveLength(1);
@@ -1926,6 +2106,9 @@ describe('GsSweepScrubComponent', () => {
     it('shows the value alone and says the setting in the button name', async () => {
       await setUp({ parameter: 'scheduler', startExpanded: true });
       reportWidth(900);
+      // The grid is opt-in at every width.
+      find<HTMLButtonElement>('.gs-plate-sheet-go')!.click();
+      fixture.detectChanges();
 
       expect(
         all('.gs-sweep-option-cap .gs-sweep-value').map((cell) =>
