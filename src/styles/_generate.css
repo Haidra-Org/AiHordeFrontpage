@@ -8755,6 +8755,20 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   position: relative;
   flex: none;
 }
+/* The alchemy footer keeps the price's place in the row while there is no
+   price to show, so the button beside it stays put. */
+.gen-studio .gs-kudos--slot {
+  min-width: 5.5rem;
+  min-height: 28px;
+}
+/* The alchemy button's label counts the operations picked, so its width would
+   follow the count; from tablet width up it keeps the width the widened
+   footer gives it, and the label changes inside a fixed box. */
+@media (min-width: 1024px) {
+  .gen-studio.gs-alchemy .gs-submitrow .gs-genbtn {
+    min-width: 12rem;
+  }
+}
 .gen-studio .gs-kudos-btn {
   position: relative;
   display: inline-flex;

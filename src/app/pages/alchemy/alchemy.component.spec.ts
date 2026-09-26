@@ -1099,7 +1099,7 @@ describe('AlchemyComponent developer surface (rendered)', () => {
     it('renders nothing when a control map is asked for', async () => {
       await priced('annotation');
 
-      expect(fixture.nativeElement.querySelector('.gs-kudos')).toBeNull();
+      expect(fixture.nativeElement.querySelector('.gs-kudos-btn')).toBeNull();
     });
   });
 
