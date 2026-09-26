@@ -30,13 +30,16 @@ const SOURCE_INPUT_TYPES = new Set([
  * request keeps `source_processing` (only the base64 payloads are stripped), so
  * its presence is the reliable mark of a job that carried an input image.
  * An unknown request counts as carrying one, so a fault is never hidden on a
- * guess.
+ * guess. A job adopted from the account record holds `{ prompt: '' }` in place
+ * of the request it was made with, and the horde refuses an empty prompt, so an
+ * empty prompt marks the request as unknown.
  */
 function requestCarriesSourceInput(
   request: ImageGenerationRequest | undefined,
 ): boolean {
   return (
     request === undefined ||
+    request.prompt === '' ||
     request.source_processing !== undefined ||
     request.source_image !== undefined ||
     request.source_mask !== undefined ||

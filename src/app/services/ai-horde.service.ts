@@ -164,13 +164,20 @@ export class AiHordeService {
       );
   }
   public getUserByApiKey(apiKey: string): Observable<HordeUser | null> {
-    return this.cache
-      .cachedGet<HordeUser>(
-        `${this.baseUrl}/find_user`,
-        { headers: { apikey: apiKey } },
-        { ttl: CacheTTL.MEDIUM, category: 'user' },
-      )
-      .pipe(catchError(() => of(null)));
+    return this.readUserByApiKey(apiKey).pipe(catchError(() => of(null)));
+  }
+
+  /**
+   * The account record behind a key, with the failure left for the caller: a
+   * reader on a timer needs to tell a rate limit from a revoked key, which
+   * {@link getUserByApiKey} folds together.
+   */
+  public readUserByApiKey(apiKey: string): Observable<HordeUser> {
+    return this.cache.cachedGet<HordeUser>(
+      `${this.baseUrl}/find_user`,
+      { headers: { apikey: apiKey } },
+      { ttl: CacheTTL.MEDIUM, category: 'user' },
+    );
   }
 
   public getSelfUserByApiKeyUncached(

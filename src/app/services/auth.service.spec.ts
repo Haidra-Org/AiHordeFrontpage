@@ -3,9 +3,9 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
-import { AuthService } from './auth.service';
+import { AuthService, UserRead } from './auth.service';
 import { AiHordeService } from './ai-horde.service';
 import { DatabaseService, StorageType } from './database.service';
 import { HordeUser } from '../types/horde-user';
@@ -30,6 +30,7 @@ describe('AuthService', () => {
   };
   let mockHorde: {
     getUserByApiKey: ReturnType<typeof vi.fn>;
+    readUserByApiKey: ReturnType<typeof vi.fn>;
     inferPublicWorkers: ReturnType<typeof vi.fn>;
   };
 
@@ -41,6 +42,7 @@ describe('AuthService', () => {
 
     mockHorde = {
       getUserByApiKey: vi.fn().mockReturnValue(of(null)),
+      readUserByApiKey: vi.fn().mockReturnValue(of(null)),
       inferPublicWorkers: vi.fn().mockReturnValue(of(true)),
     };
 
@@ -214,6 +216,76 @@ describe('AuthService', () => {
 
       expect(result).not.toBeNull();
       expect(result!.kudos).toBe(9999);
+    });
+  });
+
+  // ===========================================================================
+  // readUser()
+  // ===========================================================================
+
+  describe('readUser()', () => {
+    function storeKey(): void {
+      mockDb.get = vi.fn((key: string, ..._args: unknown[]) => {
+        if (key === 'remember_api_key') return true;
+        if (key === 'api_key') return 'stored-key';
+        return null;
+      }) as typeof mockDb.get;
+    }
+
+    function read(): UserRead[] {
+      const results: UserRead[] = [];
+      service.readUser().subscribe((r) => results.push(r));
+      return results;
+    }
+
+    function failWith(status: number): void {
+      mockHorde.readUserByApiKey.mockReturnValue(
+        throwError(
+          () => new HttpErrorResponse({ status, statusText: 'Error' }),
+        ),
+      );
+    }
+
+    it('reports unauthorized when no API key is stored', () => {
+      expect(read()).toEqual([{ error: 'unauthorized' }]);
+      expect(mockHorde.readUserByApiKey).not.toHaveBeenCalled();
+    });
+
+    it('returns the record and stores it as the current user', () => {
+      storeKey();
+      mockHorde.readUserByApiKey.mockReturnValue(of(fakeUser({ kudos: 7 })));
+      const results = read();
+
+      expect(mockHorde.readUserByApiKey).toHaveBeenCalledWith('stored-key');
+      expect(results).toHaveLength(1);
+      expect('user' in results[0] && results[0].user.kudos).toBe(7);
+      expect(service.currentUser()?.kudos).toBe(7);
+    });
+
+    it('reports a 429 as rate limited and keeps the current user', () => {
+      storeKey();
+      mockHorde.readUserByApiKey.mockReturnValue(of(fakeUser({ kudos: 7 })));
+      read();
+
+      failWith(429);
+      const results = read();
+
+      expect(results).toEqual([{ error: 'rate_limited' }]);
+      expect(service.currentUser()?.kudos).toBe(7);
+    });
+
+    it('reports a refused key as unauthorized', () => {
+      storeKey();
+      failWith(401);
+
+      expect(read()).toEqual([{ error: 'unauthorized' }]);
+    });
+
+    it('reports a server fault as a network failure', () => {
+      storeKey();
+      failWith(503);
+
+      expect(read()).toEqual([{ error: 'network' }]);
     });
   });
 

@@ -1003,7 +1003,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (this.isBrowser) {
       // Anything already running under this key belongs in the results grid,
       // including what another device started.
-      this.activeGenerations.start();
+      this.destroyRef.onDestroy(this.activeGenerations.start());
       // The saved jobs are only in memory once the queue has read them, and
       // seeding from an empty list would mark the store seeded with nothing.
       void this.queue

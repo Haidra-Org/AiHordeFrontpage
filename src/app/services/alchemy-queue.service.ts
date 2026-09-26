@@ -263,6 +263,12 @@ export class AlchemyQueueService {
    * bring the deleted job straight back as an adoption.
    */
   private readonly droppedJobIds = new Map<string, number>();
+  /**
+   * Ids whose submit has returned but whose job is not in the list yet. The
+   * account record can name such an id before the job is stored, and
+   * `adoptActive` would otherwise take it for a request made elsewhere.
+   */
+  private readonly inFlightIds = new Set<string>();
 
   constructor() {
     if (!this.isBrowser) {
@@ -325,7 +331,7 @@ export class AlchemyQueueService {
 
   /** Submit a request and, when the horde takes it, begin tracking it. */
   public async submit(input: AlchemySubmission): Promise<AlchemySubmitOutcome> {
-    const apiKey = this.auth.getStoredApiKey() ?? ANONYMOUS_API_KEY;
+    const apiKey = this.auth.getStoredApiKey() || ANONYMOUS_API_KEY;
     const detectors = input.annotationControlTypes ?? [];
     const request: InterrogationRequest = {
       // A control map is one form per detector: the horde reads each entry on
@@ -349,38 +355,42 @@ export class AlchemyQueueService {
       return { kind: 'refused', error: result.error };
     }
     const response = result.response;
+    this.inFlightIds.add(response.id);
+    try {
+      const now = Date.now();
+      const sourceMode = isUrlSource(input.source);
+      const job: StoredAlchemyJob = {
+        localId: randomUuid(),
+        jobId: response.id,
+        createdAt: now,
+        updatedAt: now,
+        forms: input.forms,
+        annotationControlTypes: input.forms.includes('annotation')
+          ? detectors
+          : undefined,
+        slowWorkers: input.slowWorkers,
+        sourceMode,
+        sourceUrl: sourceMode === 'url' ? input.source : undefined,
+        kudos: response.kudos,
+        status: null,
+        done: false,
+        faulted: false,
+        cancelled: false,
+        notFound: false,
+        storedResultForms: [],
+        failedResultForms: [],
+      };
 
-    const now = Date.now();
-    const sourceMode = isUrlSource(input.source);
-    const job: StoredAlchemyJob = {
-      localId: randomUuid(),
-      jobId: response.id,
-      createdAt: now,
-      updatedAt: now,
-      forms: input.forms,
-      annotationControlTypes: input.forms.includes('annotation')
-        ? detectors
-        : undefined,
-      slowWorkers: input.slowWorkers,
-      sourceMode,
-      sourceUrl: sourceMode === 'url' ? input.source : undefined,
-      kudos: response.kudos,
-      status: null,
-      done: false,
-      faulted: false,
-      cancelled: false,
-      notFound: false,
-      storedResultForms: [],
-      failedResultForms: [],
-    };
-
-    await this.db.putJob(job);
-    this.stored.update((jobs) => [job, ...jobs]);
-    this.tabSync.publish('alchemy-job.added', job);
-    // Off the submit path: a URL source needs no work, and a canvas encode of a
-    // multi-megabyte upload should not hold up the job appearing on screen.
-    void this.storeSourceImages(job, input);
-    return { kind: 'submitted', id: response.id };
+      await this.db.putJob(job);
+      this.stored.update((jobs) => [job, ...jobs]);
+      this.tabSync.publish('alchemy-job.added', job);
+      // Off the submit path: a URL source needs no work, and a canvas encode of
+      // a multi-megabyte upload should not hold up the job appearing on screen.
+      void this.storeSourceImages(job, input);
+      return { kind: 'submitted', id: response.id };
+    } finally {
+      this.inFlightIds.delete(response.id);
+    }
   }
 
   /**
@@ -395,7 +405,11 @@ export class AlchemyQueueService {
     this.pruneDeleted();
     const known = new Set(this.stored().map((job) => job.jobId));
     for (const jobId of ids) {
-      if (known.has(jobId) || this.droppedJobIds.has(jobId)) {
+      if (
+        known.has(jobId) ||
+        this.droppedJobIds.has(jobId) ||
+        this.inFlightIds.has(jobId)
+      ) {
         continue;
       }
       // A peer tab may have taken this id over while an earlier adoption here

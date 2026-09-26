@@ -169,6 +169,12 @@ export class GenerationQueueService {
   private readonly recentlyDeleted = new Map<string, number>();
   /** Horde ids of deleted or orphaned generations, with when they were dropped. */
   private readonly droppedHordeIds = new Map<string, number>();
+  /**
+   * Horde ids whose submit has returned but whose local job does not carry the
+   * id yet. The account record can list such an id before the patch lands, and
+   * `adoptActive` would otherwise take it for a generation started elsewhere.
+   */
+  private readonly inFlightIds = new Set<string>();
 
   private dispatchRunning = false;
   private pollRunning = false;
@@ -305,7 +311,11 @@ export class GenerationQueueService {
         .filter((hordeId): hordeId is string => hordeId !== undefined),
     );
     for (const hordeId of ids) {
-      if (known.has(hordeId) || this.droppedHordeIds.has(hordeId)) {
+      if (
+        known.has(hordeId) ||
+        this.droppedHordeIds.has(hordeId) ||
+        this.inFlightIds.has(hordeId)
+      ) {
         continue;
       }
       // A peer tab may have taken this id over while an earlier adoption here
@@ -555,23 +565,29 @@ export class GenerationQueueService {
     const stillWaiting = this.findJob(job.localId)?.status === 'waiting';
 
     if (result.kind === 'success') {
-      if (!stillWaiting) {
-        await this.reconcileOrphanedSubmit(job.localId, result.response.id);
-        return 'transient';
+      const hordeId = result.response.id;
+      this.inFlightIds.add(hordeId);
+      try {
+        if (!stillWaiting) {
+          await this.reconcileOrphanedSubmit(job.localId, hordeId);
+          return 'transient';
+        }
+        await this.patchJob(job.localId, {
+          status: 'requested',
+          hordeId,
+          kudos: result.response.kudos,
+          // The same figure, kept where nothing later overwrites it, so the
+          // finished job can be shown against what it was quoted.
+          quotedKudos: result.response.kudos,
+          errorMessage: undefined,
+          errorKey: undefined,
+          errorRc: undefined,
+          submitBlocked: undefined,
+          submitRetryAt: undefined,
+        });
+      } finally {
+        this.inFlightIds.delete(hordeId);
       }
-      await this.patchJob(job.localId, {
-        status: 'requested',
-        hordeId: result.response.id,
-        kudos: result.response.kudos,
-        // The same figure, kept where nothing later overwrites it, so the
-        // finished job can be shown against what it was quoted.
-        quotedKudos: result.response.kudos,
-        errorMessage: undefined,
-        errorKey: undefined,
-        errorRc: undefined,
-        submitBlocked: undefined,
-        submitRetryAt: undefined,
-      });
       this.ngZone.run(() =>
         this._lastAccepted.set({ localId: job.localId, at: this.now() }),
       );

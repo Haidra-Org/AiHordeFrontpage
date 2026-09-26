@@ -787,6 +787,36 @@ describe('GenerationQueueService', () => {
     expect(queue.jobs()[0].adopted).toBeUndefined();
   });
 
+  it('does not adopt an id whose submit is still being recorded', async () => {
+    aiHorde.submitImageGenerationResult.mockReturnValue(
+      of(submitSuccess('h-race')),
+    );
+    const queue = await createQueue();
+    await queue.enqueue({ prompt: 'a cat' });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const putJob = fakeDb.putJob.bind(fakeDb);
+    vi.spyOn(fakeDb, 'putJob').mockImplementation(async (job) => {
+      if (job.hordeId === 'h-race' && !job.adopted) {
+        await gate;
+      }
+      return putJob(job);
+    });
+
+    await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+    expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(1);
+
+    await queue.adoptActive(['h-race']);
+    expect(queue.jobs()).toHaveLength(1);
+
+    release();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(queue.jobs()).toHaveLength(1);
+    expect(queue.jobs()[0].hordeId).toBe('h-race');
+    expect(queue.jobs()[0].adopted).toBeUndefined();
+  });
+
   it('polls an adopted job to done through the existing path', async () => {
     aiHorde.checkImageGenerationResult.mockReturnValue(
       of(checkResult({ check: { done: true, processing: 0 } })),

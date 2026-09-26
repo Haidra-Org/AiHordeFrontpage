@@ -68,6 +68,17 @@ describe('deriveImageMeta', () => {
     expect(derived.errors).toHaveLength(1);
   });
 
+  it('keeps a source-image fault on an adopted job, whose request is unknown', () => {
+    const derived = deriveImageMeta(
+      metadata([{ type: 'source_image', value: 'parse_failed' }]),
+      { prompt: '' },
+    );
+
+    expect(derived.errors).toEqual([
+      { type: 'source_image', value: 'parse_failed', ref: undefined },
+    ]);
+  });
+
   it('keeps lora and ti faults regardless of the source inputs', () => {
     const derived = deriveImageMeta(
       metadata([

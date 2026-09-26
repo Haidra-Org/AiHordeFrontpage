@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
-import { AuthService } from './auth.service';
+import { AuthService, UserReadError } from './auth.service';
 import { HordeApiCacheService } from './horde-api-cache.service';
 import { GenerationQueueService } from './generation-queue.service';
 import {
@@ -16,18 +16,28 @@ import {
 } from './alchemy-queue.service';
 
 /**
- * How often the account record is re-read. One read answers for both studios,
- * so it runs on the slower of the two queue cadences rather than on a period of
- * its own.
+ * How often the account record is re-read while work is outstanding. One read
+ * answers for both studios, so it runs on the slower of the two queue cadences
+ * rather than on a period of its own.
  */
 const READ_INTERVAL_MS = ALCHEMY_POLL_INTERVAL_MS;
 
 /**
- * How long to wait after a read the horde would not answer. `AuthService`
- * reports every failure as an absent user, so this covers the rate limit along
- * with everything else that can go wrong with the call.
+ * How often the record is re-read with nothing outstanding. A generation
+ * started on another device leaves no trace in this browser, so an idle reader
+ * still looks now and then, at a cost of one request a minute.
  */
+const IDLE_READ_INTERVAL_MS = 60_000;
+
+/** How long to wait after a read that failed for want of an answer. */
 const BACKOFF_MS = 15_000;
+
+/**
+ * How long to wait after the horde rate-limited the read. Its limit counts
+ * every request under the key, so reading again soon would spend the budget
+ * the studios need for their own polling.
+ */
+const RATE_LIMITED_BACKOFF_MS = 60_000;
 
 /**
  * Reconciles what the horde says is running under the reader's key with what
@@ -54,32 +64,65 @@ export class ActiveGenerationsService {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private timer: ReturnType<typeof setInterval> | null = null;
+  private readonly onVisibility = (): void => {
+    // Whatever changed while the tab was away, including a generation started
+    // on another device, is only visible in the record, so the return reads it
+    // whether or not this browser knows of work outstanding.
+    if (this.document.visibilityState === 'visible') {
+      void this.reconcile();
+    }
+  };
   /** Guards against a second read starting while one is still outstanding. */
   private reading = false;
   private backoffUntil = 0;
+  private lastReadAt = 0;
+  /** Studios open right now; the timer runs while there is at least one. */
+  private holders = 0;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.stop());
+  }
 
   /**
-   * Read the record once and keep reading it while anything is running. Called
-   * by each studio as it opens; the second call is a no-op, so both studios can
-   * ask without either of them owning the timer.
+   * Read the record once, then every {@link READ_INTERVAL_MS} while anything is
+   * running and every {@link IDLE_READ_INTERVAL_MS} otherwise. Called by each
+   * studio as it opens; the returned release is called as it closes, and the
+   * reads stop with the last studio, so a reader elsewhere on the site costs no
+   * requests. Both studios can ask without either of them owning the timer.
    */
-  public start(): void {
-    if (!this.isBrowser || this.timer !== null) {
-      return;
+  public start(): () => void {
+    if (!this.isBrowser) {
+      return () => undefined;
+    }
+    this.holders += 1;
+    let released = false;
+    const release = (): void => {
+      if (released) {
+        return;
+      }
+      released = true;
+      this.holders -= 1;
+      if (this.holders === 0) {
+        this.stop();
+      }
+    };
+    if (this.timer !== null) {
+      return release;
     }
     this.ngZone.runOutsideAngular(() => {
       this.timer = setInterval(() => void this.tick(), READ_INTERVAL_MS);
-      const onVisibility = (): void => {
-        if (this.document.visibilityState === 'visible') {
-          void this.tick();
-        }
-      };
-      this.document.addEventListener('visibilitychange', onVisibility);
-      this.destroyRef.onDestroy(() =>
-        this.document.removeEventListener('visibilitychange', onVisibility),
-      );
+      this.document.addEventListener('visibilitychange', this.onVisibility);
     });
     void this.reconcile();
+    return release;
+  }
+
+  private stop(): void {
+    if (this.timer !== null) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+    this.document.removeEventListener('visibilitychange', this.onVisibility);
   }
 
   private async tick(): Promise<void> {
@@ -89,16 +132,18 @@ export class ActiveGenerationsService {
     if (this.document.visibilityState === 'hidden') {
       return;
     }
-    if (!this.hasWorkOutstanding()) {
+    if (
+      !this.hasWorkOutstanding() &&
+      Date.now() - this.lastReadAt < IDLE_READ_INTERVAL_MS
+    ) {
       return;
     }
     await this.reconcile();
   }
 
   /**
-   * Whether the record is worth re-reading. An account with nothing running and
-   * no local job in flight cannot gain one without this browser knowing, so an
-   * idle reader costs no requests at all.
+   * Whether the record is worth re-reading at the faster cadence: the account
+   * reports something running, or a local job is still in flight.
    */
   private hasWorkOutstanding(): boolean {
     const active = this.auth.currentUser()?.active_generations;
@@ -122,18 +167,19 @@ export class ActiveGenerationsService {
       return;
     }
     this.reading = true;
+    this.lastReadAt = Date.now();
     try {
       // The account read is served from a cache that outlives the cadence by
       // an order of magnitude, so a job started elsewhere would sit unseen
       // until that copy aged out. Dropping the cached user first makes every
       // tick a real read, and hands the fresh record to every other reader.
       this.cache.invalidate({ category: 'user' });
-      const user = await firstValueFrom(this.auth.refreshUser());
-      if (!user) {
-        this.backoffUntil = Date.now() + BACKOFF_MS;
+      const read = await firstValueFrom(this.auth.readUser());
+      if ('error' in read) {
+        this.onReadFailed(read.error);
         return;
       }
-      const active = user.active_generations;
+      const active = read.user.active_generations;
       await this.imageQueue.adoptActive(active?.image ?? []);
       await this.alchemyQueue.adoptActive(active?.alchemy ?? []);
     } catch {
@@ -142,6 +188,26 @@ export class ActiveGenerationsService {
       this.backoffUntil = Date.now() + BACKOFF_MS;
     } finally {
       this.reading = false;
+    }
+  }
+
+  /**
+   * A failed read is never shown to the reader: the studios keep polling their
+   * own jobs, and the record only adds jobs this browser did not start.
+   */
+  private onReadFailed(error: UserReadError): void {
+    switch (error) {
+      case 'rate_limited':
+        this.backoffUntil = Date.now() + RATE_LIMITED_BACKOFF_MS;
+        return;
+      case 'unauthorized':
+        // The key no longer names an account, so no later read can succeed. A
+        // studio opening after a new sign-in starts the loop again.
+        this.stop();
+        return;
+      case 'network':
+        this.backoffUntil = Date.now() + BACKOFF_MS;
+        return;
     }
   }
 }

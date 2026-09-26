@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, catchError, map, tap, switchMap } from 'rxjs';
 import { extractApiErrorField } from '../helper/extract-api-error';
 import { DatabaseService, StorageType } from './database.service';
@@ -15,6 +15,26 @@ export interface DeleteUserResponse {
 export interface DeleteUserError {
   message: string;
   rc?: string;
+}
+
+/** Why a read of the account record came back without one. */
+export type UserReadError = 'rate_limited' | 'unauthorized' | 'network';
+
+/** The account record, or the reason the horde did not give it. */
+export type UserRead = { user: HordeUser } | { error: UserReadError };
+
+function classifyReadError(error: unknown): UserReadError {
+  if (!(error instanceof HttpErrorResponse)) {
+    return 'network';
+  }
+  if (error.status === 429) {
+    return 'rate_limited';
+  }
+  // The horde answers an unknown or revoked key on find_user with one of these.
+  if (error.status === 401 || error.status === 403 || error.status === 404) {
+    return 'unauthorized';
+  }
+  return 'network';
 }
 
 @Injectable({
@@ -127,6 +147,33 @@ export class AuthService {
     );
   }
 
+  /**
+   * Re-read the stored key's account record and say why when there is none.
+   * `refreshUser()` folds every failure into `null`, which cannot tell a rate
+   * limit from a revoked key; a caller that reads on a timer needs the
+   * difference to decide whether to wait or stop. A failed read leaves the
+   * current user in place.
+   */
+  public readUser(): Observable<UserRead> {
+    const apiKey = this.getStoredApiKey();
+    if (!apiKey) {
+      return of({ error: 'unauthorized' });
+    }
+    return this.aiHorde.readUserByApiKey(apiKey).pipe(
+      switchMap((user) => (user ? this.enrichUser(user) : of(null))),
+      map((user): UserRead => {
+        if (!user) {
+          return { error: 'unauthorized' };
+        }
+        this._currentUser.set(user);
+        return { user };
+      }),
+      catchError((error: unknown) =>
+        of<UserRead>({ error: classifyReadError(error) }),
+      ),
+    );
+  }
+
   public getStoredApiKey(): string | null {
     const remember = this.database.get('remember_api_key', true);
     return this.database.get<string | null>(
@@ -151,17 +198,19 @@ export class AuthService {
   }
 
   private fetchAndEnrichUser(apiKey: string): Observable<HordeUser | null> {
-    return this.aiHorde.getUserByApiKey(apiKey).pipe(
-      switchMap((user) => {
-        if (!user || !user.worker_count) {
-          if (user) user.public_workers = false;
-          return of(user);
-        }
-        return this.aiHorde
-          .inferPublicWorkers(user.id)
-          .pipe(map((isPublic) => ({ ...user, public_workers: isPublic })));
-      }),
-    );
+    return this.aiHorde
+      .getUserByApiKey(apiKey)
+      .pipe(switchMap((user) => (user ? this.enrichUser(user) : of(user))));
+  }
+
+  private enrichUser(user: HordeUser): Observable<HordeUser> {
+    if (!user.worker_count) {
+      user.public_workers = false;
+      return of(user);
+    }
+    return this.aiHorde
+      .inferPublicWorkers(user.id)
+      .pipe(map((isPublic) => ({ ...user, public_workers: isPublic })));
   }
 
   /**

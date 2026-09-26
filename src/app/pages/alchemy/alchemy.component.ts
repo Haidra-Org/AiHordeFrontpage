@@ -805,7 +805,7 @@ export class AlchemyComponent {
     afterNextRender(() => {
       // Anything already running under this key belongs in the request list,
       // including what another device started.
-      this.activeGenerations.start();
+      this.destroyRef.onDestroy(this.activeGenerations.start());
       void this.selectNewestJob();
       this.watchViewport();
       void this.consumeHandoff();

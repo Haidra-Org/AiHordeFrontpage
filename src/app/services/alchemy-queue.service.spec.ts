@@ -149,6 +149,24 @@ describe('AlchemyQueueService', () => {
       expect((await db.listJobs())[0].jobId).toBe('job-1');
     });
 
+    it('submits with the anonymous key when the stored key is empty', async () => {
+      const auth = TestBed.inject(AuthService) as unknown as {
+        getStoredApiKey: () => string | null;
+      };
+      auth.getStoredApiKey = () => '';
+
+      const pending = service.submit({
+        forms: ['caption'],
+        slowWorkers: true,
+        source: 'https://example.com/i.png',
+      });
+
+      const req = http.expectOne(`${API_BASE}/interrogate/async`);
+      expect(req.request.headers.get('apikey')).toBe('0000000000');
+      req.flush({ id: 'job-anon' });
+      await pending;
+    });
+
     it('sends and persists the detector selected for an annotation', async () => {
       const pending = service.submit({
         annotationControlTypes: ['depth'],
@@ -638,6 +656,34 @@ describe('AlchemyQueueService', () => {
       await submit('job-a');
 
       await service.adoptActive(['job-a']);
+
+      expect(service.jobs()).toHaveLength(1);
+      expect(service.jobs()[0].adopted).toBe(false);
+    });
+
+    it('does not adopt an id whose submit is still being recorded', async () => {
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const putJob = db.putJob.bind(db);
+      vi.spyOn(db, 'putJob').mockImplementationOnce(async (job) => {
+        await gate;
+        return putJob(job);
+      });
+
+      const pending = service.submit({
+        forms: ['caption'],
+        slowWorkers: true,
+        source: 'https://example.com/i.png',
+      });
+      http.expectOne(`${API_BASE}/interrogate/async`).flush({ id: 'job-race' });
+      await settle();
+
+      await service.adoptActive(['job-race']);
+      expect(service.jobs()).toHaveLength(0);
+
+      release();
+      await pending;
+      await settle();
 
       expect(service.jobs()).toHaveLength(1);
       expect(service.jobs()[0].adopted).toBe(false);
