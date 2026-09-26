@@ -1698,7 +1698,16 @@
             (click)="onViewerImageClick()"
             [attr.aria-label]="'generate.results.close' | transloco"
           >
-            <img #viewerImg class="gs-viewer-img" [src]="view.url" alt="" />
+            <img
+              #viewerImg
+              class="gs-viewer-img"
+              [src]="view.url"
+              [alt]="
+                viewerPromptAlt() ||
+                ('generate.results.picture_alt'
+                  | transloco: { n: viewerIndex() + 1, total: viewerCount() })
+              "
+            />
           </button>
           @if (viewerCount() > 1) {
             <button

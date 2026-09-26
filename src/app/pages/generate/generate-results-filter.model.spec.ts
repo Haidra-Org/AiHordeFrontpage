@@ -60,8 +60,8 @@ describe('parseResultQuery', () => {
   });
 
   it('reads an unknown key as a bare term, colon included', () => {
-    expect(parseResultQuery('style:watercolor')).toEqual([
-      { key: null, value: 'style:watercolor' },
+    expect(parseResultQuery('lighting:soft')).toEqual([
+      { key: null, value: 'lighting:soft' },
     ]);
   });
 
@@ -82,8 +82,26 @@ describe('parseResultQuery', () => {
       'prompt',
       'negative',
       'model',
+      'sampler',
+      'steps',
+      'cfg',
+      'size',
+      'seed',
+      'lora',
+      'style',
     ]);
-    expect(RESULT_FILTER_PLACES).toEqual(['prompt:', 'negative:', 'model:']);
+    expect(RESULT_FILTER_PLACES).toEqual([
+      'prompt:',
+      'negative:',
+      'model:',
+      'sampler:',
+      'steps:',
+      'cfg:',
+      'size:',
+      'seed:',
+      'lora:',
+      'style:',
+    ]);
   });
 });
 
@@ -158,8 +176,93 @@ describe('matchesResultQuery', () => {
   });
 
   it('searches a colon in the prompt through an unknown key', () => {
-    const styled = tile('style:watercolor, a bridge');
+    const lit = tile('lighting:soft, a bridge');
 
-    expect(matches(styled, 'style:watercolor')).toBe(true);
+    expect(matches(lit, 'lighting:soft')).toBe(true);
+  });
+});
+
+describe('matchesResultQuery over settings', () => {
+  const tuned: ResultQuerySubject = {
+    prompt: 'a harbour at dusk',
+    seed: '3141592653',
+    styleName: 'Watercolor Dream',
+    request: {
+      prompt: 'a harbour at dusk',
+      models: ['AlbedoBase XL'],
+      params: {
+        sampler_name: 'k_dpmpp_2m',
+        steps: 30,
+        cfg_scale: 7.5,
+        width: 1024,
+        height: 768,
+        loras: [{ name: 'Detail Tweaker XL' }, { name: '58390' }],
+      },
+    },
+  };
+
+  it('matches a sampler by part of its name', () => {
+    expect(matches(tuned, 'sampler:dpmpp')).toBe(true);
+    expect(matches(tuned, 'sampler:K_DPMPP_2M')).toBe(true);
+    expect(matches(tuned, 'sampler:euler')).toBe(false);
+  });
+
+  it('matches steps by exact value only', () => {
+    expect(matches(tuned, 'steps:30')).toBe(true);
+    expect(matches(tuned, 'steps:3')).toBe(false);
+    expect(matches(tuned, 'steps:abc')).toBe(false);
+  });
+
+  it('matches cfg by exact value, decimals included', () => {
+    expect(matches(tuned, 'cfg:7.5')).toBe(true);
+    expect(matches(tuned, 'cfg:7')).toBe(false);
+  });
+
+  it('matches a size as WxH or as either dimension', () => {
+    expect(matches(tuned, 'size:1024x768')).toBe(true);
+    expect(matches(tuned, 'size:1024X768')).toBe(true);
+    expect(matches(tuned, 'size:768x1024')).toBe(false);
+    expect(matches(tuned, 'size:1024')).toBe(true);
+    expect(matches(tuned, 'size:768')).toBe(true);
+    expect(matches(tuned, 'size:512')).toBe(false);
+    expect(matches(tuned, 'size:1024x')).toBe(false);
+  });
+
+  it('matches the seed a finished image reports or the one requested', () => {
+    expect(matches(tuned, 'seed:3141592653')).toBe(true);
+    expect(matches(tuned, 'seed:314159')).toBe(false);
+
+    const requested: ResultQuerySubject = {
+      request: { prompt: 'x', params: { seed: 'lighthouse' } },
+    };
+    expect(matches(requested, 'seed:Lighthouse')).toBe(true);
+  });
+
+  it('matches a lora by part of any of its names', () => {
+    expect(matches(tuned, 'lora:detail')).toBe(true);
+    expect(matches(tuned, 'lora:58390')).toBe(true);
+    expect(matches(tuned, 'lora:ghibli')).toBe(false);
+  });
+
+  it('matches a style by its name, case folded', () => {
+    expect(matches(tuned, 'style:watercolor')).toBe(true);
+    expect(matches(tuned, 'style:"watercolor dream"')).toBe(true);
+    expect(matches(tuned, 'style:oil')).toBe(false);
+  });
+
+  it('matches nothing for a setting the tile does not carry', () => {
+    const bare: ResultQuerySubject = { prompt: 'a lighthouse' };
+
+    for (const query of [
+      'sampler:k',
+      'steps:30',
+      'cfg:7',
+      'size:1024',
+      'seed:1',
+      'lora:x',
+      'style:x',
+    ]) {
+      expect(matches(bare, query)).toBe(false);
+    }
   });
 });

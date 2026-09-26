@@ -10,12 +10,23 @@ import { splitCombinedPrompt } from './generate-form.model';
  * a tile stays, so the tile pipeline in the results panel does not change.
  *
  * A key the list does not know is read as part of an ordinary term, because a
- * colon is ordinary prompt text ("style: watercolor") and a reader searching
- * for it should find it rather than find nothing.
+ * colon is ordinary prompt text ("lighting: soft") and a reader searching for
+ * it should find it rather than find nothing.
  *
  * Everything here is plain functions over plain data, so the matching can be
  * tested without building the panel.
  */
+
+/** The request settings a keyed term can match against. */
+export interface ResultQueryParams {
+  sampler_name?: string;
+  steps?: number;
+  cfg_scale?: number;
+  width?: number;
+  height?: number;
+  seed?: string;
+  loras?: readonly { name: string }[];
+}
 
 /**
  * The parts of a results tile a search reads. Declared here rather than taken
@@ -26,8 +37,19 @@ export interface ResultQuerySubject {
   prompt?: string;
   /** The model a finished image reports it was made with. */
   model?: string;
-  /** The request as submitted: the combined prompt and the models asked for. */
-  request?: { prompt: string; models?: string[] };
+  /**
+   * The seed a finished image reports. A request that left the seed to the
+   * horde holds none, so this is the only seed such a picture has.
+   */
+  seed?: string;
+  /** The style the generation was submitted with, as it was named then. */
+  styleName?: string;
+  /** The request as submitted: the combined prompt, models and settings. */
+  request?: {
+    prompt: string;
+    models?: string[];
+    params?: ResultQueryParams;
+  };
 }
 
 /** One filter a `key:value` term can be aimed at. */
@@ -61,6 +83,39 @@ function contains(haystack: string | undefined, term: string): boolean {
   return !!haystack && haystack.toLowerCase().includes(term);
 }
 
+/**
+ * Whether a number equals the term read as a number. A term that is not a
+ * number matches nothing, so `steps:abc` empties the grid rather than being
+ * ignored and leaving the reader to wonder why nothing narrowed.
+ */
+function equalsNumber(value: number | undefined, term: string): boolean {
+  const wanted = Number(term);
+  return value !== undefined && Number.isFinite(wanted) && value === wanted;
+}
+
+/**
+ * Whether the size matches `WxH` or a single dimension. A single number
+ * matches either side, since a reader who remembers "1024" rarely remembers
+ * which side it was.
+ */
+function matchesSize(
+  params: ResultQueryParams | undefined,
+  term: string,
+): boolean {
+  const [first, second, ...rest] = term.split(/[x×]/);
+  if (first === undefined || rest.length > 0) {
+    return false;
+  }
+  if (second === undefined) {
+    return (
+      equalsNumber(params?.width, first) || equalsNumber(params?.height, first)
+    );
+  }
+  return (
+    equalsNumber(params?.width, first) && equalsNumber(params?.height, second)
+  );
+}
+
 export const RESULT_FILTERS: readonly ResultFilterDefinition[] = [
   {
     key: 'prompt',
@@ -77,6 +132,42 @@ export const RESULT_FILTERS: readonly ResultFilterDefinition[] = [
     matches: (tile, term) =>
       contains(tile.model, term) ||
       (tile.request?.models ?? []).some((model) => contains(model, term)),
+  },
+  {
+    key: 'sampler',
+    matches: (tile, term) => contains(tile.request?.params?.sampler_name, term),
+  },
+  {
+    key: 'steps',
+    matches: (tile, term) => equalsNumber(tile.request?.params?.steps, term),
+  },
+  {
+    key: 'cfg',
+    matches: (tile, term) =>
+      equalsNumber(tile.request?.params?.cfg_scale, term),
+  },
+  {
+    key: 'size',
+    matches: (tile, term) => matchesSize(tile.request?.params, term),
+  },
+  {
+    // Seeds are compared as text: they can exceed the integers a number holds
+    // exactly, and a request may carry a seed that is not numeric at all.
+    key: 'seed',
+    matches: (tile, term) =>
+      tile.seed?.toLowerCase() === term ||
+      tile.request?.params?.seed?.toLowerCase() === term,
+  },
+  {
+    key: 'lora',
+    matches: (tile, term) =>
+      (tile.request?.params?.loras ?? []).some((lora) =>
+        contains(lora.name, term),
+      ),
+  },
+  {
+    key: 'style',
+    matches: (tile, term) => contains(tile.styleName, term),
   },
 ];
 

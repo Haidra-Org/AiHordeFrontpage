@@ -24,8 +24,27 @@ import en from '../../../../assets/i18n/en.json';
 import { studioLinkFromText } from '../studio-link';
 import { DOCS_IMAGE } from '../../../content/docs-links';
 import { ResultControlActionRequest } from '../result-control-action';
+import { TextGenerationDbService } from '../../../services/text-generation-db.service';
+import { RESULT_FILTER_PLACES } from '../generate-results-filter.model';
 
 const TRANSLATIONS = en as Record<string, string>;
+
+/**
+ * An empty store for kept text requests. The panel's children reach the text
+ * queue, which reads that store as it is created, and the test environment has
+ * no IndexedDB for it to open.
+ */
+function textDbStub(): Pick<
+  TextGenerationDbService,
+  'put' | 'get' | 'list' | 'remove'
+> {
+  return {
+    put: vi.fn(() => Promise.resolve()),
+    get: vi.fn(() => Promise.resolve(undefined)),
+    list: vi.fn(() => Promise.resolve([])),
+    remove: vi.fn(() => Promise.resolve()),
+  };
+}
 
 function job(
   localId: string,
@@ -106,6 +125,7 @@ describe('GenerateResultsPanelComponent', () => {
   let describeService: {
     describe: ReturnType<typeof vi.fn>;
     pending: ReturnType<typeof signal<boolean>>;
+    readingKudos: ReturnType<typeof signal<number>>;
   };
 
   /**
@@ -145,6 +165,7 @@ describe('GenerateResultsPanelComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
         {
           provide: GenerationQueueService,
           useValue: {
@@ -794,8 +815,19 @@ describe('GenerateResultsPanelComponent', () => {
         string,
         { action?: { label: string; run: () => void } },
       ];
-      expect(key).toBe('generate.results.deleted_undo');
+      expect(key).toBe('generate.results.deleted_undo_one');
       expect(options.action?.label).toBe('generate.results.undo');
+    });
+
+    it('counts several removed generations in the plural', () => {
+      component.requestDelete(['a', 'b']);
+
+      const [key, options] = toastSuccess.mock.calls[0] as [
+        string,
+        { messageParams?: { count: number } },
+      ];
+      expect(key).toBe('generate.results.deleted_undo_other');
+      expect(options.messageParams?.count).toBe(2);
     });
 
     it('restores exactly what was removed when undone', () => {
@@ -875,7 +907,7 @@ describe('GenerateResultsPanelComponent', () => {
       component.requestDelete(['unsent']);
 
       expect(toastSuccess.mock.calls[0][0]).toBe(
-        'generate.results.deleted_undo',
+        'generate.results.deleted_undo_one',
       );
     });
 
@@ -1749,6 +1781,7 @@ describe('GenerateResultsPanelComponent empty pane', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
         provideRouter([]),
         {
           provide: GenerationQueueService,
@@ -1838,6 +1871,7 @@ describe('GenerateResultsPanelComponent status chip', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
         provideRouter([]),
         {
           provide: GenerationQueueService,
@@ -1939,6 +1973,7 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
         provideRouter([]),
         {
           provide: GenerationQueueService,
@@ -2047,7 +2082,7 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
     });
 
     it('keeps the group on a phone for a picture made here', async () => {
-      finishedJobs.set([{ ...adopted, localId: 'own-1', adopted: false }]);
+      finishedJobs.set([{ ...adopted, localId: 'own-1', adopted: undefined }]);
       fixture.detectChanges();
       await Promise.resolve();
       await Promise.resolve();
@@ -2110,6 +2145,7 @@ describe('GenerateResultsPanelComponent justified rows', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
         provideRouter([]),
         {
           provide: GenerationQueueService,
@@ -2182,8 +2218,10 @@ describe('GenerateResultsPanelComponent results search field', () => {
   let fixture: ComponentFixture<GenerateResultsPanelComponent>;
   let component: GenerateResultsPanelComponent;
   let host: HTMLElement;
+  let finishedJobs: ReturnType<typeof signal<LocalGenerationJob[]>>;
 
   beforeEach(async () => {
+    finishedJobs = signal<LocalGenerationJob[]>(SEARCH_FINISHED);
     URL.createObjectURL = vi.fn(() => 'blob:test');
     URL.revokeObjectURL = vi.fn();
 
@@ -2200,6 +2238,7 @@ describe('GenerateResultsPanelComponent results search field', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
         provideRouter([]),
         {
           provide: GenerationQueueService,
@@ -2209,7 +2248,7 @@ describe('GenerateResultsPanelComponent results search field', () => {
               ...SEARCH_FINISHED,
             ]),
             pendingJobs: signal<LocalGenerationJob[]>(SEARCH_PENDING),
-            finishedJobs: signal<LocalGenerationJob[]>(SEARCH_FINISHED),
+            finishedJobs,
             cancel: vi.fn(),
             retry: vi.fn(),
             deleteJob: vi.fn(),
@@ -2273,7 +2312,7 @@ describe('GenerateResultsPanelComponent results search field', () => {
     expect(host.querySelector(`#${hintId}`)?.textContent?.trim()).toBe(
       TRANSLATIONS['generate.results.search_hint'].replace(
         '{{ places }}',
-        'prompt:, negative:, model:',
+        RESULT_FILTER_PLACES.join(', '),
       ),
     );
   });
@@ -2326,5 +2365,122 @@ describe('GenerateResultsPanelComponent results search field', () => {
 
     expect(component.query()).toBe('');
     expect(host.querySelector('.gs-empty-clear')).toBeNull();
+  });
+
+  it('empties the search when the bar goes with the last finished picture', () => {
+    type('fox');
+    expect(component.visibleTiles().some((t) => t.jobLocalId === 'p')).toBe(
+      false,
+    );
+
+    finishedJobs.set([]);
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-view-search')).toBeNull();
+    expect(component.query()).toBe('');
+    expect(component.visibleTiles()).toEqual(component.tiles());
+    expect(component.visibleTiles().map((t) => t.jobLocalId)).toEqual(['p']);
+  });
+});
+
+describe('GenerateResultsPanelComponent viewer picture description', () => {
+  let fixture: ComponentFixture<GenerateResultsPanelComponent>;
+  let component: GenerateResultsPanelComponent;
+  let host: HTMLElement;
+
+  async function render(prompts: string[]): Promise<void> {
+    const finished = prompts.map((prompt, index) => ({
+      ...job(`f${index}`, 'done'),
+      request: { prompt },
+    }));
+    await TestBed.configureTestingModule({
+      imports: [
+        GenerateResultsPanelComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en },
+          translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: TextGenerationDbService, useValue: textDbStub() },
+        provideRouter([]),
+        {
+          provide: GenerationQueueService,
+          useValue: {
+            jobs: signal<LocalGenerationJob[]>(finished),
+            pendingJobs: signal<LocalGenerationJob[]>([]),
+            finishedJobs: signal<LocalGenerationJob[]>(finished),
+            cancel: vi.fn(),
+            retry: vi.fn(),
+            deleteJob: vi.fn(),
+            getJobImages: vi.fn((localId: string) =>
+              Promise.resolve([resultImage(localId, `${localId}-img`)]),
+            ),
+          },
+        },
+        {
+          provide: ToastService,
+          useValue: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+        },
+        {
+          provide: DatabaseService,
+          useValue: { get: vi.fn().mockReturnValue(undefined), store: vi.fn() },
+        },
+        { provide: StudioHandoffService, useValue: { set: vi.fn() } },
+        {
+          provide: StudioDescribeService,
+          useValue: {
+            describe: vi.fn(),
+            pending: signal(false),
+            readingKudos: signal(8),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+    component = fixture.componentInstance;
+    host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+  }
+
+  function openAt(index: number): string | null {
+    component.openViewer(component.viewerTiles()[index]);
+    fixture.detectChanges();
+    return host.querySelector('.gs-viewer-img')!.getAttribute('alt');
+  }
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:test');
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  it('describes the picture by its prompt', async () => {
+    await render(['a red fox in snow ### blurry']);
+
+    expect(openAt(0)).toBe('a red fox in snow');
+  });
+
+  it('cuts a long prompt to the length a screen reader can bear', async () => {
+    await render(['word '.repeat(80)]);
+
+    const alt = openAt(0)!;
+    expect(alt).toHaveLength(200);
+    expect(alt.endsWith('…')).toBe(true);
+  });
+
+  it('falls back to its place in the set without a prompt', async () => {
+    await render(['a lighthouse', '']);
+
+    expect(openAt(1)).toBe('Picture 2 of 2');
   });
 });

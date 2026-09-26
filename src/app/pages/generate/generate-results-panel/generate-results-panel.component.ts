@@ -10,6 +10,7 @@ import {
   input,
   output,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
@@ -129,6 +130,11 @@ const MIN_TILE_PX = 140;
 const COMPACT_TILE_PX = 168;
 /** Must track `--gs-tile-gap` on `.gs-tile-grid`, for the tile-width arithmetic. */
 const GRID_GAP_PX = 16;
+/**
+ * The longest prompt the viewer reads out as its picture's description. A
+ * screen reader speaks all of it on every step through the set.
+ */
+const VIEWER_ALT_MAX_CHARS = 200;
 
 /** How far a finger has to travel across the viewer before it counts as a swipe. */
 const SWIPE_THRESHOLD_PX = 40;
@@ -1030,6 +1036,16 @@ export class GenerateResultsPanelComponent {
   public readonly viewerTile = computed<ResultTile | null>(
     () => this.viewerTiles()[this.viewerIndex()] ?? null,
   );
+  /**
+   * The viewer picture's prompt as its description, or '' when it has none and
+   * the template falls back to its place in the set.
+   */
+  public readonly viewerPromptAlt = computed(() => {
+    const prompt = this.viewerTile()?.prompt?.trim() ?? '';
+    return prompt.length > VIEWER_ALT_MAX_CHARS
+      ? `${prompt.slice(0, VIEWER_ALT_MAX_CHARS - 1)}…`
+      : prompt;
+  });
 
   private readonly viewerPanel =
     viewChild<ElementRef<HTMLElement>>('viewerPanel');
@@ -1298,6 +1314,15 @@ export class GenerateResultsPanelComponent {
       const grid = this.tileGrid()?.nativeElement ?? null;
       this.observeGrid(grid);
     });
+    // The search field lives in the view bar, which is not drawn until a
+    // picture has finished, while the query still narrows the pending tiles.
+    // Emptying it with the bar keeps a filter the reader cannot see from
+    // hiding work.
+    effect(() => {
+      if (!this.hasFinished() && untracked(this.query)) {
+        this.query.set('');
+      }
+    });
     // A soft delete the user walked away from still means "delete".
     effect(() => this.announceReady(this.readyImageCount()));
     this.destroyRef.onDestroy(() => {
@@ -1431,7 +1456,7 @@ export class GenerateResultsPanelComponent {
     }
     const message = cancelsRunning
       ? `generate.results.cancelled_undo${ids.length === 1 ? '_one' : '_other'}`
-      : 'generate.results.deleted_undo';
+      : `generate.results.deleted_undo${ids.length === 1 ? '_one' : '_other'}`;
     this.undoToastId = this.toast.success(message, {
       transloco: true,
       messageParams: { count: ids.length },
