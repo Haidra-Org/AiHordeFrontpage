@@ -16,7 +16,7 @@
         <button
           type="button"
           class="hd-btn hd-btn--dense"
-          (click)="loadSharedKeys()"
+          (click)="loadSharedKeys(true)"
           [disabled]="loading()"
         >
           @if (loading()) {

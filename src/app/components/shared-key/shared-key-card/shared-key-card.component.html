@@ -124,6 +124,65 @@
     </div>
   </div>
 
+  @if (usage(); as usageView) {
+    <section
+      class="shared-key-usage"
+      [attr.aria-labelledby]="'shared-key-usage-' + sharedKey().id"
+    >
+      <h5 class="hd-label" [id]="'shared-key-usage-' + sharedKey().id">
+        {{ "profile.shared_keys.usage.title" | transloco }}
+      </h5>
+      @if (usageView.kinds.length === 0) {
+        <p class="shared-key-usage-note">
+          {{ "profile.shared_keys.usage.idle" | transloco }}
+        </p>
+      } @else {
+        @for (kind of usageView.kinds; track kind.labelKey) {
+          <div class="shared-key-usage-kind">
+            <p class="hd-sublabel shared-key-usage-kind-label">
+              {{ kind.labelKey | transloco }}
+            </p>
+            <div class="hd-row">
+              <span>{{
+                "profile.shared_keys.usage.requests" | transloco
+              }}</span>
+              <span class="hd-row-val">{{
+                kind.summary.requests | formatNumber
+              }}</span>
+            </div>
+            <div class="hd-row">
+              <span>{{ "profile.shared_keys.usage.queued" | transloco }}</span>
+              <span class="hd-row-val">{{
+                kind.summary.queued | formatNumber
+              }}</span>
+            </div>
+            <div class="hd-row">
+              <span>{{
+                "profile.shared_keys.usage.processing" | transloco
+              }}</span>
+              <span class="hd-row-val">{{
+                kind.summary.processing | formatNumber
+              }}</span>
+            </div>
+            @if (kind.oldestWait; as wait) {
+              <div class="hd-row">
+                <span>{{
+                  "profile.shared_keys.usage.oldest_wait" | transloco
+                }}</span>
+                <span class="hd-row-val">{{
+                  wait.key | transloco: wait.params
+                }}</span>
+              </div>
+            }
+          </div>
+        }
+        <p class="shared-key-usage-note">
+          {{ "profile.shared_keys.usage.counts_note" | transloco }}
+        </p>
+      }
+    </section>
+  }
+
   @if (!readonly()) {
     <div class="shared-key-actions">
       <button

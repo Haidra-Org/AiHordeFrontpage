@@ -9,7 +9,10 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { FormatNumberPipe } from '../../../pipes/format-number.pipe';
 import { TouchTooltipDirective } from '../../../helper/touch-tooltip.directive';
-import { SharedKeyDetails } from '../../../types/shared-key';
+import {
+  SharedKeyDetails,
+  SharedKeyUsageSummary,
+} from '../../../types/shared-key';
 import {
   JsonInspectorComponent,
   JsonInspectorSection,
@@ -19,6 +22,27 @@ import { IconComponent } from '../../icon/icon.component';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 
 export type SharedKeyStatus = 'active' | 'expired' | 'exhausted';
+
+/** A translation key and its parameters, resolved in the template. */
+export interface SharedKeyUsageText {
+  key: string;
+  params: Record<string, number>;
+}
+
+/** One kind of work on the key that has something queued or running. */
+export interface SharedKeyUsageKind {
+  labelKey: string;
+  summary: SharedKeyUsageSummary;
+  oldestWait: SharedKeyUsageText | null;
+}
+
+/**
+ * What the card shows about work running on the key. Null when the horde sent
+ * no counts, which happens for anyone but the owner and on older hordes.
+ */
+export interface SharedKeyUsageView {
+  kinds: SharedKeyUsageKind[];
+}
 
 @Component({
   selector: 'app-shared-key-card',
@@ -73,6 +97,25 @@ export class SharedKeyCardComponent {
     return this.computeStatus(key);
   });
 
+  public readonly usage = computed<SharedKeyUsageView | null>(() => {
+    const activeUsage = this.sharedKey().active_usage;
+    if (!activeUsage) {
+      return null;
+    }
+    const kinds: SharedKeyUsageKind[] = [];
+    if (this.hasWork(activeUsage.image)) {
+      kinds.push(
+        this.usageKind('profile.shared_keys.usage.image', activeUsage.image),
+      );
+    }
+    if (this.hasWork(activeUsage.text)) {
+      kinds.push(
+        this.usageKind('profile.shared_keys.usage.text', activeUsage.text),
+      );
+    }
+    return { kinds };
+  });
+
   /**
    * Computes the square dimension string from a pixel count.
    */
@@ -123,6 +166,59 @@ export class SharedKeyCardComponent {
 
   public closeRawJson(): void {
     this.rawJsonOpen.set(false);
+  }
+
+  private hasWork(summary: SharedKeyUsageSummary | undefined): boolean {
+    return (
+      !!summary &&
+      (summary.requests > 0 || summary.queued > 0 || summary.processing > 0)
+    );
+  }
+
+  private usageKind(
+    labelKey: string,
+    summary: SharedKeyUsageSummary,
+  ): SharedKeyUsageKind {
+    return {
+      labelKey,
+      summary,
+      oldestWait:
+        summary.oldest_queued_age > 0
+          ? this.waitText(summary.oldest_queued_age)
+          : null,
+    };
+  }
+
+  /** Whole seconds under a minute, then rounded minutes, then rounded hours. */
+  private waitText(seconds: number): SharedKeyUsageText {
+    if (seconds < 60) {
+      const count = Math.max(1, Math.round(seconds));
+      return {
+        key:
+          count === 1
+            ? 'profile.shared_keys.usage.wait_seconds_one'
+            : 'profile.shared_keys.usage.wait_seconds_other',
+        params: { count },
+      };
+    }
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) {
+      return {
+        key:
+          minutes === 1
+            ? 'profile.shared_keys.usage.wait_minutes_one'
+            : 'profile.shared_keys.usage.wait_minutes_other',
+        params: { count: minutes },
+      };
+    }
+    const hours = Math.round(seconds / 3600);
+    return {
+      key:
+        hours === 1
+          ? 'profile.shared_keys.usage.wait_hours_one'
+          : 'profile.shared_keys.usage.wait_hours_other',
+      params: { count: hours },
+    };
   }
 
   private computeStatus(key: SharedKeyDetails): SharedKeyStatus {

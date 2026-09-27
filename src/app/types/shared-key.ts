@@ -20,6 +20,33 @@ export interface SharedKeyDetails {
   max_image_steps?: number;
   /** The maximum amount of text tokens this key can generate per job. -1 means unlimited. */
   max_text_tokens?: number;
+  /**
+   * Work currently funded by this key. Only sent to the key's owner when the request carries the owner's personal
+   * API key, and absent on hordes that predate it.
+   */
+  active_usage?: SharedKeyActiveUsage;
+}
+
+/**
+ * Aggregate counts of one kind of work funded by a shared key. Carries no request IDs or request contents.
+ */
+export interface SharedKeyUsageSummary {
+  /** Requests with queued or processing work. */
+  requests: number;
+  /** Generations waiting for a worker, across those requests. */
+  queued: number;
+  /** Generations a worker is making now, across those requests. */
+  processing: number;
+  /** Generations already completed within those still-active requests. */
+  finished: number;
+  /** Age in seconds of the oldest request with queued work, or 0 if none. */
+  oldest_queued_age: number;
+}
+
+/** A shared key's current work, split by kind. */
+export interface SharedKeyActiveUsage {
+  image: SharedKeyUsageSummary;
+  text: SharedKeyUsageSummary;
 }
 
 /**

@@ -8,7 +8,8 @@ import { vi } from 'vitest';
 import { of } from 'rxjs';
 import { SharedKeyService } from './shared-key.service';
 import { AuthService } from './auth.service';
-import { HordeApiCacheService } from './horde-api-cache.service';
+import { CacheTTL, HordeApiCacheService } from './horde-api-cache.service';
+import { SharedKeyDetails } from '../types/shared-key';
 import { ApiError } from '../types/api-error';
 import { API_BASE } from '../testing/api-test-helpers';
 
@@ -64,6 +65,49 @@ describe('SharedKeyService', () => {
       );
     });
 
+    it('caches the stored-key read briefly, since it carries live counts', () => {
+      service.getSharedKey('sk1').subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ ttl: CacheTTL.SHORT }),
+      );
+    });
+
+    it('keeps the longer cache for a read with another key', () => {
+      service.getSharedKey('sk1', 'override-key').subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ ttl: CacheTTL.MEDIUM }),
+      );
+    });
+
+    it('passes active_usage through untouched', () => {
+      const activeUsage = {
+        image: {
+          requests: 2,
+          queued: 5,
+          processing: 1,
+          finished: 3,
+          oldest_queued_age: 42,
+        },
+        text: {
+          requests: 0,
+          queued: 0,
+          processing: 0,
+          finished: 0,
+          oldest_queued_age: 0,
+        },
+      };
+      mockCache.cachedGet.mockReturnValue(
+        of({ id: 'sk1', active_usage: activeUsage }),
+      );
+      let result: SharedKeyDetails | undefined;
+      service.getSharedKey('sk1').subscribe((r) => (result = r));
+      expect(result?.active_usage).toEqual(activeUsage);
+    });
+
     it('sends empty headers when no key is available', () => {
       mockAuth.getStoredApiKey.mockReturnValue(null);
       service.getSharedKey('sk1').subscribe();
@@ -80,6 +124,19 @@ describe('SharedKeyService', () => {
       let result: unknown[] = [];
       service.getSharedKeysByIds([]).subscribe((r) => (result = r));
       expect(result).toEqual([]);
+    });
+
+    it('reads through the cache unless asked for fresh data', () => {
+      service.getSharedKeysByIds(['sk1']).subscribe();
+      expect(mockCache.invalidate).not.toHaveBeenCalled();
+    });
+
+    it('drops cached keys before a fresh read', () => {
+      service.getSharedKeysByIds(['sk1'], true).subscribe();
+      expect(mockCache.invalidate).toHaveBeenCalledWith({
+        category: 'sharedkeys',
+      });
+      expect(mockCache.cachedGet).toHaveBeenCalled();
     });
   });
 

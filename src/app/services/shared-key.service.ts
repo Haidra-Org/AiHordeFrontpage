@@ -62,20 +62,32 @@ export class SharedKeyService {
   ): Observable<SharedKeyDetails> {
     const apiKey = apiKeyOverride ?? this.ensureApiKey();
     const headers: Record<string, string> = apiKey ? { apikey: apiKey } : {};
+    // A read with the stored key is the owner's view of their own keys, which
+    // carries `active_usage`: counts of running work that go stale in seconds.
+    const ttl = apiKeyOverride ? CacheTTL.MEDIUM : CacheTTL.SHORT;
     return this.cache
       .cachedGet<SharedKeyDetails>(
         `${this.baseUrl}/${sharedKeyId}`,
         { headers, context: this.sharedKeyContext },
-        { ttl: CacheTTL.MEDIUM, category: 'sharedkeys' },
+        { ttl, category: 'sharedkeys' },
       )
       .pipe(catchError((err: unknown) => this.handleError(err)));
   }
 
+  /**
+   * @param fresh Drop cached keys first, so the counts in `active_usage` are
+   *   current rather than up to one cache lifetime old.
+   */
   public getSharedKeysByIds(
     sharedKeyIds: string[],
+    fresh = false,
   ): Observable<SharedKeyDetails[]> {
     if (sharedKeyIds.length === 0) {
       return of([]);
+    }
+
+    if (fresh) {
+      this.cache.invalidate({ category: 'sharedkeys' });
     }
 
     return forkJoin(sharedKeyIds.map((id) => this.getSharedKey(id))).pipe(

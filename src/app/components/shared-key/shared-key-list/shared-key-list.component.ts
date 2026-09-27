@@ -155,7 +155,11 @@ export class SharedKeyListComponent implements OnInit {
     }
   }
 
-  public loadSharedKeys(): void {
+  /**
+   * @param fresh Skip cached keys. The refresh button asks for this so the
+   *   running-work counts on each card are current when the reader wants them.
+   */
+  public loadSharedKeys(fresh = false): void {
     // Don't fetch if using external data
     if (this.isExternalData()) {
       return;
@@ -172,7 +176,7 @@ export class SharedKeyListComponent implements OnInit {
     }
 
     this.sharedKeyService
-      .getSharedKeysByIds(sharedKeyIds)
+      .getSharedKeysByIds(sharedKeyIds, fresh)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (keys) => {
