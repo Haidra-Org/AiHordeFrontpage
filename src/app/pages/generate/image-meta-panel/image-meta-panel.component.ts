@@ -145,9 +145,10 @@ export class ImageMetaPanelComponent {
     undefined,
   );
   /**
-   * A line explaining why there are no settings rows, for an image whose
-   * request this browser never held. Shown in place of them, and null where
-   * there is a request to read.
+   * A line about where the rows came from, for an image this browser did not
+   * request itself: why there are none, why the prompt is missing, or that
+   * they were read back from the horde. Shown above the rows; null for an
+   * image requested here.
    */
   public readonly noteKey = input<string | null>(null);
 

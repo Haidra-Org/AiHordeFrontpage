@@ -158,6 +158,73 @@ describe('AiHordeService', () => {
   // -----------------------------------------------------------------------
   // getImageGenerationStatus
   // -----------------------------------------------------------------------
+  describe('getSubmittedImageRequestResult', () => {
+    const url = `${API_BASE}/generate/request/gen-123`;
+
+    it('reads the request back with the submitting key', async () => {
+      const result = firstValueFrom(
+        service.getSubmittedImageRequestResult('owner-key', 'gen-123'),
+      );
+      const req = http.expectOne(url);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.headers.get('apikey')).toBe('owner-key');
+      req.flush({ prompt: 'a cat', params: { steps: 20 } });
+
+      expect(await result).toEqual({
+        kind: 'success',
+        request: { prompt: 'a cat', params: { steps: 20 } },
+      });
+    });
+
+    it('reports a horde without the endpoint apart from a refusal', async () => {
+      const result = firstValueFrom(
+        service.getSubmittedImageRequestResult('owner-key', 'gen-123'),
+      );
+      http
+        .expectOne(url)
+        .flush(
+          { message: 'The requested URL was not found on the server.' },
+          { status: 404, statusText: 'Not Found' },
+        );
+
+      expect(await result).toEqual({ kind: 'missing_route' });
+    });
+
+    it('carries the rc of a request the horde does not have', async () => {
+      const result = firstValueFrom(
+        service.getSubmittedImageRequestResult('owner-key', 'gen-123'),
+      );
+      http
+        .expectOne(url)
+        .flush(
+          { message: 'not found', rc: 'RequestNotFound' },
+          { status: 404, statusText: 'Not Found' },
+        );
+
+      expect(await result).toEqual({
+        kind: 'error',
+        error: { status: 404, message: 'not found', rc: 'RequestNotFound' },
+      });
+    });
+
+    it('carries the rc of a key that did not submit the request', async () => {
+      const result = firstValueFrom(
+        service.getSubmittedImageRequestResult('other-key', 'gen-123'),
+      );
+      http
+        .expectOne(url)
+        .flush(
+          { message: 'not yours', rc: 'NotRequestOwner' },
+          { status: 403, statusText: 'Forbidden' },
+        );
+
+      expect(await result).toEqual({
+        kind: 'error',
+        error: { status: 403, message: 'not yours', rc: 'NotRequestOwner' },
+      });
+    });
+  });
+
   describe('getImageGenerationStatus', () => {
     it('should GET the status endpoint and return the response', async () => {
       const mockStatus = {

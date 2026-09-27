@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   extractApiErrorField,
   extractApiError,
+  isMissingRoute,
   serializeErrorDetails,
 } from './extract-api-error';
 
@@ -131,5 +132,46 @@ describe('serializeErrorDetails', () => {
     circular['self'] = circular;
     const err = new HttpErrorResponse({ error: circular, status: 500 });
     expect(serializeErrorDetails(err)).toBeNull();
+  });
+});
+
+describe('isMissingRoute', () => {
+  it('reads a bare 404 as a route the server does not have', () => {
+    const err = new HttpErrorResponse({
+      error: { message: 'The requested URL was not found on the server.' },
+      status: 404,
+    });
+    expect(isMissingRoute(err)).toBe(true);
+  });
+
+  it('reads a bare 405 as a method the route does not have', () => {
+    const err = new HttpErrorResponse({ error: null, status: 405 });
+    expect(isMissingRoute(err)).toBe(true);
+  });
+
+  it('reads a non-JSON 404 body as a missing route', () => {
+    const err = new HttpErrorResponse({
+      error: '<html>Not Found</html>',
+      status: 404,
+    });
+    expect(isMissingRoute(err)).toBe(true);
+  });
+
+  it('keeps a 404 that carries an rc as a real answer from the route', () => {
+    const err = new HttpErrorResponse({
+      error: { message: 'Request not found', rc: 'RequestNotFound' },
+      status: 404,
+    });
+    expect(isMissingRoute(err)).toBe(false);
+  });
+
+  it('keeps other statuses and non-HTTP errors out', () => {
+    expect(
+      isMissingRoute(new HttpErrorResponse({ error: null, status: 403 })),
+    ).toBe(false);
+    expect(
+      isMissingRoute(new HttpErrorResponse({ error: null, status: 0 })),
+    ).toBe(false);
+    expect(isMissingRoute(new Error('boom'))).toBe(false);
   });
 });

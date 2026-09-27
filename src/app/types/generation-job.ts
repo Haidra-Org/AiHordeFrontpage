@@ -121,12 +121,24 @@ export interface LocalGenerationJob {
   request: ImageGenerationRequest;
   /**
    * The job was taken from the account's own list of active generations rather
-   * than submitted from this browser, so `request` is a placeholder standing in
-   * for settings nobody here ever held. Everything that would read those
-   * settings back (loading them, linking them, asking for the same picture
-   * again) has to be withheld for such a job.
+   * than submitted from this browser. Its `request` starts as a placeholder and
+   * holds what was asked for only once {@link LocalGenerationJob.requestRecovery}
+   * says it was read back; {@link requestKnowledge} is the one reading of the
+   * two that decides what the job's settings may be used for.
    */
   adopted?: true;
+  /**
+   * How reading an adopted job's request back from the horde went. Set when the
+   * job is adopted and settled by the one attempt made then; a job adopted
+   * before the read-back existed carries none, and none is ever made for it.
+   */
+  requestRecovery?: AdoptedRequestRecovery;
+  /**
+   * The reader chose to keep this job after being told that jobs taken from the
+   * account before the horde could read requests back may belong to people
+   * using their shared keys. Lifts {@link isJobHidden} for it.
+   */
+  keptByReader?: true;
   hordeId?: string;
   /**
    * The running kudos figure: what the horde quoted at submit while the job is
@@ -215,6 +227,81 @@ export interface LocalGenerationJob {
    * hammer the check endpoint immediately after a reload.
    */
   lastCheckedAt?: number;
+}
+
+/**
+ * Where reading back an adopted job's request stands.
+ *
+ * - `pending`: the one attempt is under way, or the page closed during it.
+ * - `full`: the request and its prompt came back.
+ * - `settings`: the settings came back, but the horde stored no prompt for it.
+ * - `refused`: the horde has the endpoint and answered with a refusal (the
+ *   request is gone, or the key did not submit it). The answer itself shows the
+ *   job was taken from a horde that reads requests back.
+ * - `failed`: no answer from the endpoint: a network failure, or a horde
+ *   without it.
+ */
+export type AdoptedRequestRecovery =
+  | 'pending'
+  | 'full'
+  | 'settings'
+  | 'refused'
+  | 'failed';
+
+/**
+ * How much of what a job asked for this browser holds: the whole request,
+ * its settings without the prompt, or nothing but a placeholder.
+ */
+export type RequestKnowledge = 'full' | 'settings' | 'none';
+
+/**
+ * What a job's stored request may stand for. A job submitted here holds its
+ * request in full. An adopted one holds only what was read back for it, and
+ * until that has succeeded its request is a placeholder that must not be
+ * shown, loaded or shared as if it were what was asked for.
+ */
+export function requestKnowledge(
+  job: Pick<LocalGenerationJob, 'adopted' | 'requestRecovery'>,
+): RequestKnowledge {
+  if (!job.adopted) {
+    return 'full';
+  }
+  if (job.requestRecovery === 'full') {
+    return 'full';
+  }
+  return job.requestRecovery === 'settings' ? 'settings' : 'none';
+}
+
+/**
+ * Whether a job stays out of every list of the reader's generations.
+ *
+ * Before the horde could read requests back, the account's list of running
+ * generations also named requests other people made through the account's
+ * shared keys, and the studio took those in like any other. A job taken in
+ * then cannot be told apart from one the reader started on another device, so
+ * every such job is held back until the reader decides. `readBackSince` is when
+ * this browser first saw the horde read a request back (null until it has).
+ * A job whose own read-back reached the endpoint was taken in after that
+ * change and is never held back.
+ */
+export function isJobHidden(
+  job: Pick<
+    LocalGenerationJob,
+    'adopted' | 'requestRecovery' | 'keptByReader' | 'createdAt'
+  >,
+  readBackSince: number | null,
+): boolean {
+  if (!job.adopted || job.keptByReader || readBackSince === null) {
+    return false;
+  }
+  if (
+    job.requestRecovery === 'full' ||
+    job.requestRecovery === 'settings' ||
+    job.requestRecovery === 'refused'
+  ) {
+    return false;
+  }
+  return job.createdAt < readBackSince;
 }
 
 /** What a day at the studio came to, read off the jobs already held locally. */

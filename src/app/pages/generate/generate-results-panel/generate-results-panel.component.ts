@@ -22,7 +22,11 @@ import { GenerationQueueService } from '../../../services/generation-queue.servi
 import { placeholderPictureCount } from '../../../services/generation-db.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
-import { LocalGenerationJob } from '../../../types/generation-job';
+import {
+  LocalGenerationJob,
+  RequestKnowledge,
+  requestKnowledge,
+} from '../../../types/generation-job';
 import {
   StoredJobImage,
   StoredJobImageMetadata,
@@ -225,10 +229,17 @@ interface ResultTile {
   prompt?: string;
   /**
    * The generation was taken over from the account's active list rather than
-   * submitted here, so there are no settings behind it: the tile says where it
-   * came from and withholds everything that would read a request back.
+   * submitted here. The tile says where it came from; what it may do with the
+   * request is {@link ResultTile.known}.
    */
   adopted?: boolean;
+  /**
+   * How much of the request behind this tile is held. `settings` offers the
+   * settings rows and their apply but nothing that needs the prompt; `none`
+   * withholds everything that would read a request back. Absent reads as
+   * `none`.
+   */
+  known?: RequestKnowledge;
   /** The job's stored request, for viewing/loading its settings. */
   request?: ImageGenerationRequest;
   /**
@@ -602,6 +613,30 @@ export class GenerateResultsPanelComponent {
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private undoToastId: string | null = null;
 
+  /**
+   * Jobs the queue holds back because they may have been started by someone
+   * using the reader's shared keys (see `isJobHidden`), less any already on
+   * their way out behind an Undo. The notice about them shows while any are
+   * left.
+   */
+  public readonly heldBackJobs = computed(() => {
+    const leaving = this.hiddenJobs();
+    return this.queue.hiddenJobs().filter((job) => !leaving.has(job.localId));
+  });
+
+  /** Show the held-back jobs in the grid from now on, in every tab. */
+  public async keepHeldBackJobs(): Promise<void> {
+    await this.queue.keepHiddenJobs();
+    this.toast.success('generate.results.held_back_kept', {
+      transloco: true,
+    });
+  }
+
+  /** Delete the held-back jobs the same reversible way the grid deletes. */
+  public removeHeldBackJobs(): void {
+    this.requestDelete(this.heldBackJobs().map((job) => job.localId));
+  }
+
   // --- View controls -------------------------------------------------------
 
   /** Grid density (columns per row), persisted so it sticks across sessions. */
@@ -738,12 +773,13 @@ export class GenerateResultsPanelComponent {
       }
       const { dims, aspect } = this.geometryOf(job);
       const prompt = positivePrompt(job.request.prompt);
-      // An adopted job's request stands in for settings this browser never
-      // held, so nothing may be concluded from it about which workers could
-      // serve the generation or why it is waiting.
-      const requirement = job.adopted
-        ? null
-        : workerRequirementForRequest(job.request);
+      const known = requestKnowledge(job);
+      // An adopted job's placeholder request stands in for settings this
+      // browser never held, so nothing may be concluded from it about which
+      // workers could serve the generation or why it is waiting. Settings read
+      // back without their prompt still say which workers fit.
+      const requirement =
+        known === 'none' ? null : workerRequirementForRequest(job.request);
       // Asked once per job rather than once per placeholder tile: a batch of
       // eight shares one request and therefore one answer.
       const feasibility = requirement
@@ -772,7 +808,8 @@ export class GenerateResultsPanelComponent {
           feasibility,
           prompt,
           adopted: job.adopted,
-          ...(job.adopted
+          known,
+          ...(known === 'none'
             ? {}
             : { request: job.request, applyRequest: job.request }),
           retryCount: job.retryCount,
@@ -788,6 +825,7 @@ export class GenerateResultsPanelComponent {
       }
       const { dims, aspect } = this.geometryOf(job);
       const prompt = positivePrompt(job.request.prompt);
+      const known = requestKnowledge(job);
       if (job.status === 'done') {
         const thumbs = thumbnails.get(job.localId) ?? [];
         thumbs.forEach((thumb, index) => {
@@ -811,9 +849,9 @@ export class GenerateResultsPanelComponent {
             metaExport: buildImageMetadataExport(
               thumb.imageId,
               thumb.metadata,
-              // The export carries the request verbatim, and an adopted job's
-              // is a placeholder rather than what was asked for.
-              job.adopted ? undefined : job.request,
+              // The export carries the request verbatim, so it is left out
+              // where the request is a placeholder or lacks its prompt.
+              known === 'full' ? job.request : undefined,
               derived,
             ),
             provenance: buildImageProvenance(
@@ -824,7 +862,8 @@ export class GenerateResultsPanelComponent {
             ),
             prompt,
             adopted: job.adopted,
-            ...(job.adopted
+            known,
+            ...(known === 'none'
               ? {}
               : {
                   request: job.request,
@@ -847,7 +886,8 @@ export class GenerateResultsPanelComponent {
             dims,
             prompt,
             adopted: job.adopted,
-            ...(job.adopted
+            known,
+            ...(known === 'none'
               ? {}
               : { request: job.request, applyRequest: job.request }),
             retryCount: job.retryCount,
@@ -864,7 +904,8 @@ export class GenerateResultsPanelComponent {
             dims,
             prompt,
             adopted: job.adopted,
-            ...(job.adopted
+            known,
+            ...(known === 'none'
               ? {}
               : { request: job.request, applyRequest: job.request }),
             retryCount: job.retryCount,
@@ -881,10 +922,11 @@ export class GenerateResultsPanelComponent {
           dims,
           errorMessage: job.errorMessage,
           errorKey: job.errorKey,
-          metaExport: { request: job.adopted ? null : job.request },
+          metaExport: { request: known === 'full' ? job.request : null },
           prompt,
           adopted: job.adopted,
-          ...(job.adopted
+          known,
+          ...(known === 'none'
             ? {}
             : { request: job.request, applyRequest: job.request }),
           retryCount: job.retryCount,
@@ -898,10 +940,11 @@ export class GenerateResultsPanelComponent {
           jobLocalId: job.localId,
           aspect,
           dims,
-          metaExport: { request: job.adopted ? null : job.request },
+          metaExport: { request: known === 'full' ? job.request : null },
           prompt,
           adopted: job.adopted,
-          ...(job.adopted
+          known,
+          ...(known === 'none'
             ? {}
             : { request: job.request, applyRequest: job.request }),
           retryCount: job.retryCount,
@@ -1444,9 +1487,14 @@ export class GenerateResultsPanelComponent {
     }
     // Deleting a job the horde is still working on also cancels it there, and
     // the message says so: "deleted" alone reads as tidying a finished result.
-    const cancelsRunning = this.pendingJobs().some(
-      (job) => ids.includes(job.localId) && job.hordeId !== undefined,
-    );
+    const cancelsRunning = [
+      ...this.pendingJobs(),
+      ...this.queue
+        .hiddenJobs()
+        .filter((job) =>
+          ['requested', 'queued', 'processing'].includes(job.status),
+        ),
+    ].some((job) => ids.includes(job.localId) && job.hordeId !== undefined);
     // Only one Undo can be outstanding, so a new delete settles the previous one.
     void this.commitPendingDelete();
     this.stepViewerPastDeleted(ids);
@@ -1932,12 +1980,16 @@ export class GenerateResultsPanelComponent {
    * made with, and the seed the horde returned, so the same picture comes back.
    */
   public async copyImageLink(tile: ResultTile): Promise<void> {
-    await this.copyStudioLink(tile.applyRequest ?? tile.request, tile);
+    await this.copyStudioLink(
+      tile.known === 'full' ? (tile.applyRequest ?? tile.request) : undefined,
+      tile,
+    );
   }
 
   /** The same address with the seed let go, so the settings make a new picture. */
   public async copySettingsLink(tile: ResultTile): Promise<void> {
-    const request = tile.applyRequest ?? tile.request;
+    const request =
+      tile.known === 'full' ? (tile.applyRequest ?? tile.request) : undefined;
     await this.copyStudioLink(
       request ? requestWithoutSeed(request) : undefined,
       tile,
@@ -1971,8 +2023,9 @@ export class GenerateResultsPanelComponent {
 
   /**
    * The picture the prompt check is about: the one the metadata panel is
-   * showing, as long as it is a finished result with a prompt behind it. An
-   * adopted job has neither, so the block is left out for it.
+   * showing, as long as it is a finished result with a prompt behind it. A
+   * job adopted from the account whose prompt was not read back has none, so
+   * the block is left out for it.
    */
   private readonly checkTarget = computed<PromptCheckTarget | null>(() => {
     const tile = this.metaTile();
@@ -2040,7 +2093,9 @@ export class GenerateResultsPanelComponent {
     action: 'variation' | 'settings',
     seed: string | null,
   ): void {
-    const request = tile.applyRequest ?? tile.request;
+    // Both load the whole request, prompt included, over the form.
+    const request =
+      tile.known === 'full' ? (tile.applyRequest ?? tile.request) : undefined;
     if (!request) {
       return;
     }
@@ -2458,11 +2513,23 @@ export class GenerateResultsPanelComponent {
   }
 
   /**
-   * What the metadata panel says instead of the settings rows for a generation
-   * taken over from the account. Held here rather than written into the binding
-   * so the key sits in one place.
+   * What the metadata panel says about a generation taken over from the
+   * account: why there are no settings rows, why there is no prompt row, or
+   * where the rows came from. Null for a generation made here.
    */
-  public readonly adoptedNoteKey = 'generate.results.adopted_note';
+  public metaNoteKey(tile: ResultTile): string | null {
+    if (!tile.adopted) {
+      return null;
+    }
+    switch (tile.known) {
+      case 'full':
+        return 'generate.results.request_read_back_note';
+      case 'settings':
+        return 'generate.results.prompt_unknown_note';
+      default:
+        return 'generate.results.request_unknown_note';
+    }
+  }
 
   public openMeta(tile: ResultTile): void {
     this.metaKey.set(tile.key);
@@ -2477,7 +2544,9 @@ export class GenerateResultsPanelComponent {
    * but reviewable and partially undoable before it is applied.
    */
   public openLoadSettings(tile: ResultTile): void {
-    this.metaMode.set('replace');
+    // Replace resets every row left unchecked, the prompt included, and there
+    // is no prompt row to keep when the prompt was never read back.
+    this.metaMode.set(tile.known === 'settings' ? 'overlay' : 'replace');
     this.openMeta(tile);
   }
 
@@ -2581,12 +2650,15 @@ export class GenerateResultsPanelComponent {
     for (const job of done) {
       const jobImages = await this.queue.getJobImages(job.localId);
       const results = jobImages.filter((image) => image.kind === 'result');
+      // As on the tiles, the request travels only where it is known whole.
+      const request =
+        requestKnowledge(job) === 'full' ? job.request : undefined;
       for (const image of results) {
         const derived = deriveImageMeta(image.metadata, job.request);
         const record = buildImageMetadataExport(
           image.imageId,
           image.metadata,
-          job.request,
+          request,
           derived,
           { quoted: job.quotedKudos ?? null, charged: job.kudos ?? null },
         );
@@ -2594,7 +2666,9 @@ export class GenerateResultsPanelComponent {
         parametersByImageId.set(
           image.imageId,
           buildParametersText(
-            requestForApply(job.request, image.metadata?.seed),
+            request
+              ? requestForApply(request, image.metadata?.seed)
+              : undefined,
             image.metadata,
           ),
         );

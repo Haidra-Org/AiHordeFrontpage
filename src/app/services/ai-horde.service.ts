@@ -39,8 +39,13 @@ import {
   CheckImageResult,
   CheckTextResult,
   HordeApiError,
+  SubmittedImageRequest,
+  SubmittedImageRequestResult,
 } from '../types/generation';
-import { extractApiErrorField } from '../helper/extract-api-error';
+import {
+  extractApiErrorField,
+  isMissingRoute,
+} from '../helper/extract-api-error';
 import { HordeApiCacheService, CacheTTL } from './horde-api-cache.service';
 import { CLIENT_AGENT } from './interceptors/client-agent.interceptor';
 import { API_BASE_URL } from './api-config';
@@ -456,6 +461,31 @@ export class AiHordeService {
       extractApiErrorField(err, 'detail') ??
       'Request failed';
     return { status, message, rc: extractApiErrorField(err, 'rc') };
+  }
+
+  /**
+   * Read back what an image request asked for. Only the key that submitted it
+   * may, and the answer is private to that key, so it is never cached.
+   */
+  public getSubmittedImageRequestResult(
+    apiKey: string,
+    id: string,
+  ): Observable<SubmittedImageRequestResult> {
+    return this.httpClient
+      .get<SubmittedImageRequest>(
+        `${this.baseUrl}/generate/request/${encodeURIComponent(id)}`,
+        { headers: { apikey: apiKey }, context: this.generateContext },
+      )
+      .pipe(
+        map((request) => ({ kind: 'success' as const, request })),
+        catchError((err: unknown) =>
+          of(
+            isMissingRoute(err)
+              ? { kind: 'missing_route' as const }
+              : { kind: 'error' as const, error: this.toHordeApiError(err) },
+          ),
+        ),
+      );
   }
 
   public getImageGenerationStatus(

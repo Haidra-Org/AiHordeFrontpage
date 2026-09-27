@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   LocalGenerationJob,
   LocalGenerationJobStatus,
+  isJobHidden,
   sessionStatsToday,
 } from './generation-job';
 
@@ -92,5 +93,44 @@ describe('sessionStatsToday', () => {
     const stats = sessionStatsToday([job({ kudos: undefined })], NOON);
     expect(stats.kudos).toBe(0);
     expect(stats.images).toBe(1);
+  });
+});
+
+describe('isJobHidden', () => {
+  const SINCE = 5_000;
+  const taken = {
+    adopted: true as const,
+    createdAt: 1_000,
+  };
+
+  it('holds back a job taken in before the horde read requests back', () => {
+    expect(isJobHidden(taken, SINCE)).toBe(true);
+    expect(isJobHidden({ ...taken, requestRecovery: 'failed' }, SINCE)).toBe(
+      true,
+    );
+    expect(isJobHidden({ ...taken, requestRecovery: 'pending' }, SINCE)).toBe(
+      true,
+    );
+  });
+
+  it('holds back nothing while the moment is unknown', () => {
+    expect(isJobHidden(taken, null)).toBe(false);
+  });
+
+  it('shows a job taken in at or after the moment', () => {
+    expect(isJobHidden({ ...taken, createdAt: SINCE }, SINCE)).toBe(false);
+  });
+
+  it('shows a job whose own read-back reached the endpoint', () => {
+    for (const outcome of ['full', 'settings', 'refused'] as const) {
+      expect(isJobHidden({ ...taken, requestRecovery: outcome }, SINCE)).toBe(
+        false,
+      );
+    }
+  });
+
+  it('shows a job the reader kept, and every job made here', () => {
+    expect(isJobHidden({ ...taken, keptByReader: true }, SINCE)).toBe(false);
+    expect(isJobHidden({ createdAt: 1_000 }, SINCE)).toBe(false);
   });
 });

@@ -16,11 +16,13 @@ import { GenerationDbService } from './generation-db.service';
 import {
   GENERATION_NOT_FOUND,
   GenerationOutput,
+  SubmittedImageRequestResult,
   ImageExtraSourceImage,
   ImageGenerationRequest,
   hordeRejectionKey,
 } from '../types/generation';
 import {
+  AdoptedRequestRecovery,
   EnqueueSourceImage,
   LocalGenerationJob,
   LocalGenerationJobStatus,
@@ -28,13 +30,24 @@ import {
   StoredJobImage,
   SubmitBlockReason,
   extraSourceImageId,
+  isJobHidden,
 } from '../types/generation-job';
 import { base64ToBlob, blobToBase64 } from '../helper/blob-base64';
 import { randomUuid } from '../helper/random-uuid';
+import { studioRequestFromSubmitted } from '../helper/submitted-request';
 import { GenerationWaitInsightsService } from './generation-wait-insights.service';
 import { SyncedJobDeletion, TabSyncService } from './tab-sync.service';
 
 const ANONYMOUS_API_KEY = '0000000000';
+
+/**
+ * Where this browser keeps the moment it first saw the horde read a request
+ * back (see {@link isJobHidden}). Local storage rather than the generation
+ * database: the database has no store for a single value, and one would need
+ * a schema version of its own. Local storage is shared by every tab, and its
+ * change event carries the value to the others.
+ */
+const READ_BACK_SINCE_KEY = 'aihorde.generate.read-back-since';
 
 const MAX_CONCURRENT = 5;
 const SUBMIT_WINDOW_MS = 60_000;
@@ -135,15 +148,35 @@ export class GenerationQueueService {
     at: number;
   } | null>(null);
 
-  /** All jobs, newest first. */
-  public readonly jobs = this._jobs.asReadonly();
+  private readonly _readBackSince = signal<number | null>(null);
+
+  /**
+   * When this browser first saw the horde read a request back, or null. Jobs
+   * taken from the account before then may be held back; see
+   * {@link isJobHidden}.
+   */
+  public readonly readBackSince = this._readBackSince.asReadonly();
+  /**
+   * Every job the reader's lists show, newest first. Jobs {@link isJobHidden}
+   * holds back are left out here and everywhere derived from it, while the
+   * engine itself still polls, downloads and counts them.
+   */
+  public readonly jobs = computed(() => {
+    const since = this._readBackSince();
+    return this._jobs().filter((job) => !isJobHidden(job, since));
+  });
+  /** The jobs held back until the reader decides to keep or remove them. */
+  public readonly hiddenJobs = computed(() => {
+    const since = this._readBackSince();
+    return this._jobs().filter((job) => isJobHidden(job, since));
+  });
   public readonly pendingJobs = computed(() =>
-    this._jobs().filter(
+    this.jobs().filter(
       (job) => job.status === 'waiting' || ACTIVE_STATUSES.has(job.status),
     ),
   );
   public readonly finishedJobs = computed(() =>
-    this._jobs().filter((job) => FINISHED_STATUSES.has(job.status)),
+    this.jobs().filter((job) => FINISHED_STATUSES.has(job.status)),
   );
   /**
    * Wall clock, advanced by the dispatch loop while a job is waiting on a retry
@@ -175,6 +208,8 @@ export class GenerationQueueService {
    * `adoptActive` would otherwise take it for a generation started elsewhere.
    */
   private readonly inFlightIds = new Set<string>();
+  /** The tail of each job's queue of pending patches; see `patchJob`. */
+  private readonly patchChains = new Map<string, Promise<void>>();
 
   private dispatchRunning = false;
   private pollRunning = false;
@@ -184,6 +219,8 @@ export class GenerationQueueService {
 
   constructor() {
     if (this.isBrowser) {
+      this._readBackSince.set(readStoredReadBackSince());
+      this.listenForReadBackSince();
       // Listening starts before the stored jobs load, so nothing a peer writes
       // while the load is under way is missed.
       this.listenToPeers();
@@ -207,6 +244,80 @@ export class GenerationQueueService {
       console.warn('Failed to load persisted generation jobs:', error);
     }
     this.startLoops();
+    void this.probeReadBack();
+  }
+
+  /**
+   * Ask the horde once per page load whether it reads requests back, when
+   * that decides something: this browser has not seen it yet and holds jobs
+   * taken from the account. The id is made up, so a horde with the endpoint
+   * answers that no such request exists; one without it gives no answer the
+   * page can read.
+   */
+  private async probeReadBack(): Promise<void> {
+    if (
+      this._readBackSince() !== null ||
+      !this._jobs().some((job) => job.adopted)
+    ) {
+      return;
+    }
+    try {
+      const result = await firstValueFrom(
+        this.aiHorde.getSubmittedImageRequestResult(
+          this.apiKey(),
+          randomUuid(),
+        ),
+      );
+      this.noteReadBack(result);
+    } catch (error) {
+      console.warn('Could not ask whether requests can be read back:', error);
+    }
+  }
+
+  /**
+   * Record, once, the first answer that came from the read-back endpoint
+   * itself: a request, or a refusal carrying the horde's return code. A missing
+   * route, and a browser that could not reach the endpoint at all (which is how
+   * a horde without it looks from a page, since its preflight fails), leave
+   * the moment unset.
+   */
+  private noteReadBack(result: SubmittedImageRequestResult): void {
+    if (!answeredByReadBack(result) || this._readBackSince() !== null) {
+      return;
+    }
+    const now = this.now();
+    this._readBackSince.set(now);
+    try {
+      localStorage.setItem(READ_BACK_SINCE_KEY, String(now));
+    } catch {
+      // Storage can be unavailable; the moment then holds for this page only.
+    }
+  }
+
+  private listenForReadBackSince(): void {
+    const onStorage = (event: StorageEvent): void => {
+      if (event.key === READ_BACK_SINCE_KEY && this._readBackSince() === null) {
+        this.ngZone.run(() =>
+          this._readBackSince.set(readStoredReadBackSince()),
+        );
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    this.destroyRef.onDestroy(() =>
+      window.removeEventListener('storage', onStorage),
+    );
+  }
+
+  /**
+   * Keep every held-back job: each is marked on its record, which reaches the
+   * other tabs like any other change.
+   */
+  public async keepHiddenJobs(): Promise<void> {
+    await Promise.all(
+      this.hiddenJobs().map((job) =>
+        this.patchJob(job.localId, { keptByReader: true }),
+      ),
+    );
   }
 
   private startLoops(): void {
@@ -302,6 +413,10 @@ export class GenerationQueueService {
    * record. So are ids of jobs deleted here a moment ago: the account goes on
    * listing a generation for a while after it was cancelled, and a failed
    * cancel would otherwise bring the deleted job straight back.
+   *
+   * Each newly adopted job gets one attempt at reading its request back from
+   * the horde, made here and nowhere else: a job already in the store is never
+   * read back later, whatever it holds.
    */
   public async adoptActive(ids: readonly string[]): Promise<void> {
     this.pruneDeleted();
@@ -325,7 +440,7 @@ export class GenerationQueueService {
       }
       known.add(hordeId);
       const now = this.now();
-      const job: LocalGenerationJob = {
+      const draft: LocalGenerationJob = {
         localId: randomUuid(),
         status: 'queued',
         createdAt: now,
@@ -337,10 +452,67 @@ export class GenerationQueueService {
         hordeId,
         resultImageIds: [],
       };
+      const apiKey = this.apiKey();
+      const job: LocalGenerationJob = {
+        ...draft,
+        // Written with the row, so a reload during the attempt finds it spent
+        // rather than owed.
+        requestRecovery: this.mayRecoverRequest(draft, apiKey)
+          ? 'pending'
+          : 'failed',
+      };
       await this.db.putJob(job);
       this.addToState(job);
       this.tabSync.publish('generation-job.added', job);
+      if (job.requestRecovery === 'pending') {
+        void this.recoverRequest(job.localId, hordeId, apiKey);
+      }
     }
+  }
+
+  /**
+   * Whether a job just adopted may have its request read back. The horde
+   * answers only the key that submitted the request, and the anonymous key is
+   * refused outright, so asking with it is a request certain to fail.
+   */
+  private mayRecoverRequest(job: LocalGenerationJob, apiKey: string): boolean {
+    return (
+      job.adopted === true &&
+      job.hordeId !== undefined &&
+      apiKey !== ANONYMOUS_API_KEY
+    );
+  }
+
+  /**
+   * Read an adopted job's request back and store it in place of the
+   * placeholder. The outcome is stored whatever it is, a failure included, so
+   * the attempt is made once: a horde without the endpoint, a refusal or a
+   * network failure all leave the job as it was adopted.
+   */
+  private async recoverRequest(
+    localId: string,
+    hordeId: string,
+    apiKey: string,
+  ): Promise<void> {
+    let patch: Partial<LocalGenerationJob> = { requestRecovery: 'failed' };
+    try {
+      const result = await firstValueFrom(
+        this.aiHorde.getSubmittedImageRequestResult(apiKey, hordeId),
+      );
+      this.noteReadBack(result);
+      if (result.kind === 'success') {
+        const request = studioRequestFromSubmitted(result.request);
+        const recovery: AdoptedRequestRecovery = request.prompt
+          ? 'full'
+          : 'settings';
+        patch = { request, requestRecovery: recovery };
+      } else if (answeredByReadBack(result)) {
+        patch = { requestRecovery: 'refused' };
+      }
+    } catch (error) {
+      console.warn('Could not read back an adopted request:', error);
+    }
+    await this.patchJob(localId, patch);
   }
 
   /**
@@ -430,8 +602,10 @@ export class GenerationQueueService {
       throw new Error(`Cannot retry unknown job ${localId}`);
     }
     if (job.adopted) {
-      // An adopted job's request was never here, so there is nothing to send
-      // again; the surfaces that offer Retry withhold it for these.
+      // An adopted job's source pictures were never stored here, and a request
+      // read back from the horde carries its prompt from before any style the
+      // horde applied, so there is no exact request to send again; the
+      // surfaces that offer Retry withhold it for these.
       throw new Error(`Cannot retry adopted job ${localId}`);
     }
     const images = await this.db.getImagesForJob(localId);
@@ -1136,7 +1310,33 @@ export class GenerationQueueService {
    * move a finished job back to another status, which is a poll answer
    * arriving after a cancel.
    */
-  private async patchJob(
+  private patchJob(
+    localId: string,
+    patch: Partial<LocalGenerationJob>,
+  ): Promise<void> {
+    // Patches to one job run one after another. Each builds its row from the
+    // job as the previous one left it, so a poll answer that started before
+    // an adopted job's request was read back cannot land after it and write
+    // the placeholder back over it. The first patch starts at once, as a lone
+    // patch always did.
+    const previous = this.patchChains.get(localId);
+    const run = previous
+      ? previous.then(() => this.applyPatch(localId, patch))
+      : this.applyPatch(localId, patch);
+    const settled = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.patchChains.set(localId, settled);
+    void settled.then(() => {
+      if (this.patchChains.get(localId) === settled) {
+        this.patchChains.delete(localId);
+      }
+    });
+    return run;
+  }
+
+  private async applyPatch(
     localId: string,
     patch: Partial<LocalGenerationJob>,
   ): Promise<void> {
@@ -1359,5 +1559,22 @@ export class GenerationQueueService {
         jobs.map((job) => (job.localId === updated.localId ? updated : job)),
       ),
     );
+  }
+}
+
+/** Whether an answer came from the read-back endpoint itself. */
+function answeredByReadBack(result: SubmittedImageRequestResult): boolean {
+  return (
+    result.kind === 'success' ||
+    (result.kind === 'error' && result.error.rc !== undefined)
+  );
+}
+
+function readStoredReadBackSince(): number | null {
+  try {
+    const stored = Number(localStorage.getItem(READ_BACK_SINCE_KEY));
+    return Number.isFinite(stored) && stored > 0 ? stored : null;
+  } catch {
+    return null;
   }
 }

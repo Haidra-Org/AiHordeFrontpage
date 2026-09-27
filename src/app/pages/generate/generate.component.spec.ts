@@ -157,6 +157,7 @@ describe('GenerateComponent', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             estimateKudos,
             enqueue,
             jobs,
@@ -2468,6 +2469,7 @@ async function createPaneOnlyStudio(): Promise<void> {
       {
         provide: GenerationQueueService,
         useValue: {
+          hiddenJobs: signal([]),
           estimateKudos: vi.fn().mockResolvedValue(1),
           enqueue: vi.fn(),
           jobs: signal([]),
@@ -2538,6 +2540,7 @@ async function createWholeStudio(
       {
         provide: GenerationQueueService,
         useValue: {
+          hiddenJobs: signal([]),
           estimateKudos: vi.fn().mockResolvedValue(1),
           enqueue: vi.fn(),
           jobs: signal([]),
@@ -2889,6 +2892,7 @@ async function createStudioWithLicensing(
       {
         provide: GenerationQueueService,
         useValue: {
+          hiddenJobs: signal([]),
           estimateKudos: vi.fn().mockResolvedValue(1),
           enqueue: vi.fn(),
           jobs: signal([]),

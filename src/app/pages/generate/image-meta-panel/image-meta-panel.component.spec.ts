@@ -100,6 +100,16 @@ describe('ImageMetaPanelComponent', () => {
     expect(size.rows[0].keys).toEqual(['width', 'height']);
   });
 
+  it('leaves the prompt out of a request that came back without one', () => {
+    fixture.componentRef.setInput('request', { ...REQUEST, prompt: '' });
+    fixture.detectChanges();
+
+    expect(component.groups().map((group) => group.id)).toEqual([
+      'sampling',
+      'size',
+    ]);
+  });
+
   it('omits rows the request does not carry', () => {
     const ids = component.groups()[1].rows.map((row) => row.id);
 

@@ -14944,6 +14944,11 @@ app-gs-compare-wipe {
 }
 
 /* The tutorial's parting note, over the results it stood aside for. */
+/* The notice about pictures held back from the grid sits above everything
+   else in the results, spaced like the other notices there. */
+.gen-studio .gs-held-back-notice {
+  margin-bottom: 12px;
+}
 .gen-studio .gs-learn-done {
   display: flex;
   flex-wrap: wrap;

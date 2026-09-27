@@ -69,3 +69,29 @@ export function serializeErrorDetails(error: unknown): string | null {
   }
   return null;
 }
+
+/**
+ * Whether a failed request reached a server that has no such route, as opposed
+ * to a route that exists and refused. The horde tags every refusal it raises
+ * itself with an `rc` (a missing record answers 404 with `RequestNotFound`, for
+ * instance), while the framework's own answer for an unknown path or method is
+ * a bare 404 or 405 without one. That difference is how a surface built ahead
+ * of a horde release can tell an endpoint that is not deployed yet from one
+ * that is deployed and said no.
+ *
+ * In a browser this only covers requests that pass CORS preflight. A request
+ * carrying an `apikey` header is preflighted, and the horde answers the
+ * preflight for an unknown path with a 404, which the browser rejects as a
+ * status 0 failure that never reaches this check. Callers therefore show a
+ * surface only once an endpoint has answered, rather than hiding it only
+ * after this returns true.
+ */
+export function isMissingRoute(error: unknown): boolean {
+  if (!(error instanceof HttpErrorResponse)) {
+    return false;
+  }
+  if (error.status !== 404 && error.status !== 405) {
+    return false;
+  }
+  return extractApiErrorField(error, 'rc') === undefined;
+}

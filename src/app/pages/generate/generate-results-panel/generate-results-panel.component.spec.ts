@@ -169,6 +169,7 @@ describe('GenerateResultsPanelComponent', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             pendingJobs,
             finishedJobs,
             cancel,
@@ -1786,6 +1787,7 @@ describe('GenerateResultsPanelComponent empty pane', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             pendingJobs: signal<LocalGenerationJob[]>([]),
             finishedJobs: signal<LocalGenerationJob[]>([]),
             cancel: vi.fn(),
@@ -1876,6 +1878,7 @@ describe('GenerateResultsPanelComponent status chip', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             pendingJobs,
             finishedJobs: signal<LocalGenerationJob[]>([]),
             cancel: vi.fn(),
@@ -1943,6 +1946,9 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
   let fixture: ComponentFixture<GenerateResultsPanelComponent>;
   let host: HTMLElement;
   let finishedJobs: ReturnType<typeof signal<LocalGenerationJob[]>>;
+  let heldBack: ReturnType<typeof signal<LocalGenerationJob[]>>;
+  let keepHiddenJobs: ReturnType<typeof vi.fn>;
+  let deleteJob: ReturnType<typeof vi.fn>;
 
   const adopted: LocalGenerationJob = {
     localId: 'adopted-1',
@@ -1959,6 +1965,9 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
     URL.createObjectURL = vi.fn(() => 'blob:test');
     URL.revokeObjectURL = vi.fn();
     finishedJobs = signal<LocalGenerationJob[]>([adopted]);
+    heldBack = signal<LocalGenerationJob[]>([]);
+    keepHiddenJobs = vi.fn(() => Promise.resolve());
+    deleteJob = vi.fn(() => Promise.resolve());
 
     await TestBed.configureTestingModule({
       // What the tile says and what it withholds are both claims about the
@@ -1978,12 +1987,14 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: heldBack,
+            keepHiddenJobs,
             jobs: signal<LocalGenerationJob[]>([adopted]),
             pendingJobs: signal<LocalGenerationJob[]>([]),
             finishedJobs,
             cancel: vi.fn(),
             retry: vi.fn(),
-            deleteJob: vi.fn(),
+            deleteJob,
             getJobImages: vi.fn((localId: string) =>
               Promise.resolve([resultImage(localId, 'out-1')]),
             ),
@@ -2052,6 +2063,153 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
     expect(menu!.textContent).toContain(
       TRANSLATIONS['generate.results.delete'],
     );
+  });
+
+  it('says why nothing about the request is shown', () => {
+    const component = fixture.componentInstance;
+    const tile = component.tiles()[0];
+
+    expect(tile.known).toBe('none');
+    expect(tile.request).toBeUndefined();
+    expect(component.metaNoteKey(tile)).toBe(
+      'generate.results.request_unknown_note',
+    );
+  });
+
+  describe('pictures held back from the grid', () => {
+    const notice = (): Element | null =>
+      host.querySelector('.gs-held-back-notice');
+
+    function holdBack(): void {
+      heldBack.set([{ ...adopted, localId: 'stranger-1' }]);
+      fixture.detectChanges();
+    }
+
+    it('says nothing while none are held back', () => {
+      expect(notice()).toBeNull();
+    });
+
+    it('explains them and offers both choices as buttons', () => {
+      holdBack();
+
+      const section = notice();
+      expect(section?.getAttribute('aria-labelledby')).toBe(
+        'gs-held-back-title',
+      );
+      expect(section?.textContent).toContain(
+        TRANSLATIONS['generate.results.held_back_title'],
+      );
+      const labels = [...section!.querySelectorAll('button')].map((button) =>
+        button.textContent?.trim(),
+      );
+      expect(labels).toEqual([
+        TRANSLATIONS['generate.results.held_back_remove'],
+        TRANSLATIONS['generate.results.held_back_keep'],
+      ]);
+    });
+
+    it('keeps them through the queue', async () => {
+      holdBack();
+
+      notice()!.querySelectorAll('button')[1].click();
+      await Promise.resolve();
+
+      expect(keepHiddenJobs).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes them the reversible way the grid deletes', () => {
+      vi.useFakeTimers();
+      try {
+        holdBack();
+
+        notice()!.querySelectorAll('button')[0].click();
+        fixture.detectChanges();
+
+        // Gone from view at once, deleted only once the Undo offer lapses.
+        expect(notice()).toBeNull();
+        expect(deleteJob).not.toHaveBeenCalled();
+        vi.runAllTimers();
+        expect(deleteJob).toHaveBeenCalledWith('stranger-1');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe('once the request was read back', () => {
+    async function show(job: LocalGenerationJob): Promise<void> {
+      finishedJobs.set([job]);
+      fixture.detectChanges();
+      await Promise.resolve();
+      await Promise.resolve();
+      fixture.detectChanges();
+    }
+
+    it('offers every request action when the prompt came back', async () => {
+      await show({
+        ...adopted,
+        requestRecovery: 'full',
+        request: { prompt: 'a lighthouse', params: { steps: 20 } },
+      });
+      const component = fixture.componentInstance;
+      const tile = component.tiles()[0];
+      const menu = host.querySelector('.gs-flip-menu');
+
+      expect(tile.known).toBe('full');
+      expect(tile.request?.prompt).toBe('a lighthouse');
+      expect(menu!.textContent).toContain(
+        TRANSLATIONS['generate.results.make_variation'],
+      );
+      expect(menu!.textContent).toContain(
+        TRANSLATIONS['generate.results.menu_load'],
+      );
+      expect(menu!.textContent).toContain(
+        TRANSLATIONS['generate.link.copy_settings'],
+      );
+      expect(component.metaNoteKey(tile)).toBe(
+        'generate.results.request_read_back_note',
+      );
+      // Where it came from is still said.
+      expect(host.querySelector('.gs-tile-adopted')).not.toBeNull();
+    });
+
+    it('offers the settings alone when the horde kept no prompt', async () => {
+      await show({
+        ...adopted,
+        requestRecovery: 'settings',
+        request: { prompt: '', params: { steps: 20 } },
+      });
+      const component = fixture.componentInstance;
+      const tile = component.tiles()[0];
+      const menu = host.querySelector('.gs-flip-menu');
+
+      expect(tile.known).toBe('settings');
+      expect(menu!.textContent).toContain(
+        TRANSLATIONS['generate.results.menu_load'],
+      );
+      expect(menu!.textContent).not.toContain(
+        TRANSLATIONS['generate.results.make_variation'],
+      );
+      expect(menu!.textContent).not.toContain(
+        TRANSLATIONS['generate.results.copy_settings'],
+      );
+      expect(menu!.textContent).not.toContain(
+        TRANSLATIONS['generate.link.copy_settings'],
+      );
+      expect(component.metaNoteKey(tile)).toBe(
+        'generate.results.prompt_unknown_note',
+      );
+
+      const emitted: unknown[] = [];
+      component.controlAction.subscribe((event) => emitted.push(event));
+      component.copySettings(tile);
+      component.makeVariation(tile);
+      expect(emitted).toEqual([]);
+
+      // Replace would reset the prompt in the form with nothing to put back.
+      component.openLoadSettings(tile);
+      expect(component.metaMode()).toBe('overlay');
+    });
   });
 
   describe('request actions in the viewer', () => {
@@ -2150,6 +2308,7 @@ describe('GenerateResultsPanelComponent justified rows', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             pendingJobs: signal<LocalGenerationJob[]>([
               sizedJob('square', 512, 512),
               sizedJob('wide', 1024, 512),
@@ -2243,6 +2402,7 @@ describe('GenerateResultsPanelComponent results search field', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             jobs: signal<LocalGenerationJob[]>([
               ...SEARCH_PENDING,
               ...SEARCH_FINISHED,
@@ -2422,6 +2582,7 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
         {
           provide: GenerationQueueService,
           useValue: {
+            hiddenJobs: signal([]),
             jobs: signal<LocalGenerationJob[]>(finished),
             pendingJobs: signal<LocalGenerationJob[]>([]),
             finishedJobs: signal<LocalGenerationJob[]>(finished),

@@ -305,6 +305,47 @@ export type CheckImageResult =
   | { kind: 'not_found' }
   | { kind: 'error'; error: HordeApiError };
 
+/**
+ * GET /v2/generate/request/{id}: the request as the horde recorded it, read
+ * back by the key that submitted it. Parameters carry their filled-in defaults
+ * and any style's overrides; `prompt` is what was typed, before a style or a
+ * filter changed it, and is missing for requests stored before the horde kept
+ * prompts. Source images come back as expiring links to the horde's own copies
+ * rather than as the base64 that was sent. `dry_run`, `allow_downgrade`,
+ * `replacement_filter` and `style` are never returned.
+ */
+export interface SubmittedImageRequest {
+  prompt?: string;
+  params?: ImageGenerationParams & { special?: Record<string, unknown> };
+  nsfw?: boolean;
+  censor_nsfw?: boolean;
+  trusted_workers?: boolean;
+  validated_backends?: boolean;
+  slow_workers?: boolean;
+  extra_slow_workers?: boolean;
+  workers?: string[];
+  worker_blacklist?: boolean;
+  models?: string[];
+  source_image?: string;
+  source_processing?: ImageSourceProcessing;
+  source_mask?: string;
+  extra_source_images?: ImageExtraSourceImage[];
+  r2?: boolean;
+  shared?: boolean;
+  disable_batching?: boolean;
+  webhook?: string;
+  proxied_account?: string;
+}
+
+/**
+ * The read-back of a submitted request. `missing_route` is a horde without the
+ * endpoint at all, told apart from a refusal by the absent `rc`.
+ */
+export type SubmittedImageRequestResult =
+  | { kind: 'success'; request: SubmittedImageRequest }
+  | { kind: 'missing_route' }
+  | { kind: 'error'; error: HordeApiError };
+
 export type GenerationMetadataType =
   | 'lora'
   | 'ti'

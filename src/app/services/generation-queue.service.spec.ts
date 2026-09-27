@@ -18,6 +18,7 @@ import {
 } from '../testing/fake-broadcast-channel';
 
 const DISPATCH_TICK_MS = 1_000;
+const READ_BACK_SINCE_KEY = 'aihorde.generate.read-back-since';
 const POLL_TICK_MS = 2_000;
 
 /** Minimal in-memory stand-in for the IndexedDB persistence layer. */
@@ -87,6 +88,7 @@ interface AiHordeMock {
   checkImageGenerationResult: ReturnType<typeof vi.fn>;
   getImageGenerationStatus: ReturnType<typeof vi.fn>;
   cancelImageGeneration: ReturnType<typeof vi.fn>;
+  getSubmittedImageRequestResult: ReturnType<typeof vi.fn>;
 }
 
 function submitSuccess(id: string, kudos = 1): SubmitImageResult {
@@ -149,6 +151,7 @@ describe('GenerationQueueService', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    localStorage.removeItem(READ_BACK_SINCE_KEY);
     FakeBroadcastChannel.reset();
     vi.stubGlobal('BroadcastChannel', FakeBroadcastChannel);
     fakeDb = new FakeGenerationDb();
@@ -157,6 +160,9 @@ describe('GenerationQueueService', () => {
       checkImageGenerationResult: vi.fn(() => of(checkResult())),
       getImageGenerationStatus: vi.fn(() => of(null)),
       cancelImageGeneration: vi.fn(() => of(null)),
+      getSubmittedImageRequestResult: vi.fn(() =>
+        of({ kind: 'missing_route' }),
+      ),
     };
     auth = { getStoredApiKey: vi.fn(() => 'test-key') };
 
@@ -837,6 +843,459 @@ describe('GenerationQueueService', () => {
     // The tile has no request to name the model, so the per-image record is
     // where it has to come from.
     expect(images[0].metadata?.model).toBe('sd');
+  });
+
+  describe('reading back an adopted request', () => {
+    it('fills the request from the horde when the job is adopted', async () => {
+      aiHorde.getSubmittedImageRequestResult.mockReturnValue(
+        of({
+          kind: 'success',
+          request: {
+            prompt: 'a lighthouse',
+            params: { width: 832, height: 1216, steps: 20, n: 2 },
+            models: ['m1'],
+            source_processing: 'img2img',
+            source_image: 'https://r2.example/x_src.webp?sig=1',
+          },
+        }),
+      );
+      const queue = await createQueue();
+
+      await queue.adoptActive(['elsewhere-1']);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(aiHorde.getSubmittedImageRequestResult).toHaveBeenCalledTimes(1);
+      expect(aiHorde.getSubmittedImageRequestResult).toHaveBeenCalledWith(
+        'test-key',
+        'elsewhere-1',
+      );
+      const job = queue.jobs()[0];
+      expect(job.adopted).toBe(true);
+      expect(job.requestRecovery).toBe('full');
+      expect(job.request).toEqual({
+        prompt: 'a lighthouse',
+        params: { width: 832, height: 1216, steps: 20, n: 2 },
+        models: ['m1'],
+        source_processing: 'img2img',
+      });
+      expect(fakeDb.jobs.get(job.localId)?.request.prompt).toBe('a lighthouse');
+      expect(fakeDb.jobs.get(job.localId)?.requestRecovery).toBe('full');
+    });
+
+    it('keeps the settings of a request stored without a prompt', async () => {
+      aiHorde.getSubmittedImageRequestResult.mockReturnValue(
+        of({
+          kind: 'success',
+          request: { params: { width: 512, height: 512 }, models: ['m1'] },
+        }),
+      );
+      const queue = await createQueue();
+
+      await queue.adoptActive(['legacy-1']);
+      await vi.advanceTimersByTimeAsync(0);
+
+      const job = queue.jobs()[0];
+      expect(job.requestRecovery).toBe('settings');
+      expect(job.request).toEqual({
+        prompt: '',
+        params: { width: 512, height: 512 },
+        models: ['m1'],
+      });
+    });
+
+    it.each([
+      [
+        'a refusal',
+        () =>
+          of({
+            kind: 'error',
+            error: { status: 403, message: 'no', rc: 'NotRequestOwner' },
+          }),
+        'refused',
+      ],
+      [
+        'a request the horde no longer has',
+        () =>
+          of({
+            kind: 'error',
+            error: { status: 404, message: 'gone', rc: 'RequestNotFound' },
+          }),
+        'refused',
+      ],
+      [
+        'a horde without the endpoint',
+        () => of({ kind: 'missing_route' }),
+        'failed',
+      ],
+      [
+        'an endpoint the browser could not reach',
+        () => of({ kind: 'error', error: { status: 0, message: 'failed' } }),
+        'failed',
+      ],
+      [
+        'a network failure',
+        () => throwError(() => new Error('offline')),
+        'failed',
+      ],
+    ])(
+      'leaves the placeholder and records the attempt after %s',
+      async (_label, answer, outcome) => {
+        const warn = vi
+          .spyOn(console, 'warn')
+          .mockImplementation(() => undefined);
+        aiHorde.getSubmittedImageRequestResult.mockImplementation(answer);
+        const queue = await createQueue();
+
+        await queue.adoptActive(['elsewhere-1']);
+        await vi.advanceTimersByTimeAsync(0);
+
+        const job = queue.jobs()[0];
+        expect(job.request).toEqual({ prompt: '' });
+        expect(job.requestRecovery).toBe(outcome);
+        expect(fakeDb.jobs.get(job.localId)?.requestRecovery).toBe(outcome);
+        warn.mockRestore();
+      },
+    );
+
+    it('keeps both changes when an earlier write lands after a later one', async () => {
+      const answer = new Subject<unknown>();
+      aiHorde.getSubmittedImageRequestResult.mockReturnValue(answer);
+      const queue = await createQueue();
+      await queue.adoptActive(['elsewhere-1']);
+      const localId = queue.jobs()[0].localId;
+
+      // The first poll's write is held until the read-back has come in, so the
+      // write that started first is the one that finishes last.
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => (release = resolve));
+      const putJob = fakeDb.putJob.bind(fakeDb);
+      let held = false;
+      vi.spyOn(fakeDb, 'putJob').mockImplementation(async (job) => {
+        if (!held && job.queuePosition !== undefined) {
+          held = true;
+          await gate;
+        }
+        return putJob(job);
+      });
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+      expect(held).toBe(true);
+
+      answer.next({ kind: 'success', request: { prompt: 'a lighthouse' } });
+      answer.complete();
+      await vi.advanceTimersByTimeAsync(0);
+      release();
+      await vi.advanceTimersByTimeAsync(0);
+
+      const job = queue.jobs()[0];
+      expect(job.request.prompt).toBe('a lighthouse');
+      expect(job.requestRecovery).toBe('full');
+      expect(job.queuePosition).toBe(2);
+      const stored = fakeDb.jobs.get(localId);
+      expect(stored?.request.prompt).toBe('a lighthouse');
+      expect(stored?.queuePosition).toBe(2);
+    });
+
+    it('asks once per adopted job, however often the account is read', async () => {
+      const queue = await createQueue();
+
+      await queue.adoptActive(['elsewhere-1']);
+      await vi.advanceTimersByTimeAsync(0);
+      await queue.adoptActive(['elsewhere-1']);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(aiHorde.getSubmittedImageRequestResult).toHaveBeenCalledTimes(1);
+    });
+
+    it('never asks with the anonymous key, which the horde refuses', async () => {
+      auth.getStoredApiKey.mockReturnValue('');
+      const queue = await createQueue();
+
+      await queue.adoptActive(['elsewhere-1']);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(aiHorde.getSubmittedImageRequestResult).not.toHaveBeenCalled();
+      expect(queue.jobs()[0].requestRecovery).toBe('failed');
+    });
+
+    it('never reads back a job that was already in the store', async () => {
+      const stored: LocalGenerationJob[] = [
+        {
+          localId: 'old-adopted',
+          status: 'queued',
+          createdAt: 1,
+          updatedAt: 1,
+          request: { prompt: '' },
+          adopted: true,
+          hordeId: 'h-old',
+          resultImageIds: [],
+        },
+        {
+          localId: 'interrupted',
+          status: 'queued',
+          createdAt: 2,
+          updatedAt: 2,
+          request: { prompt: '' },
+          adopted: true,
+          requestRecovery: 'pending',
+          hordeId: 'h-interrupted',
+          resultImageIds: [],
+        },
+      ];
+      for (const job of stored) {
+        fakeDb.jobs.set(job.localId, job);
+      }
+      const queue = await createQueue();
+
+      await queue.adoptActive(['h-old', 'h-interrupted']);
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+      // The one call on load is the probe, which asks about a made-up id.
+      const asked = aiHorde.getSubmittedImageRequestResult.mock.calls.map(
+        (call) => call[1] as string,
+      );
+      expect(asked).toHaveLength(1);
+      expect(asked).not.toContain('h-old');
+      expect(asked).not.toContain('h-interrupted');
+    });
+  });
+
+  describe('jobs taken in before the horde read requests back', () => {
+    const NOT_FOUND = {
+      kind: 'error',
+      error: { status: 404, message: 'not found', rc: 'RequestNotFound' },
+    } as const;
+
+    function storedAdopted(
+      localId: string,
+      overrides: Partial<LocalGenerationJob> = {},
+    ): LocalGenerationJob {
+      return {
+        localId,
+        status: 'done',
+        createdAt: 1_000,
+        updatedAt: 1_000,
+        request: { prompt: '' },
+        adopted: true,
+        hordeId: `h-${localId}`,
+        resultImageIds: [],
+        ...overrides,
+      };
+    }
+
+    function seed(...jobs: LocalGenerationJob[]): void {
+      for (const job of jobs) {
+        fakeDb.jobs.set(job.localId, job);
+      }
+    }
+
+    describe('finding out when the horde started reading requests back', () => {
+      it('asks once on load and records the moment the endpoint answers', async () => {
+        seed(storedAdopted('old'));
+        aiHorde.getSubmittedImageRequestResult.mockReturnValue(of(NOT_FOUND));
+
+        const queue = await createQueue();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(aiHorde.getSubmittedImageRequestResult).toHaveBeenCalledTimes(1);
+        const [key, id] = aiHorde.getSubmittedImageRequestResult.mock
+          .calls[0] as [string, string];
+        expect(key).toBe('test-key');
+        expect(id).not.toBe('h-old');
+        expect(queue.readBackSince()).not.toBeNull();
+        expect(localStorage.getItem(READ_BACK_SINCE_KEY)).toBe(
+          String(queue.readBackSince()),
+        );
+      });
+
+      it.each([
+        [
+          'an endpoint the browser could not reach',
+          { kind: 'error', error: { status: 0, message: 'failed' } },
+        ],
+        ['a bare 404', { kind: 'missing_route' }],
+      ])('records nothing after %s', async (_label, answer) => {
+        seed(storedAdopted('old'));
+        aiHorde.getSubmittedImageRequestResult.mockReturnValue(of(answer));
+
+        const queue = await createQueue();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(aiHorde.getSubmittedImageRequestResult).toHaveBeenCalledTimes(1);
+        expect(queue.readBackSince()).toBeNull();
+        expect(localStorage.getItem(READ_BACK_SINCE_KEY)).toBeNull();
+        expect(queue.jobs()).toHaveLength(1);
+      });
+
+      it('never asks when no job was taken in from the account', async () => {
+        seed({ ...storedAdopted('own'), adopted: undefined });
+
+        await createQueue();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(aiHorde.getSubmittedImageRequestResult).not.toHaveBeenCalled();
+      });
+
+      it('never asks again once the moment is known, and never moves it', async () => {
+        localStorage.setItem(READ_BACK_SINCE_KEY, '5000');
+        seed(storedAdopted('old'));
+        aiHorde.getSubmittedImageRequestResult.mockReturnValue(of(NOT_FOUND));
+
+        const queue = await createQueue();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(aiHorde.getSubmittedImageRequestResult).not.toHaveBeenCalled();
+
+        await queue.adoptActive(['fresh']);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(aiHorde.getSubmittedImageRequestResult).toHaveBeenCalledTimes(1);
+        expect(queue.readBackSince()).toBe(5000);
+        expect(localStorage.getItem(READ_BACK_SINCE_KEY)).toBe('5000');
+      });
+
+      it('learns the moment from a job read back on adoption', async () => {
+        const queue = await createQueue();
+        aiHorde.getSubmittedImageRequestResult.mockReturnValue(
+          of({ kind: 'success', request: { prompt: 'a cat' } }),
+        );
+
+        await queue.adoptActive(['fresh']);
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(queue.readBackSince()).not.toBeNull();
+        // The job that proved it is not held back.
+        expect(queue.jobs()).toHaveLength(1);
+        expect(queue.hiddenJobs()).toEqual([]);
+      });
+
+      it('hears the moment from another tab', async () => {
+        seed(storedAdopted('old'));
+        const queue = await createQueue();
+        expect(queue.hiddenJobs()).toEqual([]);
+
+        localStorage.setItem(READ_BACK_SINCE_KEY, '5000');
+        window.dispatchEvent(
+          new StorageEvent('storage', {
+            key: READ_BACK_SINCE_KEY,
+            newValue: '5000',
+          }),
+        );
+
+        expect(queue.readBackSince()).toBe(5000);
+        expect(queue.hiddenJobs().map((job) => job.localId)).toEqual(['old']);
+      });
+    });
+
+    describe('holding them back', () => {
+      beforeEach(() => localStorage.setItem(READ_BACK_SINCE_KEY, '5000'));
+
+      it('leaves them out of every list and keeps the rest', async () => {
+        seed(
+          storedAdopted('old'),
+          storedAdopted('old-pending', { requestRecovery: 'pending' }),
+          storedAdopted('old-failed', { requestRecovery: 'failed' }),
+          storedAdopted('read-back', { requestRecovery: 'full' }),
+          storedAdopted('settings-only', { requestRecovery: 'settings' }),
+          storedAdopted('refused', { requestRecovery: 'refused' }),
+          storedAdopted('after', { createdAt: 6_000 }),
+          storedAdopted('kept', { keptByReader: true }),
+          { ...storedAdopted('own'), adopted: undefined },
+          storedAdopted('old-running', { status: 'queued' }),
+        );
+
+        const queue = await createQueue();
+
+        expect(
+          queue
+            .hiddenJobs()
+            .map((job) => job.localId)
+            .sort(),
+        ).toEqual(['old', 'old-failed', 'old-pending', 'old-running']);
+        const shown = queue.jobs().map((job) => job.localId);
+        expect(shown.sort()).toEqual(
+          [
+            'after',
+            'kept',
+            'own',
+            'read-back',
+            'refused',
+            'settings-only',
+          ].sort(),
+        );
+        expect(queue.finishedJobs().map((job) => job.localId)).not.toContain(
+          'old',
+        );
+        expect(queue.pendingJobs()).toEqual([]);
+      });
+
+      it('deletes nothing on its own', async () => {
+        seed(storedAdopted('old'));
+
+        await createQueue();
+        await vi.advanceTimersByTimeAsync(POLL_TICK_MS * 3);
+
+        expect(fakeDb.jobs.has('old')).toBe(true);
+      });
+
+      it('shows them again when kept, in this tab and the others', async () => {
+        seed(storedAdopted('old'));
+        const queue = await createQueue();
+        const peer = openPeerChannel();
+
+        await queue.keepHiddenJobs();
+
+        expect(queue.hiddenJobs()).toEqual([]);
+        expect(queue.jobs().map((job) => job.localId)).toEqual(['old']);
+        expect(fakeDb.jobs.get('old')?.keptByReader).toBe(true);
+        const app = FakeBroadcastChannel.instances[0];
+        expect(app.posted).toContainEqual(
+          expect.objectContaining({
+            topic: 'generation-job.changed',
+            payload: expect.objectContaining({
+              localId: 'old',
+              keptByReader: true,
+            }),
+          }),
+        );
+        peer.close();
+      });
+
+      it('shows a job another tab kept', async () => {
+        seed(storedAdopted('old'));
+        const queue = await createQueue();
+        const peer = openPeerChannel();
+
+        postFromPeer(peer, 'generation-job.changed', {
+          ...storedAdopted('old'),
+          keptByReader: true,
+          updatedAt: 2_000,
+        });
+
+        expect(queue.hiddenJobs()).toEqual([]);
+        expect(queue.jobs().map((job) => job.localId)).toEqual(['old']);
+      });
+
+      it('deletes a held-back job with its pictures through the usual delete', async () => {
+        seed(storedAdopted('old'), {
+          ...storedAdopted('own'),
+          adopted: undefined,
+        });
+        fakeDb.images.set('old::out-1', {
+          localId: 'old',
+          imageId: 'out-1',
+          kind: 'result',
+          blob: new Blob(['x']),
+          mimeType: 'image/webp',
+        });
+        const queue = await createQueue();
+
+        await queue.deleteJob(queue.hiddenJobs()[0].localId);
+
+        expect(fakeDb.jobs.has('old')).toBe(false);
+        expect(fakeDb.images.size).toBe(0);
+        expect(fakeDb.jobs.has('own')).toBe(true);
+        expect(queue.hiddenJobs()).toEqual([]);
+      });
+    });
   });
 
   it('refuses to retry an adopted job', async () => {

@@ -151,14 +151,19 @@ export function buildMetaGroups(
   const off = t('generate.results.meta_off');
   const label = (id: string): string => `generate.results.meta_row_${id}`;
 
-  const prompt: MetaRowSeed[] = [
-    {
-      id: 'prompt',
-      labelKey: label('prompt'),
-      value: value.prompt,
-      keys: ['prompt'],
-    },
-  ];
+  // An empty prompt is one the horde did not keep for a request read back
+  // from it (a request to be sent is never empty), and a row for it would
+  // apply nothing over the prompt already in the form.
+  const prompt: MetaRowSeed[] = value.prompt
+    ? [
+        {
+          id: 'prompt',
+          labelKey: label('prompt'),
+          value: value.prompt,
+          keys: ['prompt'],
+        },
+      ]
+    : [];
   if (value.negativePrompt) {
     prompt.push({
       id: 'negative',
@@ -304,11 +309,15 @@ export function buildMetaGroups(
   }
 
   return [
-    {
-      id: 'prompt',
-      titleKey: 'generate.results.meta_group_prompt',
-      rows: placed(prompt),
-    },
+    ...(prompt.length > 0
+      ? [
+          {
+            id: 'prompt',
+            titleKey: 'generate.results.meta_group_prompt',
+            rows: placed(prompt),
+          },
+        ]
+      : []),
     {
       id: 'sampling',
       titleKey: 'generate.results.meta_group_sampling',

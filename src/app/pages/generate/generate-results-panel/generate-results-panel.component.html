@@ -409,6 +409,39 @@
     [class.hidden]="tutorialOpen()"
     [class.gs-results-body--docked]="helpDockOpen()"
   >
+    @if (heldBackJobs().length > 0) {
+      <!-- Pictures the studio took in from the account's running requests
+           before the horde left requests made through shared keys out of that
+           list. They stay hidden, and nothing is deleted, until the reader
+           picks one of the two buttons. -->
+      <section
+        class="hd-callout hd-callout--accent gs-held-back-notice"
+        aria-labelledby="gs-held-back-title"
+      >
+        <h3 id="gs-held-back-title" class="hd-callout-title">
+          {{ "generate.results.held_back_title" | transloco }}
+        </h3>
+        <p class="hd-callout-body">
+          {{ "generate.results.held_back_body" | transloco }}
+        </p>
+        <div class="hd-callout-actions">
+          <button
+            type="button"
+            class="hd-btn hd-btn--tonal"
+            (click)="removeHeldBackJobs()"
+          >
+            {{ "generate.results.held_back_remove" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="hd-btn hd-btn--tonal"
+            (click)="keepHeldBackJobs()"
+          >
+            {{ "generate.results.held_back_keep" | transloco }}
+          </button>
+        </div>
+      </section>
+    }
     @if (tutorialCompleted()) {
       <!-- The tutorial stood down so the image could land here; this is the
            only thing it has left to say, and it says it once. -->
@@ -565,8 +598,8 @@
       <!-- Prompt header + retry badge, shared by every tile kind. `hidePrompt`
            drops the collapsible header when the grid-wide prompt overlay is on,
            which supersedes it; the retry badge stays either way. A generation
-           taken over from the account says so where its prompt would be, since
-           there is no prompt here to show. -->
+           taken over from the account says so above its prompt, or in its place
+           when the prompt is not known here. -->
       <ng-template #tileTop let-t let-hidePrompt="hidePrompt">
         @if (t.adopted || (t.prompt && !hidePrompt) || t.retryCount) {
           <div class="gs-tile-top">
@@ -785,7 +818,7 @@
                         <span class="gs-quick-acts-label">{{
                           "generate.results.use_in_request" | transloco
                         }}</span>
-                        @if (!tile.adopted) {
+                        @if (tile.known === "full") {
                           <button
                             type="button"
                             class="gs-quick-act gs-quick-act--primary"
@@ -814,7 +847,7 @@
                           <app-icon name="refresh-alt" />
                           {{ "generate.results.source_short" | transloco }}
                         </button>
-                        @if (!tile.adopted) {
+                        @if (tile.known === "full") {
                           <button
                             type="button"
                             class="gs-quick-act"
@@ -894,7 +927,7 @@
                         >
                           {{ "generate.results.use_in_request" | transloco }}
                         </div>
-                        @if (!tile.adopted) {
+                        @if (tile.known === "full") {
                           <button
                             type="button"
                             class="gs-flip-item"
@@ -923,7 +956,9 @@
                           <app-icon name="refresh-alt" />
                           {{ "generate.results.reuse" | transloco }}
                         </button>
-                        @if (!tile.adopted) {
+                        @if (
+                          tile.known === "full" || tile.known === "settings"
+                        ) {
                           <button
                             type="button"
                             class="gs-flip-item"
@@ -949,7 +984,7 @@
                           <app-icon name="link" />
                           {{ "generate.link.copy_image" | transloco }}
                         </button>
-                        @if (!tile.adopted) {
+                        @if (tile.known === "full") {
                           <button
                             type="button"
                             class="gs-flip-item"
@@ -1036,7 +1071,7 @@
                   <span class="gs-tile-status-text">
                     {{ "generate.results.tile_finished_pending" | transloco }}
                   </span>
-                  @if (!tile.adopted) {
+                  @if (tile.known === "full" || tile.known === "settings") {
                     <div class="gs-tile-btnrow gs-tile-btnrow--status">
                       <button
                         type="button"
@@ -1088,7 +1123,7 @@
                     <span class="gs-status-summary">
                       {{ "generate.results.claimed_summary" | transloco }}
                     </span>
-                    @if (!tile.adopted) {
+                    @if (tile.known === "full" || tile.known === "settings") {
                       <button
                         type="button"
                         class="gs-tile-btn"
@@ -1238,7 +1273,7 @@
                         }
                       }
                     </span>
-                    @if (!tile.adopted) {
+                    @if (tile.known === "full" || tile.known === "settings") {
                       <button
                         type="button"
                         class="gs-tile-btn"
@@ -1458,6 +1493,8 @@
                         <app-icon name="refresh-alt" />
                         {{ "generate.results.retry" | transloco }}
                       </button>
+                    }
+                    @if (tile.known === "full" || tile.known === "settings") {
                       <button
                         type="button"
                         class="gs-tile-btn"
@@ -1509,6 +1546,8 @@
                         <app-icon name="refresh-alt" />
                         {{ "generate.results.retry" | transloco }}
                       </button>
+                    }
+                    @if (tile.known === "full" || tile.known === "settings") {
                       <button
                         type="button"
                         class="gs-tile-btn"
@@ -1560,6 +1599,8 @@
                         <app-icon name="refresh-alt" />
                         {{ "generate.results.retry" | transloco }}
                       </button>
+                    }
+                    @if (tile.known === "full" || tile.known === "settings") {
                       <button
                         type="button"
                         class="gs-tile-btn"
@@ -1593,7 +1634,7 @@
                   <div
                     class="gs-tile-btnrow gs-tile-btnrow--wrap gs-tile-btnrow--status"
                   >
-                    @if (!tile.adopted) {
+                    @if (tile.known === "full" || tile.known === "settings") {
                       <button
                         type="button"
                         class="gs-tile-btn"
@@ -1735,9 +1776,9 @@
              one press away in the list at the end of the row. -->
         <div class="gs-viewer-actions">
           <!-- The group's label is positioned over its border, so a group left
-               with no buttons collapses beneath it; an adopted result on a
-               phone has none of these actions. -->
-          @if (!view.adopted || !viewerNarrow()) {
+               with no buttons collapses beneath it; a result whose request is not
+               known whole has none of these actions on a phone. -->
+          @if (view.known === "full" || !viewerNarrow()) {
             <div
               class="gs-viewer-action-group"
               role="group"
@@ -1746,7 +1787,7 @@
               <span class="gs-viewer-action-group-label">{{
                 "generate.results.use_in_request" | transloco
               }}</span>
-              @if (!view.adopted) {
+              @if (view.known === "full") {
                 <button
                   type="button"
                   class="gs-viewer-act gs-viewer-act--primary"
@@ -1766,7 +1807,7 @@
                   <app-icon name="refresh-alt" />
                   {{ "generate.results.reuse" | transloco }}
                 </button>
-                @if (!view.adopted) {
+                @if (view.known === "full") {
                   <button
                     type="button"
                     class="gs-viewer-act"
@@ -1869,8 +1910,8 @@
           [currentValue]="formValue()"
           [defaultMode]="metaMode()"
           [pinned]="metaPinned()"
-          [noteKey]="tile.adopted ? adoptedNoteKey : null"
-          [quickActions]="!tile.adopted"
+          [noteKey]="metaNoteKey(tile)"
+          [quickActions]="tile.known === 'full'"
           [promptCheckView]="promptCheckView()"
           (apply)="onMetaApply($event)"
           (quickAction)="onQuickAction($event, tile)"
@@ -1970,7 +2011,7 @@
         }}</span>
       </span>
     </button>
-    @if (!view.adopted) {
+    @if (view.known === "full") {
       <button
         type="button"
         class="gs-opt-row"
@@ -2004,7 +2045,7 @@
       }}</span>
     </span>
   </button>
-  @if (!view.adopted) {
+  @if (view.known === "full") {
     <button
       type="button"
       class="gs-opt-row"
@@ -2152,7 +2193,7 @@
         <app-icon name="x-mark" aria-hidden="true" />
       </button>
     </div>
-    @if (!menu.tile.adopted) {
+    @if (menu.tile.known === "full") {
       <button
         type="button"
         class="gs-tile-menu-item"
@@ -2173,7 +2214,7 @@
       <app-icon name="refresh-alt" />
       {{ "generate.results.reuse" | transloco }}
     </button>
-    @if (!menu.tile.adopted) {
+    @if (menu.tile.known === "full") {
       <button
         type="button"
         class="gs-tile-menu-item"
@@ -2183,6 +2224,8 @@
         <app-icon name="adjustments-horizontal" />
         {{ "generate.results.copy_settings" | transloco }}
       </button>
+    }
+    @if (menu.tile.known === "full" || menu.tile.known === "settings") {
       <button
         type="button"
         class="gs-tile-menu-item"
@@ -2215,7 +2258,7 @@
       <app-icon name="link" />
       {{ "generate.link.copy_image" | transloco }}
     </button>
-    @if (!menu.tile.adopted) {
+    @if (menu.tile.known === "full") {
       <button
         type="button"
         class="gs-tile-menu-item"
@@ -2285,8 +2328,8 @@
         [currentValue]="formValue()"
         [defaultMode]="metaMode()"
         [pinned]="metaPinned()"
-        [noteKey]="tile.adopted ? adoptedNoteKey : null"
-        [quickActions]="!tile.adopted"
+        [noteKey]="metaNoteKey(tile)"
+        [quickActions]="tile.known === 'full'"
         [promptCheckView]="promptCheckView()"
         (apply)="onMetaApply($event)"
         (quickAction)="onQuickAction($event, tile)"
