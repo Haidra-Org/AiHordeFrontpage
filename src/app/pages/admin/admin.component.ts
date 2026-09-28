@@ -2,131 +2,152 @@ import {
   Component,
   DestroyRef,
   ChangeDetectionStrategy,
+  computed,
   inject,
   OnInit,
-  PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import {
-  NavigationEnd,
-  Router,
-  RouterLink,
-  RouterOutlet,
-} from '@angular/router';
-import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
-import { filter } from 'rxjs';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../services/translator.service';
 import { FooterColorService } from '../../services/footer-color.service';
 import { AuthService } from '../../services/auth.service';
 import { HordeStatusService } from '../../services/horde-status.service';
-import { ToastService } from '../../services/toast.service';
+import { ModerationCountsService } from '../../services/moderation-counts.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { ModerationCountComponent } from '../../components/admin/moderation-count/moderation-count.component';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { HordeStatusModes } from '../../types/horde-status';
 import { setPageTitle } from '../../helper/page-title';
 
-/** Breakpoint at which sidebar becomes permanently visible (lg breakpoint) */
-const DESKTOP_BREAKPOINT = 1024;
+export interface AdminTab {
+  /** Path under /admin; empty for the dashboard. */
+  slug: string;
+  labelKey: string;
+  iconName: string;
+  /** Match exactly, since every tab's path starts with the dashboard's. */
+  exact: boolean;
+}
+
+const TAB_DASHBOARD: AdminTab = {
+  slug: '',
+  labelKey: 'admin.nav.dashboard',
+  iconName: 'home',
+  exact: true,
+};
+const TAB_REVIEW: AdminTab = {
+  slug: 'review',
+  labelKey: 'admin.nav.review',
+  iconName: 'shield-check',
+  exact: false,
+};
+const TAB_WORKERS: AdminTab = {
+  slug: 'workers',
+  labelKey: 'admin.nav.workers',
+  iconName: 'cpu-chip',
+  exact: false,
+};
+const TAB_USERS: AdminTab = {
+  slug: 'users',
+  labelKey: 'admin.nav.users',
+  iconName: 'users-simple',
+  exact: false,
+};
+const TAB_FILTERS: AdminTab = {
+  slug: 'filters',
+  labelKey: 'admin.nav.filters',
+  iconName: 'filter-simple',
+  exact: false,
+};
+const TAB_OPERATIONS: AdminTab = {
+  slug: 'operations',
+  labelKey: 'admin.nav.operations',
+  iconName: 'lock-closed',
+  exact: false,
+};
+
+/** One horde-wide mode the status line reports. */
+interface StatusMode {
+  labelKey: string;
+  active: boolean;
+}
 
 @Component({
   selector: 'app-admin',
   imports: [
     TranslocoPipe,
-    TranslocoModule,
     RouterLink,
+    RouterLinkActive,
     RouterOutlet,
     IconComponent,
+    ModerationCountComponent,
     StickyHeaderDirective,
   ],
   templateUrl: './admin.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(window:resize)': 'onResize()',
-  },
 })
 export class AdminComponent implements OnInit {
   private readonly title = inject(Title);
   private readonly translator = inject(TranslatorService);
   private readonly footerColor = inject(FooterColorService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly hordeStatus = inject(HordeStatusService);
-  private readonly platformId = inject(PLATFORM_ID);
   public readonly auth = inject(AuthService);
-  public readonly toastService = inject(ToastService);
+  public readonly counts = inject(ModerationCountsService);
 
-  public statusModes = signal<HordeStatusModes | null>(null);
-  /** Sidebar visibility state - starts closed on mobile, open on desktop */
-  public sidebarOpen = signal<boolean>(false);
-  /** Whether we're on a desktop-sized screen */
-  public isDesktop = signal<boolean>(false);
+  public readonly statusModes = signal<HordeStatusModes | null>(null);
+
+  public readonly reviewSlug = TAB_REVIEW.slug;
+
+  /**
+   * The tabs this account can open. Review shows only once one of its queues
+   * has answered, so a horde without the moderation endpoints offers no tab
+   * that opens onto nothing.
+   */
+  public readonly tabs = computed<readonly AdminTab[]>(() => {
+    if (!this.auth.currentUser()?.moderator) {
+      return [TAB_DASHBOARD, TAB_WORKERS];
+    }
+    return [
+      TAB_DASHBOARD,
+      ...(this.counts.anyAvailable() ? [TAB_REVIEW] : []),
+      TAB_WORKERS,
+      TAB_USERS,
+      TAB_FILTERS,
+      TAB_OPERATIONS,
+    ];
+  });
+
+  public readonly modes = computed<readonly StatusMode[]>(() => {
+    const status = this.statusModes();
+    if (!status) return [];
+    return [
+      {
+        labelKey: 'admin.status.maintenance_mode',
+        active: status.maintenance_mode,
+      },
+      {
+        labelKey: 'admin.status.invite_only',
+        active: status.invite_only_mode,
+      },
+      ...(status.raid_mode !== undefined
+        ? [{ labelKey: 'admin.status.raid_mode', active: status.raid_mode }]
+        : []),
+    ];
+  });
 
   ngOnInit(): void {
     setPageTitle(this.translator, this.title, this.destroyRef, 'admin.title');
 
     this.footerColor.setDarkMode(true);
 
-    // Initialize sidebar state based on screen size (only in browser)
-    if (isPlatformBrowser(this.platformId)) {
-      this.updateScreenSize();
-    }
-
-    // Load status modes
     this.hordeStatus
       .getStatusModes()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((modes) => {
         this.statusModes.set(modes);
       });
-
-    // Close sidebar on navigation (mobile only)
-    this.router.events
-      .pipe(
-        filter((event) => event instanceof NavigationEnd),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(() => {
-        if (!this.isDesktop()) {
-          this.sidebarOpen.set(false);
-        }
-      });
-  }
-
-  onResize(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.updateScreenSize();
-    }
-  }
-
-  private updateScreenSize(): void {
-    const isNowDesktop = window.innerWidth >= DESKTOP_BREAKPOINT;
-    const wasDesktop = this.isDesktop();
-    this.isDesktop.set(isNowDesktop);
-
-    // Auto-open sidebar when transitioning to desktop
-    if (isNowDesktop && !wasDesktop) {
-      this.sidebarOpen.set(true);
-    }
-    // Auto-close sidebar when transitioning to mobile
-    if (!isNowDesktop && wasDesktop) {
-      this.sidebarOpen.set(false);
-    }
-  }
-
-  public toggleSidebar(): void {
-    this.sidebarOpen.set(!this.sidebarOpen());
-  }
-
-  public closeSidebarOnMobile(): void {
-    if (!this.isDesktop()) {
-      this.sidebarOpen.set(false);
-    }
-  }
-
-  public isActive(path: string): boolean {
-    return this.router.url === path || this.router.url.startsWith(path + '/');
   }
 }

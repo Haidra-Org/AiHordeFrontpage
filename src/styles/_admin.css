@@ -1,327 +1,765 @@
 /* =================================================================
    ADMIN PANEL STYLES
-   
-   Theme-aware admin panel components with light/dark mode support.
-   Uses Tailwind CSS v4 @apply directive.
-   
-   Includes:
-   - Admin layout (sidebar navigation, mobile drawer)
+
+   The /admin shell and its dashboard and review pages are drawn on HD
+   (--hd-* tokens, .hd-* primitives in the markup); the rules for them
+   carry no .dark variant because the tokens flip. The pages routed under
+   the shell (workers, users, filters, operations) are still glass, and
+   the rest of this sheet serves them:
    - Admin containers & headers
-   - Panels
-   - Stat cards
-   - Status icons
-   - Dialogs/Modals
-   - Toasts
-   - Toggle switches
-   - Field layouts
-   - Icon buttons
-   - Admin-specific grids & text utilities
-   
-   Breakpoints:
-   - Mobile: < 1024px (sidebar as slide-out drawer)
-   - Desktop: >= 1024px (sidebar permanently visible)
+   - Stat cards, status icons, worker models list
+   - Toggle switches, field layouts, list item buttons
+   - Admin grids, text and colour utilities, tables, code blocks
+   - Filter controls, data tables, test results, worker dropdown
+   - Info grids, form layouts, stats bars
    ================================================================= */
 
 @layer components {
   /* =================================================================
-     ADMIN LAYOUT - Responsive sidebar navigation
+     SHELL - title, horde status line, tab count
+     The tab row and the routed panel are the details shell
+     (.details-shell, .details-nav, .details-panel in _details-tabs.css).
      ================================================================= */
 
-  .admin-layout {
-    @apply min-h-screen flex relative;
+  .admin-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2) var(--hd-space-4);
+  }
+
+  .admin-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .admin-status-heading {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-label);
+  }
+
+  .admin-status-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1) var(--hd-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Each mode says its state in words and in its glyph, so the danger
+     tint of a mode that is on is never the only sign of it. */
+  .admin-status-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    padding: 2px var(--hd-space-2);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-pill);
+    background: var(--hd-card);
+    font-size: var(--hd-text-xs);
+    color: var(--hd-ink-2);
+  }
+
+  .admin-status-mode--on {
+    border-color: var(--hd-danger-tint-border);
+    background: var(--hd-danger-tint);
+    color: var(--hd-ink);
+  }
+
+  .admin-status-mode-icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--hd-green);
+  }
+
+  .admin-status-mode--on .admin-status-mode-icon {
+    color: var(--hd-danger);
+  }
+
+  .admin-status-mode-state {
+    font-weight: 700;
+  }
+
+  .admin-tab-count {
+    min-height: 20px;
+    border-color: var(--hd-accent-tint-border);
+    background: var(--hd-accent-tint);
+    color: var(--hd-accent-text);
   }
 
   /* =================================================================
-     SIDEBAR
+     DASHBOARD
      ================================================================= */
 
-  .admin-sidebar {
-    @apply fixed left-0 z-40 w-64 -translate-x-full transition-transform duration-[250ms] ease-out;
-    top: var(--sticky-offset, 0px);
-    height: calc(100vh - var(--sticky-offset, 0px));
+  .admin-dash {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-6);
+    max-width: 72rem;
   }
 
-  .admin-sidebar.open {
-    @apply translate-x-0;
+  .admin-dash-welcome {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    color: var(--hd-ink-2);
   }
 
-  .admin-sidebar.desktop {
-    @apply sticky translate-x-0;
-    top: var(--sticky-offset, 0px);
-    height: calc(100vh - var(--sticky-offset, 0px));
+  .admin-dash-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
   }
 
-  .admin-sidebar-content {
-    @apply h-full py-4 px-3 overflow-y-auto w-full;
-    background: var(--color-glass-surface-heavy);
-    backdrop-filter: blur(var(--blur-glass-sm));
-    -webkit-backdrop-filter: blur(var(--blur-glass-sm));
-    border-right: 1px solid var(--color-glass-border-subtle);
+  .admin-dash-heading {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    color: var(--hd-ink);
   }
 
-  .dark .admin-sidebar-content {
-    background: var(--color-glass-surface-dark-heavy);
-    border-right-color: var(--color-glass-border-dark-subtle);
+  .admin-dash-lead {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-muted);
   }
 
-  .admin-sidebar-header {
-    @apply flex items-center justify-between mb-6 px-2;
+  .admin-dash-queues,
+  .admin-dash-tools {
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .admin-sidebar-logo {
-    @apply flex items-center;
+  .admin-dash-queue {
+    height: 100%;
+    min-height: 44px;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--hd-dur-fast) var(--hd-ease);
   }
 
-  .admin-sidebar-title {
-    @apply text-xl font-semibold;
-    color: var(--color-text-primary);
+  .admin-dash-queue:hover {
+    border-color: var(--hd-accent-tint-border);
+    text-decoration: none;
   }
 
-  .dark .admin-sidebar-title {
-    @apply text-white;
+  .admin-dash-queue:focus-visible,
+  .admin-dash-tool:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
   }
 
-  .admin-sidebar-close-btn {
-    @apply p-2 rounded-md transition-colors duration-150;
-    color: var(--color-text-secondary);
+  .admin-dash-tools {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: var(--hd-space-2);
   }
 
-  .admin-sidebar-close-btn:hover {
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
+  .admin-dash-tool {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-3);
+    height: 100%;
+    min-height: 44px;
+    padding: var(--hd-space-3);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color var(--hd-dur-fast) var(--hd-ease);
   }
 
-  .dark .admin-sidebar-close-btn {
-    @apply text-gray-400;
+  .admin-dash-tool:hover {
+    border-color: var(--hd-accent-tint-border);
+    text-decoration: none;
   }
 
-  .dark .admin-sidebar-close-btn:hover {
-    @apply bg-gray-700 text-white;
+  .admin-dash-tool-icon {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    color: var(--hd-accent-text);
   }
 
-  .admin-sidebar-close-btn:focus {
-    @apply outline-2 outline-blue-500 outline-offset-2;
+  .admin-dash-tool-text {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
 
-  .admin-sidebar.desktop .admin-sidebar-close-btn {
-    @apply hidden;
+  .admin-dash-tool-name {
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
-  .admin-sidebar-close-icon {
-    @apply w-5 h-5;
+  .admin-dash-tool-desc {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
   }
 
-  /* Sidebar navigation */
-  .admin-nav {
-    @apply flex flex-col gap-2;
+  .admin-dash-tool-chevron {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--hd-muted);
   }
 
-  .admin-nav-item {
-    @apply flex items-center p-3 rounded-lg transition-colors duration-150;
-    color: var(--color-text-secondary);
-  }
-
-  .admin-nav-item:hover {
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-nav-item {
-    @apply text-gray-300;
-  }
-
-  .dark .admin-nav-item:hover {
-    @apply bg-gray-700 text-white;
-  }
-
-  .admin-nav-item:focus {
-    @apply outline-2 outline-blue-500 outline-offset-2;
-  }
-
-  .admin-nav-item.active {
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
-  }
-
-  .dark .admin-nav-item.active {
-    @apply bg-gray-700 text-white;
-  }
-
-  .admin-nav-icon {
-    @apply w-5 h-5 shrink-0;
-  }
-
-  .admin-nav-label {
-    @apply ml-3;
-  }
-
-  /* Status indicators section */
-  .admin-status-section {
-    @apply mt-8 px-2;
-  }
-
-  .admin-status-title {
-    @apply text-xs font-semibold uppercase mb-3;
-    color: var(--color-text-secondary);
-  }
-
-  .dark .admin-status-title {
-    @apply text-gray-400;
-  }
-
-  .admin-status-list {
-    @apply flex flex-col gap-2;
-  }
-
-  .admin-status-item {
-    @apply flex items-center justify-between text-sm;
-  }
-
-  .admin-status-label {
-    color: var(--color-text-secondary);
-  }
-
-  .dark .admin-status-label {
-    @apply text-gray-300;
-  }
-
-  /* =================================================================
-     MOBILE OVERLAY
-     ================================================================= */
-
-  .admin-mobile-overlay {
-    @apply fixed left-0 right-0 bottom-0 z-30 cursor-pointer;
-    top: var(--sticky-offset, 0px);
-    background-color: rgb(0 0 0 / 0.5);
-    animation: admin-fade-in 200ms ease;
-  }
-
-  @keyframes admin-fade-in {
-    from {
-      opacity: 0;
+  @media (prefers-reduced-motion: reduce) {
+    .admin-dash-queue,
+    .admin-dash-tool {
+      transition: none;
     }
-    to {
-      opacity: 1;
-    }
   }
 
   /* =================================================================
-     MAIN CONTENT AREA
+     REVIEW - the moderator queues at /admin/review
+     A list of compact rows beside the open item's detail. The page and
+     the detail are containers and draw no frame; the rows, the reports,
+     the prompt texts and the dialogs are the boxes.
      ================================================================= */
 
-  .admin-main {
-    @apply flex-1 min-w-0 flex flex-col;
+  .review-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
   }
 
-  /* =================================================================
-     MOBILE HEADER
-     ================================================================= */
-
-  .admin-mobile-header {
-    @apply sticky z-20 py-3 px-4;
-    background-color: var(--color-bg-primary);
-    border-bottom: 1px solid var(--color-border-primary);
+  .review-page-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
   }
 
-  .dark .admin-mobile-header {
-    @apply bg-gray-900 border-gray-600;
+  .review-page-tabs {
+    padding: 0;
+    background: none;
   }
 
-  .admin-mobile-header.desktop-hidden {
-    @apply hidden;
+  .review-link {
+    color: var(--hd-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
-  .admin-mobile-header-content {
-    @apply flex items-center justify-between;
+  .review-link:hover {
+    color: var(--hd-ink);
   }
 
-  .admin-mobile-menu-btn {
-    @apply p-2 rounded-md transition-colors duration-150;
-    color: var(--color-text-secondary);
+  .review-link:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--hd-radius-sm);
   }
 
-  .admin-mobile-menu-btn:hover {
-    background-color: var(--color-bg-secondary);
-    color: var(--color-text-primary);
+  .review-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--hd-text-xs);
+    overflow-wrap: anywhere;
   }
 
-  .dark .admin-mobile-menu-btn {
-    @apply text-gray-400;
+  .review-empty {
+    padding-top: var(--hd-space-8);
   }
 
-  .dark .admin-mobile-menu-btn:hover {
-    @apply bg-gray-700 text-white;
+  /* Five views and three kinds wrap on a phone rather than scroll. */
+  .review-seg {
+    flex-wrap: wrap;
+    max-width: 100%;
   }
 
-  .admin-mobile-menu-btn:focus {
-    @apply outline-2 outline-blue-500 outline-offset-2;
+  .review-scope {
+    margin: 0;
+    max-width: 72ch;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink-2);
   }
 
-  .admin-mobile-menu-icon {
-    @apply w-6 h-6;
+  .review-criteria {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-2);
+    padding-bottom: var(--hd-space-3);
+    border-bottom: 1px solid var(--hd-border-subtle);
   }
 
-  .admin-mobile-title {
-    @apply text-lg font-semibold;
-    color: var(--color-text-primary);
+  .review-criteria-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-1) var(--hd-space-3);
   }
 
-  .dark .admin-mobile-title {
-    @apply text-white;
+  .review-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
   }
 
-  .admin-mobile-spacer {
-    @apply w-10;
+  /* The message is in ink, so it reads on a card, the canvas and the
+     dialog alike; the danger rule beside it marks it as a problem. */
+  .review-field-error {
+    margin: 0;
+    padding-inline-start: var(--hd-space-2);
+    border-inline-start: 3px solid var(--hd-danger);
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    color: var(--hd-ink);
   }
 
-  /* =================================================================
-     PAGE CONTENT
-     ================================================================= */
-
-  .admin-content {
-    @apply p-4 flex-1 relative z-[1];
-    background-color: var(--color-bg-secondary);
-    min-height: calc(100vh - var(--sticky-offset, 0px));
+  /* The dialog panel is darker than the canvas in the light theme, where
+     the muted label and note tokens fall under 4.5:1 on it. */
+  .dialog-body .review-detail-note {
+    color: var(--hd-ink-2);
   }
 
-  .dark .admin-content {
-    @apply bg-gray-900;
+  .dialog-body .hd-label {
+    color: var(--hd-ink);
   }
 
-  @media (min-width: 640px) {
-    .admin-content {
-      @apply p-6;
-    }
+  .review-problems {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* List beside detail from the split breakpoint up; below it the open
+     item replaces the list. Kept in step with REVIEW_SPLIT_MEDIA. */
+  .review-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hd-space-4);
+    align-items: start;
+  }
+
+  .review-split-list,
+  .review-split-detail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
   }
 
   @media (min-width: 1024px) {
-    .admin-content {
-      @apply p-8;
-      min-height: calc(100vh - var(--sticky-offset, 0px));
+    .review-split {
+      grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr);
+    }
+
+    .review-back {
+      display: none;
     }
   }
 
-  /* Access denied section */
-  .admin-access-denied {
-    @apply text-center py-12 px-4;
+  @media (max-width: 1023.98px) {
+    .review-split--detail .review-split-list,
+    .review-split:not(.review-split--detail) .review-split-detail {
+      display: none;
+    }
+
+    .review-back {
+      align-self: flex-start;
+    }
   }
 
-  .admin-access-denied-title {
-    @apply text-2xl font-bold mb-4;
-    color: var(--color-text-primary);
+  .review-list-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
   }
 
-  .dark .admin-access-denied-title {
-    @apply text-white;
+  .review-list-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    font-weight: 700;
+    color: var(--hd-ink);
   }
 
-  .admin-access-denied-text {
-    @apply mb-6;
-    color: var(--color-text-secondary);
+  .review-list-heading-count {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-muted);
   }
 
-  .dark .admin-access-denied-text {
-    @apply text-gray-400;
+  /* Rows */
+  .review-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+  }
+
+  .review-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--hd-card-border);
+    border-inline-start: 3px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  /* The open row carries a chevron and aria-current as well as the tint,
+     so it reads without the colour. */
+  .review-row--current {
+    border-color: var(--hd-accent-tint-border);
+    border-inline-start-color: var(--hd-accent);
+    background: var(--hd-accent-tint);
+  }
+
+  .review-row-cell {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .review-row-btn {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    min-height: 44px;
+    padding: var(--hd-space-2) calc(var(--hd-space-2) + 20px) var(--hd-space-2)
+      var(--hd-space-2-5);
+    border: 0;
+    border-radius: var(--hd-radius-md);
+    background: none;
+    color: var(--hd-ink);
+    font-family: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .review-row-btn:hover {
+    background: var(--hd-pop-hover);
+  }
+
+  .review-row-btn:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: -2px;
+  }
+
+  .review-row-line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .review-row-id {
+    flex: none;
+    font-size: var(--hd-text-xs);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-muted);
+  }
+
+  .review-row-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .review-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--hd-space-2);
+    font-size: var(--hd-text-xs);
+    color: var(--hd-ink-2);
+  }
+
+  .review-row-flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  .review-row-open {
+    position: absolute;
+    top: 50%;
+    right: var(--hd-space-2);
+    width: 16px;
+    height: 16px;
+    color: var(--hd-accent-text);
+    transform: translateY(-50%);
+  }
+
+  .review-load-more {
+    align-self: center;
+  }
+
+  /* The checkbox cell that chooses a row for a bulk action. The label is
+     the hit area, so the whole cell toggles the box. */
+  .review-row-check {
+    display: flex;
+    flex: none;
+  }
+
+  .review-row-check-hit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    cursor: pointer;
+  }
+
+  .review-row-check input:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
+  @media (pointer: coarse) {
+    .review-row-check-hit {
+      min-width: 44px;
+    }
+  }
+
+  /* The bulk bar over a list: choose all, the count, and the actions. */
+  .review-bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2) var(--hd-space-3);
+    padding: var(--hd-space-1) 0;
+    border-bottom: 1px solid var(--hd-border-subtle);
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink-2);
+  }
+
+  .review-bulk-all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  .review-bulk-count {
+    color: var(--hd-ink-2);
+  }
+
+  .review-bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .review-bulk-summary {
+    margin: 0;
+  }
+
+  .review-bulk-progress {
+    width: 100%;
+    height: 8px;
+    accent-color: var(--hd-accent);
+  }
+
+  /* Detail */
+  .review-detail-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--hd-space-2);
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .review-detail-title:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .review-detail-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-2);
+    padding-top: var(--hd-space-3);
+    border-top: 1px solid var(--hd-border-subtle);
+  }
+
+  .review-detail-section > .hd-textarea {
+    width: 100%;
+  }
+
+  .review-detail-subtitle {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .review-detail-note {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .review-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--hd-space-2) var(--hd-space-4);
+    margin: 0;
+  }
+
+  .review-fact {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .review-fact--wide {
+    grid-column: 1 / -1;
+  }
+
+  .review-fact dt {
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    color: var(--hd-label);
+  }
+
+  .review-fact dd {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--hd-space-2);
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink);
+  }
+
+  .review-prose {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .review-flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .review-flag {
+    border-color: var(--hd-card-border);
+    background: var(--hd-card);
+    color: var(--hd-ink);
+  }
+
+  .review-reasons,
+  .review-models,
+  .review-history {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .review-models {
+    flex-flow: row wrap;
+    gap: var(--hd-space-1) var(--hd-space-3);
+  }
+
+  .review-reason,
+  .review-history-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px var(--hd-space-2);
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink);
+  }
+
+  .review-reason-name {
+    font-weight: 600;
+  }
+
+  .review-reason-count,
+  .review-history-time {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .review-reason-desc,
+  .review-history-detail {
+    flex-basis: 100%;
+    color: var(--hd-ink-2);
+  }
+
+  .review-decisions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  /* The worker a suspicion event belongs to, in an account's history,
+     where one list mixes several workers. */
+  .review-history-worker {
+    font-weight: 600;
+  }
+
+  .review-dialog-field {
+    width: 100%;
+  }
+
+  /* =================================================================
+     SUSPICION HISTORY DISCLOSURE - folded on worker cards and the user
+     management page, where opening it is what reads the history.
+     ================================================================= */
+
+  .suspicion-disclosure-head {
+    width: 100%;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* The head carries no summary to push the chevron to the far end. */
+  .suspicion-disclosure-chev {
+    margin-inline-start: auto;
+  }
+
+  .suspicion-disclosure-body {
+    align-items: flex-start;
+  }
+
+  /* =================================================================
+     USER MODERATION RECORD - the account's workers' suspicion history,
+     on the user management page
+     ================================================================= */
+
+  .user-moderation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
   }
 
   /* =================================================================
@@ -345,43 +783,6 @@
       LEGACY VISUAL ALIASES
       Non-surface compatibility classes remain here temporarily.
       ================================================================= */
-
-  /* Legacy stat-card-icon variants without BEM dashes */
-  .stat-card-icon-purple {
-    @apply bg-purple-100 text-purple-600;
-  }
-  .dark .stat-card-icon-purple {
-    background-color: rgb(88 28 135 / 0.5);
-    @apply text-purple-400;
-  }
-  .stat-card-icon-blue {
-    @apply bg-blue-100 text-blue-600;
-  }
-  .dark .stat-card-icon-blue {
-    background-color: rgb(30 58 138 / 0.5);
-    @apply text-blue-400;
-  }
-  .stat-card-icon-green {
-    @apply bg-green-100 text-green-600;
-  }
-  .dark .stat-card-icon-green {
-    background-color: rgb(22 101 52 / 0.5);
-    @apply text-green-400;
-  }
-  .stat-card-icon-yellow {
-    @apply bg-yellow-100 text-yellow-700;
-  }
-  .dark .stat-card-icon-yellow {
-    background-color: rgb(113 63 18 / 0.5);
-    @apply text-yellow-400;
-  }
-  .stat-card-icon-indigo {
-    @apply bg-indigo-100 text-indigo-600;
-  }
-  .dark .stat-card-icon-indigo {
-    background-color: rgb(49 46 129 / 0.5);
-    @apply text-indigo-400;
-  }
 
   /* Legacy status-icon variants without BEM dashes */
   .status-icon-success {
@@ -690,17 +1091,6 @@
 
   @media (min-width: 768px) {
     .admin-grid-limits {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  .admin-grid-tools {
-    @apply grid gap-4;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-
-  @media (min-width: 640px) {
-    .admin-grid-tools {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }

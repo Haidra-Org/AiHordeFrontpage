@@ -56,7 +56,7 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | -------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
 | `/`            | `HomepageComponent`        | —                                                                                              |
 | `/profile`     | `ProfileShellComponent`    | 8 child routes (overview, generations, records, workers, teams, styles, settings, shared-keys) |
-| `/admin`       | `AdminComponent` (guarded) | Admin child routes                                                                             |
+| `/admin`       | `AdminComponent` (guarded) | dashboard, `review`, `workers`, `users`, `users/:userId`, `filters`, `operations`              |
 | `/details`     | `DetailsComponent`         | ~15 child routes (models, workers, teams, styles, leaderboard, etc.)                           |
 | `/faq`         | `FaqComponent`             | —                                                                                              |
 | `/guis`        | `GuisAndToolsComponent`    | —                                                                                              |
@@ -121,6 +121,33 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `AdminFilterService`     | Filter/flag management                           |
 | `AdminModerationService` | Moderation overview; prompt moderation log, its notes and evidence holds; worker suspicion log; one availability signal per endpoint family |
 | `ModerationCountsService` | The moderator queue counts the dashboard, the admin tabs and the account menu share: the overview queues; polls every five minutes for a moderator, in the browser, while the page is visible, and probes the prompt log once |
+
+#### The admin shell and the review page
+
+`AdminComponent` draws the title, a line of horde modes (maintenance, invite only, raid) and a row of HD sub-tabs:
+Dashboard and Workers for any signed-in account; Review, Users, Filters and Operations for moderators, each behind
+`moderatorGuard`. On the moderator pages (any route carrying `moderatorGuard`, see `isModeratorRoute`) the site's
+floating controls show only the actions a page registers, without the glossary button or scroll-to-top. Review, the
+dashboard's queue counts and the account menu's Moderation entry show only once one of
+the moderation endpoints has answered. Every surface is gated on its own endpoint's signal in `AdminModerationService`.
+A browser reports a keyed request to an undeployed path as status 0 (its CORS preflight fails), the same as a network
+failure, so the unkeyed heartbeat (`HordeStatusService.checkReachable`) decides between them: once it has answered in
+this page load, a status 0 from any moderation endpoint, the overview included, marks that endpoint `absent`, and an
+absent endpoint is not asked again until a reload. A status 0 before the heartbeat has answered is held while the
+heartbeat is read; if the heartbeat fails too, the held endpoints stay `unknown` and the next poll tries both again.
+Each probe runs to its answer even when its caller leaves, so an endpoint is probed once per page load. When every
+queue's endpoint is absent, `/admin/review` says review is not available on this horde and links back to the
+dashboard. The prompt log is probed once with its cheapest read.
+
+`/admin/review` holds two tabs, chosen by the `tab` query parameter (`promotions`, `paused`).
+Each queue list is an ARIA grid (`ReviewGridDirective`) beside the open item's detail; below 1024px the detail replaces
+the list and carries a way back. Confirmations go through `AdminDialogComponent`.
+
+Paused workers (`ReviewPausedWorkersComponent`) reads its own overview, up to 500 workers, and offers the
+kind, suspicion cause, online and order filters only once the horde has answered with `paused_workers_total`,
+which is also what the tab badge counts; the owner filters (trusted, flagged, at the suspicion limit) narrow
+the loaded list on the page. Bulk unpause and maintenance run one worker at a time, 400 ms apart, can stop
+between workers, and end with a summary that lists each refusal with the horde's message.
 
 ### UI Services
 

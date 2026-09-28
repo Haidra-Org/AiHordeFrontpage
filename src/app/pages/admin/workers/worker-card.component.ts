@@ -46,6 +46,7 @@ import {
 } from '../../../components/json-inspector/json-inspector.component';
 import { JsonInspectorTriggerComponent } from '../../../components/json-inspector-trigger/json-inspector-trigger.component';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { SuspicionHistoryComponent } from '../../../components/admin/suspicion-history/suspicion-history.component';
 import { GlossaryService } from '../../../services/glossary.service';
 import { ToastService } from '../../../services/toast.service';
 
@@ -64,6 +65,7 @@ import { ToastService } from '../../../services/toast.service';
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
     IconComponent,
+    SuspicionHistoryComponent,
   ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

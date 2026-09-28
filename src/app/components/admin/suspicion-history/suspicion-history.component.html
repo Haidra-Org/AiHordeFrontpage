@@ -1,0 +1,102 @@
+@if (mode() === "section") {
+  @if (contentShown()) {
+    <section
+      class="review-detail-section"
+      [attr.aria-labelledby]="headingId"
+      [attr.aria-busy]="loading()"
+    >
+      <h4 [id]="headingId" class="review-detail-subtitle">
+        {{ "admin.suspicion_history.title" | transloco }}
+      </h4>
+      <ng-container *ngTemplateOutlet="body" />
+    </section>
+  }
+} @else if (disclosureShown()) {
+  <div
+    class="hd-disclosure suspicion-disclosure"
+    [class.hd-disclosure--open]="open()"
+  >
+    <button
+      type="button"
+      class="hd-disclosure-head suspicion-disclosure-head"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="open() ? bodyId : null"
+      (click)="toggle()"
+    >
+      <span class="hd-disclosure-name">{{
+        "admin.suspicion_history.title" | transloco
+      }}</span>
+      <app-icon
+        name="chevron-right"
+        class="hd-disclosure-chev suspicion-disclosure-chev"
+        aria-hidden="true"
+      />
+    </button>
+    @if (open()) {
+      <div
+        class="hd-disclosure-body suspicion-disclosure-body"
+        [id]="bodyId"
+        [attr.aria-busy]="loading()"
+      >
+        <ng-content />
+        @if (contentShown()) {
+          <ng-container *ngTemplateOutlet="body" />
+        }
+      </div>
+    }
+  </div>
+}
+
+<ng-template #body>
+  @if (loading()) {
+    <div class="hd-skeleton">
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+      <span class="hd-skeleton-bar"></span>
+    </div>
+  } @else if (failed()) {
+    <p class="review-detail-note">
+      {{ "admin.suspicion_history.error" | transloco }}
+    </p>
+  } @else if (history().length === 0) {
+    <p class="review-detail-note">
+      {{
+        (byAccount()
+          ? "admin.suspicion_history.none_account"
+          : "admin.suspicion_history.none_worker"
+        ) | transloco
+      }}
+    </p>
+  } @else {
+    <ol class="review-history">
+      @for (event of history(); track event.id) {
+        <li class="review-history-item">
+          <time
+            class="review-history-time"
+            [attr.datetime]="hordeTime(event.created)?.toISOString()"
+            >{{ hordeTime(event.created) | date: "medium" }}</time
+          >
+          @if (byAccount()) {
+            <span class="review-history-worker">{{ event.worker_name }}</span>
+          }
+          <span class="review-reason-name review-code">{{ event.reason }}</span>
+          <span class="review-history-detail">{{ event.detail }}</span>
+        </li>
+      }
+    </ol>
+    @if (cursor() !== null) {
+      <button
+        type="button"
+        class="hd-btn review-load-more"
+        [disabled]="loadingMore()"
+        (click)="loadMore()"
+      >
+        {{
+          (loadingMore()
+            ? "admin.review.loading_more"
+            : "admin.review.load_more"
+          ) | transloco
+        }}
+      </button>
+    }
+  }
+</ng-template>

@@ -123,6 +123,14 @@
                         routerLinkActive="nav-dropdown-item-active"
                       >
                         {{ resolveChildLabel(child) | transloco }}
+                        @if (childCount(child); as count) {
+                          <span class="nav-dropdown-item-count">
+                            <app-moderation-count [value]="count" />
+                            <span class="sr-only">{{
+                              "admin.moderation.waiting" | transloco
+                            }}</span>
+                          </span>
+                        }
                       </a>
                     } @else if (child.href) {
                       <a
@@ -213,6 +221,14 @@
                           routerLinkActive="nav-dropdown-item-active"
                         >
                           {{ resolveChildLabel(child) | transloco }}
+                          @if (childCount(child); as count) {
+                            <span class="nav-dropdown-item-count">
+                              <app-moderation-count [value]="count" />
+                              <span class="sr-only">{{
+                                "admin.moderation.waiting" | transloco
+                              }}</span>
+                            </span>
+                          }
                         </a>
                       } @else if (child.href) {
                         <a
@@ -378,6 +394,14 @@
                             (click)="closeMobileMenu()"
                           >
                             {{ resolveChildLabel(child) | transloco }}
+                            @if (childCount(child); as count) {
+                              <span class="nav-dropdown-item-count">
+                                <app-moderation-count [value]="count" />
+                                <span class="sr-only">{{
+                                  "admin.moderation.waiting" | transloco
+                                }}</span>
+                              </span>
+                            }
                           </a>
                         } @else if (child.href) {
                           <a

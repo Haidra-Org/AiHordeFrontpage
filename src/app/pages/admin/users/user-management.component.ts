@@ -42,6 +42,7 @@ import { GenerationType } from '../../../types/generation';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
+import { UserModerationRecordComponent } from './user-moderation-record.component';
 
 type DialogType = 'resetSuspicion' | 'undeleteUser';
 
@@ -69,6 +70,7 @@ const MAX_HISTORY_SIZE = 30;
     JsonInspectorComponent,
     JsonInspectorTriggerComponent,
     IconComponent,
+    UserModerationRecordComponent,
   ],
   templateUrl: './user-management.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

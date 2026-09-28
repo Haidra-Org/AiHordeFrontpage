@@ -173,6 +173,7 @@ describe('isModeratorRoute', () => {
 
   it('is true on every page the moderator guard keeps', async () => {
     for (const url of [
+      '/admin/review',
       '/admin/users',
       '/admin/users/42',
       '/admin/filters',

@@ -1,73 +1,82 @@
-<div class="max-w-6xl flex flex-col mx-auto">
-  <!-- Welcome Header -->
-  <div class="mb-8">
-    <h1 class="heading-admin-lg">
-      {{
-        "admin.dashboard.welcome"
-          | transloco: { username: auth.currentUser()!.username }
-      }}
-    </h1>
-  </div>
+<div class="admin-dash">
+  <p class="admin-dash-welcome">
+    {{
+      "admin.dashboard.welcome"
+        | transloco: { username: auth.currentUser()!.username }
+    }}
+  </p>
 
-  <!-- Moderator Tools -->
   @if (auth.currentUser()!.moderator) {
-    <div class="panel p-6">
-      <h2 class="heading-admin-section mb-2">
+    @if (queues().length > 0) {
+      <section class="admin-dash-section" aria-labelledby="admin-dash-queues">
+        <h2 id="admin-dash-queues" class="admin-dash-heading">
+          {{ "admin.dashboard.queue.title" | transloco }}
+        </h2>
+        <p class="admin-dash-lead">
+          {{ "admin.dashboard.queue.lead" | transloco }}
+        </p>
+        <ul class="hd-stats admin-dash-queues">
+          @for (queue of queues(); track queue.labelKey) {
+            <li>
+              <a
+                class="hd-stat admin-dash-queue"
+                routerLink="/admin/review"
+                [queryParams]="queue.queryParams"
+              >
+                <span class="hd-stat-label">{{
+                  queue.labelKey | transloco
+                }}</span>
+                <span class="hd-stat-value">
+                  <app-moderation-count [value]="queue.count" />
+                </span>
+                <span class="hd-stat-note">{{
+                  queue.noteKey | transloco
+                }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </section>
+    } @else if (counts.loading()) {
+      <div class="hd-skeleton admin-dash-section" aria-busy="true">
+        <span class="hd-skeleton-bar hd-skeleton-bar--title"></span>
+        <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+      </div>
+    }
+
+    <section class="admin-dash-section" aria-labelledby="admin-dash-tools">
+      <h2 id="admin-dash-tools" class="admin-dash-heading">
         {{ "admin.dashboard.moderator_tools" | transloco }}
       </h2>
-      <p class="text-secondary mb-6">
+      <p class="admin-dash-lead">
         {{ "admin.dashboard.moderator_description" | transloco }}
       </p>
-
-      <div class="admin-grid-tools">
-        <a routerLink="/admin/users/" class="panel-link">
-          <div class="stat-card-icon stat-card-icon-purple rounded-full">
-            <app-icon name="users-simple" class="w-6 h-6" />
-          </div>
-          <div class="stat-card-content">
-            <p class="text-primary text-sm">
-              {{ "admin.dashboard.view_users" | transloco }}
-            </p>
-          </div>
-          <app-icon name="chevron-right" class="w-5 h-5 text-secondary" />
-        </a>
-
-        <a routerLink="/admin/workers/" class="panel-link">
-          <div class="stat-card-icon stat-card-icon-blue rounded-full">
-            <app-icon name="cpu-chip" class="w-6 h-6" />
-          </div>
-          <div class="stat-card-content">
-            <p class="text-primary text-sm">
-              {{ "admin.dashboard.view_workers" | transloco }}
-            </p>
-          </div>
-          <app-icon name="chevron-right" class="w-5 h-5 text-secondary" />
-        </a>
-
-        <a routerLink="/admin/filters/" class="panel-link">
-          <div class="stat-card-icon stat-card-icon-green rounded-full">
-            <app-icon name="filter-simple" class="w-6 h-6" />
-          </div>
-          <div class="stat-card-content">
-            <p class="text-primary text-sm">
-              {{ "admin.dashboard.view_filters" | transloco }}
-            </p>
-          </div>
-          <app-icon name="chevron-right" class="w-5 h-5 text-secondary" />
-        </a>
-
-        <a routerLink="/admin/operations/" class="panel-link">
-          <div class="stat-card-icon stat-card-icon-yellow rounded-full">
-            <app-icon name="lock-closed" class="w-6 h-6" />
-          </div>
-          <div class="stat-card-content">
-            <p class="text-primary text-sm">
-              {{ "admin.dashboard.view_operations" | transloco }}
-            </p>
-          </div>
-          <app-icon name="chevron-right" class="w-5 h-5 text-secondary" />
-        </a>
-      </div>
-    </div>
+      <ul class="admin-dash-tools">
+        @for (tool of tools; track tool.path) {
+          <li>
+            <a class="hd-card admin-dash-tool" [routerLink]="tool.path">
+              <app-icon
+                [name]="tool.iconName"
+                class="admin-dash-tool-icon"
+                aria-hidden="true"
+              />
+              <span class="admin-dash-tool-text">
+                <span class="admin-dash-tool-name">{{
+                  tool.labelKey | transloco
+                }}</span>
+                <span class="admin-dash-tool-desc">{{
+                  tool.descriptionKey | transloco
+                }}</span>
+              </span>
+              <app-icon
+                name="chevron-right"
+                class="admin-dash-tool-chevron"
+                aria-hidden="true"
+              />
+            </a>
+          </li>
+        }
+      </ul>
+    </section>
   }
 </div>

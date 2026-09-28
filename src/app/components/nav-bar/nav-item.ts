@@ -33,8 +33,11 @@ export interface NavItem {
    * is pinned and always stays on the bar.
    */
   overflowPriority?: number;
-  /** Controls visibility based on authentication state */
-  authState?: 'logged-in' | 'logged-out' | 'any';
+  /**
+   * Controls visibility based on authentication state. `moderator` entries show
+   * only to a moderator on a horde that answers the moderation queue.
+   */
+  authState?: 'logged-in' | 'logged-out' | 'moderator' | 'any';
   /**
    * Nav-notification item key — when present, the dropdown
    * shows a notification badge sourced from `NavNotificationService`.

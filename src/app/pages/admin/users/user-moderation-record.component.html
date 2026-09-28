@@ -1,0 +1,7 @@
+<div class="user-moderation">
+  <app-suspicion-history mode="disclosure" [filter]="{ user_id: userId() }">
+    <p class="review-detail-note">
+      {{ "admin.user_moderation.history_scope" | transloco }}
+    </p>
+  </app-suspicion-history>
+</div>

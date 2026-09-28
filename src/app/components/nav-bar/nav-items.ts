@@ -11,6 +11,9 @@ export function isStudioRoute(url: string): boolean {
   return /^\/(generate|alchemy)(\/|$|\?|#)/.test(url);
 }
 
+/** The account menu's entry into the moderator pages, which carries the queue count. */
+export const MODERATION_NAV_ID = 'moderation';
+
 export const NAV_ITEMS: NavItem[] = [
   { labelKey: 'home', routerLink: '/', exact: true },
   {
@@ -120,6 +123,12 @@ export const NAV_ITEMS: NavItem[] = [
         labelKey: 'profile.nav_login',
         loggedInLabelKey: 'profile.nav_profile',
         routerLink: '/profile/',
+      },
+      {
+        id: MODERATION_NAV_ID,
+        labelKey: 'nav.moderation',
+        routerLink: '/admin/',
+        authState: 'moderator',
       },
       {
         labelKey: 'register_account',

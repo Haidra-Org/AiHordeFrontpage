@@ -210,7 +210,7 @@
 </div>
 
 @if (!hideFloatingControls()) {
-  <app-floating-controls />
+  <app-floating-controls [onlyActions]="onModeratorPage()" />
 }
 
 <!-- The modal lives at the root rather than inside the floating controls so

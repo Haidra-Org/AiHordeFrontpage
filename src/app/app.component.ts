@@ -27,6 +27,7 @@ import { NavBarComponent } from './components/nav-bar/nav-bar.component';
 import { isStudioRoute } from './components/nav-bar/nav-items';
 import { ToastBarComponent } from './components/toast-bar/toast-bar.component';
 import { scrollToAnchorWhenReady } from './helper/scroll-utils';
+import { isModeratorRoute } from './guards/admin.guard';
 
 @Component({
   selector: 'app-root',
@@ -90,6 +91,19 @@ export class AppComponent implements OnInit {
   );
   public readonly hideFloatingControls = computed(
     () => this.onStudioRoute() || this.onAppLanding(),
+  );
+  /**
+   * Moderator pages are tools for people who know the terms, so the glossary
+   * and the jump to the top are dropped there, as on the studio; over the
+   * review lists they stood on the end of a row. The controls stay for the
+   * actions a page registers, such as the user page's save.
+   */
+  public readonly onModeratorPage = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map(() => isModeratorRoute(this.router.routerState.snapshot.root)),
+    ),
+    { initialValue: false },
   );
 
   ngOnInit(): void {

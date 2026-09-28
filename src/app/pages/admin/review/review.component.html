@@ -1,0 +1,63 @@
+<div class="review-page">
+  <header class="review-page-head">
+    <h2 class="admin-dash-heading">{{ "admin.review.title" | transloco }}</h2>
+    @if (tabs().length > 0) {
+      <p class="admin-dash-lead">{{ "admin.review.lead" | transloco }}</p>
+    }
+  </header>
+
+  @if (tabs().length > 0) {
+    <nav
+      class="hd-subtabs review-page-tabs"
+      [attr.aria-label]="'admin.review.tabs.label' | transloco"
+    >
+      <div class="hd-subtabs-scroll">
+        @for (tab of tabs(); track tab.id) {
+          <a
+            class="hd-subtab"
+            [class.hd-subtab--active]="activeTab() === tab.id"
+            [routerLink]="[]"
+            [queryParams]="{ tab: tab.id }"
+            queryParamsHandling="merge"
+            [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+          >
+            {{ tab.labelKey | transloco }}
+            @if (tab.count; as count) {
+              @if (count.count > 0) {
+                <span class="hd-badge admin-tab-count">
+                  <app-moderation-count [value]="count" />
+                  <span class="sr-only">{{
+                    "admin.moderation.waiting" | transloco
+                  }}</span>
+                </span>
+              }
+            }
+          </a>
+        }
+      </div>
+    </nav>
+  }
+
+  @switch (activeTab()) {
+    @case ("promotions") {
+      <app-review-promotions />
+    }
+    @case ("paused") {
+      <app-review-paused-workers />
+    }
+    @default {
+      @if (counts.noneAvailable()) {
+        <p class="admin-dash-lead" data-review-none>
+          {{ "admin.review.none" | transloco }}
+          <a routerLink="/admin">{{ "admin.review.none_back" | transloco }}</a>
+        </p>
+      } @else {
+        <div class="hd-skeleton" aria-busy="true">
+          <span class="hd-skeleton-bar hd-skeleton-bar--title"></span>
+          <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+          <span class="hd-skeleton-bar"></span>
+        </div>
+      }
+    }
+  }
+</div>

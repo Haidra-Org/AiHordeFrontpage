@@ -4,6 +4,7 @@ import {
   OnDestroy,
   afterNextRender,
   inject,
+  input,
   NgZone,
   PLATFORM_ID,
   signal,
@@ -29,18 +30,20 @@ import { IconComponent } from '../icon/icon.component';
     >
       <ng-content />
 
-      <!-- Glossary FAB -->
-      <button
-        type="button"
-        class="glossary-fab"
-        (click)="glossary.open()"
-        [attr.aria-label]="'help.open_glossary' | transloco"
-      >
-        ?
-      </button>
+      @if (!onlyActions()) {
+        <!-- Glossary FAB -->
+        <button
+          type="button"
+          class="glossary-fab"
+          (click)="glossary.open()"
+          [attr.aria-label]="'help.open_glossary' | transloco"
+        >
+          ?
+        </button>
+      }
 
       <!-- Scroll to Top -->
-      @if (showScrollToTop()) {
+      @if (showScrollToTop() && !onlyActions()) {
         <button
           type="button"
           (click)="scrollToTop()"
@@ -78,6 +81,8 @@ export class FloatingControlsComponent implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly zone = inject(NgZone);
   public readonly glossary = inject(GlossaryService);
+  /** Show only the actions pages register, without the glossary or scroll-to-top. */
+  public readonly onlyActions = input(false);
   public readonly floatingActions = inject(FloatingActionService);
   public readonly showScrollToTop = signal(false);
   /** Stepped off the bottom edge so the page can be read past them. */

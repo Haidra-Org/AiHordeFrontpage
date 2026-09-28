@@ -1,21 +1,71 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   OnInit,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { RouterLink } from '@angular/router';
-import { TranslocoPipe, TranslocoModule } from '@jsverse/transloco';
+import { Params, RouterLink } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { TranslatorService } from '../../../services/translator.service';
 import { AuthService } from '../../../services/auth.service';
+import { ModerationCountsService } from '../../../services/moderation-counts.service';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { ModerationCountComponent } from '../../../components/admin/moderation-count/moderation-count.component';
 import { setPageTitle } from '../../../helper/page-title';
+import { ListCount } from '../../../types/moderation';
+import { ReviewTab } from '../review/review-query';
+
+interface QueueTile {
+  labelKey: string;
+  noteKey: string;
+  count: ListCount;
+  queryParams: Params;
+}
+
+interface ToolLink {
+  path: string;
+  labelKey: string;
+  descriptionKey: string;
+  iconName: string;
+}
+
+const TOOLS: readonly ToolLink[] = [
+  {
+    path: '/admin/users',
+    labelKey: 'admin.dashboard.view_users',
+    descriptionKey: 'admin.dashboard.view_users_description',
+    iconName: 'users-simple',
+  },
+  {
+    path: '/admin/workers',
+    labelKey: 'admin.dashboard.view_workers',
+    descriptionKey: 'admin.dashboard.view_workers_description',
+    iconName: 'cpu-chip',
+  },
+  {
+    path: '/admin/filters',
+    labelKey: 'admin.dashboard.view_filters',
+    descriptionKey: 'admin.dashboard.view_filters_description',
+    iconName: 'filter-simple',
+  },
+  {
+    path: '/admin/operations',
+    labelKey: 'admin.dashboard.view_operations',
+    descriptionKey: 'admin.dashboard.view_operations_description',
+    iconName: 'lock-closed',
+  },
+];
+
+function tabParams(tab: ReviewTab, extra: Params = {}): Params {
+  return { tab, ...extra };
+}
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [TranslocoPipe, TranslocoModule, RouterLink, IconComponent],
+  imports: [TranslocoPipe, RouterLink, IconComponent, ModerationCountComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,6 +74,42 @@ export class DashboardComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly destroyRef = inject(DestroyRef);
   public readonly auth = inject(AuthService);
+  public readonly counts = inject(ModerationCountsService);
+
+  public readonly tools = TOOLS;
+
+  /** One tile per queue whose endpoint has answered. */
+  public readonly queues = computed<readonly QueueTile[]>(() => {
+    const tiles: QueueTile[] = [];
+    const eligible = this.counts.eligible();
+    if (eligible) {
+      tiles.push({
+        labelKey: 'admin.dashboard.queue.eligible',
+        noteKey: 'admin.dashboard.queue.eligible_note',
+        count: eligible,
+        queryParams: tabParams('promotions'),
+      });
+    }
+    const blocked = this.counts.blocked();
+    if (blocked) {
+      tiles.push({
+        labelKey: 'admin.dashboard.queue.blocked',
+        noteKey: 'admin.dashboard.queue.blocked_note',
+        count: blocked,
+        queryParams: tabParams('promotions'),
+      });
+    }
+    const paused = this.counts.paused();
+    if (paused) {
+      tiles.push({
+        labelKey: 'admin.dashboard.queue.paused',
+        noteKey: 'admin.dashboard.queue.paused_note',
+        count: paused,
+        queryParams: tabParams('paused'),
+      });
+    }
+    return tiles;
+  });
 
   ngOnInit(): void {
     setPageTitle(
@@ -32,15 +118,6 @@ export class DashboardComponent implements OnInit {
       this.destroyRef,
       'admin.dashboard.title',
     );
-  }
-
-  public formatAccountAge(seconds: number): string {
-    const days = Math.floor(seconds / 86400);
-    if (days > 365) {
-      const years = Math.floor(days / 365);
-      const remainingDays = days % 365;
-      return `${years} year${years !== 1 ? 's' : ''}, ${remainingDays} day${remainingDays !== 1 ? 's' : ''}`;
-    }
-    return `${days} day${days !== 1 ? 's' : ''}`;
+    this.counts.refreshIfStale();
   }
 }

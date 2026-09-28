@@ -1,0 +1,345 @@
+@if (eligible().length === 0 && blocked().length === 0) {
+  <div class="hd-empty review-empty">
+    <p class="hd-empty-title">
+      {{ "admin.review.promotions.empty_title" | transloco }}
+    </p>
+    <p class="hd-empty-sub">
+      {{ "admin.review.promotions.empty_sub" | transloco }}
+    </p>
+  </div>
+} @else {
+  <div class="review-split" [class.review-split--detail]="detailShown()">
+    <div class="review-split-list">
+      @for (group of groups(); track group.id) {
+        <section
+          class="review-list-group"
+          [attr.aria-labelledby]="'review-promotions-' + group.id"
+        >
+          <h3
+            class="review-list-heading"
+            [id]="'review-promotions-' + group.id"
+          >
+            {{ group.titleKey | transloco }}
+            <span class="review-list-heading-count">{{
+              group.users.length
+            }}</span>
+          </h3>
+          <p class="review-detail-note">{{ group.leadKey | transloco }}</p>
+          @if (group.users.length === 0) {
+            <p class="review-detail-note">
+              {{ "admin.review.promotions.group_empty" | transloco }}
+            </p>
+          } @else {
+            <div
+              appReviewGrid
+              class="review-grid"
+              [attr.aria-labelledby]="'review-promotions-' + group.id"
+              aria-describedby="review-promotions-grid-help"
+            >
+              @for (user of group.users; track user.id) {
+                <div
+                  role="row"
+                  class="review-row"
+                  [class.review-row--current]="isCurrent(user)"
+                >
+                  <div role="gridcell" class="review-row-cell">
+                    <button
+                      type="button"
+                      class="review-row-btn"
+                      data-grid-cell
+                      [attr.data-promotion-user]="user.id"
+                      [attr.tabindex]="
+                        tabStop(group.users) === user.id ? 0 : -1
+                      "
+                      [attr.aria-current]="isCurrent(user) ? 'true' : null"
+                      (click)="open(user.id)"
+                    >
+                      <span class="review-row-line">
+                        <span class="review-row-title">{{
+                          user.username
+                        }}</span>
+                        <span class="review-row-id">#{{ user.id }}</span>
+                      </span>
+                      <span class="review-row-meta">
+                        <span>{{
+                          "admin.review.promotions.row_kudos"
+                            | transloco
+                              : {
+                                  kudos:
+                                    (user.evaluating_kudos | number: "1.0-0"),
+                                }
+                        }}</span>
+                        <span>{{
+                          "admin.review.promotions.row_suspicion"
+                            | transloco
+                              : {
+                                  count: user.suspicious,
+                                  threshold: user.suspicion_threshold,
+                                }
+                        }}</span>
+                        @if (user.flagged) {
+                          <span class="review-row-flag">{{
+                            "admin.review.flag.flagged" | transloco
+                          }}</span>
+                        }
+                      </span>
+                      @if (isCurrent(user)) {
+                        <app-icon
+                          name="chevron-right"
+                          class="review-row-open"
+                          aria-hidden="true"
+                        />
+                      }
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
+      }
+      <p id="review-promotions-grid-help" class="sr-only">
+        {{ "admin.review.grid_help" | transloco }}
+      </p>
+    </div>
+
+    <section
+      class="review-split-detail"
+      [attr.aria-label]="'admin.review.promotions.detail_label' | transloco"
+    >
+      @if (selected(); as user) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost review-back"
+          (click)="back()"
+        >
+          <app-icon name="arrow-left" class="icon-sm" aria-hidden="true" />
+          {{ "admin.review.back" | transloco }}
+        </button>
+
+        <h3 #detailHeading class="review-detail-title" tabindex="-1">
+          {{ user.username }}
+          <span class="review-row-id">#{{ user.id }}</span>
+        </h3>
+        <p class="review-detail-note">
+          <a class="review-link" [routerLink]="['/admin/users', user.id]">{{
+            "admin.review.open_account" | transloco
+          }}</a>
+        </p>
+
+        @if (user.flagged || user.vpn || user.deleted) {
+          <ul class="review-flags">
+            @if (user.flagged) {
+              <li class="hd-badge review-flag">
+                {{ "admin.review.flag.flagged" | transloco }}
+              </li>
+            }
+            @if (user.vpn) {
+              <li class="hd-badge review-flag">
+                {{ "admin.review.flag.vpn" | transloco }}
+              </li>
+            }
+            @if (user.deleted) {
+              <li class="hd-badge review-flag">
+                {{ "admin.review.flag.deleted" | transloco }}
+              </li>
+            }
+          </ul>
+        }
+
+        <dl class="review-facts">
+          <div class="review-fact">
+            <dt>
+              {{ "admin.review.promotions.field.account_age" | transloco }}
+            </dt>
+            <dd>{{ accountAge(user) }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>
+              {{ "admin.review.promotions.field.last_active" | transloco }}
+            </dt>
+            <dd>
+              <time
+                [attr.datetime]="hordeTime(user.last_active)?.toISOString()"
+                >{{ hordeTime(user.last_active) | date: "medium" }}</time
+              >
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.promotions.field.kudos" | transloco }}</dt>
+            <dd>{{ user.kudos | number: "1.0-0" }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>
+              {{ "admin.review.promotions.field.evaluating_kudos" | transloco }}
+            </dt>
+            <dd>{{ user.evaluating_kudos | number: "1.0-0" }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.promotions.field.threshold" | transloco }}</dt>
+            <dd>
+              {{
+                "admin.review.promotions.threshold_value"
+                  | transloco
+                    : {
+                        threshold: (user.promotion_threshold | number: "1.0-0"),
+                        excess: (user.threshold_excess | number: "1.0-0"),
+                      }
+              }}
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.field.suspicion" | transloco }}</dt>
+            <dd>
+              {{
+                "admin.review.suspicion_value"
+                  | transloco
+                    : {
+                        count: user.suspicious,
+                        threshold: user.suspicion_threshold,
+                      }
+              }}
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.promotions.field.workers" | transloco }}</dt>
+            <dd>
+              {{
+                "admin.review.promotions.workers_value"
+                  | transloco
+                    : {
+                        count: user.worker_count,
+                        paused: user.paused_worker_count,
+                      }
+              }}
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>
+              {{ "admin.review.promotions.field.worker_kudos" | transloco }}
+            </dt>
+            <dd>{{ user.worker_kudos | number: "1.0-0" }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>
+              {{
+                "admin.review.promotions.field.worker_fulfilments" | transloco
+              }}
+            </dt>
+            <dd>{{ user.worker_fulfilments | number: "1.0-0" }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.field.contact" | transloco }}</dt>
+            <dd class="review-prose">
+              {{ user.contact || ("admin.review.not_set" | transloco) }}
+            </dd>
+          </div>
+          <div class="review-fact review-fact--wide">
+            <dt>
+              {{ "admin.review.promotions.field.admin_comment" | transloco }}
+            </dt>
+            <dd class="review-prose">
+              {{ user.admin_comment || ("admin.review.not_set" | transloco) }}
+            </dd>
+          </div>
+        </dl>
+
+        <section
+          class="review-detail-section"
+          aria-labelledby="review-promotion-reasons-title"
+        >
+          <h4
+            id="review-promotion-reasons-title"
+            class="review-detail-subtitle"
+          >
+            {{ "admin.review.reasons_title" | transloco }}
+          </h4>
+          @if (user.suspicion_reasons.length === 0) {
+            <p class="review-detail-note">
+              {{ "admin.review.reasons_none" | transloco }}
+            </p>
+          } @else {
+            <ul class="review-reasons">
+              @for (reason of user.suspicion_reasons; track reason.id) {
+                <li class="review-reason">
+                  <span class="review-reason-name review-code">{{
+                    reason.name
+                  }}</span>
+                  <span class="review-reason-count">{{
+                    "admin.review.reason_count"
+                      | transloco: { count: reason.count }
+                  }}</span>
+                  <span class="review-reason-desc">{{
+                    reason.description
+                  }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section
+          class="review-detail-section"
+          aria-labelledby="review-promotion-decision-title"
+        >
+          <h4
+            id="review-promotion-decision-title"
+            class="review-detail-subtitle"
+          >
+            {{ "admin.review.decision_title" | transloco }}
+          </h4>
+          <div class="review-decisions">
+            <button
+              type="button"
+              class="hd-btn hd-btn--primary"
+              [disabled]="acting()"
+              (click)="ask('trust')"
+            >
+              {{ "admin.review.promotions.action.trust" | transloco }}
+            </button>
+            @if (user.suspicious > 0) {
+              <button
+                type="button"
+                class="hd-btn"
+                [disabled]="acting()"
+                (click)="ask('reset')"
+              >
+                {{ "admin.review.promotions.action.reset" | transloco }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <app-admin-dialog
+          [open]="pendingAction() !== null"
+          [title]="
+            (pendingAction() === 'reset'
+              ? 'admin.review.promotions.confirm_title.reset'
+              : 'admin.review.promotions.confirm_title.trust'
+            ) | transloco: { username: user.username }
+          "
+          [confirmLabel]="
+            (pendingAction() === 'reset'
+              ? 'admin.review.promotions.action.reset'
+              : 'admin.review.promotions.action.trust'
+            ) | transloco
+          "
+          [cancelLabel]="'admin.review.cancel' | transloco"
+          [loading]="acting()"
+          [loadingLabel]="'admin.review.working' | transloco"
+          (confirmed)="confirm()"
+          (cancelled)="cancel()"
+        >
+          <p>
+            {{
+              (pendingAction() === "reset"
+                ? "admin.review.promotions.confirm_body.reset"
+                : "admin.review.promotions.confirm_body.trust"
+              ) | transloco
+            }}
+          </p>
+        </app-admin-dialog>
+      }
+    </section>
+  </div>
+}

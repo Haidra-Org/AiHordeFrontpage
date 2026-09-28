@@ -1,0 +1,688 @@
+@if (filtersSupported()) {
+  <div
+    class="review-criteria"
+    role="group"
+    [attr.aria-label]="'admin.review.paused.filter.label' | transloco"
+  >
+    <div class="review-criteria-row">
+      <span class="hd-label" id="review-paused-kind">{{
+        "admin.review.paused.filter.kind" | transloco
+      }}</span>
+      <div
+        class="review-chip-row"
+        role="group"
+        aria-labelledby="review-paused-kind"
+      >
+        @for (kind of kinds; track kind) {
+          <button
+            type="button"
+            class="hd-chip"
+            [class.hd-chip--active]="filters().kinds.includes(kind)"
+            [attr.aria-pressed]="filters().kinds.includes(kind)"
+            (click)="toggleKind(kind)"
+          >
+            {{ kindKey(kind) | transloco }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="review-criteria-row">
+      <span class="hd-label" id="review-paused-cause">{{
+        "admin.review.paused.filter.cause" | transloco
+      }}</span>
+      <div
+        class="review-chip-row"
+        role="group"
+        aria-labelledby="review-paused-cause"
+      >
+        @for (cause of causes; track cause.id) {
+          <button
+            type="button"
+            class="hd-chip"
+            [class.hd-chip--active]="filters().causes.includes(cause.id)"
+            [attr.aria-pressed]="filters().causes.includes(cause.id)"
+            (click)="toggleCause(cause.id)"
+          >
+            {{ causeKey(cause.key) | transloco }}
+          </button>
+        }
+      </div>
+    </div>
+    <div class="review-criteria-row">
+      <span class="hd-label" id="review-paused-online">{{
+        "admin.review.paused.filter.online" | transloco
+      }}</span>
+      <div
+        class="hd-seg review-seg"
+        role="group"
+        aria-labelledby="review-paused-online"
+        aria-describedby="review-paused-online-note"
+      >
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="filters().online === null"
+          (click)="setOnline(null)"
+        >
+          {{ "admin.review.paused.filter.online_any" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="filters().online === true"
+          (click)="setOnline(true)"
+        >
+          {{ "admin.review.paused.online" | transloco }}
+        </button>
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="filters().online === false"
+          (click)="setOnline(false)"
+        >
+          {{ "admin.review.paused.offline" | transloco }}
+        </button>
+      </div>
+    </div>
+    <p id="review-paused-online-note" class="review-detail-note">
+      {{ "admin.review.paused.filter.online_note" | transloco }}
+    </p>
+    <div class="review-criteria-row">
+      <span class="hd-label" id="review-paused-owner">{{
+        "admin.review.paused.filter.owner" | transloco
+      }}</span>
+      <div
+        class="review-chip-row"
+        role="group"
+        aria-labelledby="review-paused-owner"
+        aria-describedby="review-paused-owner-note"
+      >
+        @for (state of ownerStates; track state) {
+          <button
+            type="button"
+            class="hd-chip"
+            [class.hd-chip--active]="filters().owners.includes(state)"
+            [attr.aria-pressed]="filters().owners.includes(state)"
+            (click)="toggleOwner(state)"
+          >
+            {{ ownerKey(state) | transloco }}
+          </button>
+        }
+      </div>
+    </div>
+    <p id="review-paused-owner-note" class="review-detail-note">
+      {{ "admin.review.paused.filter.owner_note" | transloco }}
+    </p>
+    <div class="review-criteria-row">
+      <label class="hd-label" for="review-paused-sort">{{
+        "admin.review.paused.filter.sort" | transloco
+      }}</label>
+      <select
+        #sortSelect
+        id="review-paused-sort"
+        class="hd-input"
+        (change)="setSort(sortSelect.value)"
+      >
+        <option value="" [selected]="filters().sort === null">
+          {{ sortKey("default") | transloco }}
+        </option>
+        @for (sort of sorts; track sort) {
+          <option [value]="sort" [selected]="filters().sort === sort">
+            {{ sortKey(sort) | transloco }}
+          </option>
+        }
+      </select>
+      @if (anyFilter()) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost"
+          (click)="clearFilters()"
+        >
+          {{ "admin.review.paused.filter.clear" | transloco }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+@if (overview()) {
+  <p class="review-scope" aria-live="polite" data-paused-shown>
+    @if (total() !== null) {
+      {{
+        "admin.review.paused.showing"
+          | transloco: { shown: paused().length, total: total() }
+      }}
+      @if (filters().owners.length > 0) {
+        {{
+          "admin.review.paused.showing_owner"
+            | transloco: { loaded: loaded().length }
+        }}
+      }
+    } @else {
+      {{
+        "admin.review.paused.showing_loaded"
+          | transloco: { shown: paused().length }
+      }}
+    }
+  </p>
+}
+
+@if (bulkSummary(); as summary) {
+  <div class="hd-callout review-bulk-summary" role="status">
+    <p class="hd-callout-body" data-bulk-summary>
+      {{
+        "admin.review.paused.bulk.summary." + summary.action
+          | transloco: { count: summary.succeeded }
+      }}
+      @if (summary.skipped > 0) {
+        {{
+          "admin.review.paused.bulk.skipped"
+            | transloco: { count: summary.skipped }
+        }}
+      }
+    </p>
+    @if (summary.failed.length > 0) {
+      <p class="hd-callout-body">
+        {{
+          "admin.review.paused.bulk.failed"
+            | transloco: { count: summary.failed.length }
+        }}
+      </p>
+      <ul class="review-problems" data-bulk-failed>
+        @for (failure of summary.failed; track failure.id) {
+          <li class="review-field-error">
+            {{ failure.name }}:
+            {{
+              failure.message ??
+                ("admin.review.paused.bulk.failed_unknown" | transloco)
+            }}
+          </li>
+        }
+      </ul>
+    }
+    <div class="hd-callout-actions">
+      <button
+        type="button"
+        class="hd-btn hd-btn--dense"
+        (click)="dismissSummary()"
+      >
+        {{ "admin.review.paused.bulk.dismiss" | transloco }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (loading() && !overview()) {
+  <div class="hd-skeleton" aria-busy="true">
+    <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+    <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+    <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+  </div>
+} @else if (paused().length === 0) {
+  @if (!loadFailed()) {
+    <div class="hd-empty review-empty">
+      <p class="hd-empty-title">
+        {{
+          (anyFilter()
+            ? "admin.review.paused.empty_filtered_title"
+            : "admin.review.paused.empty_title"
+          ) | transloco
+        }}
+      </p>
+      <p class="hd-empty-sub">
+        {{
+          (anyFilter()
+            ? "admin.review.paused.empty_filtered_sub"
+            : "admin.review.paused.empty_sub"
+          ) | transloco
+        }}
+      </p>
+    </div>
+  }
+} @else {
+  <div class="review-split" [class.review-split--detail]="detailShown()">
+    <div class="review-split-list">
+      <div
+        class="review-bulk"
+        role="group"
+        [attr.aria-label]="'admin.review.paused.bulk.label' | transloco"
+      >
+        <label class="review-bulk-all">
+          <input
+            type="checkbox"
+            [checked]="allChecked()"
+            [indeterminate]="someChecked()"
+            (change)="toggleAll()"
+          />
+          {{ "admin.review.paused.bulk.check_all" | transloco }}
+        </label>
+        <span class="review-bulk-count" aria-live="polite">{{
+          "admin.review.paused.bulk.checked"
+            | transloco: { count: checkedShown().length }
+        }}</span>
+        <div class="review-bulk-actions">
+          <button
+            type="button"
+            class="hd-btn hd-btn--dense"
+            [disabled]="checkedShown().length === 0 || bulkRunning()"
+            (click)="askBulk('unpause')"
+          >
+            {{ "admin.review.paused.action.unpause" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="hd-btn hd-btn--dense"
+            [disabled]="checkedShown().length === 0 || bulkRunning()"
+            (click)="askBulk('maintenance_on')"
+          >
+            {{ "admin.review.paused.action.maintenance_on" | transloco }}
+          </button>
+          <button
+            type="button"
+            class="hd-btn hd-btn--dense"
+            [disabled]="checkedShown().length === 0 || bulkRunning()"
+            (click)="askBulk('maintenance_off')"
+          >
+            {{ "admin.review.paused.action.maintenance_off" | transloco }}
+          </button>
+        </div>
+      </div>
+      <div
+        appReviewGrid
+        class="review-grid"
+        [attr.aria-label]="'admin.review.paused.list_label' | transloco"
+        aria-describedby="review-paused-grid-help"
+      >
+        @for (worker of paused(); track worker.id) {
+          <div
+            role="row"
+            class="review-row"
+            [class.review-row--current]="selected()?.id === worker.id"
+          >
+            <div role="gridcell" class="review-row-check">
+              <label class="review-row-check-hit">
+                <input
+                  type="checkbox"
+                  data-grid-cell
+                  tabindex="-1"
+                  [checked]="checked().has(worker.id)"
+                  (change)="toggleChecked(worker.id)"
+                  [attr.aria-label]="
+                    'admin.review.paused.bulk.check_one'
+                      | transloco: { name: worker.name }
+                  "
+                />
+              </label>
+            </div>
+            <div role="gridcell" class="review-row-cell">
+              <button
+                type="button"
+                class="review-row-btn"
+                data-grid-cell
+                [attr.data-paused-worker]="worker.id"
+                [attr.tabindex]="tabStop() === worker.id ? 0 : -1"
+                [attr.aria-current]="
+                  selected()?.id === worker.id ? 'true' : null
+                "
+                (click)="open(worker.id)"
+              >
+                <span class="review-row-line">
+                  <span class="review-row-title">{{ worker.name }}</span>
+                </span>
+                <span class="review-row-meta">
+                  <span>{{ kindKey(worker.type) | transloco }}</span>
+                  <span>{{
+                    "admin.review.paused.row_owner"
+                      | transloco: { owner: worker.owner }
+                  }}</span>
+                  <span>{{
+                    (worker.online
+                      ? "admin.review.paused.online"
+                      : "admin.review.paused.offline"
+                    ) | transloco
+                  }}</span>
+                  <span>{{
+                    "admin.review.suspicion_value"
+                      | transloco
+                        : {
+                            count: worker.suspicious,
+                            threshold: worker.suspicion_threshold,
+                          }
+                  }}</span>
+                </span>
+                @if (selected()?.id === worker.id) {
+                  <app-icon
+                    name="chevron-right"
+                    class="review-row-open"
+                    aria-hidden="true"
+                  />
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+      <p id="review-paused-grid-help" class="sr-only">
+        {{ "admin.review.grid_help" | transloco }}
+      </p>
+    </div>
+
+    <section
+      class="review-split-detail"
+      [attr.aria-label]="'admin.review.paused.detail_label' | transloco"
+    >
+      @if (selected(); as worker) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost review-back"
+          (click)="back()"
+        >
+          <app-icon name="arrow-left" class="icon-sm" aria-hidden="true" />
+          {{ "admin.review.back" | transloco }}
+        </button>
+
+        <h3 #detailHeading class="review-detail-title" tabindex="-1">
+          {{ worker.name }}
+        </h3>
+        <p class="review-detail-note review-code">{{ worker.id }}</p>
+
+        <ul class="review-flags">
+          <li class="hd-badge review-flag">
+            {{
+              (worker.online
+                ? "admin.review.paused.online"
+                : "admin.review.paused.offline"
+              ) | transloco
+            }}
+          </li>
+          @if (worker.maintenance_mode) {
+            <li class="hd-badge review-flag">
+              {{ "admin.review.paused.maintenance_on" | transloco }}
+            </li>
+          }
+          @if (worker.owner_trusted) {
+            <li class="hd-badge review-flag">
+              {{ "admin.review.paused.owner_trusted" | transloco }}
+            </li>
+          }
+          @if (worker.owner_flagged) {
+            <li class="hd-badge review-flag">
+              {{ "admin.review.paused.owner_flagged" | transloco }}
+            </li>
+          }
+        </ul>
+
+        <dl class="review-facts">
+          <div class="review-fact">
+            <dt>{{ "admin.review.paused.field.owner" | transloco }}</dt>
+            <dd>
+              <a
+                class="review-link"
+                [routerLink]="['/admin/users', worker.owner_id]"
+                >{{ worker.owner }}</a
+              >
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>
+              {{ "admin.review.paused.field.owner_suspicion" | transloco }}
+            </dt>
+            <dd>{{ worker.owner_suspicion }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.field.suspicion" | transloco }}</dt>
+            <dd>
+              {{
+                "admin.review.suspicion_value"
+                  | transloco
+                    : {
+                        count: worker.suspicious,
+                        threshold: worker.suspicion_threshold,
+                      }
+              }}
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.paused.field.last_check_in" | transloco }}</dt>
+            <dd>
+              <time
+                [attr.datetime]="hordeTime(worker.last_check_in)?.toISOString()"
+                >{{ hordeTime(worker.last_check_in) | date: "medium" }}</time
+              >
+            </dd>
+          </div>
+          @if (worker.maintenance_mode && worker.maintenance_msg) {
+            <div class="review-fact review-fact--wide">
+              <dt>
+                {{ "admin.review.paused.field.maintenance_msg" | transloco }}
+              </dt>
+              <dd class="review-prose">{{ worker.maintenance_msg }}</dd>
+            </div>
+          }
+          <div class="review-fact">
+            <dt>{{ "admin.review.paused.field.requests" | transloco }}</dt>
+            <dd>{{ worker.requests_fulfilled | number: "1.0-0" }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.paused.field.aborted" | transloco }}</dt>
+            <dd>{{ worker.aborted_jobs | number: "1.0-0" }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.paused.field.bridge" | transloco }}</dt>
+            <dd class="review-code">{{ worker.bridge_agent }}</dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.field.contact" | transloco }}</dt>
+            <dd class="review-prose">
+              {{ worker.contact || ("admin.review.not_set" | transloco) }}
+            </dd>
+          </div>
+        </dl>
+
+        <section
+          class="review-detail-section"
+          aria-labelledby="review-paused-models-title"
+        >
+          <h4 id="review-paused-models-title" class="review-detail-subtitle">
+            {{
+              "admin.review.paused.models_title"
+                | transloco: { count: worker.models.length }
+            }}
+          </h4>
+          @if (worker.models.length === 0) {
+            <p class="review-detail-note">
+              {{ "admin.review.paused.models_none" | transloco }}
+            </p>
+          } @else {
+            <ul class="review-models">
+              @for (model of worker.models; track model) {
+                <li class="review-code">{{ model }}</li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section
+          class="review-detail-section"
+          aria-labelledby="review-paused-reasons-title"
+        >
+          <h4 id="review-paused-reasons-title" class="review-detail-subtitle">
+            {{ "admin.review.reasons_title" | transloco }}
+          </h4>
+          @if (worker.suspicion_reasons.length === 0) {
+            <p class="review-detail-note">
+              {{ "admin.review.reasons_none" | transloco }}
+            </p>
+          } @else {
+            <ul class="review-reasons">
+              @for (reason of worker.suspicion_reasons; track reason.id) {
+                <li class="review-reason">
+                  <span class="review-reason-name review-code">{{
+                    reason.name
+                  }}</span>
+                  <span class="review-reason-count">{{
+                    "admin.review.reason_count"
+                      | transloco: { count: reason.count }
+                  }}</span>
+                  <span class="review-reason-desc">{{
+                    reason.description
+                  }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <app-suspicion-history [filter]="{ worker_id: worker.id }" />
+
+        <section
+          class="review-detail-section"
+          aria-labelledby="review-paused-decision-title"
+        >
+          <h4 id="review-paused-decision-title" class="review-detail-subtitle">
+            {{ "admin.review.decision_title" | transloco }}
+          </h4>
+          <div class="review-decisions">
+            <button
+              type="button"
+              class="hd-btn hd-btn--primary"
+              [disabled]="acting()"
+              (click)="ask('unpause')"
+            >
+              {{ "admin.review.paused.action.unpause" | transloco }}
+            </button>
+            @if (worker.maintenance_mode) {
+              <button
+                type="button"
+                class="hd-btn"
+                [disabled]="acting()"
+                (click)="ask('maintenance_off')"
+              >
+                {{ "admin.review.paused.action.maintenance_off" | transloco }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="hd-btn"
+                [disabled]="acting()"
+                (click)="ask('maintenance_on')"
+              >
+                {{ "admin.review.paused.action.maintenance_on" | transloco }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <app-admin-dialog
+          [open]="pendingAction() !== null"
+          [title]="
+            'admin.review.paused.confirm_title.' +
+              (pendingAction() ?? 'unpause') | transloco: { name: worker.name }
+          "
+          [confirmLabel]="
+            'admin.review.paused.action.' + (pendingAction() ?? 'unpause')
+              | transloco
+          "
+          [cancelLabel]="'admin.review.cancel' | transloco"
+          [loading]="acting()"
+          [loadingLabel]="'admin.review.working' | transloco"
+          (confirmed)="confirm()"
+          (cancelled)="cancel()"
+        >
+          <p>
+            {{
+              "admin.review.paused.confirm_body." +
+                (pendingAction() ?? "unpause") | transloco
+            }}
+          </p>
+          @if (pendingAction() === "maintenance_on") {
+            <label class="hd-label" for="review-maintenance-message">{{
+              "admin.review.paused.maintenance_message" | transloco
+            }}</label>
+            <input
+              #maintenanceField
+              id="review-maintenance-message"
+              class="hd-input"
+              type="text"
+              [value]="maintenanceMessage()"
+              (input)="maintenanceMessage.set(maintenanceField.value)"
+            />
+          }
+        </app-admin-dialog>
+      }
+    </section>
+  </div>
+}
+
+<app-admin-dialog
+  [open]="bulkAction() !== null"
+  [title]="
+    'admin.review.paused.bulk.confirm_title.' + (bulkAction() ?? 'unpause')
+      | transloco: { count: checkedShown().length }
+  "
+  [confirmLabel]="
+    'admin.review.paused.action.' + (bulkAction() ?? 'unpause') | transloco
+  "
+  [cancelLabel]="'admin.review.cancel' | transloco"
+  [loading]="bulkRunning()"
+  [loadingLabel]="
+    'admin.review.paused.bulk.progress'
+      | transloco: { done: bulkProgress().done, total: bulkProgress().total }
+  "
+  (confirmed)="confirmBulk()"
+  (cancelled)="cancelBulk()"
+>
+  <p>
+    {{
+      "admin.review.paused.confirm_body." + (bulkAction() ?? "unpause")
+        | transloco
+    }}
+  </p>
+  <p class="review-detail-note">
+    {{
+      "admin.review.paused.bulk.paced"
+        | transloco: { count: checkedShown().length }
+    }}
+  </p>
+  @if (bulkAction() === "maintenance_on" && !bulkRunning()) {
+    <label class="hd-label" for="review-bulk-maintenance-message">{{
+      "admin.review.paused.maintenance_message" | transloco
+    }}</label>
+    <input
+      #bulkMessageField
+      id="review-bulk-maintenance-message"
+      class="hd-input review-dialog-field"
+      type="text"
+      [value]="maintenanceMessage()"
+      (input)="maintenanceMessage.set(bulkMessageField.value)"
+    />
+  }
+  @if (bulkRunning()) {
+    <progress
+      class="review-bulk-progress"
+      [max]="bulkProgress().total"
+      [value]="bulkProgress().done"
+      [attr.aria-label]="'admin.review.paused.bulk.progress_label' | transloco"
+    ></progress>
+    <p class="review-detail-note" aria-live="polite">
+      {{
+        "admin.review.paused.bulk.progress"
+          | transloco
+            : { done: bulkProgress().done, total: bulkProgress().total }
+      }}
+    </p>
+    <button
+      type="button"
+      class="hd-btn hd-btn--dense"
+      [disabled]="bulkStopping()"
+      (click)="cancelBulk()"
+    >
+      {{
+        (bulkStopping()
+          ? "admin.review.paused.bulk.stopping"
+          : "admin.review.paused.bulk.stop"
+        ) | transloco
+      }}
+    </button>
+  }
+</app-admin-dialog>

@@ -488,6 +488,15 @@
     @apply dark:text-purple-300 dark:bg-purple-900/30;
   }
 
+  /* How much waits on the reader behind an entry, such as the moderator
+     queue. The number is text, so it holds its contrast on its own. */
+  .nav-dropdown-item-count {
+    @apply ml-2 inline-flex items-center rounded-full px-2 text-xs font-semibold;
+    @apply bg-purple-100 text-purple-800;
+    @apply dark:bg-purple-900/40 dark:text-purple-200;
+    min-height: 1.25rem;
+  }
+
   /* Names the group an overflowed dropdown's entries came from. Read as a
      heading over its entries rather than as a quieter one of them, which is
      also what keeps it clear of the contrast floor in the light theme. */

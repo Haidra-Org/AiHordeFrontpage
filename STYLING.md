@@ -134,7 +134,7 @@ src/styles/
 ├── _sponsors.css           Sponsors page: sponsor cards, patron run, donate plate, drawn on --hd-*
 ├── _utilities.css          Spinners, skeletons, state containers, code blocks, icon sizing
 ├── _floating-controls.css  Floating control stack and scroll-to-top
-├── _admin.css              Admin layout: sidebar, admin nav, drawer
+├── _admin.css              Admin shell, dashboard and review page on --hd-*; glass rules the routed admin pages still use
 ├── _style-detail.css       Style detail page layout
 ├── _leaderboard.css        Kudos leaderboard layout and top cards
 ├── _legacy.css             Deprecated aliases; migrate away from these

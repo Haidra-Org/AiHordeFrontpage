@@ -2,7 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { signal } from '@angular/core';
 import { FloatingControlsComponent } from './floating-controls.component';
+import { FloatingActionService } from '../../services/floating-action.service';
 import en from '../../../assets/i18n/en.json';
 
 describe('FloatingControlsComponent', () => {
@@ -126,5 +128,26 @@ describe('FloatingControlsComponent', () => {
 
     scrollTo(1200);
     expect(retreated()).toBe(false);
+  });
+
+  it('shows only the registered actions when asked, without the glossary or scroll-to-top', async () => {
+    await build();
+    TestBed.inject(FloatingActionService).register({
+      id: 'save',
+      labelKey: 'admin.users.save',
+      cssClass: 'floating-save',
+      disabled: signal(false),
+      visible: signal(true),
+      action: () => undefined,
+    });
+    scrollTo(600);
+    expect(row().querySelector('.glossary-fab')).not.toBeNull();
+    expect(row().querySelector('.scroll-to-top-btn')).not.toBeNull();
+
+    fixture.componentRef.setInput('onlyActions', true);
+    fixture.detectChanges();
+    expect(row().querySelector('.glossary-fab')).toBeNull();
+    expect(row().querySelector('.scroll-to-top-btn')).toBeNull();
+    expect(row().querySelector('.floating-save')).not.toBeNull();
   });
 });

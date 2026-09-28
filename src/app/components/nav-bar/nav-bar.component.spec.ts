@@ -5,9 +5,15 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { ModerationCountsService } from '../../services/moderation-counts.service';
+import { ListCount } from '../../types/moderation';
 import { NavBarComponent } from './nav-bar.component';
+import { MODERATION_NAV_ID, NAV_ITEMS } from './nav-items';
 
 const STORAGE_KEY = 'aihorde.nav.github_stars';
+
+const moderationAvailable = signal(false);
+const moderationTotal = signal<ListCount | null>(null);
 
 describe('NavBarComponent GitHub star link', () => {
   let fixture: ComponentFixture<NavBarComponent>;
@@ -39,7 +45,17 @@ describe('NavBarComponent GitHub star link', () => {
       ],
       providers: [
         provideRouter([]),
-        { provide: AuthService, useValue: { isLoggedIn: signal(false) } },
+        {
+          provide: AuthService,
+          useValue: { isLoggedIn: signal(false), currentUser: signal(null) },
+        },
+        {
+          provide: ModerationCountsService,
+          useValue: {
+            anyAvailable: moderationAvailable,
+            total: moderationTotal,
+          },
+        },
         {
           provide: ThemeService,
           useValue: {
@@ -121,5 +137,76 @@ describe('NavBarComponent GitHub star link', () => {
       'Star AI-Horde on GitHub',
     );
     expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('NavBarComponent moderation entry', () => {
+  const entry = NAV_ITEMS.flatMap((item) => item.children ?? []).find(
+    (child) => child.id === MODERATION_NAV_ID,
+  )!;
+
+  const create = async (): Promise<NavBarComponent> => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await TestBed.configureTestingModule({
+      imports: [
+        NavBarComponent,
+        TranslocoTestingModule.forRoot({
+          langs: { en: {} },
+          translocoConfig: { defaultLang: 'en', availableLangs: ['en'] },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: AuthService,
+          useValue: { isLoggedIn: signal(true), currentUser: signal(null) },
+        },
+        {
+          provide: ModerationCountsService,
+          useValue: {
+            anyAvailable: moderationAvailable,
+            total: moderationTotal,
+          },
+        },
+        {
+          provide: ThemeService,
+          useValue: {
+            isDark: signal(false),
+            getTheme: vi.fn().mockReturnValue('system'),
+            setTheme: vi.fn(),
+          },
+        },
+      ],
+    }).compileComponents();
+    return TestBed.createComponent(NavBarComponent).componentInstance;
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    moderationAvailable.set(false);
+    moderationTotal.set(null);
+  });
+
+  it('lives in the account menu and opens the moderator pages', () => {
+    const account = NAV_ITEMS.find((item) => item.dropdownId === 'account');
+    expect(account?.children).toContain(entry);
+    expect(entry.routerLink).toBe('/admin/');
+  });
+
+  it('shows only once a review list has answered', async () => {
+    const nav = await create();
+    expect(nav.isChildVisible(entry)).toBe(false);
+
+    moderationAvailable.set(true);
+    expect(nav.isChildVisible(entry)).toBe(true);
+  });
+
+  it('carries the waiting count, floor and all, and nothing at zero', async () => {
+    const nav = await create();
+    moderationTotal.set({ count: 0, atLeast: false });
+    expect(nav.childCount(entry)).toBeNull();
+
+    moderationTotal.set({ count: 100, atLeast: true });
+    expect(nav.childCount(entry)).toEqual({ count: 100, atLeast: true });
   });
 });

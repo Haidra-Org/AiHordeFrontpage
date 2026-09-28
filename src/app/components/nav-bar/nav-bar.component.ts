@@ -27,12 +27,16 @@ import { filter, map, startWith } from 'rxjs';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
 import { NavNotificationService } from '../../services/nav-notification.service';
+import { ModerationCountsService } from '../../services/moderation-counts.service';
 import { StickyHeaderDirective } from '../../helper/sticky-header.directive';
 import { IconComponent } from '../icon/icon.component';
 import { NavDropdownComponent } from '../nav-dropdown/nav-dropdown.component';
 import { ThemeToggleComponent } from '../theme-toggle/theme-toggle.component';
+import { ModerationCountComponent } from '../admin/moderation-count/moderation-count.component';
 import { NavItem } from './nav-item';
+import { ListCount } from '../../types/moderation';
 import {
+  MODERATION_NAV_ID,
   NAV_ITEMS,
   NAV_OVERFLOW_DROPDOWN_ID,
   NavEntryMeasurement,
@@ -67,6 +71,7 @@ function readStoredStars(): number | null {
     IconComponent,
     NavDropdownComponent,
     ThemeToggleComponent,
+    ModerationCountComponent,
   ],
   templateUrl: './nav-bar.component.html',
   host: {
@@ -80,6 +85,7 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
   public readonly themeService = inject(ThemeService);
   public readonly auth = inject(AuthService);
   public readonly navNotifications = inject(NavNotificationService);
+  private readonly moderationCounts = inject(ModerationCountsService);
 
   // ── GitHub star link ──
   /**
@@ -237,6 +243,13 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return child.labelKey;
   }
 
+  /** The waiting-work count an entry carries, when it carries one and it is above zero. */
+  public childCount(child: NavItem): ListCount | null {
+    if (child.id !== MODERATION_NAV_ID) return null;
+    const total = this.moderationCounts.total();
+    return total && total.count > 0 ? total : null;
+  }
+
   /** True only when a notification targets this specific child via navSubItem */
   public hasNotificationForChild(item: NavItem, child: NavItem): boolean {
     if (!item.notificationNavItem || !child.id) return false;
@@ -249,6 +262,9 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
   public isChildVisible(child: NavItem): boolean {
     if (!child.authState || child.authState === 'any') return true;
     if (child.authState === 'logged-in') return this.auth.isLoggedIn();
+    if (child.authState === 'moderator') {
+      return this.moderationCounts.anyAvailable();
+    }
     return !this.auth.isLoggedIn();
   }
 

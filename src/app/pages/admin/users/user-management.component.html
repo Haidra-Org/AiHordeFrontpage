@@ -263,6 +263,9 @@
             }
           </div>
         </div>
+        @if (auth.currentUser()?.moderator) {
+          <app-user-moderation-record [userId]="selectedUser()!.id" />
+        }
       </div>
 
       <!-- Permissions & Flags Section -->

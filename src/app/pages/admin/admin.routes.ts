@@ -10,6 +10,12 @@ export const adminRoutes: Routes = [
       ),
   },
   {
+    path: 'review',
+    canActivate: [moderatorGuard],
+    loadComponent: () =>
+      import('./review/review.component').then((c) => c.ReviewComponent),
+  },
+  {
     path: 'workers',
     loadComponent: () =>
       import('./workers/worker-list.component').then(
