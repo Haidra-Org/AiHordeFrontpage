@@ -1,5 +1,10 @@
 import { inject, PLATFORM_ID } from '@angular/core';
-import { CanActivateFn, CanDeactivateFn, Router } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivateFn,
+  CanDeactivateFn,
+  Router,
+} from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { filter, map, take } from 'rxjs';
@@ -89,3 +94,19 @@ export const moderatorGuard: CanActivateFn = () => {
     }),
   );
 };
+
+/**
+ * Whether the page a navigation settled on is one only moderators can open:
+ * a route on its path carries `moderatorGuard`. Keyed on the route, never on
+ * the viewer, so a moderator on any other page sees it as everyone does.
+ */
+export function isModeratorRoute(root: ActivatedRouteSnapshot): boolean {
+  for (
+    let route: ActivatedRouteSnapshot | null = root;
+    route;
+    route = route.firstChild
+  ) {
+    if (route.routeConfig?.canActivate?.includes(moderatorGuard)) return true;
+  }
+  return false;
+}

@@ -119,6 +119,8 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `AdminWorkerService`     | Worker management operations                     |
 | `AdminOperationsService` | Bulk admin operations                            |
 | `AdminFilterService`     | Filter/flag management                           |
+| `AdminModerationService` | Moderation overview; prompt moderation log, its notes and evidence holds; worker suspicion log; one availability signal per endpoint family |
+| `ModerationCountsService` | The moderator queue counts the dashboard, the admin tabs and the account menu share: the overview queues; polls every five minutes for a moderator, in the browser, while the page is visible, and probes the prompt log once |
 
 ### UI Services
 
