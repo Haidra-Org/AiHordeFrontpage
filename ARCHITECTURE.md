@@ -119,8 +119,8 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 | `AdminWorkerService`     | Worker management operations                     |
 | `AdminOperationsService` | Bulk admin operations                            |
 | `AdminFilterService`     | Filter/flag management                           |
-| `AdminModerationService` | Moderation overview; prompt moderation log, its notes and evidence holds; worker suspicion log; one availability signal per endpoint family |
-| `ModerationCountsService` | The moderator queue counts the dashboard, the admin tabs and the account menu share: the overview queues; polls every five minutes for a moderator, in the browser, while the page is visible, and probes the prompt log once |
+| `AdminModerationService` | Moderation overview; report listings by subject (over the thresholds, watching, escalated) and the decisions on them; prompt moderation log, its notes and evidence holds; benign worker reports; alert settings; worker suspicion log; one availability signal per endpoint family |
+| `ModerationCountsService` | The moderator queue counts the dashboard, the admin tabs and the account menu share: subjects over the alert thresholds by kind, escalated subjects, and the overview queues; polls every five minutes for a moderator, in the browser, while the page is visible, and probes the prompt log once |
 
 #### The admin shell and the review page
 
@@ -137,9 +137,11 @@ absent endpoint is not asked again until a reload. A status 0 before the heartbe
 heartbeat is read; if the heartbeat fails too, the held endpoints stay `unknown` and the next poll tries both again.
 Each probe runs to its answer even when its caller leaves, so an endpoint is probed once per page load. When every
 queue's endpoint is absent, `/admin/review` says review is not available on this horde and links back to the
-dashboard. The prompt log is probed once with its cheapest read.
+dashboard. The report listings are asked with one read
+until they answer; the prompt log and the Reports views with endpoints of their own (Workers, Benign, Thresholds) are
+probed once with their cheapest read.
 
-`/admin/review` holds three tabs, chosen by the `tab` query parameter (`prompts`, `promotions`, `paused`).
+`/admin/review` holds four tabs, chosen by the `tab` query parameter (`reports`, `prompts`, `promotions`, `paused`).
 Each queue list is an ARIA grid (`ReviewGridDirective`) beside the open item's detail; below 1024px the detail replaces
 the list and carries a way back. Confirmations go through `AdminDialogComponent`.
 
@@ -160,6 +162,28 @@ On a horde whose reports carry `held_until`, each report can be kept past the 30
 90 days and a note, or released with an optional note. The hold controls, the "Kept until" marker on a collapsed row
 and the Prompts tab's line about holds all show only when the loaded reports carry the field.
 
+Reports (`ReviewReportsComponent`) moderates by subject rather than by event: an account, a proxied account on an
+account, or a request address, ranked by how many reports it collected. A single report means little on its own (a
+worker's CSAM check can flag ordinary pictures), so the unit of attention is a subject whose count over a window
+crosses a threshold. The address carries all of it (`review-query.ts`): `view` (`over`, `watching`, `escalated`,
+`false_positives`, `thresholds`), `kind`, the criteria (none for the alert preset; `window`, `min_count` and repeated
+`reason` for a custom search; `since_review=0` to count reports a decision already covered) and `open`, the open
+subject as `kind:identity` (`review-subjects.ts`). The subject detail (`ReviewSubjectComponent`) reads the subject's
+decisions, then its reports (`ReviewSubjectEventsComponent`): those after the latest decision's watermark first, the
+covered ones on request. Prompt text stays hidden until shown, one report at a time, or every rejected prompt loaded at
+once; a worker report is only ever shown on its own. It hides again when another subject or query opens, and only the
+stages a report has are drawn. Benign, watching (an end date within 90 days, an optional lower threshold) and escalated are chosen in
+one dialog and sent with the newest report on the page as the watermark. `actioned` is never a choice: flagging an
+account, resetting its suspicion, timing out an address or pausing a report's worker goes through its own service, and
+only once it succeeds is an `actioned` decision recorded naming the action; if that record fails the detail offers to
+save it again. The benign worker reports and the thresholds editor are read only when their view is chosen, and each
+view with an endpoint of its own is offered only once that endpoint has answered. Each
+alert rule counts its own one to three reasons, and a subject exceeds a rule when its count reaches the rule's minimum.
+The horde keys an IPv6 address by its /64 network, so an `ip` subject can be a network (`open=ip:2001:db8:1:2::/64`);
+the detail says so, and a timeout on it covers the whole network. Refusals the horde names (`InvalidModerationNote`,
+`InvalidModerationDecision`, `ModerationSubjectNotFound`, `InvalidModerationCriteria`, `InvalidModerationSettings`)
+are shown as plain messages through `refusalKey`, with the horde's own message in the toast details.
+
 Paused workers (`ReviewPausedWorkersComponent`) reads its own overview, up to 500 workers, and offers the
 kind, suspicion cause, online and order filters only once the horde has answered with `paused_workers_total`,
 which is also what the tab badge counts; the owner filters (trusted, flagged, at the suspicion limit) narrow
@@ -169,7 +193,8 @@ between workers, and end with a summary that lists each refusal with the horde's
 The account page's `UserModerationRecordComponent` shows once the prompt log's probe answers, and reads nothing for
 the account before then: the account's reports by reason
 from one read of up to 100 (the last 30 days, the horde's retention), without prompt text, and a link to them in the
-Prompts tab. The worker card and the paused-worker detail link to the
+Prompts tab. Where the report listings answer, it also shows the account's latest decision, counts over the longest
+alert window instead, and links to the account in Reports. The worker card and the paused-worker detail link to the
 reports a worker made.
 
 ### UI Services

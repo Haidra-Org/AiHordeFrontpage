@@ -1,0 +1,219 @@
+<section
+  class="review-panel"
+  aria-labelledby="review-thresholds-title"
+  [attr.aria-busy]="loading()"
+>
+  <h3 id="review-thresholds-title" class="review-detail-title">
+    {{ "admin.review.thresholds.title" | transloco }}
+  </h3>
+  <p class="review-scope">
+    {{ "admin.review.thresholds.lead" | transloco }}
+  </p>
+
+  @if (loading()) {
+    <div class="hd-skeleton" aria-hidden="true">
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+    </div>
+  } @else if (failed()) {
+    <button type="button" class="hd-btn" (click)="load()">
+      {{ "admin.review.try_again" | transloco }}
+    </button>
+  } @else {
+    @let windowMin = duration(bounds.minWindow);
+    @let windowMax = duration(bounds.maxWindow);
+    @let messageParams =
+      {
+        maxRules: bounds.maxRules,
+        maxReasons: bounds.maxReasons,
+        minCount: bounds.minCount,
+        maxCount: bounds.maxCount | number,
+        minWindow: windowMin.key | transloco: { count: windowMin.count },
+        maxWindow: windowMax.key | transloco: { count: windowMax.count },
+      };
+    <form
+      class="review-thresholds"
+      novalidate
+      (submit)="$event.preventDefault(); save()"
+    >
+      <ol class="review-rules">
+        @for (row of rows(); track row.id; let index = $index) {
+          <li class="review-rule">
+            <fieldset class="review-rule-fields">
+              <legend class="hd-label">
+                {{
+                  "admin.review.thresholds.rule_label"
+                    | transloco: { number: index + 1 }
+                }}
+              </legend>
+              <div class="review-filter">
+                <label class="hd-label" [for]="'review-rule-count-' + row.id">{{
+                  "admin.review.thresholds.count" | transloco
+                }}</label>
+                <input
+                  #countInput
+                  class="hd-input"
+                  type="number"
+                  step="1"
+                  inputmode="numeric"
+                  [id]="'review-rule-count-' + row.id"
+                  [min]="bounds.minCount"
+                  [max]="bounds.maxCount"
+                  [value]="row.count"
+                  [attr.aria-invalid]="
+                    problemsOf(index).includes(
+                      'admin.review.thresholds.error.count'
+                    )
+                  "
+                  [attr.aria-describedby]="
+                    problemsOf(index).length
+                      ? 'review-rule-problems-' + row.id
+                      : null
+                  "
+                  (input)="updateRow(row.id, { count: countInput.value })"
+                />
+              </div>
+              <div class="review-filter">
+                <label
+                  class="hd-label"
+                  [for]="'review-rule-window-' + row.id"
+                  >{{ "admin.review.thresholds.window" | transloco }}</label
+                >
+                <div class="review-filter-row">
+                  <input
+                    #windowInput
+                    class="hd-input"
+                    type="number"
+                    step="any"
+                    inputmode="decimal"
+                    min="1"
+                    [id]="'review-rule-window-' + row.id"
+                    [value]="row.value"
+                    [attr.aria-invalid]="
+                      problemsOf(index).includes(
+                        'admin.review.thresholds.error.window'
+                      )
+                    "
+                    [attr.aria-describedby]="
+                      problemsOf(index).length
+                        ? 'review-rule-problems-' + row.id
+                        : null
+                    "
+                    (input)="updateRow(row.id, { value: windowInput.value })"
+                  />
+                  <select
+                    #unitSelect
+                    class="hd-input"
+                    [attr.aria-label]="
+                      'admin.review.thresholds.unit_label' | transloco
+                    "
+                    (change)="setUnit(row.id, unitSelect.value)"
+                  >
+                    @for (unit of units; track unit) {
+                      <option [value]="unit" [selected]="row.unit === unit">
+                        {{ unitKey(unit) | transloco }}
+                      </option>
+                    }
+                  </select>
+                </div>
+              </div>
+              <div
+                class="review-filter review-reason-picks"
+                role="group"
+                [attr.aria-labelledby]="'review-rule-reasons-' + row.id"
+              >
+                <span class="hd-label" [id]="'review-rule-reasons-' + row.id">{{
+                  "admin.review.thresholds.reasons" | transloco
+                }}</span>
+                <div class="review-chip-row">
+                  @for (reason of reasons; track reason) {
+                    <button
+                      type="button"
+                      class="hd-chip"
+                      [class.hd-chip--active]="row.reasons.includes(reason)"
+                      [attr.aria-pressed]="row.reasons.includes(reason)"
+                      (click)="toggleReason(row.id, reason)"
+                    >
+                      {{ reasonKey(reason) | transloco }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <button
+                type="button"
+                class="hd-btn hd-btn--ghost review-rule-remove"
+                (click)="removeRule(row.id)"
+              >
+                {{
+                  "admin.review.thresholds.remove"
+                    | transloco: { number: index + 1 }
+                }}
+              </button>
+            </fieldset>
+            @if (problemsOf(index).length > 0) {
+              <ul
+                class="review-problems"
+                [id]="'review-rule-problems-' + row.id"
+              >
+                @for (problem of problemsOf(index); track problem) {
+                  <li class="review-field-error">
+                    {{ problem | transloco: messageParams }}
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        }
+      </ol>
+
+      <button
+        type="button"
+        class="hd-btn review-rule-add"
+        [disabled]="rows().length >= bounds.maxRules"
+        (click)="addRule()"
+      >
+        {{ "admin.review.thresholds.add" | transloco }}
+      </button>
+      <p class="review-detail-note">
+        {{ "admin.review.thresholds.bounds" | transloco: messageParams }}
+      </p>
+
+      @if (setProblems().length > 0) {
+        <div role="alert">
+          <ul class="review-problems">
+            @for (problem of setProblems(); track problem) {
+              <li class="review-field-error">
+                {{ problem | transloco: messageParams }}
+              </li>
+            }
+          </ul>
+        </div>
+      } @else if (attempted() && !valid()) {
+        <p class="review-field-error" role="alert">
+          {{ "admin.review.thresholds.error.fix_rules" | transloco }}
+        </p>
+      }
+
+      <div class="review-decisions">
+        <button
+          type="submit"
+          class="hd-btn hd-btn--primary"
+          [disabled]="saving() || !dirty()"
+        >
+          {{
+            (saving() ? "admin.review.working" : "admin.review.thresholds.save")
+              | transloco
+          }}
+        </button>
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost"
+          [disabled]="saving() || !dirty()"
+          (click)="reset()"
+        >
+          {{ "admin.review.thresholds.reset" | transloco }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

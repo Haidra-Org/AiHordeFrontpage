@@ -8,6 +8,39 @@
         {{ "admin.user_moderation.reports_title" | transloco }}
       </h3>
       <dl class="review-facts">
+        @if (casesAvailable()) {
+          <div class="review-fact">
+            <dt>{{ "admin.review.reports.state" | transloco }}</dt>
+            <dd data-account-state>
+              @if (latest(); as decision) {
+                <span class="review-state">{{
+                  "admin.review.reports.outcome." + decision.outcome | transloco
+                }}</span>
+                @if (decision.outcome === "watching" && decision.watch_until) {
+                  <span>{{
+                    (watching()
+                      ? "admin.review.reports.watch_until"
+                      : "admin.review.reports.watch_ended"
+                    )
+                      | transloco
+                        : {
+                            date:
+                              hordeTime(decision.watch_until)
+                              | date: "mediumDate",
+                          }
+                  }}</span>
+                }
+                <time
+                  class="review-history-time"
+                  [attr.datetime]="hordeTime(decision.created)?.toISOString()"
+                  >{{ hordeTime(decision.created) | date: "mediumDate" }}</time
+                >
+              } @else if (latest() === null) {
+                {{ "admin.review.reports.state_none" | transloco }}
+              }
+            </dd>
+          </div>
+        }
         @if (summary(); as summary) {
           <div class="review-fact">
             <dt>
@@ -53,6 +86,15 @@
           data-prompts-link
           >{{ "admin.user_moderation.open_prompts" | transloco }}</a
         >
+        @if (casesAvailable()) {
+          <a
+            class="hd-btn user-moderation-open"
+            routerLink="/admin/review"
+            [queryParams]="reviewQuery()"
+            data-case-link
+            >{{ "admin.user_moderation.open_review" | transloco }}</a
+          >
+        }
       </div>
     </section>
   }

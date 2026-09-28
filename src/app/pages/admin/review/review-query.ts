@@ -1,18 +1,105 @@
 import { ParamMap, Params } from '@angular/router';
 import {
+  ModerationSubjectKind,
+  ModerationSubjectQuery,
   PromptModerationEventQuery,
   PromptModerationReason,
 } from '../../../types/moderation';
-import { PROMPT_REASONS, hordeInstant, positiveInt } from './review-subjects';
+import {
+  PROMPT_REASONS,
+  SUBJECT_KINDS,
+  SubjectRef,
+  hordeInstant,
+  parseSubjectKey,
+  positiveInt,
+  subjectKey,
+} from './review-subjects';
 
 /** The queues the review page shows, as the `tab` query parameter names them. */
-export type ReviewTab = 'prompts' | 'promotions' | 'paused';
+export type ReviewTab = 'reports' | 'prompts' | 'promotions' | 'paused';
 
 export const REVIEW_TABS: readonly ReviewTab[] = [
+  'reports',
   'prompts',
   'promotions',
   'paused',
 ];
+
+/**
+ * What the Reports tab shows. The first three are lists beside a detail:
+ * those over the criteria, those being watched, and those escalated. The
+ * other two are the worker reports later marked benign, and the alert
+ * settings; each is read only when it is chosen.
+ */
+export type ReportsView =
+  | 'over'
+  | 'watching'
+  | 'escalated'
+  | 'workers'
+  | 'false_positives'
+  | 'thresholds';
+
+export const REPORTS_VIEWS: readonly ReportsView[] = [
+  'over',
+  'watching',
+  'escalated',
+  'workers',
+  'false_positives',
+  'thresholds',
+];
+
+/** The views drawn as a list beside a detail. */
+export const LIST_VIEWS: readonly ReportsView[] = [
+  'over',
+  'watching',
+  'escalated',
+];
+
+/** The windows a custom search offers, in seconds. */
+export const WINDOW_CHOICES: readonly number[] = [
+  3_600, 21_600, 86_400, 604_800, 2_592_000,
+];
+
+/** What a custom search starts from when the address names only part of it. */
+export const CUSTOM_DEFAULTS = { window: 86_400, minCount: 1 } as const;
+
+/**
+ * What the subject list asks for. With `window` null it asks for those over
+ * the configured alert rules, and sends no window, count or reasons.
+ */
+export interface ReportCriteria {
+  window: number | null;
+  minCount: number | null;
+  /** Empty for every reason. */
+  reasons: PromptModerationReason[];
+  /** Count only reports after the latest decision on each. */
+  sinceReview: boolean;
+}
+
+export const DEFAULT_CRITERIA: ReportCriteria = {
+  window: null,
+  minCount: null,
+  reasons: [],
+  sinceReview: true,
+};
+
+export interface ReportsState {
+  view: ReportsView;
+  kind: ModerationSubjectKind;
+  criteria: ReportCriteria;
+  /** The subject whose detail is open. */
+  open: SubjectRef | null;
+  /** The worker open in the reporting-workers view. */
+  worker: string | null;
+}
+
+export const DEFAULT_REPORTS: ReportsState = {
+  view: 'over',
+  kind: 'account',
+  criteria: DEFAULT_CRITERIA,
+  open: null,
+  worker: null,
+};
 
 /** Who the Prompts tab narrows the log to; each set filter must match. */
 export interface PromptFilter {
@@ -64,6 +151,7 @@ export const DEFAULT_PROMPTS: PromptsState = {
 export interface ReviewQuery {
   /** The tab the address names, or null when it names none or an unknown one. */
   tab: ReviewTab | null;
+  reports: ReportsState;
   prompts: PromptsState;
 }
 
@@ -73,8 +161,21 @@ export interface ReviewQuery {
  */
 export function parseReviewQuery(params: ParamMap): ReviewQuery {
   const tab = params.get('tab');
+  const view = params.get('view');
+  const kind = params.get('kind');
   return {
     tab: REVIEW_TABS.includes(tab as ReviewTab) ? (tab as ReviewTab) : null,
+    reports: {
+      view: REPORTS_VIEWS.includes(view as ReportsView)
+        ? (view as ReportsView)
+        : DEFAULT_REPORTS.view,
+      kind: SUBJECT_KINDS.includes(kind as ModerationSubjectKind)
+        ? (kind as ModerationSubjectKind)
+        : DEFAULT_REPORTS.kind,
+      criteria: parseCriteria(params),
+      open: parseSubjectKey(params.get('open')),
+      worker: view === 'workers' ? params.get('worker') || null : null,
+    },
     prompts: parsePrompts(params),
   };
 }
@@ -177,5 +278,65 @@ export function promptQueryOf(
     ...(since ? { since: hordeInstant(since) } : {}),
     ...(state.until ? { until: hordeInstant(state.until) } : {}),
     ...(reasons ? { reason: reasons } : {}),
+  };
+}
+
+function parseCriteria(params: ParamMap): ReportCriteria {
+  const sinceReview = params.get('since_review') !== '0';
+  const rawWindow = Number(params.get('window'));
+  const window = WINDOW_CHOICES.includes(rawWindow) ? rawWindow : null;
+  const minCount = positiveInt(params.get('min_count') ?? '');
+  if (window === null && minCount === null) {
+    return { ...DEFAULT_CRITERIA, sinceReview };
+  }
+  const named = params.getAll('reason');
+  const reasons = PROMPT_REASONS.filter((reason) => named.includes(reason));
+  return {
+    window: window ?? CUSTOM_DEFAULTS.window,
+    minCount: minCount ?? CUSTOM_DEFAULTS.minCount,
+    reasons: reasons.length === PROMPT_REASONS.length ? [] : reasons,
+    sinceReview,
+  };
+}
+
+/**
+ * The query parameters for the Reports tab. A value at its default is written
+ * as null, which removes it from the address on a merge.
+ */
+export function reportsParams(state: ReportsState): Params {
+  const custom = state.criteria.window !== null;
+  return {
+    tab: 'reports',
+    view: state.view === DEFAULT_REPORTS.view ? null : state.view,
+    kind: state.kind === DEFAULT_REPORTS.kind ? null : state.kind,
+    window: custom ? state.criteria.window : null,
+    min_count: custom ? state.criteria.minCount : null,
+    reason:
+      custom && state.criteria.reasons.length ? state.criteria.reasons : null,
+    since_review: state.criteria.sinceReview ? null : '0',
+    open: state.open ? subjectKey(state.open) : null,
+    worker: state.view === 'workers' ? state.worker : null,
+  };
+}
+
+/** The listing request for a kind under some criteria. */
+export function subjectQueryOf(
+  kind: ModerationSubjectKind,
+  criteria: ReportCriteria,
+  limit: number,
+  offset?: number,
+): ModerationSubjectQuery {
+  return {
+    kind,
+    ...(criteria.window !== null
+      ? {
+          window: criteria.window,
+          min_count: criteria.minCount ?? CUSTOM_DEFAULTS.minCount,
+          ...(criteria.reasons.length ? { reason: criteria.reasons } : {}),
+        }
+      : {}),
+    since_review: criteria.sinceReview,
+    limit,
+    ...(offset ? { offset } : {}),
   };
 }

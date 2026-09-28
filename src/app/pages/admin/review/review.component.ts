@@ -21,10 +21,13 @@ import { setPageTitle } from '../../../helper/page-title';
 import { ListCount } from '../../../types/moderation';
 import {
   PromptsState,
+  ReportsState,
   ReviewTab,
   parseReviewQuery,
   promptsParams,
+  reportsParams,
 } from './review-query';
+import { ReviewReportsComponent } from './review-reports.component';
 import { ReviewPromptsComponent } from './review-prompts.component';
 import { ReviewPromotionsComponent } from './review-promotions.component';
 import { ReviewPausedWorkersComponent } from './review-paused-workers.component';
@@ -36,8 +39,9 @@ interface ReviewTabView {
 }
 
 /**
- * The moderator review queues. The tab, and on Prompts the filters, live in
- * the address, so a link can open the page on one queue already filtered.
+ * The moderator review queues. The tab, on Reports what is listed and which
+ * one is open, and on Prompts the filters, live in the address, so a link
+ * can open the page on one queue already filtered.
  */
 @Component({
   selector: 'app-admin-review',
@@ -45,6 +49,7 @@ interface ReviewTabView {
     TranslocoPipe,
     RouterLink,
     ModerationCountComponent,
+    ReviewReportsComponent,
     ReviewPromptsComponent,
     ReviewPromotionsComponent,
     ReviewPausedWorkersComponent,
@@ -65,11 +70,19 @@ export class ReviewComponent implements OnInit {
     { initialValue: parseReviewQuery(this.route.snapshot.queryParamMap) },
   );
 
+  public readonly reports = computed(() => this.query().reports);
   public readonly prompts = computed(() => this.query().prompts);
 
   /** Only the queues whose endpoint has answered. */
   public readonly tabs = computed<readonly ReviewTabView[]>(() => {
     const tabs: ReviewTabView[] = [];
+    if (this.counts.reportsAvailable()) {
+      tabs.push({
+        id: 'reports',
+        labelKey: 'admin.review.tabs.reports',
+        count: this.counts.reportsTotal(),
+      });
+    }
     if (this.counts.promptsAvailable()) {
       tabs.push({
         id: 'prompts',
@@ -121,6 +134,14 @@ export class ReviewComponent implements OnInit {
       'admin.review.title',
     );
     this.counts.refreshIfStale();
+  }
+
+  public setReports(state: ReportsState): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: reportsParams(state),
+      queryParamsHandling: 'merge',
+    });
   }
 
   public setPrompts(state: PromptsState): void {

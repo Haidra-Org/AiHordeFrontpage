@@ -18,6 +18,7 @@ import { HordeStatusService } from './horde-status.service';
 import { API_BASE } from '../testing/api-test-helpers';
 import {
   ModerationOverview,
+  ModerationSubjectsPage,
   PromptModerationEvent,
   PromptModerationEventsPage,
 } from '../types/moderation';
@@ -49,6 +50,12 @@ const ROW: PromptModerationEvent = {
   effective_prompt: null,
   text_truncated: false,
   notes: [],
+};
+
+const SUBJECTS: ModerationSubjectsPage = {
+  criteria: { rules: null },
+  subjects: [],
+  next_offset: null,
 };
 
 function paramsOf(call: unknown[]): HttpParams | undefined {
@@ -325,6 +332,344 @@ describe('AdminModerationService', () => {
     });
   });
 
+  describe('getSubjects', () => {
+    beforeEach(() => mockCache.cachedGet.mockReturnValue(of(SUBJECTS)));
+
+    it('repeats each reason and sends the criteria, cached by category', () => {
+      svc
+        .getSubjects({
+          kind: 'ip',
+          window: 3600,
+          min_count: 5,
+          reason: ['worker_csam', 'model_rejection'],
+          since_review: false,
+          limit: 50,
+          offset: 50,
+        })
+        .subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/subjects`);
+      expect(call[2]).toEqual({
+        ttl: CacheTTL.SHORT,
+        category: 'admin-moderation',
+      });
+      const params = paramsOf(call);
+      expect(params?.get('kind')).toBe('ip');
+      expect(params?.get('window')).toBe('3600');
+      expect(params?.get('min_count')).toBe('5');
+      expect(params?.getAll('reason')).toEqual([
+        'worker_csam',
+        'model_rejection',
+      ]);
+      expect(params?.get('since_review')).toBe('false');
+      expect(params?.get('offset')).toBe('50');
+      expect(svc.subjectsAvailability()).toBe('available');
+    });
+
+    it('sends no window or count for the alert view', () => {
+      svc.getSubjects({ kind: 'account', since_review: true }).subscribe();
+      expect(paramsOf(mockCache.cachedGet.mock.calls[0])?.keys()).toEqual([
+        'kind',
+        'since_review',
+      ]);
+    });
+
+    it('marks the listings absent on a bare 404', () => {
+      mockCache.cachedGet.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404, error: null })),
+      );
+      svc
+        .getSubjects({ kind: 'account' })
+        .subscribe({ error: () => undefined });
+      expect(svc.subjectsAvailability()).toBe('absent');
+    });
+
+    it('learns nothing from a refused preflight', () => {
+      mockCache.cachedGet.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0, error: null })),
+      );
+      svc
+        .getSubjects({ kind: 'account' })
+        .subscribe({ error: () => undefined });
+      expect(svc.subjectsAvailability()).toBe('unknown');
+    });
+  });
+
+  describe('the watching and escalated lists', () => {
+    beforeEach(() => mockCache.cachedGet.mockReturnValue(of({ subjects: [] })));
+
+    it('reads each state through the subject endpoint', () => {
+      svc.getSubjects({ state: 'watching', limit: 50 }).subscribe();
+      svc.getSubjects({ state: 'escalated', limit: 50 }).subscribe();
+      expect(mockCache.cachedGet.mock.calls.map((call) => call[0])).toEqual([
+        `${BASE}/operations/moderation/subjects`,
+        `${BASE}/operations/moderation/subjects`,
+      ]);
+      expect(svc.subjectsAvailability()).toBe('available');
+    });
+  });
+
+  describe('getSubjectDecisions', () => {
+    it('sends the identity and cursor and never caches', () => {
+      mockCache.cachedGet.mockReturnValue(
+        of({ decisions: [], next_cursor: null }),
+      );
+      svc
+        .getSubjectDecisions({
+          kind: 'proxied_account',
+          user_id: 4,
+          proxied_account: 'bot:1',
+          before_id: 30,
+          limit: 10,
+        })
+        .subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/subjects/decisions`);
+      expect(call[2]).toEqual({ ttl: CacheTTL.NEVER });
+      const params = paramsOf(call);
+      expect(params?.get('kind')).toBe('proxied_account');
+      expect(params?.get('user_id')).toBe('4');
+      expect(params?.get('proxied_account')).toBe('bot:1');
+      expect(params?.get('before_id')).toBe('30');
+    });
+  });
+
+  describe('getSubjectDetail', () => {
+    it('sends the identity and range and never caches, so a superseded read can be cancelled', () => {
+      mockCache.cachedGet.mockReturnValue(of({}));
+      svc
+        .getSubjectDetail({
+          kind: 'ip',
+          ipaddr: '2001:db8:1:2::/64',
+          since: '2026-09-26T02:00:00+00:00',
+          until: '2026-09-26T04:00:00+00:00',
+        })
+        .subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/subjects/detail`);
+      expect(call[2]).toEqual({ ttl: CacheTTL.NEVER });
+      const params = paramsOf(call);
+      expect(params?.get('kind')).toBe('ip');
+      expect(params?.get('ipaddr')).toBe('2001:db8:1:2::/64');
+      expect(params?.get('since')).toBe('2026-09-26T02:00:00+00:00');
+      expect(params?.get('until')).toBe('2026-09-26T04:00:00+00:00');
+      expect(params?.has('window')).toBe(false);
+    });
+  });
+
+  describe('detail memo', () => {
+    const query = { kind: 'account' as const, user_id: 7 };
+
+    it('reuses a detail answer, and reads again after a decision on the subject', () => {
+      mockCache.cachedGet.mockReturnValue(of({ count: 1 }));
+      svc.getSubjectDetail(query).subscribe();
+      svc.getSubjectDetail(query).subscribe();
+      svc.getSubjectDetail({ ...query, since: 'x', until: 'y' }).subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledTimes(2);
+
+      svc.forgetDetails('account:8');
+      svc.getSubjectDetail(query).subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledTimes(2);
+
+      svc
+        .recordSubjectDecision({
+          kind: 'account',
+          user_id: 7,
+          outcome: 'benign',
+        })
+        .subscribe();
+      http
+        .expectOne(`${BASE}/operations/moderation/subjects/decisions`)
+        .flush({ id: 5 });
+      svc.getSubjectDetail(query).subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledTimes(3);
+    });
+
+    it('drops a paused worker, and every detail when a note is added', () => {
+      mockCache.cachedGet.mockReturnValue(of({ count: 1 }));
+      svc.getWorkerDetail({ worker_id: 'w' }).subscribe();
+      svc
+        .recordSubjectDecision({
+          kind: 'account',
+          user_id: 7,
+          outcome: 'actioned',
+          action: 'pause_worker',
+          action_detail: 'w',
+        })
+        .subscribe();
+      http
+        .expectOne(`${BASE}/operations/moderation/subjects/decisions`)
+        .flush({ id: 6 });
+      svc.getWorkerDetail({ worker_id: 'w' }).subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledTimes(2);
+
+      svc.addPromptNote(3, 'ordinary').subscribe();
+      http
+        .expectOne(`${BASE}/operations/moderation/prompts/3/notes`)
+        .flush({ id: 1 });
+      svc.getWorkerDetail({ worker_id: 'w' }).subscribe();
+      expect(mockCache.cachedGet).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('getReportingWorkers', () => {
+    it('sends the window, order and paging to the ranking', () => {
+      mockCache.cachedGet.mockReturnValue(of({}));
+      svc
+        .getReportingWorkers({
+          window: 604800,
+          sort: 'cleared',
+          limit: 50,
+          offset: 50,
+        })
+        .subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/workers`);
+      const params = paramsOf(call);
+      expect(params?.get('window')).toBe('604800');
+      expect(params?.get('sort')).toBe('cleared');
+      expect(params?.get('offset')).toBe('50');
+    });
+  });
+
+  describe('getWorkerDetail', () => {
+    it('sends the worker and range and never caches', () => {
+      mockCache.cachedGet.mockReturnValue(of({}));
+      svc
+        .getWorkerDetail({
+          worker_id: 'w-1',
+          since: '2026-09-26T02:00:00+00:00',
+          until: '2026-09-26T04:00:00+00:00',
+        })
+        .subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/workers/detail`);
+      expect(call[2]).toEqual({ ttl: CacheTTL.NEVER });
+      expect(paramsOf(call)?.get('worker_id')).toBe('w-1');
+    });
+  });
+
+  describe('recordSubjectDecision', () => {
+    it('posts the decision and drops the cached listings', () => {
+      let result: unknown;
+      svc
+        .recordSubjectDecision({
+          kind: 'account',
+          user_id: 12,
+          outcome: 'benign',
+          note: 'blurry photos',
+          watermark_event_id: 80,
+        })
+        .subscribe((r) => (result = r));
+
+      const req = http.expectOne(
+        `${BASE}/operations/moderation/subjects/decisions`,
+      );
+      expect(req.request.method).toBe('POST');
+      expect(req.request.headers.get('apikey')).toBe('mod-key');
+      expect(req.request.body).toEqual({
+        kind: 'account',
+        user_id: 12,
+        outcome: 'benign',
+        note: 'blurry photos',
+        watermark_event_id: 80,
+      });
+      req.flush({ id: 5 }, { status: 201, statusText: 'Created' });
+
+      expect(result).toEqual({ id: 5 });
+      expect(mockCache.invalidate).toHaveBeenCalledWith({
+        category: 'admin-moderation',
+      });
+    });
+
+    it('passes a refused decision to the caller and keeps the listings', () => {
+      let failed = false;
+      svc
+        .recordSubjectDecision({
+          kind: 'ip',
+          ipaddr: '1.2.3.4',
+          outcome: 'benign',
+        })
+        .subscribe({ error: () => (failed = true) });
+      http
+        .expectOne(`${BASE}/operations/moderation/subjects/decisions`)
+        .flush(
+          { message: 'no events', rc: 'ModerationSubjectNotFound' },
+          { status: 404, statusText: 'Not Found' },
+        );
+      expect(failed).toBe(true);
+      expect(svc.subjectsAvailability()).toBe('available');
+      expect(mockCache.invalidate).not.toHaveBeenCalled();
+    });
+
+    it('returns null without a key and sends nothing', () => {
+      mockAuth.getStoredApiKey.mockReturnValue('');
+      let result: unknown = 'unset';
+      svc
+        .recordSubjectDecision({
+          kind: 'account',
+          user_id: 1,
+          outcome: 'benign',
+        })
+        .subscribe((r) => (result = r));
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getFalsePositives', () => {
+    it('sends the window', () => {
+      mockCache.cachedGet.mockReturnValue(
+        of({
+          since: '2026-09-01T00:00:00Z',
+          until: '2026-09-27T00:00:00Z',
+          models: [],
+          total: 0,
+          next_offset: null,
+        }),
+      );
+      svc.getFalsePositives(604800).subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/models`);
+      expect(paramsOf(call)?.get('window')).toBe('604800');
+      expect(svc.falsePositivesAvailability()).toBe('available');
+    });
+  });
+
+  describe('settings', () => {
+    const SETTINGS = {
+      rules: [
+        {
+          window_seconds: 3600,
+          min_count: 50,
+          reasons: ['worker_csam' as const],
+        },
+      ],
+    };
+
+    it('reads the settings, cached by category', () => {
+      mockCache.cachedGet.mockReturnValue(of(SETTINGS));
+      svc.getSettings().subscribe();
+      const call = mockCache.cachedGet.mock.calls[0];
+      expect(call[0]).toBe(`${BASE}/operations/moderation/settings`);
+      expect(call[2]).toEqual({
+        ttl: CacheTTL.SHORT,
+        category: 'admin-moderation',
+      });
+      expect(svc.settingsAvailability()).toBe('available');
+    });
+
+    it('puts the settings and drops the cached listings', () => {
+      svc.updateSettings(SETTINGS).subscribe();
+      const req = http.expectOne(`${BASE}/operations/moderation/settings`);
+      expect(req.request.method).toBe('PUT');
+      expect(req.request.body).toEqual(SETTINGS);
+      req.flush(SETTINGS);
+      expect(mockCache.invalidate).toHaveBeenCalledWith({
+        category: 'admin-moderation',
+      });
+    });
+  });
+
   describe('getWorkerSuspicionEvents', () => {
     beforeEach(() => mockCache.cachedGet.mockReturnValue(of(PAGE)));
 
@@ -383,8 +728,8 @@ describe('AdminModerationService', () => {
     it('marks an endpoint absent on a status 0 once the heartbeat has answered, and asks it no more', () => {
       mockStatus.reachable.set(true);
       mockCache.cachedGet.mockReturnValue(unreached());
-      svc.getWorkerSuspicionEvents().subscribe({ error: ignore });
-      expect(svc.workerSuspicionEventsAvailability()).toBe('absent');
+      svc.getSubjects({ kind: 'account' }).subscribe({ error: ignore });
+      expect(svc.subjectsAvailability()).toBe('absent');
       expect(mockStatus.checkReachable).not.toHaveBeenCalled();
 
       // The cache's request is lazy; what matters is that nothing
@@ -397,7 +742,7 @@ describe('AdminModerationService', () => {
       );
       let refusal: unknown;
       svc
-        .getWorkerSuspicionEvents()
+        .getSubjects({ kind: 'ip' })
         .subscribe({ error: (error: unknown) => (refusal = error) });
       expect(sent).toBe(0);
       expect(refusal).toBeInstanceOf(HttpErrorResponse);
@@ -422,45 +767,43 @@ describe('AdminModerationService', () => {
 
     it('holds a status 0 until the heartbeat answers, then marks it absent', () => {
       mockCache.cachedGet.mockReturnValue(unreached());
-      svc.getWorkerSuspicionEvents().subscribe({ error: ignore });
+      svc.getSettings().subscribe({ error: ignore });
       svc.getOverview().subscribe({ error: ignore });
-      expect(svc.workerSuspicionEventsAvailability()).toBe('unknown');
+      expect(svc.settingsAvailability()).toBe('unknown');
       expect(svc.overviewAvailability()).toBe('unknown');
       expect(mockStatus.checkReachable).toHaveBeenCalledTimes(1);
 
       answerHeartbeat();
-      expect(svc.workerSuspicionEventsAvailability()).toBe('absent');
+      expect(svc.settingsAvailability()).toBe('absent');
       expect(svc.overviewAvailability()).toBe('absent');
     });
 
     it('leaves held endpoints unknown when the heartbeat fails too, and reads both again next time', () => {
       mockCache.cachedGet.mockReturnValue(unreached());
-      svc.getWorkerSuspicionEvents().subscribe({ error: ignore });
+      svc.getSettings().subscribe({ error: ignore });
       heartbeat.next(false);
       heartbeat.complete();
-      expect(svc.workerSuspicionEventsAvailability()).toBe('unknown');
+      expect(svc.settingsAvailability()).toBe('unknown');
 
       heartbeat = new Subject<boolean>();
       mockCache.cachedGet.mockClear();
-      svc.getWorkerSuspicionEvents().subscribe({ error: ignore });
+      svc.getSettings().subscribe({ error: ignore });
       expect(mockCache.cachedGet).toHaveBeenCalledTimes(1);
       expect(mockStatus.checkReachable).toHaveBeenCalledTimes(2);
-      expect(svc.workerSuspicionEventsAvailability()).toBe('unknown');
+      expect(svc.settingsAvailability()).toBe('unknown');
 
       answerHeartbeat();
-      expect(svc.workerSuspicionEventsAvailability()).toBe('absent');
+      expect(svc.settingsAvailability()).toBe('absent');
     });
 
     it('keeps an endpoint that answers while the heartbeat is still out', () => {
       mockCache.cachedGet.mockReturnValue(unreached());
-      svc.getWorkerSuspicionEvents().subscribe({ error: ignore });
-      mockCache.cachedGet.mockReturnValue(
-        of({ events: [], next_cursor: null }),
-      );
-      svc.getWorkerSuspicionEvents().subscribe();
+      svc.getSettings().subscribe({ error: ignore });
+      mockCache.cachedGet.mockReturnValue(of({ rules: [] }));
+      svc.getSettings().subscribe();
 
       answerHeartbeat();
-      expect(svc.workerSuspicionEventsAvailability()).toBe('available');
+      expect(svc.settingsAvailability()).toBe('available');
     });
 
     it('keeps an endpoint that has answered when a later read never reaches the horde', () => {
@@ -569,6 +912,31 @@ describe('AdminModerationService', () => {
       svc.probe('promptEvents').subscribe();
       expect(mockCache.cachedGet).toHaveBeenCalledTimes(2);
       expect(svc.promptEventsAvailability()).toBe('unknown');
+    });
+
+    it('asks each parked view with its cheapest read and swallows the failure', () => {
+      mockCache.cachedGet.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404, error: null })),
+      );
+      let completed = 0;
+      for (const endpoint of [
+        'reportingWorkers',
+        'falsePositives',
+        'settings',
+      ] as const) {
+        svc.probe(endpoint).subscribe({ complete: () => completed++ });
+      }
+      expect(completed).toBe(3);
+      expect(
+        mockCache.cachedGet.mock.calls.map((call) => String(call[0])),
+      ).toEqual([
+        `${BASE}/operations/moderation/workers`,
+        `${BASE}/operations/moderation/models`,
+        `${BASE}/operations/moderation/settings`,
+      ]);
+      expect(svc.reportingWorkersAvailability()).toBe('absent');
+      expect(svc.falsePositivesAvailability()).toBe('absent');
+      expect(svc.settingsAvailability()).toBe('absent');
     });
   });
 });

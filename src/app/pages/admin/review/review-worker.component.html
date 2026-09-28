@@ -1,0 +1,194 @@
+<div class="review-case review-case--solo">
+  <button
+    type="button"
+    class="hd-btn hd-btn--ghost review-back"
+    (click)="back.emit()"
+  >
+    <app-icon name="arrow-left" class="icon-sm" aria-hidden="true" />
+    {{ "admin.review.back" | transloco }}
+  </button>
+
+  <header class="review-case-head" data-worker-head>
+    <div class="review-case-who">
+      <span class="review-detail-kind">{{
+        "admin.review.workers.kind" | transloco
+      }}</span>
+      <h3 #heading class="review-detail-title" tabindex="-1">
+        {{ name() }}
+      </h3>
+      <span class="review-code">{{ workerId() }}</span>
+      @if (detail() && paused() === null) {
+        <p class="review-detail-note" data-worker-deleted>
+          {{ "admin.review.workers.deleted" | transloco }}
+        </p>
+      }
+      @if (paused() !== null) {
+        <p class="review-detail-note" data-worker-paused>
+          {{
+            (paused()
+              ? "admin.review.workers.paused"
+              : "admin.review.workers.not_paused"
+            ) | transloco
+          }}
+        </p>
+      }
+      <div class="review-decisions">
+        <a
+          class="hd-btn hd-btn--dense"
+          routerLink="/admin/workers"
+          [queryParams]="{ worker: workerId() }"
+          >{{ "admin.review.workers.open_card" | transloco }}</a
+        >
+      </div>
+    </div>
+
+    <div class="review-case-counts">
+      @if (detail(); as detail) {
+        <p class="review-case-total" data-worker-count>
+          <span class="review-case-big">{{ detail.count }}</span>
+          {{
+            plural("admin.review.reports.window_total", detail.count)
+              | transloco
+                : {
+                    window:
+                      windowLength()?.key
+                      | transloco: { count: windowLength()?.count },
+                  }
+          }}
+        </p>
+        @if (reasonCounts().length > 0) {
+          <ul
+            class="review-legend"
+            [attr.aria-label]="'admin.review.reports.legend_label' | transloco"
+          >
+            @for (entry of reasonCounts(); track entry.reason) {
+              <li>
+                <span class="review-sev" [attr.data-reason]="entry.reason">{{
+                  reasonKey(entry.reason) | transloco
+                }}</span>
+                <span class="review-num">{{ entry.count }}</span>
+              </li>
+            }
+          </ul>
+        }
+      } @else if (detailState() === "loading") {
+        @if (limitWait(); as seconds) {
+          <p class="review-detail-note" role="status" data-rate-limited>
+            {{
+              plural("admin.review.rate_limited", seconds)
+                | transloco: { count: seconds }
+            }}
+          </p>
+        }
+        <div class="hd-skeleton" aria-hidden="true">
+          <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+          <span class="hd-skeleton-bar"></span>
+        </div>
+      } @else if (detailState() === "missing") {
+        <p class="review-detail-note" data-worker-missing>
+          {{ "admin.review.workers.missing" | transloco }}
+        </p>
+      } @else {
+        <p class="review-detail-note">
+          {{ "admin.review.workers.detail_load_error" | transloco }}
+        </p>
+        <button type="button" class="hd-btn hd-btn--dense" (click)="reload()">
+          {{ "admin.review.try_again" | transloco }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="review-case-main">
+    @if (detail(); as detail) {
+      <app-review-timeline
+        [source]="detail"
+        [range]="ranged.range()"
+        (rangeChange)="selectRange($event)"
+      />
+
+      @if (ranged.settled(); as settledRange) {
+        <section
+          class="review-detail-section review-range"
+          aria-labelledby="review-worker-range"
+          [attr.aria-busy]="ranged.state() === 'loading'"
+          data-in-range
+        >
+          <h4 id="review-worker-range" class="review-detail-subtitle">
+            {{ "admin.review.reports.range.title" | transloco }}
+          </h4>
+          <p class="review-detail-note">
+            {{
+              "admin.review.reports.range.span"
+                | transloco
+                  : {
+                      from: settledRange.since | date: "short",
+                      to: settledRange.until | date: "short",
+                    }
+            }}
+          </p>
+          @if (ranged.detail(); as inRange) {
+            <app-review-pivots
+              [accounts]="inRange.related.accounts"
+              [proxiedAccounts]="inRange.related.proxied_accounts"
+              [ips]="inRange.related.ips"
+              [models]="inRange.models"
+            />
+          } @else if (ranged.state() === "failed") {
+            <button
+              type="button"
+              class="hd-btn hd-btn--dense"
+              (click)="ranged.retry()"
+            >
+              {{ "admin.review.try_again" | transloco }}
+            </button>
+          } @else {
+            @if (ranged.limitWait(); as seconds) {
+              <p class="review-detail-note" role="status" data-rate-limited>
+                {{
+                  plural("admin.review.rate_limited", seconds)
+                    | transloco: { count: seconds }
+                }}
+              </p>
+            }
+            <div class="hd-skeleton" aria-hidden="true">
+              <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+            </div>
+          }
+        </section>
+      }
+
+      <section
+        class="review-detail-section"
+        aria-labelledby="review-worker-connected"
+        data-connected
+      >
+        <h4 id="review-worker-connected" class="review-detail-subtitle">
+          {{
+            "admin.review.workers.reported_title"
+              | transloco
+                : {
+                    window:
+                      windowLength()?.key
+                      | transloco: { count: windowLength()?.count },
+                  }
+          }}
+        </h4>
+        <app-review-pivots
+          [accounts]="detail.related.accounts"
+          [proxiedAccounts]="detail.related.proxied_accounts"
+          [ips]="detail.related.ips"
+          [models]="detail.models"
+        />
+      </section>
+    }
+
+    @if (detailState() !== "missing" && detailState() !== "failed") {
+      <app-review-subject-events
+        [workerId]="workerId()"
+        [page]="eventsPage()"
+        [canPause]="false"
+      />
+    }
+  </div>
+</div>

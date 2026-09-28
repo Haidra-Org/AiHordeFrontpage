@@ -1,0 +1,158 @@
+<section class="review-detail-section" aria-labelledby="review-timeline-title">
+  <h4 id="review-timeline-title" class="review-detail-subtitle">
+    {{ "admin.review.reports.timeline_title" | transloco }}
+  </h4>
+  <ul
+    class="review-legend"
+    [attr.aria-label]="'admin.review.reports.legend_label' | transloco"
+  >
+    @for (reason of reasons(); track reason) {
+      <li>
+        <span class="review-sev" [attr.data-reason]="reason">{{
+          reasonKey(reason) | transloco
+        }}</span>
+      </li>
+    }
+  </ul>
+  <div class="review-timeline">
+    <div class="review-timeline-y" aria-hidden="true">
+      <span>{{ chartTop().top }}</span>
+      <span>{{ chartTop().top / 2 }}</span>
+      <span>0</span>
+    </div>
+    <svg
+      #chart
+      class="review-timeline-chart"
+      role="img"
+      [attr.viewBox]="'0 0 ' + chartWidth() + ' ' + chartHeight"
+      preserveAspectRatio="none"
+      [attr.aria-label]="
+        'admin.review.reports.timeline_label'
+          | transloco
+            : {
+                bucket:
+                  bucketLength().key
+                  | transloco: { count: bucketLength().count },
+                window:
+                  windowLength().key
+                  | transloco: { count: windowLength().count },
+                max: chartTop().max,
+              }
+      "
+      (pointerdown)="onChartPointerDown($event, chart)"
+      (pointermove)="onChartPointerMove($event, chart)"
+      (pointerup)="onChartPointerUp($event, chart)"
+      (pointercancel)="onChartPointerCancel()"
+      data-timeline
+    >
+      <line
+        class="review-timeline-grid"
+        x1="0"
+        [attr.x2]="chartWidth()"
+        [attr.y1]="chartHeight / 2"
+        [attr.y2]="chartHeight / 2"
+      />
+      @for (column of chartColumns(); track column.index) {
+        <g
+          [class.review-timeline-dim]="!isInRange(column.index)"
+          [attr.data-column]="column.index"
+        >
+          <title>
+            {{
+              plural("admin.review.reports.timeline_bucket", column.total)
+                | transloco
+                  : {
+                      count: column.total,
+                      time: column.start | date: "short",
+                    }
+            }}
+          </title>
+          <rect
+            class="review-timeline-hit"
+            [attr.x]="column.index * chartBand"
+            y="0"
+            [attr.width]="chartBand"
+            [attr.height]="chartHeight"
+          />
+          @for (segment of column.segments; track segment.reason) {
+            <rect
+              class="review-timeline-bar"
+              [attr.data-reason]="segment.reason"
+              [attr.x]="column.x"
+              [attr.y]="segment.y"
+              [attr.width]="chartBar"
+              [attr.height]="segment.height"
+            />
+          }
+        </g>
+      }
+      @if (shownRange(); as shown) {
+        <rect
+          class="review-timeline-brush"
+          [attr.x]="shown.from * chartBand"
+          y="0"
+          [attr.width]="(shown.to - shown.from + 1) * chartBand"
+          [attr.height]="chartHeight"
+          data-brush
+        />
+      }
+    </svg>
+    <div class="review-timeline-x" aria-hidden="true">
+      @for (label of chartLabels(); track label.left) {
+        <span [style.left.%]="label.left">{{
+          label.start | date: chartLabelFormat()
+        }}</span>
+      }
+    </div>
+  </div>
+  <div class="review-brush-row">
+    @if (busiestLength(); as span) {
+      <button
+        type="button"
+        class="hd-btn hd-btn--dense"
+        (click)="selectBusiest()"
+        data-select-busiest
+      >
+        {{
+          "admin.review.reports.range.busiest"
+            | transloco: { span: span.key | transloco: { count: span.count } }
+        }}
+      </button>
+    }
+    <button
+      type="button"
+      class="hd-btn hd-btn--ghost hd-btn--dense"
+      [disabled]="range() === null"
+      (click)="selectAll()"
+      data-select-all
+    >
+      {{ "admin.review.reports.range.all" | transloco }}
+    </button>
+    <span class="review-detail-note" aria-live="polite" data-range-status>
+      @if (shownSpan(); as span) {
+        {{
+          plural("admin.review.reports.range.showing", span.count)
+            | transloco
+              : {
+                  from: span.since | date: "short",
+                  to: span.until | date: "short",
+                  count: span.count,
+                }
+        }}
+      } @else {
+        {{
+          "admin.review.reports.range.showing_all"
+            | transloco
+              : {
+                  window:
+                    windowLength().key
+                    | transloco: { count: windowLength().count },
+                }
+        }}
+      }
+    </span>
+  </div>
+  <p class="review-detail-note">
+    {{ "admin.review.reports.range.help" | transloco }}
+  </p>
+</section>

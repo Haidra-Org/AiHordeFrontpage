@@ -16,26 +16,54 @@
 
 /* =================================================================
    MODERATION TOKENS
-   Severity by report reason. They live here rather than in the design
-   system's semantic tokens because they name moderation concepts, and
-   the design system stays free of any one consumer's vocabulary. They
-   flip under .dark like the HD tokens.
+   Severity by report reason, the state a decision leaves a subject in,
+   and a count's place against its alert rule. They live here rather
+   than in the design system's semantic tokens because they name
+   moderation concepts, and the design system stays free of any one
+   consumer's vocabulary. They flip under .dark like the HD tokens.
 
    Severity is one rose hue, ordinal, darkest in the light theme and
    brightest in the dark theme for the most severe reason. Its light end
    sits under 3:1 on purpose: the reason's name always stands beside the
-   swatch.
+   swatch. Every state and threshold ink holds 4.5:1 on the panel and the
+   card in both themes; the light watching, near and under inks fall to
+   about 4.2:1 on the canvas, where they are drawn as marks beside ink
+   text, never as small text. The chip's words are --hd-ink on the tint.
+   Over the rule and escalated share a value: both are the most urgent
+   state, and neither appears without its words.
    ================================================================= */
 :root {
   --hd-sev-filter: #f07a96;
   --hd-sev-model: #d2335c;
   --hd-sev-csam: #8e1238;
+  --hd-state-escalated: #b91c1c;
+  --hd-state-escalated-tint: #fef2f2;
+  --hd-state-actioned: #7e22ce;
+  --hd-state-actioned-tint: #faf5ff;
+  --hd-state-watching: #a16207;
+  --hd-state-watching-tint: #fefce8;
+  --hd-state-benign: #15803d;
+  --hd-state-benign-tint: #f0fdf4;
+  --hd-threshold-under: #64748b;
+  --hd-threshold-near: #a16207;
+  --hd-threshold-over: #b91c1c;
 }
 
 .dark {
   --hd-sev-filter: #b72550;
   --hd-sev-model: #e2587c;
   --hd-sev-csam: #f9b0c3;
+  --hd-state-escalated: #f87171;
+  --hd-state-escalated-tint: #3a2127;
+  --hd-state-actioned: #c084fc;
+  --hd-state-actioned-tint: #2f2440;
+  --hd-state-watching: #facc15;
+  --hd-state-watching-tint: #35301c;
+  --hd-state-benign: #4ade80;
+  --hd-state-benign-tint: #1d3326;
+  --hd-threshold-under: #94a3b8;
+  --hd-threshold-near: #facc15;
+  --hd-threshold-over: #f87171;
 }
 
 @layer components {
@@ -295,10 +323,22 @@
     padding-top: var(--hd-space-8);
   }
 
+  /* Reports: what to show, who the reports are about, and the criteria */
+  .review-reports {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
   /* Five views and three kinds wrap on a phone rather than scroll. */
+  .review-views,
   .review-seg {
     flex-wrap: wrap;
     max-width: 100%;
+  }
+
+  .review-views {
+    align-self: flex-start;
   }
 
   .review-scope {
@@ -338,6 +378,23 @@
     min-width: 11rem;
   }
 
+  .review-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-2);
+  }
+
+  .review-filter-row .hd-input {
+    flex: 1 1 6rem;
+    min-width: 0;
+  }
+
+  .review-reason-picks {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
   .review-chip-row {
     display: flex;
     flex-wrap: wrap;
@@ -364,7 +421,8 @@
 
   /* The dialog panel is darker than the canvas in the light theme, where
      the muted label and note tokens fall under 4.5:1 on it. */
-  .dialog-body .review-detail-note {
+  .dialog-body .review-detail-note,
+  .dialog-body .review-choice-desc {
     color: var(--hd-ink-2);
   }
 
@@ -379,6 +437,29 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  .review-rule-summary {
+    margin: 0;
+    padding-inline-start: var(--hd-space-4);
+    font-size: var(--hd-text-xs);
+    color: var(--hd-ink-2);
+  }
+
+  /* The preset's criteria as one line, so the list starts high. */
+  .review-criteria-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-1) var(--hd-space-3);
+  }
+
+  .review-criteria-done {
+    align-self: flex-start;
+  }
+
+  .review-since {
+    min-height: 44px;
   }
 
   /* List beside detail from the split breakpoint up; below it the open
@@ -530,6 +611,13 @@
     color: var(--hd-muted);
   }
 
+  .review-row-count {
+    flex: none;
+    font-size: var(--hd-text-sm);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
   .review-row-meta {
     display: flex;
     flex-wrap: wrap;
@@ -542,6 +630,15 @@
     display: inline-flex;
     align-items: center;
     gap: 3px;
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  /* A decision's outcome, named in words beside the row's other facts. */
+  .review-state {
+    padding: 0 var(--hd-space-1);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-sm);
     font-weight: 600;
     color: var(--hd-ink);
   }
@@ -822,6 +919,12 @@
     font-weight: 600;
   }
 
+  .review-detail-kind {
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    color: var(--hd-muted);
+  }
+
   .review-facts--dense {
     grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
     gap: var(--hd-space-1) var(--hd-space-3);
@@ -905,20 +1008,300 @@
     gap: var(--hd-space-1);
   }
 
+  /* The decision dialog's outcomes: a radio beside its name and what it does. */
+  .review-choices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    margin: 0 0 var(--hd-space-3);
+    padding: 0;
+    border: 0;
+  }
+
+  .review-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--hd-space-2);
+    min-height: 44px;
+    padding: var(--hd-space-1) 0;
+    cursor: pointer;
+  }
+
+  .review-choice input {
+    flex: none;
+    margin-top: 3px;
+  }
+
+  .review-choice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .review-choice-name {
+    font-size: var(--hd-text-sm);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .review-choice-desc {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-ink-2);
+  }
+
   .review-dialog-field {
     width: 100%;
   }
 
+  /* One subject, verdict first: who it is and where it stands, the rule
+     meters, the decision bar, then the evidence. Below the rail
+     breakpoint the rail's wrapper steps aside (display: contents), so the
+     meters follow the head and the history follows the evidence. */
+  .review-case {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
+  }
+
+  .review-case-head {
+    order: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--hd-space-3) var(--hd-space-6);
+    padding: var(--hd-space-3) var(--hd-space-4);
+    border: 1px solid var(--hd-card-border);
+    border-inline-start: 6px solid
+      var(--review-case-edge, var(--hd-card-border));
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-panel);
+  }
+
+  /* The edge repeats what the meters say in words. */
+  .review-case-head[data-over="true"] {
+    --review-case-edge: var(--hd-threshold-over);
+  }
+
+  .review-case-who,
+  .review-case-counts {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-1);
+    min-width: 0;
+  }
+
+  .review-case-who .review-detail-title {
+    overflow-wrap: anywhere;
+  }
+
+  .review-case-total,
+  .review-case-since {
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink-2);
+  }
+
+  .review-case-since {
+    color: var(--hd-ink);
+  }
+
+  .review-case-big {
+    margin-inline-end: var(--hd-space-1);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink);
+  }
+
+  .review-case-rail {
+    display: contents;
+  }
+
+  .review-case-meters {
+    order: 2;
+  }
+
+  /* The bar stays in reach while the evidence scrolls: under the site
+     header on wider screens, at the foot of the screen on a phone. */
+  .review-case-bar {
+    order: 3;
+    position: sticky;
+    top: var(--sticky-offset, 0px);
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+    padding: var(--hd-space-2) 0;
+    border-bottom: 1px solid var(--hd-border-subtle);
+    background: var(--hd-canvas);
+  }
+
+  .review-case-steps,
+  .review-case-bar-more,
+  .review-case-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .review-case-steps {
+    gap: var(--hd-space-1);
+  }
+
+  .review-case-more {
+    display: none;
+    order: 4;
+  }
+
+  .review-case-alert {
+    order: 4;
+  }
+
+  .review-case-main {
+    order: 5;
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+    min-width: 0;
+  }
+
+  .review-case-history {
+    order: 6;
+  }
+
+  @media (min-width: 640px) {
+    .review-case-head {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .review-case-bar {
+      order: 20;
+      top: auto;
+      bottom: 0;
+      padding-bottom: calc(var(--hd-space-2) + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--hd-card-border);
+      border-bottom: 0;
+      box-shadow: var(--hd-pop-shadow);
+    }
+
+    .review-case-bar-more {
+      display: none;
+    }
+
+    .review-case-more {
+      display: flex;
+    }
+  }
+
+  /* Whatever takes focus scrolls clear of the pinned bar. */
+  html:has(.review-case) {
+    scroll-padding-bottom: 5rem;
+  }
+
+  /* The rail: the meters and the decisions beside the evidence. */
+  @media (min-width: 1200px) {
+    .review-case {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 17rem;
+      gap: var(--hd-space-3) var(--hd-space-6);
+      align-items: start;
+    }
+
+    .review-case > * {
+      grid-column: 1 / -1;
+    }
+
+    .review-case > .review-case-main {
+      grid-column: 1;
+    }
+
+    /* A worker's page has no rail: no decisions and no rules. */
+    .review-case--solo > .review-case-main {
+      grid-column: 1 / -1;
+    }
+
+    .review-case > .review-case-rail {
+      order: 5;
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      gap: var(--hd-space-3);
+      min-width: 0;
+    }
+  }
+
+  /* A decision's state: the icon and the words carry it, the colour
+     repeats it on the edge and the ground. */
+  .review-state-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    max-width: 100%;
+    padding: 1px var(--hd-space-2);
+    border: 1px solid var(--review-state, var(--hd-card-border));
+    border-radius: var(--hd-radius-pill);
+    background: var(--review-state-tint, transparent);
+    font-size: var(--hd-text-xs);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--hd-ink);
+  }
+
+  .review-state-chip-icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--review-state, var(--hd-ink-2));
+  }
+
+  .review-state-chip[data-outcome="escalated"] {
+    --review-state: var(--hd-state-escalated);
+    --review-state-tint: var(--hd-state-escalated-tint);
+  }
+
+  .review-state-chip[data-outcome="actioned"] {
+    --review-state: var(--hd-state-actioned);
+    --review-state-tint: var(--hd-state-actioned-tint);
+  }
+
+  .review-state-chip[data-outcome="watching"] {
+    --review-state: var(--hd-state-watching);
+    --review-state-tint: var(--hd-state-watching-tint);
+  }
+
+  .review-state-chip[data-outcome="benign"] {
+    --review-state: var(--hd-state-benign);
+    --review-state-tint: var(--hd-state-benign-tint);
+  }
+
   /* A reason: a swatch beside its name, never coloured text. */
-  :is(.review-sev, .review-event)[data-reason="worker_csam"] {
+  :is(
+    .review-sev,
+    .review-event,
+    .review-timeline-bar
+  )[data-reason="worker_csam"] {
     --review-sev: var(--hd-sev-csam);
   }
 
-  :is(.review-sev, .review-event)[data-reason="model_rejection"] {
+  :is(
+    .review-sev,
+    .review-event,
+    .review-timeline-bar
+  )[data-reason="model_rejection"] {
     --review-sev: var(--hd-sev-model);
   }
 
-  :is(.review-sev, .review-event)[data-reason="filter_rejection"] {
+  :is(
+    .review-sev,
+    .review-event,
+    .review-timeline-bar
+  )[data-reason="filter_rejection"] {
     --review-sev: var(--hd-sev-filter);
   }
 
@@ -938,7 +1321,278 @@
     content: "";
   }
 
+  .review-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1) var(--hd-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-ink-2);
+  }
+
+  .review-legend li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--hd-space-1);
+  }
+
+  .review-num {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink);
+  }
+
+  /* A count against its rule: the numbers, a bar with a tick at the
+     threshold, and the verdict in words. */
+  .review-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+  }
+
+  .review-meter[data-meter="over"] {
+    --review-meter: var(--hd-threshold-over);
+  }
+
+  .review-meter[data-meter="near"] {
+    --review-meter: var(--hd-threshold-near);
+  }
+
+  .review-meter[data-meter="under"] {
+    --review-meter: var(--hd-threshold-under);
+  }
+
+  .review-meter-rule {
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    color: var(--hd-ink-2);
+  }
+
+  .review-meter-quiet {
+    align-self: flex-start;
+  }
+
+  /* The head names the rule furthest past its threshold, in words. */
+  .review-case-rules {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--hd-space-1);
+    margin: 0;
+    font-size: var(--hd-text-sm);
+    font-weight: 600;
+    color: var(--hd-ink);
+  }
+
+  .review-case-rules-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: var(--hd-threshold-under);
+  }
+
+  .review-case-rules[data-rules-verdict="over"] .review-case-rules-icon {
+    color: var(--hd-threshold-over);
+  }
+
+  .review-meter-track {
+    position: relative;
+    height: 8px;
+    margin: 4px 0;
+    border-radius: 4px;
+    background: var(--hd-border-subtle);
+  }
+
+  .review-meter-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 4px;
+    background: var(--review-meter);
+  }
+
+  .review-meter-tick {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    margin-inline-start: -1px;
+    background: var(--hd-ink);
+  }
+
+  .review-meter-verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+    margin: 0;
+    font-size: var(--hd-text-xs);
+    font-weight: 700;
+    color: var(--hd-ink);
+  }
+
+  .review-meter-icon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    color: var(--review-meter);
+  }
+
+  /* One labelled observation, above the evidence it is about. */
+  .review-finding {
+    margin: 0;
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border-inline-start: 4px solid var(--hd-accent);
+    border-radius: 0 var(--hd-radius-sm) var(--hd-radius-sm) 0;
+    background: var(--hd-accent-tint);
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink);
+  }
+
+  .review-finding-label {
+    margin-inline-end: var(--hd-space-1);
+    font-weight: 700;
+  }
+
+  /* The timeline stretches to its box; the axis labels are HTML so they
+     keep their size on a phone. */
+  .review-timeline {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 9rem auto;
+    column-gap: var(--hd-space-1);
+    width: 100%;
+  }
+
+  .review-timeline-y {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: var(--hd-text-2xs);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    color: var(--hd-muted);
+  }
+
+  .review-timeline-chart {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-bottom: 1px solid var(--hd-border);
+    cursor: crosshair;
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .review-timeline-grid {
+    stroke: var(--hd-border-subtle);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .review-timeline-hit {
+    fill: transparent;
+  }
+
+  /* The canvas-coloured edge parts the stacked segments. */
+  .review-timeline-bar {
+    fill: var(--review-sev);
+    stroke: var(--hd-canvas);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .review-timeline-dim {
+    opacity: 0.28;
+  }
+
+  .review-timeline-brush {
+    fill: var(--hd-accent);
+    fill-opacity: 0.12;
+    stroke: var(--hd-accent-text);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    pointer-events: none;
+  }
+
+  .review-timeline-x {
+    position: relative;
+    grid-column: 2;
+    height: 1.25rem;
+    font-size: var(--hd-text-2xs);
+    color: var(--hd-muted);
+  }
+
+  .review-timeline-x span {
+    position: absolute;
+    top: 2px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  .review-brush-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  /* What the reports name, ranked by count. */
+  .review-pivots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    gap: var(--hd-space-3) var(--hd-space-4);
+    width: 100%;
+  }
+
+  .review-pivot-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .review-pivot-list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .review-pivot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--hd-space-2);
+    min-height: 28px;
+    border-bottom: 1px solid var(--hd-border-subtle);
+    font-size: var(--hd-text-sm);
+  }
+
+  .review-pivot > .review-link {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .review-pivot-count {
+    flex: none;
+    font-size: var(--hd-text-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink-2);
+  }
+
+  .review-pivot-toggle {
+    align-self: flex-start;
+  }
+
   @media (pointer: coarse) {
+    .review-pivot {
+      min-height: 44px;
+    }
+
     .review-event .review-fact dd .review-link {
       display: inline-flex;
       align-items: center;
@@ -1018,7 +1672,8 @@
     color: var(--hd-ink-2);
   }
 
-  /* Whole-width views with a heading of their own. */
+  /* The benign worker reports and the thresholds: whole-width views
+     with a heading of their own. */
   .review-panel {
     display: flex;
     flex-direction: column;
@@ -1030,6 +1685,99 @@
   .review-panel > app-review-subject-events {
     display: block;
     align-self: stretch;
+  }
+
+  .review-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--hd-space-4);
+    width: 100%;
+  }
+
+  .review-table-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    min-width: 0;
+  }
+
+  .review-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--hd-text-sm);
+    color: var(--hd-ink);
+  }
+
+  .review-table th {
+    padding: var(--hd-space-1) var(--hd-space-2);
+    border-bottom: 1px solid var(--hd-border-subtle);
+    font-size: var(--hd-text-xs);
+    font-weight: 600;
+    color: var(--hd-label);
+    text-align: start;
+  }
+
+  .review-table td {
+    padding: var(--hd-space-1) var(--hd-space-2);
+    border-bottom: 1px solid var(--hd-border-subtle);
+    overflow-wrap: anywhere;
+  }
+
+  .review-table .review-table-num {
+    width: 6rem;
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+  }
+
+  .review-table-name {
+    display: block;
+    font-weight: 600;
+  }
+
+  .review-thresholds {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--hd-space-3);
+    width: 100%;
+  }
+
+  .review-rules {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-2);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .review-rule {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-1);
+    padding: var(--hd-space-2) var(--hd-space-2-5);
+    border: 1px solid var(--hd-card-border);
+    border-radius: var(--hd-radius-md);
+    background: var(--hd-card);
+  }
+
+  .review-rule-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--hd-space-2) var(--hd-space-3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .review-rule-fields > legend {
+    margin-bottom: var(--hd-space-1);
+  }
+
+  .review-rule-remove {
+    margin-inline-start: auto;
   }
 
   /* =================================================================
@@ -1054,7 +1802,7 @@
   }
 
   /* =================================================================
-     USER MODERATION RECORD - the account's reports and its
+     USER MODERATION RECORD - the account's standing in Reports and its
      workers' suspicion history, on the user management page
      ================================================================= */
 

@@ -250,6 +250,25 @@
                   data-pivot="proxied_account"
                   >{{ event.proxied_account }}</a
                 >
+                @if (casesAvailable()) {
+                  <a
+                    class="review-link"
+                    routerLink="/admin/review"
+                    [queryParams]="
+                      caseParams({
+                        kind: 'proxied_account',
+                        user_id: event.user_id,
+                        proxied_account: event.proxied_account,
+                        ipaddr: null,
+                      })
+                    "
+                    queryParamsHandling="merge"
+                    data-case-link
+                    >{{
+                      "admin.review.reports.events.open_in_reports" | transloco
+                    }}</a
+                  >
+                }
               </dd>
             </div>
           }
@@ -268,6 +287,25 @@
                   "
                   >{{ event.ipaddr }}</a
                 >
+                @if (casesAvailable()) {
+                  <a
+                    class="review-link"
+                    routerLink="/admin/review"
+                    [queryParams]="
+                      caseParams({
+                        kind: 'ip',
+                        user_id: null,
+                        proxied_account: null,
+                        ipaddr: event.ipaddr,
+                      })
+                    "
+                    queryParamsHandling="merge"
+                    data-case-link
+                    >{{
+                      "admin.review.reports.events.open_in_reports" | transloco
+                    }}</a
+                  >
+                }
               </dd>
             </div>
           }
@@ -309,6 +347,18 @@
                     "admin.review.reports.events.worker_page" | transloco
                   }}</a
                 >
+                @if (workerReportsAvailable()) {
+                  <a
+                    class="review-link"
+                    routerLink="/admin/review"
+                    [queryParams]="workerParams(event.worker_id)"
+                    queryParamsHandling="merge"
+                    data-worker-reports-link
+                    >{{
+                      "admin.review.reports.events.open_in_reports" | transloco
+                    }}</a
+                  >
+                }
               } @else {
                 {{ "admin.review.not_recorded" | transloco }}
               }

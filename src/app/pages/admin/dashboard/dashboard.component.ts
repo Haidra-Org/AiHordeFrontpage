@@ -17,6 +17,7 @@ import { ModerationCountComponent } from '../../../components/admin/moderation-c
 import { setPageTitle } from '../../../helper/page-title';
 import { ListCount } from '../../../types/moderation';
 import { ReviewTab } from '../review/review-query';
+import { SUBJECT_KINDS } from '../review/review-subjects';
 
 interface QueueTile {
   labelKey: string;
@@ -81,6 +82,28 @@ export class DashboardComponent implements OnInit {
   /** One tile per queue whose endpoint has answered. */
   public readonly queues = computed<readonly QueueTile[]>(() => {
     const tiles: QueueTile[] = [];
+    const subjects = this.counts.subjects();
+    if (subjects) {
+      for (const kind of SUBJECT_KINDS) {
+        const count = subjects[kind];
+        if (!count) continue;
+        tiles.push({
+          labelKey: `admin.dashboard.queue.over.${kind}`,
+          noteKey: 'admin.dashboard.queue.over_note',
+          count,
+          queryParams: tabParams('reports', kind === 'account' ? {} : { kind }),
+        });
+      }
+    }
+    const escalated = this.counts.escalated();
+    if (escalated) {
+      tiles.push({
+        labelKey: 'admin.dashboard.queue.escalated',
+        noteKey: 'admin.dashboard.queue.escalated_note',
+        count: escalated,
+        queryParams: tabParams('reports', { view: 'escalated' }),
+      });
+    }
     const eligible = this.counts.eligible();
     if (eligible) {
       tiles.push({

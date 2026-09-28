@@ -7,11 +7,18 @@ import {
   MODERATION_POLL_MS,
   ModerationCountsService,
   OVERVIEW_LIMIT,
+  SUBJECT_COUNT_LIMIT,
 } from './moderation-counts.service';
 import { AdminModerationService } from './admin-moderation.service';
 import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
-import { EndpointAvailability, ModerationOverview } from '../types/moderation';
+import {
+  EndpointAvailability,
+  ModerationOverview,
+  ModerationSubjectKind,
+  ModerationSubjectQuery,
+  ModerationSubjectsPage,
+} from '../types/moderation';
 
 function overview(
   eligible: number,
@@ -26,6 +33,18 @@ function overview(
   };
 }
 
+function subjects(n: number): ModerationSubjectsPage {
+  return {
+    criteria: { rules: null },
+    subjects: Array.from({ length: n }),
+    next_offset: null,
+  };
+}
+
+function list(n: number): ModerationSubjectsPage {
+  return subjects(n);
+}
+
 /**
  * A stand-in for AdminModerationService whose availability signals move the
  * way the real service moves them: an answer marks the endpoint available, a
@@ -33,6 +52,8 @@ function overview(
  */
 function makeModeration() {
   const overviewAvailability: WritableSignal<EndpointAvailability> =
+    signal('unknown');
+  const subjectsAvailability: WritableSignal<EndpointAvailability> =
     signal('unknown');
   const promptEventsAvailability: WritableSignal<EndpointAvailability> =
     signal('unknown');
@@ -54,12 +75,26 @@ function makeModeration() {
           complete: () => subscriber.complete(),
         }),
       );
+  const perKind: Record<ModerationSubjectKind, number> = {
+    account: 3,
+    proxied_account: 1,
+    ip: 2,
+  };
   const answers = {
     overview: (): Observable<ModerationOverview> => of(overview(2, 1, 3)),
+    subjects: (
+      query: ModerationSubjectQuery,
+    ): Observable<ModerationSubjectsPage> =>
+      of(subjects(perKind[query.kind ?? 'account'])),
+    escalated: (): Observable<ModerationSubjectsPage> => of(list(4)),
   };
+  const escalatedRequest = vi.fn(() =>
+    answers.escalated().pipe(track(subjectsAvailability)),
+  );
   return {
     answers,
     overviewAvailability,
+    subjectsAvailability,
     promptEventsAvailability,
     probe: vi.fn((): Observable<void> => {
       promptEventsAvailability.set('available');
@@ -68,6 +103,12 @@ function makeModeration() {
     getOverview: vi.fn(() =>
       answers.overview().pipe(track(overviewAvailability)),
     ),
+    getSubjects: vi.fn((query: ModerationSubjectQuery) =>
+      query.state === 'escalated'
+        ? escalatedRequest()
+        : answers.subjects(query).pipe(track(subjectsAvailability)),
+    ),
+    escalatedRequest,
     invalidate: vi.fn(),
   };
 }
@@ -110,13 +151,32 @@ describe('ModerationCountsService', () => {
     delete (document as { visibilityState?: unknown }).visibilityState;
   });
 
+  it('counts each kind over the default criteria, and the escalated, never single reports', () => {
+    const counts = setup();
+
+    expect(moderation.getSubjects.mock.calls.map(([query]) => query)).toEqual([
+      { kind: 'account', limit: SUBJECT_COUNT_LIMIT },
+      { kind: 'proxied_account', limit: SUBJECT_COUNT_LIMIT },
+      { kind: 'ip', limit: SUBJECT_COUNT_LIMIT },
+      { state: 'escalated', limit: SUBJECT_COUNT_LIMIT },
+    ]);
+    expect(moderation.escalatedRequest).toHaveBeenCalledTimes(1);
+    expect(counts.subjects()).toEqual({
+      account: { count: 3, atLeast: false },
+      proxied_account: { count: 1, atLeast: false },
+      ip: { count: 2, atLeast: false },
+    });
+    expect(counts.escalated()).toEqual({ count: 4, atLeast: false });
+    expect(counts.reportsTotal()).toEqual({ count: 10, atLeast: false });
+  });
+
   it('adds the overview queues into the total', () => {
     const counts = setup();
 
     expect(counts.eligible()).toEqual({ count: 2, atLeast: false });
     expect(counts.blocked()).toEqual({ count: 1, atLeast: false });
     expect(counts.paused()).toEqual({ count: 3, atLeast: false });
-    expect(counts.total()).toEqual({ count: 6, atLeast: false });
+    expect(counts.total()).toEqual({ count: 16, atLeast: false });
     expect(counts.anyAvailable()).toBe(true);
   });
 
@@ -129,10 +189,13 @@ describe('ModerationCountsService', () => {
   });
 
   it('carries a full page into the total as a floor', () => {
+    moderation.answers.subjects = () => of(subjects(SUBJECT_COUNT_LIMIT));
     moderation.answers.overview = () => of(overview(OVERVIEW_LIMIT, 0, 0));
     const counts = setup();
 
-    expect(counts.total()).toEqual({ count: 100, atLeast: true });
+    expect(counts.subjects()?.account).toEqual({ count: 100, atLeast: true });
+    expect(counts.reportsTotal()?.atLeast).toBe(true);
+    expect(counts.total()).toEqual({ count: 404, atLeast: true });
   });
 
   it('asks nothing for an account that is not a moderator', () => {
@@ -140,6 +203,7 @@ describe('ModerationCountsService', () => {
     const counts = setup();
 
     expect(moderation.getOverview).not.toHaveBeenCalled();
+    expect(moderation.getSubjects).not.toHaveBeenCalled();
     expect(counts.total()).toBeNull();
   });
 
@@ -148,21 +212,23 @@ describe('ModerationCountsService', () => {
     vi.advanceTimersByTime(MODERATION_POLL_MS * 2);
 
     expect(moderation.getOverview).not.toHaveBeenCalled();
+    expect(moderation.getSubjects).not.toHaveBeenCalled();
   });
 
   it('polls on its interval and skips its turn while the page is hidden', () => {
     setup();
-    expect(moderation.getOverview).toHaveBeenCalledTimes(1);
+    expect(moderation.escalatedRequest).toHaveBeenCalledTimes(1);
 
     vi.advanceTimersByTime(MODERATION_POLL_MS);
-    expect(moderation.getOverview).toHaveBeenCalledTimes(2);
+    expect(moderation.escalatedRequest).toHaveBeenCalledTimes(2);
 
     visibility = 'hidden';
     vi.advanceTimersByTime(MODERATION_POLL_MS * 3);
-    expect(moderation.getOverview).toHaveBeenCalledTimes(2);
+    expect(moderation.escalatedRequest).toHaveBeenCalledTimes(2);
 
     visibility = 'visible';
     document.dispatchEvent(new Event('visibilitychange'));
+    expect(moderation.escalatedRequest).toHaveBeenCalledTimes(3);
     expect(moderation.getOverview).toHaveBeenCalledTimes(3);
   });
 
@@ -174,6 +240,7 @@ describe('ModerationCountsService', () => {
     document.dispatchEvent(new Event('visibilitychange'));
 
     expect(moderation.getOverview).toHaveBeenCalledTimes(1);
+    expect(moderation.escalatedRequest).toHaveBeenCalledTimes(1);
   });
 
   it('stops polling and forgets the counts when the account stops being a moderator', () => {
@@ -184,6 +251,7 @@ describe('ModerationCountsService', () => {
 
     expect(moderation.getOverview).toHaveBeenCalledTimes(1);
     expect(counts.total()).toBeNull();
+    expect(counts.reportsTotal()).toBeNull();
   });
 
   it('shows nothing and says nothing when the browser never reached the horde', () => {
@@ -192,19 +260,83 @@ describe('ModerationCountsService', () => {
     const unreachable = () =>
       throwError(() => new HttpErrorResponse({ status: 0, error: null }));
     moderation.answers.overview = unreachable;
+    moderation.answers.subjects = unreachable;
+    moderation.answers.escalated = unreachable;
     // The prompt log's probe fails the same way and leaves it unknown.
     moderation.probe.mockImplementation(() => of(undefined));
     const counts = setup();
 
+    expect(moderation.subjectsAvailability()).toBe('unknown');
+    expect(counts.reportsAvailable()).toBe(false);
     expect(counts.anyAvailable()).toBe(false);
     expect(counts.total()).toBeNull();
     expect(counts.loading()).toBe(false);
     expect(toast.error).not.toHaveBeenCalled();
   });
 
+  it('keeps the other counts when one listing fails, and fills it in once a later read reaches it', () => {
+    moderation.answers.escalated = () =>
+      throwError(() => new HttpErrorResponse({ status: 0, error: null }));
+    const counts = setup();
+    expect(counts.escalated()).toBeNull();
+    expect(counts.reportsTotal()).toEqual({ count: 6, atLeast: false });
+
+    moderation.answers.escalated = () => of(list(1));
+    counts.refresh();
+
+    expect(counts.escalated()).toEqual({ count: 1, atLeast: false });
+    expect(counts.reportsTotal()).toEqual({ count: 7, atLeast: false });
+  });
+
+  it('keeps the last count of a listing whose read fails', () => {
+    const counts = setup();
+    moderation.answers.subjects = (query) =>
+      query.kind === 'ip'
+        ? throwError(
+            () =>
+              new HttpErrorResponse({
+                status: 500,
+                error: { message: 'boom', rc: 'InternalError' },
+              }),
+          )
+        : of(subjects(5));
+    counts.refresh();
+
+    expect(counts.subjects()).toEqual({
+      account: { count: 5, atLeast: false },
+      proxied_account: { count: 5, atLeast: false },
+      ip: { count: 2, atLeast: false },
+    });
+  });
+
+  it('asks one listing until the listings answer, and none of the others if it does not', () => {
+    moderation.answers.subjects = () =>
+      throwError(() => new HttpErrorResponse({ status: 0, error: null }));
+    const counts = setup();
+
+    expect(moderation.getSubjects.mock.calls.map(([query]) => query)).toEqual([
+      { kind: 'account', limit: SUBJECT_COUNT_LIMIT },
+    ]);
+    expect(counts.reportsTotal()).toBeNull();
+
+    vi.advanceTimersByTime(MODERATION_POLL_MS);
+    expect(moderation.getSubjects).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks no listing once the listings are absent, and badges only the other queues', () => {
+    moderation.subjectsAvailability.set('absent');
+    const counts = setup();
+    vi.advanceTimersByTime(MODERATION_POLL_MS * 2);
+
+    expect(moderation.getSubjects).not.toHaveBeenCalled();
+    expect(counts.reportsTotal()).toBeNull();
+    expect(counts.total()).toEqual({ count: 6, atLeast: false });
+  });
+
   it('probes the prompt log once, which is enough to show a queue', () => {
     moderation.answers.overview = () =>
       throwError(() => new HttpErrorResponse({ status: 0, error: null }));
+    moderation.subjectsAvailability.set('absent');
     const counts = setup();
     vi.advanceTimersByTime(MODERATION_POLL_MS * 2);
 
@@ -227,6 +359,8 @@ describe('ModerationCountsService', () => {
       });
     moderation.answers.overview = () =>
       refused(moderation.overviewAvailability);
+    moderation.answers.subjects = () =>
+      refused(moderation.subjectsAvailability);
     moderation.probe.mockImplementation(() => {
       moderation.promptEventsAvailability.set('absent');
       return of(undefined);
@@ -236,6 +370,7 @@ describe('ModerationCountsService', () => {
     counts.refresh();
 
     expect(moderation.getOverview).toHaveBeenCalledTimes(1);
+    expect(moderation.getSubjects).toHaveBeenCalledTimes(1);
     expect(moderation.probe).toHaveBeenCalledTimes(1);
     expect(counts.noneAvailable()).toBe(true);
     expect(counts.anyAvailable()).toBe(false);
@@ -244,6 +379,7 @@ describe('ModerationCountsService', () => {
 
   it('is not settled on having no queue while any endpoint is unknown', () => {
     moderation.overviewAvailability.set('absent');
+    moderation.subjectsAvailability.set('absent');
     moderation.probe.mockImplementation(() => of(undefined));
     const counts = setup();
 

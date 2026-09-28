@@ -1,0 +1,187 @@
+<p class="review-detail-note">
+  {{ "admin.review.reports.view.workers_note" | transloco }}
+</p>
+
+<div class="review-criteria-row">
+  <span class="hd-label" id="review-workers-window">{{
+    "admin.review.reports.window" | transloco
+  }}</span>
+  <div
+    class="hd-seg review-seg"
+    role="group"
+    aria-labelledby="review-workers-window"
+  >
+    @for (seconds of windows; track seconds) {
+      <button
+        type="button"
+        class="hd-seg-opt"
+        [attr.aria-pressed]="window() === seconds"
+        (click)="window.set(seconds)"
+      >
+        {{
+          "admin.review.reports.window_last"
+            | transloco
+              : {
+                  window:
+                    duration(seconds).key
+                    | transloco: { count: duration(seconds).count },
+                }
+        }}
+      </button>
+    }
+  </div>
+</div>
+
+<div class="review-criteria-row">
+  <span class="hd-label" id="review-workers-sort">{{
+    "admin.review.workers.sort_label" | transloco
+  }}</span>
+  <div
+    class="hd-seg review-seg"
+    role="group"
+    aria-labelledby="review-workers-sort"
+  >
+    @for (option of sorts; track option) {
+      <button
+        type="button"
+        class="hd-seg-opt"
+        [attr.aria-pressed]="sort() === option"
+        (click)="sort.set(option)"
+      >
+        {{ sortKey(option) | transloco }}
+      </button>
+    }
+  </div>
+</div>
+
+<div class="review-split" [class.review-split--detail]="detailShown()">
+  <div class="review-split-list">
+    @if (total() !== null && !loading()) {
+      <p class="review-detail-note" data-workers-total>
+        {{
+          plural("admin.review.workers.shown", total()!)
+            | transloco: { shown: workers().length, total: total() }
+        }}
+      </p>
+    }
+    @if (loading()) {
+      <div class="hd-skeleton" aria-busy="true">
+        <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+        <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+        <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+      </div>
+    } @else if (failed()) {
+      <button type="button" class="hd-btn" (click)="retry()">
+        {{ "admin.review.try_again" | transloco }}
+      </button>
+    } @else if (workers().length === 0) {
+      <div class="hd-empty review-empty">
+        <p class="hd-empty-title">
+          {{ "admin.review.workers.empty" | transloco }}
+        </p>
+      </div>
+    } @else {
+      <div
+        appReviewGrid
+        class="review-grid"
+        [attr.aria-label]="'admin.review.reports.view.workers' | transloco"
+        aria-describedby="review-workers-grid-help"
+      >
+        @for (row of workers(); track row.worker_id) {
+          <div
+            role="row"
+            class="review-row"
+            [class.review-row--current]="worker() === row.worker_id"
+          >
+            <div role="gridcell" class="review-row-cell">
+              <button
+                type="button"
+                class="review-row-btn"
+                data-grid-cell
+                [attr.data-worker]="row.worker_id"
+                [attr.tabindex]="tabStop() === row.worker_id ? 0 : -1"
+                [attr.aria-current]="worker() === row.worker_id ? 'true' : null"
+                (click)="open(row)"
+              >
+                <span class="review-row-line">
+                  <span class="review-row-title">{{
+                    row.worker_name ?? row.worker_id
+                  }}</span>
+                  <span class="review-row-count">{{
+                    plural("admin.review.reports.report_count", row.reports)
+                      | transloco: { count: row.reports }
+                  }}</span>
+                </span>
+                <span class="review-row-meta">
+                  <span>{{
+                    plural("admin.review.workers.accounts", row.accounts)
+                      | transloco: { count: row.accounts }
+                  }}</span>
+                  <span>{{
+                    "admin.review.workers.cleared"
+                      | transloco: { count: row.cleared }
+                  }}</span>
+                  @if (row.paused === null) {
+                    <span class="review-row-flag">{{
+                      "admin.review.workers.deleted" | transloco
+                    }}</span>
+                  }
+                  @if (row.paused) {
+                    <span class="review-row-flag">
+                      <app-icon
+                        name="pause-circle"
+                        class="icon-sm"
+                        aria-hidden="true"
+                      />
+                      {{ "admin.review.workers.paused_short" | transloco }}
+                    </span>
+                  }
+                </span>
+                @if (worker() === row.worker_id) {
+                  <app-icon
+                    name="chevron-right"
+                    class="review-row-open"
+                    aria-hidden="true"
+                  />
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+      <p id="review-workers-grid-help" class="sr-only">
+        {{ "admin.review.grid_help" | transloco }}
+      </p>
+      @if (nextOffset() !== null) {
+        <button
+          type="button"
+          class="hd-btn review-load-more"
+          [disabled]="loadingMore()"
+          (click)="loadMore()"
+        >
+          {{
+            (loadingMore()
+              ? "admin.review.loading_more"
+              : "admin.review.load_more"
+            ) | transloco
+          }}
+        </button>
+      }
+    }
+  </div>
+
+  <section
+    class="review-split-detail"
+    [attr.aria-label]="'admin.review.reports.detail_label' | transloco"
+  >
+    @if (worker(); as id) {
+      <app-review-worker [workerId]="id" [row]="openRow()" (back)="back()" />
+    } @else if (workers().length > 0) {
+      <div class="hd-empty review-empty">
+        <p class="hd-empty-title">
+          {{ "admin.review.workers.none_open" | transloco }}
+        </p>
+      </div>
+    }
+  </section>
+</div>

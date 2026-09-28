@@ -1,0 +1,282 @@
+<div class="review-pivots">
+  @if (accounts()?.items?.length && accounts(); as accountsList) {
+    <div class="review-pivot-group">
+      <h5 class="review-stage-label">
+        {{ "admin.review.reports.pivot.accounts" | transloco }}
+      </h5>
+      <ul class="review-pivot-list">
+        @for (item of accountsList.items; track item.user_id) {
+          @if ($index < pivotLimit || pivotsOpen("accounts")) {
+            <li class="review-pivot">
+              <a
+                class="review-link"
+                [routerLink]="[]"
+                [queryParams]="
+                  caseParams({
+                    kind: 'account',
+                    user_id: item.user_id,
+                    proxied_account: null,
+                    ipaddr: null,
+                  })
+                "
+                queryParamsHandling="merge"
+                >{{
+                  item.username ??
+                    ("admin.review.account_short"
+                      | transloco: { id: item.user_id })
+                }}</a
+              >
+              <span class="review-pivot-count">{{ item.count }}</span>
+            </li>
+          }
+        }
+      </ul>
+      @if (accountsList.items.length > pivotLimit) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense review-pivot-toggle"
+          [attr.aria-expanded]="pivotsOpen('accounts')"
+          (click)="togglePivots('accounts')"
+        >
+          {{
+            (pivotsOpen("accounts")
+              ? "admin.review.reports.pivot.fewer"
+              : "admin.review.reports.pivot.all"
+            ) | transloco: { count: accountsList.items.length }
+          }}
+        </button>
+      }
+      @if (accountsList.total > accountsList.items.length) {
+        <p class="review-detail-note">
+          {{
+            "admin.review.reports.pivot.more"
+              | transloco
+                : {
+                    count: accountsList.total - accountsList.items.length,
+                  }
+          }}
+        </p>
+      }
+    </div>
+  }
+  @if (proxiedAccounts()?.items?.length && proxiedAccounts(); as proxiedList) {
+    <div class="review-pivot-group">
+      <h5 class="review-stage-label">
+        {{ "admin.review.reports.pivot.proxied_accounts" | transloco }}
+      </h5>
+      <ul class="review-pivot-list">
+        @for (
+          item of proxiedList.items;
+          track item.user_id + ":" + item.proxied_account
+        ) {
+          @if ($index < pivotLimit || pivotsOpen("proxied_accounts")) {
+            <li class="review-pivot">
+              <a
+                class="review-link review-code"
+                [routerLink]="[]"
+                [queryParams]="
+                  caseParams({
+                    kind: 'proxied_account',
+                    user_id: item.user_id,
+                    proxied_account: item.proxied_account,
+                    ipaddr: null,
+                  })
+                "
+                queryParamsHandling="merge"
+                >{{ item.proxied_account }}</a
+              >
+              <span class="review-pivot-count">{{ item.count }}</span>
+            </li>
+          }
+        }
+      </ul>
+      @if (proxiedList.items.length > pivotLimit) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense review-pivot-toggle"
+          [attr.aria-expanded]="pivotsOpen('proxied_accounts')"
+          (click)="togglePivots('proxied_accounts')"
+        >
+          {{
+            (pivotsOpen("proxied_accounts")
+              ? "admin.review.reports.pivot.fewer"
+              : "admin.review.reports.pivot.all"
+            ) | transloco: { count: proxiedList.items.length }
+          }}
+        </button>
+      }
+      @if (proxiedList.total > proxiedList.items.length) {
+        <p class="review-detail-note">
+          {{
+            "admin.review.reports.pivot.more"
+              | transloco
+                : {
+                    count: proxiedList.total - proxiedList.items.length,
+                  }
+          }}
+        </p>
+      }
+    </div>
+  }
+  @if (ips()?.items?.length && ips(); as ipsList) {
+    <div class="review-pivot-group">
+      <h5 class="review-stage-label">
+        {{ "admin.review.reports.pivot.ips" | transloco }}
+      </h5>
+      <ul class="review-pivot-list">
+        @for (item of ipsList.items; track item.ipaddr) {
+          @if ($index < pivotLimit || pivotsOpen("ips")) {
+            <li class="review-pivot">
+              <a
+                class="review-link review-code"
+                [routerLink]="[]"
+                [queryParams]="
+                  caseParams({
+                    kind: 'ip',
+                    user_id: null,
+                    proxied_account: null,
+                    ipaddr: item.ipaddr,
+                  })
+                "
+                queryParamsHandling="merge"
+                >{{ item.ipaddr }}</a
+              >
+              <span class="review-pivot-count">{{ item.count }}</span>
+            </li>
+          }
+        }
+      </ul>
+      @if (ipsList.items.length > pivotLimit) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense review-pivot-toggle"
+          [attr.aria-expanded]="pivotsOpen('ips')"
+          (click)="togglePivots('ips')"
+        >
+          {{
+            (pivotsOpen("ips")
+              ? "admin.review.reports.pivot.fewer"
+              : "admin.review.reports.pivot.all"
+            ) | transloco: { count: ipsList.items.length }
+          }}
+        </button>
+      }
+      @if (ipsList.total > ipsList.items.length) {
+        <p class="review-detail-note">
+          {{
+            "admin.review.reports.pivot.more"
+              | transloco
+                : {
+                    count: ipsList.total - ipsList.items.length,
+                  }
+          }}
+        </p>
+      }
+    </div>
+  }
+  @if (workers()?.items?.length && workers(); as workersList) {
+    <div class="review-pivot-group">
+      <h5 class="review-stage-label">
+        {{ "admin.review.reports.pivot.workers" | transloco }}
+      </h5>
+      <ul class="review-pivot-list">
+        @for (item of workersList.items; track item.worker_id) {
+          @if ($index < pivotLimit || pivotsOpen("workers")) {
+            <li class="review-pivot">
+              <a
+                class="review-link"
+                [routerLink]="[]"
+                [queryParams]="workerParams(item.worker_id)"
+                queryParamsHandling="merge"
+                data-pivot-worker
+                >{{ item.worker_name ?? item.worker_id }}</a
+              >
+              <span class="review-pivot-count">{{ item.count }}</span>
+            </li>
+          }
+        }
+      </ul>
+      @if (workersList.items.length > pivotLimit) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense review-pivot-toggle"
+          [attr.aria-expanded]="pivotsOpen('workers')"
+          (click)="togglePivots('workers')"
+        >
+          {{
+            (pivotsOpen("workers")
+              ? "admin.review.reports.pivot.fewer"
+              : "admin.review.reports.pivot.all"
+            ) | transloco: { count: workersList.items.length }
+          }}
+        </button>
+      }
+      @if (workersList.total > workersList.items.length) {
+        <p class="review-detail-note">
+          {{
+            "admin.review.reports.pivot.more"
+              | transloco
+                : {
+                    count: workersList.total - workersList.items.length,
+                  }
+          }}
+        </p>
+      }
+    </div>
+  }
+  @if (models()?.items?.length && models(); as modelsList) {
+    <div class="review-pivot-group">
+      <h5 class="review-stage-label">
+        {{ "admin.review.reports.pivot.models" | transloco }}
+      </h5>
+      <ul class="review-pivot-list">
+        @for (item of modelsList.items; track item.model) {
+          @if ($index < pivotLimit || pivotsOpen("models")) {
+            <li class="review-pivot">
+              <a
+                class="review-link"
+                [routerLink]="['/details/models/name', item.model]"
+                >{{ item.model }}</a
+              >
+              <span class="review-pivot-count">{{ item.count }}</span>
+            </li>
+          }
+        }
+      </ul>
+      @if (modelsList.items.length > pivotLimit) {
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense review-pivot-toggle"
+          [attr.aria-expanded]="pivotsOpen('models')"
+          (click)="togglePivots('models')"
+        >
+          {{
+            (pivotsOpen("models")
+              ? "admin.review.reports.pivot.fewer"
+              : "admin.review.reports.pivot.all"
+            ) | transloco: { count: modelsList.items.length }
+          }}
+        </button>
+      }
+      @if (modelsList.total > modelsList.items.length) {
+        <p class="review-detail-note">
+          {{
+            "admin.review.reports.pivot.more"
+              | transloco: { count: modelsList.total - modelsList.items.length }
+          }}
+        </p>
+      }
+    </div>
+  }
+  @if (
+    !accounts()?.items?.length &&
+    !proxiedAccounts()?.items?.length &&
+    !ips()?.items?.length &&
+    !workers()?.items?.length &&
+    !models()?.items?.length
+  ) {
+    <p class="review-detail-note">
+      {{ "admin.review.reports.pivot.none" | transloco }}
+    </p>
+  }
+</div>

@@ -1,0 +1,145 @@
+<section
+  class="review-panel"
+  aria-labelledby="review-fp-title"
+  [attr.aria-busy]="loading()"
+>
+  <h3 id="review-fp-title" class="review-detail-title">
+    {{ "admin.review.false_positives.title" | transloco }}
+  </h3>
+  <p class="review-scope">
+    {{ "admin.review.false_positives.lead" | transloco }}
+  </p>
+
+  <div class="review-criteria-row">
+    <span class="hd-label" id="review-fp-window">{{
+      "admin.review.reports.window" | transloco
+    }}</span>
+    <div
+      class="hd-seg review-seg"
+      role="group"
+      aria-labelledby="review-fp-window"
+    >
+      @for (seconds of windows; track seconds) {
+        <button
+          type="button"
+          class="hd-seg-opt"
+          [attr.aria-pressed]="window() === seconds"
+          (click)="window.set(seconds)"
+        >
+          {{
+            "admin.review.reports.window_last"
+              | transloco
+                : {
+                    window:
+                      duration(seconds).key
+                      | transloco: { count: duration(seconds).count },
+                  }
+          }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (loading() && !report()) {
+    <div class="hd-skeleton" aria-hidden="true">
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+    </div>
+  } @else if (report(); as report) {
+    <div class="review-tables">
+      <div class="review-table-block">
+        <h4 class="review-detail-subtitle" id="review-fp-models">
+          {{ "admin.review.false_positives.by_model" | transloco }}
+        </h4>
+        @if (report.models.length > 0) {
+          <table class="review-table" aria-labelledby="review-fp-models">
+            <thead>
+              <tr>
+                <th scope="col">
+                  {{ "admin.review.false_positives.model" | transloco }}
+                </th>
+                <th scope="col" class="review-table-num">
+                  {{ "admin.review.false_positives.count" | transloco }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of report.models; track row.model) {
+                <tr>
+                  <td>{{ row.model }}</td>
+                  <td class="review-table-num">{{ row.cleared }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (report.next_offset !== null) {
+            <button
+              type="button"
+              class="hd-btn"
+              [disabled]="loadingMore()"
+              (click)="loadMoreModels()"
+            >
+              {{ "admin.review.load_more" | transloco }}
+            </button>
+          }
+        } @else {
+          <p class="review-detail-note">
+            {{ "admin.review.false_positives.none" | transloco }}
+          </p>
+        }
+      </div>
+
+      <div class="review-table-block">
+        <h4 class="review-detail-subtitle" id="review-fp-workers">
+          {{ "admin.review.false_positives.by_worker" | transloco }}
+        </h4>
+        @if (cleared().length > 0) {
+          <table class="review-table" aria-labelledby="review-fp-workers">
+            <thead>
+              <tr>
+                <th scope="col">
+                  {{ "admin.review.false_positives.worker" | transloco }}
+                </th>
+                <th scope="col" class="review-table-num">
+                  {{ "admin.review.false_positives.count" | transloco }}
+                </th>
+                <th scope="col" class="review-table-num">
+                  {{ "admin.review.false_positives.reports" | transloco }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of cleared(); track row.worker_id) {
+                <tr>
+                  <td>
+                    <a
+                      class="review-link review-table-name"
+                      [routerLink]="[]"
+                      [queryParams]="workerParams(row.worker_id)"
+                      queryParamsHandling="merge"
+                      >{{
+                        row.worker_name ??
+                          ("admin.review.not_recorded" | transloco)
+                      }}</a
+                    >
+                    <span class="review-code">{{ row.worker_id }}</span>
+                  </td>
+                  <td class="review-table-num">{{ row.cleared }}</td>
+                  <td class="review-table-num">{{ row.reports }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="review-detail-note">
+            {{ "admin.review.false_positives.none" | transloco }}
+          </p>
+        }
+      </div>
+    </div>
+  } @else if (failed()) {
+    <button type="button" class="hd-btn" (click)="retry()">
+      {{ "admin.review.try_again" | transloco }}
+    </button>
+  }
+</section>

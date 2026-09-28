@@ -1,3 +1,4 @@
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
@@ -13,6 +14,7 @@ import { SubjectRef } from './review-subjects';
 import { AdminModerationService } from '../../../services/admin-moderation.service';
 import { ToastService } from '../../../services/toast.service';
 import {
+  EndpointAvailability,
   PromptModerationEvent,
   PromptModerationEventQuery,
 } from '../../../types/moderation';
@@ -57,7 +59,11 @@ describe('ReviewSubjectEventsComponent', () => {
     success: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
   };
+  let subjectsAvailability: WritableSignal<EndpointAvailability>;
+  let reportingWorkersAvailability: WritableSignal<EndpointAvailability>;
   let moderation: {
+    subjectsAvailability: WritableSignal<EndpointAvailability>;
+    reportingWorkersAvailability: WritableSignal<EndpointAvailability>;
     getPromptEvents: ReturnType<typeof vi.fn>;
     addPromptNote: ReturnType<typeof vi.fn>;
     holdPromptEvent: ReturnType<typeof vi.fn>;
@@ -123,7 +129,11 @@ describe('ReviewSubjectEventsComponent', () => {
       }),
       event(1),
     ];
+    subjectsAvailability = signal<EndpointAvailability>('absent');
+    reportingWorkersAvailability = signal<EndpointAvailability>('absent');
     moderation = {
+      subjectsAvailability,
+      reportingWorkersAvailability,
       getPromptEvents: vi.fn(() => of({ events, next_cursor: null })),
       addPromptNote: vi.fn(),
       holdPromptEvent: vi.fn(),
@@ -745,6 +755,18 @@ describe('ReviewSubjectEventsComponent', () => {
       expect(hrefOf('[data-admin-page="worker"]')).toBe(
         '/admin/workers?worker=w-1',
       );
+    });
+
+    it('links into Reports only where Reports answers', async () => {
+      await openNamed();
+      expect(host().querySelector('[data-case-link]')).toBeNull();
+      expect(host().querySelector('[data-worker-reports-link]')).toBeNull();
+
+      subjectsAvailability.set('available');
+      reportingWorkersAvailability.set('available');
+      fixture.detectChanges();
+      expect(host().querySelectorAll('[data-case-link]').length).toBe(2);
+      expect(hrefOf('[data-worker-reports-link]')).toContain('view=workers');
     });
   });
 

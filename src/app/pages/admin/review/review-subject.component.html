@@ -1,0 +1,816 @@
+<div class="review-case">
+  <button
+    type="button"
+    class="hd-btn hd-btn--ghost review-back"
+    (click)="back.emit()"
+  >
+    <app-icon name="arrow-left" class="icon-sm" aria-hidden="true" />
+    {{ "admin.review.back" | transloco }}
+  </button>
+
+  <header class="review-case-head" [attr.data-over]="anyOver()" data-verdict>
+    <div class="review-case-who">
+      <span class="review-detail-kind">{{
+        "admin.review.reports.kind." + ref().kind | transloco
+      }}</span>
+      <h3 #heading class="review-detail-title" tabindex="-1">
+        @switch (ref().kind) {
+          @case ("account") {
+            {{
+              username() ??
+                ("admin.review.account_short"
+                  | transloco: { id: ref().user_id })
+            }}
+          }
+          @case ("proxied_account") {
+            {{ ref().proxied_account }}
+          }
+          @case ("ip") {
+            {{ ref().ipaddr }}
+          }
+        }
+      </h3>
+      @if (ref().user_id !== null) {
+        <a class="review-link" [routerLink]="['/admin/users', ref().user_id]">{{
+          "admin.review.account_short" | transloco: { id: ref().user_id }
+        }}</a>
+      }
+      <div data-subject-state>
+        @if (state(); as current) {
+          <ng-container
+            *ngTemplateOutlet="stateChip; context: { $implicit: current }"
+          />
+          @if (latest(); as decision) {
+            <p class="review-detail-note">
+              {{
+                "admin.review.reports.state_set"
+                  | transloco
+                    : {
+                        date: hordeTime(decision.created) | date: "mediumDate",
+                        reviewer:
+                          decision.reviewer ??
+                          ("admin.review.account_short"
+                            | transloco: { id: decision.reviewer_id }),
+                      }
+              }}
+              @if (watchRunning() && decision.watch_min_count !== null) {
+                {{
+                  "admin.review.reports.state_watch_min"
+                    | transloco: { count: decision.watch_min_count }
+                }}
+              }
+            </p>
+          }
+        } @else {
+          <p class="review-detail-note">
+            {{ "admin.review.reports.state_none" | transloco }}
+          </p>
+        }
+      </div>
+      @if (network()) {
+        <p class="review-detail-note" data-ip-network>
+          {{ "admin.review.reports.ip_network_note" | transloco }}
+        </p>
+      }
+    </div>
+
+    <div class="review-case-counts">
+      @if (detail(); as detail) {
+        <p class="review-case-total" data-subject-count>
+          <span class="review-case-big">{{ detail.count }}</span>
+          {{
+            plural("admin.review.reports.window_total", detail.count)
+              | transloco
+                : {
+                    window:
+                      windowLength()!.key
+                      | transloco: { count: windowLength()!.count },
+                  }
+          }}
+        </p>
+        @if (latest(); as decision) {
+          <p class="review-case-since" data-since-decision>
+            {{
+              plural(
+                "admin.review.reports.since_decision",
+                detail.since_review_count
+              )
+                | transloco
+                  : {
+                      count: detail.since_review_count,
+                      date: hordeTime(decision.created) | date: "mediumDate",
+                    }
+            }}
+          </p>
+        }
+        @if (verdict(); as rules) {
+          @if (rules.lead; as lead) {
+            <p class="review-case-rules" data-rules-verdict="over">
+              <app-icon
+                name="exclamation-circle"
+                class="review-case-rules-icon"
+                aria-hidden="true"
+              />
+              <span>{{
+                "admin.review.reports.verdict_over"
+                  | transloco
+                    : {
+                        exceeded: rules.exceeded,
+                        total: rules.total,
+                        reasons: reasonsOf(lead.reasons),
+                        count: lead.count,
+                        min: lead.min_count,
+                        window:
+                          duration(lead.window_seconds).key
+                          | transloco
+                            : { count: duration(lead.window_seconds).count },
+                      }
+              }}</span>
+            </p>
+          } @else if (rules.total > 0) {
+            <p class="review-case-rules" data-rules-verdict="under">
+              <app-icon
+                name="info-circle"
+                class="review-case-rules-icon"
+                aria-hidden="true"
+              />
+              <span>{{
+                plural("admin.review.reports.verdict_under", rules.total)
+                  | transloco: { total: rules.total }
+              }}</span>
+            </p>
+          }
+        }
+        @if (reasonCounts().length > 0) {
+          <ul
+            class="review-legend"
+            [attr.aria-label]="'admin.review.reports.legend_label' | transloco"
+          >
+            @for (entry of reasonCounts(); track entry.reason) {
+              <li>
+                <span class="review-sev" [attr.data-reason]="entry.reason">{{
+                  reasonKey(entry.reason) | transloco
+                }}</span>
+                <span class="review-num">{{ entry.count }}</span>
+              </li>
+            }
+          </ul>
+        }
+      } @else if (detailState() === "loading") {
+        @if (limitWait(); as seconds) {
+          <p class="review-detail-note" role="status" data-rate-limited>
+            {{
+              plural("admin.review.rate_limited", seconds)
+                | transloco: { count: seconds }
+            }}
+          </p>
+        }
+        <div class="hd-skeleton" aria-hidden="true">
+          <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+          <span class="hd-skeleton-bar"></span>
+        </div>
+      } @else if (detailState() === "missing") {
+        <p class="review-detail-note">
+          {{ "admin.review.reports.detail_missing" | transloco }}
+        </p>
+      } @else {
+        <p class="review-detail-note">
+          {{ "admin.review.reports.detail_load_error" | transloco }}
+        </p>
+        <button
+          type="button"
+          class="hd-btn hd-btn--dense"
+          (click)="reloadDetail()"
+        >
+          {{ "admin.review.try_again" | transloco }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div
+    class="review-case-bar"
+    role="group"
+    [attr.aria-label]="'admin.review.reports.bar_label' | transloco"
+    data-decision-bar
+  >
+    <div class="review-case-steps">
+      <button
+        type="button"
+        class="hd-btn hd-btn--ghost hd-btn--dense review-case-step"
+        aria-keyshortcuts="k"
+        [disabled]="!hasPrevious()"
+        (click)="step.emit('previous')"
+        data-step-previous
+      >
+        <app-icon name="chevron-left" class="icon-sm" aria-hidden="true" />
+        {{ "admin.review.reports.step.previous" | transloco }}
+      </button>
+      <button
+        type="button"
+        class="hd-btn hd-btn--ghost hd-btn--dense review-case-step"
+        aria-keyshortcuts="j"
+        [disabled]="!hasNext()"
+        (click)="step.emit('next')"
+        data-step-next
+      >
+        {{ "admin.review.reports.step.next" | transloco }}
+        <app-icon name="chevron-right" class="icon-sm" aria-hidden="true" />
+      </button>
+    </div>
+    <button
+      type="button"
+      class="hd-btn hd-btn--primary"
+      [disabled]="saving()"
+      (click)="openDecision()"
+    >
+      {{ "admin.review.reports.decision.open" | transloco }}
+    </button>
+    <div class="review-case-bar-more">
+      <ng-container *ngTemplateOutlet="otherActions" />
+    </div>
+  </div>
+
+  <div class="review-case-more">
+    <ng-container *ngTemplateOutlet="otherActions" />
+  </div>
+
+  @if (unrecorded(); as missing) {
+    <div class="hd-callout review-caution review-case-alert" role="alert">
+      <p class="hd-callout-body">
+        {{
+          "admin.review.reports.unrecorded"
+            | transloco
+              : {
+                  action:
+                    actionKey(missing.input.action ?? "other") | transloco,
+                }
+        }}
+      </p>
+      <div class="hd-callout-actions">
+        <button
+          type="button"
+          class="hd-btn hd-btn--dense"
+          [disabled]="saving()"
+          (click)="retryUnrecorded()"
+        >
+          {{ "admin.review.reports.unrecorded_retry" | transloco }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <div class="review-case-main">
+    @if (detail(); as detail) {
+      @if (finding(); as found) {
+        <p class="review-finding" data-finding>
+          <span class="review-finding-label">{{
+            "admin.review.reports.finding_label" | transloco
+          }}</span>
+          {{
+            "admin.review.reports.finding." + found.kind
+              | transloco: { count: found.count, total: found.total }
+          }}
+          @if (found.kind === "worker") {
+            <a
+              class="review-link"
+              [routerLink]="[]"
+              [queryParams]="workerParams(found.id)"
+              queryParamsHandling="merge"
+              >{{ found.name }}</a
+            >.
+          } @else {
+            <a
+              class="review-link"
+              [routerLink]="['/details/models/name', found.id]"
+              >{{ found.name }}</a
+            >.
+          }
+        </p>
+      }
+
+      <app-review-timeline
+        [source]="detail"
+        [range]="ranged.range()"
+        (rangeChange)="selectRange($event)"
+      />
+
+      @if (ranged.settled(); as settledRange) {
+        <section
+          class="review-detail-section review-range"
+          aria-labelledby="review-subject-range"
+          [attr.aria-busy]="ranged.state() === 'loading'"
+          data-in-range
+        >
+          <h4 id="review-subject-range" class="review-detail-subtitle">
+            {{ "admin.review.reports.range.title" | transloco }}
+          </h4>
+          <p class="review-detail-note">
+            {{
+              "admin.review.reports.range.span"
+                | transloco
+                  : {
+                      from: settledRange.since | date: "short",
+                      to: settledRange.until | date: "short",
+                    }
+            }}
+          </p>
+          @if (ranged.detail(); as inRange) {
+            <app-review-pivots
+              [accounts]="inRange.related.accounts"
+              [proxiedAccounts]="inRange.related.proxied_accounts"
+              [ips]="inRange.related.ips"
+              [workers]="inRange.workers"
+              [models]="inRange.models"
+            />
+          } @else if (ranged.state() === "failed") {
+            <button
+              type="button"
+              class="hd-btn hd-btn--dense"
+              (click)="ranged.retry()"
+            >
+              {{ "admin.review.try_again" | transloco }}
+            </button>
+          } @else {
+            @if (ranged.limitWait(); as seconds) {
+              <p class="review-detail-note" role="status" data-rate-limited>
+                {{
+                  plural("admin.review.rate_limited", seconds)
+                    | transloco: { count: seconds }
+                }}
+              </p>
+            }
+            <div class="hd-skeleton" aria-hidden="true">
+              <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+              <span class="hd-skeleton-bar"></span>
+            </div>
+          }
+        </section>
+      }
+
+      <section
+        class="review-detail-section"
+        aria-labelledby="review-subject-connected"
+        data-connected
+      >
+        <h4 id="review-subject-connected" class="review-detail-subtitle">
+          {{
+            "admin.review.reports.connected_title"
+              | transloco
+                : {
+                    window:
+                      windowLength()?.key
+                      | transloco: { count: windowLength()?.count },
+                  }
+          }}
+        </h4>
+        <p class="review-detail-note">
+          {{ "admin.review.reports.connected_note" | transloco }}
+        </p>
+        <app-review-pivots
+          [accounts]="detail.related.accounts"
+          [proxiedAccounts]="detail.related.proxied_accounts"
+          [ips]="detail.related.ips"
+          [workers]="detail.workers"
+          [models]="detail.models"
+        />
+      </section>
+    }
+
+    @if (detailState() !== "missing" && detailState() !== "failed") {
+      <app-review-subject-events
+        [ref]="ref()"
+        [page]="eventsPage()"
+        [watermark]="watermark()"
+        [workerNames]="workerNames()"
+        (pauseWorker)="askAction('pause_worker', $event)"
+      />
+    }
+  </div>
+
+  <div class="review-case-rail">
+    <section
+      class="review-detail-section review-case-meters"
+      aria-labelledby="review-subject-meters"
+    >
+      <h4 id="review-subject-meters" class="review-detail-subtitle">
+        {{ "admin.review.reports.meters_title" | transloco }}
+      </h4>
+      @if (detail()) {
+        <p class="review-detail-note">
+          {{ "admin.review.reports.meters_note" | transloco }}
+        </p>
+        @for (meter of activeMeters(); track $index) {
+          <ng-container
+            *ngTemplateOutlet="meterItem; context: { $implicit: meter }"
+          />
+        }
+        @if (quietMeters().length > 0) {
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost hd-btn--dense review-meter-quiet"
+            [attr.aria-expanded]="quietOpen()"
+            (click)="quietOpen.set(!quietOpen())"
+            data-quiet-rules
+          >
+            <app-icon
+              [name]="quietOpen() ? 'chevron-up' : 'chevron-down'"
+              class="icon-sm"
+              aria-hidden="true"
+            />
+            {{
+              plural("admin.review.reports.meters_quiet", quietMeters().length)
+                | transloco: { count: quietMeters().length }
+            }}
+          </button>
+          @if (quietOpen()) {
+            @for (meter of quietMeters(); track $index) {
+              <ng-container
+                *ngTemplateOutlet="meterItem; context: { $implicit: meter }"
+              />
+            }
+          }
+        }
+        @if (meters().length === 0) {
+          <p class="review-detail-note">
+            {{ "admin.review.reports.meters_none" | transloco }}
+          </p>
+        }
+      } @else if (detailState() === "loading") {
+        <div class="hd-skeleton" aria-hidden="true">
+          <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+        </div>
+      }
+    </section>
+
+    <section
+      class="review-detail-section review-case-history"
+      aria-labelledby="review-subject-history"
+      [attr.aria-busy]="!decisionsLoaded()"
+    >
+      <h4 id="review-subject-history" class="review-detail-subtitle">
+        {{ "admin.review.reports.history.title" | transloco }}
+      </h4>
+      <p class="review-detail-note">
+        {{ "admin.review.reports.actions_note" | transloco }}
+      </p>
+      @if (decisions().length > 0) {
+        <ol class="review-history" data-decision-history>
+          @for (decision of decisions(); track decision.id) {
+            <li class="review-history-item">
+              @if (historyState(decision); as past) {
+                <ng-container
+                  *ngTemplateOutlet="stateChip; context: { $implicit: past }"
+                />
+              }
+              @if (decision.action) {
+                <span>{{ actionKey(decision.action) | transloco }}</span>
+              }
+              @if (
+                decision.action === "pause_worker" && decision.action_detail
+              ) {
+                <a
+                  class="review-link review-code"
+                  [routerLink]="[]"
+                  [queryParams]="workerParams(decision.action_detail)"
+                  queryParamsHandling="merge"
+                  >{{
+                    workerNames().get(decision.action_detail) ??
+                      decision.action_detail
+                  }}</a
+                >
+              } @else if (decision.action_detail) {
+                <span class="review-code">{{ decision.action_detail }}</span>
+              }
+              <time
+                class="review-history-time"
+                [attr.datetime]="hordeTime(decision.created)?.toISOString()"
+                >{{ hordeTime(decision.created) | date: "medium" }}</time
+              >
+              <span class="review-history-detail">
+                {{
+                  "admin.review.reports.history.by"
+                    | transloco
+                      : {
+                          reviewer:
+                            decision.reviewer ??
+                            ("admin.review.account_short"
+                              | transloco: { id: decision.reviewer_id }),
+                        }
+                }}
+                @if (decision.watermark_event_id !== null) {
+                  {{
+                    "admin.review.reports.history.covers"
+                      | transloco: { id: decision.watermark_event_id }
+                  }}
+                }
+                @if (decision.watch_min_count !== null) {
+                  {{
+                    "admin.review.reports.history.watch_min"
+                      | transloco: { count: decision.watch_min_count }
+                  }}
+                }
+              </span>
+              @if (decision.note) {
+                <span class="review-history-detail review-prose">{{
+                  decision.note
+                }}</span>
+              }
+            </li>
+          }
+        </ol>
+        @if (decisionsCursor() !== null) {
+          <button
+            type="button"
+            class="hd-btn review-load-more"
+            [disabled]="decisionsLoadingMore()"
+            (click)="loadMoreDecisions()"
+          >
+            {{
+              (decisionsLoadingMore()
+                ? "admin.review.loading_more"
+                : "admin.review.load_more"
+              ) | transloco
+            }}
+          </button>
+        }
+      } @else if (decisionsLoaded()) {
+        <p class="review-detail-note">
+          {{ "admin.review.reports.history.none" | transloco }}
+        </p>
+      }
+    </section>
+  </div>
+</div>
+
+<ng-template #meterItem let-meter>
+  <div class="review-meter" [attr.data-meter]="meter.state">
+    <p class="review-meter-rule">
+      {{
+        (isWatchThreshold(meter.rule.min_count)
+          ? "admin.review.reports.meter_rule_watch"
+          : "admin.review.reports.meter_rule"
+        )
+          | transloco
+            : {
+                reasons: reasonsOf(meter.rule.reasons),
+                window:
+                  duration(meter.rule.window_seconds).key
+                  | transloco
+                    : { count: duration(meter.rule.window_seconds).count },
+              }
+      }}
+    </p>
+    <div class="review-meter-track" aria-hidden="true">
+      <span class="review-meter-fill" [style.width.%]="meter.fill"></span>
+      <span class="review-meter-tick" [style.left.%]="meter.tick"></span>
+    </div>
+    <p class="review-meter-verdict">
+      <app-icon
+        [name]="meterIcon(meter.state)"
+        class="review-meter-icon"
+        aria-hidden="true"
+      />
+      {{
+        "admin.review.reports.meter." + meter.verdict
+          | transloco
+            : {
+                count: meter.rule.count,
+                min: meter.rule.min_count,
+                gap: meter.gap,
+              }
+      }}
+    </p>
+  </div>
+</ng-template>
+
+<ng-template #stateChip let-current>
+  <span class="review-state-chip" [attr.data-outcome]="current.outcome">
+    <app-icon
+      [name]="stateIcon(current)"
+      class="review-state-chip-icon"
+      aria-hidden="true"
+    />
+    <span>{{
+      stateKey(current)
+        | transloco: { date: current.until | date: "mediumDate" }
+    }}</span>
+  </span>
+</ng-template>
+
+<ng-template #otherActions>
+  @for (action of actions(); track action) {
+    <button
+      type="button"
+      class="hd-btn hd-btn--dense"
+      [disabled]="saving()"
+      (click)="askAction(action)"
+    >
+      {{ actionKey(action) | transloco }}
+    </button>
+  }
+  @if (ref().user_id !== null) {
+    <a
+      class="hd-btn hd-btn--ghost hd-btn--dense"
+      [routerLink]="['/admin/users', ref().user_id]"
+      >{{ "admin.review.open_account" | transloco }}</a
+    >
+  }
+</ng-template>
+<app-admin-dialog
+  [open]="decisionOpen()"
+  [title]="'admin.review.reports.decision.title' | transloco"
+  [confirmLabel]="'admin.review.reports.decision.save' | transloco"
+  [cancelLabel]="'admin.review.cancel' | transloco"
+  [loading]="saving()"
+  [loadingLabel]="'admin.review.working' | transloco"
+  (confirmed)="confirmDecision()"
+  (cancelled)="cancelDecision()"
+>
+  <fieldset class="review-choices">
+    <legend class="hd-label">
+      {{ "admin.review.reports.decision.outcome_label" | transloco }}
+    </legend>
+    @for (outcome of outcomes; track outcome) {
+      <label class="review-choice">
+        <input
+          type="radio"
+          name="review-decision-outcome"
+          [value]="outcome"
+          [checked]="form().outcome === outcome"
+          (change)="setOutcome(outcome)"
+        />
+        <span class="review-choice-text">
+          <span class="review-choice-name">{{
+            outcomeKey(outcome) | transloco
+          }}</span>
+          <span class="review-choice-desc">{{
+            "admin.review.reports.decision.explain." + outcome | transloco
+          }}</span>
+        </span>
+      </label>
+    }
+  </fieldset>
+
+  @if (form().outcome === "watching") {
+    <div class="review-filters">
+      <div class="review-filter">
+        <label class="hd-label" for="review-watch-until">{{
+          "admin.review.reports.decision.watch_until" | transloco
+        }}</label>
+        <input
+          #untilInput
+          id="review-watch-until"
+          class="hd-input"
+          type="date"
+          required
+          [min]="watchMin()"
+          [max]="watchMax()"
+          [value]="form().watchUntil"
+          aria-describedby="review-watch-until-note"
+          (input)="updateForm({ watchUntil: untilInput.value })"
+        />
+        <p id="review-watch-until-note" class="review-detail-note">
+          {{
+            "admin.review.reports.decision.watch_until_note"
+              | transloco: { days: watchMaxDays }
+          }}
+        </p>
+      </div>
+      <div class="review-filter">
+        <label class="hd-label" for="review-watch-count">{{
+          "admin.review.reports.decision.watch_min_count" | transloco
+        }}</label>
+        <input
+          #minInput
+          id="review-watch-count"
+          class="hd-input"
+          type="number"
+          min="1"
+          step="1"
+          inputmode="numeric"
+          [value]="form().watchMinCount"
+          aria-describedby="review-watch-count-note"
+          (input)="updateForm({ watchMinCount: minInput.value })"
+        />
+        <p id="review-watch-count-note" class="review-detail-note">
+          {{ "admin.review.reports.decision.watch_min_count_note" | transloco }}
+        </p>
+      </div>
+    </div>
+  }
+
+  <label class="hd-label" for="review-decision-note">{{
+    "admin.review.reports.decision.note_label" | transloco
+  }}</label>
+  <textarea
+    #noteField
+    id="review-decision-note"
+    class="hd-textarea review-dialog-field"
+    rows="3"
+    [attr.maxlength]="noteLimit"
+    aria-describedby="review-decision-note-left"
+    [value]="form().note"
+    (input)="updateForm({ note: noteField.value })"
+  ></textarea>
+  <p id="review-decision-note-left" class="review-detail-note">
+    {{
+      "admin.review.reports.decision.note_remaining"
+        | transloco: { count: noteRemaining() }
+    }}
+  </p>
+
+  @if (shownProblems().length > 0) {
+    <div role="alert">
+      <ul class="review-problems">
+        @for (problem of shownProblems(); track problem) {
+          <li class="review-field-error">
+            {{ problem | transloco: { days: watchMaxDays } }}
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</app-admin-dialog>
+
+<app-admin-dialog
+  [open]="pendingAction() !== null"
+  variant="danger"
+  [title]="
+    (pendingAction()
+      ? 'admin.review.reports.action_confirm.' + pendingAction()!.action
+      : 'admin.review.reports.decision.title'
+    ) | transloco
+  "
+  [confirmLabel]="
+    (pendingAction()
+      ? actionKey(pendingAction()!.action)
+      : 'admin.review.reports.decision.save'
+    ) | transloco
+  "
+  [cancelLabel]="'admin.review.cancel' | transloco"
+  [loading]="saving()"
+  [loadingLabel]="'admin.review.working' | transloco"
+  (confirmed)="confirmAction()"
+  (cancelled)="cancelAction()"
+>
+  @if (pendingAction(); as pending) {
+    <p>
+      {{
+        "admin.review.reports.action_body." +
+          pending.action +
+          (pending.action === "ip_timeout" && network() ? "_network" : "")
+          | transloco
+            : {
+                worker: pending.workerId
+                  ? (workerNames().get(pending.workerId) ?? pending.workerId)
+                  : "",
+              }
+      }}
+    </p>
+    @if (pending.action === "ip_timeout") {
+      <label class="hd-label" for="review-ip-hours">{{
+        "admin.review.reports.ip_hours" | transloco
+      }}</label>
+      <input
+        #hoursInput
+        id="review-ip-hours"
+        class="hd-input review-dialog-field"
+        type="number"
+        step="1"
+        inputmode="numeric"
+        [min]="ipHoursRange.min"
+        [max]="ipHoursRange.max"
+        [value]="ipHours()"
+        [attr.aria-invalid]="ipHoursInvalid()"
+        aria-describedby="review-ip-hours-note"
+        (input)="ipHours.set(hoursInput.value)"
+      />
+      <p
+        id="review-ip-hours-note"
+        class="review-detail-note"
+        [class.review-field-error]="ipHoursInvalid()"
+      >
+        {{
+          "admin.review.reports.ip_hours_note"
+            | transloco: { min: ipHoursRange.min, max: ipHoursRange.max }
+        }}
+      </p>
+    }
+    <label class="hd-label" for="review-action-note">{{
+      "admin.review.reports.decision.note_label" | transloco
+    }}</label>
+    <textarea
+      #actionNoteField
+      id="review-action-note"
+      class="hd-textarea review-dialog-field"
+      rows="2"
+      [attr.maxlength]="noteLimit"
+      [value]="actionNote()"
+      (input)="setActionNote(actionNoteField.value)"
+    ></textarea>
+    <p class="review-detail-note">
+      {{ "admin.review.reports.action_records" | transloco }}
+    </p>
+  }
+</app-admin-dialog>

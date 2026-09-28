@@ -1,0 +1,431 @@
+<div class="review-reports">
+  <div
+    class="hd-seg review-views"
+    role="group"
+    [attr.aria-label]="'admin.review.reports.views_label' | transloco"
+  >
+    @for (option of views(); track option) {
+      <button
+        type="button"
+        class="hd-seg-opt"
+        [attr.aria-pressed]="view() === option"
+        (click)="setView(option)"
+      >
+        {{ viewKey(option) | transloco }}
+      </button>
+    }
+  </div>
+
+  @if (isListView()) {
+    <p class="review-scope">
+      {{ "admin.review.reports.scope" | transloco }}
+    </p>
+
+    @if (view() === "over" && !draftCustom() && !criteriaOpen()) {
+      <div class="review-criteria-summary" data-criteria-summary>
+        <p class="review-detail-note">
+          {{
+            (state().criteria.sinceReview
+              ? "admin.review.reports.criteria_summary_since"
+              : "admin.review.reports.criteria_summary_all"
+            ) | transloco
+          }}
+        </p>
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense"
+          aria-controls="review-criteria"
+          [attr.aria-expanded]="false"
+          (click)="criteriaOpen.set(true)"
+        >
+          {{ "admin.review.reports.criteria_change" | transloco }}
+        </button>
+      </div>
+    } @else if (view() === "over") {
+      <div class="review-criteria" id="review-criteria">
+        <div class="review-criteria-row">
+          <span class="hd-label" id="review-kind-label">{{
+            "admin.review.reports.kind_label" | transloco
+          }}</span>
+          <div
+            class="hd-seg review-seg"
+            role="group"
+            aria-labelledby="review-kind-label"
+          >
+            @for (kind of kinds; track kind) {
+              <button
+                type="button"
+                class="hd-seg-opt"
+                [attr.aria-pressed]="state().kind === kind"
+                (click)="setKind(kind)"
+              >
+                {{ kindKey(kind) | transloco }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="review-criteria-row">
+          <span class="hd-label" id="review-criteria-label">{{
+            "admin.review.reports.criteria_label" | transloco
+          }}</span>
+          <div
+            class="hd-seg review-seg"
+            role="group"
+            aria-labelledby="review-criteria-label"
+          >
+            <button
+              type="button"
+              class="hd-seg-opt"
+              [attr.aria-pressed]="!draftCustom()"
+              (click)="setCustom(false)"
+            >
+              {{ "admin.review.reports.criteria_preset" | transloco }}
+            </button>
+            <button
+              type="button"
+              class="hd-seg-opt"
+              [attr.aria-pressed]="draftCustom()"
+              (click)="setCustom(true)"
+            >
+              {{ "admin.review.reports.criteria_custom" | transloco }}
+            </button>
+          </div>
+        </div>
+
+        @if (draftCustom()) {
+          <form
+            class="review-filters"
+            [attr.aria-label]="'admin.review.reports.custom_label' | transloco"
+            (submit)="$event.preventDefault(); applyCustom()"
+          >
+            <div class="review-filter">
+              <label class="hd-label" for="review-custom-window">{{
+                "admin.review.reports.window" | transloco
+              }}</label>
+              <select
+                #windowSelect
+                id="review-custom-window"
+                class="hd-input"
+                (change)="draftWindow.set(+windowSelect.value)"
+              >
+                @for (seconds of windowChoices; track seconds) {
+                  <option
+                    [value]="seconds"
+                    [selected]="draftWindow() === seconds"
+                  >
+                    {{
+                      "admin.review.reports.window_last"
+                        | transloco
+                          : {
+                              window:
+                                duration(seconds).key
+                                | transloco: { count: duration(seconds).count },
+                            }
+                    }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <div class="review-filter">
+              <label class="hd-label" for="review-custom-count">{{
+                "admin.review.reports.min_count" | transloco
+              }}</label>
+              <input
+                #countInput
+                id="review-custom-count"
+                class="hd-input"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                [value]="draftMinCount()"
+                [attr.aria-invalid]="minCountInvalid()"
+                [attr.aria-describedby]="
+                  minCountInvalid() ? 'review-custom-count-error' : null
+                "
+                (input)="draftMinCount.set(countInput.value)"
+              />
+              @if (minCountInvalid()) {
+                <p id="review-custom-count-error" class="review-field-error">
+                  {{ "admin.review.reports.min_count_error" | transloco }}
+                </p>
+              }
+            </div>
+
+            <fieldset class="review-filter review-reason-picks">
+              <legend class="hd-label">
+                {{ "admin.review.reports.reasons" | transloco }}
+              </legend>
+              <div class="review-chip-row">
+                @for (reason of reasons; track reason) {
+                  <button
+                    type="button"
+                    class="hd-chip"
+                    [class.hd-chip--active]="draftReasons().has(reason)"
+                    [attr.aria-pressed]="draftReasons().has(reason)"
+                    (click)="toggleReason(reason)"
+                  >
+                    {{ reasonKey(reason) | transloco }}
+                  </button>
+                }
+              </div>
+              <p class="review-detail-note">
+                {{ "admin.review.reports.reasons_none_means_all" | transloco }}
+              </p>
+            </fieldset>
+
+            <button
+              type="submit"
+              class="hd-btn hd-btn--primary review-apply"
+              [disabled]="minCountInvalid()"
+            >
+              {{ "admin.review.reports.apply" | transloco }}
+            </button>
+          </form>
+        } @else {
+          <p class="review-detail-note">
+            {{ "admin.review.reports.preset_note" | transloco }}
+          </p>
+          @if (rules().length > 0) {
+            <ul class="review-rule-summary" data-alert-rules>
+              @for (rule of rules(); track $index) {
+                <li>
+                  {{
+                    "admin.review.reports.rule_line"
+                      | transloco
+                        : {
+                            min: rule.min_count,
+                            reasons: reasonsOf(rule.reasons),
+                            window:
+                              duration(rule.window_seconds).key
+                              | transloco
+                                : {
+                                    count: duration(rule.window_seconds).count,
+                                  },
+                          }
+                  }}
+                </li>
+              }
+            </ul>
+          }
+        }
+
+        <label class="hd-switch review-since">
+          <input
+            #sinceToggle
+            type="checkbox"
+            [checked]="state().criteria.sinceReview"
+            aria-describedby="review-since-note"
+            (change)="setSinceReview(sinceToggle.checked)"
+          />
+          <span class="hd-switch-track" aria-hidden="true">
+            <span class="hd-switch-thumb"></span>
+          </span>
+          {{ "admin.review.reports.since_review" | transloco }}
+        </label>
+        <p id="review-since-note" class="review-detail-note">
+          {{ "admin.review.reports.since_review_note" | transloco }}
+        </p>
+        @if (!draftCustom()) {
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost hd-btn--dense review-criteria-done"
+            aria-controls="review-criteria"
+            [attr.aria-expanded]="true"
+            (click)="criteriaOpen.set(false)"
+          >
+            {{ "admin.review.reports.criteria_done" | transloco }}
+          </button>
+        }
+      </div>
+    } @else {
+      <p class="review-detail-note">
+        {{ viewKey(view()) + "_note" | transloco }}
+      </p>
+    }
+
+    <div class="review-split" [class.review-split--detail]="detailShown()">
+      <div class="review-split-list">
+        @if (loading()) {
+          <div class="hd-skeleton" aria-busy="true">
+            <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+            <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+            <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+          </div>
+        } @else if (subjects().length === 0) {
+          @if (!loadFailed()) {
+            <div class="hd-empty review-empty">
+              <p class="hd-empty-title">
+                {{ viewKey(view()) + "_empty" | transloco }}
+              </p>
+              <p class="hd-empty-sub">
+                {{ viewKey(view()) + "_empty_sub" | transloco }}
+              </p>
+            </div>
+          }
+        } @else {
+          <div
+            appReviewGrid
+            class="review-grid"
+            [attr.aria-label]="viewKey(view()) | transloco"
+            aria-describedby="review-reports-grid-help"
+          >
+            @for (subject of subjects(); track keyOf(subject)) {
+              <div
+                role="row"
+                class="review-row"
+                [class.review-row--current]="openKey() === keyOf(subject)"
+              >
+                <div role="gridcell" class="review-row-cell">
+                  <button
+                    type="button"
+                    class="review-row-btn"
+                    data-grid-cell
+                    [attr.data-subject]="keyOf(subject)"
+                    [attr.tabindex]="tabStop() === keyOf(subject) ? 0 : -1"
+                    [attr.aria-current]="
+                      openKey() === keyOf(subject) ? 'true' : null
+                    "
+                    (click)="open(subject)"
+                  >
+                    <span class="review-row-line">
+                      <span class="review-row-title">
+                        @switch (subject.kind) {
+                          @case ("account") {
+                            {{
+                              subject.username ??
+                                ("admin.review.account_short"
+                                  | transloco: { id: subject.user_id })
+                            }}
+                          }
+                          @case ("proxied_account") {
+                            {{ subject.proxied_account }}
+                          }
+                          @case ("ip") {
+                            {{ subject.ipaddr }}
+                          }
+                        }
+                      </span>
+                      <span class="review-row-count">{{
+                        plural(
+                          "admin.review.reports.report_count",
+                          subject.count
+                        ) | transloco: { count: subject.count }
+                      }}</span>
+                    </span>
+                    <span class="review-row-meta">
+                      @if (view() !== "over") {
+                        <span>{{ kindKey(subject.kind) | transloco }}</span>
+                      }
+                      @if (subject.kind === "proxied_account") {
+                        <span>{{
+                          "admin.review.account_short"
+                            | transloco: { id: subject.user_id }
+                        }}</span>
+                      }
+                      @for (
+                        entry of reasonCounts(subject);
+                        track entry.reason
+                      ) {
+                        <span
+                          >{{ reasonKey(entry.reason) | transloco }}:
+                          {{ entry.count }}</span
+                        >
+                      }
+                    </span>
+                    <span class="review-row-meta">
+                      @if (hordeTime(subject.last_event); as last) {
+                        <span
+                          >{{ "admin.review.reports.last_report" | transloco }}
+                          <time [attr.datetime]="last.toISOString()">{{
+                            last | date: "short"
+                          }}</time></span
+                        >
+                      }
+                      @if (stateOf(subject); as current) {
+                        <span
+                          class="review-state-chip"
+                          [attr.data-outcome]="current.outcome"
+                        >
+                          <app-icon
+                            [name]="outcomeIcons[current.outcome]"
+                            class="review-state-chip-icon"
+                            aria-hidden="true"
+                          />
+                          <span>{{
+                            stateKey(current)
+                              | transloco
+                                : { date: current.until | date: "mediumDate" }
+                          }}</span>
+                        </span>
+                      }
+                    </span>
+                    @if (openKey() === keyOf(subject)) {
+                      <app-icon
+                        name="chevron-right"
+                        class="review-row-open"
+                        aria-hidden="true"
+                      />
+                    }
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+          <p id="review-reports-grid-help" class="sr-only">
+            {{ "admin.review.grid_help" | transloco }}
+          </p>
+          @if (nextOffset() !== null) {
+            <button
+              type="button"
+              class="hd-btn review-load-more"
+              [disabled]="loadingMore()"
+              (click)="loadMore()"
+            >
+              {{
+                (loadingMore()
+                  ? "admin.review.loading_more"
+                  : "admin.review.load_more"
+                ) | transloco
+              }}
+            </button>
+          }
+        }
+      </div>
+
+      <section
+        class="review-split-detail"
+        [attr.aria-label]="'admin.review.reports.detail_label' | transloco"
+      >
+        @if (state().open; as ref) {
+          <app-review-subject
+            [ref]="ref"
+            [subject]="openSubject()"
+            [hasPrevious]="hasPrevious()"
+            [hasNext]="hasNext()"
+            (back)="back()"
+            (decided)="onDecided($event)"
+            (step)="onStep($event)"
+          />
+        } @else if (subjects().length > 0) {
+          <div class="hd-empty review-empty">
+            <p class="hd-empty-title">
+              {{ "admin.review.reports.none_open" | transloco }}
+            </p>
+          </div>
+        }
+      </section>
+    </div>
+  } @else if (view() === "workers") {
+    <app-review-workers
+      [worker]="state().worker"
+      (workerChange)="openWorker($event)"
+    />
+  } @else if (view() === "false_positives") {
+    <app-review-false-positives />
+  } @else {
+    <app-review-thresholds />
+  }
+</div>

@@ -8,7 +8,10 @@ import { ReviewPromptsComponent } from './review-prompts.component';
 import { DEFAULT_PROMPTS, PromptsState } from './review-query';
 import { AdminModerationService } from '../../../services/admin-moderation.service';
 import { ToastService } from '../../../services/toast.service';
-import { PromptModerationEvent } from '../../../types/moderation';
+import {
+  EndpointAvailability,
+  PromptModerationEvent,
+} from '../../../types/moderation';
 
 describe('ReviewPromptsComponent', () => {
   let fixture: ComponentFixture<ReviewPromptsComponent>;
@@ -43,6 +46,9 @@ describe('ReviewPromptsComponent', () => {
         {
           provide: AdminModerationService,
           useValue: {
+            subjectsAvailability: signal<EndpointAvailability>('absent'),
+            reportingWorkersAvailability:
+              signal<EndpointAvailability>('absent'),
             getPromptEvents,
             addPromptNote: vi.fn(),
             promptReasonFilter,

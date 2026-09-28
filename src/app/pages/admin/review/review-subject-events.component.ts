@@ -40,10 +40,12 @@ import {
 import {
   EVENT_NOTE_LIMIT,
   SubjectRef,
+  caseParams,
   eventFilterOf,
   hordeInstant,
   pluralKey,
   refusalKey,
+  workerParams,
 } from './review-subjects';
 import { PromptFilter, promptPivotParams } from './review-query';
 
@@ -179,6 +181,8 @@ export class ReviewSubjectEventsComponent {
 
   public readonly noteLimit = EVENT_NOTE_LIMIT;
   public readonly hordeTime = parseHordeTime;
+  public readonly caseParams = caseParams;
+  public readonly workerParams = workerParams;
   public readonly plural = pluralKey;
 
   /** The subject's kind, or null for a worker's reports. */
@@ -195,6 +199,14 @@ export class ReviewSubjectEventsComponent {
     if (kind === 'account' || kind === 'proxied_account') return false;
     return this.query()?.user_id === undefined;
   });
+  /** Whether a subject can be opened in Reports. */
+  public readonly casesAvailable = computed(
+    () => this.moderation.subjectsAvailability() === 'available',
+  );
+  /** Whether a worker's reports can be opened in Reports. */
+  public readonly workerReportsAvailable = computed(
+    () => this.moderation.reportingWorkersAvailability() === 'available',
+  );
   /** Whether the list is narrowed to a brushed range. */
   public readonly inRange = computed(() => this.page()?.since !== undefined);
 

@@ -15,6 +15,7 @@ import {
   EndpointAvailability,
   PromptModerationEvent,
   PromptModerationReason,
+  SubjectDecision,
 } from '../../../types/moderation';
 
 function event(
@@ -40,13 +41,40 @@ function event(
   };
 }
 
+function decision(overrides: Partial<SubjectDecision> = {}): SubjectDecision {
+  return {
+    id: 1,
+    subject_kind: 'account',
+    user_id: 42,
+    proxied_account: null,
+    ipaddr: null,
+    outcome: 'benign',
+    note: null,
+    reviewer_id: 9,
+    reviewer: 'mod',
+    created: '2026-09-20T10:00:00+00:00',
+    watermark_event_id: 3,
+    watch_until: null,
+    watch_min_count: null,
+    action: null,
+    action_detail: null,
+    ...overrides,
+  };
+}
+
 describe('UserModerationRecordComponent', () => {
   let fixture: ComponentFixture<UserModerationRecordComponent>;
+  let subjectsAvailability: WritableSignal<EndpointAvailability>;
   let promptEventsAvailability: WritableSignal<EndpointAvailability>;
   let events: PromptModerationEvent[];
+  let decisions: SubjectDecision[];
   let moderation: {
+    subjectsAvailability: WritableSignal<EndpointAvailability>;
     promptEventsAvailability: WritableSignal<EndpointAvailability>;
+    settingsAvailability: WritableSignal<EndpointAvailability>;
     workerSuspicionEventsAvailability: WritableSignal<EndpointAvailability>;
+    getSubjectDecisions: ReturnType<typeof vi.fn>;
+    getSettings: ReturnType<typeof vi.fn>;
     getPromptEvents: ReturnType<typeof vi.fn>;
     getWorkerSuspicionEvents: ReturnType<typeof vi.fn>;
     probe: ReturnType<typeof vi.fn>;
@@ -85,16 +113,33 @@ describe('UserModerationRecordComponent', () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-09-26T12:00:00Z'));
+    subjectsAvailability = signal<EndpointAvailability>('absent');
     promptEventsAvailability = signal<EndpointAvailability>('available');
     events = [
       event(1, 'worker_csam'),
       event(2, 'worker_csam'),
       event(3, 'filter_rejection'),
     ];
+    decisions = [decision()];
     moderation = {
+      subjectsAvailability,
       promptEventsAvailability,
+      settingsAvailability: signal<EndpointAvailability>('available'),
       workerSuspicionEventsAvailability:
         signal<EndpointAvailability>('unknown'),
+      getSubjectDecisions: vi.fn(() => of({ decisions, next_cursor: null })),
+      getSettings: vi.fn(() =>
+        of({
+          rules: [
+            { window_seconds: 3600, min_count: 50, reasons: ['worker_csam'] },
+            {
+              window_seconds: 86_400,
+              min_count: 200,
+              reasons: ['worker_csam'],
+            },
+          ],
+        }),
+      ),
       getPromptEvents: vi.fn(() => {
         promptEventsAvailability.set('available');
         return of({ events, next_cursor: null });
@@ -122,6 +167,8 @@ describe('UserModerationRecordComponent', () => {
         user_id: 42,
         limit: ACCOUNT_REPORT_LIMIT,
       });
+      expect(moderation.getSubjectDecisions).not.toHaveBeenCalled();
+      expect(moderation.getSettings).not.toHaveBeenCalled();
       expect(count('all')).toBe('3');
       expect(count('worker_csam')).toBe('2');
       expect(count('filter_rejection')).toBe('1');
@@ -129,6 +176,13 @@ describe('UserModerationRecordComponent', () => {
       expect(fixture.componentInstance.summary()?.window).toBe(
         REPORT_RETENTION_SECONDS,
       );
+    });
+
+    it('shows no standing in Reports and no link to it', async () => {
+      await render();
+
+      expect(host().querySelector('[data-account-state]')).toBeNull();
+      expect(host().querySelector('[data-case-link]')).toBeNull();
     });
 
     it("links to the account's reports in the Prompts tab", async () => {
@@ -190,6 +244,70 @@ describe('UserModerationRecordComponent', () => {
 
       expect(moderation.getPromptEvents).not.toHaveBeenCalled();
       expect(host().querySelector('.user-moderation-reports')).toBeNull();
+    });
+  });
+
+  describe('with the report listings', () => {
+    beforeEach(() => subjectsAvailability.set('available'));
+
+    it("asks for the account's latest decision", async () => {
+      await render();
+
+      expect(moderation.getSubjectDecisions).toHaveBeenCalledWith({
+        kind: 'account',
+        user_id: 42,
+        limit: 1,
+      });
+      expect(
+        host().querySelector('[data-account-state]')?.textContent,
+      ).toContain('admin.review.reports.outcome.benign');
+    });
+
+    it('counts reports over the longest alert window, by reason', async () => {
+      await render();
+
+      expect(moderation.getPromptEvents).toHaveBeenCalledWith({
+        user_id: 42,
+        since: '2026-09-25T12:00:00+00:00',
+        limit: ACCOUNT_REPORT_LIMIT,
+      });
+      expect(count('all')).toBe('3');
+    });
+
+    it('counts over the retention when the alert rules cannot be read', async () => {
+      moderation.settingsAvailability.set('absent');
+      await render();
+
+      expect(moderation.getSettings).not.toHaveBeenCalled();
+      expect(moderation.getPromptEvents).toHaveBeenCalledWith({
+        user_id: 42,
+        limit: ACCOUNT_REPORT_LIMIT,
+      });
+    });
+
+    it('says a watch is running until its date', async () => {
+      decisions = [
+        decision({
+          outcome: 'watching',
+          watch_until: '2026-10-10T00:00:00+00:00',
+        }),
+      ];
+      await render();
+
+      expect(
+        host().querySelector('[data-account-state]')?.textContent,
+      ).toContain('admin.review.reports.watch_until');
+    });
+
+    it('links to this account in Reports', async () => {
+      await render();
+
+      const url = hrefOf('[data-case-link]');
+      expect(url?.pathname).toBe('/admin/review');
+      expect(Object.fromEntries(url?.searchParams ?? [])).toEqual({
+        tab: 'reports',
+        open: 'account:42',
+      });
     });
   });
 
