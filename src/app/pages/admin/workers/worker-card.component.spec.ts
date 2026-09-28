@@ -43,7 +43,10 @@ describe('WorkerCardComponent suspicion', () => {
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
 
-  const render = async (isModerator: boolean): Promise<void> => {
+  const render = async (
+    isModerator: boolean,
+    prompts: EndpointAvailability = 'unknown',
+  ): Promise<void> => {
     getWorkerSuspicionEvents = vi.fn(() =>
       of({ events: [], next_cursor: null }),
     );
@@ -67,6 +70,7 @@ describe('WorkerCardComponent suspicion', () => {
           useValue: {
             workerSuspicionEventsAvailability:
               signal<EndpointAvailability>('unknown'),
+            promptEventsAvailability: signal<EndpointAvailability>(prompts),
             getWorkerSuspicionEvents,
           },
         },
@@ -102,6 +106,23 @@ describe('WorkerCardComponent suspicion', () => {
     expect(host().textContent).not.toContain('admin.workers.card.suspicion');
     expect(host().querySelector('app-suspicion-history')).toBeNull();
     expect(getWorkerSuspicionEvents).not.toHaveBeenCalled();
+  });
+
+  it('links moderators to the reports the worker made once the prompt log answers', async () => {
+    await render(true);
+    expect(host().querySelector('[data-prompts-link]')).toBeNull();
+    TestBed.resetTestingModule();
+
+    await render(true, 'available');
+    const link = host().querySelector('[data-prompts-link]');
+    expect(link?.getAttribute('href')).toContain('/admin/review?');
+    expect(link?.getAttribute('href')).toContain('tab=prompts');
+    expect(link?.getAttribute('href')).toContain('worker_id=worker-1');
+  });
+
+  it('never links others to the reports', async () => {
+    await render(false, 'available');
+    expect(host().querySelector('[data-prompts-link]')).toBeNull();
   });
 
   it('shows moderators the count, with the history folded and unread', async () => {

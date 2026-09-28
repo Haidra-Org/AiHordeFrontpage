@@ -139,15 +139,38 @@ Each probe runs to its answer even when its caller leaves, so an endpoint is pro
 queue's endpoint is absent, `/admin/review` says review is not available on this horde and links back to the
 dashboard. The prompt log is probed once with its cheapest read.
 
-`/admin/review` holds two tabs, chosen by the `tab` query parameter (`promotions`, `paused`).
+`/admin/review` holds three tabs, chosen by the `tab` query parameter (`prompts`, `promotions`, `paused`).
 Each queue list is an ARIA grid (`ReviewGridDirective`) beside the open item's detail; below 1024px the detail replaces
 the list and carries a way back. Confirmations go through `AdminDialogComponent`.
+
+Prompts (`ReviewPromptsComponent`) is the prompt log newest first, filtered by `user_id`, `proxied_account`, `ipaddr`,
+`worker_id`, a `period` (`day`, `week`, else everything the horde keeps, which is 30 days) or a `since`/`until` a link
+names, and the reasons shown (`prompt_reason`, repeated; every reason when absent). The filters live in the address;
+the reading position does not, and Load more appends. Reasons are chosen over the reports loaded, with a count of how
+many are shown, unless the prompt log's one-row probe returned a row carrying `held_until`
+(`AdminModerationService.promptReasonFilter`): reason filtering and evidence holds came in one horde release, and the
+row's shape decides rather than the version, which unrelated horde branches can share. A probe with no rows settles as
+no filter. Where the horde filters, every chosen reason is sent as a repeated `reason` whenever fewer than all are
+chosen, and the list waits for the probe before its first read. While one reason is on, its chip is marked as not
+toggleable. A stage of a report's text that repeats the stage before it says so in place of the text. Each account, proxied account, address and worker in a report pivots the tab onto it, and accounts and
+workers also link to their admin page. The list is `ReviewSubjectEventsComponent` given a `query`, which reads its own
+first page.
+
+On a horde whose reports carry `held_until`, each report can be kept past the 30-day retention with a hold of 7, 30 or
+90 days and a note, or released with an optional note. The hold controls, the "Kept until" marker on a collapsed row
+and the Prompts tab's line about holds all show only when the loaded reports carry the field.
 
 Paused workers (`ReviewPausedWorkersComponent`) reads its own overview, up to 500 workers, and offers the
 kind, suspicion cause, online and order filters only once the horde has answered with `paused_workers_total`,
 which is also what the tab badge counts; the owner filters (trusted, flagged, at the suspicion limit) narrow
 the loaded list on the page. Bulk unpause and maintenance run one worker at a time, 400 ms apart, can stop
 between workers, and end with a summary that lists each refusal with the horde's message.
+
+The account page's `UserModerationRecordComponent` shows once the prompt log's probe answers, and reads nothing for
+the account before then: the account's reports by reason
+from one read of up to 100 (the last 30 days, the horde's retention), without prompt text, and a link to them in the
+Prompts tab. The worker card and the paused-worker detail link to the
+reports a worker made.
 
 ### UI Services
 

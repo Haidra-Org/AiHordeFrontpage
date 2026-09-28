@@ -14,7 +14,7 @@ import {
 import { formatUptime } from '../../../helper/account-age';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Dialog, DialogRef, DialogModule } from '@angular/cdk/dialog';
-import { RouterLink } from '@angular/router';
+import { Params, RouterLink } from '@angular/router';
 import {
   TranslocoPipe,
   TranslocoModule,
@@ -49,6 +49,8 @@ import { IconComponent } from '../../../components/icon/icon.component';
 import { SuspicionHistoryComponent } from '../../../components/admin/suspicion-history/suspicion-history.component';
 import { GlossaryService } from '../../../services/glossary.service';
 import { ToastService } from '../../../services/toast.service';
+import { AdminModerationService } from '../../../services/admin-moderation.service';
+import { DEFAULT_PROMPTS, promptsParams } from '../review/review-query';
 
 @Component({
   selector: 'app-worker-card',
@@ -83,6 +85,7 @@ export class WorkerCardComponent {
   private readonly unitConversion = inject(UnitConversionService);
   private readonly cdkDialog = inject(Dialog);
   private readonly glossary = inject(GlossaryService);
+  private readonly moderation = inject(AdminModerationService);
   private readonly toastService = inject(ToastService);
 
   private readonly dialogTpl =
@@ -110,6 +113,18 @@ export class WorkerCardComponent {
   public showSuccess = signal<boolean>(false);
   public deleteError = signal<string | null>(null);
   public deleteNameConfirm = signal<string>('');
+  /** Whether the card links to the reports this worker made. */
+  public readonly promptsLinked = computed(
+    () =>
+      this.isModerator() &&
+      this.moderation.promptEventsAvailability() === 'available',
+  );
+
+  /** The Prompts tab filtered to this worker. */
+  public readonly promptsQuery = computed<Params>(() =>
+    promptsParams({ ...DEFAULT_PROMPTS, worker_id: this.worker().id }),
+  );
+
   public readonly deleteConfirmValid = computed(
     () => this.deleteNameConfirm() === this.worker().name,
   );

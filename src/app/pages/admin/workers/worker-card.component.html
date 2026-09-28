@@ -1060,6 +1060,15 @@
           mode="disclosure"
           [filter]="{ worker_id: worker().id }"
         />
+        @if (promptsLinked()) {
+          <a
+            class="hd-btn hd-btn--ghost hd-btn--dense"
+            routerLink="/admin/review"
+            [queryParams]="promptsQuery()"
+            data-prompts-link
+            >{{ "admin.workers.card.worker_reports" | transloco }}</a
+          >
+        }
       </div>
     }
   </div>

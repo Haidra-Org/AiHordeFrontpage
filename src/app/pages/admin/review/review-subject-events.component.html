@@ -1,0 +1,656 @@
+<section
+  class="review-detail-section"
+  aria-labelledby="review-events-title"
+  [attr.aria-busy]="list().loading"
+  [attr.data-range-events]="inRange() ? '' : null"
+  data-events
+>
+  <h4 id="review-events-title" class="review-detail-subtitle">
+    {{
+      (inRange()
+        ? "admin.review.reports.events.range_title"
+        : "admin.review.reports.events.all_title"
+      ) | transloco
+    }}
+  </h4>
+  <p class="review-detail-note">
+    {{ "admin.review.reports.events.text_hidden" | transloco }}
+  </p>
+  @if (list().events.length > 0) {
+    <div class="review-event-actions review-reveal-all" data-reveal-rejections>
+      <button
+        type="button"
+        class="hd-btn hd-btn--tonal hd-btn--dense"
+        [attr.aria-pressed]="rejectionsRevealed()"
+        (click)="toggleRejectionsRevealed()"
+      >
+        {{ "admin.review.reports.events.reveal_rejections" | transloco }}
+      </button>
+      <p class="review-detail-note">
+        {{ "admin.review.reports.events.reveal_rejections_note" | transloco }}
+      </p>
+    </div>
+  }
+  @if (narrowed()) {
+    <p class="review-detail-note" role="status" data-shown-count>
+      {{
+        plural(
+          "admin.review.reports.events.shown_of_loaded",
+          list().events.length
+        )
+          | transloco
+            : { shown: shownEvents().length, loaded: list().events.length }
+      }}
+    </p>
+  }
+  @if (shownEvents().length > 0) {
+    <ol class="review-events">
+      @for (event of shownEvents(); track event.id) {
+        <ng-container
+          *ngTemplateOutlet="eventItem; context: { $implicit: event }"
+        />
+      }
+    </ol>
+  } @else if (!list().loading && !list().failed) {
+    <p class="review-detail-note">
+      {{
+        (narrowed()
+          ? "admin.review.reports.events.none_shown"
+          : inRange()
+            ? "admin.review.reports.events.range_none"
+            : standalone()
+              ? "admin.review.reports.events.none_match"
+              : "admin.review.reports.events.none"
+        ) | transloco
+      }}
+    </p>
+  }
+  @if (list().loading) {
+    <div class="hd-skeleton" aria-hidden="true">
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+      <span class="hd-skeleton-bar hd-skeleton-bar--wide"></span>
+    </div>
+  } @else if (list().failed || list().cursor !== null) {
+    <button type="button" class="hd-btn review-load-more" (click)="loadMore()">
+      {{
+        (list().failed ? "admin.review.try_again" : "admin.review.load_more")
+          | transloco
+      }}
+    </button>
+  }
+</section>
+
+<ng-template #eventItem let-event>
+  <li
+    class="review-event"
+    [attr.data-reason]="event.reason"
+    [attr.data-event]="event.id"
+  >
+    <div class="review-event-row">
+      <button
+        type="button"
+        class="review-event-toggle"
+        [attr.aria-expanded]="isExpanded(event.id)"
+        [attr.aria-controls]="'review-event-body-' + event.id"
+        (click)="toggleExpanded(event.id)"
+        data-event-toggle
+      >
+        <app-icon
+          [name]="isExpanded(event.id) ? 'chevron-down' : 'chevron-right'"
+          class="review-event-chevron"
+          aria-hidden="true"
+        />
+        <span class="review-sev" [attr.data-reason]="event.reason">{{
+          reasonKey(event.reason) | transloco
+        }}</span>
+        <time
+          class="review-row-time"
+          [attr.datetime]="hordeTime(event.created)?.toISOString()"
+          >{{ hordeTime(event.created) | date: "short" }}</time
+        >
+      </button>
+      @if (accountInRow() && event.user_id !== null) {
+        <a
+          class="review-link review-event-cell"
+          routerLink="/admin/review"
+          [queryParams]="pivot({ user_id: event.user_id })"
+          queryParamsHandling="merge"
+          [attr.aria-label]="
+            'admin.review.reports.events.pivot'
+              | transloco
+                : {
+                    name:
+                      'admin.review.account_short'
+                      | transloco: { id: event.user_id },
+                  }
+          "
+          data-pivot="account"
+          >{{
+            "admin.review.account_short" | transloco: { id: event.user_id }
+          }}</a
+        >
+      }
+      @if (event.worker_id) {
+        <a
+          class="review-link review-event-cell"
+          routerLink="/admin/review"
+          [queryParams]="pivot({ worker_id: event.worker_id })"
+          queryParamsHandling="merge"
+          [attr.aria-label]="
+            'admin.review.reports.events.pivot'
+              | transloco: { name: workerName(event.worker_id) }
+          "
+          data-pivot="worker"
+          >{{ workerName(event.worker_id) }}</a
+        >
+      }
+      @for (model of event.models ?? []; track model) {
+        <a
+          class="review-link review-event-cell"
+          [routerLink]="['/details/models/name', model]"
+          >{{ model }}</a
+        >
+      }
+      @if (event.ipaddr && kind() !== "ip") {
+        <a
+          class="review-link review-code review-event-cell"
+          routerLink="/admin/review"
+          [queryParams]="pivot({ ipaddr: event.ipaddr })"
+          queryParamsHandling="merge"
+          [attr.aria-label]="
+            'admin.review.reports.events.pivot'
+              | transloco: { name: event.ipaddr }
+          "
+          data-pivot="ip"
+          >{{ event.ipaddr }}</a
+        >
+      }
+      @if (isCovered(event)) {
+        <span class="review-event-covered" data-covered>{{
+          "admin.review.reports.events.covered" | transloco
+        }}</span>
+      }
+      @if (event.held_until) {
+        <span class="review-event-held" data-held-marker>{{
+          "admin.review.reports.events.hold_until"
+            | transloco
+              : { date: (hordeTime(event.held_until) | date: "medium") }
+        }}</span>
+      }
+    </div>
+
+    @if (!isExpanded(event.id) && !revealsAlone(event)) {
+      <ng-container *ngTemplateOutlet="stages; context: { $implicit: event }" />
+    }
+
+    @if (isExpanded(event.id)) {
+      <div class="review-event-body" [id]="'review-event-body-' + event.id">
+        <p class="review-event-head">
+          <span class="review-row-id">#{{ event.id }}</span>
+          <span class="review-event-outcome">{{
+            outcomeKey(event.outcome) | transloco
+          }}</span>
+        </p>
+        <dl class="review-facts review-facts--dense">
+          @if (kind() !== "account") {
+            <div class="review-fact">
+              <dt>{{ "admin.review.field.account" | transloco }}</dt>
+              <dd>
+                <a
+                  class="review-link"
+                  routerLink="/admin/review"
+                  [queryParams]="pivot({ user_id: event.user_id })"
+                  queryParamsHandling="merge"
+                  [attr.aria-label]="
+                    'admin.review.reports.events.pivot'
+                      | transloco
+                        : {
+                            name:
+                              'admin.review.account_short'
+                              | transloco: { id: event.user_id },
+                          }
+                  "
+                  data-pivot="account"
+                  >{{
+                    "admin.review.account_short"
+                      | transloco: { id: event.user_id }
+                  }}</a
+                >
+                <a
+                  class="review-link"
+                  [routerLink]="['/admin/users', event.user_id]"
+                  data-admin-page="account"
+                  >{{
+                    "admin.review.reports.events.account_page" | transloco
+                  }}</a
+                >
+              </dd>
+            </div>
+          }
+          @if (event.proxied_account && kind() !== "proxied_account") {
+            <div class="review-fact">
+              <dt>
+                {{ "admin.review.reports.kind.proxied_account" | transloco }}
+              </dt>
+              <dd class="review-code">
+                <a
+                  class="review-link"
+                  routerLink="/admin/review"
+                  [queryParams]="
+                    pivot({
+                      user_id: event.user_id,
+                      proxied_account: event.proxied_account,
+                    })
+                  "
+                  queryParamsHandling="merge"
+                  [attr.aria-label]="
+                    'admin.review.reports.events.pivot'
+                      | transloco: { name: event.proxied_account }
+                  "
+                  data-pivot="proxied_account"
+                  >{{ event.proxied_account }}</a
+                >
+              </dd>
+            </div>
+          }
+          @if (event.ipaddr && kind() !== "ip") {
+            <div class="review-fact">
+              <dt>{{ "admin.review.reports.kind.ip" | transloco }}</dt>
+              <dd class="review-code">
+                <a
+                  class="review-link"
+                  routerLink="/admin/review"
+                  [queryParams]="pivot({ ipaddr: event.ipaddr })"
+                  queryParamsHandling="merge"
+                  [attr.aria-label]="
+                    'admin.review.reports.events.pivot'
+                      | transloco: { name: event.ipaddr }
+                  "
+                  >{{ event.ipaddr }}</a
+                >
+              </dd>
+            </div>
+          }
+          @if (event.models?.length) {
+            <div class="review-fact">
+              <dt>{{ "admin.review.reports.events.models" | transloco }}</dt>
+              <dd>
+                @for (model of event.models; track model) {
+                  <a
+                    class="review-link"
+                    [routerLink]="['/details/models/name', model]"
+                    >{{ model }}</a
+                  >
+                }
+              </dd>
+            </div>
+          }
+          <div class="review-fact">
+            <dt>{{ "admin.review.reports.events.worker" | transloco }}</dt>
+            <dd>
+              @if (event.worker_id) {
+                <a
+                  class="review-link"
+                  routerLink="/admin/review"
+                  [queryParams]="pivot({ worker_id: event.worker_id })"
+                  queryParamsHandling="merge"
+                  [attr.aria-label]="
+                    'admin.review.reports.events.pivot'
+                      | transloco: { name: workerName(event.worker_id) }
+                  "
+                  >{{ workerName(event.worker_id) }}</a
+                >
+                <a
+                  class="review-link"
+                  routerLink="/admin/workers"
+                  [queryParams]="{ worker: event.worker_id }"
+                  data-admin-page="worker"
+                  >{{
+                    "admin.review.reports.events.worker_page" | transloco
+                  }}</a
+                >
+              } @else {
+                {{ "admin.review.not_recorded" | transloco }}
+              }
+            </dd>
+          </div>
+          <div class="review-fact">
+            <dt>{{ "admin.review.reports.events.request" | transloco }}</dt>
+            <dd class="review-code">
+              {{
+                event.request_id ?? ("admin.review.not_recorded" | transloco)
+              }}
+            </dd>
+          </div>
+        </dl>
+
+        @if (event.reason === "worker_csam") {
+          <p class="hd-callout review-caution" role="note">
+            {{ "admin.review.reports.events.csam_caution" | transloco }}
+          </p>
+        }
+
+        <div class="review-event-actions">
+          @if (revealsAlone(event)) {
+            <button
+              type="button"
+              class="hd-btn hd-btn--tonal hd-btn--dense"
+              [attr.aria-controls]="'review-event-text-' + event.id"
+              [attr.aria-expanded]="isRevealed(event)"
+              (click)="toggleReveal(event.id)"
+            >
+              <app-icon
+                [name]="isRevealed(event) ? 'chevron-up' : 'chevron-down'"
+                class="icon-sm"
+                aria-hidden="true"
+              />
+              {{
+                (isRevealed(event)
+                  ? "admin.review.reports.events.text_hide"
+                  : "admin.review.reports.events.text_show"
+                ) | transloco
+              }}
+            </button>
+          }
+          @if (noteFor() !== event.id) {
+            <button
+              type="button"
+              class="hd-btn hd-btn--ghost hd-btn--dense"
+              data-opens="note"
+              (click)="startNote(event.id)"
+            >
+              {{ "admin.review.reports.events.note_add" | transloco }}
+            </button>
+          }
+          @if (canHold(event) && holdFor() !== event.id) {
+            <button
+              type="button"
+              class="hd-btn hd-btn--ghost hd-btn--dense"
+              [disabled]="savingHold()"
+              data-opens="hold"
+              (click)="startHold(event.id)"
+            >
+              {{
+                (event.held_until
+                  ? "admin.review.reports.events.hold_renew"
+                  : "admin.review.reports.events.hold_add"
+                ) | transloco
+              }}
+            </button>
+          }
+          @if (
+            canHold(event) &&
+            event.held_until &&
+            releaseFor() !== event.id &&
+            holdFor() !== event.id
+          ) {
+            <button
+              type="button"
+              class="hd-btn hd-btn--ghost hd-btn--dense"
+              [disabled]="savingHold()"
+              data-opens="release"
+              (click)="startRelease(event.id)"
+            >
+              {{ "admin.review.reports.events.hold_release" | transloco }}
+            </button>
+          }
+          @if (event.worker_id && canPause()) {
+            <button
+              type="button"
+              class="hd-btn hd-btn--ghost hd-btn--dense"
+              (click)="pauseWorker.emit(event.worker_id)"
+            >
+              {{ "admin.review.reports.action.pause_worker" | transloco }}
+            </button>
+          }
+        </div>
+
+        @if (canHold(event) && event.held_until) {
+          <p class="review-detail-note" data-hold-expiry>
+            {{
+              "admin.review.reports.events.hold_until"
+                | transloco
+                  : { date: (hordeTime(event.held_until) | date: "medium") }
+            }}
+          </p>
+        }
+        @if (releaseFor() === event.id) {
+          <div
+            class="review-note-form"
+            data-release-confirm
+            data-form="release"
+          >
+            <p class="review-detail-note">
+              {{
+                "admin.review.reports.events.hold_release_warning" | transloco
+              }}
+            </p>
+            <label
+              class="hd-label"
+              [for]="'review-event-release-note-' + event.id"
+              >{{
+                "admin.review.reports.events.hold_release_note" | transloco
+              }}</label
+            >
+            <textarea
+              #releaseNoteField
+              class="hd-textarea"
+              rows="2"
+              [id]="'review-event-release-note-' + event.id"
+              [attr.maxlength]="noteLimit"
+              [value]="releaseNote()"
+              (input)="setReleaseNote(releaseNoteField.value)"
+            ></textarea>
+            <div class="review-decisions">
+              <button
+                type="button"
+                class="hd-btn hd-btn--primary hd-btn--dense"
+                [disabled]="savingHold()"
+                (click)="releaseHold(event.id)"
+              >
+                {{
+                  "admin.review.reports.events.hold_release_confirm" | transloco
+                }}
+              </button>
+              <button
+                type="button"
+                class="hd-btn hd-btn--ghost hd-btn--dense"
+                [disabled]="savingHold()"
+                (click)="cancelRelease()"
+              >
+                {{ "admin.review.cancel" | transloco }}
+              </button>
+            </div>
+          </div>
+        }
+
+        <ng-container
+          *ngTemplateOutlet="stages; context: { $implicit: event }"
+        />
+
+        @if (event.notes.length > 0) {
+          <ul
+            class="review-notes"
+            [attr.aria-label]="
+              'admin.review.reports.events.notes_label' | transloco
+            "
+          >
+            @for (note of event.notes; track note.id) {
+              <li class="review-note">
+                <span class="review-note-meta">
+                  <a
+                    class="review-link"
+                    [routerLink]="['/admin/users', note.author_id]"
+                    >{{
+                      "admin.review.account_short"
+                        | transloco: { id: note.author_id }
+                    }}</a
+                  >
+                  <time
+                    [attr.datetime]="hordeTime(note.created)?.toISOString()"
+                    >{{ hordeTime(note.created) | date: "short" }}</time
+                  >
+                </span>
+                <span class="review-prose">{{ note.note }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (noteFor() === event.id) {
+          <form
+            class="review-note-form"
+            data-form="note"
+            (submit)="$event.preventDefault(); saveNote()"
+          >
+            <label class="hd-label" [for]="'review-event-note-' + event.id">{{
+              "admin.review.reports.events.note_label"
+                | transloco: { id: event.id }
+            }}</label>
+            <textarea
+              #noteField
+              class="hd-textarea"
+              rows="2"
+              [id]="'review-event-note-' + event.id"
+              [attr.maxlength]="noteLimit"
+              [value]="noteDraft()"
+              (input)="setNoteDraft(noteField.value)"
+            ></textarea>
+            <div class="review-decisions">
+              <button
+                type="submit"
+                class="hd-btn hd-btn--primary hd-btn--dense"
+                [disabled]="savingNote() || !noteDraft().trim()"
+              >
+                {{ "admin.review.reports.events.note_save" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="hd-btn hd-btn--ghost hd-btn--dense"
+                [disabled]="savingNote()"
+                (click)="cancelNote()"
+              >
+                {{ "admin.review.cancel" | transloco }}
+              </button>
+            </div>
+          </form>
+        }
+        @if (holdFor() === event.id) {
+          <form
+            class="review-note-form"
+            data-hold-form
+            data-form="hold"
+            (submit)="$event.preventDefault(); saveHold()"
+          >
+            <label
+              class="hd-label"
+              [for]="'review-event-hold-days-' + event.id"
+              >{{
+                "admin.review.reports.events.hold_duration" | transloco
+              }}</label
+            >
+            <select
+              #holdDaysField
+              class="hd-input"
+              [id]="'review-event-hold-days-' + event.id"
+              [value]="holdDays()"
+              [attr.aria-describedby]="
+                event.held_until ? 'review-event-hold-keeps-' + event.id : null
+              "
+              (change)="setHoldDays(holdDaysField.value)"
+            >
+              <option value="7">
+                {{ "admin.review.reports.events.hold_7_days" | transloco }}
+              </option>
+              <option value="30">
+                {{ "admin.review.reports.events.hold_30_days" | transloco }}
+              </option>
+              <option value="90">
+                {{ "admin.review.reports.events.hold_90_days" | transloco }}
+              </option>
+            </select>
+            @if (event.held_until) {
+              <p
+                class="review-detail-note"
+                [id]="'review-event-hold-keeps-' + event.id"
+                data-hold-keeps
+              >
+                {{ "admin.review.reports.events.hold_keeps_later" | transloco }}
+              </p>
+            }
+            <label
+              class="hd-label"
+              [for]="'review-event-hold-note-' + event.id"
+              >{{ "admin.review.reports.events.hold_note" | transloco }}</label
+            >
+            <textarea
+              #holdNoteField
+              class="hd-textarea"
+              rows="2"
+              [id]="'review-event-hold-note-' + event.id"
+              [attr.maxlength]="noteLimit"
+              [value]="holdNote()"
+              (input)="setHoldNote(holdNoteField.value)"
+            ></textarea>
+            <div class="review-decisions">
+              <button
+                type="submit"
+                class="hd-btn hd-btn--primary hd-btn--dense"
+                [disabled]="savingHold() || !holdNote().trim()"
+              >
+                {{ "admin.review.reports.events.hold_save" | transloco }}
+              </button>
+              <button
+                type="button"
+                class="hd-btn hd-btn--ghost hd-btn--dense"
+                [disabled]="savingHold()"
+                (click)="cancelHold()"
+              >
+                {{ "admin.review.cancel" | transloco }}
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    }
+  </li>
+</ng-template>
+
+<!--
+  Only the stages an event has are drawn. A null stage does not exist for
+  that reason (a rejection never reached a worker, so it has no text a
+  worker received), and is never a copy of another stage. A stage whose
+  text repeats the one before it says so instead of repeating it.
+-->
+<ng-template #stages let-event>
+  <div [id]="'review-event-text-' + event.id" class="review-stages">
+    @if (isRevealed(event)) {
+      @for (stage of stagesOf(event); track stage.labelKey) {
+        <div class="review-stage">
+          <h5 class="review-stage-label">
+            {{ stage.labelKey | transloco }}
+          </h5>
+          @if (stage.sameKey; as sameKey) {
+            <p class="review-detail-note" data-prompt-stage-same>
+              {{ sameKey | transloco }}
+            </p>
+          } @else {
+            <p class="review-stage-text" data-prompt-stage>
+              {{ stage.text }}
+            </p>
+          }
+        </div>
+      }
+      @if (!hasText(event)) {
+        <p class="review-detail-note">
+          {{ "admin.review.reports.events.text_none" | transloco }}
+        </p>
+      }
+      @if (event.text_truncated) {
+        <p class="review-detail-note">
+          {{ "admin.review.reports.events.truncated" | transloco }}
+        </p>
+      }
+    }
+  </div>
+</ng-template>

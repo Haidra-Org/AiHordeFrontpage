@@ -12,7 +12,9 @@ import {
   PLATFORM_ID,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
 import { Title } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe, isPlatformBrowser } from '@angular/common';
@@ -83,6 +85,8 @@ export class WorkerListComponent implements OnInit {
   public readonly auth = inject(AuthService);
   public readonly units = inject(UnitConversionService);
   private readonly glossary = inject(GlossaryService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   public viewMode = input<'admin' | 'public'>('admin');
   public titleKey = input<string>('admin.workers.title');
   public setPageTitle = input<boolean>(true);
@@ -92,6 +96,20 @@ export class WorkerListComponent implements OnInit {
 
   /** Worker ID to highlight and scroll to (from route). */
   public highlightWorkerId = input<string | null>(null);
+
+  /**
+   * The worker named by `?worker=` in the address, so a link from the review
+   * can open this page on one worker's card, where pausing lives.
+   */
+  private readonly queryWorkerId = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('worker'))),
+    { initialValue: null },
+  );
+
+  /** The worker to highlight: the one the route names, else the one the address names. */
+  private readonly highlightedId = computed(
+    () => this.highlightWorkerId() ?? this.queryWorkerId(),
+  );
 
   /** Owner ID to filter by (from route). */
   public filterOwnerId = input<string | null>(null);
@@ -150,7 +168,7 @@ export class WorkerListComponent implements OnInit {
 
     // Effect to detect worker type and scroll to highlighted worker
     effect(() => {
-      const workerId = this.highlightWorkerId();
+      const workerId = this.highlightedId();
       const workers = this.workers();
 
       if (workerId && workers.length > 0 && !this.initialTypeApplied) {
@@ -162,6 +180,20 @@ export class WorkerListComponent implements OnInit {
           this.pendingScrollToWorker = true;
         }
       }
+    });
+
+    // Once the highlighted worker's card is drawn, bring it into view.
+    effect(() => {
+      const workerId = this.highlightedId();
+      if (!isPlatformBrowser(this.platformId)) return;
+      if (!workerId || !this.pendingScrollToWorker) return;
+      if (!this.filteredWorkers().some((w) => w.id === workerId)) return;
+      this.pendingScrollToWorker = false;
+      setTimeout(() =>
+        document
+          .querySelector(`[data-worker-id="${CSS.escape(workerId)}"]`)
+          ?.scrollIntoView({ block: 'start' }),
+      );
     });
 
     // Fetch workers only in the browser after rendering completes.
@@ -218,7 +250,7 @@ export class WorkerListComponent implements OnInit {
     }
 
     // Sort - if there's a highlighted worker, put it first
-    const highlightId = this.highlightWorkerId();
+    const highlightId = this.highlightedId();
     const key = this.sortKey();
     const order = this.sortOrder();
 
@@ -280,7 +312,7 @@ export class WorkerListComponent implements OnInit {
 
   /** Check if a worker is highlighted (for styling). */
   public isWorkerHighlighted(workerId: string): boolean {
-    return this.highlightWorkerId() === workerId;
+    return this.highlightedId() === workerId;
   }
 
   /** Open the detail modal for a given worker (row click). */
@@ -491,6 +523,7 @@ export class WorkerListComponent implements OnInit {
       .subscribe({
         next: (workers) => {
           this.workers.set(workers);
+          this.addHighlightedWorker(workers);
         },
         error: (err: unknown) => {
           this.errorMessage.set(
@@ -498,6 +531,27 @@ export class WorkerListComponent implements OnInit {
           );
           this.workers.set([]);
         },
+      });
+  }
+
+  /**
+   * The horde lists only workers that checked in lately, so a worker named
+   * in the address can be missing from the list; it is read on its own and
+   * added, so the link still opens on its card.
+   */
+  private addHighlightedWorker(workers: HordeWorker[]): void {
+    const workerId = this.highlightedId();
+    if (!workerId || workers.some((w) => w.id === workerId)) return;
+    this.workerService
+      .getWorker(workerId)
+      .pipe(
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((worker) => {
+        if (worker && !this.workers().some((w) => w.id === worker.id)) {
+          this.workers.update((list) => [...list, worker]);
+        }
       });
   }
 
@@ -551,6 +605,13 @@ export class WorkerListComponent implements OnInit {
    */
   public onHighlightCleared(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (this.queryWorkerId() !== null && this.highlightWorkerId() === null) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { worker: null },
+        queryParamsHandling: 'merge',
+      });
+    }
     this.highlightCleared.emit();
   }
 

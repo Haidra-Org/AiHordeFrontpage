@@ -39,6 +39,12 @@
   }
 
   @switch (activeTab()) {
+    @case ("prompts") {
+      <app-review-prompts
+        [state]="prompts()"
+        (stateChange)="setPrompts($event)"
+      />
+    }
     @case ("promotions") {
       <app-review-promotions />
     }

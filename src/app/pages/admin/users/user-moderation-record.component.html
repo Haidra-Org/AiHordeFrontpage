@@ -1,4 +1,62 @@
 <div class="user-moderation">
+  @if (shown()) {
+    <section
+      class="hd-card user-moderation-reports"
+      aria-labelledby="user-moderation-reports-title"
+    >
+      <h3 id="user-moderation-reports-title" class="review-detail-subtitle">
+        {{ "admin.user_moderation.reports_title" | transloco }}
+      </h3>
+      <dl class="review-facts">
+        @if (summary(); as summary) {
+          <div class="review-fact">
+            <dt>
+              {{
+                "admin.user_moderation.reports_in"
+                  | transloco
+                    : {
+                        window:
+                          duration(summary.window).key
+                          | transloco
+                            : { count: duration(summary.window).count },
+                      }
+              }}
+            </dt>
+            <dd data-report-count="all">
+              <app-moderation-count [value]="summary.total" />
+            </dd>
+          </div>
+          @for (entry of summary.byReason; track entry.reason) {
+            <div class="review-fact">
+              <dt>{{ "admin.review.reason." + entry.reason | transloco }}</dt>
+              <dd [attr.data-report-count]="entry.reason">{{ entry.count }}</dd>
+            </div>
+          }
+        }
+      </dl>
+      @if (summary()?.total?.atLeast) {
+        <p class="review-detail-note">
+          {{
+            "admin.user_moderation.reports_sample"
+              | transloco: { count: summary()!.total.count }
+          }}
+        </p>
+      }
+      <p class="review-detail-note">
+        {{ "admin.user_moderation.reports_note" | transloco }}
+      </p>
+      <div class="review-decisions">
+        <a
+          class="hd-btn user-moderation-open"
+          routerLink="/admin/review"
+          [queryParams]="promptsQuery()"
+          data-prompts-link
+          >{{ "admin.user_moderation.open_prompts" | transloco }}</a
+        >
+      </div>
+    </section>
+  }
+
   <app-suspicion-history mode="disclosure" [filter]="{ user_id: userId() }">
     <p class="review-detail-note">
       {{ "admin.user_moderation.history_scope" | transloco }}

@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { map } from 'rxjs';
 import { TranslatorService } from '../../../services/translator.service';
@@ -19,7 +19,13 @@ import {
 import { ModerationCountComponent } from '../../../components/admin/moderation-count/moderation-count.component';
 import { setPageTitle } from '../../../helper/page-title';
 import { ListCount } from '../../../types/moderation';
-import { ReviewTab, parseReviewQuery } from './review-query';
+import {
+  PromptsState,
+  ReviewTab,
+  parseReviewQuery,
+  promptsParams,
+} from './review-query';
+import { ReviewPromptsComponent } from './review-prompts.component';
 import { ReviewPromotionsComponent } from './review-promotions.component';
 import { ReviewPausedWorkersComponent } from './review-paused-workers.component';
 
@@ -30,8 +36,8 @@ interface ReviewTabView {
 }
 
 /**
- * The moderator review queues. The tab lives in the address, so a link can
- * open the page on one queue.
+ * The moderator review queues. The tab, and on Prompts the filters, live in
+ * the address, so a link can open the page on one queue already filtered.
  */
 @Component({
   selector: 'app-admin-review',
@@ -39,6 +45,7 @@ interface ReviewTabView {
     TranslocoPipe,
     RouterLink,
     ModerationCountComponent,
+    ReviewPromptsComponent,
     ReviewPromotionsComponent,
     ReviewPausedWorkersComponent,
   ],
@@ -50,6 +57,7 @@ export class ReviewComponent implements OnInit {
   private readonly translator = inject(TranslatorService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   public readonly counts = inject(ModerationCountsService);
 
   private readonly query = toSignal(
@@ -57,9 +65,18 @@ export class ReviewComponent implements OnInit {
     { initialValue: parseReviewQuery(this.route.snapshot.queryParamMap) },
   );
 
+  public readonly prompts = computed(() => this.query().prompts);
+
   /** Only the queues whose endpoint has answered. */
   public readonly tabs = computed<readonly ReviewTabView[]>(() => {
     const tabs: ReviewTabView[] = [];
+    if (this.counts.promptsAvailable()) {
+      tabs.push({
+        id: 'prompts',
+        labelKey: 'admin.review.tabs.prompts',
+        count: null,
+      });
+    }
     if (this.counts.overviewAvailable()) {
       const eligible = this.counts.eligible();
       const blocked = this.counts.blocked();
@@ -104,5 +121,13 @@ export class ReviewComponent implements OnInit {
       'admin.review.title',
     );
     this.counts.refreshIfStale();
+  }
+
+  public setPrompts(state: PromptsState): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: promptsParams(state),
+      queryParamsHandling: 'merge',
+    });
   }
 }

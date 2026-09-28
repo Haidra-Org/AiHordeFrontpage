@@ -13,7 +13,14 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { BehaviorSubject, map, of } from 'rxjs';
 import { vi } from 'vitest';
 import { ReviewComponent } from './review.component';
-import { parseReviewQuery } from './review-query';
+import {
+  DEFAULT_PROMPTS,
+  PromptsState,
+  parseReviewQuery,
+  promptPivotParams,
+  promptQueryOf,
+  promptsParams,
+} from './review-query';
 import { ModerationCountsService } from '../../../services/moderation-counts.service';
 import { TranslatorService } from '../../../services/translator.service';
 import { ListCount } from '../../../types/moderation';
@@ -33,6 +40,151 @@ describe('parseReviewQuery', () => {
       ),
     ).toEqual({
       tab: null,
+      prompts: DEFAULT_PROMPTS,
+    });
+  });
+});
+
+describe('Prompts tab address', () => {
+  const now = Date.parse('2026-09-26T12:00:00Z');
+
+  it('reads the filters, the period and the reasons, and ignores what it does not know', () => {
+    expect(
+      parseReviewQuery(
+        convertToParamMap({
+          tab: 'prompts',
+          user_id: '42',
+          proxied_account: 'bot:7',
+          ipaddr: '2001:db8::/64',
+          worker_id: 'w-1',
+          period: 'week',
+          prompt_reason: ['worker_csam', 'nonsense'],
+        }),
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        tab: 'prompts',
+        prompts: {
+          user_id: 42,
+          proxied_account: 'bot:7',
+          ipaddr: '2001:db8::/64',
+          worker_id: 'w-1',
+          period: 'week',
+          since: null,
+          until: null,
+          reasons: ['worker_csam'],
+        },
+      }),
+    );
+    expect(
+      parseReviewQuery(
+        convertToParamMap({
+          user_id: 'x',
+          period: 'year',
+          since: '2026-09-01T00:00:00',
+          prompt_reason: 'nonsense',
+        }),
+      ).prompts,
+    ).toEqual(DEFAULT_PROMPTS);
+  });
+
+  it('writes values at their default as removals, and round-trips', () => {
+    expect(promptsParams(DEFAULT_PROMPTS)).toEqual({
+      tab: 'prompts',
+      user_id: null,
+      proxied_account: null,
+      ipaddr: null,
+      worker_id: null,
+      period: null,
+      since: null,
+      until: null,
+      prompt_reason: null,
+    });
+    const state: PromptsState = {
+      user_id: 42,
+      proxied_account: null,
+      ipaddr: '10.0.0.1',
+      worker_id: null,
+      period: 'day',
+      since: new Date('2026-09-20T00:00:00Z'),
+      until: new Date('2026-09-21T00:00:00Z'),
+      reasons: ['filter_rejection', 'worker_csam'],
+    };
+    // The router writes every value into the address as text.
+    const address: Params = Object.fromEntries(
+      Object.entries(promptsParams(state))
+        .filter(([, value]) => value !== null)
+        .map(([key, value]) => [
+          key,
+          Array.isArray(value) ? value.map(String) : String(value),
+        ]),
+    );
+    expect(parseReviewQuery(convertToParamMap(address)).prompts).toEqual(state);
+  });
+
+  it('pivots onto one identity, clearing the others and keeping the rest of the address', () => {
+    expect(promptPivotParams({ ipaddr: '10.0.0.1' })).toEqual({
+      tab: 'prompts',
+      user_id: null,
+      proxied_account: null,
+      ipaddr: '10.0.0.1',
+      worker_id: null,
+    });
+  });
+
+  it('asks for the filters and the period, with no reason while the horde cannot filter by one', () => {
+    expect(
+      promptQueryOf(
+        {
+          ...DEFAULT_PROMPTS,
+          user_id: 42,
+          worker_id: 'w-1',
+          period: 'day',
+          reasons: ['worker_csam'],
+        },
+        now,
+        false,
+      ),
+    ).toEqual({
+      user_id: 42,
+      worker_id: 'w-1',
+      since: '2026-09-25T12:00:00+00:00',
+    });
+    expect(promptQueryOf(DEFAULT_PROMPTS, now, false)).toEqual({});
+  });
+
+  it('sends every selected reason to a horde that filters by it', () => {
+    expect(
+      promptQueryOf(
+        { ...DEFAULT_PROMPTS, reasons: ['worker_csam'] },
+        now,
+        true,
+      ),
+    ).toEqual({ reason: ['worker_csam'] });
+    expect(
+      promptQueryOf(
+        { ...DEFAULT_PROMPTS, reasons: ['worker_csam', 'model_rejection'] },
+        now,
+        true,
+      ),
+    ).toEqual({ reason: ['model_rejection', 'worker_csam'] });
+  });
+
+  it('lets a named range stand in for the period', () => {
+    expect(
+      promptQueryOf(
+        {
+          ...DEFAULT_PROMPTS,
+          period: 'week',
+          since: new Date('2026-09-20T00:00:00Z'),
+          until: new Date('2026-09-21T00:00:00Z'),
+        },
+        now,
+        false,
+      ),
+    ).toEqual({
+      since: '2026-09-20T00:00:00+00:00',
+      until: '2026-09-21T00:00:00+00:00',
     });
   });
 });
@@ -43,6 +195,7 @@ describe('ReviewComponent', () => {
   let query: BehaviorSubject<Params>;
   let router: { navigate: ReturnType<typeof vi.fn> };
   let counts: {
+    promptsAvailable: WritableSignal<boolean>;
     overviewAvailable: WritableSignal<boolean>;
     loading: WritableSignal<boolean>;
     eligible: WritableSignal<ListCount | null>;
@@ -89,6 +242,7 @@ describe('ReviewComponent', () => {
   beforeEach(() => {
     router = { navigate: vi.fn().mockResolvedValue(true) };
     counts = {
+      promptsAvailable: signal(true),
       overviewAvailable: signal(true),
       loading: signal(false),
       eligible: signal({ count: 2, atLeast: false }),
@@ -109,6 +263,7 @@ describe('ReviewComponent', () => {
   it('sums the trusted status queues', async () => {
     await render({});
     expect(component.tabs()).toEqual([
+      { id: 'prompts', labelKey: 'admin.review.tabs.prompts', count: null },
       {
         id: 'promotions',
         labelKey: 'admin.review.tabs.promotions',
@@ -122,24 +277,52 @@ describe('ReviewComponent', () => {
     await render({ tab: 'reports' });
 
     expect(component.tabs().map((tab) => tab.id)).toEqual([
+      'prompts',
       'promotions',
       'paused',
     ]);
-    expect(component.activeTab()).toBe('promotions');
+    expect(component.activeTab()).toBe('prompts');
+  });
+
+  it('shows the Prompts tab on its own endpoint, without the report listings', async () => {
+    counts.overviewAvailable.set(false);
+    await render({ tab: 'prompts', worker_id: 'w-1' });
+
+    expect(component.tabs().map((tab) => tab.id)).toEqual(['prompts']);
+    expect(component.activeTab()).toBe('prompts');
+    expect(component.prompts().worker_id).toBe('w-1');
+  });
+
+  it('writes a changed Prompts state back into the address', async () => {
+    await render({ tab: 'prompts' });
+    component.setPrompts({ ...DEFAULT_PROMPTS, ipaddr: '10.0.0.1' });
+
+    expect(router.navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({
+          tab: 'prompts',
+          ipaddr: '10.0.0.1',
+          user_id: null,
+        }),
+        queryParamsHandling: 'merge',
+      }),
+    );
   });
 
   it('waits for a named queue that is still being asked for', async () => {
-    counts.overviewAvailable.set(false);
+    counts.promptsAvailable.set(false);
     counts.loading.set(true);
-    await render({ tab: 'paused' });
+    await render({ tab: 'prompts' });
     expect(component.activeTab()).toBeNull();
 
-    counts.overviewAvailable.set(true);
+    counts.promptsAvailable.set(true);
     counts.loading.set(false);
-    expect(component.activeTab()).toBe('paused');
+    expect(component.activeTab()).toBe('prompts');
   });
 
   it('shows no tab at all when no queue has answered', async () => {
+    counts.promptsAvailable.set(false);
     counts.overviewAvailable.set(false);
     await render({});
 
@@ -170,6 +353,7 @@ describe('ReviewComponent with nothing to show', () => {
         {
           provide: ModerationCountsService,
           useValue: {
+            promptsAvailable: off(),
             overviewAvailable: off(),
             loading: off(),
             noneAvailable,

@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { WritableSignal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
@@ -115,6 +115,7 @@ describe('ReviewPausedWorkersComponent', () => {
   };
   let counts: {
     refreshOverview: ReturnType<typeof vi.fn>;
+    promptsAvailable: WritableSignal<boolean>;
   };
 
   const host = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -174,7 +175,7 @@ describe('ReviewPausedWorkersComponent', () => {
       setPaused: vi.fn(() => of({ paused: false })),
       setMaintenance: vi.fn(() => of({ maintenance: true })),
     };
-    counts = { refreshOverview: vi.fn() };
+    counts = { refreshOverview: vi.fn(), promptsAvailable: signal(false) };
   });
 
   it('offers no filters to a horde that states no total, and sends none', async () => {
@@ -326,5 +327,20 @@ describe('ReviewPausedWorkersComponent', () => {
 
     expect(workers.setPaused).toHaveBeenCalledWith('c', false);
     expect(moderation.invalidate).toHaveBeenCalled();
+  });
+
+  it('links the open worker to the reports it made once the prompt log answers', async () => {
+    await render();
+    component.open('c');
+    fixture.detectChanges();
+    expect(host().querySelector('[data-prompts-link]')).toBeNull();
+
+    counts.promptsAvailable.set(true);
+    fixture.detectChanges();
+    const href = host()
+      .querySelector('[data-prompts-link]')
+      ?.getAttribute('href');
+    expect(href).toContain('tab=prompts');
+    expect(href).toContain('worker_id=c');
   });
 });

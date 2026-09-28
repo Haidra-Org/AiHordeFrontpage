@@ -181,6 +181,19 @@ export interface PromptModerationEventQuery {
   worker_id?: string;
 }
 
+/**
+ * Who a set of reports is about. One event counts toward every one of these
+ * it names, and a decision on one kind does not cover another.
+ */
+export type ModerationSubjectKind = 'account' | 'proxied_account' | 'ip';
+
+/** The identity fields a subject kind uses. */
+export interface SubjectIdentity {
+  user_id?: number;
+  proxied_account?: string;
+  ipaddr?: string;
+}
+
 /** One time a worker was marked suspicious. */
 export interface WorkerSuspicionEvent {
   id: number;

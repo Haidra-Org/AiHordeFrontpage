@@ -501,6 +501,7 @@
         <div class="worker-grid">
           @for (worker of filteredWorkers(); track worker.id) {
             <app-worker-card
+              [attr.data-worker-id]="worker.id"
               [worker]="worker"
               [isModerator]="auth.currentUser()?.moderator ?? false"
               [viewMode]="viewMode()"
@@ -518,6 +519,7 @@
         <div class="worker-row-list">
           @for (worker of filteredWorkers(); track worker.id) {
             <app-worker-row
+              [attr.data-worker-id]="worker.id"
               [worker]="worker"
               [isModerator]="auth.currentUser()?.moderator ?? false"
               [viewMode]="viewMode()"

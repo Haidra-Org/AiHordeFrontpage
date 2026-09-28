@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { DOCUMENT, DatePipe, DecimalPipe } from '@angular/common';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Params, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   EMPTY,
@@ -46,6 +46,7 @@ import {
 import { ReviewGridDirective } from './review-grid.directive';
 import { isSplitView, nextAfter } from './review-layout';
 import { refusalKey } from './review-subjects';
+import { DEFAULT_PROMPTS, promptsParams } from './review-query';
 
 export type WorkerAction = 'unpause' | 'maintenance_on' | 'maintenance_off';
 
@@ -198,6 +199,10 @@ export class ReviewPausedWorkersComponent {
   private readonly destroyRef = inject(DestroyRef);
   public readonly counts = inject(ModerationCountsService);
 
+  /** The Prompts tab filtered to one worker. */
+  public promptsQuery(workerId: string): Params {
+    return promptsParams({ ...DEFAULT_PROMPTS, worker_id: workerId });
+  }
   public readonly hordeTime = parseHordeTime;
 
   public readonly kinds = WORKER_KINDS;
