@@ -346,7 +346,7 @@
                       | transloco
                         : {
                             count: worker.suspicious,
-                            threshold: worker.suspicion_threshold,
+                            threshold: workerThreshold(),
                           }
                   }}</span>
                 </span>
@@ -437,7 +437,7 @@
                   | transloco
                     : {
                         count: worker.suspicious,
-                        threshold: worker.suspicion_threshold,
+                        threshold: workerThreshold(),
                       }
               }}
             </dd>

@@ -23,14 +23,15 @@ import {
   PromptsState,
   promptQueryOf,
 } from './review-query';
-import { PROMPT_REASONS, positiveInt } from './review-subjects';
+import { PROMPT_REASONS, pluralKey, positiveInt } from './review-subjects';
 import { ReviewSubjectEventsComponent } from './review-subject-events.component';
 
 /**
  * The Prompts tab: the prompt log newest first, narrowed by account, proxied
- * account, address, worker, a period and the reasons shown. Everything but
- * the reading position lives in the address through `state` and
- * `stateChange`, so a filtered view can be shared as a link.
+ * account, address, worker, a period and the reasons shown, or one report by
+ * its id, as an alert's review link opens it. Everything but the reading
+ * position lives in the address through `state` and `stateChange`, so a
+ * filtered view can be shared as a link.
  *
  * Reasons are chosen after the read, over the reports loaded, unless the
  * horde filters selected reasons itself (see
@@ -51,6 +52,7 @@ export class ReviewPromptsComponent {
 
   public readonly periods = PROMPT_PERIODS;
   public readonly reasons = PROMPT_REASONS;
+  public readonly plural = pluralKey;
 
   private readonly events = viewChild(ReviewSubjectEventsComponent);
 
@@ -61,6 +63,17 @@ export class ReviewPromptsComponent {
   public readonly holdsShown = computed(
     () => this.events()?.holdsShown() ?? false,
   );
+
+  /**
+   * The retention policy the horde reported with the list, read by the
+   * list's own request; null until it answers.
+   */
+  public readonly retention = computed(
+    () => this.events()?.retention() ?? null,
+  );
+
+  /** The one report shown, when the address names one. */
+  public readonly eventId = computed(() => this.state().event_id);
 
   /**
    * The log request; a period is counted back from when the state changed.
@@ -83,6 +96,7 @@ export class ReviewPromptsComponent {
     computed<ReadonlySet<PromptModerationReason> | null>(() => {
       const reasons = this.state().reasons;
       if (reasons.length === PROMPT_REASONS.length) return null;
+      if (this.state().event_id !== null) return null;
       if (this.query()?.reason !== undefined) return null;
       return new Set(reasons);
     });
@@ -109,6 +123,7 @@ export class ReviewPromptsComponent {
       state.user_id !== null ||
       state.proxied_account !== null ||
       state.ipaddr !== null ||
+      state.ip_subject_key !== null ||
       state.worker_id !== null
     );
   });
@@ -159,6 +174,16 @@ export class ReviewPromptsComponent {
 
   public clearFilters(): void {
     this.stateChange.emit({ ...this.state(), ...NO_PROMPT_FILTER });
+  }
+
+  /** Leave the single report for the list it came from. */
+  public showAll(): void {
+    this.stateChange.emit({ ...this.state(), event_id: null });
+  }
+
+  /** The first 12 characters of an address pseudonym, as the IP alert shows it. */
+  public subjectKeyShort(key: string): string {
+    return key.slice(0, 12);
   }
 
   public setPeriod(period: PromptPeriod): void {

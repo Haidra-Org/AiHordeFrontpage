@@ -72,13 +72,22 @@ function event(id: number): PromptModerationEvent {
     worker_id: 'w-misfire',
     proxied_account: null,
     ipaddr: '198.18.187.129',
+    ip_subject_key: null,
+    origin_text: null,
     models: ['AlbedoBase XL (SDXL)'],
     reason: 'worker_csam',
     outcome: 'censored',
     submitted_prompt: 'text',
     moderation_prompt: null,
     effective_prompt: null,
+    text_state: 'pending',
+    text_url: null,
+    text_sha256: null,
+    text_chars: null,
     text_truncated: false,
+    text_redacted: false,
+    ipaddr_redacted: false,
+    anonymized: false,
     notes: [],
   };
 }
@@ -116,7 +125,13 @@ describe('ReviewWorkerComponent', () => {
       getWorkerDetail: vi.fn((query) =>
         query.since ? rangeDetail : of(detailOf()),
       ),
-      getPromptEvents: vi.fn(() => of({ events: [], next_cursor: null })),
+      getPromptEvents: vi.fn(() =>
+        of({
+          events: [],
+          next_cursor: null,
+          retention: { text_days: null, ipaddr_days: 30, ceiling_days: 365 },
+        }),
+      ),
     };
     await TestBed.configureTestingModule({
       imports: [

@@ -1664,6 +1664,7 @@
   }
 
   .review-event-covered,
+  .review-event-anonymized,
   .review-event-held {
     padding: 0 var(--hd-space-1);
     border: 1px solid var(--hd-card-border);

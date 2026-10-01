@@ -11,7 +11,16 @@ import { ToastService } from '../../../services/toast.service';
 import {
   EndpointAvailability,
   PromptModerationEvent,
+  PromptModerationRetention,
 } from '../../../types/moderation';
+
+const RETENTION: PromptModerationRetention = {
+  text_days: null,
+  ipaddr_days: 30,
+  ceiling_days: 365,
+};
+
+const SUBJECT_KEY = '0123456789abcdef'.repeat(4);
 
 describe('ReviewPromptsComponent', () => {
   let fixture: ComponentFixture<ReviewPromptsComponent>;
@@ -29,10 +38,11 @@ describe('ReviewPromptsComponent', () => {
     /** Null for a probe that has not answered yet. */
     reasonFilter: boolean | null = false,
     events: PromptModerationEvent[] = [],
+    retention: PromptModerationRetention = RETENTION,
   ): Promise<void> => {
     promptReasonFilter = signal(reasonFilter ?? undefined);
     probe = vi.fn(() => of(undefined));
-    getPromptEvents = vi.fn(() => of({ events, next_cursor: null }));
+    getPromptEvents = vi.fn(() => of({ events, next_cursor: null, retention }));
     await TestBed.configureTestingModule({
       imports: [
         ReviewPromptsComponent,
@@ -77,16 +87,70 @@ describe('ReviewPromptsComponent', () => {
     reasons: ['worker_csam'],
   };
 
-  it('reads the log with the filters and states how long reports are kept', async () => {
+  it('reads the log with the filters and states the retention the horde reported', async () => {
     await render({ ...DEFAULT_PROMPTS, user_id: 42 });
 
     expect(getPromptEvents).toHaveBeenCalledExactlyOnceWith({
       user_id: 42,
       limit: 50,
     });
-    expect(host().querySelector('[data-retention]')?.textContent).toContain(
-      'admin.review.prompts.retention',
+    const line = host().querySelector('[data-retention]')?.textContent ?? '';
+    expect(line).toContain('admin.review.prompts.retention_text_kept');
+    expect(line).toContain('admin.review.prompts.retention_address_days_other');
+    expect(line).toContain('admin.review.prompts.retention_ceiling_other');
+    expect(host().textContent).toContain(
+      'admin.review.prompts.retention_exempt',
     );
+  });
+
+  it('states a text window when the horde has one, and nothing before it answers', async () => {
+    await render(DEFAULT_PROMPTS, null);
+    expect(host().querySelector('[data-retention]')).toBeNull();
+
+    TestBed.resetTestingModule();
+    await render(DEFAULT_PROMPTS, false, [], {
+      text_days: 1,
+      ipaddr_days: null,
+      ceiling_days: 365,
+    });
+    const line = host().querySelector('[data-retention]')?.textContent ?? '';
+    expect(line).toContain('admin.review.prompts.retention_text_days_one');
+    expect(line).toContain('admin.review.prompts.retention_address_kept');
+  });
+
+  describe('one report from an alert link', () => {
+    const linked: PromptsState = {
+      ...DEFAULT_PROMPTS,
+      user_id: 42,
+      reasons: ['worker_csam'],
+      event_id: 77,
+    };
+
+    it('reads that report alone, past every other filter', async () => {
+      await render(linked);
+
+      expect(getPromptEvents).toHaveBeenCalledExactlyOnceWith({
+        event_id: 77,
+        limit: 50,
+      });
+      expect(component.clientReasons()).toBeNull();
+      expect(host().querySelector('[data-single-event]')).not.toBeNull();
+      expect(host().querySelector('.review-filters')).toBeNull();
+    });
+
+    it('says the report was not found', async () => {
+      await render(linked, false, []);
+      expect(host().textContent).toContain(
+        'admin.review.reports.events.event_not_found',
+      );
+    });
+
+    it('returns to the list it came from', async () => {
+      await render(linked);
+      host().querySelector<HTMLButtonElement>('[data-show-all]')?.click();
+
+      expect(emitted.at(-1)).toEqual({ ...linked, event_id: null });
+    });
   });
 
   describe('reason filter', () => {
@@ -149,13 +213,22 @@ describe('ReviewPromptsComponent', () => {
         worker_id: null,
         proxied_account: null,
         ipaddr: null,
+        ip_subject_key: null,
+        origin_text: null,
         models: null,
         reason: 'filter_rejection',
         outcome: 'rejected',
         submitted_prompt: null,
         moderation_prompt: null,
         effective_prompt: null,
+        text_state: 'pending',
+        text_url: null,
+        text_sha256: null,
+        text_chars: null,
         text_truncated: false,
+        text_redacted: false,
+        ipaddr_redacted: false,
+        anonymized: false,
         notes: [],
       };
       const holdsLine = (): boolean =>
@@ -260,6 +333,22 @@ describe('ReviewPromptsComponent', () => {
       component.clearFilters();
 
       expect(emitted.at(-1)).toEqual({ ...oneReason, period: 'week' });
+    });
+
+    it('reads by an address identifier, says so, and clears it with the rest', async () => {
+      await render({ ...DEFAULT_PROMPTS, ip_subject_key: SUBJECT_KEY });
+
+      expect(getPromptEvents).toHaveBeenCalledExactlyOnceWith({
+        ip_subject_key: SUBJECT_KEY,
+        limit: 50,
+      });
+      expect(
+        host().querySelector('[data-address-key-filter]')?.textContent,
+      ).toContain('admin.review.prompts.address_key_filter');
+      expect(component.filtered()).toBe(true);
+
+      component.clearFilters();
+      expect(emitted.at(-1)).toEqual(DEFAULT_PROMPTS);
     });
 
     it('lets a period replace a range a link named', async () => {

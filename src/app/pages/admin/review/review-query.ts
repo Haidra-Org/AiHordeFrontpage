@@ -106,6 +106,8 @@ export interface PromptFilter {
   user_id: number | null;
   proxied_account: string | null;
   ipaddr: string | null;
+  /** An address pseudonym, as a report carries it; never an address. */
+  ip_subject_key: string | null;
   worker_id: string | null;
 }
 
@@ -113,13 +115,14 @@ export const NO_PROMPT_FILTER: PromptFilter = {
   user_id: null,
   proxied_account: null,
   ipaddr: null,
+  ip_subject_key: null,
   worker_id: null,
 };
 
-/**
- * How far back the Prompts tab reads. `any` sends no bound: the horde keeps
- * reports for 30 days, so that is everything it has.
- */
+/** An address pseudonym as the horde writes one; the horde refuses any other. */
+const SUBJECT_KEY = /^[0-9a-f]{64}$/;
+
+/** How far back the Prompts tab reads. `any` sends no bound. */
 export type PromptPeriod = 'any' | 'day' | 'week';
 
 export const PROMPT_PERIODS: readonly PromptPeriod[] = ['any', 'day', 'week'];
@@ -138,10 +141,16 @@ export interface PromptsState extends PromptFilter {
   until: Date | null;
   /** The reasons shown; every reason unless the address narrows them. */
   reasons: readonly PromptModerationReason[];
+  /**
+   * One report, as an alert's review link names it. While it is set the tab
+   * shows that report alone, and the other filters wait.
+   */
+  event_id: number | null;
 }
 
 export const DEFAULT_PROMPTS: PromptsState = {
   ...NO_PROMPT_FILTER,
+  event_id: null,
   period: 'any',
   since: null,
   until: null,
@@ -195,7 +204,9 @@ function parsePrompts(params: ParamMap): PromptsState {
     user_id: positiveInt(params.get('user_id') ?? ''),
     proxied_account: params.get('proxied_account') || null,
     ipaddr: params.get('ipaddr') || null,
+    ip_subject_key: subjectKeyOf(params.get('ip_subject_key')),
     worker_id: params.get('worker_id') || null,
+    event_id: positiveInt(params.get('event_id') ?? ''),
     period: PROMPT_PERIODS.includes(period as PromptPeriod)
       ? (period as PromptPeriod)
       : DEFAULT_PROMPTS.period,
@@ -203,6 +214,11 @@ function parsePrompts(params: ParamMap): PromptsState {
     until: instantOf(params.get('until')),
     reasons: reasons.length ? reasons : DEFAULT_PROMPTS.reasons,
   };
+}
+
+/** An address pseudonym from the address; anything else the horde would refuse. */
+function subjectKeyOf(value: string | null): string | null {
+  return value && SUBJECT_KEY.test(value) ? value : null;
 }
 
 /** An instant from the address; one without a zone is not guessed at. */
@@ -221,6 +237,7 @@ export function promptsParams(state: PromptsState): Params {
   return {
     tab: 'prompts',
     ...promptFilterParams(state),
+    event_id: state.event_id,
     period: state.period === DEFAULT_PROMPTS.period ? null : state.period,
     since: state.since ? hordeInstant(state.since) : null,
     until: state.until ? hordeInstant(state.until) : null,
@@ -231,12 +248,14 @@ export function promptsParams(state: PromptsState): Params {
 /**
  * The parameters that open the Prompts tab on one account, proxied account,
  * address or worker. Merged into the address, they replace whatever the tab
- * was filtered by and keep its period and reasons.
+ * was filtered by, leave a single report for the list, and keep its period
+ * and reasons.
  */
 export function promptPivotParams(filter: Partial<PromptFilter>): Params {
   return {
     tab: 'prompts',
     ...promptFilterParams({ ...NO_PROMPT_FILTER, ...filter }),
+    event_id: null,
   };
 }
 
@@ -245,6 +264,7 @@ function promptFilterParams(filter: PromptFilter): Params {
     user_id: filter.user_id,
     proxied_account: filter.proxied_account,
     ipaddr: filter.ipaddr,
+    ip_subject_key: filter.ip_subject_key,
     worker_id: filter.worker_id,
   };
 }
@@ -252,13 +272,15 @@ function promptFilterParams(filter: PromptFilter): Params {
 /**
  * The log request for the Prompts tab, without a limit or cursor. A period
  * is counted back from `now`. `serverReasons` says the horde filters by
- * `reason`; all selected reasons are sent when they narrow the set.
+ * `reason`; all selected reasons are sent when they narrow the set. A single
+ * report is asked for by its id alone, so no other filter can hide it.
  */
 export function promptQueryOf(
   state: PromptsState,
   now: number,
   serverReasons: boolean,
 ): PromptModerationEventQuery {
+  if (state.event_id !== null) return { event_id: state.event_id };
   const since =
     state.since ??
     (state.period === 'any'
@@ -274,6 +296,7 @@ export function promptQueryOf(
       ? { proxied_account: state.proxied_account }
       : {}),
     ...(state.ipaddr ? { ipaddr: state.ipaddr } : {}),
+    ...(state.ip_subject_key ? { ip_subject_key: state.ip_subject_key } : {}),
     ...(state.worker_id ? { worker_id: state.worker_id } : {}),
     ...(since ? { since: hordeInstant(since) } : {}),
     ...(state.until ? { until: hordeInstant(state.until) } : {}),

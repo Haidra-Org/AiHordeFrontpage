@@ -58,10 +58,12 @@
           ? "admin.review.reports.events.none_shown"
           : inRange()
             ? "admin.review.reports.events.range_none"
-            : standalone()
-              ? "admin.review.reports.events.none_match"
-              : "admin.review.reports.events.none"
-        ) | transloco
+            : singleEventId() !== null
+              ? "admin.review.reports.events.event_not_found"
+              : standalone()
+                ? "admin.review.reports.events.none_match"
+                : "admin.review.reports.events.none"
+        ) | transloco: { id: singleEventId() }
       }}
     </p>
   }
@@ -164,6 +166,24 @@
           data-pivot="ip"
           >{{ event.ipaddr }}</a
         >
+      } @else if (event.ip_subject_key && kind() !== "ip") {
+        <a
+          class="review-link review-code review-event-cell"
+          routerLink="/admin/review"
+          [queryParams]="pivot({ ip_subject_key: event.ip_subject_key })"
+          queryParamsHandling="merge"
+          [attr.aria-label]="
+            'admin.review.reports.events.pivot_address_key'
+              | transloco: { key: subjectKeyShort(event.ip_subject_key) }
+          "
+          data-pivot="ip_subject_key"
+          >{{ subjectKeyShort(event.ip_subject_key) }}</a
+        >
+      }
+      @if (event.anonymized) {
+        <span class="review-event-anonymized" data-anonymized>{{
+          "admin.review.reports.events.anonymized" | transloco
+        }}</span>
       }
       @if (isCovered(event)) {
         <span class="review-event-covered" data-covered>{{
@@ -192,7 +212,7 @@
           }}</span>
         </p>
         <dl class="review-facts review-facts--dense">
-          @if (kind() !== "account") {
+          @if (kind() !== "account" && event.user_id !== null) {
             <div class="review-fact">
               <dt>{{ "admin.review.field.account" | transloco }}</dt>
               <dd>
@@ -273,7 +293,7 @@
             </div>
           }
           @if (event.ipaddr && kind() !== "ip") {
-            <div class="review-fact">
+            <div class="review-fact" data-address-fact>
               <dt>{{ "admin.review.reports.kind.ip" | transloco }}</dt>
               <dd class="review-code">
                 <a
@@ -307,6 +327,47 @@
                   >
                 }
               </dd>
+            </div>
+          } @else if (event.ipaddr_redacted && !event.anonymized) {
+            <div class="review-fact" data-address-fact>
+              <dt>{{ "admin.review.reports.kind.ip" | transloco }}</dt>
+              <dd data-address-removed>
+                {{ "admin.review.reports.events.address_removed" | transloco }}
+              </dd>
+            </div>
+          }
+          @if (event.ip_subject_key) {
+            <div class="review-fact" data-address-key>
+              <dt>
+                {{ "admin.review.reports.events.address_key" | transloco }}
+              </dt>
+              <dd class="review-code">
+                @if (event.ipaddr === null && kind() !== "ip") {
+                  <a
+                    class="review-link"
+                    routerLink="/admin/review"
+                    [queryParams]="
+                      pivot({ ip_subject_key: event.ip_subject_key })
+                    "
+                    queryParamsHandling="merge"
+                    [attr.aria-label]="
+                      'admin.review.reports.events.pivot_address_key'
+                        | transloco
+                          : { key: subjectKeyShort(event.ip_subject_key) }
+                    "
+                    data-pivot="ip_subject_key"
+                    >{{ subjectKeyShort(event.ip_subject_key) }}</a
+                  >
+                } @else {
+                  {{ subjectKeyShort(event.ip_subject_key) }}
+                }
+              </dd>
+            </div>
+          }
+          @if (event.origin_text) {
+            <div class="review-fact" data-origin>
+              <dt>{{ "admin.review.reports.events.origin" | transloco }}</dt>
+              <dd class="review-code">{{ event.origin_text }}</dd>
             </div>
           }
           @if (event.models?.length) {
@@ -364,15 +425,22 @@
               }
             </dd>
           </div>
-          <div class="review-fact">
-            <dt>{{ "admin.review.reports.events.request" | transloco }}</dt>
-            <dd class="review-code">
-              {{
-                event.request_id ?? ("admin.review.not_recorded" | transloco)
-              }}
-            </dd>
-          </div>
+          @if (!event.anonymized) {
+            <div class="review-fact">
+              <dt>{{ "admin.review.reports.events.request" | transloco }}</dt>
+              <dd class="review-code">
+                {{
+                  event.request_id ?? ("admin.review.not_recorded" | transloco)
+                }}
+              </dd>
+            </div>
+          }
         </dl>
+        @if (event.anonymized) {
+          <p class="review-detail-note" data-anonymized-note>
+            {{ "admin.review.reports.events.anonymized_note" | transloco }}
+          </p>
+        }
 
         @if (event.reason === "worker_csam") {
           <p class="hd-callout review-caution" role="note">
@@ -667,39 +735,89 @@
 </ng-template>
 
 <!--
-  Only the stages an event has are drawn. A null stage does not exist for
-  that reason (a rejection never reached a worker, so it has no text a
-  worker received), and is never a copy of another stage. A stage whose
-  text repeats the one before it says so instead of repeating it.
+  Only the stages an event has are drawn. On an event retention has not
+  touched, a null stage does not exist for that reason (a rejection never
+  reached a worker, so it has no text a worker received), and is never a
+  copy of another stage. A stage whose text repeats the one before it says
+  so instead of repeating it. Stored text is read once the event is
+  revealed, and a failed read is reported on its own event.
 -->
 <ng-template #stages let-event>
   <div [id]="'review-event-text-' + event.id" class="review-stages">
     @if (isRevealed(event)) {
-      @for (stage of stagesOf(event); track stage.labelKey) {
-        <div class="review-stage">
-          <h5 class="review-stage-label">
-            {{ stage.labelKey | transloco }}
-          </h5>
-          @if (stage.sameKey; as sameKey) {
-            <p class="review-detail-note" data-prompt-stage-same>
-              {{ sameKey | transloco }}
-            </p>
-          } @else {
-            <p class="review-stage-text" data-prompt-stage>
-              {{ stage.text }}
+      @switch (textView(event)) {
+        @case ("shown") {
+          @for (stage of stagesOf(event); track stage.labelKey) {
+            <div class="review-stage">
+              <h5 class="review-stage-label">
+                {{ stage.labelKey | transloco }}
+              </h5>
+              @if (stage.sameKey; as sameKey) {
+                <p class="review-detail-note" data-prompt-stage-same>
+                  {{ sameKey | transloco }}
+                </p>
+              } @else {
+                <p class="review-stage-text" data-prompt-stage>
+                  {{ stage.text }}
+                </p>
+              }
+            </div>
+          }
+          @if (!hasText(event)) {
+            <p class="review-detail-note">
+              {{ "admin.review.reports.events.text_none" | transloco }}
             </p>
           }
-        </div>
-      }
-      @if (!hasText(event)) {
-        <p class="review-detail-note">
-          {{ "admin.review.reports.events.text_none" | transloco }}
-        </p>
-      }
-      @if (event.text_truncated) {
-        <p class="review-detail-note">
-          {{ "admin.review.reports.events.truncated" | transloco }}
-        </p>
+          @if (event.text_chars !== null) {
+            <p class="review-detail-note" data-text-chars>
+              {{
+                plural(
+                  "admin.review.reports.events.text_chars",
+                  event.text_chars
+                ) | transloco: { count: event.text_chars }
+              }}
+            </p>
+          }
+          @if (event.text_truncated) {
+            <p class="review-detail-note">
+              {{ "admin.review.reports.events.truncated" | transloco }}
+            </p>
+          }
+        }
+        @case ("loading") {
+          <p class="review-detail-note" role="status" data-text-loading>
+            {{ "admin.review.reports.events.text_loading" | transloco }}
+          </p>
+        }
+        @case ("failed") {
+          <div class="review-event-actions" data-text-error>
+            <p class="review-field-error" role="alert">
+              {{ "admin.review.reports.events.text_error" | transloco }}
+            </p>
+            <button
+              type="button"
+              class="hd-btn hd-btn--ghost hd-btn--dense"
+              (click)="retryText(event)"
+            >
+              {{ "admin.review.try_again" | transloco }}
+            </button>
+          </div>
+        }
+        @case ("unavailable") {
+          <p class="review-detail-note" data-text-unavailable>
+            {{ "admin.review.reports.events.text_unavailable" | transloco }}
+          </p>
+        }
+        @case ("removed") {
+          <p class="review-detail-note" data-text-removed>
+            {{ "admin.review.reports.events.text_removed" | transloco }}
+          </p>
+        }
+        @case ("not_recorded") {
+          <p class="review-detail-note" data-text-not-recorded>
+            {{ "admin.review.reports.events.text_not_recorded" | transloco }}
+          </p>
+        }
       }
     }
   </div>

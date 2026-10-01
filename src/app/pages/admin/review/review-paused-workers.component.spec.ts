@@ -38,7 +38,6 @@ function worker(
     maintenance_mode: false,
     maintenance_msg: null,
     suspicious: 3,
-    suspicion_threshold: 3,
     suspicion_reasons: [],
     owner_suspicion: 0,
     owner_trusted: false,
@@ -57,6 +56,9 @@ function overview(
   total?: number,
 ): ModerationOverview {
   return {
+    promotion_threshold: 1000,
+    suspicion_threshold: 5,
+    worker_suspicion_threshold: 3,
     promotion_blocked_users: [],
     promotion_eligible_users: [],
     paused_workers: workers,
@@ -88,12 +90,13 @@ describe('paused worker filters', () => {
 
   it('matches an owner in any chosen state', () => {
     const flagged = worker('a', { owner_flagged: true });
-    const over = worker('b', { owner_suspicion: 5, suspicion_threshold: 3 });
-    expect(matchesOwner(flagged, [])).toBe(true);
-    expect(matchesOwner(flagged, ['flagged'])).toBe(true);
-    expect(matchesOwner(flagged, ['trusted'])).toBe(false);
-    expect(matchesOwner(over, ['over'])).toBe(true);
-    expect(matchesOwner(worker('c'), ['over', 'trusted'])).toBe(false);
+    const over = worker('b', { owner_suspicion: 5 });
+    expect(matchesOwner(flagged, [], 5)).toBe(true);
+    expect(matchesOwner(flagged, ['flagged'], 5)).toBe(true);
+    expect(matchesOwner(flagged, ['trusted'], 5)).toBe(false);
+    expect(matchesOwner(over, ['over'], 5)).toBe(true);
+    expect(matchesOwner(over, ['over'], 6)).toBe(false);
+    expect(matchesOwner(worker('c'), ['over', 'trusted'], 5)).toBe(false);
   });
 });
 
@@ -234,6 +237,27 @@ describe('ReviewPausedWorkersComponent', () => {
 
     expect(component.paused().map((each) => each.id)).toEqual(['b']);
     expect(moderation.getOverview.mock.calls.length).toBe(calls);
+  });
+
+  it("holds each owner's suspicion against the overview's account threshold", async () => {
+    answer = overview(
+      [
+        worker('a', { owner_suspicion: 5 }),
+        worker('b', { owner_suspicion: 4 }),
+        worker('c', { owner_suspicion: 9 }),
+      ],
+      3,
+    );
+    await render();
+    component.toggleOwner('over');
+    settle();
+
+    expect(component.paused().map((each) => each.id)).toEqual(['a', 'c']);
+  });
+
+  it("states a worker's suspicion against the overview's worker threshold", async () => {
+    await render();
+    expect(component.workerThreshold()).toBe(3);
   });
 
   it('runs a bulk unpause one worker at a time, lists refusals and keeps them chosen', async () => {

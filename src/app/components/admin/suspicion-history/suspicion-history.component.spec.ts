@@ -23,7 +23,10 @@ function event(id: number): WorkerSuspicionEvent {
   return {
     id,
     created: '2026-09-20T10:00:00Z',
+    worker_id: 'w-1',
     worker_name: `Worker ${id}`,
+    user_id: 7,
+    suspicion_id: 3,
     reason: 'UNSAFE_IP',
     detail: `detail ${id}`,
   };

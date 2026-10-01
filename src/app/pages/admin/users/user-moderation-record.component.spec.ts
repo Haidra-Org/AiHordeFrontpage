@@ -6,7 +6,7 @@ import { Subject, of } from 'rxjs';
 import { vi } from 'vitest';
 import {
   ACCOUNT_REPORT_LIMIT,
-  REPORT_RETENTION_SECONDS,
+  REPORT_SUMMARY_SECONDS,
   UserModerationRecordComponent,
 } from './user-moderation-record.component';
 import { AdminModerationService } from '../../../services/admin-moderation.service';
@@ -30,13 +30,22 @@ function event(
     worker_id: null,
     proxied_account: null,
     ipaddr: null,
+    ip_subject_key: null,
+    origin_text: null,
     models: null,
     reason,
     outcome: 'rejected',
     submitted_prompt: `submitted text ${id}`,
     moderation_prompt: `styled text ${id}`,
     effective_prompt: `effective text ${id}`,
+    text_state: 'pending',
+    text_url: null,
+    text_sha256: null,
+    text_chars: null,
     text_truncated: false,
+    text_redacted: false,
+    ipaddr_redacted: false,
+    anonymized: false,
     notes: [],
   };
 }
@@ -160,11 +169,12 @@ describe('UserModerationRecordComponent', () => {
   };
 
   describe('without the report listings', () => {
-    it('counts the kept reports by reason from one read, and asks nothing else', async () => {
+    it('counts the reports of the summary window by reason from one read, and asks nothing else', async () => {
       await render();
 
       expect(moderation.getPromptEvents).toHaveBeenCalledExactlyOnceWith({
         user_id: 42,
+        since: '2026-08-27T12:00:00+00:00',
         limit: ACCOUNT_REPORT_LIMIT,
       });
       expect(moderation.getSubjectDecisions).not.toHaveBeenCalled();
@@ -174,7 +184,7 @@ describe('UserModerationRecordComponent', () => {
       expect(count('filter_rejection')).toBe('1');
       expect(count('model_rejection')).toBe('0');
       expect(fixture.componentInstance.summary()?.window).toBe(
-        REPORT_RETENTION_SECONDS,
+        REPORT_SUMMARY_SECONDS,
       );
     });
 
@@ -212,6 +222,7 @@ describe('UserModerationRecordComponent', () => {
 
       expect(moderation.getPromptEvents).toHaveBeenCalledExactlyOnceWith({
         user_id: 42,
+        since: '2026-08-27T12:00:00+00:00',
         limit: ACCOUNT_REPORT_LIMIT,
       });
       expect(host().querySelector('.user-moderation-reports')).not.toBeNull();
@@ -274,13 +285,14 @@ describe('UserModerationRecordComponent', () => {
       expect(count('all')).toBe('3');
     });
 
-    it('counts over the retention when the alert rules cannot be read', async () => {
+    it('counts over the summary window when the alert rules cannot be read', async () => {
       moderation.settingsAvailability.set('absent');
       await render();
 
       expect(moderation.getSettings).not.toHaveBeenCalled();
       expect(moderation.getPromptEvents).toHaveBeenCalledWith({
         user_id: 42,
+        since: '2026-08-27T12:00:00+00:00',
         limit: ACCOUNT_REPORT_LIMIT,
       });
     });

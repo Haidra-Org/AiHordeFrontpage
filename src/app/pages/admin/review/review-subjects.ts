@@ -333,6 +333,8 @@ const REFUSALS: Readonly<Record<string, string>> = {
   InvalidModerationCriteria: 'admin.review.refusal.criteria',
   InvalidModerationSettings: 'admin.review.refusal.settings',
   InvalidSuspicionID: 'admin.review.refusal.suspicion_id',
+  InvalidModerationEventID: 'admin.review.refusal.event_id',
+  InvalidModerationAddressFilter: 'admin.review.refusal.address_filter',
 };
 
 /** The message for a failed moderation request: a known refusal's, else `fallback`. */

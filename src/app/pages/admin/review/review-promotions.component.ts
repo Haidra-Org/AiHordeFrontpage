@@ -59,6 +59,14 @@ export class ReviewPromotionsComponent {
   public readonly blocked = computed(
     () => this.counts.overview()?.promotion_blocked_users ?? [],
   );
+  /** Null when the horde has no promotion threshold configured. */
+  public readonly promotionThreshold = computed(
+    () => this.counts.overview()?.promotion_threshold ?? null,
+  );
+  /** The report count at which an account counts as suspicious. */
+  public readonly suspicionThreshold = computed(
+    () => this.counts.overview()?.suspicion_threshold ?? null,
+  );
   public readonly groups = computed(() => [
     {
       id: 'eligible',
@@ -92,6 +100,11 @@ export class ReviewPromotionsComponent {
 
   private readonly detailHeading =
     viewChild<ElementRef<HTMLElement>>('detailHeading');
+
+  /** How far the account's evaluating kudos stand above the promotion threshold. */
+  public excess(user: PromotionReviewUser, threshold: number): number {
+    return user.evaluating_kudos - threshold;
+  }
 
   public accountAge(user: PromotionReviewUser): string {
     return formatAccountAge(this.transloco, user.account_age);

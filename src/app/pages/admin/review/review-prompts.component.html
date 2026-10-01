@@ -5,193 +5,246 @@
   <p class="review-scope">
     {{ "admin.review.prompts.lead" | transloco }}
   </p>
-  <p class="review-scope" data-retention>
-    {{ "admin.review.prompts.retention" | transloco }}
-  </p>
+  @if (retention(); as retention) {
+    <p class="review-scope" data-retention>
+      @if (retention.text_days === null) {
+        {{ "admin.review.prompts.retention_text_kept" | transloco }}
+      } @else {
+        {{
+          plural(
+            "admin.review.prompts.retention_text_days",
+            retention.text_days
+          ) | transloco: { count: retention.text_days }
+        }}
+      }
+      @if (retention.ipaddr_days === null) {
+        {{ "admin.review.prompts.retention_address_kept" | transloco }}
+      } @else {
+        {{
+          plural(
+            "admin.review.prompts.retention_address_days",
+            retention.ipaddr_days
+          ) | transloco: { count: retention.ipaddr_days }
+        }}
+      }
+      {{
+        plural("admin.review.prompts.retention_ceiling", retention.ceiling_days)
+          | transloco: { count: retention.ceiling_days }
+      }}
+    </p>
+    <p class="review-scope">
+      {{ "admin.review.prompts.retention_exempt" | transloco }}
+    </p>
+  }
   @if (holdsShown()) {
     <p class="review-scope">
       {{ "admin.review.prompts.retention_with_holds" | transloco }}
     </p>
   }
 
-  <form
-    class="review-filters"
-    [attr.aria-label]="'admin.review.prompts.filters_label' | transloco"
-    (submit)="$event.preventDefault(); applyFilters()"
-  >
-    <div class="review-filter">
-      <label class="hd-label" for="review-prompts-account">{{
-        "admin.review.prompts.account_id" | transloco
-      }}</label>
-      <input
-        #accountInput
-        id="review-prompts-account"
-        class="hd-input"
-        type="text"
-        inputmode="numeric"
-        autocomplete="off"
-        [value]="draftAccount()"
-        [attr.aria-invalid]="accountInvalid()"
-        [attr.aria-describedby]="
-          accountInvalid() ? 'review-prompts-account-error' : null
-        "
-        (input)="draftAccount.set(accountInput.value)"
-      />
-      @if (accountInvalid()) {
-        <p id="review-prompts-account-error" class="review-field-error">
-          {{ "admin.review.prompts.account_error" | transloco }}
-        </p>
-      }
-    </div>
-    <div class="review-filter">
-      <label class="hd-label" for="review-prompts-proxied">{{
-        "admin.review.reports.kind.proxied_account" | transloco
-      }}</label>
-      <input
-        #proxiedInput
-        id="review-prompts-proxied"
-        class="hd-input"
-        type="text"
-        autocomplete="off"
-        [value]="draftProxied()"
-        (input)="draftProxied.set(proxiedInput.value)"
-      />
-    </div>
-    <div class="review-filter">
-      <label class="hd-label" for="review-prompts-ip">{{
-        "admin.review.reports.kind.ip" | transloco
-      }}</label>
-      <input
-        #ipInput
-        id="review-prompts-ip"
-        class="hd-input"
-        type="text"
-        autocomplete="off"
-        spellcheck="false"
-        [value]="draftIp()"
-        (input)="draftIp.set(ipInput.value)"
-      />
-    </div>
-    <div class="review-filter">
-      <label class="hd-label" for="review-prompts-worker">{{
-        "admin.review.prompts.worker_id" | transloco
-      }}</label>
-      <input
-        #workerInput
-        id="review-prompts-worker"
-        class="hd-input"
-        type="text"
-        autocomplete="off"
-        spellcheck="false"
-        [value]="draftWorker()"
-        (input)="draftWorker.set(workerInput.value)"
-      />
-    </div>
-    <button
-      type="submit"
-      class="hd-btn hd-btn--primary review-apply"
-      [disabled]="accountInvalid()"
-    >
-      {{ "admin.review.reports.apply" | transloco }}
-    </button>
-    @if (filtered()) {
-      <button
-        type="button"
-        class="hd-btn hd-btn--ghost"
-        (click)="clearFilters()"
-        data-clear-filters
-      >
-        {{ "admin.review.prompts.clear_filters" | transloco }}
-      </button>
-    }
-  </form>
-
-  <div class="review-criteria-row">
-    <span class="hd-label" id="review-prompts-period">{{
-      "admin.review.prompts.period_label" | transloco
-    }}</span>
-    <div
-      class="hd-seg review-seg"
-      role="group"
-      aria-labelledby="review-prompts-period"
-    >
-      @for (period of periods; track period) {
-        <button
-          type="button"
-          class="hd-seg-opt"
-          [attr.aria-pressed]="!ranged() && state().period === period"
-          (click)="setPeriod(period)"
-        >
-          {{ periodKey(period) | transloco }}
-        </button>
-      }
-    </div>
-  </div>
-  @if (ranged()) {
-    <div class="review-criteria-row" data-range>
+  @if (eventId(); as id) {
+    <div class="review-criteria-row" data-single-event>
       <p class="review-detail-note">
-        @if (state().since && state().until) {
-          {{
-            "admin.review.prompts.range_between"
-              | transloco
-                : {
-                    since: state().since | date: "short",
-                    until: state().until | date: "short",
-                  }
-          }}
-        } @else if (state().since) {
-          {{
-            "admin.review.prompts.range_since"
-              | transloco: { since: state().since | date: "short" }
-          }}
-        } @else {
-          {{
-            "admin.review.prompts.range_until"
-              | transloco: { until: state().until | date: "short" }
-          }}
-        }
+        {{ "admin.review.prompts.single_event" | transloco: { id } }}
       </p>
       <button
         type="button"
         class="hd-btn hd-btn--ghost hd-btn--dense"
-        (click)="clearRange()"
+        (click)="showAll()"
+        data-show-all
       >
-        {{ "admin.review.prompts.range_clear" | transloco }}
+        {{ "admin.review.prompts.show_all" | transloco }}
       </button>
     </div>
-  }
-
-  <div
-    class="review-criteria-row"
-    role="group"
-    aria-labelledby="review-prompts-reasons"
-  >
-    <span class="hd-label" id="review-prompts-reasons">{{
-      "admin.review.reports.reasons" | transloco
-    }}</span>
-    <div class="review-chip-row">
-      @for (reason of reasons; track reason) {
+  } @else {
+    <form
+      class="review-filters"
+      [attr.aria-label]="'admin.review.prompts.filters_label' | transloco"
+      (submit)="$event.preventDefault(); applyFilters()"
+    >
+      <div class="review-filter">
+        <label class="hd-label" for="review-prompts-account">{{
+          "admin.review.prompts.account_id" | transloco
+        }}</label>
+        <input
+          #accountInput
+          id="review-prompts-account"
+          class="hd-input"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          [value]="draftAccount()"
+          [attr.aria-invalid]="accountInvalid()"
+          [attr.aria-describedby]="
+            accountInvalid() ? 'review-prompts-account-error' : null
+          "
+          (input)="draftAccount.set(accountInput.value)"
+        />
+        @if (accountInvalid()) {
+          <p id="review-prompts-account-error" class="review-field-error">
+            {{ "admin.review.prompts.account_error" | transloco }}
+          </p>
+        }
+      </div>
+      <div class="review-filter">
+        <label class="hd-label" for="review-prompts-proxied">{{
+          "admin.review.reports.kind.proxied_account" | transloco
+        }}</label>
+        <input
+          #proxiedInput
+          id="review-prompts-proxied"
+          class="hd-input"
+          type="text"
+          autocomplete="off"
+          [value]="draftProxied()"
+          (input)="draftProxied.set(proxiedInput.value)"
+        />
+      </div>
+      <div class="review-filter">
+        <label class="hd-label" for="review-prompts-ip">{{
+          "admin.review.reports.kind.ip" | transloco
+        }}</label>
+        <input
+          #ipInput
+          id="review-prompts-ip"
+          class="hd-input"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="draftIp()"
+          (input)="draftIp.set(ipInput.value)"
+        />
+      </div>
+      <div class="review-filter">
+        <label class="hd-label" for="review-prompts-worker">{{
+          "admin.review.prompts.worker_id" | transloco
+        }}</label>
+        <input
+          #workerInput
+          id="review-prompts-worker"
+          class="hd-input"
+          type="text"
+          autocomplete="off"
+          spellcheck="false"
+          [value]="draftWorker()"
+          (input)="draftWorker.set(workerInput.value)"
+        />
+      </div>
+      <button
+        type="submit"
+        class="hd-btn hd-btn--primary review-apply"
+        [disabled]="accountInvalid()"
+      >
+        {{ "admin.review.reports.apply" | transloco }}
+      </button>
+      @if (filtered()) {
         <button
           type="button"
-          class="hd-chip"
-          [class.hd-chip--active]="reasonShown(reason)"
-          [attr.aria-pressed]="reasonShown(reason)"
-          [attr.aria-disabled]="reasonLocked(reason) ? 'true' : null"
-          [attr.aria-describedby]="
-            reasonLocked(reason) ? 'review-prompts-reason-kept' : null
-          "
-          (click)="toggleReason(reason)"
+          class="hd-btn hd-btn--ghost"
+          (click)="clearFilters()"
+          data-clear-filters
         >
-          {{ reasonKey(reason) | transloco }}
+          {{ "admin.review.prompts.clear_filters" | transloco }}
         </button>
       }
+    </form>
+
+    <div class="review-criteria-row">
+      <span class="hd-label" id="review-prompts-period">{{
+        "admin.review.prompts.period_label" | transloco
+      }}</span>
+      <div
+        class="hd-seg review-seg"
+        role="group"
+        aria-labelledby="review-prompts-period"
+      >
+        @for (period of periods; track period) {
+          <button
+            type="button"
+            class="hd-seg-opt"
+            [attr.aria-pressed]="!ranged() && state().period === period"
+            (click)="setPeriod(period)"
+          >
+            {{ periodKey(period) | transloco }}
+          </button>
+        }
+      </div>
     </div>
-    @if (state().reasons.length === 1) {
-      <p class="review-detail-note" id="review-prompts-reason-kept">
-        {{ "admin.review.prompts.reason_kept" | transloco }}
+    @if (ranged()) {
+      <div class="review-criteria-row" data-range>
+        <p class="review-detail-note">
+          @if (state().since && state().until) {
+            {{
+              "admin.review.prompts.range_between"
+                | transloco
+                  : {
+                      since: state().since | date: "short",
+                      until: state().until | date: "short",
+                    }
+            }}
+          } @else if (state().since) {
+            {{
+              "admin.review.prompts.range_since"
+                | transloco: { since: state().since | date: "short" }
+            }}
+          } @else {
+            {{
+              "admin.review.prompts.range_until"
+                | transloco: { until: state().until | date: "short" }
+            }}
+          }
+        </p>
+        <button
+          type="button"
+          class="hd-btn hd-btn--ghost hd-btn--dense"
+          (click)="clearRange()"
+        >
+          {{ "admin.review.prompts.range_clear" | transloco }}
+        </button>
+      </div>
+    }
+
+    @if (state().ip_subject_key; as key) {
+      <p class="review-detail-note" data-address-key-filter>
+        {{
+          "admin.review.prompts.address_key_filter"
+            | transloco: { key: subjectKeyShort(key) }
+        }}
       </p>
     }
-  </div>
+
+    <div
+      class="review-criteria-row"
+      role="group"
+      aria-labelledby="review-prompts-reasons"
+    >
+      <span class="hd-label" id="review-prompts-reasons">{{
+        "admin.review.reports.reasons" | transloco
+      }}</span>
+      <div class="review-chip-row">
+        @for (reason of reasons; track reason) {
+          <button
+            type="button"
+            class="hd-chip"
+            [class.hd-chip--active]="reasonShown(reason)"
+            [attr.aria-pressed]="reasonShown(reason)"
+            [attr.aria-disabled]="reasonLocked(reason) ? 'true' : null"
+            [attr.aria-describedby]="
+              reasonLocked(reason) ? 'review-prompts-reason-kept' : null
+            "
+            (click)="toggleReason(reason)"
+          >
+            {{ reasonKey(reason) | transloco }}
+          </button>
+        }
+      </div>
+      @if (state().reasons.length === 1) {
+        <p class="review-detail-note" id="review-prompts-reason-kept">
+          {{ "admin.review.prompts.reason_kept" | transloco }}
+        </p>
+      }
+    </div>
+  }
 
   <app-review-subject-events
     [query]="query()"

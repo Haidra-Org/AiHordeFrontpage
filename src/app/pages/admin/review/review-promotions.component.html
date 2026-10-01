@@ -74,7 +74,7 @@
                             | transloco
                               : {
                                   count: user.suspicious,
-                                  threshold: user.suspicion_threshold,
+                                  threshold: suspicionThreshold(),
                                 }
                         }}</span>
                         @if (user.flagged) {
@@ -175,20 +175,25 @@
             </dt>
             <dd>{{ user.evaluating_kudos | number: "1.0-0" }}</dd>
           </div>
-          <div class="review-fact">
-            <dt>{{ "admin.review.promotions.field.threshold" | transloco }}</dt>
-            <dd>
-              {{
-                "admin.review.promotions.threshold_value"
-                  | transloco
-                    : {
-                        threshold: (user.promotion_threshold | number: "1.0-0"),
-                        excess: (user.threshold_excess | number: "1.0-0"),
-                      }
-              }}
-            </dd>
-          </div>
-          <div class="review-fact">
+          @let threshold = promotionThreshold();
+          @if (threshold !== null) {
+            <div class="review-fact" data-promotion-threshold>
+              <dt>
+                {{ "admin.review.promotions.field.threshold" | transloco }}
+              </dt>
+              <dd>
+                {{
+                  "admin.review.promotions.threshold_value"
+                    | transloco
+                      : {
+                          threshold: (threshold | number: "1.0-0"),
+                          excess: (excess(user, threshold) | number: "1.0-0"),
+                        }
+                }}
+              </dd>
+            </div>
+          }
+          <div class="review-fact" data-suspicion>
             <dt>{{ "admin.review.field.suspicion" | transloco }}</dt>
             <dd>
               {{
@@ -196,7 +201,7 @@
                   | transloco
                     : {
                         count: user.suspicious,
-                        threshold: user.suspicion_threshold,
+                        threshold: suspicionThreshold(),
                       }
               }}
             </dd>

@@ -27,6 +27,9 @@ function overview(
 ): ModerationOverview {
   const many = (n: number): never[] => Array.from({ length: n });
   return {
+    promotion_threshold: 1000,
+    suspicion_threshold: 5,
+    worker_suspicion_threshold: 3,
     promotion_eligible_users: many(eligible),
     promotion_blocked_users: many(blocked),
     paused_workers: many(paused),

@@ -22,10 +22,8 @@ export interface PromotionReviewUser {
   account_age: number;
   kudos: number;
   evaluating_kudos: number;
-  promotion_threshold: number;
-  threshold_excess: number;
+  /** Held against the overview's `suspicion_threshold`. */
   suspicious: number;
-  suspicion_threshold: number;
   suspicion_reasons: SuspicionReason[];
   flagged: boolean;
   deleted: boolean;
@@ -51,10 +49,13 @@ export interface PausedWorkerReview {
   online: boolean;
   maintenance_mode: boolean;
   maintenance_msg: string | null;
+  /** Held against the overview's `worker_suspicion_threshold`. */
   suspicious: number;
-  suspicion_threshold: number;
   suspicion_reasons: SuspicionReason[];
-  /** How much suspicion the owner's account carries. */
+  /**
+   * How much suspicion the owner's account carries, held against the
+   * overview's `suspicion_threshold`.
+   */
   owner_suspicion: number;
   owner_trusted: boolean;
   owner_flagged: boolean;
@@ -67,6 +68,16 @@ export interface PausedWorkerReview {
 
 /** GET /v2/operations/moderation */
 export interface ModerationOverview {
+  /**
+   * The evaluating kudos above which an account is promoted to trusted; null
+   * when the horde has none configured, and then both promotion lists are
+   * empty.
+   */
+  promotion_threshold: number | null;
+  /** The report count at which an account counts as suspicious. */
+  suspicion_threshold: number;
+  /** The report count at which a worker counts as suspicious. */
+  worker_suspicion_threshold: number;
   promotion_blocked_users: PromotionReviewUser[];
   promotion_eligible_users: PromotionReviewUser[];
   paused_workers: PausedWorkerReview[];
@@ -105,6 +116,20 @@ export type PromptModerationReason =
 /** What happened to the request the prompt belonged to. */
 export type PromptModerationOutcome = 'rejected' | 'censored';
 
+/**
+ * Where an event's prompt text is held. `pending` carries the stages inline,
+ * `stored` behind `text_url`, and `none` holds no text, either because no stage
+ * existed or because retention removed it.
+ */
+export type PromptTextState = 'pending' | 'stored' | 'none';
+
+/** The JSON object a `stored` event's `text_url` returns. */
+export interface PromptModerationText {
+  submitted_prompt: string | null;
+  moderation_prompt: string | null;
+  effective_prompt: string | null;
+}
+
 /** A moderator's note on one event. Notes carry no status. */
 export interface PromptModerationNote {
   id: number;
@@ -122,8 +147,10 @@ export interface PromptModerationEvent {
   id: number;
   /** ISO 8601 with a zone; read with `parseHordeTime`. */
   created: string;
-  user_id: number;
+  /** Null once the event is anonymized. */
+  user_id: number | null;
   request_id: string | null;
+  /** The worker that reported the job; it identifies the reporter, not the subject. */
   worker_id: string | null;
   proxied_account: string | null;
   /**
@@ -131,15 +158,43 @@ export interface PromptModerationEvent {
    * address as its /64 network (`2001:db8:1:2::/64`).
    */
   ipaddr: string | null;
+  /**
+   * A pseudonym of the address, 64 lowercase hex characters, equal for every
+   * event from one IPv4 address or IPv6 /64. It outlives `ipaddr` until the
+   * event is anonymized. It is never an address.
+   */
+  ip_subject_key: string | null;
+  /** The origin a trusted proxy reported when it was not an IP address. */
+  origin_text: string | null;
   /** The models the request asked for. */
   models: string[] | null;
   reason: PromptModerationReason;
   outcome: PromptModerationOutcome;
+  /** The three stages are inline only while `text_state` is `pending`. */
   submitted_prompt: string | null;
   moderation_prompt: string | null;
   effective_prompt: string | null;
-  /** Whether the stored prompt text was cut to the log's length limit. */
+  text_state: PromptTextState;
+  /**
+   * A presigned link to the stored stages as JSON, valid for ten minutes;
+   * null unless `text_state` is `stored` and the horde has an evidence store.
+   */
+  text_url: string | null;
+  /** Hex SHA-256 of the stored stages; retention removes it with the text. */
+  text_sha256: string | null;
+  /** Total characters of the stored stages; retention removes it with the text. */
+  text_chars: number | null;
+  /** Whether a prompt stage was cut to the log's length limit. */
   text_truncated: boolean;
+  /** Retention removed the prompt stages, or found none to remove. */
+  text_redacted: boolean;
+  /** Retention removed the address, or found none to remove. */
+  ipaddr_redacted: boolean;
+  /**
+   * Retention removed the account, proxied account, address, pseudonym and
+   * request id. Reason, outcome, models, time, worker and notes are kept.
+   */
+  anonymized: boolean;
   /** UTC expiry of an evidence hold, or null under normal retention. */
   held_until?: string | null;
   notes: PromptModerationNote[];
@@ -159,6 +214,20 @@ export interface PromptModerationEventsPage {
   events: PromptModerationEvent[];
   /** Feeds `before_id` for the next, older page; null on the last page. */
   next_cursor: number | null;
+  retention: PromptModerationRetention;
+}
+
+/**
+ * The horde's retention windows, in days from capture. They apply only to
+ * events not under moderation action; no event is removed by age.
+ */
+export interface PromptModerationRetention {
+  /** Null keeps the prompt text until the ceiling. */
+  text_days: number | null;
+  /** Null keeps the address until the ceiling. */
+  ipaddr_days: number | null;
+  /** After this many days an event keeps no identifying data. */
+  ceiling_days: number;
 }
 
 /** Filters and cursor for the prompt moderation log. */
@@ -167,10 +236,14 @@ export interface PromptModerationEventQuery {
   limit?: number;
   /** Events older than this id. */
   before_id?: number;
+  /** Only this one event. */
+  event_id?: number;
   user_id?: number;
   proxied_account?: string;
   /** An IPv6 address matches every event in its /64. */
   ipaddr?: string;
+  /** The events carrying exactly this address pseudonym. */
+  ip_subject_key?: string;
   /** Any of these reasons; sent only past the release that supports the filter. */
   reason?: PromptModerationReason[];
   /** ISO 8601 with a timezone, inclusive. */
@@ -473,8 +546,14 @@ export interface WorkerSuspicionEvent {
   id: number;
   /** ISO 8601 with a zone; read with `parseHordeTime`. */
   created: string;
+  worker_id: string;
+  /** The worker's name when the suspicion was recorded. */
   worker_name: string;
-  /** The horde's enum name for the reason. */
+  /** The account that owned the worker when the suspicion was recorded. */
+  user_id: number;
+  /** The horde's numeric code for the reason. */
+  suspicion_id: number;
+  /** The horde's enum name for the reason, or `UNKNOWN_<id>`. */
   reason: string;
   /** The reason with its particulars filled in, as the horde formats it. */
   detail: string;

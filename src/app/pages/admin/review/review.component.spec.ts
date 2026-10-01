@@ -230,7 +230,9 @@ describe('Prompts tab address', () => {
           user_id: 42,
           proxied_account: 'bot:7',
           ipaddr: '2001:db8::/64',
+          ip_subject_key: null,
           worker_id: 'w-1',
+          event_id: null,
           period: 'week',
           since: null,
           until: null,
@@ -250,6 +252,25 @@ describe('Prompts tab address', () => {
     ).toEqual(DEFAULT_PROMPTS);
   });
 
+  it('reads the report an alert link names, and an address identifier', () => {
+    const key = '0123456789abcdef'.repeat(4);
+    const parsed = parseReviewQuery(
+      convertToParamMap({
+        tab: 'prompts',
+        event_id: '77',
+        ip_subject_key: key,
+      }),
+    ).prompts;
+    expect(parsed.event_id).toBe(77);
+    expect(parsed.ip_subject_key).toBe(key);
+
+    const refused = parseReviewQuery(
+      convertToParamMap({ event_id: '0', ip_subject_key: 'ABC' }),
+    ).prompts;
+    expect(refused.event_id).toBeNull();
+    expect(refused.ip_subject_key).toBeNull();
+  });
+
   it('keeps its reasons apart from the Reports criteria', () => {
     const parsed = parseReviewQuery(
       convertToParamMap({ reason: 'worker_csam', window: '3600' }),
@@ -264,7 +285,9 @@ describe('Prompts tab address', () => {
       user_id: null,
       proxied_account: null,
       ipaddr: null,
+      ip_subject_key: null,
       worker_id: null,
+      event_id: null,
       period: null,
       since: null,
       until: null,
@@ -274,7 +297,9 @@ describe('Prompts tab address', () => {
       user_id: 42,
       proxied_account: null,
       ipaddr: '10.0.0.1',
+      ip_subject_key: '0123456789abcdef'.repeat(4),
       worker_id: null,
+      event_id: 77,
       period: 'day',
       since: new Date('2026-09-20T00:00:00Z'),
       until: new Date('2026-09-21T00:00:00Z'),
@@ -298,8 +323,26 @@ describe('Prompts tab address', () => {
       user_id: null,
       proxied_account: null,
       ipaddr: '10.0.0.1',
+      ip_subject_key: null,
       worker_id: null,
+      event_id: null,
     });
+  });
+
+  it('asks for a single report by its id alone', () => {
+    expect(
+      promptQueryOf(
+        {
+          ...DEFAULT_PROMPTS,
+          user_id: 42,
+          period: 'day',
+          reasons: ['worker_csam'],
+          event_id: 77,
+        },
+        now,
+        true,
+      ),
+    ).toEqual({ event_id: 77 });
   });
 
   it('asks for the filters and the period, with no reason while the horde cannot filter by one', () => {

@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   DestroyRef,
+  effect,
   ElementRef,
   inject,
   Injector,
@@ -11,21 +12,27 @@ import {
   linkedSignal,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Params, RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import {
   EMPTY,
+  Observable,
   Subject,
+  Subscription,
   catchError,
   distinctUntilChanged,
   filter,
   map,
   merge,
+  of,
   switchMap,
   tap,
+  throwError,
 } from 'rxjs';
 import { AdminModerationService } from '../../../services/admin-moderation.service';
 import { ToastService } from '../../../services/toast.service';
@@ -35,7 +42,10 @@ import { extractApiErrorField } from '../../../helper/extract-api-error';
 import {
   PromptModerationEvent,
   PromptModerationEventQuery,
+  PromptModerationEventsPage,
   PromptModerationReason,
+  PromptModerationRetention,
+  PromptModerationText,
 } from '../../../types/moderation';
 import {
   EVENT_NOTE_LIMIT,
@@ -88,11 +98,22 @@ const SAME_AS: Readonly<Record<string, string>> = {
 };
 
 /**
- * The stages an event has, in order. A prompt sent without a style reaches
- * the filter unchanged, so its second stage often repeats the first word for
- * word; a repeat keeps its heading, so the sequence still reads in full.
+ * The stages an event has, in order: the event's own while its text is
+ * inline, or the stored text read for it. A prompt sent without a style
+ * reaches the filter unchanged, so its second stage often repeats the first
+ * word for word; a repeat keeps its heading, so the sequence still reads in
+ * full.
  */
-export function promptStages(event: PromptModerationEvent): PromptStage[] {
+/**
+ * Whether a store refused a presigned link because it expired. R2 answers
+ * 403; Garage answers 400 ("Date is too old"). Both mean a fresh link is
+ * needed, nothing else.
+ */
+function isExpiredLink(status: number): boolean {
+  return status === 403 || status === 400;
+}
+
+export function promptStages(event: PromptModerationText): PromptStage[] {
   const stages: [string, string | null][] = [
     [STAGE_SUBMITTED, event.submitted_prompt],
     [STAGE_AFTER_STYLES, event.moderation_prompt],
@@ -111,6 +132,28 @@ export function promptStages(event: PromptModerationEvent): PromptStage[] {
   }
   return drawn;
 }
+
+/**
+ * The stored text of one revealed event, as read from its `text_url`.
+ * `unavailable` is a stored event the horde gave no link for.
+ */
+export type StoredText =
+  | { status: 'loading' }
+  | { status: 'loaded'; text: PromptModerationText }
+  | { status: 'failed' }
+  | { status: 'unavailable' };
+
+/**
+ * What a revealed event's text area shows. `removed` is text retention took
+ * away; `not_recorded` is an event that never held any.
+ */
+export type TextView =
+  | 'shown'
+  | 'loading'
+  | 'failed'
+  | 'unavailable'
+  | 'removed'
+  | 'not_recorded';
 
 interface EventList {
   events: PromptModerationEvent[];
@@ -131,8 +174,10 @@ interface EventList {
  * Prompt text stays hidden until the moderator asks for it, one event at a
  * time, or for every rejected prompt loaded at once. A worker report is only
  * ever shown one at a time. Opening another subject, range or query, or
- * closing the report, hides it again, and nothing about it is stored. Notes
- * are not hidden: moderators write them to be read.
+ * closing the report, hides it again, and nothing about it is stored. Text
+ * the horde moved to its evidence store is read from the event's link only
+ * once the event is revealed, and dropped when it is hidden. Notes are not
+ * hidden: moderators write them to be read.
  */
 @Component({
   selector: 'app-review-subject-events',
@@ -256,6 +301,20 @@ export class ReviewSubjectEventsComponent {
     this.list().events.some((event) => this.canHold(event)),
   );
 
+  /** The retention policy the latest page reported; null before one answers. */
+  public readonly retention = signal<PromptModerationRetention | null>(null);
+
+  /** The single report the list was asked for, by the query's `event_id`. */
+  public readonly singleEventId = computed(
+    () => this.query()?.event_id ?? null,
+  );
+
+  /** Stored text read for the revealed events, by event id. */
+  public readonly storedTexts = signal<ReadonlyMap<number, StoredText>>(
+    new Map(),
+  );
+  private readonly textReads = new Map<number, Subscription>();
+
   /** Whether the reason filter hides any loaded report. */
   public readonly narrowed = computed(
     () => this.shownEvents().length < this.list().events.length,
@@ -289,7 +348,10 @@ export class ReviewSubjectEventsComponent {
       .subscribe(() => {
         this.revealedId.set(null);
         this.rejectionsRevealed.set(false);
-        this.expanded.set(new Set());
+        // A single report opens with its notes and pivots in view; its text
+        // still waits for the moderator.
+        const single = this.singleEventId();
+        this.expanded.set(new Set(single === null ? [] : [single]));
         this.noteFor.set(null);
         this.noteDraft.set('');
         this.holdFor.set(null);
@@ -321,14 +383,25 @@ export class ReviewSubjectEventsComponent {
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((first) =>
+      .subscribe((first) => {
+        this.noteRetention(first);
         this.list.set({
           events: first.events,
           cursor: first.next_cursor,
           loading: false,
           failed: false,
-        }),
+        });
+      });
+
+    effect(() => {
+      const wanted = this.shownEvents().filter(
+        (event) => event.text_state === 'stored' && this.isRevealed(event),
       );
+      untracked(() => this.syncStoredTexts(wanted));
+    });
+    this.destroyRef.onDestroy(() => {
+      for (const read of this.textReads.values()) read.unsubscribe();
+    });
   }
 
   /** The newest event on the page, to record a decision as covering what was seen. */
@@ -391,16 +464,44 @@ export class ReviewSubjectEventsComponent {
   }
 
   public stagesOf(event: PromptModerationEvent): PromptStage[] {
-    return promptStages(event);
+    if (event.text_state !== 'stored') return promptStages(event);
+    const stored = this.storedTexts().get(event.id);
+    return stored?.status === 'loaded' ? promptStages(stored.text) : [];
   }
 
-  /** Whether an event has any prompt text kept. */
+  /** Whether an event has any prompt text to draw. */
   public hasText(event: PromptModerationEvent): boolean {
-    return (
-      event.submitted_prompt !== null ||
-      event.moderation_prompt !== null ||
-      event.effective_prompt !== null
-    );
+    return this.stagesOf(event).length > 0;
+  }
+
+  /**
+   * What a revealed event's text area holds. A null stage on an event
+   * retention has not touched does not exist; on one it has, it was removed.
+   */
+  public textView(event: PromptModerationEvent): TextView {
+    switch (event.text_state) {
+      case 'stored': {
+        const stored = this.storedTexts().get(event.id);
+        if (!stored || stored.status === 'loading') return 'loading';
+        return stored.status === 'loaded' ? 'shown' : stored.status;
+      }
+      case 'none':
+        return event.text_redacted ? 'removed' : 'not_recorded';
+      default:
+        return !this.hasText(event) && event.text_redacted
+          ? 'removed'
+          : 'shown';
+    }
+  }
+
+  /** Read a revealed event's stored text again after it failed. */
+  public retryText(event: PromptModerationEvent): void {
+    this.readStoredText(event);
+  }
+
+  /** The first 12 characters of an address pseudonym, as the IP alert shows it. */
+  public subjectKeyShort(key: string): string {
+    return key.slice(0, 12);
   }
 
   /** The address that opens the Prompts tab on one account, address or worker. */
@@ -440,13 +541,15 @@ export class ReviewSubjectEventsComponent {
       .getPromptEvents(query)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (next) =>
+        next: (next) => {
+          this.noteRetention(next);
           this.list.update((current) => ({
             events: [...current.events, ...next.events],
             cursor: next.next_cursor,
             loading: false,
             failed: false,
-          })),
+          }));
+        },
         error: (error: unknown) => this.failRead(error),
       });
   }
@@ -661,6 +764,91 @@ export class ReviewSubjectEventsComponent {
       },
       { injector: this.injector },
     );
+  }
+
+  /**
+   * Keep the stored text of the events in `wanted` and no other: start a
+   * read for each newly revealed one, and drop and cancel the rest.
+   */
+  private syncStoredTexts(wanted: readonly PromptModerationEvent[]): void {
+    const ids = new Set(wanted.map((event) => event.id));
+    for (const [id, read] of this.textReads) {
+      if (ids.has(id)) continue;
+      read.unsubscribe();
+      this.textReads.delete(id);
+    }
+    const kept = new Map([...this.storedTexts()].filter(([id]) => ids.has(id)));
+    const fresh = wanted.filter((event) => !kept.has(event.id));
+    this.storedTexts.set(kept);
+    for (const event of fresh) this.readStoredText(event);
+  }
+
+  private readStoredText(event: PromptModerationEvent): void {
+    this.textReads.get(event.id)?.unsubscribe();
+    this.setStoredText(event.id, { status: 'loading' });
+    const read = this.fetchStoredText(event).subscribe({
+      next: (text) =>
+        this.setStoredText(
+          event.id,
+          text ? { status: 'loaded', text } : { status: 'unavailable' },
+        ),
+      error: () => this.setStoredText(event.id, { status: 'failed' }),
+    });
+    this.textReads.set(event.id, read);
+  }
+
+  /**
+   * An event's stored text, or null when the horde gives no link to it. The
+   * link expires; the store then refuses the signature (403 from R2, 400
+   * "Date is too old" from Garage), and the event is read again once for a
+   * fresh link.
+   */
+  private fetchStoredText(
+    event: PromptModerationEvent,
+  ): Observable<PromptModerationText | null> {
+    if (!event.text_url) return of(null);
+    return this.moderation
+      .getStoredPromptText(event.text_url)
+      .pipe(
+        catchError((error: unknown) =>
+          error instanceof HttpErrorResponse && isExpiredLink(error.status)
+            ? this.rereadEvent(event.id).pipe(
+                switchMap((fresh) =>
+                  fresh?.text_state === 'stored' && fresh.text_url
+                    ? this.moderation.getStoredPromptText(fresh.text_url)
+                    : of(null),
+                ),
+              )
+            : throwError(() => error),
+        ),
+      );
+  }
+
+  /**
+   * One event read again by its id, replacing the loaded copy, so the row
+   * shows whatever retention changed since it was loaded.
+   */
+  private rereadEvent(id: number): Observable<PromptModerationEvent | null> {
+    return this.moderation.getPromptEvents({ event_id: id }).pipe(
+      map((page) => page.events.at(0) ?? null),
+      tap((fresh) => {
+        if (!fresh) return;
+        this.list.update((list) => ({
+          ...list,
+          events: list.events.map((event) => (event.id === id ? fresh : event)),
+        }));
+      }),
+    );
+  }
+
+  /** Set an event's stored text, unless it was hidden meanwhile. */
+  private setStoredText(id: number, text: StoredText): void {
+    if (!this.storedTexts().has(id) && text.status !== 'loading') return;
+    this.storedTexts.update((texts) => new Map(texts).set(id, text));
+  }
+
+  private noteRetention(page: PromptModerationEventsPage): void {
+    if (page.retention) this.retention.set(page.retention);
   }
 
   private failRead(error: unknown): void {

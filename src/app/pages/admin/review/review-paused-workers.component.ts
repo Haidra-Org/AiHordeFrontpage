@@ -133,10 +133,15 @@ export function pausedQueryOf(filters: PausedFilters): ModerationOverviewQuery {
   };
 }
 
-/** Whether a worker's owner is in any of the chosen states; any owner when none is chosen. */
+/**
+ * Whether a worker's owner is in any of the chosen states; any owner when none
+ * is chosen. `suspicionThreshold` is the overview's account threshold, which
+ * the owner's suspicion is held against.
+ */
 export function matchesOwner(
   worker: PausedWorkerReview,
   owners: readonly OwnerState[],
+  suspicionThreshold: number,
 ): boolean {
   if (owners.length === 0) return true;
   return owners.some((state) => {
@@ -146,7 +151,7 @@ export function matchesOwner(
       case 'flagged':
         return worker.owner_flagged;
       case 'over':
-        return worker.owner_suspicion >= worker.suspicion_threshold;
+        return worker.owner_suspicion >= suspicionThreshold;
     }
   });
 }
@@ -230,8 +235,16 @@ export class ReviewPausedWorkersComponent {
   /** The workers shown: those returned, narrowed by the owner states. */
   public readonly paused = computed(() => {
     const owners = this.filters().owners;
-    return this.loaded().filter((worker) => matchesOwner(worker, owners));
+    const threshold = this.overview()?.suspicion_threshold ?? 0;
+    return this.loaded().filter((worker) =>
+      matchesOwner(worker, owners, threshold),
+    );
   });
+
+  /** The report count at which a worker counts as suspicious. */
+  public readonly workerThreshold = computed(
+    () => this.overview()?.worker_suspicion_threshold ?? null,
+  );
 
   /** How many match the horde's filters, however many it returned. */
   public readonly total = computed(

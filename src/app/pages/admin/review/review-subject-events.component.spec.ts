@@ -17,7 +17,17 @@ import {
   EndpointAvailability,
   PromptModerationEvent,
   PromptModerationEventQuery,
+  PromptModerationRetention,
 } from '../../../types/moderation';
+
+const RETENTION: PromptModerationRetention = {
+  text_days: null,
+  ipaddr_days: 30,
+  ceiling_days: 365,
+};
+
+/** A 64-character address pseudonym, as the horde writes one. */
+const SUBJECT_KEY = '0123456789abcdef'.repeat(4);
 
 const ACCOUNT: SubjectRef = {
   kind: 'account',
@@ -38,17 +48,43 @@ function event(
     worker_id: null,
     proxied_account: null,
     ipaddr: null,
+    ip_subject_key: null,
+    origin_text: null,
     models: null,
     reason: 'filter_rejection',
     outcome: 'rejected',
     submitted_prompt: `submitted text ${id}`,
     moderation_prompt: `styled text ${id}`,
     effective_prompt: null,
+    text_state: 'pending',
+    text_url: null,
+    text_sha256: null,
+    text_chars: null,
     text_truncated: false,
+    text_redacted: false,
+    ipaddr_redacted: false,
+    anonymized: false,
     held_until: null,
     notes: [],
     ...overrides,
   };
+}
+
+/** An event whose text the horde moved to its evidence store. */
+function storedEvent(
+  id: number,
+  overrides: Partial<PromptModerationEvent> = {},
+): PromptModerationEvent {
+  return event(id, {
+    submitted_prompt: null,
+    moderation_prompt: null,
+    effective_prompt: null,
+    text_state: 'stored',
+    text_url: `https://bucket.example/evidence/${id}.json?sig=old`,
+    text_sha256: 'f'.repeat(64),
+    text_chars: 24,
+    ...overrides,
+  });
 }
 
 describe('ReviewSubjectEventsComponent', () => {
@@ -65,6 +101,7 @@ describe('ReviewSubjectEventsComponent', () => {
     subjectsAvailability: WritableSignal<EndpointAvailability>;
     reportingWorkersAvailability: WritableSignal<EndpointAvailability>;
     getPromptEvents: ReturnType<typeof vi.fn>;
+    getStoredPromptText: ReturnType<typeof vi.fn>;
     addPromptNote: ReturnType<typeof vi.fn>;
     holdPromptEvent: ReturnType<typeof vi.fn>;
     releasePromptHold: ReturnType<typeof vi.fn>;
@@ -134,7 +171,16 @@ describe('ReviewSubjectEventsComponent', () => {
     moderation = {
       subjectsAvailability,
       reportingWorkersAvailability,
-      getPromptEvents: vi.fn(() => of({ events, next_cursor: null })),
+      getPromptEvents: vi.fn(() =>
+        of({ events, next_cursor: null, retention: RETENTION }),
+      ),
+      getStoredPromptText: vi.fn(() =>
+        of({
+          submitted_prompt: 'stored submitted',
+          moderation_prompt: 'stored styled',
+          effective_prompt: null,
+        }),
+      ),
       addPromptNote: vi.fn(),
       holdPromptEvent: vi.fn(),
       releasePromptHold: vi.fn(),
@@ -767,6 +813,285 @@ describe('ReviewSubjectEventsComponent', () => {
       fixture.detectChanges();
       expect(host().querySelectorAll('[data-case-link]').length).toBe(2);
       expect(hrefOf('[data-worker-reports-link]')).toContain('view=workers');
+    });
+  });
+
+  describe('stored prompt text', () => {
+    const forbidden = (): unknown =>
+      throwError(() => new HttpErrorResponse({ status: 403 }));
+
+    it('reads stored text only once the report is revealed, and drops it on hide', async () => {
+      events = [storedEvent(5)];
+      await render();
+      component.toggleExpanded(5);
+      await settle();
+      expect(moderation.getStoredPromptText).not.toHaveBeenCalled();
+
+      component.toggleReveal(5);
+      await settle();
+      expect(moderation.getStoredPromptText).toHaveBeenCalledExactlyOnceWith(
+        'https://bucket.example/evidence/5.json?sig=old',
+      );
+      expect(stageTexts()).toEqual(['stored submitted', 'stored styled']);
+      expect(
+        host().querySelector('[data-text-chars]')?.textContent?.trim(),
+      ).toBe('admin.review.reports.events.text_chars_other');
+
+      component.toggleReveal(5);
+      await settle();
+      expect(component.storedTexts().size).toBe(0);
+      expect(stageTexts()).toEqual([]);
+    });
+
+    it('never reads a stored worker report when every rejection is shown', async () => {
+      events = [
+        storedEvent(5),
+        storedEvent(6, { reason: 'worker_csam', outcome: 'censored' }),
+      ];
+      await render();
+      component.toggleRejectionsRevealed();
+      await settle();
+
+      expect(moderation.getStoredPromptText).toHaveBeenCalledExactlyOnceWith(
+        'https://bucket.example/evidence/5.json?sig=old',
+      );
+    });
+
+    it.each([403, 400])(
+      'reads the report again for a fresh link once the old one expired (%i)',
+      async (status) => {
+        events = [storedEvent(5)];
+        const fresh = storedEvent(5, {
+          text_url: 'https://bucket.example/evidence/5.json?sig=new',
+        });
+        moderation.getStoredPromptText
+          .mockReturnValueOnce(
+            throwError(() => new HttpErrorResponse({ status })),
+          )
+          .mockReturnValueOnce(
+            of({
+              submitted_prompt: 'fresh text',
+              moderation_prompt: null,
+              effective_prompt: null,
+            }),
+          );
+        moderation.getPromptEvents.mockReturnValue(
+          of({ events: [fresh], next_cursor: null, retention: RETENTION }),
+        );
+        await render();
+        component.toggleExpanded(5);
+        component.toggleReveal(5);
+        await settle();
+
+        expect(moderation.getPromptEvents).toHaveBeenCalledExactlyOnceWith({
+          event_id: 5,
+        });
+        expect(moderation.getStoredPromptText).toHaveBeenLastCalledWith(
+          'https://bucket.example/evidence/5.json?sig=new',
+        );
+        expect(stageTexts()).toEqual(['fresh text']);
+        expect(component.list().events[0].text_url).toBe(
+          'https://bucket.example/evidence/5.json?sig=new',
+        );
+      },
+    );
+
+    it('reports a failed read on its own report, once, and reads again on request', async () => {
+      events = [storedEvent(5), event(4)];
+      moderation.getStoredPromptText.mockReturnValue(forbidden());
+      moderation.getPromptEvents.mockReturnValue(
+        of({
+          events: [storedEvent(5)],
+          next_cursor: null,
+          retention: RETENTION,
+        }),
+      );
+      await render();
+      component.toggleExpanded(5);
+      component.toggleReveal(5);
+      await settle();
+
+      expect(moderation.getPromptEvents).toHaveBeenCalledTimes(1);
+      expect(moderation.getStoredPromptText).toHaveBeenCalledTimes(2);
+      expect(
+        host().querySelector('[data-event="5"] [data-text-error]'),
+      ).not.toBeNull();
+      expect(host().querySelectorAll('[data-text-error]').length).toBe(1);
+      expect(toast.error).not.toHaveBeenCalled();
+
+      moderation.getStoredPromptText.mockReturnValue(
+        of({
+          submitted_prompt: 'second try',
+          moderation_prompt: null,
+          effective_prompt: null,
+        }),
+      );
+      host()
+        .querySelector<HTMLButtonElement>('[data-text-error] button')
+        ?.click();
+      await settle();
+      expect(stageTexts()).toEqual(['second try']);
+    });
+
+    it('says when the horde gave no link to stored text', async () => {
+      events = [storedEvent(5, { text_url: null })];
+      await render();
+      component.toggleExpanded(5);
+      component.toggleReveal(5);
+      await settle();
+
+      expect(moderation.getStoredPromptText).not.toHaveBeenCalled();
+      expect(host().querySelector('[data-text-unavailable]')).not.toBeNull();
+    });
+  });
+
+  describe('retention', () => {
+    const reveal = async (target: PromptModerationEvent): Promise<void> => {
+      events = [target];
+      await render();
+      component.toggleExpanded(target.id);
+      component.toggleReveal(target.id);
+      await settle();
+    };
+
+    it('says a report never held text, without reading anything', async () => {
+      await reveal(
+        event(5, {
+          submitted_prompt: null,
+          moderation_prompt: null,
+          text_state: 'none',
+        }),
+      );
+      expect(host().querySelector('[data-text-not-recorded]')).not.toBeNull();
+      expect(host().querySelector('[data-text-removed]')).toBeNull();
+      expect(moderation.getStoredPromptText).not.toHaveBeenCalled();
+    });
+
+    it('says retention removed the text of a redacted report', async () => {
+      await reveal(
+        event(5, {
+          submitted_prompt: null,
+          moderation_prompt: null,
+          text_state: 'none',
+          text_redacted: true,
+        }),
+      );
+      expect(host().querySelector('[data-text-removed]')).not.toBeNull();
+      expect(host().querySelector('[data-text-not-recorded]')).toBeNull();
+    });
+
+    it('says retention removed the address, and pivots by the address identifier', async () => {
+      events = [
+        event(5, { ipaddr_redacted: true, ip_subject_key: SUBJECT_KEY }),
+      ];
+      await render(null, null, null, {});
+      const rowPivot = host().querySelector('[data-pivot="ip_subject_key"]');
+      expect(rowPivot?.textContent?.trim()).toBe('0123456789ab');
+      expect(hrefOf('[data-pivot="ip_subject_key"]')).toContain(
+        `ip_subject_key=${SUBJECT_KEY}`,
+      );
+      expect(hrefOf('[data-pivot="ip_subject_key"]')).toContain('tab=prompts');
+
+      component.toggleExpanded(5);
+      fixture.detectChanges();
+      expect(host().querySelector('[data-address-removed]')).not.toBeNull();
+      expect(
+        host().querySelector('[data-address-key] dd')?.textContent?.trim(),
+      ).toBe('0123456789ab');
+    });
+
+    it('shows the address identifier beside an address it does not replace', async () => {
+      events = [event(5, { ipaddr: '10.0.0.1', ip_subject_key: SUBJECT_KEY })];
+      await render(null, null, null, {});
+      expect(host().querySelector('[data-pivot="ip_subject_key"]')).toBeNull();
+
+      component.toggleExpanded(5);
+      fixture.detectChanges();
+      expect(hrefOf('[data-pivot="ip"]')).toContain('ipaddr=10.0.0.1');
+      expect(
+        host().querySelector('[data-address-key] dd')?.textContent?.trim(),
+      ).toBe('0123456789ab');
+      expect(host().querySelector('[data-address-key] a')).toBeNull();
+    });
+
+    it('shows the origin a proxy reported', async () => {
+      events = [event(5, { origin_text: 'tor-exit' })];
+      await render();
+      component.toggleExpanded(5);
+      fixture.detectChanges();
+      expect(
+        host().querySelector('[data-origin] dd')?.textContent?.trim(),
+      ).toBe('tor-exit');
+    });
+
+    it('marks an anonymized report and leaves out the identity it lost', async () => {
+      events = [
+        event(5, {
+          user_id: null,
+          worker_id: 'w-1',
+          submitted_prompt: null,
+          moderation_prompt: null,
+          text_state: 'none',
+          text_redacted: true,
+          ipaddr_redacted: true,
+          anonymized: true,
+        }),
+      ];
+      await render(null, null, null, {});
+      expect(host().querySelector('[data-anonymized]')).not.toBeNull();
+      expect(host().querySelector('[data-pivot="account"]')).toBeNull();
+
+      component.toggleExpanded(5);
+      fixture.detectChanges();
+      expect(host().querySelector('[data-pivot="account"]')).toBeNull();
+      expect(host().querySelector('[data-admin-page="account"]')).toBeNull();
+      expect(host().querySelector('[data-address-fact]')).toBeNull();
+      expect(host().querySelector('[data-anonymized-note]')).not.toBeNull();
+      expect(hrefOf('[data-pivot="worker"]')).toContain('worker_id=w-1');
+    });
+
+    it('keeps the retention policy the page reported', async () => {
+      await render(null, null, null, {});
+      expect(component.retention()).toEqual(RETENTION);
+    });
+  });
+
+  describe('one report by its id', () => {
+    it('reads only that report and opens it with its notes', async () => {
+      events = [
+        event(5, {
+          notes: [
+            {
+              id: 1,
+              author_id: 9,
+              note: 'seen',
+              created: '2026-09-26T11:00:00+00:00',
+            },
+          ],
+        }),
+      ];
+      await render(null, null, null, { event_id: 5 });
+
+      expect(moderation.getPromptEvents).toHaveBeenCalledExactlyOnceWith({
+        event_id: 5,
+        limit: 50,
+      });
+      expect(component.isExpanded(5)).toBe(true);
+      expect(host().querySelector('.review-note')?.textContent).toContain(
+        'seen',
+      );
+      expect(stageTexts()).toEqual([]);
+    });
+
+    it('says plainly when the report was not found', async () => {
+      events = [];
+      await render(null, null, null, { event_id: 99 });
+      expect(host().textContent).toContain(
+        'admin.review.reports.events.event_not_found',
+      );
+      expect(host().textContent).not.toContain(
+        'admin.review.reports.events.none_match',
+      );
     });
   });
 

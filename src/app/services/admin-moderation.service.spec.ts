@@ -26,12 +26,19 @@ import {
 const BASE = API_BASE;
 
 const OVERVIEW: ModerationOverview = {
+  promotion_threshold: 1000,
+  suspicion_threshold: 5,
+  worker_suspicion_threshold: 3,
   promotion_blocked_users: [],
   promotion_eligible_users: [],
   paused_workers: [],
 };
 
-const PAGE: PromptModerationEventsPage = { events: [], next_cursor: null };
+const PAGE: PromptModerationEventsPage = {
+  events: [],
+  next_cursor: null,
+  retention: { text_days: null, ipaddr_days: 30, ceiling_days: 365 },
+};
 
 /** One log row as a horde without evidence holds sends it. */
 const ROW: PromptModerationEvent = {
@@ -42,13 +49,22 @@ const ROW: PromptModerationEvent = {
   worker_id: null,
   proxied_account: null,
   ipaddr: null,
+  ip_subject_key: null,
+  origin_text: null,
   models: null,
   reason: 'filter_rejection',
   outcome: 'rejected',
   submitted_prompt: null,
   moderation_prompt: null,
   effective_prompt: null,
+  text_state: 'none',
+  text_url: null,
+  text_sha256: null,
+  text_chars: null,
   text_truncated: false,
+  text_redacted: false,
+  ipaddr_redacted: false,
+  anonymized: false,
   notes: [],
 };
 
@@ -219,6 +235,14 @@ describe('AdminModerationService', () => {
       expect(params?.get('until')).toBe('2026-09-02T00:00:00+00:00');
     });
 
+    it('sends one report by its id, and an address identifier', () => {
+      const key = '0123456789abcdef'.repeat(4);
+      svc.getPromptEvents({ event_id: 77, ip_subject_key: key }).subscribe();
+      const params = paramsOf(mockCache.cachedGet.mock.calls[0]);
+      expect(params?.get('event_id')).toBe('77');
+      expect(params?.get('ip_subject_key')).toBe(key);
+    });
+
     it('leaves unset filters off the query', () => {
       svc.getPromptEvents({ user_id: 3 }).subscribe();
       expect(paramsOf(mockCache.cachedGet.mock.calls[0])?.keys()).toEqual([
@@ -232,6 +256,41 @@ describe('AdminModerationService', () => {
       );
       svc.getPromptEvents().subscribe({ error: () => undefined });
       expect(svc.promptEventsAvailability()).toBe('absent');
+    });
+  });
+
+  describe('getStoredPromptText', () => {
+    const URL = 'https://bucket.example/evidence/5.json?X-Amz-Signature=abc';
+
+    it('reads the presigned link with no header, and leaves the log alone', () => {
+      const text = {
+        submitted_prompt: 'a',
+        moderation_prompt: null,
+        effective_prompt: null,
+      };
+      let result: unknown;
+      svc.getStoredPromptText(URL).subscribe((r) => (result = r));
+
+      const req = http.expectOne(URL);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.headers.keys()).toEqual([]);
+      req.flush(text);
+
+      expect(result).toEqual(text);
+      expect(svc.promptEventsAvailability()).toBe('unknown');
+    });
+
+    it('passes an expired link to the caller', () => {
+      let status: number | undefined;
+      svc.getStoredPromptText(URL).subscribe({
+        error: (error: unknown) => {
+          if (error instanceof HttpErrorResponse) status = error.status;
+        },
+      });
+      http
+        .expectOne(URL)
+        .flush('expired', { status: 403, statusText: 'Forbidden' });
+      expect(status).toBe(403);
     });
   });
 

@@ -53,15 +53,15 @@ import {
 export const ACCOUNT_REPORT_LIMIT = 100;
 
 /**
- * How long the horde keeps reports. A read without a start reaches back
- * this far and no further.
+ * How far back the counts reach when no alert rule gives a window. This is a
+ * choice of the summary: the horde keeps reports for longer.
  */
-export const REPORT_RETENTION_SECONDS = 2_592_000;
+export const REPORT_SUMMARY_SECONDS = 2_592_000;
 
 export interface AccountReportSummary {
   /**
    * Seconds the counts reach back: the longest alert rule's window where the
-   * rules can be read, else the retention.
+   * rules can be read, else `REPORT_SUMMARY_SECONDS`.
    */
   window: number;
   total: ListCount;
@@ -90,7 +90,7 @@ export function summariseReports(
  * and the suspicion history of its workers, read when opened. Where the horde
  * serves the report listings, the record also carries the account's standing
  * in Reports (its latest decision), counts over the longest alert window
- * rather than the whole retention, and links to its case. Prompt text is
+ * rather than the default summary window, and links to its case. Prompt text is
  * never shown here; reading it is left to the review page, where it stays
  * hidden until asked for.
  */
@@ -187,26 +187,17 @@ export class UserModerationRecordComponent {
         filter(([, , shown]) => shown),
         switchMap(([userId, casesAvailable]) =>
           this.ruleWindow(casesAvailable).pipe(
+            map((window) => window ?? REPORT_SUMMARY_SECONDS),
             switchMap((window) =>
               this.moderation
                 .getPromptEvents({
                   user_id: userId,
-                  ...(window === null
-                    ? {}
-                    : {
-                        since: hordeInstant(
-                          new Date(Date.now() - window * 1000),
-                        ),
-                      }),
+                  since: hordeInstant(new Date(Date.now() - window * 1000)),
                   limit: ACCOUNT_REPORT_LIMIT,
                 })
                 .pipe(
                   map((page) =>
-                    summariseReports(
-                      page.events,
-                      ACCOUNT_REPORT_LIMIT,
-                      window ?? REPORT_RETENTION_SECONDS,
-                    ),
+                    summariseReports(page.events, ACCOUNT_REPORT_LIMIT, window),
                   ),
                 ),
             ),
@@ -223,7 +214,7 @@ export class UserModerationRecordComponent {
 
   /**
    * The longest alert rule's window, read only where Reports is served;
-   * null to count over everything the horde keeps.
+   * null where no rule gives one.
    */
   private ruleWindow(casesAvailable: boolean): Observable<number | null> {
     if (

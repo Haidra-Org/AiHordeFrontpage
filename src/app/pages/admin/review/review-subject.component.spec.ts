@@ -57,13 +57,22 @@ function event(id: number): PromptModerationEvent {
     worker_id: 'worker-7',
     proxied_account: null,
     ipaddr: '10.0.0.9',
+    ip_subject_key: null,
+    origin_text: null,
     models: ['model a'],
     reason: 'worker_csam',
     outcome: 'censored',
     submitted_prompt: `submitted text ${id}`,
     moderation_prompt: null,
     effective_prompt: null,
+    text_state: 'pending',
+    text_url: null,
+    text_sha256: null,
+    text_chars: null,
     text_truncated: false,
+    text_redacted: false,
+    ipaddr_redacted: false,
+    anonymized: false,
     notes: [],
   };
 }
@@ -271,7 +280,11 @@ describe('ReviewSubjectComponent', () => {
         }),
       ),
       getPromptEvents: vi.fn((_query: PromptModerationEventQuery) =>
-        of({ events: [event(14), event(12)], next_cursor: null }),
+        of({
+          events: [event(14), event(12)],
+          next_cursor: null,
+          retention: { text_days: null, ipaddr_days: 30, ceiling_days: 365 },
+        }),
       ),
       getSubjectDetail: vi.fn((_query: ModerationSubjectDetailQuery) =>
         of(detailOf()),

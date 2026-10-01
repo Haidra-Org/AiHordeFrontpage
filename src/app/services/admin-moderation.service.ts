@@ -35,6 +35,7 @@ import {
   PromptModerationEventsPage,
   PromptModerationNote,
   PromptModerationHold,
+  PromptModerationText,
   ReportingWorkersPage,
   ReportingWorkersQuery,
   SubjectDecision,
@@ -329,6 +330,19 @@ export class AdminModerationService {
         { ttl: CacheTTL.NEVER },
       )
       .pipe(this.trackAvailability(this._promptEvents));
+  }
+
+  /**
+   * The prompt stages of a `stored` event, read from its `text_url`.
+   *
+   * The link is presigned for the evidence bucket, so the request carries no
+   * header: the key must not reach the bucket, and a header would make the
+   * cross-origin GET need a preflight the bucket does not answer. An expired
+   * link is refused by the store; the caller reads the event again for a
+   * fresh one.
+   */
+  public getStoredPromptText(url: string): Observable<PromptModerationText> {
+    return this.httpClient.get<PromptModerationText>(url);
   }
 
   /**
