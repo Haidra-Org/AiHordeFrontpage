@@ -68,6 +68,17 @@
                 }
               ]
             },
+            "devhorde": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.devhorde.ts"
+                }
+              ]
+            },
             "local": {
               "optimization": false,
               "sourceMap": true,
@@ -131,6 +142,9 @@
             },
             "development": {
               "buildTarget": "AiHordeWebsite:build:development"
+            },
+            "devhorde": {
+              "buildTarget": "AiHordeWebsite:build:devhorde"
             },
             "local": {
               "buildTarget": "AiHordeWebsite:build:local"

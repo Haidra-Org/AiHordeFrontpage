@@ -40,6 +40,15 @@ server and serves the on-disk evidence library:
 npm start -- --configuration local
 ```
 
+To drive a horde change that is deployed to the staging host but not yet to
+production, serve the `devhorde` configuration. It is the development
+configuration with API traffic pointed at `https://dev.aihorde.net`, which has
+its own accounts and keys:
+
+```bash
+npm start -- --configuration devhorde
+```
+
 To open that studio from a phone or a second machine, serve the `lan`
 configuration bound to the machine's address. It is the local configuration
 with the API origin read off the page's own hostname, so requests reach the API
