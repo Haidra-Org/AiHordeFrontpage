@@ -11814,10 +11814,14 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     column-gap: var(--gs-space-6);
     align-items: start;
   }
+  /* Pinned under the site nav like the contents rail beside it; measured
+     from the viewport top, the nav covered the card's head. */
   .gen-studio .gs-tut-evidence {
     position: sticky;
-    top: 12px;
-    max-height: calc(100vh - 24px);
+    top: calc(var(--sticky-offset, var(--nav-height-desktop, 80px)) + 12px);
+    max-height: calc(
+      100vh - var(--sticky-offset, var(--nav-height-desktop, 80px)) - 24px
+    );
     overflow-y: auto;
     scrollbar-width: thin;
   }
