@@ -15,14 +15,12 @@
    ================================================================= */
 
 @layer components {
-  /* Fixed navigation bar - always visible at top of viewport */
-  header {
-    @apply z-50 transition-all duration-300;
-  }
-
-  /* Shared nav shell for sticky header backgrounds/borders */
+  /* Fixed navigation bar, always visible at the top of the viewport. The
+     stacking is set on the class: a bare header selector also lifts every
+     page and card <header> that is a flex or grid item over the sticky
+     bars below the site header. */
   .nav-shell {
-    @apply fixed top-0 left-0 right-0 z-50;
+    @apply fixed top-0 left-0 right-0 z-50 transition-all duration-300;
     background: var(--color-glass-surface-heavy);
     backdrop-filter: blur(var(--blur-glass-md));
     -webkit-backdrop-filter: blur(var(--blur-glass-md));
