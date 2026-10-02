@@ -484,6 +484,42 @@
       grid-template-columns: minmax(18rem, 26rem) minmax(0, 1fr);
     }
 
+    /* A long list scrolls the page while the open item stays beside
+       whichever row was clicked; a detail taller than the screen scrolls
+       on its own. The inline padding keeps focus rings clear of the
+       clipping edge. Opt-in, because a pane with its own sticky bar
+       (.review-case-bar) is laid out against the page scroll. */
+    .review-split--pinned .review-split-detail {
+      position: sticky;
+      top: calc(var(--sticky-offset, 0px) + var(--hd-space-3));
+      max-height: calc(100dvh - var(--sticky-offset, 0px) - var(--hd-space-6));
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-inline: var(--hd-space-1);
+      margin-inline: calc(-1 * var(--hd-space-1));
+      scroll-padding-bottom: 6rem;
+    }
+
+    /* The decision stays in reach however long the evidence above it runs.
+       Its fill is the .section-secondary page the admin shell sits on, so
+       it reads as part of the page until something scrolls under it. */
+    .review-split--pinned
+      .review-split-detail
+      > .review-detail-section:has(.review-decisions) {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      padding-bottom: var(--hd-space-2);
+      background: var(--color-surface-secondary);
+    }
+
+    .dark
+      .review-split--pinned
+      .review-split-detail
+      > .review-detail-section:has(.review-decisions) {
+      background: var(--color-gray-800);
+    }
+
     .review-back {
       display: none;
     }

@@ -100,6 +100,8 @@ export class ReviewPromotionsComponent {
 
   private readonly detailHeading =
     viewChild<ElementRef<HTMLElement>>('detailHeading');
+  private readonly detailPane =
+    viewChild<ElementRef<HTMLElement>>('detailPane');
 
   /** How far the account's evaluating kudos stand above the promotion threshold. */
   public excess(user: PromotionReviewUser, threshold: number): number {
@@ -120,11 +122,18 @@ export class ReviewPromotionsComponent {
   }
 
   public open(id: number): void {
-    this.selectedId.set(id);
+    this.select(id);
     this.detailShown.set(true);
     if (!isSplitView(this.document)) {
       setTimeout(() => this.detailHeading()?.nativeElement.focus());
     }
+  }
+
+  /** The pane keeps its scroll position across items, so each one opens at its top. */
+  private select(id: number | null): void {
+    this.selectedId.set(id);
+    const pane = this.detailPane()?.nativeElement;
+    if (pane) pane.scrollTop = 0;
   }
 
   public back(): void {
@@ -168,7 +177,7 @@ export class ReviewPromotionsComponent {
           transloco: true,
           messageParams: { username: user.username },
         });
-        this.selectedId.set(next);
+        this.select(next);
         this.counts.refreshOverview(true);
       },
       error: (error: unknown) => {

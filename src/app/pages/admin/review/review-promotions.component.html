@@ -8,7 +8,10 @@
     </p>
   </div>
 } @else {
-  <div class="review-split" [class.review-split--detail]="detailShown()">
+  <div
+    class="review-split review-split--pinned"
+    [class.review-split--detail]="detailShown()"
+  >
     <div class="review-split-list">
       @for (group of groups(); track group.id) {
         <section
@@ -104,6 +107,7 @@
     </div>
 
     <section
+      #detailPane
       class="review-split-detail"
       [attr.aria-label]="'admin.review.promotions.detail_label' | transloco"
     >

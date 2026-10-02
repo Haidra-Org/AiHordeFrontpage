@@ -299,6 +299,8 @@ export class ReviewPausedWorkersComponent {
 
   private readonly detailHeading =
     viewChild<ElementRef<HTMLElement>>('detailHeading');
+  private readonly detailPane =
+    viewChild<ElementRef<HTMLElement>>('detailPane');
 
   constructor() {
     const request = computed(() => ({
@@ -398,11 +400,18 @@ export class ReviewPausedWorkersComponent {
   }
 
   public open(id: string): void {
-    this.selectedId.set(id);
+    this.select(id);
     this.detailShown.set(true);
     if (!isSplitView(this.document)) {
       setTimeout(() => this.detailHeading()?.nativeElement.focus());
     }
+  }
+
+  /** The pane keeps its scroll position across items, so each one opens at its top. */
+  private select(id: string | null): void {
+    this.selectedId.set(id);
+    const pane = this.detailPane()?.nativeElement;
+    if (pane) pane.scrollTop = 0;
   }
 
   public back(): void {
@@ -471,7 +480,7 @@ export class ReviewPausedWorkersComponent {
             transloco: true,
             messageParams: { name: worker.name },
           });
-          this.selectedId.set(next);
+          this.select(next);
           this.refresh();
         },
         error: (error: unknown) => {
