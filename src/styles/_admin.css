@@ -1220,7 +1220,7 @@
       order: 20;
       top: auto;
       bottom: 0;
-      padding-bottom: calc(var(--hd-space-2) + env(safe-area-inset-bottom));
+      padding-bottom: calc(var(--hd-space-2) + var(--gs-safe-bottom));
       border-top: 1px solid var(--hd-card-border);
       border-bottom: 0;
       box-shadow: var(--hd-pop-shadow);

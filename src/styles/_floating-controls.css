@@ -91,13 +91,13 @@
     html:has(.gs-docs .gs-subtabs) {
       --floating-controls-reserve: calc(
         var(--floating-controls-band) + var(--gs-tabbar-height) +
-          env(safe-area-inset-bottom)
+          var(--gs-safe-bottom)
       );
     }
 
     html:has(.gs-docs .gs-subtabs) .floating-controls {
       --floating-controls-shift: calc(
-        -1 * (var(--gs-tabbar-height) + env(safe-area-inset-bottom))
+        -1 * (var(--gs-tabbar-height) + var(--gs-safe-bottom))
       );
     }
 

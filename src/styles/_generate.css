@@ -86,6 +86,17 @@
   --gs-pinbar-height: 60px;
 }
 
+/* The room every bar pinned to the foot of the screen keeps clear of the
+   system's own bars. The page does not set `viewport-fit=cover`, so the browser
+   already keeps it off them and this is zero. It is not read from
+   `env(safe-area-inset-bottom)`: Firefox for Android reports the system bar's
+   height there until its toolbar first hides and zero after, so every bar and
+   page end padded with it changed size mid-scroll. A page that adopts
+   `viewport-fit=cover` sets the inset here, once. */
+:root {
+  --gs-safe-bottom: 0px;
+}
+
 /* The nine section identity hues, declared at the document root because the
    surfaces that use them are not all inside the studio: the glossary modal is
    mounted at the root and would otherwise have to restate every value, which is
@@ -748,7 +759,7 @@
     z-index: 44;
     height: auto;
     gap: 0;
-    padding: 0 0 env(safe-area-inset-bottom);
+    padding: 0 0 var(--gs-safe-bottom);
     border-top: 1px solid var(--gs-border);
     border-bottom: 0;
     box-shadow: var(--gs-elev-2);
@@ -800,7 +811,7 @@
   }
   /* The page ends above the bar rather than under it. */
   .gen-studio .gs-shell-outlet {
-    padding-bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--gs-tabbar-height) + var(--gs-safe-bottom));
   }
 }
 /* Wide, the documentation has crumbs and its own row of pages up there, so the
@@ -927,7 +938,7 @@ body.gs-immersive .gen-studio.gs-shell {
   min-height: 100dvh;
 }
 body.gs-immersive .gen-studio .gs-shell-outlet {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--gs-safe-bottom);
 }
 /* The in-page phone fallback has the same edge treatment and unchanged bar
    height as native fullscreen. */
@@ -1419,7 +1430,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 @media (max-width: 1023.98px) {
   .gen-studio .gs-submitrow--pinned {
     position: fixed;
-    inset: auto 0 calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom)) 0;
+    inset: auto 0 calc(var(--gs-tabbar-height) + var(--gs-safe-bottom)) 0;
     /* Under the tool bar (44) and everything above it: the sheet at 45 and the
        modal surfaces at 60+ cover this bar rather than sharing the screen with
        it, which is what an open editor or dialog should do. */
@@ -1454,8 +1465,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   /* The page ends above the bar as well as above the tool bar. */
   .gen-studio .gs-shell-outlet:has(.gs-submitrow--pinned) {
     padding-bottom: calc(
-      var(--gs-tabbar-height) + var(--gs-pinbar-height) +
-        env(safe-area-inset-bottom)
+      var(--gs-tabbar-height) + var(--gs-pinbar-height) + var(--gs-safe-bottom)
     );
   }
 }
@@ -2067,7 +2077,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    small, worded, and with nothing to dismiss. */
 .gen-studio .gs-dock {
   position: sticky;
-  bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom) + 8px);
+  bottom: calc(var(--gs-tabbar-height) + var(--gs-safe-bottom) + 8px);
   /* Over the panel's own cards, under the tool bar (44), the sheet (45) and
      every modal surface (60+). */
   z-index: 20;
@@ -2088,7 +2098,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   .gen-studio form:has(.gs-submitrow--pinned) .gs-dock {
     bottom: calc(
       var(--gs-tabbar-height) + var(--gs-pinbar-height) +
-        env(safe-area-inset-bottom) + 8px
+        var(--gs-safe-bottom) + 8px
     );
   }
   /* Fullscreen removes the tool bar and moves a pinned Generate row through
@@ -2187,7 +2197,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 @media (max-width: 1023.98px) {
   html:has(.gen-studio .gs-dock) {
     scroll-padding-bottom: calc(
-      var(--gs-tabbar-height) + env(safe-area-inset-bottom) + 8px + 44px + 8px
+      var(--gs-tabbar-height) + var(--gs-safe-bottom) + 8px + 44px + 8px
     );
   }
 }
@@ -7395,7 +7405,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   /* The viewer covers the studio's tab bar, so the row is the last thing above
      the bottom of the screen and clears the home indicator itself. The fallback
      keeps the clearance where env() is unknown. */
-  padding: 12px 10px calc(14px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 10px calc(14px + var(--gs-safe-bottom));
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
 }
 .gen-studio .gs-viewer-action-group {
@@ -7487,7 +7497,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   .gen-studio .gs-viewer-actions {
     gap: 6px;
     /* Tighter sides, but the clearance from the bottom edge stays. */
-    padding: 10px 8px calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 8px calc(12px + var(--gs-safe-bottom));
   }
   .gen-studio .gs-viewer-act {
     padding: 7px 9px;
@@ -8111,7 +8121,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 14px calc(10px + var(--gs-safe-bottom));
   border-top: 1px solid var(--gs-border);
 }
 .gen-studio .gs-meta-seg {
@@ -8401,7 +8411,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     order: 3;
     border-bottom: 0;
     border-top: 1px solid var(--gs-border-soft);
-    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(14px + var(--gs-safe-bottom));
     background: var(--gs-panel);
     gap: 10px;
     /* The dock reads a vertical swipe as a fold, so the browser must not spend
@@ -9285,7 +9295,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 @media (max-width: 1023.98px) {
   /* The generate footer sits against the bottom edge of the viewport. */
   .gen-studio .gs-footer {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(12px + var(--gs-safe-bottom));
   }
   .gen-studio .gs-switch,
   .gen-studio .gs-switch-row {
@@ -10026,7 +10036,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
      scrollport that begins below it. Scrolling the layer, with the panel
      centred only while it fits, keeps the first example whole and reachable. */
   .gen-studio .gs-sb-viewer {
-    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    padding: env(safe-area-inset-top, 0px) 0 var(--gs-safe-bottom);
     align-items: flex-start;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -10081,7 +10091,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
   .gen-studio .gs-sb-viewer-actions {
     flex-wrap: wrap;
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(12px + var(--gs-safe-bottom));
   }
   .gen-studio .gs-sb-viewer-variant {
     flex: 1 1 100%;
@@ -11715,12 +11725,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     align-items: flex-start;
     padding: var(--gs-space-2);
     padding-top: calc(var(--gs-space-2) + env(safe-area-inset-top));
-    padding-bottom: calc(var(--gs-space-2) + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--gs-space-2) + var(--gs-safe-bottom));
   }
   .gs-tut-viewer-body {
     max-height: calc(
       100dvh - 2 * var(--gs-space-2) - env(safe-area-inset-top) -
-        env(safe-area-inset-bottom)
+        var(--gs-safe-bottom)
     );
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -14162,14 +14172,14 @@ app-gs-sweep-scrub + app-gs-door {
     align-items: flex-start;
     padding: var(--gs-space-2);
     padding-top: calc(var(--gs-space-2) + env(safe-area-inset-top));
-    padding-bottom: calc(var(--gs-space-2) + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--gs-space-2) + var(--gs-safe-bottom));
   }
   .gen-studio
     .gs-sweep-viewer:not(.gs-sweep-viewer--inline)
     .gs-sweep-viewer-body:not(.gs-plate) {
     max-height: calc(
       100dvh - 2 * var(--gs-space-2) - env(safe-area-inset-top) -
-        env(safe-area-inset-bottom)
+        var(--gs-safe-bottom)
     );
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -14180,7 +14190,7 @@ app-gs-sweep-scrub + app-gs-door {
      taken off the frame, which is the one thing the reader came for. */
   .gen-studio .gs-sweep-viewer:has(.gs-sweep-viewer-body.gs-plate) {
     padding: env(safe-area-inset-top) env(safe-area-inset-right)
-      env(safe-area-inset-bottom) env(safe-area-inset-left);
+      var(--gs-safe-bottom) env(safe-area-inset-left);
   }
   .gen-studio .gs-sweep-viewer-body.gs-plate {
     width: 100%;
@@ -15202,7 +15212,7 @@ app-gs-compare-wipe {
    the last thing on the page, and the outlet keeps its own end. */
 @media (max-width: 1023.98px) {
   html:has(.gs-docs .gs-subtabs) .footer-shell {
-    padding-bottom: calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--gs-tabbar-height) + var(--gs-safe-bottom));
   }
 }
 
@@ -17289,7 +17299,7 @@ app-gs-compare-wipe {
    below it, which is why the sheet no longer pads for it. */
 .gen-studio .gs-sheet {
   position: fixed;
-  inset: auto 0 calc(var(--gs-tabbar-height) + env(safe-area-inset-bottom)) 0;
+  inset: auto 0 calc(var(--gs-tabbar-height) + var(--gs-safe-bottom)) 0;
   z-index: 45;
   display: flex;
   flex-direction: column;
@@ -17595,7 +17605,7 @@ html:has(app-gs-sheet) {
 @media (max-width: 1023.98px) {
   html:has(app-gs-sheet) {
     scroll-padding-bottom: calc(
-      var(--gs-sheet-clearance, 96px) + 56px + env(safe-area-inset-bottom)
+      var(--gs-sheet-clearance, 96px) + 56px + var(--gs-safe-bottom)
     );
   }
   /* The page also has to be able to scroll that far: a field near the foot of
@@ -17605,7 +17615,7 @@ html:has(app-gs-sheet) {
   html:has(app-gs-sheet) .gen-studio .gs-shell-outlet {
     padding-bottom: calc(
       var(--gs-sheet-clearance, 96px) + var(--gs-tabbar-height) +
-        env(safe-area-inset-bottom)
+        var(--gs-safe-bottom)
     );
   }
 }
@@ -17727,8 +17737,8 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-parked-host--phone {
   position: fixed;
-  inset: auto 10px
-    calc(var(--gs-tabbar-height) + 10px + env(safe-area-inset-bottom)) 10px;
+  inset: auto 10px calc(var(--gs-tabbar-height) + 10px + var(--gs-safe-bottom))
+    10px;
   z-index: 45;
 }
 /* Fixed over the form, so its tint is laid on an opaque card: a translucent
@@ -19203,7 +19213,7 @@ html:has(app-gs-sheet) {
   display: flex;
   justify-content: flex-end;
   padding: var(--gs-space-3) var(--gs-space-4);
-  padding-bottom: calc(var(--gs-space-3) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--gs-space-3) + var(--gs-safe-bottom));
   border-top: 1px solid var(--gs-border);
 }
 .gen-studio .gs-prompt-editor-done {
@@ -19716,7 +19726,7 @@ html:has(app-gs-sheet) {
 @media (max-width: 640px) {
   .gen-studio .gs-modal-overlay--full {
     padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
-      env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+      var(--gs-safe-bottom) env(safe-area-inset-left, 0px);
   }
   .gen-studio .gs-se-panel {
     height: 100%;
