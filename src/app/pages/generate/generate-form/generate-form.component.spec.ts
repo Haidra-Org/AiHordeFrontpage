@@ -3319,6 +3319,7 @@ describe('GenerateFormComponent Options list', () => {
       phone: signal(phone),
       toggle: (): Promise<void> => Promise.resolve(),
       setTarget: (): void => undefined,
+      setExitInView: (): void => undefined,
     } as unknown as FullscreenService;
   }
 

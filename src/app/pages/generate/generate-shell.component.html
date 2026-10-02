@@ -8,8 +8,8 @@
   <!-- The way back to the page, drawn only while the studio has the screen.
        Escape and the system gesture do the same thing; this is for the reader
        on a phone, who has neither, and it is the only way back out of the
-       in-page mode. -->
-  @if (fullscreen.filling()) {
+       in-page mode once the header's own exit has scrolled away. -->
+  @if (fullscreen.filling() && !fullscreen.exitInView()) {
     <button
       type="button"
       class="gs-fs-exit"

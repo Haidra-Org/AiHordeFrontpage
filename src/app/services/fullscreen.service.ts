@@ -74,6 +74,15 @@ export class FullscreenService {
    */
   public readonly phone: Signal<boolean> = this._phone.asReadonly();
 
+  private readonly _exitInView = signal(false);
+
+  /**
+   * Whether a page control that leaves the whole screen is on screen itself.
+   * The shell's floating way out stands down while it is, so the reader is not
+   * shown two exits side by side.
+   */
+  public readonly exitInView: Signal<boolean> = this._exitInView.asReadonly();
+
   /** Whether the studio fills the screen, by either route. */
   public readonly filling: Signal<boolean> = computed(
     () => this._active() || this._immersive(),
@@ -111,6 +120,10 @@ export class FullscreenService {
   /** The element that goes on screen. The shell owns it and clears it on the way out. */
   setTarget(element: HTMLElement | null): void {
     this._target.set(element);
+  }
+
+  setExitInView(inView: boolean): void {
+    this._exitInView.set(inView);
   }
 
   async toggle(): Promise<void> {
@@ -182,11 +195,16 @@ export class FullscreenService {
       this.document.webkitFullscreenElement ??
       null;
     const target = this._target();
-    this._active.set(
+    const active =
       current !== null &&
-        target !== null &&
-        (current === target || target.contains(current)),
-    );
+      target !== null &&
+      (current === target || target.contains(current));
+    // The browser ends its half on its own (a phone does so when the reader
+    // switches apps). The page's half went in alongside it, so it comes out
+    // with it; otherwise the studio would still hide the site's bars and draw
+    // its exit controls over a page that is no longer on the whole screen.
+    if (this._active() && !active) this.setImmersive(false);
+    this._active.set(active);
   };
 }
 

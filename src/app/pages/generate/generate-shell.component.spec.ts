@@ -18,6 +18,7 @@ describe('GenerateShellComponent', () => {
   let fixture: ComponentFixture<GenerateShellComponent>;
   let router: Router;
   let fullscreenActive: WritableSignal<boolean>;
+  let exitInView: WritableSignal<boolean>;
 
   const links = (): HTMLAnchorElement[] =>
     Array.from(
@@ -33,6 +34,7 @@ describe('GenerateShellComponent', () => {
 
   beforeEach(async () => {
     fullscreenActive = signal(false);
+    exitInView = signal(false);
     const fullscreen = {
       available: true,
       active: fullscreenActive.asReadonly(),
@@ -40,6 +42,7 @@ describe('GenerateShellComponent', () => {
       phone: signal(false),
       // The one state the shell draws from: either route to the whole screen.
       filling: fullscreenActive.asReadonly(),
+      exitInView: exitInView.asReadonly(),
       setTarget: () => undefined,
       toggle: () => Promise.resolve(),
       enter: () => Promise.resolve(),
@@ -180,6 +183,22 @@ describe('GenerateShellComponent', () => {
     fixture.detectChanges();
 
     expect(exit()).toBeNull();
+  });
+
+  it('stands the way back down while the page shows its own exit', () => {
+    const exit = (): HTMLButtonElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector('.gs-fs-exit');
+
+    fullscreenActive.set(true);
+    exitInView.set(true);
+    fixture.detectChanges();
+
+    expect(exit()).toBeNull();
+
+    exitInView.set(false);
+    fixture.detectChanges();
+
+    expect(exit()).not.toBeNull();
   });
 
   it('has a short name for every tool to fall back on', () => {

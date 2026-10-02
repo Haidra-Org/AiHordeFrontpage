@@ -263,6 +263,40 @@ describe('FullscreenService', () => {
     expect(service.immersive()).toBe(false);
   });
 
+  it('gives the page back when the browser ends its half on its own', async () => {
+    // A phone drops the browser's fullscreen when the reader switches apps.
+    sayPhone(true);
+    const { doc, fire } = makeDocument('standard');
+    const service = serviceWith(doc);
+    service.setTarget(makeElement(doc, 'standard'));
+
+    await service.toggle();
+    expect(service.filling()).toBe(true);
+
+    doc.fullscreenElement = null;
+    fire();
+
+    expect(service.immersive()).toBe(false);
+    expect(service.filling()).toBe(false);
+    expect(doc.body?.classList.contains('gs-immersive')).toBe(false);
+  });
+
+  it('keeps the page on the screen when the browser refuses its half', async () => {
+    sayPhone(true);
+    const { doc } = makeDocument('standard');
+    const service = serviceWith(doc);
+    const element = makeElement(doc, 'standard');
+    (
+      element as unknown as { requestFullscreen: () => Promise<void> }
+    ).requestFullscreen = () => Promise.reject(new Error('refused'));
+    service.setTarget(element);
+
+    await service.toggle();
+
+    expect(service.active()).toBe(false);
+    expect(service.immersive()).toBe(true);
+  });
+
   it('leaves the page as it is where the pointer is not a finger', async () => {
     sayPhone(false);
     const { doc } = makeDocument('standard');

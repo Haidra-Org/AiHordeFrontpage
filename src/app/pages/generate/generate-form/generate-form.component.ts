@@ -6,6 +6,7 @@ import {
   Injector,
   OnInit,
   afterNextRender,
+  afterRenderEffect,
   computed,
   contentChild,
   effect,
@@ -3133,6 +3134,28 @@ export class GenerateFormComponent implements OnInit {
     () =>
       this.fullscreenBtn()?.nativeElement ?? this.optionsBtn()?.nativeElement,
   );
+
+  /**
+   * The phone's standing button is itself a way out of the whole screen, so the
+   * shell's floating one stands down while this one can be seen. The header
+   * scrolls with the form, so the floating one comes back once it has gone.
+   */
+  private readonly fullscreenExitWatch = afterRenderEffect((onCleanup) => {
+    const button = this.fullscreenBtn()?.nativeElement;
+    if (!button || typeof IntersectionObserver === 'undefined') {
+      this.fullscreen.setExitInView(false);
+      return;
+    }
+    const observer = new IntersectionObserver((records) => {
+      const record = records.at(-1);
+      if (record) this.fullscreen.setExitInView(record.isIntersecting);
+    });
+    observer.observe(button);
+    onCleanup(() => {
+      observer.disconnect();
+      this.fullscreen.setExitInView(false);
+    });
+  });
 
   public toggleFullscreen(fromOptions = true): void {
     void this.fullscreen.toggle();
