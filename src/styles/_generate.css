@@ -1179,20 +1179,6 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 
 /* ------- panel header + segmented ----------------------------------- */
 
-/* Neutralise the site-wide `header { z-index: 50 }` rule (see _navigation.css,
-   meant only for the fixed nav shell) on EVERY <header> inside the studio.
-   These are flex items, and flex items honour z-index even while
-   `position: static` — so the inherited z-50 gave them a stacking context level
-   with the nav. Scrolling one up into the nav band then painted it OVER the
-   fixed nav and the sticky subtab bar instead of beneath them. This bites the
-   panel/results headers AND each result card's own <header class="alchemy-result__head">
-   (a flex item of the result column), so the reset is blanket rather than a
-   fragile per-class list. The studio has no header that legitimately stacks;
-   the sticky subtab bar is a <nav>, not a <header>, so it keeps its z-index. */
-.gen-studio header {
-  z-index: auto;
-}
-
 .gen-studio .gs-panel-header {
   flex: none;
   display: flex;
@@ -6092,8 +6078,7 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    Replaces the old vertical job accordion. Every request is a source-image
    thumbnail: a vertical rail beside a detail pane on desktop, a sticky
    horizontal carousel that opens a pull-up sheet on mobile, plus a full-pane
-   tiled gallery. The rail/detail bars are <nav>/<div> (never <header>) so the
-   `.gen-studio header { z-index: auto }` reset stays out of the picture. */
+   tiled gallery. */
 
 /* With jobs present, the body hands its whole area to the browser: no padding
    (the rail sits flush and, on mobile, sticks) and, on desktop, a non-scrolling
