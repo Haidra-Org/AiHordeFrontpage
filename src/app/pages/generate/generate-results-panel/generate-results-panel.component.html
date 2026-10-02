@@ -2303,6 +2303,16 @@
       type="button"
       class="gs-tile-menu-item"
       role="menuitem"
+      [disabled]="!requestIdOf(menu.tile)"
+      (click)="copyRequestId(menu.tile); closeTileMenu()"
+    >
+      <app-icon name="copy" />
+      {{ "generate.results.copy_request_id" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
       (click)="openMeta(menu.tile); closeTileMenu()"
     >
       <app-icon name="bars-4" />

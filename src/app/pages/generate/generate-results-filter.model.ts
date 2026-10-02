@@ -44,6 +44,12 @@ export interface ResultQuerySubject {
   seed?: string;
   /** The style the generation was submitted with, as it was named then. */
   styleName?: string;
+  /**
+   * The id the horde gave the request. Another app on the same account reports
+   * this id, and it is all a reader has to find that app's work here once the
+   * app is gone.
+   */
+  requestId?: string;
   /** The request as submitted: the combined prompt, models and settings. */
   request?: {
     prompt: string;
@@ -169,6 +175,10 @@ export const RESULT_FILTERS: readonly ResultFilterDefinition[] = [
     key: 'style',
     matches: (tile, term) => contains(tile.styleName, term),
   },
+  {
+    key: 'id',
+    matches: (tile, term) => contains(tile.requestId, term),
+  },
 ];
 
 /**
@@ -257,9 +267,12 @@ export function matchesResultQuery(
 ): boolean {
   return query.every((term) => {
     if (term.key === null) {
+      // A bare id matches whole: a short word would otherwise hit any tile
+      // whose id happened to contain its letters.
       return (
         contains(positiveOf(tile), term.value) ||
-        contains(negativeOf(tile), term.value)
+        contains(negativeOf(tile), term.value) ||
+        tile.requestId?.toLowerCase() === term.value
       );
     }
     return FILTERS_BY_KEY.get(term.key)?.matches(tile, term.value) ?? false;

@@ -89,6 +89,7 @@ describe('parseResultQuery', () => {
       'seed',
       'lora',
       'style',
+      'id',
     ]);
     expect(RESULT_FILTER_PLACES).toEqual([
       'prompt:',
@@ -101,6 +102,7 @@ describe('parseResultQuery', () => {
       'seed:',
       'lora:',
       'style:',
+      'id:',
     ]);
   });
 });
@@ -250,6 +252,17 @@ describe('matchesResultQuery over settings', () => {
     expect(matches(tuned, 'style:oil')).toBe(false);
   });
 
+  it('matches a pasted request id whole, and id: by part', () => {
+    const adopted: ResultQuerySubject = {
+      requestId: '7f3c2a10-5b9e-4c1d-a2e8-0f6b1d9c4e77',
+    };
+
+    expect(matches(adopted, '7F3C2A10-5B9E-4C1D-A2E8-0F6B1D9C4E77')).toBe(true);
+    expect(matches(adopted, '7f3c')).toBe(false);
+    expect(matches(adopted, 'id:7f3c')).toBe(true);
+    expect(matches(adopted, 'id:ffff')).toBe(false);
+  });
+
   it('matches nothing for a setting the tile does not carry', () => {
     const bare: ResultQuerySubject = { prompt: 'a lighthouse' };
 
@@ -261,6 +274,7 @@ describe('matchesResultQuery over settings', () => {
       'seed:1',
       'lora:x',
       'style:x',
+      'id:x',
     ]) {
       expect(matches(bare, query)).toBe(false);
     }

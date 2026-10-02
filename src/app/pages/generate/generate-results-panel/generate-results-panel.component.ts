@@ -1028,7 +1028,13 @@ export class GenerateResultsPanelComponent {
     let list = this.tiles();
     const terms = this.parsedQuery();
     if (terms.length > 0) {
-      list = list.filter((tile) => matchesResultQuery(tile, terms));
+      const ids = this.requestIds();
+      list = list.filter((tile) =>
+        matchesResultQuery(
+          { ...tile, requestId: ids.get(tile.jobLocalId) },
+          terms,
+        ),
+      );
     }
     const style = this.styleFilter();
     if (style) {
@@ -1956,6 +1962,34 @@ export class GenerateResultsPanelComponent {
     );
     const url = URL.createObjectURL(embedded);
     this.triggerDownload(url, filename, true);
+  }
+
+  /** The horde's id for each job that has one, by the job's local id. */
+  private readonly requestIds = computed(
+    () =>
+      new Map(
+        [...this.pendingJobs(), ...this.finishedJobs()].flatMap(
+          (job): [string, string][] =>
+            job.hordeId ? [[job.localId, job.hordeId]] : [],
+        ),
+      ),
+  );
+
+  public requestIdOf(tile: ResultTile): string | undefined {
+    return this.requestIds().get(tile.jobLocalId);
+  }
+
+  /**
+   * Copy the id the horde gave this tile's request, which is the id another app
+   * on the account reports for the same generation.
+   */
+  public async copyRequestId(tile: ResultTile): Promise<void> {
+    const id = this.requestIdOf(tile);
+    if (id && (await copyToClipboard(id))) {
+      this.toast.success('generate.results.request_id_copied', {
+        transloco: true,
+      });
+    }
   }
 
   /** Copy a tile's seed to the clipboard for reuse in a later request. */

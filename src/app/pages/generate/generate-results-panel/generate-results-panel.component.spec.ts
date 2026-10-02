@@ -1202,6 +1202,19 @@ describe('GenerateResultsPanelComponent', () => {
       expect(component.viewerTiles().map((t) => t.jobLocalId)).toEqual(['b']);
     });
 
+    it('finds a generation by the request id another app reported', () => {
+      pendingJobs.set([
+        {
+          ...SEARCH_PENDING[0],
+          hordeId: '7f3c2a10-5b9e-4c1d-a2e8-0f6b1d9c4e77',
+        },
+      ]);
+
+      component.query.set('7f3c2a10-5b9e-4c1d-a2e8-0f6b1d9c4e77');
+
+      expect(ids()).toEqual(new Set(['p']));
+    });
+
     it('reports an empty grid when nothing matches', () => {
       component.query.set('castle');
 
