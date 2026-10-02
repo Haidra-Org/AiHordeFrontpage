@@ -8,6 +8,7 @@ import {
   inject,
   input,
 } from '@angular/core';
+import { StickyRegistryService } from '../services/sticky-registry.service';
 
 /** How close to the edge of the screen a popover may come. */
 const GUTTER_PX = 12;
@@ -60,6 +61,7 @@ export class EdgeAwarePopoverDirective implements AfterViewInit, OnChanges {
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+  private readonly stickyRegistry = inject(StickyRegistryService);
 
   public ngAfterViewInit(): void {
     this.reposition();
@@ -122,9 +124,21 @@ export class EdgeAwarePopoverDirective implements AfterViewInit, OnChanges {
     element.style.right = 'auto';
   }
 
+  /**
+   * The highest a fixed panel may reach. The site's header and any sticky bar
+   * under it are fixed over the page, so a panel placed beneath them is drawn
+   * behind them and cannot be read or reached.
+   */
+  private topEdge(): number {
+    return this.stickyRegistry.totalOffset() + GUTTER_PX;
+  }
+
   private prepareFixed(element: HTMLElement): OverlaySize {
     const availableWidth = Math.max(0, window.innerWidth - GUTTER_PX * 2);
-    const availableHeight = Math.max(0, window.innerHeight - GUTTER_PX * 2);
+    const availableHeight = Math.max(
+      0,
+      window.innerHeight - GUTTER_PX - this.topEdge(),
+    );
     element.style.maxWidth = `${availableWidth}px`;
     element.style.maxHeight = `${availableHeight}px`;
     element.style.overflow = 'auto';
@@ -138,12 +152,13 @@ export class EdgeAwarePopoverDirective implements AfterViewInit, OnChanges {
       GUTTER_PX,
       window.innerWidth - GUTTER_PX - rect.width,
     );
+    const topEdge = this.topEdge();
     const bottomMost = Math.max(
-      GUTTER_PX,
+      topEdge,
       window.innerHeight - GUTTER_PX - rect.height,
     );
     const left = Math.min(Math.max(point.x, GUTTER_PX), rightMost);
-    const top = Math.min(Math.max(point.y, GUTTER_PX), bottomMost);
+    const top = Math.min(Math.max(point.y, topEdge), bottomMost);
 
     element.style.left = `${Math.round(left)}px`;
     element.style.top = `${Math.round(top)}px`;
@@ -173,7 +188,8 @@ export class EdgeAwarePopoverDirective implements AfterViewInit, OnChanges {
 
     const roomBelow =
       window.innerHeight - GUTTER_PX - anchor.bottom - ANCHOR_GAP_PX;
-    const roomAbove = anchor.top - ANCHOR_GAP_PX - GUTTER_PX;
+    const topEdge = this.topEdge();
+    const roomAbove = anchor.top - ANCHOR_GAP_PX - topEdge;
     const opensBelow = rect.height <= roomBelow || roomBelow >= roomAbove;
     // The panel must fit wholly on the side it chose. Without this second cap,
     // clamping a tall panel back into the viewport can push it over its trigger.
@@ -186,10 +202,10 @@ export class EdgeAwarePopoverDirective implements AfterViewInit, OnChanges {
       ? anchor.bottom + ANCHOR_GAP_PX
       : anchor.top - ANCHOR_GAP_PX - rect.height;
     const bottomMost = Math.max(
-      GUTTER_PX,
+      topEdge,
       window.innerHeight - GUTTER_PX - rect.height,
     );
-    const top = Math.min(Math.max(preferredTop, GUTTER_PX), bottomMost);
+    const top = Math.min(Math.max(preferredTop, topEdge), bottomMost);
 
     element.style.left = `${Math.round(left)}px`;
     element.style.top = `${Math.round(top)}px`;

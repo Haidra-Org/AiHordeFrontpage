@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { EdgeAwarePopoverDirective } from './edge-aware-popover.directive';
+import { StickyRegistryService } from '../services/sticky-registry.service';
 
 @Component({
   imports: [EdgeAwarePopoverDirective],
@@ -45,8 +46,11 @@ function place(element: Element, left: number, width: number): void {
 describe('EdgeAwarePopoverDirective', () => {
   const originalWidth = window.innerWidth;
   const originalHeight = window.innerHeight;
+  /** The height of the fixed header stack; most cases here have none. */
+  const stickyOffset = signal(0);
 
   afterEach(() => {
+    stickyOffset.set(0);
     Object.defineProperty(window, 'innerWidth', {
       value: originalWidth,
       configurable: true,
@@ -76,6 +80,12 @@ describe('EdgeAwarePopoverDirective', () => {
   ): Promise<{ pop: HTMLElement; fixture: ComponentFixture<HostComponent> }> {
     await TestBed.configureTestingModule({
       imports: [HostComponent],
+      providers: [
+        {
+          provide: StickyRegistryService,
+          useValue: { totalOffset: stickyOffset.asReadonly() },
+        },
+      ],
     }).compileComponents();
     const fixture = TestBed.createComponent(HostComponent);
     fixture.componentInstance.align.set(align);
@@ -276,6 +286,68 @@ describe('EdgeAwarePopoverDirective', () => {
     expect(pop.style.maxHeight).toBe('282px');
     expect(pop.style.top).toBe('12px');
     expect(Number.parseFloat(pop.style.top) + 282).toBe(294);
+  });
+
+  it('keeps an upward overlay clear of the fixed site header', async () => {
+    setViewport(800, 730);
+    stickyOffset.set(105);
+    const { pop, fixture } = await render(0, 0, 200, 'end');
+    pop.style.position = 'fixed';
+    pop.getBoundingClientRect = (): DOMRect => {
+      const height = Math.min(
+        600,
+        Number.parseFloat(pop.style.maxHeight) || 600,
+      );
+      return {
+        left: 0,
+        right: 200,
+        width: 200,
+        top: 0,
+        bottom: height,
+        height,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRect;
+    };
+    fixture.componentInstance.fixedAnchor.set({
+      top: 456,
+      right: 500,
+      bottom: 480,
+      left: 474,
+    });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    // 456 - 6 gap - (105 header + 12 gutter)
+    expect(pop.style.maxHeight).toBe('333px');
+    expect(pop.style.top).toBe('117px');
+    expect(pop.dataset['edgePlacement']).toBe('top');
+  });
+
+  it('keeps an overlay opened at a point clear of the fixed site header', async () => {
+    setViewport(360, 480);
+    stickyOffset.set(64);
+    const { pop, fixture } = await render(0, 0, 214);
+    pop.style.position = 'fixed';
+    pop.getBoundingClientRect = (): DOMRect =>
+      ({
+        left: 0,
+        right: 214,
+        width: 214,
+        top: 0,
+        bottom: 200,
+        height: 200,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    fixture.componentInstance.point.set({ x: 20, y: 30 });
+    fixture.detectChanges();
+    await Promise.resolve();
+
+    expect(pop.style.top).toBe('76px');
+    expect(pop.style.maxHeight).toBe('392px');
   });
 
   it('uses the full layout height while an upward menu is scaling open', async () => {
