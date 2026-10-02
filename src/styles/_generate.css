@@ -9570,11 +9570,13 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     padding-inline: 12px;
   }
   /* `safe` keeps the first button reachable once the stack outgrows the tile:
-     plain centring would push the overflow past the scroll origin. */
+     plain centring would push the overflow past the scroll origin. The box
+     covers the whole status tile, so a swipe that lands on it must carry on to
+     the page once the box has nothing left to scroll; containing it would
+     leave a screen of pending tiles with nowhere to scroll from. */
   .gen-studio .gs-tile-center {
     justify-content: safe center;
     overflow-y: auto;
-    overscroll-behavior: contain;
     scrollbar-width: thin;
   }
   .gen-studio .gs-tile-grid--compact .gs-tile-btnrow--status .gs-tile-btn {
