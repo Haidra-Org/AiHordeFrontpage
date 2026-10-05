@@ -163,10 +163,31 @@ describe('GalleryComponent', () => {
 
     expect(navigate).toHaveBeenCalledWith(
       [],
-      expect.objectContaining({ queryParams: { picture: 'snail-cathedral' } }),
+      expect.objectContaining({
+        queryParams: { picture: 'snail-cathedral' },
+        scroll: 'manual',
+      }),
     );
     expect(find('app-gs-picture-dialog')).not.toBeNull();
     expect(text('.gs-picdlg-count')).toBe('1 of 3');
+  });
+
+  it('closes the picture without asking the router to scroll the gallery', async () => {
+    await settle();
+    component.openPicture('snail-cathedral');
+    fixture.detectChanges();
+
+    component.closePicture();
+    fixture.detectChanges();
+
+    expect(navigate).toHaveBeenLastCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { picture: null },
+        scroll: 'manual',
+      }),
+    );
+    expect(find('app-gs-picture-dialog')).toBeNull();
   });
 
   it('walks the set in the order the filter left it', async () => {
@@ -182,6 +203,13 @@ describe('GalleryComponent', () => {
     fixture.detectChanges();
     expect(component.open()?.picture.id).toBe('tram-rainbow');
     expect(text('.gs-picdlg-count')).toBe('2 of 2');
+    expect(navigate).toHaveBeenLastCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: { picture: 'tram-rainbow' },
+        scroll: 'manual',
+      }),
+    );
 
     // The ends join, so the arrows never run out under the reader's hand.
     component.step(1);

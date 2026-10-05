@@ -11,13 +11,13 @@ function fakeView(): {
   fireBack: () => void;
 } {
   const entries: unknown[] = [null];
-  const listeners = new Set<() => void>();
+  const listeners = new Set<(event: PopStateEvent) => void>();
   const fireBack = (): void => {
     if (entries.length > 1) {
       entries.pop();
     }
     for (const listener of [...listeners]) {
-      listener();
+      listener(new PopStateEvent('popstate', { state: entries.at(-1) }));
     }
   };
   const view = {
@@ -32,15 +32,46 @@ function fakeView(): {
       pushState: (state: unknown) => entries.push(state),
       back: fireBack,
     },
-    addEventListener: (_: string, listener: () => void) =>
+    addEventListener: (_: string, listener: (event: PopStateEvent) => void) =>
       listeners.add(listener),
-    removeEventListener: (_: string, listener: () => void) =>
-      listeners.delete(listener),
+    removeEventListener: (
+      _: string,
+      listener: (event: PopStateEvent) => void,
+    ) => listeners.delete(listener),
   } as unknown as Window & typeof globalThis;
   return { view, entries, fireBack };
 }
 
 describe('BackClose', () => {
+  it('keeps the viewer open when its action sheet is dismissed', () => {
+    const { view, fireBack } = fakeView();
+    const closeViewer = vi.fn();
+    const viewer = new BackClose(view, closeViewer);
+    const sheet = new BackClose(view, vi.fn());
+    viewer.arm();
+    sheet.arm();
+
+    sheet.disarm();
+
+    expect(closeViewer).not.toHaveBeenCalled();
+    fireBack();
+    expect(closeViewer).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes nested layers one at a time with Back', () => {
+    const { view, fireBack } = fakeView();
+    const closes = [vi.fn(), vi.fn(), vi.fn()];
+    const layers = closes.map((close) => new BackClose(view, close));
+    layers.forEach((layer) => layer.arm());
+
+    fireBack();
+    expect(closes.map((close) => close.mock.calls.length)).toEqual([0, 0, 1]);
+    fireBack();
+    expect(closes.map((close) => close.mock.calls.length)).toEqual([0, 1, 1]);
+    fireBack();
+    expect(closes.map((close) => close.mock.calls.length)).toEqual([1, 1, 1]);
+  });
+
   it('answers Back by closing the layer, once', () => {
     const { view, fireBack } = fakeView();
     const close = vi.fn();

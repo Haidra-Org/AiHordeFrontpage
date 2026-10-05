@@ -1803,6 +1803,7 @@
   "generate.results.errors_count": "{{ count }} input error(s)",
   "generate.results.censor_nsfw": "Held back: a worker read this as adult",
   "generate.results.censor_csam": "Held back: automated filters flagged this image",
+  "generate.results.delete_failed": "Could not delete this generation. Try again.",
   "generate.results.censor_csam_details": "Why this image was held back",
   "generate.results.fetch_failed": "Finished, but this picture could not be downloaded",
   "generate.results.fetch_failed_details": "Why this picture is missing",

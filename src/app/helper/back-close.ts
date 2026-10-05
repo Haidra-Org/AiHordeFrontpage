@@ -8,6 +8,7 @@ import { DestroyRef, PLATFORM_ID, inject } from '@angular/core';
  * moved past is never unwound by mistake.
  */
 const LAYER_KEY = 'aihordeLayer';
+const PARENTS_KEY = 'aihordeLayerParents';
 
 /**
  * How long the page is held where it was after a history move this helper
@@ -70,7 +71,7 @@ export class BackClose {
     this.view?.addEventListener('popstate', this.onPopState);
   }
 
-  private readonly onPopState = (): void => {
+  private readonly onPopState = (event: PopStateEvent): void => {
     if (!this.view) {
       return;
     }
@@ -80,6 +81,16 @@ export class BackClose {
       return;
     }
     if (!this.armed) {
+      return;
+    }
+    const state = event.state as Record<string, unknown> | null;
+    // A nested layer can leave history while this layer still owns its entry.
+    // Only the layer whose entry was removed answers that Back gesture.
+    if (
+      state?.[LAYER_KEY] === this.id ||
+      (Array.isArray(state?.[PARENTS_KEY]) &&
+        state[PARENTS_KEY].includes(this.id))
+    ) {
       return;
     }
     this.armed = false;
@@ -99,10 +110,18 @@ export class BackClose {
       return;
     }
     this.armed = true;
+    const state = this.view.history.state as Record<string, unknown> | null;
+    const parents: unknown[] = Array.isArray(state?.[PARENTS_KEY])
+      ? state[PARENTS_KEY]
+      : [];
     // The router keeps its own bookkeeping in history.state, so the mark is
     // added to what is there rather than written over it.
     this.view.history.pushState(
-      { ...(this.view.history.state as object | null), [LAYER_KEY]: this.id },
+      {
+        ...state,
+        [LAYER_KEY]: this.id,
+        [PARENTS_KEY]: state?.[LAYER_KEY] ? [...parents, state[LAYER_KEY]] : [],
+      },
       '',
     );
   }

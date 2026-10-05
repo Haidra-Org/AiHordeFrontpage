@@ -284,7 +284,7 @@
     gap: var(--hd-space-3);
   }
 
-  .worker-card {
+  .contribute-page .worker-card {
     --worker-hue: var(--hd-accent);
     --worker-tint: var(--hd-accent-tint);
     --worker-edge: var(--hd-accent-tint-border);
@@ -313,7 +313,7 @@
     --worker-edge: var(--hd-green-tint-border);
   }
 
-  .worker-card:is(:hover, :focus-within) {
+  .contribute-page .worker-card:is(:hover, :focus-within) {
     box-shadow: var(--hd-elev-2);
     transform: translateY(-2px);
   }
@@ -436,29 +436,37 @@
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .worker-card:is(:hover, :focus-within) .worker-image-scan {
+    .contribute-page .worker-card:is(:hover, :focus-within) .worker-image-scan {
       animation: worker-image-reveal 2.4s ease-in-out infinite;
     }
-    .worker-card:is(:hover, :focus-within) .worker-text-cursor {
+    .contribute-page
+      .worker-card:is(:hover, :focus-within)
+      .worker-text-cursor {
       animation: worker-text-type 1s steps(2, jump-none) infinite;
     }
     /* One cycle is one job: the picture is handed along the arrow and the
        result arrives in the larger frame. Transforms only, so the card
        layout never moves. */
-    .worker-card:is(:hover, :focus-within)
+    .contribute-page
+      .worker-card:is(:hover, :focus-within)
       .worker-alchemy-pair
       > span:first-child {
       animation: worker-alchemy-send 2.4s ease-in-out infinite;
     }
-    .worker-card:is(:hover, :focus-within) .worker-alchemy-pair > app-icon {
+    .contribute-page
+      .worker-card:is(:hover, :focus-within)
+      .worker-alchemy-pair
+      > app-icon {
       animation: worker-alchemy-carry 2.4s ease-in-out infinite;
     }
-    .worker-card:is(:hover, :focus-within)
+    .contribute-page
+      .worker-card:is(:hover, :focus-within)
       .worker-alchemy-pair
       > span:last-child {
       animation: worker-alchemy-ring 2.4s ease-out infinite;
     }
-    .worker-card:is(:hover, :focus-within)
+    .contribute-page
+      .worker-card:is(:hover, :focus-within)
       .worker-alchemy-pair
       > span:last-child
       app-icon {
@@ -1112,7 +1120,7 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .worker-card {
+    .contribute-page .worker-card {
       display: grid;
       grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr);
     }
@@ -1155,7 +1163,7 @@
     }
 
     .contribute-network,
-    .worker-card,
+    .contribute-page .worker-card,
     .worker-assurances,
     .worker-steps,
     .donate-allocation,
@@ -1226,7 +1234,7 @@
       transform: none;
     }
 
-    .worker-card,
+    .contribute-page .worker-card,
     .donate-primary-method,
     .donate-secondary-methods > a {
       transform: none;
@@ -1234,7 +1242,7 @@
   }
 
   @media (forced-colors: active) {
-    .worker-card,
+    .contribute-page .worker-card,
     .donate-primary-method,
     .donate-secondary-methods > a {
       border-color: CanvasText;

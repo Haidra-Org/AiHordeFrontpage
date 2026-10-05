@@ -116,14 +116,15 @@ export class GsPictureDialogComponent {
     useScrollLock().enable();
     // The panel takes focus as it opens, so the key that closes it and the
     // controls that walk the set are where the reader already is.
-    afterNextRender(() => this.panel()?.nativeElement.focus(), {
-      injector: this.injector,
-    });
+    afterNextRender(
+      () => this.panel()?.nativeElement.focus({ preventScroll: true }),
+      { injector: this.injector },
+    );
   }
 
   public close(): void {
     this.closed.emit();
-    queueMicrotask(() => this.returnFocus?.focus());
+    queueMicrotask(() => this.returnFocus?.focus({ preventScroll: true }));
   }
 
   /** The backdrop closes; a press that landed on the panel itself does not. */

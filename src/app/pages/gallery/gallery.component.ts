@@ -195,6 +195,8 @@ export class GalleryComponent implements OnInit {
       relativeTo: this.route,
       queryParams: { picture: id },
       queryParamsHandling: 'merge',
+      // The picture is a layer over this page, so changing it keeps the grid's place.
+      scroll: 'manual',
     });
   }
 
@@ -203,6 +205,7 @@ export class GalleryComponent implements OnInit {
       relativeTo: this.route,
       queryParams: { picture: null },
       queryParamsHandling: 'merge',
+      scroll: 'manual',
     });
   }
 

@@ -1324,6 +1324,135 @@ describe('GenerationQueueService', () => {
   });
 
   describe('deletion', () => {
+    it.each([false, true])(
+      'keeps an in-flight submit consistent when storage deletion succeeds: %s',
+      async (succeeds) => {
+        const submitted = new Subject<SubmitImageResult>();
+        aiHorde.submitImageGenerationResult.mockReturnValue(submitted);
+        const queue = await createQueue();
+        const localId = await queue.enqueue({ prompt: 'a cat' });
+        await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+        let resolveDelete!: () => void;
+        let rejectDelete!: (error: Error) => void;
+        vi.spyOn(fakeDb, 'deleteJobCascade').mockImplementationOnce(
+          () =>
+            new Promise<void>((resolve, reject) => {
+              resolveDelete = () => {
+                fakeDb.jobs.delete(localId);
+                resolve();
+              };
+              rejectDelete = reject;
+            }),
+        );
+        const deletion = queue.deleteJob(localId);
+        const settled = deletion.catch((error: unknown) => error);
+
+        submitted.next(submitSuccess('late-id'));
+        submitted.complete();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(queue.jobs()[0].hordeId).toBeUndefined();
+
+        if (succeeds) {
+          resolveDelete();
+        } else {
+          rejectDelete(new Error('storage unavailable'));
+        }
+        expect(await settled).toEqual(
+          succeeds ? undefined : new Error('storage unavailable'),
+        );
+        await vi.advanceTimersByTimeAsync(0);
+
+        const expectedIds = succeeds ? [] : ['late-id'];
+        expect(queue.jobs().map((job) => job.hordeId)).toEqual(expectedIds);
+        expect((await fakeDb.getJob(localId))?.hordeId).toBe(
+          succeeds ? undefined : 'late-id',
+        );
+        expect(aiHorde.cancelImageGeneration.mock.calls).toEqual(
+          succeeds ? [['late-id']] : [],
+        );
+        expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(1);
+        await queue.adoptActive(['late-id']);
+        expect(queue.jobs().map((job) => job.hordeId)).toEqual(expectedIds);
+      },
+    );
+
+    it('keeps a flagged batch and its images when storage deletion fails, then allows retry', async () => {
+      const row: LocalGenerationJob = {
+        localId: 'mixed',
+        status: 'done',
+        createdAt: 0,
+        updatedAt: 0,
+        request: { prompt: 'a cat' },
+        resultImageIds: ['image'],
+        csamCensoredCount: 1,
+        fetchFailedCount: 1,
+      };
+      await fakeDb.putJob(row);
+      await fakeDb.putImage({
+        localId: 'mixed',
+        imageId: 'image',
+        kind: 'result',
+        blob: new Blob(['image']),
+        mimeType: 'image/webp',
+      });
+      const queue = await createQueue();
+      const remove = vi
+        .spyOn(fakeDb, 'deleteJobCascade')
+        .mockRejectedValueOnce(new Error('storage unavailable'));
+
+      await expect(queue.deleteJob('mixed')).rejects.toThrow(
+        'storage unavailable',
+      );
+      expect(queue.finishedJobs()).toEqual([row]);
+      expect(await fakeDb.getJob('mixed')).toEqual(row);
+      expect(await queue.getJobImages('mixed')).toHaveLength(1);
+
+      await queue.deleteJob('mixed');
+      expect(remove).toHaveBeenCalledTimes(2);
+      expect(queue.jobs()).toEqual([]);
+      expect(await fakeDb.getJob('mixed')).toBeUndefined();
+      expect(await queue.getJobImages('mixed')).toEqual([]);
+    });
+
+    it('allows a waiting job to submit after its storage deletion fails', async () => {
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      vi.spyOn(fakeDb, 'deleteJobCascade').mockRejectedValueOnce(
+        new Error('storage unavailable'),
+      );
+
+      await expect(queue.deleteJob(localId)).rejects.toThrow(
+        'storage unavailable',
+      );
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+
+      expect(queue.jobs()[0].status).toBe('requested');
+      expect(queue.jobs()[0].hordeId).toBe('horde-id');
+      expect((await fakeDb.getJob(localId))?.hordeId).toBe('horde-id');
+      expect(aiHorde.cancelImageGeneration).not.toHaveBeenCalled();
+    });
+
+    it('keeps polling a running job after failed storage deletion without cancelling it', async () => {
+      const queue = await createQueue();
+      const localId = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      vi.spyOn(fakeDb, 'deleteJobCascade').mockRejectedValueOnce(
+        new Error('storage unavailable'),
+      );
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { processing: 1, waiting: 0 } })),
+      );
+
+      await expect(queue.deleteJob(localId)).rejects.toThrow(
+        'storage unavailable',
+      );
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+      expect(aiHorde.cancelImageGeneration).not.toHaveBeenCalled();
+      expect(queue.jobs()[0].status).toBe('processing');
+      expect((await fakeDb.getJob(localId))?.status).toBe('processing');
+    });
+
     it('cancels a running job on the horde when it is deleted', async () => {
       const queue = await createQueue();
       const localId = await queue.enqueue({ prompt: 'a cat' });

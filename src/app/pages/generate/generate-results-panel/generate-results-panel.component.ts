@@ -609,7 +609,11 @@ export class GenerateResultsPanelComponent {
    * Jobs soft-deleted and awaiting the Undo window: gone from the grid, still on
    * disk. See {@link requestDelete}.
    */
-  private readonly hiddenJobs = signal<ReadonlySet<string>>(new Set());
+  private readonly pendingDeleteJobs = signal<ReadonlySet<string>>(new Set());
+  private readonly deletingJobs = signal<ReadonlySet<string>>(new Set());
+  private readonly hiddenJobs = computed<ReadonlySet<string>>(
+    () => new Set([...this.pendingDeleteJobs(), ...this.deletingJobs()]),
+  );
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private undoToastId: string | null = null;
 
@@ -1447,9 +1451,9 @@ export class GenerateResultsPanelComponent {
   }
 
   public async deleteJob(localId: string): Promise<void> {
+    await this.queue.deleteJob(localId);
     this.revokeJob(localId);
     this.loaded.delete(localId);
-    await this.queue.deleteJob(localId);
   }
 
   /** Enter/leave select mode, clearing any marks when leaving. */
@@ -1487,7 +1491,9 @@ export class GenerateResultsPanelComponent {
    * dialog unnecessary — the recovery is the affordance.
    */
   public requestDelete(localIds: readonly string[]): void {
-    const ids = localIds.filter((id) => id.length > 0);
+    const ids = [...new Set(localIds)].filter(
+      (id) => id.length > 0 && !this.hiddenJobs().has(id),
+    );
     if (ids.length === 0) {
       return;
     }
@@ -1504,7 +1510,7 @@ export class GenerateResultsPanelComponent {
     // Only one Undo can be outstanding, so a new delete settles the previous one.
     void this.commitPendingDelete();
     this.stepViewerPastDeleted(ids);
-    this.hiddenJobs.set(new Set(ids));
+    this.pendingDeleteJobs.set(new Set(ids));
     this.selectedJobs.set(new Set());
     this.selectMode.set(false);
     this.flippedTile.set(null);
@@ -1578,28 +1584,49 @@ export class GenerateResultsPanelComponent {
   }
 
   /** Whether an Undo is currently on offer (drives the specs and the grid). */
-  public readonly undoPending = computed(() => this.hiddenJobs().size > 0);
+  public readonly undoPending = computed(
+    () => this.pendingDeleteJobs().size > 0,
+  );
 
   /** Put the soft-deleted jobs back exactly as they were. */
   public undoDelete(): void {
     this.clearUndoTimer();
-    this.hiddenJobs.set(new Set());
+    this.pendingDeleteJobs.set(new Set());
+    if (this.undoToastId) {
+      this.toast.dismiss(this.undoToastId);
+      this.undoToastId = null;
+    }
   }
 
   /** Make the pending deletion real, removing the records for good. */
   public async commitPendingDelete(): Promise<void> {
-    const ids = [...this.hiddenJobs()];
+    const ids = [...this.pendingDeleteJobs()];
     if (ids.length === 0) {
       return;
     }
     this.clearUndoTimer();
-    this.hiddenJobs.set(new Set());
+    // Ending Undo must not reveal tiles while their stored job still exists.
+    this.deletingJobs.update((current) => new Set([...current, ...ids]));
+    this.pendingDeleteJobs.set(new Set());
     if (this.undoToastId) {
       this.toast.dismiss(this.undoToastId);
       this.undoToastId = null;
     }
     for (const id of ids) {
-      await this.deleteJob(id);
+      try {
+        await this.deleteJob(id);
+      } catch (error) {
+        this.toast.error('generate.results.delete_failed', {
+          transloco: true,
+          rawError: error,
+        });
+      } finally {
+        this.deletingJobs.update((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
+      }
     }
   }
 
@@ -1667,7 +1694,7 @@ export class GenerateResultsPanelComponent {
     this.releaseFullscreenTarget();
     this.closeMeta();
     this.detachViewerKeys();
-    this.previousActiveElement?.focus();
+    this.previousActiveElement?.focus({ preventScroll: true });
     this.previousActiveElement = null;
   }
 
@@ -1695,7 +1722,7 @@ export class GenerateResultsPanelComponent {
    */
   public closeViewerMoreAndFocus(): void {
     this.closeViewerMore();
-    this.viewerMoreBtn()?.nativeElement.focus();
+    this.viewerMoreBtn()?.nativeElement.focus({ preventScroll: true });
   }
 
   /** Whether the picture itself currently has the whole screen. */
@@ -1839,7 +1866,10 @@ export class GenerateResultsPanelComponent {
     this.viewerKeydown = (event: KeyboardEvent) => this.onViewerKeydown(event);
     document.addEventListener('keydown', this.viewerKeydown, true);
     // The panel only exists after the template renders the viewer.
-    setTimeout(() => this.viewerPanel()?.nativeElement.focus(), 0);
+    setTimeout(
+      () => this.viewerPanel()?.nativeElement.focus({ preventScroll: true }),
+      0,
+    );
   }
 
   private detachViewerKeys(): void {

@@ -114,7 +114,7 @@ describe('GenerateResultsPanelComponent', () => {
   let finishedJobs: ReturnType<typeof signal<LocalGenerationJob[]>>;
   let cancel: ReturnType<typeof vi.fn>;
   let retry: ReturnType<typeof vi.fn>;
-  let deleteJob: ReturnType<typeof vi.fn>;
+  let deleteJob: ReturnType<typeof vi.fn<(localId: string) => Promise<void>>>;
   let toastSuccess: ReturnType<typeof vi.fn>;
   let toastError: ReturnType<typeof vi.fn>;
   let getJobImages: ReturnType<typeof vi.fn>;
@@ -184,6 +184,7 @@ describe('GenerateResultsPanelComponent', () => {
             success: toastSuccess,
             warning: vi.fn(),
             error: toastError,
+            dismiss: vi.fn(),
           },
         },
         {
@@ -511,6 +512,28 @@ describe('GenerateResultsPanelComponent', () => {
       dims: '',
     });
     expect(component.viewerKey()).toBeNull();
+  });
+
+  it('returns focus without scrolling the gallery when the viewer closes', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const focus = vi.spyOn(opener, 'focus');
+    try {
+      component.openViewer({
+        key: 'k',
+        kind: 'done',
+        jobLocalId: 'j',
+        aspect: '1/1',
+        dims: '',
+        url: 'blob:x',
+      });
+      component.closeViewer();
+
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    } finally {
+      opener.remove();
+    }
   });
 
   describe('mobile tile flip', () => {
@@ -917,6 +940,205 @@ describe('GenerateResultsPanelComponent', () => {
 
       expect(component.undoPending()).toBe(false);
       expect(toastSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deletion persistence', () => {
+    function delayedDelete(localId: string): () => void {
+      let complete!: () => void;
+      deleteJob.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            complete = () => {
+              finishedJobs.update((jobs) =>
+                jobs.filter((item) => item.localId !== localId),
+              );
+              pendingJobs.update((jobs) =>
+                jobs.filter((item) => item.localId !== localId),
+              );
+              resolve();
+            };
+          }),
+      );
+      return () => complete();
+    }
+
+    it.each([
+      { status: 'done', csamCensoredCount: 2 },
+      { status: 'done', fetchFailedCount: 2 },
+      { status: 'error' },
+      { status: 'cancelled' },
+      { status: 'queued' },
+    ] as const)(
+      'keeps $status placeholders hidden until storage deletion finishes: %j',
+      async (fields) => {
+        const item = { ...job('j', fields.status), ...fields };
+        if (fields.status === 'queued') {
+          pendingJobs.set([item]);
+        } else {
+          finishedJobs.set([item]);
+        }
+        expect(component.tiles().length).toBeGreaterThan(0);
+        const complete = delayedDelete('j');
+
+        component.requestDelete(['j']);
+        const committing = component.commitPendingDelete();
+
+        expect(component.undoPending()).toBe(false);
+        expect(component.tiles()).toEqual([]);
+        expect(component.readyImageCount()).toBe(0);
+        complete();
+        await committing;
+        expect(component.tiles()).toEqual([]);
+      },
+    );
+
+    it('keeps a mixed batch hidden after the Undo timer expires', async () => {
+      vi.useFakeTimers();
+      try {
+        getJobImages.mockResolvedValueOnce([resultImage('mixed', 'image')]);
+        finishedJobs.set([
+          {
+            ...job('mixed', 'done'),
+            csamCensoredCount: 1,
+            fetchFailedCount: 1,
+          },
+        ]);
+        await loadThumbnails();
+        fixture.detectChanges();
+        expect(component.tiles().map((tile) => tile.kind)).toEqual([
+          'done',
+          'censored',
+          'fetch-failed',
+        ]);
+        const complete = delayedDelete('mixed');
+        component.requestDelete(['mixed']);
+        fixture.detectChanges();
+        expect(component.tiles()).toEqual([]);
+
+        await vi.advanceTimersByTimeAsync(6000);
+        fixture.detectChanges();
+        expect(deleteJob).toHaveBeenCalledExactlyOnceWith('mixed');
+        expect(component.tiles()).toEqual([]);
+
+        complete();
+        await Promise.resolve();
+        await Promise.resolve();
+        fixture.detectChanges();
+        expect(component.tiles()).toEqual([]);
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('restores a failed mixed batch with its images and continues deleting other jobs', async () => {
+      getJobImages.mockResolvedValueOnce([resultImage('bad', 'image')]);
+      finishedJobs.set([
+        { ...job('bad', 'done'), csamCensoredCount: 1, fetchFailedCount: 1 },
+        job('next', 'error'),
+      ]);
+      await loadThumbnails();
+      const error = new Error('storage unavailable');
+      deleteJob.mockRejectedValueOnce(error);
+      const complete = delayedDelete('next');
+      component.requestDelete(['bad', 'next']);
+      const committing = component.commitPendingDelete();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(component.tiles().map((tile) => tile.kind)).toEqual([
+        'done',
+        'censored',
+        'fetch-failed',
+      ]);
+      expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+      expect(toastError).toHaveBeenCalledWith(
+        'generate.results.delete_failed',
+        {
+          transloco: true,
+          rawError: error,
+        },
+      );
+      complete();
+      await committing;
+      expect(deleteJob.mock.calls.map(([id]) => id)).toEqual(['bad', 'next']);
+      expect(component.tiles().every((tile) => tile.jobLocalId === 'bad')).toBe(
+        true,
+      );
+
+      deleteJob.mockImplementationOnce(() => {
+        finishedJobs.set([]);
+        return Promise.resolve();
+      });
+      component.requestDelete(['bad']);
+      await component.commitPendingDelete();
+      expect(component.tiles()).toEqual([]);
+    });
+
+    it('keeps an earlier deletion hidden when the newer Undo is used', async () => {
+      finishedJobs.set([
+        { ...job('first', 'done'), csamCensoredCount: 1 },
+        job('second', 'error'),
+      ]);
+      const complete = delayedDelete('first');
+      component.requestDelete(['first']);
+      const firstCommit = component.commitPendingDelete();
+      component.requestDelete(['second']);
+      component.undoDelete();
+
+      expect(component.tiles().map((tile) => tile.jobLocalId)).toEqual([
+        'second',
+      ]);
+      complete();
+      await firstCommit;
+      expect(component.tiles().map((tile) => tile.jobLocalId)).toEqual([
+        'second',
+      ]);
+      expect(deleteJob).toHaveBeenCalledExactlyOnceWith('first');
+    });
+
+    it('preserves a newer Undo window when an earlier deletion fails', async () => {
+      finishedJobs.set([
+        { ...job('first', 'done'), csamCensoredCount: 1 },
+        job('second', 'error'),
+      ]);
+      let fail!: (error: Error) => void;
+      deleteJob.mockImplementationOnce(
+        () =>
+          new Promise<void>((_resolve, reject) => {
+            fail = reject;
+          }),
+      );
+      component.requestDelete(['first']);
+      const firstCommit = component.commitPendingDelete();
+      component.requestDelete(['second']);
+      fail(new Error('storage unavailable'));
+      await firstCommit;
+
+      expect(component.undoPending()).toBe(true);
+      expect(component.tiles().map((tile) => tile.jobLocalId)).toEqual([
+        'first',
+      ]);
+      component.undoDelete();
+      expect(component.tiles().map((tile) => tile.jobLocalId)).toEqual([
+        'first',
+        'second',
+      ]);
+    });
+
+    it('does not delete the same job twice while its commit is outstanding', async () => {
+      finishedJobs.set([{ ...job('j', 'done'), csamCensoredCount: 1 }]);
+      const complete = delayedDelete('j');
+      component.requestDelete(['j', 'j']);
+      const committing = component.commitPendingDelete();
+      component.requestDelete(['j']);
+      await component.commitPendingDelete();
+      expect(deleteJob).toHaveBeenCalledExactlyOnceWith('j');
+      expect(component.undoPending()).toBe(false);
+      expect(component.tiles()).toEqual([]);
+      complete();
+      await committing;
     });
   });
 
@@ -1961,7 +2183,7 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
   let finishedJobs: ReturnType<typeof signal<LocalGenerationJob[]>>;
   let heldBack: ReturnType<typeof signal<LocalGenerationJob[]>>;
   let keepHiddenJobs: ReturnType<typeof vi.fn>;
-  let deleteJob: ReturnType<typeof vi.fn>;
+  let deleteJob: ReturnType<typeof vi.fn<(localId: string) => Promise<void>>>;
 
   const adopted: LocalGenerationJob = {
     localId: 'adopted-1',
@@ -2050,6 +2272,45 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
       TRANSLATIONS['generate.results.adopted_line'],
     );
     expect(fixture.componentInstance.tiles()[0].adopted).toBe(true);
+  });
+
+  it('keeps every tile in a batch removed from the DOM while its flagged tile deletion commits', async () => {
+    finishedJobs.set([
+      { ...adopted, csamCensoredCount: 1, fetchFailedCount: 1 },
+    ]);
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.gs-tile')).toHaveLength(3);
+    let complete!: () => void;
+    deleteJob.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          complete = () => {
+            finishedJobs.set([]);
+            resolve();
+          };
+        }),
+    );
+    vi.useFakeTimers();
+    try {
+      host
+        .querySelector<HTMLButtonElement>(
+          '.gs-tile-center .gs-tile-btn--danger',
+        )!
+        .click();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-tile')).toBeNull();
+      await vi.advanceTimersByTimeAsync(6000);
+      fixture.detectChanges();
+      expect(deleteJob).toHaveBeenCalledExactlyOnceWith(adopted.localId);
+      expect(host.querySelector('.gs-tile')).toBeNull();
+      complete();
+      await Promise.resolve();
+      await Promise.resolve();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-tile')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('withholds everything that would read a request back', () => {
@@ -2236,6 +2497,67 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
 
     const group = (): Element | null =>
       host.querySelector('.gs-viewer-action-group');
+
+    it('focuses the viewer without scrolling the gallery on opening', async () => {
+      openAt(false);
+      const panel = host.querySelector<HTMLElement>('.gs-viewer-body')!;
+      const focus = vi.spyOn(panel, 'focus');
+
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+      expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    });
+
+    it('shows metadata from the phone menu while keeping the image open', async () => {
+      openAt(true);
+      const component = fixture.componentInstance;
+      const viewerState = history.state;
+      component.toggleViewerMore();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      // Dismissing the sheet returns to the viewer's existing history entry.
+      vi.spyOn(history, 'back').mockImplementation(() => {
+        history.replaceState(viewerState, '');
+        window.dispatchEvent(
+          new PopStateEvent('popstate', { state: viewerState }),
+        );
+      });
+      const metadata = Array.from(
+        host.querySelectorAll<HTMLButtonElement>('.gs-sheet .gs-opt-row'),
+      ).find((button) =>
+        button.textContent?.includes(TRANSLATIONS['generate.results.metadata']),
+      )!;
+
+      metadata.click();
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(component.viewerKey()).not.toBeNull();
+      expect(component.viewerMoreOpen()).toBe(false);
+      expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+      expect(host.querySelector('.gs-viewer-meta')).not.toBeNull();
+    });
+
+    it('toggles the docked metadata panel beside an open image', () => {
+      openAt(false);
+      const metadata = Array.from(
+        host.querySelectorAll<HTMLButtonElement>('.gs-viewer-act'),
+      ).find((button) =>
+        button.textContent?.includes(TRANSLATIONS['generate.results.metadata']),
+      )!;
+
+      metadata.click();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-meta')).not.toBeNull();
+      expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+
+      metadata.click();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-meta')).toBeNull();
+      expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+    });
 
     it('leaves the group out when an adopted picture has none on a phone', () => {
       openAt(true);

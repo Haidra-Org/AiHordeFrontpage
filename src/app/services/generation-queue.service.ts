@@ -210,6 +210,7 @@ export class GenerationQueueService {
   private readonly inFlightIds = new Set<string>();
   /** The tail of each job's queue of pending patches; see `patchJob`. */
   private readonly patchChains = new Map<string, Promise<void>>();
+  private readonly storageDeletions = new Map<string, Promise<void>>();
 
   private dispatchRunning = false;
   private pollRunning = false;
@@ -532,18 +533,41 @@ export class GenerationQueueService {
 
   /**
    * Delete a job and its stored images. A job the horde is still working on is
-   * cancelled there first, so it stops spending kudos and does not come back
-   * through the account's list of active generations.
+   * cancelled there after local deletion, so it stops spending kudos and does
+   * not come back through the account's list of active generations.
    */
   public async deleteJob(localId: string): Promise<void> {
     const job = this.findJob(localId);
     // Marked before anything is awaited, so a poll or submit that lands during
     // the cancel or the delete cannot write the row back.
     this.markDeleted(localId, job?.hordeId);
+    const markedAt = this.recentlyDeleted.get(localId);
+    try {
+      const deletion = this.db.deleteJobCascade(localId);
+      this.storageDeletions.set(localId, deletion);
+      await deletion;
+    } catch (error) {
+      // A failed transaction leaves the row intact. Let it receive future
+      // updates again, unless another deletion has since removed it.
+      if (
+        this.findJob(localId) === job &&
+        this.recentlyDeleted.get(localId) === markedAt
+      ) {
+        this.recentlyDeleted.delete(localId);
+        if (
+          job?.hordeId &&
+          this.droppedHordeIds.get(job.hordeId) === markedAt
+        ) {
+          this.droppedHordeIds.delete(job.hordeId);
+        }
+      }
+      throw error;
+    } finally {
+      this.storageDeletions.delete(localId);
+    }
     if (job) {
       await this.cancelOnHorde(job);
     }
-    await this.db.deleteJobCascade(localId);
     this.forgetLocally(localId);
     this.tabSync.publish('generation-job.deleted', {
       localId,
@@ -720,7 +744,7 @@ export class GenerationQueueService {
     job: LocalGenerationJob,
   ): Promise<DispatchOutcome> {
     const current = await this.freshRow(job.localId);
-    if (current?.status !== 'waiting') {
+    if (this.isDeleted(job.localId) || current?.status !== 'waiting') {
       return 'transient';
     }
     return this.submitJob(current);
@@ -759,6 +783,10 @@ export class GenerationQueueService {
           submitBlocked: undefined,
           submitRetryAt: undefined,
         });
+        if (this.isDeleted(job.localId)) {
+          await this.reconcileOrphanedSubmit(job.localId, hordeId);
+          return 'transient';
+        }
       } finally {
         this.inFlightIds.delete(hordeId);
       }
@@ -1340,6 +1368,12 @@ export class GenerationQueueService {
     localId: string,
     patch: Partial<LocalGenerationJob>,
   ): Promise<void> {
+    // A submit answer must survive a failed deletion, but must never write
+    // over a successful one. Wait for the transaction to decide which it is.
+    const deletion = this.storageDeletions.get(localId);
+    if (deletion) {
+      await deletion.catch(() => undefined);
+    }
     if (this.isDeleted(localId)) {
       return;
     }
