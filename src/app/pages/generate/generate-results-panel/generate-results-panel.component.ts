@@ -42,6 +42,7 @@ import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { StudioDescribeService } from '../../../services/studio-describe.service';
 import { buildJobImageArchive, extensionFor } from '../generate-archive';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
+import { imageRequestWithPlaceholders } from '../../../helper/image-request-inspection';
 import { useBackClose } from '../../../helper/back-close';
 import { requestWithoutSeed, studioLinkAddress } from '../studio-link';
 import { embedWebpExifInBlob } from '../../../helper/webp-exif';
@@ -747,6 +748,8 @@ export class GenerateResultsPanelComponent {
   public readonly metaOpen = signal(false);
   /** Which tile the panel describes while the viewer is closed. */
   private readonly metaKey = signal<string | null>(null);
+  private readonly metaSelection = signal<ResultTile | null>(null);
+  public readonly payloadDownloading = signal(false);
   /** Which apply mode the panel opens on; "Load settings" forces `replace`. */
   public readonly metaMode = signal<MetaApplyMode>('replace');
   /** The raw JSON view, only reachable from inside the metadata panel. */
@@ -1165,7 +1168,74 @@ export class GenerateResultsPanelComponent {
       return this.viewerTile();
     }
     const key = this.metaKey();
-    return this.visibleTiles().find((tile) => tile.key === key) ?? null;
+    const selection = this.metaSelection();
+    const tiles = this.tiles();
+    const exact = tiles.find((tile) => tile.key === key);
+    if (exact) return exact;
+    const job = [...this.pendingJobs(), ...this.finishedJobs()].find(
+      (job) => job.localId === selection?.jobLocalId,
+    );
+    if (!job || !selection) return null;
+    const replacement = tiles.find((tile) => tile.jobLocalId === job.localId);
+    if (replacement) return replacement;
+    const known = requestKnowledge(job);
+    return {
+      ...selection,
+      known,
+      request: known === 'none' ? undefined : job.request,
+      applyRequest: known === 'none' ? undefined : job.request,
+    };
+  });
+
+  public readonly metaJob = computed(() => {
+    const tile = this.metaTile();
+    return (
+      [...this.pendingJobs(), ...this.finishedJobs()].find(
+        (job) => job.localId === tile?.jobLocalId,
+      ) ?? null
+    );
+  });
+
+  /** A request is inspectable before worker results exist; each source of parameters stays explicit. */
+  public readonly metaData = computed(() => {
+    const tile = this.metaTile();
+    const job = this.metaJob();
+    if (!tile || !job) return null;
+    const placeholder = this.transloco.translate(
+      'generate.results.payload_image_placeholder',
+    );
+    const known = requestKnowledge(job);
+    const request =
+      known === 'none'
+        ? null
+        : imageRequestWithPlaceholders(
+            job.inspectionRequest ?? job.request,
+            placeholder,
+          );
+    return {
+      ...tile.metaExport,
+      request,
+      server_request: job.reportedRequest
+        ? imageRequestWithPlaceholders(job.reportedRequest, placeholder)
+        : null,
+      request_availability: known,
+      request_recovery: job.requestRecovery ?? null,
+      job: {
+        local_id: job.localId,
+        request_id: job.hordeId ?? null,
+        status: job.status,
+        finished: job.finishedCount ?? null,
+        processing: job.processingCount ?? null,
+        waiting: job.waitingCount ?? null,
+        queue_position: job.queuePosition ?? null,
+        wait_time: job.waitTime ?? null,
+        quoted_kudos: job.quotedKudos ?? null,
+        kudos: job.kudos ?? null,
+        error: job.errorKey
+          ? this.transloco.translate(job.errorKey)
+          : (job.errorMessage ?? null),
+      },
+    };
   });
 
   /** Readable highlight rows for the open metadata modal (above the raw JSON). */
@@ -2591,11 +2661,18 @@ export class GenerateResultsPanelComponent {
       case 'settings':
         return 'generate.results.prompt_unknown_note';
       default:
+        if (this.metaJob()?.requestRecovery === 'pending') {
+          return 'generate.results.request_recovery_pending_note';
+        }
+        if (this.metaJob()?.requestRecovery === 'failed') {
+          return 'generate.results.request_recovery_failed_note';
+        }
         return 'generate.results.request_unknown_note';
     }
   }
 
   public openMeta(tile: ResultTile): void {
+    this.metaSelection.set(tile);
     this.metaKey.set(tile.key);
     this.metaOpen.set(true);
     this.metaJsonOpen.set(false);
@@ -2626,6 +2703,38 @@ export class GenerateResultsPanelComponent {
   public closeMeta(): void {
     this.metaOpen.set(false);
     this.metaJsonOpen.set(false);
+    this.metaSelection.set(null);
+  }
+
+  public async downloadSubmittedBody(): Promise<void> {
+    const job = this.metaJob();
+    if (!job?.submittedBodyAvailable || this.payloadDownloading()) return;
+    this.payloadDownloading.set(true);
+    try {
+      const blob = await this.queue.getSubmittedBody(job.localId);
+      if (!blob) {
+        this.toast.error('generate.results.payload_download_failed', {
+          transloco: true,
+        });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      try {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `request-${job.hordeId ?? job.localId}.json`;
+        anchor.click();
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      this.toast.error('generate.results.payload_download_failed', {
+        transloco: true,
+        rawError: error,
+      });
+    } finally {
+      this.payloadDownloading.set(false);
+    }
   }
 
   /**

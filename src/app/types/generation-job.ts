@@ -2,6 +2,7 @@ import {
   GenerationMetadataStable,
   GenerationOutput,
   ImageGenerationRequest,
+  SubmittedImageRequest,
 } from './generation';
 
 /**
@@ -35,7 +36,8 @@ export type StoredImageKind =
   | 'source'
   | 'mask'
   | 'control_map'
-  | 'extra_source';
+  | 'extra_source'
+  | 'submitted_request';
 
 /**
  * How many extra source images a remix request may carry alongside its primary
@@ -87,7 +89,7 @@ export interface StoredPromptCheck {
 }
 
 /**
- * A binary image tied to a job, keyed by `[localId, imageId]` in IndexedDB.
+ * An image or recorded submission body, keyed by `[localId, imageId]` in IndexedDB.
  * Source and mask blobs are written at enqueue time; result and control-map
  * blobs are written when the job finishes.
  */
@@ -119,6 +121,14 @@ export interface LocalGenerationJob {
   createdAt: number;
   updatedAt: number;
   request: ImageGenerationRequest;
+  /** Parameters with empty image slots; the view supplies translated placeholders. */
+  inspectionRequest?: ImageGenerationRequest;
+  /** The exact HTTP body is kept as a JSON blob beside this job's images. */
+  submittedBodyAvailable?: true;
+  /** Server-reported parameters, with image bytes and links replaced by empty slots. */
+  reportedRequest?: SubmittedImageRequest;
+  requestRecoveryAttempts?: number;
+  requestRecoveryRetryAt?: number;
   /**
    * The job was taken from the account's own list of active generations rather
    * than submitted from this browser. Its `request` starts as a placeholder and
@@ -128,9 +138,8 @@ export interface LocalGenerationJob {
    */
   adopted?: true;
   /**
-   * How reading an adopted job's request back from the horde went. Set when the
-   * job is adopted and settled by the one attempt made then; a job adopted
-   * before the read-back existed carries none, and none is ever made for it.
+   * How reading an adopted job's request back from the horde went. Transient
+   * failures are retried while the request is active, up to a bounded count.
    */
   requestRecovery?: AdoptedRequestRecovery;
   /**
@@ -232,7 +241,7 @@ export interface LocalGenerationJob {
 /**
  * Where reading back an adopted job's request stands.
  *
- * - `pending`: the one attempt is under way, or the page closed during it.
+ * - `pending`: an attempt is under way, or the page closed during it.
  * - `full`: the request and its prompt came back.
  * - `settings`: the settings came back, but the horde stored no prompt for it.
  * - `refused`: the horde has the endpoint and answered with a refusal (the

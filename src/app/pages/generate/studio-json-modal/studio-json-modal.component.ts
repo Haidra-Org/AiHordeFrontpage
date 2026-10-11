@@ -41,12 +41,16 @@ export class StudioJsonModalComponent {
   public readonly highlights = input<JsonModalHighlight[]>([]);
   /** When set, a "Download JSON" action writes the body to this filename. */
   public readonly downloadName = input<string | null>(null);
+  public readonly fullPayloadAvailable = input(false);
+  public readonly payloadNote = input('');
+  public readonly fullPayloadDownloading = input(false);
+  public readonly downloadFullPayload = output<void>();
 
   public readonly closed = output<void>();
 
   public readonly json = computed(() => {
     try {
-      return JSON.stringify(this.data(), null, 2);
+      return JSON.stringify(this.data() ?? null, null, 2) ?? 'null';
     } catch {
       return '{}';
     }

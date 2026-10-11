@@ -239,6 +239,134 @@ describe('GenerateResultsPanelComponent', () => {
     expect(component.finishedJobs().map((j) => j.localId)).toEqual(['f']);
   });
 
+  it.each(['waiting', 'requested', 'queued', 'processing'] as const)(
+    'inspects %s requests with image placeholders and live state',
+    (status) => {
+      pendingJobs.set([
+        {
+          ...job('p', status),
+          hordeId: 'h-p',
+          processingCount: 1,
+          inspectionRequest: {
+            prompt: 'a cat',
+            params: { steps: 30 },
+            source_image: '',
+            source_mask: '',
+            extra_source_images: [{ image: '', strength: 0.7 }],
+          },
+        },
+      ]);
+      component.openMeta(component.tiles()[0]);
+      expect(component.metaData()).toMatchObject({
+        request: {
+          prompt: 'a cat',
+          params: { steps: 30 },
+          source_image: 'generate.results.payload_image_placeholder',
+          source_mask: 'generate.results.payload_image_placeholder',
+          extra_source_images: [
+            {
+              image: 'generate.results.payload_image_placeholder',
+              strength: 0.7,
+            },
+          ],
+        },
+        job: { request_id: 'h-p', status, processing: 1 },
+      });
+    },
+  );
+
+  it('keeps inspection attached to a job through completion, thumbnail loading and filtering', async () => {
+    const pending = job('p', 'processing');
+    pendingJobs.set([pending]);
+    component.openMeta(component.tiles()[0]);
+    component.metaJsonOpen.set(true);
+    pendingJobs.set([]);
+    finishedJobs.set([{ ...pending, status: 'done', resultImageIds: ['out'] }]);
+    expect(component.metaTile()?.jobLocalId).toBe('p');
+    expect(component.metaData()?.job.status).toBe('done');
+    getJobImages.mockResolvedValue([resultImage('p', 'out')]);
+    await loadThumbnails();
+    expect(component.metaTile()?.seed).toBe('out');
+    component.errorsOnly.set(true);
+    expect(component.visibleTiles()).toEqual([]);
+    expect(component.metaTile()?.seed).toBe('out');
+    expect(component.metaJsonOpen()).toBe(true);
+  });
+
+  it('makes unavailable requests explicit and updates when authenticated recovery succeeds', () => {
+    const adopted: LocalGenerationJob = {
+      ...job('p', 'queued'),
+      adopted: true,
+      request: { prompt: '' },
+      requestRecovery: 'pending',
+    };
+    pendingJobs.set([adopted]);
+    component.openMeta(component.tiles()[0]);
+    expect(component.metaData()).toMatchObject({
+      request: null,
+      request_availability: 'none',
+      request_recovery: 'pending',
+    });
+    expect(component.metaNoteKey(component.metaTile()!)).toBe(
+      'generate.results.request_recovery_pending_note',
+    );
+    pendingJobs.set([
+      {
+        ...adopted,
+        requestRecovery: 'settings',
+        request: { prompt: '', params: { steps: 40 } },
+        reportedRequest: { params: { steps: 40 }, source_image: '' },
+      },
+    ]);
+    expect(component.metaTile()?.applyRequest?.params?.steps).toBe(40);
+    expect(component.metaData()).toMatchObject({
+      request_availability: 'settings',
+      server_request: {
+        params: { steps: 40 },
+        source_image: 'generate.results.payload_image_placeholder',
+      },
+    });
+  });
+
+  it('downloads the recorded body without replacing it with displayed placeholders', async () => {
+    const body = new Blob(
+      [JSON.stringify({ prompt: 'a cat', source_image: 'aGVsbG8=' })],
+      { type: 'application/json' },
+    );
+    const queue = TestBed.inject(GenerationQueueService);
+    queue.getSubmittedBody = vi.fn().mockResolvedValue(body);
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    pendingJobs.set([
+      { ...job('p', 'processing'), submittedBodyAvailable: true },
+    ]);
+    component.openMeta(component.tiles()[0]);
+    await component.downloadSubmittedBody();
+    expect(queue.getSubmittedBody).toHaveBeenCalledWith('p');
+    expect(URL.createObjectURL).toHaveBeenCalledWith(body);
+    expect(click).toHaveBeenCalledOnce();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
+    expect(component.payloadDownloading()).toBe(false);
+    click.mockRestore();
+  });
+
+  it('reports a missing recorded body with translated copy and releases the download state', async () => {
+    const queue = TestBed.inject(GenerationQueueService);
+    queue.getSubmittedBody = vi.fn().mockResolvedValue(null);
+    pendingJobs.set([
+      { ...job('p', 'processing'), submittedBodyAvailable: true },
+    ]);
+    component.openMeta(component.tiles()[0]);
+    await component.downloadSubmittedBody();
+    expect(toastError).toHaveBeenCalledWith(
+      'generate.results.payload_download_failed',
+      { transloco: true },
+    );
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    expect(component.payloadDownloading()).toBe(false);
+  });
+
   it('counts a request the horde has not taken apart from its queue', () => {
     pendingJobs.set([
       job('w', 'waiting'),
@@ -2272,6 +2400,62 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
       TRANSLATIONS['generate.results.adopted_line'],
     );
     expect(fixture.componentInstance.tiles()[0].adopted).toBe(true);
+  });
+
+  it('renders pending request JSON and exposes the complete body download through the modal', async () => {
+    const queue = TestBed.inject(GenerationQueueService);
+    const pending = queue.pendingJobs as ReturnType<
+      typeof signal<LocalGenerationJob[]>
+    >;
+    const request = {
+      prompt: 'a cat',
+      params: { steps: 30 },
+      source_image: '',
+    };
+    const row: LocalGenerationJob = {
+      ...job('pending', 'processing'),
+      request: { prompt: 'a cat', params: { steps: 30 } },
+      inspectionRequest: request,
+      submittedBodyAvailable: true,
+    };
+    finishedJobs.set([]);
+    pending.set([row]);
+    const component = fixture.componentInstance;
+    component.openMeta(component.tiles()[0]);
+    fixture.detectChanges();
+    const raw = host.querySelector('.gs-meta-raw') as HTMLButtonElement;
+    raw.click();
+    fixture.detectChanges();
+    const code = host.querySelector('.gs-api-code code');
+    expect(JSON.parse(code!.textContent)).toMatchObject({
+      request: {
+        prompt: 'a cat',
+        params: { steps: 30 },
+        source_image:
+          TRANSLATIONS['generate.results.payload_image_placeholder'],
+      },
+      job: { status: 'processing' },
+    });
+    queue.getSubmittedBody = vi
+      .fn()
+      .mockResolvedValue(
+        new Blob(['{"source_image":"aGVsbG8="}'], { type: 'application/json' }),
+      );
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => undefined);
+    const download = [
+      ...host.querySelectorAll('app-studio-json-modal button'),
+    ].find((button) =>
+      button.textContent?.includes(
+        TRANSLATIONS['generate.results.payload_download'],
+      ),
+    ) as HTMLButtonElement;
+    download.click();
+    await Promise.resolve();
+    expect(queue.getSubmittedBody).toHaveBeenCalledWith('pending');
+    expect(click).toHaveBeenCalledOnce();
+    click.mockRestore();
   });
 
   it('keeps every tile in a batch removed from the DOM while its flagged tile deletion commits', async () => {

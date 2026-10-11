@@ -1911,7 +1911,7 @@
           [defaultMode]="metaMode()"
           [pinned]="metaPinned()"
           [noteKey]="metaNoteKey(tile)"
-          [quickActions]="tile.known === 'full'"
+          [quickActions]="tile.kind === 'done' && tile.known === 'full'"
           [promptCheckView]="promptCheckView()"
           (apply)="onMetaApply($event)"
           (quickAction)="onQuickAction($event, tile)"
@@ -2339,7 +2339,7 @@
         [defaultMode]="metaMode()"
         [pinned]="metaPinned()"
         [noteKey]="metaNoteKey(tile)"
-        [quickActions]="tile.known === 'full'"
+        [quickActions]="tile.kind === 'done' && tile.known === 'full'"
         [promptCheckView]="promptCheckView()"
         (apply)="onMetaApply($event)"
         (quickAction)="onQuickAction($event, tile)"
@@ -2355,7 +2355,15 @@
     <app-studio-json-modal
       [title]="'generate.results.metadata_title' | transloco"
       [note]="'generate.results.metadata_note' | transloco"
-      [data]="tile.metaExport"
+      [data]="metaData()"
+      [fullPayloadAvailable]="metaJob()?.submittedBodyAvailable === true"
+      [payloadNote]="
+        metaJob()?.submittedBodyAvailable
+          ? ''
+          : ('generate.results.payload_unavailable' | transloco)
+      "
+      [fullPayloadDownloading]="payloadDownloading()"
+      (downloadFullPayload)="downloadSubmittedBody()"
       [highlights]="metaHighlights()"
       [downloadName]="metaDownloadName(tile)"
       (closed)="metaJsonOpen.set(false)"

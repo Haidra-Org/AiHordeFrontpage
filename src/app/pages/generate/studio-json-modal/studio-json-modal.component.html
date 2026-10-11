@@ -34,13 +34,27 @@
         </div>
       }
       <pre class="gs-api-code"><code [innerHTML]="highlighted()"></code></pre>
+      @if (payloadNote()) {
+        <p class="gs-modal-foot-note">{{ payloadNote() }}</p>
+      }
     </div>
 
     <div class="gs-modal-footer">
       <span class="gs-modal-foot-note">
         {{ note() }}
       </span>
-      <div class="flex items-center gap-2">
+      <div class="flex max-w-full flex-wrap items-center justify-end gap-2">
+        @if (fullPayloadAvailable()) {
+          <button
+            type="button"
+            class="gs-tile-btn"
+            [disabled]="fullPayloadDownloading()"
+            (click)="downloadFullPayload.emit()"
+          >
+            <app-icon name="arrow-down-tray" />
+            {{ "generate.results.payload_download" | transloco }}
+          </button>
+        }
         @if (downloadName()) {
           <button type="button" class="gs-tile-btn" (click)="download()">
             <app-icon name="arrow-down-tray" />
