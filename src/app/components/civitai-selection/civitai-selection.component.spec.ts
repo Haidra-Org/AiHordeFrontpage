@@ -199,6 +199,28 @@ describe('CivitaiSelectionComponent', () => {
   });
 
   describe('editing a row', () => {
+    it('opens a restored model ID through the model endpoint', () => {
+      const current = lora('123');
+      setLoras([current]);
+      component.onDetails(current, 0);
+      expect(component.openRow()?.target).toEqual({
+        kind: 'lora',
+        modelId: 123,
+        versionId: null,
+      });
+    });
+
+    it('opens a restored version ID without treating it as a model ID', () => {
+      const current = lora('123', { is_version: true });
+      setLoras([current]);
+      component.onDetails(current, 0);
+      expect(component.openRow()?.target).toEqual({
+        kind: 'lora',
+        modelId: null,
+        versionId: 123,
+      });
+    });
+
     it('changes one strength and leaves the rest alone', () => {
       setLoras([lora('a'), lora('b')]);
       const emitted: LoraSelection[][] = [];

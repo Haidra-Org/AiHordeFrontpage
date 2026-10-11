@@ -168,6 +168,9 @@ export class CivitaiPickerComponent implements OnInit {
   public readonly manualIsVersion = signal(false);
 
   public readonly detailTarget = signal<CivitaiDetailTarget | null>(null);
+  public readonly detailCurrent = signal<LoraSelection | TiSelection | null>(
+    null,
+  );
 
   /**
    * Fetch the next page as the end of the grid is reached.
@@ -237,6 +240,11 @@ export class CivitaiPickerComponent implements OnInit {
 
   public ngOnInit(): void {
     this.tab.set(this.kind());
+    this.manualName.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        if (!this.canBeVersion()) this.manualIsVersion.set(false);
+      });
     // A tab change, a filter change or a fresh query all start a new list; only
     // "load more" continues the one on screen.
     merge(
@@ -319,6 +327,7 @@ export class CivitaiPickerComponent implements OnInit {
   public setTab(tab: CivitaiAssetKind): void {
     if (this.tab() !== tab) {
       this.tab.set(tab);
+      this.manualIsVersion.set(false);
       this.retrigger.next();
     }
   }
@@ -398,7 +407,8 @@ export class CivitaiPickerComponent implements OnInit {
     return (
       this.loras().find(
         (lora) =>
-          lora.name === String(model.id) ||
+          lora.modelId === model.id ||
+          (lora.is_version !== true && lora.name === String(model.id)) ||
           (lora.is_version === true && versionIds.has(lora.name)),
       ) ?? null
     );
@@ -475,23 +485,39 @@ export class CivitaiPickerComponent implements OnInit {
   // --- Details --------------------------------------------------------------
 
   public openDetails(model: CivitaiModel): void {
+    const current = this.entryFor(model);
+    this.detailCurrent.set(current);
     this.detailTarget.set({
       kind: model.type === 'TextualInversion' ? 'ti' : 'lora',
       modelId: model.id,
-      versionId: null,
+      versionId:
+        current && 'clip' in current && current.is_version === true
+          ? Number(current.name)
+          : null,
     });
   }
 
   public closeDetails(): void {
     this.detailTarget.set(null);
+    this.detailCurrent.set(null);
   }
 
   public onDetailApply(entry: LoraSelection | TiSelection): void {
     if ('clip' in entry) {
       const without = this.loras().filter(
-        (lora) => lora.modelId !== entry.modelId || lora.name === entry.name,
+        (lora) =>
+          lora === this.detailCurrent() ||
+          entry.modelId === undefined ||
+          lora.modelId !== entry.modelId ||
+          (lora.name === entry.name &&
+            (lora.is_version === true) === (entry.is_version === true)),
       );
-      const index = without.findIndex((lora) => lora.name === entry.name);
+      const index = without.findIndex(
+        (lora) =>
+          lora === this.detailCurrent() ||
+          (lora.name === entry.name &&
+            (lora.is_version === true) === (entry.is_version === true)),
+      );
       this.lorasChange.emit(
         index >= 0
           ? without.map((lora, i) => (i === index ? entry : lora))
@@ -530,6 +556,10 @@ export class CivitaiPickerComponent implements OnInit {
     this.manualIsVersion.set(value);
   }
 
+  public checkedValue(event: Event): boolean {
+    return (event.target as HTMLInputElement).checked;
+  }
+
   public addManual(): void {
     const name = this.manualName.value.trim();
     if (!name) {
@@ -555,6 +585,15 @@ export class CivitaiPickerComponent implements OnInit {
 
   public onClose(): void {
     this.closed.emit();
+  }
+
+  public onDetailRemove(): void {
+    const entry = this.detailCurrent();
+    if (entry && 'clip' in entry)
+      this.lorasChange.emit(this.loras().filter((lora) => lora !== entry));
+    else if (entry)
+      this.tisChange.emit(this.tis().filter((ti) => ti !== entry));
+    this.closeDetails();
   }
 
   public onBackdrop(event: MouseEvent): void {

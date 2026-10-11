@@ -4,7 +4,11 @@
   </p>
 }
 
-@for (row of loraRows(); track row.entry.name; let i = $index) {
+@for (
+  row of loraRows();
+  track row.entry.name + ":" + (row.entry.is_version === true);
+  let i = $index
+) {
   @if (showCap() && lorasOverCap() && i === sentLoraCount()) {
     <p class="gs-cvsel-cutline">
       {{

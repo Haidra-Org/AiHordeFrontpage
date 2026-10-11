@@ -332,7 +332,12 @@ export class CivitaiSelectionComponent {
       index,
       target: {
         kind,
-        modelId: entry.modelId ?? null,
+        modelId:
+          entry.modelId ??
+          (!(this.isLora(entry) && entry.is_version === true) &&
+          isNumericAssetId(entry.name)
+            ? Number(entry.name)
+            : null),
         versionId:
           this.isLora(entry) && entry.is_version === true
             ? Number(entry.name)

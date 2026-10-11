@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CivitaiDetailComponent } from './civitai-detail.component';
 import {
@@ -60,6 +60,7 @@ describe('CivitaiDetailComponent', () => {
   let fixture: ComponentFixture<CivitaiDetailComponent>;
   let component: CivitaiDetailComponent;
   let fetchModel: ReturnType<typeof vi.fn>;
+  let fetchVersion: ReturnType<typeof vi.fn>;
 
   async function open(
     overrides: Partial<{
@@ -68,6 +69,8 @@ describe('CivitaiDetailComponent', () => {
       baseline: string | null;
       current: LoraSelection | TiSelection | null;
       allowSha256: boolean;
+      modelId: number | null;
+      versionId: number | null;
     }> = {},
   ): Promise<void> {
     fetchModel.mockReturnValue(of(overrides.model ?? MODEL));
@@ -75,8 +78,8 @@ describe('CivitaiDetailComponent', () => {
     component = fixture.componentInstance;
     fixture.componentRef.setInput('target', {
       kind: overrides.kind ?? 'lora',
-      modelId: 1,
-      versionId: null,
+      modelId: 'modelId' in overrides ? overrides.modelId : 1,
+      versionId: overrides.versionId ?? null,
     });
     fixture.componentRef.setInput('baseline', overrides.baseline ?? null);
     fixture.componentRef.setInput('current', overrides.current ?? null);
@@ -93,6 +96,7 @@ describe('CivitaiDetailComponent', () => {
 
   beforeEach(() => {
     fetchModel = vi.fn();
+    fetchVersion = vi.fn().mockReturnValue(of(null));
     TestBed.configureTestingModule({
       imports: [
         CivitaiDetailComponent,
@@ -102,11 +106,13 @@ describe('CivitaiDetailComponent', () => {
         }),
       ],
       providers: [
-        { provide: CivitaiService, useValue: { fetchModel } },
+        { provide: CivitaiService, useValue: { fetchModel, fetchVersion } },
         {
           provide: CivitaiCacheService,
           useValue: {
             getModel: vi.fn().mockResolvedValue(null),
+            getVersion: vi.fn().mockResolvedValue(null),
+            putVersion: vi.fn().mockResolvedValue(undefined),
             putSearchResult: vi.fn().mockResolvedValue(undefined),
           },
         },
@@ -278,5 +284,185 @@ describe('CivitaiDetailComponent', () => {
     expect(component.civitaiUrl()).toBe(
       'https://civitai.com/models/1?modelVersionId=12',
     );
+  });
+
+  it('resolves a manual version ID to its model and preserves the pin on update', async () => {
+    fetchVersion.mockReturnValue(of(version(12, { baseModel: 'Pony' })));
+    await open({
+      modelId: null,
+      versionId: 12,
+      current: {
+        name: '12',
+        model: 0.3,
+        clip: 0.9,
+        is_version: true,
+        origin: 'manual',
+      },
+    });
+    expect(fetchVersion).toHaveBeenCalledWith(12);
+    expect(fetchModel).toHaveBeenCalledWith(1);
+    expect(component.selectedVersion()?.id).toBe(12);
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+    component.modelStrength.set(0.8);
+    component.onApply();
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: '12',
+        model: 0.8,
+        clip: 0.9,
+        is_version: true,
+        modelId: 1,
+        origin: 'manual',
+      }),
+    );
+  });
+
+  it('preserves the identifier, flag and display metadata when lookup fails', async () => {
+    const current: LoraSelection = {
+      name: '99',
+      model: 0.3,
+      clip: 0.9,
+      is_version: true,
+      label: 'Saved name',
+      versionLabel: 'Saved version',
+      inject_trigger: 'saved',
+      sha256: 'a'.repeat(64),
+    };
+    await open({ modelId: null, versionId: 99, current });
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+    component.setTrigger(null);
+    component.onApply();
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: '99',
+        is_version: true,
+        label: 'Saved name',
+        versionLabel: 'Saved version',
+      }),
+    );
+    expect(apply.mock.calls[0][0]).not.toHaveProperty('inject_trigger');
+    expect(apply.mock.calls[0][0]).not.toHaveProperty('sha256');
+  });
+
+  it('preserves a pinned version missing from the model response', async () => {
+    await open({
+      versionId: 99,
+      current: { name: '99', model: 1, clip: 1, is_version: true, modelId: 1 },
+    });
+    expect(component.selectedVersion()).toBeNull();
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+    component.onApply();
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({ name: '99', is_version: true }),
+    );
+  });
+
+  it('uses cached version metadata when refreshing it fails', async () => {
+    const cached = version(12, { baseModel: 'Pony' });
+    vi.mocked(TestBed.inject(CivitaiCacheService).getVersion).mockResolvedValue(
+      { data: cached, stale: true },
+    );
+    await open({
+      modelId: null,
+      versionId: 12,
+      current: { name: '12', model: 0.4, clip: 0.6, is_version: true },
+    });
+    expect(fetchVersion).toHaveBeenCalledWith(12);
+    expect(fetchModel).toHaveBeenCalledWith(1);
+    expect(component.selectedVersion()?.id).toBe(12);
+  });
+
+  it('keeps a cached pin when the refreshed model omits that version', async () => {
+    const cache = TestBed.inject(CivitaiCacheService);
+    vi.mocked(cache.getVersion).mockResolvedValue({
+      data: version(99),
+      stale: false,
+    });
+    await open({
+      modelId: null,
+      versionId: 99,
+      current: { name: '99', model: 0.4, clip: 0.6, is_version: true },
+    });
+    expect(fetchVersion).not.toHaveBeenCalled();
+    expect(component.selectedVersion()?.id).toBe(99);
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+    component.onApply();
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({ name: '99', is_version: true, modelId: 1 }),
+    );
+  });
+
+  it('preserves a pin when Update is pressed before the response arrives', async () => {
+    const response = new Subject<CivitaiModel | null>();
+    await open({
+      versionId: 11,
+      current: { name: '11', model: 1, clip: 1, is_version: true, modelId: 1 },
+    });
+    fetchModel.mockReturnValue(response);
+    fixture.componentRef.setInput('target', {
+      kind: 'lora',
+      modelId: 1,
+      versionId: 11,
+    });
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+    component.onApply();
+    expect(component.loading()).toBe(true);
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({ name: '11', is_version: true }),
+    );
+    response.next(MODEL);
+    response.complete();
+  });
+
+  it('keeps model-ID mode until the user explicitly chooses a version', async () => {
+    await open({ current: { name: '1', model: 0.4, clip: 0.6 } });
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+    component.onApply();
+    expect(apply.mock.calls[0][0].name).toBe('1');
+    expect(apply.mock.calls[0][0].is_version).not.toBe(true);
+    component.selectVersion(12);
+    component.onApply();
+    expect(apply.mock.calls[1][0]).toMatchObject({
+      name: '12',
+      is_version: true,
+      model: 0.4,
+      clip: 0.6,
+    });
+  });
+
+  it('ignores an old response after opening a different asset', async () => {
+    const oldResponse = new Subject<CivitaiModel | null>();
+    await open();
+    fetchModel.mockReturnValue(oldResponse);
+    fixture.componentRef.setInput('target', {
+      kind: 'lora',
+      modelId: 1,
+      versionId: 11,
+    });
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fetchModel.mockReturnValue(
+      of({ ...MODEL, id: 2, versions: [version(22)] }),
+    );
+    fixture.componentRef.setInput('target', {
+      kind: 'lora',
+      modelId: 2,
+      versionId: 22,
+    });
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    oldResponse.next(MODEL);
+    oldResponse.complete();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(component.model()?.id).toBe(2);
+    expect(component.selectedVersion()?.id).toBe(22);
   });
 });

@@ -331,7 +331,7 @@
             <input
               type="checkbox"
               [checked]="manualIsVersion()"
-              (change)="setManualIsVersion(!manualIsVersion())"
+              (change)="setManualIsVersion(checkedValue($event))"
             />
             {{ "generate.civitai.manual_is_version" | transloco }}
           </label>
@@ -352,9 +352,11 @@
 @if (detailTarget(); as target) {
   <app-civitai-detail
     [target]="target"
+    [current]="detailCurrent()"
     [baseline]="baseline()"
     [allowSha256]="allowSha256()"
     (apply)="onDetailApply($event)"
+    (remove)="onDetailRemove()"
     (appendToPrompt)="appendToPrompt.emit($event)"
     (closed)="closeDetails()"
   />

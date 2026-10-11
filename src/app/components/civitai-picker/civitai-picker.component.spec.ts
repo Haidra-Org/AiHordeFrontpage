@@ -90,7 +90,10 @@ describe('CivitaiPickerComponent', () => {
       providers: [
         {
           provide: CivitaiService,
-          useValue: { searchModels, fetchModel: vi.fn() },
+          useValue: {
+            searchModels,
+            fetchModel: vi.fn().mockReturnValue(of(model(1))),
+          },
         },
         {
           provide: CivitaiCacheService,
@@ -331,5 +334,95 @@ describe('CivitaiPickerComponent', () => {
       expect(component.columns()).toBe(3);
       expect(select.value).toBe('3');
     });
+  });
+
+  it('does not mistake an equal-numbered version for a model selection', () => {
+    fixture.componentRef.setInput('loras', [
+      { name: '123', model: 1, clip: 1, is_version: true },
+    ]);
+    start();
+    const emitted = vi.fn();
+    component.lorasChange.subscribe(emitted);
+    expect(component.isAdded(model(123))).toBe(false);
+    component.toggle(model(123));
+    expect(emitted.mock.calls[0][0]).toHaveLength(2);
+    expect(emitted.mock.calls[0][0][0].name).toBe('123');
+  });
+
+  it('clears the manual version choice when it becomes inapplicable', () => {
+    start();
+    component.manualName.setValue('123');
+    component.setManualIsVersion(true);
+    component.manualName.setValue('named_lora');
+    component.manualName.setValue('456');
+    expect(component.manualIsVersion()).toBe(false);
+    component.setManualIsVersion(true);
+    component.setTab('ti');
+    component.setTab('lora');
+    expect(component.manualIsVersion()).toBe(false);
+  });
+
+  it('opens catalogue Details with the existing version and strengths', () => {
+    const current: LoraSelection = {
+      name: '12',
+      model: 0.4,
+      clip: 0.6,
+      is_version: true,
+      modelId: 1,
+    };
+    fixture.componentRef.setInput('loras', [current]);
+    start();
+    component.openDetails(model(1, { versions: [version(11), version(12)] }));
+    expect(component.detailTarget()).toMatchObject({
+      modelId: 1,
+      versionId: 12,
+    });
+    fixture.detectChanges();
+    expect(component.detailCurrent()).toBe(current);
+    const emitted = vi.fn();
+    component.lorasChange.subscribe(emitted);
+    component.onDetailApply({ ...current, name: '11', model: 0.8 });
+    expect(emitted.mock.calls[0][0]).toEqual([
+      { ...current, name: '11', model: 0.8 },
+    ]);
+  });
+
+  it('keeps equal-numbered selections in different namespaces when applying details', () => {
+    const current: LoraSelection = {
+      name: '11',
+      model: 1,
+      clip: 1,
+      is_version: true,
+      modelId: 1,
+    };
+    const other: LoraSelection = { name: '12', model: 1, clip: 1 };
+    fixture.componentRef.setInput('loras', [current, other]);
+    start();
+    component.openDetails(model(1, { versions: [version(11), version(12)] }));
+    const emitted = vi.fn();
+    component.lorasChange.subscribe(emitted);
+    component.onDetailApply({ ...current, name: '12' });
+    expect(emitted.mock.calls[0][0]).toEqual([
+      { ...current, name: '12' },
+      other,
+    ]);
+  });
+
+  it('removes the existing selection from catalogue Details', () => {
+    const current: LoraSelection = {
+      name: '10',
+      model: 1,
+      clip: 1,
+      is_version: true,
+      modelId: 1,
+    };
+    fixture.componentRef.setInput('loras', [current]);
+    start();
+    component.openDetails(model(1));
+    const emitted = vi.fn();
+    component.lorasChange.subscribe(emitted);
+    component.onDetailRemove();
+    expect(emitted).toHaveBeenCalledWith([]);
+    expect(component.detailTarget()).toBeNull();
   });
 });

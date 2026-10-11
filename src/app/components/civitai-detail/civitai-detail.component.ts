@@ -8,7 +8,10 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { DecimalPipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { GsShotViewerComponent } from '../gs-shot-viewer/gs-shot-viewer.component';
@@ -87,6 +90,8 @@ export class CivitaiDetailComponent {
   public readonly loading = signal(false);
   public readonly errored = signal(false);
   public readonly selectedVersionId = signal<number | null>(null);
+  private readonly resolvedVersion = signal<CivitaiModelVersion | null>(null);
+  private readonly versionChanged = signal(false);
   public readonly revealed = signal<ReadonlySet<string>>(new Set());
   /** The preview being shown whole, or null when the strip is as large as it gets. */
   public readonly enlarged = signal<string | null>(null);
@@ -116,7 +121,10 @@ export class CivitaiDetailComponent {
 
   public readonly selectedVersion = computed<CivitaiModelVersion | null>(() => {
     const id = this.selectedVersionId();
-    return this.versions().find((version) => version.id === id) ?? null;
+    return (
+      this.versions().find((version) => version.id === id) ??
+      (this.resolvedVersion()?.id === id ? this.resolvedVersion() : null)
+    );
   });
 
   /** Trigger words of the version in view, which is what a request would use. */
@@ -133,10 +141,17 @@ export class CivitaiDetailComponent {
       }
     });
 
-    effect(() => {
+    effect((onCleanup) => {
       const target = this.target();
+      this.model.set(null);
+      this.resolvedVersion.set(null);
+      this.versionChanged.set(false);
       this.selectedVersionId.set(target.versionId);
-      void this.load(target);
+      let cancelled = false;
+      onCleanup(() => {
+        cancelled = true;
+      });
+      void this.load(target, () => cancelled);
     });
 
     effect(() => {
@@ -156,16 +171,41 @@ export class CivitaiDetailComponent {
     });
   }
 
-  private async load(target: CivitaiDetailTarget): Promise<void> {
-    if (target.modelId === null) {
-      // A hand-entered asset has no catalogue page to show.
-      this.model.set(null);
-      return;
-    }
+  private async load(
+    target: CivitaiDetailTarget,
+    cancelled: () => boolean,
+  ): Promise<void> {
     this.loading.set(true);
     this.errored.set(false);
+    let modelId = target.modelId;
+    if (modelId === null && target.versionId !== null) {
+      const cachedVersion = await this.cache.getVersion(target.versionId);
+      if (cancelled()) return;
+      if (cachedVersion) this.resolvedVersion.set(cachedVersion.data);
+      const version =
+        cachedVersion && !cachedVersion.stale
+          ? cachedVersion.data
+          : await firstValueFrom(
+              this.civitai
+                .fetchVersion(target.versionId)
+                .pipe(takeUntilDestroyed(this.destroyRef)),
+              { defaultValue: null },
+            );
+      if (cancelled()) return;
+      if (version) {
+        this.resolvedVersion.set(version);
+        void this.cache.putVersion(version);
+      }
+      modelId = (version ?? cachedVersion?.data)?.modelId ?? null;
+      if (modelId === null) this.errored.set(!version && !cachedVersion);
+    }
+    if (modelId === null) {
+      this.loading.set(false);
+      return;
+    }
 
-    const cached = await this.cache.getModel(target.modelId);
+    const cached = await this.cache.getModel(modelId);
+    if (cancelled()) return;
     if (cached) {
       this.adopt(cached.data);
     }
@@ -174,20 +214,25 @@ export class CivitaiDetailComponent {
       return;
     }
 
-    this.civitai.fetchModel(target.modelId).subscribe((model) => {
-      this.loading.set(false);
-      if (model) {
-        void this.cache.putSearchResult(model);
-        this.adopt(model);
-      } else if (!cached) {
-        this.errored.set(true);
-      }
-    });
+    const model = await firstValueFrom(
+      this.civitai
+        .fetchModel(modelId)
+        .pipe(takeUntilDestroyed(this.destroyRef)),
+      { defaultValue: null },
+    );
+    if (cancelled()) return;
+    this.loading.set(false);
+    if (model) {
+      void this.cache.putSearchResult(model);
+      this.adopt(model);
+    } else if (!cached) {
+      this.errored.set(true);
+    }
   }
 
   private adopt(model: CivitaiModel): void {
     this.model.set(model);
-    if (this.selectedVersionId() === null) {
+    if (untracked(this.selectedVersionId) === null) {
       this.selectedVersionId.set(this.defaultVersion(model)?.id ?? null);
     }
   }
@@ -199,6 +244,7 @@ export class CivitaiDetailComponent {
   }
 
   public selectVersion(id: number): void {
+    this.versionChanged.set(true);
     this.selectedVersionId.set(id);
   }
 
@@ -311,17 +357,26 @@ export class CivitaiDetailComponent {
     const version = this.selectedVersion();
 
     if (this.isLora()) {
-      const pinned = version !== null;
+      const current = this.current();
+      const previous = current && 'clip' in current ? current : null;
+      // Metadata can be missing or still loading. Only an explicit version
+      // choice changes how an existing model ID is interpreted.
+      const pinned =
+        this.selectedVersionId() !== null &&
+        (!previous || previous.is_version === true || this.versionChanged());
       const entry: LoraSelection = {
-        name: pinned ? String(version.id) : (this.current()?.name ?? ''),
+        ...previous,
+        name: pinned
+          ? String(this.selectedVersionId())
+          : (previous?.name ?? (model ? String(model.id) : '')),
         model: this.modelStrength(),
         clip: this.clipStrength(),
-        label: model?.name,
-        versionLabel: version?.name,
-        baseModel: version?.baseModel,
-        thumbnailUrl: model?.preview?.url,
-        modelId: model?.id,
-        triggerWords: version?.trainedWords,
+        label: model?.name ?? previous?.label,
+        versionLabel: version?.name ?? previous?.versionLabel,
+        baseModel: version?.baseModel ?? previous?.baseModel,
+        thumbnailUrl: model?.preview?.url ?? previous?.thumbnailUrl,
+        modelId: model?.id ?? version?.modelId ?? previous?.modelId,
+        triggerWords: version?.trainedWords ?? previous?.triggerWords,
       };
       if (pinned) {
         entry.is_version = true;
@@ -329,11 +384,16 @@ export class CivitaiDetailComponent {
       const trigger = this.injectTrigger();
       if (trigger) {
         entry.inject_trigger = trigger;
+      } else {
+        delete entry.inject_trigger;
       }
       const hash = this.sha256().trim();
       if (this.allowSha256() && hash) {
         entry.sha256 = hash;
+      } else {
+        delete entry.sha256;
       }
+      if (!entry.name) return;
       this.apply.emit(entry);
       return;
     }
