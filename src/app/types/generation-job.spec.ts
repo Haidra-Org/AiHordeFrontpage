@@ -69,6 +69,15 @@ describe('sessionStatsToday', () => {
     expect(stats.averageWaitSeconds).toBe(20);
   });
 
+  it('uses completion time when a finished job was edited later', () => {
+    const done = job({ completedAt: NOON - HOUR + 10_000, updatedAt: NOON });
+    expect(sessionStatsToday([done], NOON).averageWaitSeconds).toBe(10);
+    expect(
+      sessionStatsToday([{ ...done, updatedAt: NOON + HOUR }], NOON)
+        .averageWaitSeconds,
+    ).toBe(10);
+  });
+
   it('leaves out work from before midnight', () => {
     const stats = sessionStatsToday(
       [job({ createdAt: NOON - 24 * HOUR })],

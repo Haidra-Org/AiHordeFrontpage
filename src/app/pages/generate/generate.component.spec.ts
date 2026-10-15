@@ -2407,6 +2407,7 @@ describe('GenerateComponent', () => {
         request: { prompt: 'a fox', params: { steps: 44 } },
         styleKey: null,
         kind: 'full',
+        title: null,
       });
 
       expect(component.pasteOpen()).toBe(false);
@@ -2419,6 +2420,7 @@ describe('GenerateComponent', () => {
         request: { prompt: '', models: ['Deliberate'] },
         styleKey: null,
         kind: 'simple',
+        title: null,
       });
 
       expect(component.form.controls.model.value).toBe('Deliberate');

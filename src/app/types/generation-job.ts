@@ -110,6 +110,81 @@ export interface StoredJobImage {
   promptCheck?: StoredPromptCheck;
 }
 
+/** Finished results selected for removal, without removing their siblings. */
+export interface GenerationResultSelection {
+  imageIds: readonly string[];
+  censoredIndices: readonly number[];
+  fetchFailedIndices: readonly number[];
+}
+
+/** Persisted result inventory after deletion; retained even after its last image. */
+export interface GenerationResultState {
+  localId: string;
+  resultRevision: number;
+  resultImageIds: string[];
+  censoredResultIndices: number[];
+  fetchFailedResultIndices: number[];
+  completedAt: number;
+  updatedAt: number;
+  deleted: boolean;
+}
+
+/** A result revision changes only when the stored inventory changes. */
+export function withGenerationResultState(
+  job: LocalGenerationJob,
+  state: GenerationResultState,
+): LocalGenerationJob {
+  return {
+    ...job,
+    status: 'done',
+    resultRevision: state.resultRevision,
+    resultImageIds: state.resultImageIds,
+    censoredResultIndices: state.censoredResultIndices,
+    fetchFailedResultIndices: state.fetchFailedResultIndices,
+    csamCensoredCount: state.censoredResultIndices.length,
+    fetchFailedCount: state.fetchFailedResultIndices.length,
+    completedAt: state.completedAt,
+    updatedAt: Math.max(job.updatedAt, state.updatedAt),
+  };
+}
+
+export function resultPlaceholderIndices(
+  job: LocalGenerationJob,
+  kind: 'censored' | 'fetch-failed',
+): readonly number[] {
+  return kind === 'censored'
+    ? (job.censoredResultIndices ??
+        Array.from({ length: job.csamCensoredCount ?? 0 }, (_, i) => i))
+    : (job.fetchFailedResultIndices ??
+        Array.from({ length: job.fetchFailedCount ?? 0 }, (_, i) => i));
+}
+
+/** Older peer snapshots may update metadata but cannot reopen deleted results. */
+export function preserveGenerationResultState(
+  incoming: LocalGenerationJob,
+  held: LocalGenerationJob,
+): LocalGenerationJob {
+  let job = incoming;
+  if ((held.resultRevision ?? 0) > (incoming.resultRevision ?? 0)) {
+    job = withGenerationResultState(job, {
+      localId: held.localId,
+      resultRevision: held.resultRevision!,
+      resultImageIds: held.resultImageIds,
+      censoredResultIndices: [...resultPlaceholderIndices(held, 'censored')],
+      fetchFailedResultIndices: [
+        ...resultPlaceholderIndices(held, 'fetch-failed'),
+      ],
+      completedAt: held.completedAt ?? held.updatedAt,
+      updatedAt: held.updatedAt,
+      deleted: false,
+    });
+    job = { ...job, updatedAt: incoming.updatedAt };
+  }
+  return held.status === 'done'
+    ? { ...job, completedAt: held.completedAt ?? held.updatedAt }
+    : job;
+}
+
 /**
  * The persisted record for a single generation. The stored `request` never
  * embeds the large base64 `source_image` / `source_mask`; those live in the
@@ -120,6 +195,11 @@ export interface LocalGenerationJob {
   status: LocalGenerationJobStatus;
   createdAt: number;
   updatedAt: number;
+  /** Completion time is immutable; legacy jobs use updatedAt until first edited. */
+  completedAt?: number;
+  resultRevision?: number;
+  censoredResultIndices?: number[];
+  fetchFailedResultIndices?: number[];
   request: ImageGenerationRequest;
   /** Parameters with empty image slots; the view supplies translated placeholders. */
   inspectionRequest?: ImageGenerationRequest;
@@ -349,7 +429,7 @@ export function sessionStatsToday(
     }
     images += job.resultImageIds.length;
     kudos += job.kudos ?? 0;
-    const wait = job.updatedAt - job.createdAt;
+    const wait = (job.completedAt ?? job.updatedAt) - job.createdAt;
     if (wait > 0) {
       waitTotal += wait;
       waited += 1;

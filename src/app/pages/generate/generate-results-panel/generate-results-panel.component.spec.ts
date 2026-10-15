@@ -1,3 +1,4 @@
+import { unzipSync } from 'fflate';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -175,6 +176,7 @@ describe('GenerateResultsPanelComponent', () => {
             cancel,
             retry,
             deleteJob,
+            deleteResults: vi.fn().mockResolvedValue(undefined),
             getJobImages,
           },
         },
@@ -898,9 +900,9 @@ describe('GenerateResultsPanelComponent', () => {
     it('requires confirmation before removing the generation', () => {
       component.openViewer(component.viewerTiles()[0]);
 
-      component.requestViewerDelete('a');
+      component.requestViewerDelete(component.viewerTiles()[0]);
 
-      expect(component.viewerDeletePending()).toBe('a');
+      expect(component.viewerDeletePending()?.key).toBe('a-a-img');
       expect(component.viewerKey()).toBe('a-a-img');
       expect(component.undoPending()).toBe(false);
       expect(toastSuccess).not.toHaveBeenCalled();
@@ -908,7 +910,7 @@ describe('GenerateResultsPanelComponent', () => {
 
     it('advances to the next surviving image after confirmation', () => {
       component.openViewer(component.viewerTiles()[0]);
-      component.requestViewerDelete('a');
+      component.requestViewerDelete(component.viewerTiles()[0]);
 
       component.confirmViewerDelete();
 
@@ -920,7 +922,7 @@ describe('GenerateResultsPanelComponent', () => {
 
     it('keeps the viewer unchanged when confirmation is cancelled', () => {
       component.openViewer(component.viewerTiles()[0]);
-      component.requestViewerDelete('a');
+      component.requestViewerDelete(component.viewerTiles()[0]);
 
       component.cancelViewerDelete();
 
@@ -932,7 +934,7 @@ describe('GenerateResultsPanelComponent', () => {
     it('closes the viewer when the confirmed job has no surviving image', () => {
       finishedJobs.set([job('a', 'done')]);
       component.openViewer(component.viewerTiles()[0]);
-      component.requestViewerDelete('a');
+      component.requestViewerDelete(component.viewerTiles()[0]);
 
       component.confirmViewerDelete();
 
@@ -1031,7 +1033,7 @@ describe('GenerateResultsPanelComponent', () => {
 
     it('leaves select mode and clears the marks', () => {
       component.toggleSelectMode();
-      component.toggleSelected('a');
+      component.toggleSelected('a-a-img');
 
       component.requestDeleteSelected();
 
@@ -1114,7 +1116,7 @@ describe('GenerateResultsPanelComponent', () => {
 
         expect(component.undoPending()).toBe(false);
         expect(component.tiles()).toEqual([]);
-        expect(component.readyImageCount()).toBe(0);
+        expect(component.doneCount()).toBe(0);
         complete();
         await committing;
         expect(component.tiles()).toEqual([]);
@@ -1270,6 +1272,134 @@ describe('GenerateResultsPanelComponent', () => {
     });
   });
 
+  describe('individual results in a batch', () => {
+    beforeEach(async () => {
+      finishedJobs.set([
+        {
+          ...job('batch', 'done'),
+          resultImageIds: ['bad', 'good'],
+        },
+      ]);
+      getJobImages.mockResolvedValue([
+        resultImage('batch', 'bad'),
+        resultImage('batch', 'good'),
+      ]);
+      await loadThumbnails();
+    });
+
+    it('selects and hides only the chosen image, with Undo preserving both', () => {
+      const [bad, good] = component.tiles();
+      component.toggleSelectMode();
+      component.activateTile(bad);
+      expect(component.isSelected(bad)).toBe(true);
+      expect(component.isSelected(good)).toBe(false);
+      expect(component.selectedCount()).toBe(1);
+      component.requestDeleteSelected();
+      expect(component.tiles().map((tile) => tile.key)).toEqual(['batch-good']);
+      expect(component.doneCount()).toBe(1);
+      component.undoDelete();
+      expect(component.tiles()).toHaveLength(2);
+      expect(component.doneCount()).toBe(2);
+    });
+
+    it('deletes just the chosen stored result after Undo ends', async () => {
+      component.requestTileDelete(component.tiles()[0]);
+      await component.commitPendingDelete();
+      expect(
+        TestBed.inject(GenerationQueueService).deleteResults,
+      ).toHaveBeenCalledWith('batch', {
+        imageIds: ['bad'],
+        censoredIndices: [],
+        fetchFailedIndices: [],
+      });
+      expect(deleteJob).not.toHaveBeenCalled();
+      expect(component.tiles().map((tile) => tile.key)).toEqual(['batch-good']);
+      expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+    });
+
+    it('advances the viewer to a surviving image in the same batch', () => {
+      const bad = component.viewerTiles()[0];
+      component.openViewer(bad);
+      component.requestViewerDelete(bad);
+      component.confirmViewerDelete();
+      expect(component.viewerKey()).toBe('batch-good');
+      expect(component.tiles()).toHaveLength(1);
+    });
+
+    it('restores only the affected image if saving the deletion fails', async () => {
+      vi.mocked(
+        TestBed.inject(GenerationQueueService).deleteResults,
+      ).mockRejectedValueOnce(new Error('storage'));
+      component.requestTileDelete(component.tiles()[0]);
+      await component.commitPendingDelete();
+      expect(component.tiles()).toHaveLength(2);
+      expect(deleteJob).not.toHaveBeenCalled();
+      expect(toastError).toHaveBeenCalledWith(
+        'generate.results.delete_failed',
+        expect.anything(),
+      );
+    });
+
+    it('downloads only the selected image from a batch', async () => {
+      component.toggleSelected('batch-good');
+      vi.mocked(URL.createObjectURL).mockClear();
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementationOnce(
+        () => undefined,
+      );
+      await component.downloadSelected();
+      const archive = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
+      const files = unzipSync(new Uint8Array(await archive.arrayBuffer()));
+      expect(Object.keys(files).sort()).toEqual([
+        '1-seed-good.json',
+        '1-seed-good.webp',
+      ]);
+    });
+
+    it('does not subtract a deletion twice when a peer removes the same image during Undo', async () => {
+      component.requestTileDelete(component.tiles()[0]);
+      getJobImages.mockResolvedValue([resultImage('batch', 'good')]);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({ ...job, resultImageIds: ['good'] })),
+      );
+      await loadThumbnails();
+      expect(component.doneCount()).toBe(1);
+      expect(component.tiles().map((tile) => tile.key)).toEqual(['batch-good']);
+      component.undoDelete();
+      expect(component.doneCount()).toBe(1);
+    });
+
+    it('keeps placeholder identities stable when a peer removes another placeholder', () => {
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({ ...job, csamCensoredCount: 2 })),
+      );
+      const first = component
+        .tiles()
+        .find((tile) => tile.key === 'batch-csam-0')!;
+      component.requestTileDelete(first);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          csamCensoredCount: 1,
+          censoredResultIndices: [1],
+        })),
+      );
+      expect(
+        component.tiles().some((tile) => tile.key === 'batch-csam-1'),
+      ).toBe(true);
+      expect(component.doneCount()).toBe(3);
+      component.undoDelete();
+    });
+
+    it('refreshes thumbnails when another tab removes a result', async () => {
+      getJobImages.mockResolvedValue([resultImage('batch', 'good')]);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({ ...job, resultImageIds: ['good'] })),
+      );
+      await loadThumbnails();
+      expect(component.tiles().map((tile) => tile.key)).toEqual(['batch-good']);
+    });
+  });
+
   describe('download selected', () => {
     beforeEach(async () => {
       getJobImages
@@ -1285,13 +1415,13 @@ describe('GenerateResultsPanelComponent', () => {
     it('reports whether the selection holds anything downloadable', () => {
       expect(component.hasSelectedResults()).toBe(false);
 
-      component.toggleSelected('a');
+      component.toggleSelected('a-a-img');
 
       expect(component.hasSelectedResults()).toBe(true);
     });
 
     it('zips only the selected jobs', async () => {
-      component.toggleSelected('b');
+      component.toggleSelected('b-b-img');
       getJobImages.mockResolvedValue([resultImage('b', 'b-img')]);
       getJobImages.mockClear();
 
@@ -2458,18 +2588,21 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
     click.mockRestore();
   });
 
-  it('keeps every tile in a batch removed from the DOM while its flagged tile deletion commits', async () => {
+  it('keeps the other batch results visible while deleting a flagged result', async () => {
     finishedJobs.set([
       { ...adopted, csamCensoredCount: 1, fetchFailedCount: 1 },
     ]);
     fixture.detectChanges();
     expect(host.querySelectorAll('.gs-tile')).toHaveLength(3);
     let complete!: () => void;
-    deleteJob.mockImplementationOnce(
+    const queue = TestBed.inject(GenerationQueueService);
+    queue.deleteResults = vi.fn(
       () =>
         new Promise<void>((resolve) => {
           complete = () => {
-            finishedJobs.set([]);
+            finishedJobs.set([
+              { ...adopted, csamCensoredCount: 0, fetchFailedCount: 1 },
+            ]);
             resolve();
           };
         }),
@@ -2482,16 +2615,25 @@ describe('GenerateResultsPanelComponent adopted generations', () => {
         )!
         .click();
       fixture.detectChanges();
-      expect(host.querySelector('.gs-tile')).toBeNull();
+      expect(host.querySelectorAll('.gs-tile')).toHaveLength(2);
+      expect(host.querySelector('.gs-tile-img')).not.toBeNull();
       await vi.advanceTimersByTimeAsync(6000);
       fixture.detectChanges();
-      expect(deleteJob).toHaveBeenCalledExactlyOnceWith(adopted.localId);
-      expect(host.querySelector('.gs-tile')).toBeNull();
+      expect(queue.deleteResults).toHaveBeenCalledExactlyOnceWith(
+        adopted.localId,
+        {
+          imageIds: [],
+          fetchFailedIndices: [],
+          censoredIndices: [0],
+        },
+      );
+      expect(deleteJob).not.toHaveBeenCalled();
+      expect(host.querySelectorAll('.gs-tile')).toHaveLength(2);
       complete();
       await Promise.resolve();
       await Promise.resolve();
       fixture.detectChanges();
-      expect(host.querySelector('.gs-tile')).toBeNull();
+      expect(host.querySelectorAll('.gs-tile')).toHaveLength(2);
     } finally {
       vi.useRealTimers();
     }

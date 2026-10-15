@@ -195,7 +195,6 @@ const UNREFERENCED_ALLOWLIST: readonly string[] = [
   'profile.generated_mps_tokens',
   'details.models.coming_soon',
   'details.models.total_workers',
-  'details.models.sort_by',
   'details.models.sort.workers',
   'details.models.sort.queued',
   'details.models.sort.jobs',

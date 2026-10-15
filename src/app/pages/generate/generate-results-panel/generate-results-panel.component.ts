@@ -19,13 +19,13 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { IconComponent } from '../../../components/icon/icon.component';
 import { InfoTooltipComponent } from '../../../components/info-tooltip/info-tooltip.component';
 import { GenerationQueueService } from '../../../services/generation-queue.service';
-import { placeholderPictureCount } from '../../../services/generation-db.service';
 import { ToastService } from '../../../services/toast.service';
 import { DatabaseService } from '../../../services/database.service';
 import {
   LocalGenerationJob,
   RequestKnowledge,
   requestKnowledge,
+  resultPlaceholderIndices,
 } from '../../../types/generation-job';
 import {
   StoredJobImage,
@@ -145,7 +145,7 @@ const VIEWER_ALT_MAX_CHARS = 200;
 const SWIPE_THRESHOLD_PX = 40;
 /** Movement above this is a drag, so the click that follows is not a tap. */
 const DRAG_SLOP_PX = 10;
-/** How long a soft-deleted batch can be restored before it is really removed. */
+/** How long a soft-deleted result can be restored before it is really removed. */
 const UNDO_WINDOW_MS = 6000;
 /** How long the done-count has to settle before the a11y announcement fires. */
 const ANNOUNCE_DEBOUNCE_MS = 600;
@@ -185,6 +185,7 @@ interface ResultTile {
   seed?: string;
   model?: string;
   imageIndex?: number;
+  placeholderIndex?: number;
   thumb?: JobThumbnail;
   queuePosition?: number;
   waitTime?: number;
@@ -565,10 +566,18 @@ export class GenerateResultsPanelComponent {
    */
   public readonly doneCount = computed(() => {
     const hidden = this.hiddenJobs();
+    const hiddenTiles = this.hiddenTiles();
     let count = 0;
     for (const job of this.finishedJobs()) {
-      if (job.status === 'done' && !hidden.has(job.localId)) {
-        count += job.resultImageIds.length + placeholderPictureCount(job);
+      if (job.status !== 'done' || hidden.has(job.localId)) continue;
+      count += job.resultImageIds.filter(
+        (id) => !hiddenTiles.has(`${job.localId}-${id}`),
+      ).length;
+      for (const kind of ['censored', 'fetch-failed'] as const) {
+        const suffix = kind === 'censored' ? 'csam' : 'unfetched';
+        count += resultPlaceholderIndices(job, kind).filter(
+          (id) => !hiddenTiles.has(`${job.localId}-${suffix}-${id}`),
+        ).length;
       }
     }
     return count;
@@ -590,21 +599,15 @@ export class GenerateResultsPanelComponent {
   public readonly tileMenu = signal<TileMenuState | null>(null);
 
   /** Jobs whose thumbnails have been (or are being) loaded, to avoid re-fetching. */
-  private readonly loaded = new Set<string>();
+  private readonly loaded = new Map<string, string>();
 
   /** At least one finished job exists, so a select/delete pass is meaningful. */
   public readonly hasFinished = computed(() => this.finishedJobs().length > 0);
 
-  /**
-   * Select-to-delete state. Deletion used to be a single hover-revealed button
-   * on every tile — trivial to hit by accident (and, on touch, an invisible
-   * tap target sitting over the image). Instead the user enters a select mode,
-   * marks jobs, then deletes them. Selection is tracked at the job level (a
-   * job's whole batch of tiles is removed together).
-   */
+  /** Selection uses image keys for finished results and job ids for requests. */
   public readonly selectMode = signal(false);
-  public readonly selectedJobs = signal<ReadonlySet<string>>(new Set());
-  public readonly selectedCount = computed(() => this.selectedJobs().size);
+  public readonly selectedResults = signal<ReadonlySet<string>>(new Set());
+  public readonly selectedCount = computed(() => this.selectedResults().size);
 
   /**
    * Jobs soft-deleted and awaiting the Undo window: gone from the grid, still on
@@ -614,6 +617,15 @@ export class GenerateResultsPanelComponent {
   private readonly deletingJobs = signal<ReadonlySet<string>>(new Set());
   private readonly hiddenJobs = computed<ReadonlySet<string>>(
     () => new Set([...this.pendingDeleteJobs(), ...this.deletingJobs()]),
+  );
+  private readonly pendingDeleteTiles = signal<ReadonlyMap<string, ResultTile>>(
+    new Map(),
+  );
+  private readonly deletingTiles = signal<ReadonlyMap<string, ResultTile>>(
+    new Map(),
+  );
+  private readonly hiddenTiles = computed(
+    () => new Map([...this.pendingDeleteTiles(), ...this.deletingTiles()]),
   );
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private undoToastId: string | null = null;
@@ -884,10 +896,11 @@ export class GenerateResultsPanelComponent {
             styleKey: styleKeyOf(job),
           });
         });
-        for (let index = 0; index < (job.csamCensoredCount ?? 0); index++) {
+        for (const index of resultPlaceholderIndices(job, 'censored')) {
           tiles.push({
             key: `${job.localId}-csam-${index}`,
             kind: 'censored',
+            placeholderIndex: index,
             jobLocalId: job.localId,
             aspect,
             dims,
@@ -902,10 +915,11 @@ export class GenerateResultsPanelComponent {
             styleKey: styleKeyOf(job),
           });
         }
-        for (let index = 0; index < (job.fetchFailedCount ?? 0); index++) {
+        for (const index of resultPlaceholderIndices(job, 'fetch-failed')) {
           tiles.push({
             key: `${job.localId}-unfetched-${index}`,
             kind: 'fetch-failed',
+            placeholderIndex: index,
             jobLocalId: job.localId,
             aspect,
             dims,
@@ -960,7 +974,7 @@ export class GenerateResultsPanelComponent {
         });
       }
     }
-    return tiles;
+    return tiles.filter((tile) => !this.hiddenTiles().has(tile.key));
   });
 
   /** Whether any finished image reported an aesthetic score / error / NSFW flag. */
@@ -1135,8 +1149,8 @@ export class GenerateResultsPanelComponent {
     viewChild<ElementRef<HTMLElement>>('viewerDeletePanel');
   private readonly viewerDeleteCancel =
     viewChild<ElementRef<HTMLButtonElement>>('viewerDeleteCancel');
-  /** The job awaiting explicit confirmation from the full-screen viewer. */
-  public readonly viewerDeletePending = signal<string | null>(null);
+  /** The image awaiting explicit confirmation from the full-screen viewer. */
+  public readonly viewerDeletePending = signal<ResultTile | null>(null);
   /** The element focus returns to when the viewer closes. */
   private previousActiveElement: HTMLElement | null = null;
   /**
@@ -1425,8 +1439,9 @@ export class GenerateResultsPanelComponent {
 
     effect(() => {
       for (const job of this.finishedJobs()) {
-        if (job.status === 'done' && !this.loaded.has(job.localId)) {
-          this.loaded.add(job.localId);
+        const version = JSON.stringify(job.resultImageIds);
+        if (job.status === 'done' && this.loaded.get(job.localId) !== version) {
+          this.loaded.set(job.localId, version);
           void this.loadThumbnails(job.localId);
         }
       }
@@ -1534,16 +1549,30 @@ export class GenerateResultsPanelComponent {
     // select mode always returns every tile to its image.
     this.flippedTile.set(null);
     if (!next) {
-      this.selectedJobs.set(new Set());
+      this.selectedResults.set(new Set());
     }
   }
 
-  public isSelected(localId: string): boolean {
-    return this.selectedJobs().has(localId);
+  public selectionKey(tile: ResultTile): string {
+    return ['done', 'censored', 'fetch-failed'].includes(tile.kind)
+      ? tile.key
+      : tile.jobLocalId;
+  }
+
+  public isSelected(tile: ResultTile): boolean {
+    return this.selectedResults().has(this.selectionKey(tile));
+  }
+
+  public requestTileDelete(tile: ResultTile): void {
+    if (this.selectionKey(tile) === tile.key) {
+      this.requestDelete([], [tile]);
+    } else {
+      this.requestDelete([tile.jobLocalId]);
+    }
   }
 
   public toggleSelected(localId: string): void {
-    this.selectedJobs.update((current) => {
+    this.selectedResults.update((current) => {
       const next = new Set(current);
       if (next.has(localId)) {
         next.delete(localId);
@@ -1555,16 +1584,25 @@ export class GenerateResultsPanelComponent {
   }
 
   /**
-   * Delete a set of jobs the reversible way: they leave the grid at once and the
+   * Delete results or whole requests reversibly: they leave the grid and the
    * records stay put behind an Undo toast. Nothing is actually removed until the
    * offer lapses (or another delete starts), which is what makes a confirmation
    * dialog unnecessary — the recovery is the affordance.
    */
-  public requestDelete(localIds: readonly string[]): void {
+  public requestDelete(
+    localIds: readonly string[],
+    results: readonly ResultTile[] = [],
+  ): void {
     const ids = [...new Set(localIds)].filter(
       (id) => id.length > 0 && !this.hiddenJobs().has(id),
     );
-    if (ids.length === 0) {
+    const tiles = results.filter(
+      (tile) =>
+        !this.hiddenTiles().has(tile.key) &&
+        !this.hiddenJobs().has(tile.jobLocalId) &&
+        !ids.includes(tile.jobLocalId),
+    );
+    if (ids.length === 0 && tiles.length === 0) {
       return;
     }
     // Deleting a job the horde is still working on also cancels it there, and
@@ -1579,9 +1617,13 @@ export class GenerateResultsPanelComponent {
     ].some((job) => ids.includes(job.localId) && job.hordeId !== undefined);
     // Only one Undo can be outstanding, so a new delete settles the previous one.
     void this.commitPendingDelete();
-    this.stepViewerPastDeleted(ids);
+    this.stepViewerPastDeleted(
+      ids,
+      tiles.map((tile) => tile.key),
+    );
     this.pendingDeleteJobs.set(new Set(ids));
-    this.selectedJobs.set(new Set());
+    this.pendingDeleteTiles.set(new Map(tiles.map((tile) => [tile.key, tile])));
+    this.selectedResults.set(new Set());
     this.selectMode.set(false);
     this.flippedTile.set(null);
     // A panel opened from the grid described a tile that is now gone; one opened
@@ -1589,12 +1631,13 @@ export class GenerateResultsPanelComponent {
     if (this.viewerKey() === null) {
       this.closeMeta();
     }
+    const count = ids.length + this.pendingDeleteTiles().size;
     const message = cancelsRunning
       ? `generate.results.cancelled_undo${ids.length === 1 ? '_one' : '_other'}`
-      : `generate.results.deleted_undo${ids.length === 1 ? '_one' : '_other'}`;
+      : `generate.results.deleted_undo${count === 1 ? '_one' : '_other'}`;
     this.undoToastId = this.toast.success(message, {
       transloco: true,
-      messageParams: { count: ids.length },
+      messageParams: { count },
       autoDismissMs: UNDO_WINDOW_MS,
       action: {
         label: 'generate.results.undo',
@@ -1608,12 +1651,21 @@ export class GenerateResultsPanelComponent {
   }
 
   public requestDeleteSelected(): void {
-    this.requestDelete([...this.selectedJobs()]);
+    const selected = this.selectedResults();
+    const tiles = this.tiles().filter((tile) =>
+      selected.has(this.selectionKey(tile)),
+    );
+    this.requestDelete(
+      tiles
+        .filter((tile) => this.selectionKey(tile) !== tile.key)
+        .map((tile) => tile.jobLocalId),
+      tiles.filter((tile) => this.selectionKey(tile) === tile.key),
+    );
   }
 
   /** Ask for explicit confirmation before deleting from the immersive viewer. */
-  public requestViewerDelete(localId: string): void {
-    if (!localId) {
+  public requestViewerDelete(tile: ResultTile): void {
+    if (!tile.thumb) {
       return;
     }
     this.viewerDeleteReturnFocus =
@@ -1621,7 +1673,7 @@ export class GenerateResultsPanelComponent {
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
-    this.viewerDeletePending.set(localId);
+    this.viewerDeletePending.set(tile);
     // Render the alert dialog before moving focus into its safest action.
     setTimeout(() => this.viewerDeleteCancel()?.nativeElement.focus(), 0);
   }
@@ -1637,13 +1689,13 @@ export class GenerateResultsPanelComponent {
   }
 
   public confirmViewerDelete(): void {
-    const localId = this.viewerDeletePending();
-    if (localId === null) {
+    const tile = this.viewerDeletePending();
+    if (tile === null) {
       return;
     }
     this.viewerDeletePending.set(null);
     this.viewerDeleteReturnFocus = null;
-    this.requestDelete([localId]);
+    this.requestTileDelete(tile);
   }
 
   /** Cancel only when the confirmation backdrop itself was pressed. */
@@ -1655,13 +1707,15 @@ export class GenerateResultsPanelComponent {
 
   /** Whether an Undo is currently on offer (drives the specs and the grid). */
   public readonly undoPending = computed(
-    () => this.pendingDeleteJobs().size > 0,
+    () =>
+      this.pendingDeleteJobs().size > 0 || this.pendingDeleteTiles().size > 0,
   );
 
-  /** Put the soft-deleted jobs back exactly as they were. */
+  /** Put the soft-deleted results back exactly as they were. */
   public undoDelete(): void {
     this.clearUndoTimer();
     this.pendingDeleteJobs.set(new Set());
+    this.pendingDeleteTiles.set(new Map());
     if (this.undoToastId) {
       this.toast.dismiss(this.undoToastId);
       this.undoToastId = null;
@@ -1671,13 +1725,22 @@ export class GenerateResultsPanelComponent {
   /** Make the pending deletion real, removing the records for good. */
   public async commitPendingDelete(): Promise<void> {
     const ids = [...this.pendingDeleteJobs()];
-    if (ids.length === 0) {
+    const tiles = [...this.pendingDeleteTiles().values()];
+    if (ids.length === 0 && tiles.length === 0) {
       return;
     }
     this.clearUndoTimer();
     // Ending Undo must not reveal tiles while their stored job still exists.
     this.deletingJobs.update((current) => new Set([...current, ...ids]));
     this.pendingDeleteJobs.set(new Set());
+    this.deletingTiles.update(
+      (current) =>
+        new Map([
+          ...current,
+          ...tiles.map((tile) => [tile.key, tile] as const),
+        ]),
+    );
+    this.pendingDeleteTiles.set(new Map());
     if (this.undoToastId) {
       this.toast.dismiss(this.undoToastId);
       this.undoToastId = null;
@@ -1698,6 +1761,51 @@ export class GenerateResultsPanelComponent {
         });
       }
     }
+    const byJob = new Map<string, ResultTile[]>();
+    for (const tile of tiles) {
+      const group = byJob.get(tile.jobLocalId) ?? [];
+      group.push(tile);
+      byJob.set(tile.jobLocalId, group);
+    }
+    for (const [localId, selected] of byJob) {
+      try {
+        await this.queue.deleteResults(localId, {
+          imageIds: selected.flatMap((tile) =>
+            tile.thumb ? [tile.thumb.imageId] : [],
+          ),
+          censoredIndices: selected
+            .filter((tile) => tile.kind === 'censored')
+            .map((tile) => tile.placeholderIndex!),
+          fetchFailedIndices: selected
+            .filter((tile) => tile.kind === 'fetch-failed')
+            .map((tile) => tile.placeholderIndex!),
+        });
+        const keys = new Set(selected.map((tile) => tile.key));
+        this.thumbnails.update((current) => {
+          const next = new Map(current);
+          next.set(
+            localId,
+            (current.get(localId) ?? []).filter((thumb) => {
+              if (!keys.has(`${localId}-${thumb.imageId}`)) return true;
+              URL.revokeObjectURL(thumb.url);
+              return false;
+            }),
+          );
+          return next;
+        });
+      } catch (error) {
+        this.toast.error('generate.results.delete_failed', {
+          transloco: true,
+          rawError: error,
+        });
+      } finally {
+        this.deletingTiles.update((current) => {
+          const next = new Map(current);
+          for (const tile of selected) next.delete(tile.key);
+          return next;
+        });
+      }
+    }
   }
 
   private clearUndoTimer(): void {
@@ -1708,14 +1816,19 @@ export class GenerateResultsPanelComponent {
   }
 
   /**
-   * Keep an open viewer on a live image: when the image on screen belongs to a
-   * job about to be deleted, move to the next surviving one (falling back to the
+   * Keep an open viewer on a live image: when its result or request is being
+   * deleted, move to the next surviving image (falling back to the
    * previous), and close the viewer when nothing survives. Runs before the
    * deletion so the pre-delete order is still available to walk.
    */
-  private stepViewerPastDeleted(deleted: readonly string[]): void {
+  private stepViewerPastDeleted(
+    deleted: readonly string[],
+    keys: readonly string[] = [],
+  ): void {
     const current = this.viewerTile();
-    if (!current || !deleted.includes(current.jobLocalId)) {
+    const isDeleted = (tile: ResultTile) =>
+      deleted.includes(tile.jobLocalId) || keys.includes(tile.key);
+    if (!current || !isDeleted(current)) {
       return;
     }
     const tiles = this.viewerTiles();
@@ -1723,7 +1836,7 @@ export class GenerateResultsPanelComponent {
     const survivor = [
       ...tiles.slice(index + 1),
       ...tiles.slice(0, index).reverse(),
-    ].find((tile) => !deleted.includes(tile.jobLocalId));
+    ].find((tile) => !isDeleted(tile));
     if (survivor) {
       this.viewerKey.set(survivor.key);
     } else {
@@ -2380,7 +2493,7 @@ export class GenerateResultsPanelComponent {
   /** Primary tap on a result tile: enter/exit selection, or open the viewer. */
   public activateTile(tile: ResultTile): void {
     if (this.selectMode()) {
-      this.toggleSelected(tile.jobLocalId);
+      this.toggleSelected(this.selectionKey(tile));
     } else {
       this.openViewer(tile);
     }
@@ -2791,38 +2904,47 @@ export class GenerateResultsPanelComponent {
     );
   }
 
-  /** Zip up just the marked generations, from select mode. */
+  /** Zip up just the marked images, including individual images from a batch. */
   public async downloadSelected(): Promise<void> {
-    const selected = this.selectedJobs();
+    const selected = this.selectedResults();
     await this.downloadJobs(
       this.finishedJobs().filter(
-        (job) => job.status === 'done' && selected.has(job.localId),
+        (job) =>
+          job.status === 'done' &&
+          this.tiles().some(
+            (tile) => tile.jobLocalId === job.localId && selected.has(tile.key),
+          ),
       ),
       'generations-selected.zip',
+      selected,
     );
   }
 
   /** Whether the current selection contains anything downloadable. */
   public readonly hasSelectedResults = computed(() => {
-    const selected = this.selectedJobs();
-    return this.finishedJobs().some(
-      (job) =>
-        job.status === 'done' &&
-        job.resultImageIds.length > 0 &&
-        selected.has(job.localId),
+    const selected = this.selectedResults();
+    return this.tiles().some(
+      (tile) => tile.kind === 'done' && selected.has(tile.key),
     );
   });
 
   private async downloadJobs(
     done: readonly LocalGenerationJob[],
     filename: string,
+    selected?: ReadonlySet<string>,
   ): Promise<void> {
     const images: StoredJobImage[] = [];
     const metaByImageId = new Map<string, string>();
     const parametersByImageId = new Map<string, string>();
     for (const job of done) {
       const jobImages = await this.queue.getJobImages(job.localId);
-      const results = jobImages.filter((image) => image.kind === 'result');
+      const results = jobImages.filter(
+        (image) =>
+          image.kind === 'result' &&
+          !this.hiddenJobs().has(job.localId) &&
+          !this.hiddenTiles().has(`${job.localId}-${image.imageId}`) &&
+          (!selected || selected.has(`${job.localId}-${image.imageId}`)),
+      );
       // As on the tiles, the request travels only where it is known whole.
       const request =
         requestKnowledge(job) === 'full' ? job.request : undefined;
@@ -2862,7 +2984,13 @@ export class GenerateResultsPanelComponent {
   }
 
   private async loadThumbnails(localId: string): Promise<void> {
+    const version = this.loaded.get(localId);
     const images = await this.queue.getJobImages(localId);
+    if (this.destroyRef.destroyed || this.loaded.get(localId) !== version)
+      return;
+    for (const thumb of this.thumbnails().get(localId) ?? []) {
+      URL.revokeObjectURL(thumb.url);
+    }
     const thumbs: JobThumbnail[] = images
       .filter((image) => image.kind === 'result')
       .map((image) => ({

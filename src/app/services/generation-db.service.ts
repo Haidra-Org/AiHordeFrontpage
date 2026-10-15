@@ -4,6 +4,10 @@ import { DBSchema, IDBPDatabase } from 'idb';
 import { StudioUpgradeTransaction, openStudioDb } from './idb-open';
 import {
   LocalGenerationJob,
+  GenerationResultSelection,
+  GenerationResultState,
+  resultPlaceholderIndices,
+  withGenerationResultState,
   LocalGenerationJobStatus,
   StoredJobImage,
   StoredPromptCheck,
@@ -11,10 +15,11 @@ import {
 } from '../types/generation-job';
 
 const DB_NAME = 'ai-horde-frontpage';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const JOBS_STORE = 'generationJobs';
 const IMAGES_STORE = 'generationImages';
 const SOURCE_DRAFTS_STORE = 'sourceDrafts';
+const RESULT_STATE_STORE = 'generationResultState';
 
 /** Statuses considered terminal for retention/pruning. */
 const TERMINAL_STATUSES: readonly LocalGenerationJobStatus[] = [
@@ -26,6 +31,7 @@ const TERMINAL_STATUSES: readonly LocalGenerationJobStatus[] = [
 const DEFAULT_RETENTION = 50;
 
 interface GenerationDbSchema extends DBSchema {
+  [RESULT_STATE_STORE]: { key: string; value: GenerationResultState };
   [JOBS_STORE]: {
     key: string;
     value: LocalGenerationJob;
@@ -53,6 +59,9 @@ function ensureSchema(
   db: IDBPDatabase<GenerationDbSchema>,
   tx: UpgradeTransaction,
 ): void {
+  if (!db.objectStoreNames.contains(RESULT_STATE_STORE)) {
+    db.createObjectStore(RESULT_STATE_STORE, { keyPath: 'localId' });
+  }
   if (!db.objectStoreNames.contains(JOBS_STORE)) {
     const jobs = db.createObjectStore(JOBS_STORE, { keyPath: 'localId' });
     jobs.createIndex('status', 'status');
@@ -124,22 +133,57 @@ export class GenerationDbService {
     return this.dbPromise;
   }
 
-  private openWithRecovery(): Promise<IDBPDatabase<GenerationDbSchema>> {
-    return openStudioDb<GenerationDbSchema>({
+  private async openWithRecovery(): Promise<IDBPDatabase<GenerationDbSchema>> {
+    const options = {
       name: DB_NAME,
       version: DB_VERSION,
       ensureSchema,
       hasRequiredStores,
       historyLabel: 'generation history',
+    };
+    let db = await openStudioDb<GenerationDbSchema>(options);
+    if (!db.objectStoreNames.contains(RESULT_STATE_STORE)) {
+      // A compatible database from another build must gain this store without
+      // discarding its existing jobs, images or unfamiliar stores.
+      const version = db.version + 1;
+      db.close();
+      db = await openStudioDb<GenerationDbSchema>({ ...options, version });
+    }
+    db.addEventListener('versionchange', () => {
+      db.close();
+      this.dbPromise = null;
     });
+    return db;
   }
 
-  public async putJob(job: LocalGenerationJob): Promise<void> {
-    if (!this.isBrowser) {
-      return;
-    }
+  public async putJob(
+    job: LocalGenerationJob,
+  ): Promise<LocalGenerationJob | undefined> {
+    if (!this.isBrowser) return undefined;
     const db = await this.db();
-    await db.put(JOBS_STORE, job);
+    const tx = db.transaction([JOBS_STORE, RESULT_STATE_STORE], 'readwrite');
+    const state = await tx.objectStore(RESULT_STATE_STORE).get(job.localId);
+    if (state?.deleted) {
+      await tx.done;
+      return undefined;
+    }
+    const jobs = tx.objectStore(JOBS_STORE);
+    const held = await jobs.get(job.localId);
+    let updated = job;
+    if (job.status === 'done' || held?.status === 'done') {
+      updated = {
+        ...job,
+        completedAt:
+          held?.completedAt ??
+          (held?.status === 'done'
+            ? held.updatedAt
+            : (job.completedAt ?? job.updatedAt)),
+      };
+    }
+    if (state) updated = withGenerationResultState(updated, state);
+    await jobs.put(updated);
+    await tx.done;
+    return updated;
   }
 
   public async getJob(
@@ -184,7 +228,19 @@ export class GenerationDbService {
       return;
     }
     const db = await this.db();
-    await db.put(IMAGES_STORE, image);
+    const tx = db.transaction([IMAGES_STORE, RESULT_STATE_STORE], 'readwrite');
+    const state = await tx.objectStore(RESULT_STATE_STORE).get(image.localId);
+    if (
+      !state?.deleted &&
+      !(
+        state &&
+        image.kind === 'result' &&
+        !state.resultImageIds.includes(image.imageId)
+      )
+    ) {
+      await tx.objectStore(IMAGES_STORE).put(image);
+    }
+    await tx.done;
   }
 
   public async getImage(
@@ -275,12 +331,94 @@ export class GenerationDbService {
       return;
     }
     const db = await this.db();
-    const tx = db.transaction([JOBS_STORE, IMAGES_STORE], 'readwrite');
+    const tx = db.transaction(
+      [JOBS_STORE, IMAGES_STORE, RESULT_STATE_STORE],
+      'readwrite',
+    );
+    const states = tx.objectStore(RESULT_STATE_STORE);
+    const state = await states.get(localId);
+    if (state) await states.put({ ...state, deleted: true });
     await tx.objectStore(JOBS_STORE).delete(localId);
     const imageStore = tx.objectStore(IMAGES_STORE);
     const imageKeys = await imageStore.index('localId').getAllKeys(localId);
     await Promise.all(imageKeys.map((key) => imageStore.delete(key)));
     await tx.done;
+  }
+
+  /** Null means the last result and its job were removed together. */
+  public async deleteResults(
+    localId: string,
+    selection: GenerationResultSelection,
+  ): Promise<LocalGenerationJob | null | undefined> {
+    if (!this.isBrowser) return undefined;
+    const db = await this.db();
+    const tx = db.transaction(
+      [JOBS_STORE, IMAGES_STORE, RESULT_STATE_STORE],
+      'readwrite',
+    );
+    try {
+      const jobs = tx.objectStore(JOBS_STORE);
+      const images = tx.objectStore(IMAGES_STORE);
+      const states = tx.objectStore(RESULT_STATE_STORE);
+      const job = await jobs.get(localId);
+      if (!job || job.status !== 'done') {
+        await tx.done;
+        return undefined;
+      }
+      const selected = new Set(selection.imageIds);
+      const censored = resultPlaceholderIndices(job, 'censored');
+      const failed = resultPlaceholderIndices(job, 'fetch-failed');
+      const censoredSelection = new Set(selection.censoredIndices);
+      const failedSelection = new Set(selection.fetchFailedIndices);
+      if (
+        !job.resultImageIds.some((id) => selected.has(id)) &&
+        !censored.some((id) => censoredSelection.has(id)) &&
+        !failed.some((id) => failedSelection.has(id))
+      ) {
+        await tx.done;
+        return job;
+      }
+      const state: GenerationResultState = {
+        localId,
+        resultRevision: (job.resultRevision ?? 0) + 1,
+        resultImageIds: job.resultImageIds.filter((id) => !selected.has(id)),
+        censoredResultIndices: censored.filter(
+          (id) => !censoredSelection.has(id),
+        ),
+        fetchFailedResultIndices: failed.filter(
+          (id) => !failedSelection.has(id),
+        ),
+        completedAt: job.completedAt ?? job.updatedAt,
+        updatedAt: Math.max(Date.now(), job.updatedAt + 1),
+        deleted: false,
+      };
+      const updated = withGenerationResultState(job, state);
+      const empty =
+        updated.resultImageIds.length + placeholderPictureCount(updated) === 0;
+      await states.put({ ...state, deleted: empty });
+      if (empty) {
+        await jobs.delete(localId);
+        const keys = await images.index('localId').getAllKeys(localId);
+        await Promise.all(keys.map((key) => images.delete(key)));
+      } else {
+        await jobs.put(updated);
+        await Promise.all(
+          job.resultImageIds
+            .filter((id) => selected.has(id))
+            .map((id) => images.delete([localId, id])),
+        );
+      }
+      await tx.done;
+      return empty ? null : updated;
+    } catch (error) {
+      try {
+        tx.abort();
+      } catch {
+        /* The transaction may already have aborted. */
+      }
+      await tx.done.catch(() => undefined);
+      throw error;
+    }
   }
 
   /** How many jobs are stored, for the storage management surface. */
@@ -333,7 +471,14 @@ export class GenerationDbService {
       return;
     }
     const db = await this.db();
-    const tx = db.transaction([JOBS_STORE, IMAGES_STORE], 'readwrite');
+    const tx = db.transaction(
+      [JOBS_STORE, IMAGES_STORE, RESULT_STATE_STORE],
+      'readwrite',
+    );
+    const states = tx.objectStore(RESULT_STATE_STORE);
+    for (const state of await states.getAll()) {
+      await states.put({ ...state, deleted: true });
+    }
     await Promise.all([
       tx.objectStore(JOBS_STORE).clear(),
       tx.objectStore(IMAGES_STORE).clear(),

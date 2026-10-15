@@ -1068,6 +1068,7 @@ describe('PromptDraftService', () => {
             {
               draftId: 'text-1-0',
               text: 'Matches: nothing.\nMissing: the dog.',
+              rawText: 'Matches: nothing.\nMissing: the dog.',
               negative: '',
               model: 'm/1',
               seed: 7,

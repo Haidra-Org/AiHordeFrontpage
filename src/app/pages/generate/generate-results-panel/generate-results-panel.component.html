@@ -658,9 +658,7 @@
                 class="gs-tile gs-tile--flip"
                 [class.gs-tile--flipped]="isFlipped(tile)"
                 [class.gs-tile--selectable]="selectMode()"
-                [class.gs-tile--selected]="
-                  selectMode() && isSelected(tile.jobLocalId)
-                "
+                [class.gs-tile--selected]="selectMode() && isSelected(tile)"
                 [style.--gs-tile-ar]="tile.aspect"
               >
                 <div class="gs-flip-inner">
@@ -686,6 +684,9 @@
                       class="gs-tile-imgbtn"
                       (click)="activateTile(tile)"
                       (contextmenu)="onTileContextMenu(tile, $event)"
+                      [attr.aria-pressed]="
+                        selectMode() ? isSelected(tile) : null
+                      "
                       [attr.aria-label]="
                         (selectMode()
                           ? 'generate.results.select_image'
@@ -716,7 +717,7 @@
                     @if (selectMode()) {
                       <span
                         class="gs-tile-check"
-                        [class.gs-tile-check--on]="isSelected(tile.jobLocalId)"
+                        [class.gs-tile-check--on]="isSelected(tile)"
                         aria-hidden="true"
                       >
                         <app-icon name="check" />
@@ -1038,7 +1039,7 @@
                           type="button"
                           class="gs-flip-item gs-flip-item--danger"
                           role="menuitem"
-                          (click)="requestDelete([tile.jobLocalId]); unflip()"
+                          (click)="requestTileDelete(tile); unflip()"
                         >
                           <app-icon name="trash-modern" />
                           {{ "generate.results.delete" | transloco }}
@@ -1507,7 +1508,7 @@
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
-                      (click)="requestDelete([tile.jobLocalId])"
+                      (click)="requestTileDelete(tile)"
                     >
                       {{ "generate.results.delete" | transloco }}
                     </button>
@@ -1560,7 +1561,7 @@
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
-                      (click)="requestDelete([tile.jobLocalId])"
+                      (click)="requestTileDelete(tile)"
                     >
                       {{ "generate.results.delete" | transloco }}
                     </button>
@@ -1613,7 +1614,7 @@
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
-                      (click)="requestDelete([tile.jobLocalId])"
+                      (click)="requestTileDelete(tile)"
                     >
                       {{ "generate.results.delete" | transloco }}
                     </button>
@@ -1647,7 +1648,7 @@
                     <button
                       type="button"
                       class="gs-tile-btn gs-tile-btn--danger"
-                      (click)="requestDelete([tile.jobLocalId])"
+                      (click)="requestTileDelete(tile)"
                     >
                       {{ "generate.results.delete" | transloco }}
                     </button>
@@ -2157,7 +2158,7 @@
   <button
     type="button"
     class="gs-opt-row gs-opt-row--danger"
-    (click)="closeViewerMoreAndFocus(); requestViewerDelete(view.jobLocalId)"
+    (click)="closeViewerMoreAndFocus(); requestViewerDelete(view)"
   >
     <app-icon name="trash-modern" class="gs-ico-sm" aria-hidden="true" />
     <span class="gs-opt-text">

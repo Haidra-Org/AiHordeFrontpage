@@ -6,6 +6,7 @@ import { TestBed } from '@angular/core/testing';
 import { GenerationDbService } from './generation-db.service';
 import {
   LocalGenerationJob,
+  sessionStatsToday,
   StoredImageKind,
   StoredJobImage,
   StoredSourceDraft,
@@ -107,6 +108,289 @@ describe('GenerationDbService', () => {
     expect(await service.getImagesForJob('j2')).toHaveLength(1);
   });
 
+  describe('deleting individual results', () => {
+    beforeEach(async () => {
+      await service.putJob(
+        makeJob({
+          localId: 'batch',
+          status: 'done',
+          resultImageIds: ['bad', 'good'],
+        }),
+      );
+      await service.putImage(makeImage('batch', 'bad'));
+      await service.putImage(makeImage('batch', 'good'));
+      await service.putImage(makeImage('batch', 'source', 'source'));
+    });
+
+    it('persists the surviving result and source across reads', async () => {
+      await service.deleteResults('batch', {
+        imageIds: ['bad'],
+        censoredIndices: [],
+        fetchFailedIndices: [],
+      });
+      expect((await service.getJob('batch'))?.resultImageIds).toEqual(['good']);
+      expect(
+        (await service.getImagesForJob('batch'))
+          .map((image) => image.imageId)
+          .sort(),
+      ).toEqual(['good', 'source']);
+      expect(await service.countResultPictures()).toBe(1);
+    });
+
+    it('removes the job and source only when its last result is deleted', async () => {
+      expect(
+        await service.deleteResults('batch', {
+          imageIds: ['bad', 'good'],
+          censoredIndices: [],
+          fetchFailedIndices: [],
+        }),
+      ).toBeNull();
+      expect(await service.getJob('batch')).toBeUndefined();
+      expect(await service.getImagesForJob('batch')).toEqual([]);
+    });
+
+    it('keeps good images when deleting censored and unfetched placeholders', async () => {
+      const job = (await service.getJob('batch'))!;
+      await service.putJob({
+        ...job,
+        csamCensoredCount: 2,
+        fetchFailedCount: 1,
+      });
+      await service.deleteResults('batch', {
+        imageIds: [],
+        censoredIndices: [0],
+        fetchFailedIndices: [0],
+      });
+      expect(await service.getJob('batch')).toMatchObject({
+        resultImageIds: ['bad', 'good'],
+        csamCensoredCount: 1,
+        fetchFailedCount: 0,
+      });
+      expect(await service.countResultPictures()).toBe(3);
+    });
+
+    it('serializes concurrent deletions without restoring either result', async () => {
+      await Promise.all([
+        service.deleteResults('batch', {
+          imageIds: ['bad'],
+          censoredIndices: [],
+          fetchFailedIndices: [],
+        }),
+        service.deleteResults('batch', {
+          imageIds: ['good'],
+          censoredIndices: [],
+          fetchFailedIndices: [],
+        }),
+      ]);
+      expect(await service.getJob('batch')).toBeUndefined();
+      expect(await service.getImagesForJob('batch')).toEqual([]);
+    });
+
+    it('preserves deletion across stale metadata writes and late image writes', async () => {
+      const stale = (await service.getJob('batch'))!;
+      await service.deleteResults('batch', {
+        imageIds: ['bad'],
+        censoredIndices: [],
+        fetchFailedIndices: [],
+      });
+      const saved = await service.putJob({
+        ...stale,
+        updatedAt: Date.now() + 1000,
+        keptByReader: true,
+      });
+      await service.putImage(makeImage('batch', 'bad'));
+      expect(saved).toMatchObject({
+        resultImageIds: ['good'],
+        keptByReader: true,
+        resultRevision: 1,
+      });
+      expect((await service.getJob('batch'))?.resultImageIds).toEqual(['good']);
+      expect(await service.getImage('batch', 'bad')).toBeUndefined();
+      expect(await service.getImage('batch', 'good')).toBeDefined();
+      expect(await service.getImage('batch', 'source')).toBeDefined();
+      expect(await service.countResultPictures()).toBe(1);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const reopened = TestBed.inject(GenerationDbService);
+      const afterReload = await reopened.putJob({
+        ...stale,
+        updatedAt: Date.now() + 2000,
+      });
+      expect(afterReload?.resultImageIds).toEqual(['good']);
+      await reopened.putImage(makeImage('batch', 'bad'));
+      expect(await reopened.getImage('batch', 'bad')).toBeUndefined();
+    });
+
+    it.each([true, false])(
+      'preserves deletion with writes queued before deletion: %s',
+      async (writeFirst) => {
+        const stale = (await service.getJob('batch'))!;
+        const write = () =>
+          service.putJob({ ...stale, updatedAt: Date.now() + 1000 });
+        const remove = () =>
+          service.deleteResults('batch', {
+            imageIds: ['bad'],
+            censoredIndices: [],
+            fetchFailedIndices: [],
+          });
+        await Promise.all(
+          writeFirst ? [write(), remove()] : [remove(), write()],
+        );
+        expect((await service.getJob('batch'))?.resultImageIds).toEqual([
+          'good',
+        ]);
+        expect(await service.getImage('batch', 'bad')).toBeUndefined();
+      },
+    );
+
+    it('keeps a durable tombstone after the last result, including after reload', async () => {
+      const stale = (await service.getJob('batch'))!;
+      await service.deleteResults('batch', {
+        imageIds: ['bad', 'good'],
+        censoredIndices: [],
+        fetchFailedIndices: [],
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({});
+      const reopened = TestBed.inject(GenerationDbService);
+      expect(
+        await reopened.putJob({ ...stale, updatedAt: Date.now() + 1000 }),
+      ).toBeUndefined();
+      await reopened.putImage(makeImage('batch', 'bad'));
+      await reopened.putImage(makeImage('batch', 'source', 'source'));
+      expect(await reopened.getJob('batch')).toBeUndefined();
+      expect(await reopened.getImagesForJob('batch')).toEqual([]);
+    });
+
+    it('retains result deletion protection when the batch is subsequently cleared', async () => {
+      const stale = (await service.getJob('batch'))!;
+      await service.deleteResults('batch', {
+        imageIds: ['bad'],
+        censoredIndices: [],
+        fetchFailedIndices: [],
+      });
+      await service.clearAll();
+      expect(await service.putJob(stale)).toBeUndefined();
+      await service.putImage(makeImage('batch', 'good'));
+      expect(await service.countJobs()).toBe(0);
+      expect(await service.getImagesForJob('batch')).toEqual([]);
+    });
+
+    it('rolls back the inventory, job and images together when image deletion aborts', async () => {
+      const original = IDBObjectStore.prototype.delete;
+      const remove = vi
+        .spyOn(IDBObjectStore.prototype, 'delete')
+        .mockImplementation(function (this: IDBObjectStore, key) {
+          const request = original.call(this, key);
+          if (this.name === 'generationImages') this.transaction.abort();
+          return request;
+        });
+      try {
+        await expect(
+          service.deleteResults('batch', {
+            imageIds: ['bad'],
+            censoredIndices: [],
+            fetchFailedIndices: [],
+          }),
+        ).rejects.toThrow();
+      } finally {
+        remove.mockRestore();
+      }
+      const job = (await service.getJob('batch'))!;
+      expect(job.resultImageIds).toEqual(['bad', 'good']);
+      expect(job.resultRevision).toBeUndefined();
+      expect(await service.getImage('batch', 'bad')).toBeDefined();
+      expect(await service.getImage('batch', 'good')).toBeDefined();
+      expect((await service.putJob(job))?.resultImageIds).toEqual([
+        'bad',
+        'good',
+      ]);
+    });
+
+    it('does not remove another placeholder when two tabs delete the same placeholder', async () => {
+      const job = (await service.getJob('batch'))!;
+      await service.putJob({
+        ...job,
+        csamCensoredCount: 2,
+        fetchFailedCount: 2,
+      });
+      const selection = {
+        imageIds: [],
+
+        censoredIndices: [0],
+        fetchFailedIndices: [1],
+      };
+      await Promise.all([
+        service.deleteResults('batch', selection),
+        service.deleteResults('batch', selection),
+      ]);
+      const survivor = (await service.getJob('batch'))!;
+      expect(survivor).toMatchObject({
+        resultImageIds: ['bad', 'good'],
+        censoredResultIndices: [1],
+        fetchFailedResultIndices: [0],
+        csamCensoredCount: 1,
+        fetchFailedCount: 1,
+        resultRevision: 1,
+      });
+      const staleWrite = await service.putJob({
+        ...job,
+        csamCensoredCount: 2,
+        fetchFailedCount: 2,
+        updatedAt: Date.now() + 1000,
+      });
+      expect(staleWrite?.csamCensoredCount).toBe(1);
+      expect(staleWrite?.fetchFailedCount).toBe(1);
+    });
+
+    it('keeps completion time and the original request and cost after deletion', async () => {
+      const noon = new Date().setHours(12, 0, 0, 0);
+      const original = makeJob({
+        localId: 'timed',
+        status: 'done',
+        createdAt: noon - 600_000,
+        updatedAt: noon - 590_000,
+        request: { prompt: 'a cat', params: { n: 2 } },
+        resultImageIds: ['bad', 'good'],
+        kudos: 20,
+      });
+      await service.putJob(original);
+      await service.deleteResults('timed', {
+        imageIds: ['bad'],
+        censoredIndices: [],
+        fetchFailedIndices: [],
+      });
+      const saved = (await service.getJob('timed'))!;
+      expect(saved.completedAt).toBe(original.updatedAt);
+      expect(saved.request).toEqual(original.request);
+      expect(saved.kudos).toBe(20);
+      expect(sessionStatsToday([saved], noon)).toEqual({
+        images: 1,
+        kudos: 20,
+        averageWaitSeconds: 10,
+      });
+      const edited = await service.putJob({
+        ...saved,
+        updatedAt: noon + 1000,
+        completedAt: noon + 1000,
+      });
+      expect(edited?.completedAt).toBe(original.updatedAt);
+    });
+
+    it('refuses to remove results from an unfinished request', async () => {
+      const job = (await service.getJob('batch'))!;
+      await service.putJob({ ...job, status: 'processing' });
+      expect(
+        await service.deleteResults('batch', {
+          imageIds: ['bad'],
+          censoredIndices: [],
+          fetchFailedIndices: [],
+        }),
+      ).toBeUndefined();
+      expect(await service.getImage('batch', 'bad')).toBeDefined();
+    });
+  });
+
   it('prunes the oldest terminal jobs and their blobs beyond the retention count', async () => {
     for (let i = 0; i < 4; i++) {
       const localId = `done-${i}`;
@@ -162,7 +446,7 @@ describe('GenerationDbService', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     // Sits at the service's own version, so no upgrade fires: recovery must be
     // the delete-and-recreate path, not a migration.
-    await seedForeignDb(3);
+    await seedForeignDb(4);
 
     await service.putJob(makeJob({ localId: 'r1' }));
 
@@ -175,7 +459,7 @@ describe('GenerationDbService', () => {
   it('recovers from a database at an incompatible newer version', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     // Newer than the service requests, so the open fails with VersionError.
-    await seedForeignDb(4);
+    await seedForeignDb(5);
 
     await service.putJob(makeJob({ localId: 'v1' }));
 
@@ -217,7 +501,7 @@ describe('GenerationDbService', () => {
     // Rolling back to an older bundle must not cost the user their history:
     // schema growth is additive, so a later database still carries everything
     // this build reads.
-    await seedNewerCompatibleDb(4);
+    await seedNewerCompatibleDb(5);
 
     await service.putJob(makeJob({ localId: 'afterRollback' }));
 
@@ -227,6 +511,24 @@ describe('GenerationDbService', () => {
     expect((await service.getJob('afterRollback'))?.localId).toBe(
       'afterRollback',
     );
+  });
+
+  it('upgrades legacy jobs without losing images and freezes their old completion time on edit', async () => {
+    await seedNewerCompatibleDb(3);
+    const oldDb = await openDB(DB_NAME, 3);
+    const legacy = makeJob({
+      localId: 'legacy',
+      status: 'done',
+      updatedAt: 20_000,
+      resultImageIds: ['keep'],
+    });
+    await oldDb.put('generationJobs', legacy);
+    await oldDb.put('generationImages', makeImage('legacy', 'keep'));
+    oldDb.close();
+    expect(await service.getJob('legacy')).toEqual(legacy);
+    const saved = await service.putJob({ ...legacy, updatedAt: 100_000 });
+    expect(saved?.completedAt).toBe(20_000);
+    expect(await service.getImage('legacy', 'keep')).toBeDefined();
   });
 
   it('counts stored jobs', async () => {
