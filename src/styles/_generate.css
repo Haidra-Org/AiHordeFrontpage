@@ -842,8 +842,9 @@
    shell already declares the canvas, so this only pins the height and gives the
    scroll back to it: on a phone the page is what scrolls, and once the shell is
    the screen the page no longer moves. */
-.gen-studio.gs-shell:fullscreen,
-.gen-studio.gs-shell:-webkit-full-screen {
+/* :is() keeps the selector valid in browsers that reject the other engine's
+   fullscreen pseudo-class, so Firefox also receives the scroll container. */
+.gen-studio.gs-shell:is(:fullscreen, :-webkit-full-screen) {
   height: 100%;
   overflow-y: auto;
   background: var(--gs-canvas);
