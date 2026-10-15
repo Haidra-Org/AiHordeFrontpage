@@ -58,6 +58,31 @@ describe('mergeModelList', () => {
     ]);
   });
 
+  it('preserves backend classification even when reference keys disagree', () => {
+    const merged = mergeModelList(
+      ['Known', 'Custom'],
+      [
+        { name: 'Known::worker', count: 2, custom: false },
+        { name: 'Custom', count: 1, custom: true },
+      ],
+    );
+    expect(merged.find((model) => model.name === 'Known::worker')?.custom).toBe(
+      false,
+    );
+    expect(merged.find((model) => model.name === 'Custom')?.custom).toBe(true);
+  });
+
+  it('does not infer text pricing status from missing metadata', () => {
+    const merged = mergeModelList(
+      ['Known'],
+      [{ name: 'Unknown status', count: 2 }],
+      false,
+    );
+    expect(
+      merged.find((model) => model.name === 'Unknown status')?.custom,
+    ).toBeUndefined();
+  });
+
   it('serves the horde list alone until the reference answers', () => {
     const merged = mergeModelList(null, STATUS);
 

@@ -1,13 +1,17 @@
 import {
   afterNextRender,
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   PLATFORM_ID,
   signal,
+  untracked,
+  viewChild,
 } from '@angular/core';
 import { DecimalPipe, isPlatformBrowser } from '@angular/common';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -37,6 +41,7 @@ import {
   UnitConversionService,
 } from '../../../services/unit-conversion.service';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { useScrollLock } from '../../../helper/scroll-lock';
 import {
   baselineLabel,
   capabilitiesFor,
@@ -201,9 +206,6 @@ export function textSettingRows(
   templateUrl: './model-detail.component.html',
   styleUrl: './model-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(document:keydown.escape)': 'closeViewer()',
-  },
 })
 export class ModelDetailComponent {
   private readonly route = inject(ActivatedRoute);
@@ -267,6 +269,16 @@ export class ModelDetailComponent {
 
   /** Whether the enlarged sample is open. */
   public readonly viewerOpen = signal(false);
+  public readonly failedShowcases = signal<ReadonlySet<string>>(new Set());
+  public readonly showcaseFailed = computed(() =>
+    this.failedShowcases().has(this.currentShowcase()),
+  );
+  private readonly viewer = viewChild<ElementRef<HTMLDialogElement>>('viewer');
+  private readonly viewerClose =
+    viewChild<ElementRef<HTMLButtonElement>>('viewerClose');
+  private readonly identity = viewChild<ElementRef<HTMLElement>>('identity');
+  private readonly scrollLock = useScrollLock();
+  private viewerTrigger: HTMLElement | null = null;
 
   /** The trigger word whose text was last copied. */
   public readonly copiedTrigger = signal<string | null>(null);
@@ -303,6 +315,12 @@ export class ModelDetailComponent {
   /** Whether either reference knows this model at all. */
   public readonly known = computed(
     () => this.record() !== null || this.textDetails() !== null,
+  );
+
+  public readonly custom = computed(() =>
+    this.kind() === 'text'
+      ? this.status()?.custom === true
+      : this.reference.names() !== null && !this.known(),
   );
 
   /**
@@ -507,6 +525,37 @@ export class ModelDetailComponent {
   public readonly listLink = computed(() => ['/details/models', this.kind()]);
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.closeViewer());
+    effect(() => {
+      this.modelName();
+      this.kind();
+      untracked(() => {
+        this.closeViewer();
+        this.showcaseIndex.set(0);
+        this.failedShowcases.set(new Set());
+      });
+    });
+
+    effect(() => {
+      const count = this.showcases().length;
+      if (this.showcaseIndex() >= count) {
+        this.showcaseIndex.set(Math.max(0, count - 1));
+      }
+      if (count === 0) {
+        untracked(() => this.closeViewer());
+      }
+    });
+
+    afterRenderEffect(() => {
+      const dialog = this.viewer()?.nativeElement;
+      if (!this.isBrowser || !dialog) return;
+      if (this.viewerOpen() && !dialog.open) {
+        dialog.showModal();
+        this.scrollLock.enable();
+        this.viewerClose()?.nativeElement.focus({ preventScroll: true });
+      }
+    });
+
     setPageMeta({
       titleKey: 'details.model_detail.meta_title',
       descriptionKey: 'details.model_detail.meta_description',
@@ -526,7 +575,7 @@ export class ModelDetailComponent {
       }
       const kind: ModelKind = names.includes(this.modelName())
         ? 'image'
-        : textNames.includes(this.modelName())
+        : this.reference.textRecordFor(this.modelName()) !== null
           ? 'text'
           : 'image';
       void this.router.navigate(['/details/models', kind, this.modelName()], {
@@ -563,7 +612,7 @@ export class ModelDetailComponent {
     const models =
       kind === 'image'
         ? this.aiHorde.getImageModels('all')
-        : this.aiHorde.getTextModels('all');
+        : this.aiHorde.getClassifiedTextModels();
 
     models.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (list) => {
@@ -610,17 +659,71 @@ export class ModelDetailComponent {
   }
 
   public showShowcase(index: number): void {
-    this.showcaseIndex.set(index);
+    const count = this.showcases().length;
+    if (count > 0) this.showcaseIndex.set((index + count) % count);
   }
 
-  public openViewer(): void {
-    if (this.currentShowcase() !== '') {
+  public openViewer(event: MouseEvent): void {
+    if (this.isBrowser && this.currentShowcase() !== '') {
+      this.viewerTrigger = event.currentTarget as HTMLElement;
       this.viewerOpen.set(true);
     }
   }
 
   public closeViewer(): void {
+    const wasOpen = this.viewerOpen();
     this.viewerOpen.set(false);
+    const dialog = this.viewer()?.nativeElement;
+    if (dialog?.open) dialog.close();
+    this.scrollLock.disable();
+    if (wasOpen) {
+      const target = this.viewerTrigger?.isConnected
+        ? this.viewerTrigger
+        : this.identity()?.nativeElement;
+      target?.focus({ preventScroll: true });
+      this.viewerTrigger = null;
+    }
+  }
+
+  public onViewerCancel(event: Event): void {
+    event.preventDefault();
+    this.closeViewer();
+  }
+
+  public onViewerClosed(): void {
+    if (!this.viewer()?.nativeElement.open) this.closeViewer();
+  }
+
+  public onViewerBackdrop(event: MouseEvent): void {
+    if (event.target === event.currentTarget) this.closeViewer();
+  }
+
+  public onViewerKeydown(event: KeyboardEvent): void {
+    if (
+      this.showcases().length > 1 &&
+      (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+    ) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.showShowcase(
+        this.showcaseIndex() + (event.key === 'ArrowLeft' ? -1 : 1),
+      );
+    }
+  }
+
+  public markShowcaseFailed(event: Event): void {
+    const url = (event.target as HTMLImageElement).getAttribute('src');
+    if (url && this.showcases().includes(url)) {
+      this.failedShowcases.update((failed) => new Set([...failed, url]));
+    }
+  }
+
+  public retryShowcase(): void {
+    this.failedShowcases.update((failed) => {
+      const next = new Set(failed);
+      next.delete(this.currentShowcase());
+      return next;
+    });
   }
 
   /** Put a trigger word on the clipboard, and say on the chip that it went. */

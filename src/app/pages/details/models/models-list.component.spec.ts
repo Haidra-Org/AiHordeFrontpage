@@ -94,7 +94,7 @@ describe('ModelsListComponent', () => {
           provide: AiHordeService,
           useValue: {
             getImageModels: () => of(STATUS_MODELS),
-            getTextModels: () => of([]),
+            getClassifiedTextModels: () => of([]),
             getImageModelStats: () =>
               of({ day: {}, month: { Deliberate: 812 }, total: {} }),
             getTextModelStats: () => of({ day: {}, month: {}, total: {} }),
@@ -135,7 +135,7 @@ describe('ModelsListComponent', () => {
     ).toBeGreaterThan(0);
     expect(html).toContain('No workers');
     expect(rowNames()).toContain('Somebody Elses Model');
-    expect(html).toContain('Added by a worker');
+    expect(html).toContain('Unlisted');
   });
 
   it('offers every model a way into the studio, named rather than printed', () => {
@@ -258,5 +258,57 @@ describe('ModelsListComponent', () => {
     expect(fixture.componentInstance.sortField()).toBe('count');
     expect(fixture.componentInstance.sortDirection()).toBe('desc');
     expect(fixture.componentInstance.baselineFilter()).toBeNull();
+  });
+
+  it('uses backend text classification even when metadata is missing', () => {
+    const api = TestBed.inject(AiHordeService);
+    vi.spyOn(api, 'getClassifiedTextModels').mockReturnValue(
+      of([
+        { name: 'Canonical.IQ4_XS::worker', count: 3, custom: false },
+        { name: 'Private', count: 2, custom: true },
+        { name: 'Unclassified', count: 1 },
+      ]),
+    );
+    const reference = TestBed.inject(ModelReferenceService);
+    vi.spyOn(reference, 'textNames').mockReturnValue(['Canonical']);
+    fixture.detectChanges();
+    fixture.componentInstance.setActiveTab('text');
+    fixture.detectChanges();
+
+    const rows = [
+      ...fixture.nativeElement.querySelectorAll('.hd-list-row'),
+    ] as HTMLElement[];
+    const known = rows.find((row) =>
+      row.textContent?.includes('Canonical.IQ4_XS::worker'),
+    )!;
+    expect(known.querySelector('.models-mark--custom')).toBeNull();
+    const custom = rows.find((row) => row.textContent?.includes('Private'))!;
+    expect(
+      custom.querySelector('.models-mark--custom')?.textContent?.trim(),
+    ).toBe('Unlisted');
+    expect(
+      rows.find((row) => row.textContent?.includes('Unclassified'))
+        ?.textContent,
+    ).toContain('Classification unavailable');
+    expect(
+      known.querySelector('.models-list-name')?.getAttribute('href'),
+    ).toContain('Canonical.IQ4_XS::worker');
+  });
+
+  it('sorts from the mobile selector and direction button', () => {
+    fixture.detectChanges();
+    const select = fixture.nativeElement.querySelector(
+      '#models-sort',
+    ) as HTMLSelectElement;
+    select.value = 'name';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sortField()).toBe('name');
+    const button = fixture.nativeElement.querySelector(
+      '.models-mobile-sort button',
+    ) as HTMLButtonElement;
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.sortDirection()).toBe('asc');
   });
 });

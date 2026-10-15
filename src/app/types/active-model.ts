@@ -17,7 +17,7 @@ export interface ActiveModel {
   eta?: number;
   /** The model type (text or image). */
   type?: 'image' | 'text';
-  /** Set when a worker offers a model the official reference does not list. */
+  /** True for custom models, false for known models; absent when unclassified. */
   custom?: boolean;
 }
 
@@ -71,10 +71,13 @@ export function modelEtaLabel(model: ActiveModel): ModelEtaLabel | null {
  *
  * `referenceNames` is null until the reference answers, and the status list is
  * served on its own in the meantime rather than showing nothing.
+ * Text callers disable `inferCustom`: only the backend can establish whether
+ * its own reference recognizes a live text name for pricing.
  */
 export function mergeModelList(
   referenceNames: readonly string[] | null,
   statusModels: readonly ActiveModel[],
+  inferCustom = true,
 ): ActiveModel[] {
   const byName = new Map<string, ActiveModel>();
   for (const model of statusModels) {
@@ -94,7 +97,11 @@ export function mergeModelList(
     const known = new Set(referenceNames);
     for (const model of byName.values()) {
       if (!known.has(model.name)) {
-        merged.push({ ...model, custom: true });
+        merged.push(
+          inferCustom && model.custom === undefined
+            ? { ...model, custom: true }
+            : model,
+        );
       }
     }
   }

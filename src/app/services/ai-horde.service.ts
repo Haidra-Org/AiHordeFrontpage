@@ -4,7 +4,7 @@ import {
   HttpContext,
   HttpErrorResponse,
 } from '@angular/common/http';
-import { catchError, map, Observable, of, zip } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of, zip } from 'rxjs';
 import { ImageTotalStats } from '../types/image-total-stats';
 import { HordePerformance } from '../types/horde-performance';
 import { TextTotalStats } from '../types/text-total-stats';
@@ -286,6 +286,33 @@ export class AiHordeService {
     modelState: 'known' | 'custom' | 'all' = 'all',
   ): Observable<ActiveModel[]> {
     return this.getModels('text', modelState);
+  }
+
+  /**
+   * The server recognizes worker-qualified and quantized names against its own
+   * reference. Metadata availability cannot establish that pricing status.
+   * Keep the complete live list if either classification request fails or the
+   * separately cached lists describe different moments of worker availability.
+   */
+  public getClassifiedTextModels(): Observable<ActiveModel[]> {
+    return forkJoin({
+      all: this.getTextModels('all'),
+      known: this.getTextModels('known').pipe(catchError(() => of(null))),
+      custom: this.getTextModels('custom').pipe(catchError(() => of(null))),
+    }).pipe(
+      map(({ all, known, custom }) => {
+        const knownNames = new Set(known?.map((model) => model.name));
+        const customNames = new Set(custom?.map((model) => model.name));
+        return all.map((model) => ({
+          ...model,
+          // Conflicting snapshots cannot establish either classification.
+          custom:
+            knownNames.has(model.name) === customNames.has(model.name)
+              ? undefined
+              : customNames.has(model.name),
+        }));
+      }),
+    );
   }
 
   /**

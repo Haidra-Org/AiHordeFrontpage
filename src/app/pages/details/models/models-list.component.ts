@@ -162,7 +162,7 @@ export class ModelsListComponent implements OnInit {
   );
 
   private readonly textModels = computed(() =>
-    mergeModelList(this.reference.textNames(), this.textStatus()),
+    mergeModelList(this.reference.textNames(), this.textStatus(), false),
   );
 
   /** Autocomplete suggestions based on current search query. */
@@ -487,7 +487,7 @@ export class ModelsListComponent implements OnInit {
     const models =
       tab === 'image'
         ? this.aiHorde.getImageModels('all')
-        : this.aiHorde.getTextModels('all');
+        : this.aiHorde.getClassifiedTextModels();
 
     models
       .pipe(
@@ -646,6 +646,12 @@ export class ModelsListComponent implements OnInit {
       this.sortField.set(field);
       this.sortDirection.set('desc');
     }
+  }
+
+  public onSortChange(event: Event): void {
+    this.setSortField(
+      (event.target as HTMLSelectElement).value as ModelsSortField,
+    );
   }
 
   public formatEta(seconds: number | undefined): string {

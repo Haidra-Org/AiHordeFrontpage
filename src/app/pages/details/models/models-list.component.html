@@ -310,6 +310,50 @@
           </button>
         </div>
       } @else {
+        <div class="models-mobile-sort">
+          <label class="hd-label" for="models-sort">{{
+            "details.models.sort_by" | transloco
+          }}</label>
+          <select
+            id="models-sort"
+            class="hd-input"
+            [value]="sortField()"
+            (change)="onSortChange($event)"
+          >
+            <option value="name">
+              {{ "details.models.column.name" | transloco }}
+            </option>
+            <option value="count">
+              {{ "details.models.column.workers" | transloco }}
+            </option>
+            <option value="queued">{{ queuedColumnKey() | transloco }}</option>
+            <option value="eta">
+              {{ "details.models.column.eta" | transloco }}
+            </option>
+            <option value="usage">
+              {{ "details.models.column.usage" | transloco }}
+            </option>
+            <option value="performance">
+              {{ performanceColumnKey() | transloco }}
+            </option>
+            <option value="baseline">
+              {{ "details.models.filters.baseline" | transloco }}
+            </option>
+          </select>
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost"
+            (click)="setSortField(sortField())"
+          >
+            {{
+              (sortDirection() === "asc"
+                ? "details.models.sort.ascending"
+                : "details.models.sort.descending"
+              ) | transloco
+            }}
+          </button>
+        </div>
+
         <div class="models-caption">
           <span class="models-caption-label">{{
             "details.models.columns_help.label" | transloco
@@ -445,34 +489,45 @@
                   [title]="row.model.name"
                   >{{ row.model.name }}</a
                 >
-                @if (row.parameters !== "") {
-                  <span class="hd-badge models-mark models-mark--spec">{{
-                    row.parameters
-                  }}</span>
-                }
-                @if (row.inpainting) {
-                  <span class="hd-badge models-mark models-mark--spec">{{
-                    "details.models.badge.inpainting" | transloco
-                  }}</span>
-                }
-                <!-- Whether a model makes adult pictures is still said, and
+                <div class="models-list-marks">
+                  @if (row.parameters !== "") {
+                    <span class="hd-badge models-mark models-mark--spec">{{
+                      row.parameters
+                    }}</span>
+                  }
+                  @if (row.inpainting) {
+                    <span class="hd-badge models-mark models-mark--spec">{{
+                      "details.models.badge.inpainting" | transloco
+                    }}</span>
+                  }
+                  <!-- Whether a model makes adult pictures is still said, and
                      still filtered on; it is read out rather than printed,
                      because it was on most rows and told the eye nothing. -->
-                @if (row.nsfw) {
-                  <span class="sr-only">{{
-                    "details.models.badge.adult" | transloco
-                  }}</span>
-                }
-                @if (row.model.custom) {
-                  <span class="hd-badge models-mark models-mark--custom">{{
-                    "details.models.badge.custom" | transloco
-                  }}</span>
-                }
-                @if (row.model.count === 0) {
-                  <span class="hd-badge models-mark models-mark--idle">{{
-                    "details.models.badge.no_workers" | transloco
-                  }}</span>
-                }
+                  @if (row.nsfw) {
+                    <span class="sr-only">{{
+                      "details.models.badge.adult" | transloco
+                    }}</span>
+                  }
+                  @if (row.model.custom) {
+                    <span class="hd-badge models-mark models-mark--custom">{{
+                      "details.models.badge.custom" | transloco
+                    }}</span>
+                  }
+                  @if (
+                    activeTab() === "text" &&
+                    row.model.count > 0 &&
+                    row.model.custom === undefined
+                  ) {
+                    <span class="hd-badge models-mark">{{
+                      "details.models.badge.unclassified" | transloco
+                    }}</span>
+                  }
+                  @if (row.model.count === 0) {
+                    <span class="hd-badge models-mark models-mark--idle">{{
+                      "details.models.badge.no_workers" | transloco
+                    }}</span>
+                  }
+                </div>
               </div>
 
               <span class="models-list-family models-col-family">
@@ -486,12 +541,22 @@
               <span
                 class="models-list-value"
                 [class.models-list-value--muted]="row.model.count === 0"
-                >{{ formatNumber(row.model.count) }}</span
+                ><span class="models-desktop-value">{{
+                  formatNumber(row.model.count)
+                }}</span>
+                <span class="models-mobile-value">{{
+                  (row.model.count === 1
+                    ? "details.models.worker_count_one"
+                    : "details.models.worker_count_other"
+                  ) | transloco: { count: row.model.count }
+                }}</span></span
               >
 
               <span
                 class="models-list-value"
                 [class.models-list-value--muted]="!row.model.queued"
+                ><span class="models-mobile-value"
+                  >{{ queuedColumnKey() | transloco }}: </span
                 >{{ queuedCell(row.model) }}</span
               >
 

@@ -188,6 +188,24 @@ export type ModelRecordMap = ReadonlyMap<string, ModelReferenceRecord>;
 /** Text model name -> its full record. */
 export type TextModelRecordMap = ReadonlyMap<string, TextModelReferenceRecord>;
 
+/** Mirrors AI-Horde's no_q_regex; broader suffix stripping changes recognition. */
+const TEXT_QUANTIZATION_SUFFIX =
+  /[.,-][a-zA-Z0-9]+?-?Q(-[Ii]nt)?[2-9]{1,2}([_.-][0-9a-zA-Z]+)*/g;
+
+/** Resolve metadata without changing the live name used to request a model. */
+export function resolveTextModelName(
+  name: string,
+  records: TextModelRecordMap,
+): string | null {
+  const parts = name.split('::');
+  const base = parts.length === 2 ? (parts[0] ?? name) : name;
+  if (records.has(base)) {
+    return base;
+  }
+  const unquantized = base.replace(TEXT_QUANTIZATION_SUFFIX, '');
+  return records.has(unquantized) ? unquantized : null;
+}
+
 interface CachedReference {
   version: number;
   fetchedAt: number;
@@ -668,7 +686,12 @@ export class ModelReferenceService {
     if (name === '') {
       return null;
     }
-    return this.textRecords()?.get(name) ?? null;
+    const records = this.textRecords();
+    if (!records) {
+      return null;
+    }
+    const resolved = resolveTextModelName(name, records);
+    return resolved ? (records.get(resolved) ?? null) : null;
   }
 
   /** Whether `modelName` can serve a remix request; permissive when unknown. */

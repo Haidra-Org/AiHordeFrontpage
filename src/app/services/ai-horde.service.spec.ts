@@ -695,6 +695,54 @@ describe('AiHordeService', () => {
     });
   });
 
+  describe('getClassifiedTextModels', () => {
+    it('uses server classification while preserving live names and counts', async () => {
+      const result = firstValueFrom(service.getClassifiedTextModels());
+      const known = { name: 'Model.IQ4_XS::worker', count: 3 };
+      const custom = { name: 'Private model', count: 1 };
+      http
+        .expectOne(`${API_BASE}/status/models?type=text&model_state=all`)
+        .flush([known, custom, { name: 'New arrival', count: 2 }]);
+      http
+        .expectOne(`${API_BASE}/status/models?type=text&model_state=known`)
+        .flush([{ ...known, count: 9 }]);
+      http
+        .expectOne(`${API_BASE}/status/models?type=text&model_state=custom`)
+        .flush([custom]);
+      expect(await result).toEqual([
+        { ...known, custom: false },
+        { ...custom, custom: true },
+        { name: 'New arrival', count: 2, custom: undefined },
+      ]);
+    });
+
+    it('keeps classification unavailable on failed or conflicting snapshots', async () => {
+      const result = firstValueFrom(service.getClassifiedTextModels());
+      const model = { name: 'Model', count: 2 };
+      http
+        .expectOne(`${API_BASE}/status/models?type=text&model_state=all`)
+        .flush([model]);
+      http
+        .expectOne(`${API_BASE}/status/models?type=text&model_state=known`)
+        .flush('down', { status: 503, statusText: 'Unavailable' });
+      http
+        .expectOne(`${API_BASE}/status/models?type=text&model_state=custom`)
+        .flush([]);
+      expect(await result).toEqual([{ ...model, custom: undefined }]);
+    });
+
+    it('does not classify a name present in both filtered snapshots', async () => {
+      const result = firstValueFrom(service.getClassifiedTextModels());
+      const model = { name: 'Model', count: 2 };
+      for (const state of ['all', 'known', 'custom']) {
+        http
+          .expectOne(`${API_BASE}/status/models?type=text&model_state=${state}`)
+          .flush([model]);
+      }
+      expect(await result).toEqual([{ ...model, custom: undefined }]);
+    });
+  });
+
   // -----------------------------------------------------------------------
   // transferKudos
   // -----------------------------------------------------------------------

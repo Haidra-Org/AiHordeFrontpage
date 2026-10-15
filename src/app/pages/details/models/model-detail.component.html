@@ -33,62 +33,11 @@
     </div>
   } @else {
     <div class="model-detail-columns">
-      <!-- Identity -->
-      <div class="model-detail-rail">
-        @if (currentShowcase() !== "") {
-          <button
-            type="button"
-            class="model-detail-stage"
-            (click)="openViewer()"
-            [attr.aria-label]="
-              'details.model_detail.showcase_open'
-                | transloco: { name: title() }
-            "
-          >
-            <img
-              [src]="currentShowcase()"
-              [alt]="
-                'details.model_detail.showcase_alt'
-                  | transloco: { name: title() }
-              "
-              loading="lazy"
-            />
-          </button>
-
-          @if (showcases().length > 1) {
-            <div class="model-detail-strip">
-              @for (
-                showcase of showcases();
-                track showcase;
-                let index = $index
-              ) {
-                <button
-                  type="button"
-                  class="model-detail-thumb"
-                  [attr.aria-pressed]="showcaseIndex() === index"
-                  [attr.aria-label]="
-                    'details.model_detail.showcase_pick'
-                      | transloco: { number: index + 1 }
-                  "
-                  (click)="showShowcase(index)"
-                >
-                  <img [src]="showcase" alt="" loading="lazy" />
-                </button>
-              }
-            </div>
-          }
-        } @else {
-          <div class="model-detail-stage model-detail-stage--empty">
-            {{
-              family() !== ""
-                ? family()
-                : ("details.model_detail.no_showcase" | transloco)
-            }}
-          </div>
-        }
-
+      <div class="model-detail-identity">
         <div>
-          <h1 class="model-detail-title">{{ title() }}</h1>
+          <h1 #identity tabindex="-1" class="model-detail-title">
+            {{ title() }}
+          </h1>
           @if (title() !== modelName()) {
             <p class="model-detail-subtitle">{{ modelName() }}</p>
           }
@@ -113,14 +62,207 @@
               "details.models.badge.adult" | transloco
             }}</span>
           }
-          @if (!known()) {
+          @if (custom()) {
             <span class="hd-badge models-mark models-mark--custom">{{
               "details.models.badge.custom" | transloco
             }}</span>
           }
+          @if (
+            kind() === "text" &&
+            status() !== null &&
+            status()?.custom === undefined
+          ) {
+            <span class="hd-badge models-mark">{{
+              "details.models.badge.unclassified" | transloco
+            }}</span>
+          }
+        </div>
+      </div>
+
+      @if (kind() === "image") {
+        <div class="model-detail-preview">
+          @if (currentShowcase() !== "") {
+            @if (showcaseFailed()) {
+              <div class="model-detail-preview-note" role="status">
+                <span>{{
+                  "details.model_detail.showcase_failed" | transloco
+                }}</span>
+                <button
+                  type="button"
+                  class="hd-btn hd-btn--tonal hd-btn--dense"
+                  (click)="retryShowcase()"
+                >
+                  {{ "details.model_detail.showcase_retry" | transloco }}
+                </button>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="model-detail-stage"
+                (click)="openViewer($event)"
+                aria-haspopup="dialog"
+                [attr.aria-label]="
+                  'details.model_detail.showcase_open'
+                    | transloco: { name: title() }
+                "
+              >
+                <img
+                  [src]="currentShowcase()"
+                  [alt]="
+                    'details.model_detail.showcase_alt'
+                      | transloco: { name: title() }
+                  "
+                  loading="lazy"
+                  (error)="markShowcaseFailed($event)"
+                />
+                <span class="model-detail-expand">
+                  <app-icon name="arrows-pointing-out" />
+                  {{ "details.model_detail.showcase_expand" | transloco }}
+                </span>
+              </button>
+            }
+            @if (showcases().length > 1) {
+              <div class="model-detail-strip">
+                @for (
+                  showcase of showcases();
+                  track $index;
+                  let index = $index
+                ) {
+                  <button
+                    type="button"
+                    class="model-detail-thumb"
+                    [attr.aria-pressed]="showcaseIndex() === index"
+                    [attr.aria-label]="
+                      'details.model_detail.showcase_pick'
+                        | transloco: { number: index + 1 }
+                    "
+                    (click)="showShowcase(index)"
+                  >
+                    @if (failedShowcases().has(showcase)) {
+                      <app-icon name="photo" />
+                    } @else {
+                      <img
+                        [src]="showcase"
+                        alt=""
+                        loading="lazy"
+                        (error)="markShowcaseFailed($event)"
+                      />
+                    }
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <div class="model-detail-preview-note">
+              {{ "details.model_detail.no_showcase" | transloco }}
+            </div>
+          }
+        </div>
+      }
+
+      <div class="model-detail-summary">
+        <div class="hd-stats">
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
+              "details.models.column.workers" | transloco
+            }}</span>
+            <span class="hd-stat-value">{{
+              status()?.count ?? 0 | number
+            }}</span>
+            <span class="hd-stat-note">{{
+              (status()?.count
+                ? "details.model_detail.serving_now"
+                : "details.model_detail.serving_none"
+              ) | transloco
+            }}</span>
+          </div>
+
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
+              queuedColumnKey() | transloco
+            }}</span>
+            <span class="hd-stat-value">{{ queuedValue() }}</span>
+            <span class="hd-stat-note">{{
+              queuedUnit().technical.formatted
+            }}</span>
+          </div>
+
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
+              "details.models.column.usage" | transloco
+            }}</span>
+            <span class="hd-stat-value">{{ usageMonth() | number }}</span>
+            <span class="hd-stat-note">{{
+              "details.model_detail.usage_total"
+                | transloco: { total: usageTotalText() }
+            }}</span>
+          </div>
+
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
+              performanceColumnKey() | transloco
+            }}</span>
+            <span class="hd-stat-value">{{ performanceValue() }}</span>
+            @if (performanceUnit(); as perfUnit) {
+              <span class="hd-stat-note">{{
+                perfUnit.technical.formatted
+              }}</span>
+            }
+          </div>
+
+          <div class="hd-stat">
+            <span class="hd-stat-label">{{
+              "details.models.column.eta" | transloco
+            }}</span>
+            <span class="hd-stat-value">{{
+              status()?.count ? formatEta(status()?.eta) : "-"
+            }}</span>
+          </div>
         </div>
 
-        @if (!known()) {
+        <!-- Doors -->
+        @if (kind() === "image") {
+          <div class="hd-card">
+            <p class="hd-card-title">
+              {{ "details.model_detail.try_title" | transloco }}
+            </p>
+            <div class="model-detail-doors">
+              @if (studioAddress(); as address) {
+                <a class="hd-btn hd-btn--primary" [href]="address">
+                  {{ "details.model_detail.try_recommended" | transloco }}
+                </a>
+                <a
+                  class="hd-btn hd-btn--dense"
+                  [routerLink]="'/generate/image'"
+                  [queryParams]="{ model: modelName() }"
+                >
+                  {{ "details.model_detail.try_plain" | transloco }}
+                </a>
+              } @else {
+                <a
+                  class="hd-btn hd-btn--primary"
+                  [routerLink]="'/generate/image'"
+                  [queryParams]="{ model: modelName() }"
+                >
+                  {{ "details.model_detail.try_plain" | transloco }}
+                </a>
+              }
+            </div>
+            @if (studioAddress()) {
+              <p class="model-detail-note">
+                {{ "details.model_detail.try_note" | transloco }}
+              </p>
+            }
+          </div>
+        } @else {
+          <p class="model-detail-note">
+            {{ "details.model_detail.text_no_studio" | transloco }}
+          </p>
+        }
+      </div>
+
+      <div class="model-detail-reference">
+        @if (custom()) {
           <p class="model-detail-note">
             {{ "details.model_detail.custom_note" | transloco }}
           </p>
@@ -190,7 +332,7 @@
                     {{ "details.model_detail.licensing_licence" | transloco }}
                     @if (licence.licenseUrl !== null) {
                       <a
-                        class="link"
+                        class="model-detail-link"
                         [href]="licence.licenseUrl"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -213,7 +355,7 @@
                   }
                   <p class="model-detail-note">
                     <a
-                      class="link"
+                      class="model-detail-link"
                       [href]="licensingExplorer()"
                       target="_blank"
                       rel="noopener"
@@ -228,7 +370,7 @@
                 <dt>{{ "details.model_detail.homepage" | transloco }}</dt>
                 <dd>
                   <a
-                    class="link"
+                    class="model-detail-link"
                     [href]="homepage()"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -241,67 +383,7 @@
         </div>
       </div>
 
-      <!-- What the horde is doing with it -->
       <div class="model-detail-main">
-        <div class="hd-stats">
-          <div class="hd-stat">
-            <span class="hd-stat-label">{{
-              "details.models.column.workers" | transloco
-            }}</span>
-            <span class="hd-stat-value">{{
-              status()?.count ?? 0 | number
-            }}</span>
-            <span class="hd-stat-note">{{
-              (status()?.count
-                ? "details.model_detail.serving_now"
-                : "details.model_detail.serving_none"
-              ) | transloco
-            }}</span>
-          </div>
-
-          <div class="hd-stat">
-            <span class="hd-stat-label">{{
-              queuedColumnKey() | transloco
-            }}</span>
-            <span class="hd-stat-value">{{ queuedValue() }}</span>
-            <span class="hd-stat-note">{{
-              queuedUnit().technical.formatted
-            }}</span>
-          </div>
-
-          <div class="hd-stat">
-            <span class="hd-stat-label">{{
-              "details.models.column.usage" | transloco
-            }}</span>
-            <span class="hd-stat-value">{{ usageMonth() | number }}</span>
-            <span class="hd-stat-note">{{
-              "details.model_detail.usage_total"
-                | transloco: { total: usageTotalText() }
-            }}</span>
-          </div>
-
-          <div class="hd-stat">
-            <span class="hd-stat-label">{{
-              performanceColumnKey() | transloco
-            }}</span>
-            <span class="hd-stat-value">{{ performanceValue() }}</span>
-            @if (performanceUnit(); as perfUnit) {
-              <span class="hd-stat-note">{{
-                perfUnit.technical.formatted
-              }}</span>
-            }
-          </div>
-
-          <div class="hd-stat">
-            <span class="hd-stat-label">{{
-              "details.models.column.eta" | transloco
-            }}</span>
-            <span class="hd-stat-value">{{
-              status()?.count ? formatEta(status()?.eta) : "-"
-            }}</span>
-          </div>
-        </div>
-
         @if (capabilities().length > 0) {
           <div class="hd-card">
             <p class="hd-card-title">
@@ -319,46 +401,6 @@
               }
             </ul>
           </div>
-        }
-
-        <!-- Doors -->
-        @if (kind() === "image") {
-          <div class="hd-card">
-            <p class="hd-card-title">
-              {{ "details.model_detail.try_title" | transloco }}
-            </p>
-            <div class="model-detail-doors">
-              @if (studioAddress(); as address) {
-                <a class="hd-btn hd-btn--primary" [href]="address">
-                  {{ "details.model_detail.try_recommended" | transloco }}
-                </a>
-                <a
-                  class="hd-btn hd-btn--dense"
-                  [routerLink]="'/generate/image'"
-                  [queryParams]="{ model: modelName() }"
-                >
-                  {{ "details.model_detail.try_plain" | transloco }}
-                </a>
-              } @else {
-                <a
-                  class="hd-btn hd-btn--primary"
-                  [routerLink]="'/generate/image'"
-                  [queryParams]="{ model: modelName() }"
-                >
-                  {{ "details.model_detail.try_plain" | transloco }}
-                </a>
-              }
-            </div>
-            @if (studioAddress()) {
-              <p class="model-detail-note">
-                {{ "details.model_detail.try_note" | transloco }}
-              </p>
-            }
-          </div>
-        } @else {
-          <p class="model-detail-note">
-            {{ "details.model_detail.text_no_studio" | transloco }}
-          </p>
         }
 
         <!-- Recommended settings -->
@@ -456,7 +498,7 @@
                   <dd>
                     @if (file.file_url) {
                       <a
-                        class="link"
+                        class="model-detail-link"
                         [href]="file.file_url"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -473,19 +515,80 @@
     </div>
   }
 
-  @if (viewerOpen()) {
-    <button
-      type="button"
-      class="model-detail-viewer"
-      (click)="closeViewer()"
-      [attr.aria-label]="'details.model_detail.showcase_close' | transloco"
-    >
-      <img
-        [src]="currentShowcase()"
-        [alt]="
-          'details.model_detail.showcase_alt' | transloco: { name: title() }
-        "
-      />
-    </button>
-  }
+  <dialog
+    #viewer
+    tabindex="-1"
+    class="model-detail-viewer"
+    [attr.aria-label]="
+      'details.model_detail.showcase_open' | transloco: { name: title() }
+    "
+    (cancel)="onViewerCancel($event)"
+    (close)="onViewerClosed()"
+    (click)="onViewerBackdrop($event)"
+    (keydown)="onViewerKeydown($event)"
+  >
+    <div class="model-detail-viewer-head">
+      <h2 class="model-detail-viewer-title">{{ title() }}</h2>
+      @if (showcases().length > 1) {
+        <div class="model-detail-viewer-steps">
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost hd-btn--icon"
+            (click)="showShowcase(showcaseIndex() - 1)"
+            [attr.aria-label]="'details.model_detail.showcase_prev' | transloco"
+          >
+            <app-icon name="chevron-left" />
+          </button>
+          <span aria-live="polite">{{
+            "details.model_detail.showcase_count"
+              | transloco
+                : { at: showcaseIndex() + 1, count: showcases().length }
+          }}</span>
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost hd-btn--icon"
+            (click)="showShowcase(showcaseIndex() + 1)"
+            [attr.aria-label]="'details.model_detail.showcase_next' | transloco"
+          >
+            <app-icon name="chevron-right" />
+          </button>
+        </div>
+      }
+      <button
+        #viewerClose
+        type="button"
+        class="hd-btn hd-btn--ghost hd-btn--icon"
+        (click)="closeViewer()"
+        [attr.aria-label]="'details.model_detail.showcase_close' | transloco"
+      >
+        <app-icon name="x-mark" />
+      </button>
+    </div>
+    <div class="model-detail-viewer-body">
+      @if (viewerOpen()) {
+        @if (showcaseFailed()) {
+          <div class="model-detail-preview-note" role="status">
+            <span>{{
+              "details.model_detail.showcase_failed" | transloco
+            }}</span>
+            <button
+              type="button"
+              class="hd-btn hd-btn--tonal"
+              (click)="retryShowcase()"
+            >
+              {{ "details.model_detail.showcase_retry" | transloco }}
+            </button>
+          </div>
+        } @else {
+          <img
+            [src]="currentShowcase()"
+            [alt]="
+              'details.model_detail.showcase_alt' | transloco: { name: title() }
+            "
+            (error)="markShowcaseFailed($event)"
+          />
+        }
+      }
+    </div>
+  </dialog>
 </div>

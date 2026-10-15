@@ -16,6 +16,7 @@ import {
   coerceRequirements,
   coerceTextRecordMap,
   normalizeBaseline,
+  resolveTextModelName,
 } from './model-reference.service';
 
 const MODEL_REFERENCE_URL =
@@ -236,6 +237,39 @@ describe('coerceTextRecordMap', () => {
 
   it('leaves settings null when the record recommends none', () => {
     expect(coerceTextRecordMap(TEXT_FIXTURE).get('Plain')?.settings).toBeNull();
+  });
+});
+
+describe('resolveTextModelName', () => {
+  const records = coerceTextRecordMap(TEXT_FIXTURE);
+  const canonical = 'acrastt/Marx-3B-V3';
+
+  it.each([
+    canonical,
+    `${canonical}::worker`,
+    `${canonical}.IQ4_XS`,
+    `${canonical}.IQ4_XS::worker`,
+    `${canonical}-GGUF-Q4_K_M`,
+  ])('resolves the backend-recognized name %s', (name) => {
+    expect(resolveTextModelName(name, records)).toBe(canonical);
+  });
+
+  it.each([
+    `${canonical}.Q4_K_M`,
+    `${canonical}::one::two`,
+    canonical.toLowerCase(),
+    'other/Marx-3B-V3',
+  ])('does not broaden backend recognition for %s', (name) => {
+    expect(resolveTextModelName(name, records)).toBeNull();
+  });
+
+  it('prefers an exact quantized record over its base', () => {
+    const quantized = `${canonical}.IQ4_XS`;
+    const expanded = coerceTextRecordMap({
+      ...TEXT_FIXTURE,
+      [quantized]: { parameters: 4e9 },
+    });
+    expect(resolveTextModelName(quantized, expanded)).toBe(quantized);
   });
 });
 
@@ -560,6 +594,15 @@ describe('ModelReferenceService text reference', () => {
 
     http.expectNone(TEXT_MODEL_REFERENCE_URL);
     expect(service.textRecordFor('Plain')?.baseline).toBe('llama');
+  });
+
+  it('provides canonical metadata for a worker-qualified quantized model', () => {
+    const { service, http } = setup();
+    service.loadText();
+    http.expectOne(TEXT_MODEL_REFERENCE_URL).flush(TEXT_FIXTURE);
+    expect(service.textRecordFor('acrastt/Marx-3B-V3.IQ4_XS::worker')).toEqual(
+      service.textRecordFor('acrastt/Marx-3B-V3'),
+    );
   });
 
   it('stays quiet when the text fetch fails', () => {

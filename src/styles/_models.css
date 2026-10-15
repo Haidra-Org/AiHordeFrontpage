@@ -151,12 +151,9 @@
     color: var(--hd-label);
   }
 
-  /* A phone has room for the name and the two numbers that answer "can I
-     use this now"; the rest of the columns are on the model's own page,
-     and the header goes with them: three labels over three values are
-     read off the values themselves. */
+  /* Phone rows give identity its own line so status never displaces the name. */
   .models-grid {
-    --hd-list-cols: minmax(0, 1fr) 3.25rem 4.5rem;
+    --hd-list-cols: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .models-grid .hd-list-head {
@@ -173,6 +170,22 @@
     gap: var(--hd-space-2);
     min-width: 0;
     overflow: hidden;
+  }
+
+  .models-list-marks {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .models-list-marks:empty {
+    display: none;
+  }
+
+  .models-mobile-value,
+  .models-mobile-sort {
+    display: none;
   }
 
   .models-list-name {
@@ -220,11 +233,63 @@
     color: var(--hd-accent-text);
   }
 
-  /* What a model is built from, which a phone drops: the name is what the
-     reader is scanning for, and the family has its own column above 640. */
   @media (max-width: 639.98px) {
-    .hd-list-row .models-mark--spec {
+    .models-grid .hd-list-row {
+      padding: var(--hd-space-3);
+    }
+
+    .models-list-identity {
+      grid-column: 1 / -1;
+      flex-direction: column;
+      align-items: flex-start;
+      overflow: visible;
+    }
+
+    .models-list-name {
+      width: 100%;
+      overflow-wrap: anywhere;
+      white-space: normal;
+    }
+
+    .models-list-marks {
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+
+    .models-list-marks .models-mark {
+      white-space: normal;
+    }
+
+    .models-grid .models-list-value {
+      font-size: var(--hd-text-sm);
+      text-align: left;
+    }
+
+    .models-desktop-value,
+    .hd-list-row .models-mark--idle {
       display: none;
+    }
+
+    .models-mobile-value {
+      display: inline;
+    }
+
+    .models-mobile-sort {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--hd-space-2);
+    }
+
+    .models-mobile-sort .hd-input {
+      flex: 1;
+      min-width: 0;
+      width: auto;
+      min-height: 44px;
+    }
+
+    .models-mobile-sort .hd-btn {
+      min-height: 44px;
     }
   }
 
@@ -388,7 +453,10 @@
     gap: var(--hd-space-4);
   }
 
-  .model-detail-rail,
+  .model-detail-identity,
+  .model-detail-preview,
+  .model-detail-summary,
+  .model-detail-reference,
   .model-detail-main {
     display: flex;
     flex-direction: column;
@@ -400,7 +468,33 @@
     .model-detail-columns {
       display: grid;
       grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      grid-template-areas:
+        "identity summary"
+        "preview summary"
+        "reference main";
       align-items: start;
+    }
+
+    .model-detail-columns:not(:has(.model-detail-preview)) {
+      grid-template-areas:
+        "identity summary"
+        "reference main";
+    }
+
+    .model-detail-identity {
+      grid-area: identity;
+    }
+    .model-detail-preview {
+      grid-area: preview;
+    }
+    .model-detail-summary {
+      grid-area: summary;
+    }
+    .model-detail-reference {
+      grid-area: reference;
+    }
+    .model-detail-main {
+      grid-area: main;
     }
   }
 
@@ -425,9 +519,26 @@
     color: var(--hd-ink-2);
   }
 
+  .model-detail-link {
+    color: var(--hd-accent-text);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .model-detail-link:hover {
+    color: var(--hd-ink);
+  }
+
+  .model-detail-link:focus-visible,
+  .model-detail-title:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
   /* The published sample, on the dark ground a picture is judged against
      in every room of this site that shows one. */
   .model-detail-stage {
+    position: relative;
     display: block;
     width: 100%;
     padding: 0;
@@ -441,9 +552,36 @@
   .model-detail-stage img {
     display: block;
     width: 100%;
-    height: auto;
-    aspect-ratio: 1 / 1;
-    object-fit: contain;
+    height: calc(var(--hd-space-8) * 4);
+    object-fit: cover;
+  }
+
+  @media (min-width: 640px) and (max-width: 1023.98px) {
+    .model-detail-stage img {
+      height: calc(var(--hd-space-8) * 5);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .model-detail-stage img {
+      height: auto;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
+    }
+  }
+
+  .model-detail-expand {
+    position: absolute;
+    right: var(--hd-space-2);
+    bottom: var(--hd-space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-stage);
+    color: var(--hd-stage-label);
+    font-size: var(--hd-text-sm);
   }
 
   .model-detail-stage:focus-visible {
@@ -451,25 +589,32 @@
     outline-offset: 2px;
   }
 
-  /* No sample was published, so the tile says the family instead of
-     leaving a hole where a picture would be. */
-  .model-detail-stage--empty {
+  .model-detail-preview-note {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 1 / 1;
-    color: var(--hd-stage-label);
+    gap: var(--hd-space-2);
+    min-height: calc(var(--hd-space-6) * 2);
+    padding: var(--hd-space-2) var(--hd-space-3);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-surface);
+    color: var(--hd-muted);
     font-size: var(--hd-text-sm);
-    cursor: default;
+    text-align: center;
   }
 
   .model-detail-strip {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--hd-space-2);
+    overflow-x: auto;
+    padding: var(--hd-space-1);
+    scrollbar-width: thin;
   }
 
   .model-detail-thumb {
+    flex: 0 0 56px;
+    color: var(--hd-stage-label);
     width: 56px;
     height: 56px;
     padding: 0;
@@ -497,25 +642,90 @@
     outline-offset: 2px;
   }
 
-  /* The enlarged sample. It sits over the page rather than in it, on the
-     same dark ground as the tile it came from. */
+  /* The native top layer keeps site navigation and floating controls behind
+     the picture, including when another region creates a stacking context. */
   .model-detail-viewer {
     position: fixed;
     inset: 0;
-    z-index: 60;
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: max(var(--hd-space-3), env(safe-area-inset-top))
+      max(var(--hd-space-3), env(safe-area-inset-right))
+      max(var(--hd-space-3), env(safe-area-inset-bottom))
+      max(var(--hd-space-3), env(safe-area-inset-left));
+    border: 0;
+    background: var(--hd-surface);
+    color: var(--hd-ink);
+    overflow: hidden;
+  }
+
+  .model-detail-viewer[open] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hd-space-3);
+  }
+
+  .model-detail-viewer::backdrop {
+    background: var(--hd-stage-scrim);
+  }
+
+  .model-detail-viewer-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+
+  .model-detail-viewer-head > button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .model-detail-viewer-title {
+    margin: 0;
+    font-size: var(--hd-text-lg);
+    overflow-wrap: anywhere;
+    max-height: calc(var(--hd-space-8) * 2);
+    overflow-y: auto;
+  }
+
+  .model-detail-viewer-steps {
+    grid-column: 1 / -1;
+    grid-row: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: var(--hd-space-4);
-    border: 0;
-    background: var(--hd-stage-scrim);
-    cursor: zoom-out;
+    gap: var(--hd-space-3);
+    font-size: var(--hd-text-sm);
   }
 
-  .model-detail-viewer img {
-    max-width: 100%;
-    max-height: 100%;
+  .model-detail-viewer-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 0;
+    background: var(--hd-stage);
+    border-radius: var(--hd-radius-md);
+    overflow: hidden;
+  }
+
+  .model-detail-viewer-body img {
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+  }
+
+  @media (pointer: coarse) {
+    .model-detail-viewer .hd-btn,
+    .model-detail-preview-note .hd-btn {
+      min-width: 44px;
+      min-height: 44px;
+    }
   }
 
   .model-detail-facts {
