@@ -1,7 +1,7 @@
 {
   "guild_id": "781145214752129095",
-  "synced_at": "2026-05-15T21:03:12.209112+00:00",
-  "channel_count": 115,
+  "synced_at": "2026-10-26T12:19:54.087127+00:00",
+  "channel_count": 117,
   "channels": {
     "rules": {
       "id": "977495527950262302",
@@ -153,8 +153,13 @@
       "type": "text",
       "category": "AI Horde Monitoring"
     },
-    "grafana-notifications": {
+    "service-notifications": {
       "id": "1380897098525966577",
+      "type": "text",
+      "category": "AI Horde Monitoring"
+    },
+    "deployment-logs": {
+      "id": "1531784160170082586",
       "type": "text",
       "category": "AI Horde Monitoring"
     },
@@ -298,7 +303,7 @@
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
-    "📱aislingeach": {
+    "📱aislingeach-dreamers-guild": {
       "id": "1112310729429745764",
       "type": "text",
       "category": "AI Horde Integrations UIs"
@@ -390,6 +395,11 @@
     },
     "📱silly-tavern": {
       "id": "1107645027536093184",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱sixfingers": {
+      "id": "1561926471843577866",
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
@@ -498,15 +508,15 @@
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
     },
-    "🎮roll-e": {
-      "id": "1107657288589779066",
-      "type": "text",
-      "category": "AI Horde Integrations Cont'd"
-    },
     "🎮tensor-tales": {
       "id": "1236754350668251297",
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮roll-e": {
+      "id": "1107657288589779066",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
     },
     "📱aipainter": {
       "id": "1108160262873301012",
