@@ -215,8 +215,13 @@ interface ResultTile {
   submitBlocked?: SubmitBlockReason;
   /** Epoch ms of the next submit attempt, which the card counts down to. */
   submitRetryAt?: number;
-  /** Worker censored/flagged the image (drives the NSFW marker + blur). */
+  /** Worker flag or request marking that calls for NSFW covering. */
   nsfw?: boolean;
+  /** Actual worker censorship, independent of the request's NSFW marking. */
+  censored?: boolean;
+  workerNsfw?: boolean;
+  requestNsfw?: boolean;
+  requestNsfwRevision?: number;
   /** Why it was censored, when known ('nsfw' | 'csam'). */
   censorReason?: string | null;
   /** LAION aesthetic score (0-10) when a worker reported one. */
@@ -750,7 +755,9 @@ export class GenerateResultsPanelComponent {
 
   /** Reveal NSFW/flagged images globally; individual tiles can also be revealed. */
   public readonly showNsfw = signal(false);
-  private readonly revealedNsfw = signal<ReadonlySet<string>>(new Set());
+  private readonly revealedNsfw = signal<ReadonlyMap<string, string>>(
+    new Map(),
+  );
 
   public readonly sortMode = signal<ResultSortMode>('default');
   /** Show only finished images that came back with a reported error. */
@@ -848,7 +855,11 @@ export class GenerateResultsPanelComponent {
       if (job.status === 'done') {
         const thumbs = thumbnails.get(job.localId) ?? [];
         thumbs.forEach((thumb, index) => {
-          const derived = deriveImageMeta(thumb.metadata, job.request);
+          const derived = deriveImageMeta(
+            thumb.metadata,
+            job.request,
+            job.requestNsfwOverride,
+          );
           tiles.push({
             key: `${job.localId}-${thumb.imageId}`,
             kind: 'done',
@@ -862,6 +873,10 @@ export class GenerateResultsPanelComponent {
             imageIndex: index,
             thumb,
             nsfw: derived.nsfw,
+            censored: derived.censored,
+            workerNsfw: derived.workerNsfw,
+            requestNsfw: job.requestNsfwOverride ?? job.request.nsfw === true,
+            requestNsfwRevision: job.requestNsfwRevision,
             censorReason: derived.censorReason,
             aesthetic: derived.aesthetic,
             errors: derived.errors,
@@ -1274,7 +1289,11 @@ export class GenerateResultsPanelComponent {
         label: t('generate.results.meta_nsfw'),
         value: tile.censorReason
           ? t('generate.results.censor_' + tile.censorReason)
-          : t('generate.results.meta_flagged'),
+          : t(
+              tile.workerNsfw
+                ? 'generate.results.meta_flagged'
+                : 'generate.results.meta_nsfw_request',
+            ),
         tone: csam ? 'danger' : 'warn',
       });
       if (csam) {
@@ -2632,6 +2651,21 @@ export class GenerateResultsPanelComponent {
 
   public toggleShowNsfw(): void {
     this.showNsfw.update((value) => !value);
+    if (!this.showNsfw()) {
+      this.revealedNsfw.set(new Map());
+    }
+  }
+
+  public async toggleRequestNsfw(tile: ResultTile): Promise<void> {
+    this.closeTileMenu();
+    this.closeViewerMoreAndFocus();
+    try {
+      await this.queue.setRequestNsfw(tile.jobLocalId, !tile.requestNsfw);
+    } catch {
+      this.toast.error('generate.results.nsfw_mark_failed', {
+        transloco: true,
+      });
+    }
   }
 
   /** Whether a tile should be blurred: NSFW, not globally shown, not revealed. */
@@ -2639,7 +2673,7 @@ export class GenerateResultsPanelComponent {
     return (
       tile.nsfw === true &&
       !this.showNsfw() &&
-      !this.revealedNsfw().has(tile.key)
+      this.revealedNsfw().get(tile.key) !== this.nsfwRevealVersion(tile)
     );
   }
 
@@ -2708,7 +2742,20 @@ export class GenerateResultsPanelComponent {
   }
 
   public revealNsfw(tile: ResultTile): void {
-    this.revealedNsfw.update((current) => new Set(current).add(tile.key));
+    this.revealedNsfw.update((current) =>
+      new Map(current).set(tile.key, this.nsfwRevealVersion(tile)),
+    );
+  }
+
+  private nsfwRevealVersion(tile: ResultTile): string {
+    // A reveal applies only to the marking the reader saw, including peer edits.
+    return JSON.stringify([
+      tile.requestNsfw === true,
+      tile.requestNsfwRevision ?? 0,
+      tile.censored === true,
+      tile.workerNsfw === true,
+      tile.censorReason ?? null,
+    ]);
   }
 
   public toggleSort(): void {

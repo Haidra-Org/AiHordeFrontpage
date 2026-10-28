@@ -11,7 +11,11 @@ import {
   GenerationStatusResponse,
   SubmitImageResult,
 } from '../types/generation';
-import { LocalGenerationJob, StoredJobImage } from '../types/generation-job';
+import {
+  LocalGenerationJob,
+  StoredJobImage,
+  preserveGenerationRequestMark,
+} from '../types/generation-job';
 import {
   FakeBroadcastChannel,
   openPeerChannel,
@@ -31,7 +35,20 @@ class FakeGenerationDb {
     return `${localId}::${imageId}`;
   }
 
-  putJob(job: LocalGenerationJob): Promise<LocalGenerationJob> {
+  putJob(
+    job: LocalGenerationJob,
+    requestNsfwOverride?: boolean,
+  ): Promise<LocalGenerationJob> {
+    const held = this.jobs.get(job.localId);
+    if (held) job = preserveGenerationRequestMark(job, held);
+    if (requestNsfwOverride !== undefined) {
+      job = {
+        ...(held ?? job),
+        updatedAt: Math.max(job.updatedAt, held?.updatedAt ?? 0),
+        requestNsfwOverride,
+        requestNsfwRevision: (held?.requestNsfwRevision ?? 0) + 1,
+      };
+    }
     this.jobs.set(job.localId, job);
     return Promise.resolve(job);
   }
@@ -198,6 +215,262 @@ describe('GenerationQueueService', () => {
     await queue.whenReady();
     return queue;
   }
+
+  describe('local request content marking', () => {
+    const finished: LocalGenerationJob = {
+      localId: 'marked',
+      status: 'done',
+      createdAt: 0,
+      updatedAt: 1,
+      completedAt: 1,
+      request: { prompt: 'a cat', nsfw: true, censor_nsfw: false },
+      resultImageIds: ['one', 'two'],
+    };
+
+    it('persists and restores an SFW marking while preserving submission and results', async () => {
+      fakeDb.jobs.set(finished.localId, finished);
+      const queue = await createQueue();
+
+      await queue.setRequestNsfw(finished.localId, false);
+
+      expect(fakeDb.jobs.get(finished.localId)).toMatchObject({
+        requestNsfwOverride: false,
+        request: finished.request,
+        resultImageIds: finished.resultImageIds,
+        completedAt: finished.completedAt,
+      });
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          GenerationQueueService,
+          { provide: GenerationDbService, useValue: fakeDb },
+          { provide: AiHordeService, useValue: aiHorde },
+          { provide: AuthService, useValue: auth },
+        ],
+      });
+      const restored = await createQueue();
+      expect(restored.finishedJobs()[0].requestNsfwOverride).toBe(false);
+
+      await restored.setRequestNsfw(finished.localId, true);
+      expect(fakeDb.jobs.get(finished.localId)?.requestNsfwOverride).toBe(true);
+      expect(aiHorde.submitImageGenerationResult).not.toHaveBeenCalled();
+    });
+
+    it('leaves the visible marking unchanged if saving fails', async () => {
+      fakeDb.jobs.set(finished.localId, finished);
+      const queue = await createQueue();
+      vi.spyOn(fakeDb, 'putJob').mockRejectedValueOnce(
+        new Error('storage full'),
+      );
+
+      await expect(
+        queue.setRequestNsfw(finished.localId, false),
+      ).rejects.toThrow('storage full');
+
+      expect(queue.finishedJobs()[0].requestNsfwOverride).toBeUndefined();
+    });
+
+    it('recovers from a failed save and publishes the next content revision', async () => {
+      fakeDb.jobs.set(finished.localId, finished);
+      const queue = await createQueue();
+      vi.spyOn(fakeDb, 'putJob').mockRejectedValueOnce(
+        new Error('storage full'),
+      );
+      await expect(
+        queue.setRequestNsfw(finished.localId, false),
+      ).rejects.toThrow();
+      await queue.setRequestNsfw(finished.localId, false);
+      expect(FakeBroadcastChannel.instances[0].posted).toContainEqual(
+        expect.objectContaining({
+          topic: 'generation-job.changed',
+          payload: expect.objectContaining({
+            requestNsfwOverride: false,
+            requestNsfwRevision: 1,
+          }),
+        }),
+      );
+    });
+
+    it('keeps a content marking when a peer sends a later unrelated snapshot', async () => {
+      fakeDb.jobs.set(finished.localId, finished);
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+      await queue.setRequestNsfw(finished.localId, false);
+
+      postFromPeer(peer, 'generation-job.changed', {
+        ...finished,
+        updatedAt: Date.now() + 10,
+        kudos: 9,
+      });
+
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+        kudos: 9,
+      });
+    });
+
+    it('accepts a newer peer content revision without rolling back newer metadata', async () => {
+      fakeDb.jobs.set(finished.localId, {
+        ...finished,
+        updatedAt: 100,
+        kudos: 9,
+      });
+      const queue = await createQueue();
+      const peer = openPeerChannel();
+
+      postFromPeer(peer, 'generation-job.changed', {
+        ...finished,
+        updatedAt: 50,
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+      });
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+        updatedAt: 100,
+        kudos: 9,
+      });
+      postFromPeer(peer, 'generation-job.changed', {
+        ...finished,
+        updatedAt: 200,
+        requestNsfwOverride: true,
+        requestNsfwRevision: 0,
+      });
+      expect(queue.finishedJobs()[0].requestNsfwOverride).toBe(false);
+    });
+
+    it('preserves a local marking when a delayed server request recovery completes', async () => {
+      const queue = await createQueue();
+      const recovered = new Subject();
+      aiHorde.getSubmittedImageRequestResult.mockReturnValue(recovered);
+      await queue.adoptActive(['remote']);
+      await vi.advanceTimersByTimeAsync(0);
+      const localId = queue.jobs()[0].localId;
+      await queue.setRequestNsfw(localId, false);
+
+      recovered.next({
+        kind: 'success',
+        request: { prompt: 'a cat', nsfw: true, censor_nsfw: false },
+      });
+      recovered.complete();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(queue.jobs()[0]).toMatchObject({
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+        requestRecovery: 'full',
+        request: { nsfw: true },
+      });
+      expect(fakeDb.jobs.get(localId)?.requestNsfwOverride).toBe(false);
+    });
+
+    it('accepts a peer marking based on a running snapshot without reopening a finished request', async () => {
+      fakeDb.jobs.set(finished.localId, finished);
+      const queue = await createQueue();
+      const row: LocalGenerationJob = {
+        ...finished,
+        status: 'processing',
+        updatedAt: Date.now(),
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+      };
+      fakeDb.jobs.set(finished.localId, row);
+
+      postFromPeer(openPeerChannel(), 'generation-job.changed', row);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        status: 'done',
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+      });
+      expect(fakeDb.jobs.get(finished.localId)).toMatchObject({
+        status: 'done',
+        requestNsfwOverride: false,
+      });
+    });
+
+    it('applies peer result deletion and content marking revisions together without rolling back metadata', async () => {
+      fakeDb.jobs.set(finished.localId, {
+        ...finished,
+        updatedAt: 100,
+        kudos: 9,
+      });
+      const queue = await createQueue();
+
+      postFromPeer(openPeerChannel(), 'generation-job.changed', {
+        ...finished,
+        updatedAt: 50,
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+        resultRevision: 1,
+        resultImageIds: ['two'],
+      });
+
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+        resultRevision: 1,
+        resultImageIds: ['two'],
+        kudos: 9,
+      });
+    });
+
+    it('preserves a marking through server completion without changing the submitted flags', async () => {
+      const queue = await createQueue();
+      const localId = await queue.enqueue({
+        prompt: 'a cat',
+        nsfw: true,
+        censor_nsfw: false,
+      });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      await queue.setRequestNsfw(localId, false);
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { done: true, processing: 0 } })),
+      );
+      aiHorde.getImageGenerationStatus.mockReturnValue(of(doneStatus()));
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        status: 'done',
+        requestNsfwOverride: false,
+        requestNsfwRevision: 1,
+        request: { nsfw: true, censor_nsfw: false },
+      });
+      const retryId = await queue.retry(localId);
+      expect(queue.jobs().find((job) => job.localId === retryId)).toMatchObject(
+        { request: { nsfw: true, censor_nsfw: false } },
+      );
+      expect(
+        queue.jobs().find((job) => job.localId === retryId)
+          ?.requestNsfwOverride,
+      ).toBeUndefined();
+    });
+
+    it('does not resurrect a request deleted while a content marking is being saved', async () => {
+      fakeDb.jobs.set(finished.localId, finished);
+      const queue = await createQueue();
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const putJob = fakeDb.putJob.bind(fakeDb);
+      vi.spyOn(fakeDb, 'putJob').mockImplementationOnce(
+        async (job, marking) => {
+          await gate;
+          return putJob(job, marking);
+        },
+      );
+      const saving = queue.setRequestNsfw(finished.localId, false);
+      await queue.deleteJob(finished.localId);
+      release();
+      await saving;
+
+      expect(queue.jobs()).toEqual([]);
+      expect(fakeDb.jobs.has(finished.localId)).toBe(false);
+    });
+  });
 
   describe('deleting batch results', () => {
     const batch: LocalGenerationJob = {
@@ -577,6 +850,45 @@ describe('GenerationQueueService', () => {
     expect(waiting).toHaveLength(1);
     expect(aiHorde.submitImageGenerationResult).toHaveBeenCalledTimes(5);
   });
+
+  it.each([false, true])(
+    'preserves informational NSFW per image with censor_nsfw=%s',
+    async (censor_nsfw) => {
+      const status = doneStatus();
+      status.generations[0].gen_metadata = [
+        { type: 'information', value: 'nsfw' },
+      ];
+      status.generations.push({
+        ...status.generations[0],
+        id: 'unflagged',
+        gen_metadata: [],
+      });
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { done: true, processing: 0 } })),
+      );
+      aiHorde.getImageGenerationStatus.mockReturnValue(of(status));
+      const queue = await createQueue();
+      const id = await queue.enqueue({
+        prompt: 'a cat',
+        nsfw: false,
+        censor_nsfw,
+      });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS + POLL_TICK_MS);
+
+      const images = await queue.getJobImages(id);
+      expect(
+        images.find((image) => image.imageId === 'out-1')?.metadata,
+      ).toMatchObject({
+        censored: false,
+        state: 'ok',
+        genMetadata: [{ type: 'information', value: 'nsfw' }],
+      });
+      expect(
+        images.find((image) => image.imageId === 'unflagged')?.metadata
+          ?.genMetadata,
+      ).toEqual([]);
+    },
+  );
 
   it('fetches status and stores result blobs when a job finishes', async () => {
     aiHorde.submitImageGenerationResult.mockReturnValue(

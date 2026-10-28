@@ -159,6 +159,25 @@ export function resultPlaceholderIndices(
         Array.from({ length: job.fetchFailedCount ?? 0 }, (_, i) => i));
 }
 
+/** Content revisions survive unrelated writes from tabs with stale job snapshots. */
+export function preserveGenerationRequestMark(
+  incoming: LocalGenerationJob,
+  held: LocalGenerationJob,
+): LocalGenerationJob {
+  if (
+    held.requestNsfwOverride !== undefined &&
+    (incoming.requestNsfwOverride === undefined ||
+      (held.requestNsfwRevision ?? 0) >= (incoming.requestNsfwRevision ?? 0))
+  ) {
+    return {
+      ...incoming,
+      requestNsfwOverride: held.requestNsfwOverride,
+      requestNsfwRevision: held.requestNsfwRevision,
+    };
+  }
+  return incoming;
+}
+
 /** Older peer snapshots may update metadata but cannot reopen deleted results. */
 export function preserveGenerationResultState(
   incoming: LocalGenerationJob,
@@ -201,6 +220,10 @@ export interface LocalGenerationJob {
   censoredResultIndices?: number[];
   fetchFailedResultIndices?: number[];
   request: ImageGenerationRequest;
+  /** Local content marking for this request's results; never sent to the Horde. */
+  requestNsfwOverride?: boolean;
+  /** Incremented by the store so stale job snapshots cannot undo a marking. */
+  requestNsfwRevision?: number;
   /** Parameters with empty image slots; the view supplies translated placeholders. */
   inspectionRequest?: ImageGenerationRequest;
   /** The exact HTTP body is kept as a JSON blob beside this job's images. */

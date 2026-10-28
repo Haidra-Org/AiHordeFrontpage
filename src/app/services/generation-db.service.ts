@@ -8,6 +8,7 @@ import {
   GenerationResultState,
   resultPlaceholderIndices,
   withGenerationResultState,
+  preserveGenerationRequestMark,
   LocalGenerationJobStatus,
   StoredJobImage,
   StoredPromptCheck,
@@ -156,8 +157,10 @@ export class GenerationDbService {
     return db;
   }
 
+  /** Explicit content edits get a revision in the transaction to order competing tab writes. */
   public async putJob(
     job: LocalGenerationJob,
+    requestNsfwOverride?: boolean,
   ): Promise<LocalGenerationJob | undefined> {
     if (!this.isBrowser) return undefined;
     const db = await this.db();
@@ -169,10 +172,22 @@ export class GenerationDbService {
     }
     const jobs = tx.objectStore(JOBS_STORE);
     const held = await jobs.get(job.localId);
-    let updated = job;
+    let updated = held ? preserveGenerationRequestMark(job, held) : job;
+    if (requestNsfwOverride !== undefined) {
+      if (!held) {
+        await tx.done;
+        return undefined;
+      }
+      updated = {
+        ...held,
+        updatedAt: Math.max(job.updatedAt, held.updatedAt),
+        requestNsfwOverride,
+        requestNsfwRevision: (held.requestNsfwRevision ?? 0) + 1,
+      };
+    }
     if (job.status === 'done' || held?.status === 'done') {
       updated = {
-        ...job,
+        ...updated,
         completedAt:
           held?.completedAt ??
           (held?.status === 'done'

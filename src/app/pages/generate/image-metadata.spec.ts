@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildParametersText,
+  buildImageMetadataExport,
   deriveImageMeta,
   imageErrorFieldKey,
   imageErrorReasonKey,
@@ -28,6 +29,147 @@ function metadata(
 }
 
 describe('deriveImageMeta', () => {
+  describe.each([
+    { nsfw: false, censor_nsfw: false },
+    { nsfw: false, censor_nsfw: true },
+    { nsfw: true, censor_nsfw: false },
+    { nsfw: true, censor_nsfw: true },
+  ])('NSFW request flags %j', (flags) => {
+    const request = { ...TXT2IMG_REQUEST, ...flags };
+
+    it.each([undefined, false, true])(
+      'covers informational NSFW without claiming censorship, with local marking %s',
+      (override) => {
+        const reported: StoredJobImageMetadata = {
+          censored: false,
+          state: 'ok',
+          genMetadata: [{ type: 'information', value: 'nsfw' }],
+        };
+        const derived = deriveImageMeta(reported, request, override);
+        expect(derived).toMatchObject({
+          nsfw: true,
+          workerNsfw: true,
+          censored: false,
+          censorReason: null,
+        });
+        expect(
+          buildImageMetadataExport('flagged', reported, request, derived),
+        ).toMatchObject({
+          worker_nsfw: true,
+          censored: false,
+          censorship_reason: null,
+        });
+      },
+    );
+
+    it.each([undefined, {}, { censored: false, state: 'ok' as const }])(
+      'uses the request marking for an unflagged result without claiming censorship: %j',
+      (reported) => {
+        expect(deriveImageMeta(reported, request)).toMatchObject({
+          nsfw: flags.nsfw,
+          censored: false,
+          censorReason: null,
+        });
+      },
+    );
+
+    it.each<StoredJobImageMetadata>([
+      { censored: true },
+      { state: 'censored' },
+      { state: 'csam' },
+      {
+        censored: false,
+        state: 'ok',
+        genMetadata: [{ type: 'censorship', value: 'nsfw' }],
+      },
+      { genMetadata: [{ type: 'censorship', value: 'csam' }] },
+    ])(
+      'marks a result with a worker censorship signal as NSFW: %j',
+      (reported) => {
+        expect(deriveImageMeta(reported, request)).toMatchObject({
+          nsfw: true,
+          censored: true,
+        });
+      },
+    );
+  });
+
+  it('uses a local SFW marking without changing the original request', () => {
+    const request = { ...TXT2IMG_REQUEST, nsfw: true };
+    expect(deriveImageMeta(undefined, request, false)).toMatchObject({
+      nsfw: false,
+      censored: false,
+    });
+    expect(request.nsfw).toBe(true);
+  });
+
+  it('does not read every informational entry as an NSFW flag', () => {
+    expect(
+      deriveImageMeta(
+        {
+          state: 'ok',
+          genMetadata: [
+            { type: 'information', value: 'see_ref', ref: 'another notice' },
+          ],
+        },
+        TXT2IMG_REQUEST,
+      ),
+    ).toMatchObject({ nsfw: false, workerNsfw: false, censored: false });
+  });
+
+  it('keeps informational NSFW independent of a censorship reason and aesthetic score', () => {
+    const derived = deriveImageMeta(
+      {
+        genMetadata: [
+          { type: 'information', value: 'nsfw' },
+          { type: 'censorship', value: 'csam' },
+          { type: 'aesthetic_score', value: 'see_ref', ref: '7.5' },
+        ],
+      },
+      TXT2IMG_REQUEST,
+    );
+    expect(derived).toMatchObject({
+      nsfw: true,
+      workerNsfw: true,
+      censored: true,
+      censorReason: 'csam',
+      aesthetic: 7.5,
+    });
+  });
+
+  it.each<StoredJobImageMetadata>([
+    { censored: true },
+    { censored: false, state: 'censored' },
+    { censored: false, state: 'csam' },
+    { state: 'ok', genMetadata: [{ type: 'censorship', value: 'nsfw' }] },
+    { state: 'ok', genMetadata: [{ type: 'censorship', value: 'csam' }] },
+  ])(
+    'retains each server censorship signal after a local SFW marking: %j',
+    (reported) => {
+      expect(
+        deriveImageMeta(reported, { ...TXT2IMG_REQUEST, nsfw: true }, false),
+      ).toMatchObject({ nsfw: true, censored: true });
+    },
+  );
+
+  it('supports a local marking when an adopted request is still unknown', () => {
+    expect(deriveImageMeta(undefined, undefined, true).nsfw).toBe(true);
+    expect(deriveImageMeta(undefined, undefined, false).nsfw).toBe(false);
+  });
+
+  it('uses a local NSFW marking even when the original request did not allow it', () => {
+    expect(deriveImageMeta(undefined, TXT2IMG_REQUEST, true).nsfw).toBe(true);
+  });
+
+  it('keeps a worker-flagged result covered when the request is marked SFW locally', () => {
+    expect(
+      deriveImageMeta({ censored: true }, TXT2IMG_REQUEST, false),
+    ).toMatchObject({
+      nsfw: true,
+      censored: true,
+    });
+  });
+
   it('drops a source-image fault on a request that sent no source image', () => {
     const derived = deriveImageMeta(
       metadata([{ type: 'source_image', value: 'parse_failed' }]),

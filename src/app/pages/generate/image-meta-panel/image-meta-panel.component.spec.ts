@@ -32,6 +32,7 @@ const REQUEST: ImageGenerationRequest = {
 };
 
 const PROVENANCE: ImageMetaProvenance = {
+  workerNsfw: false,
   seed: '33812009',
   model: 'AlbedoBase XL',
   workerName: 'StableNode-07',
@@ -185,6 +186,18 @@ describe('ImageMetaPanelComponent', () => {
     expect(rows.find((row) => row.value === '7.10')?.tone).toBe('good');
     const html: string = fixture.nativeElement.innerHTML;
     expect(html).toContain('gs-meta-row--info');
+  });
+
+  it('shows an uncensored worker NSFW flag as a flag rather than a censorship reason', () => {
+    fixture.componentRef.setInput('provenance', {
+      ...PROVENANCE,
+      workerNsfw: true,
+      censored: false,
+    });
+    fixture.detectChanges();
+    const values = component.infoRows().map((row) => row.value);
+    expect(values).toContain('en.generate.results.meta_flagged');
+    expect(values).not.toContain('en.generate.results.censor_nsfw');
   });
 
   it('explains a CSAM filter result beside its censorship row', () => {

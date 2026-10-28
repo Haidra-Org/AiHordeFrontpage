@@ -265,7 +265,7 @@ export class ImageMetaPanelComponent {
         tone: 'default',
       });
     }
-    if (provenance.censored) {
+    if (provenance.workerNsfw || provenance.censored) {
       const csam = provenance.censorReason === 'csam';
       rows.push({
         label: t('generate.results.meta_nsfw'),

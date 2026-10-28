@@ -12,6 +12,7 @@ import { DatabaseService } from '../../../services/database.service';
 import { Router, provideRouter } from '@angular/router';
 import { StudioHandoffService } from '../../../services/studio-handoff.service';
 import { StudioDescribeService } from '../../../services/studio-describe.service';
+import { PromptCheckService } from '../../../services/prompt-check.service';
 import { TutorialEngineService } from '../../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../../services/gs-help-dock.service';
 import { WorkerPoolService } from '../../../services/worker-pool.service';
@@ -178,6 +179,7 @@ describe('GenerateResultsPanelComponent', () => {
             deleteJob,
             deleteResults: vi.fn().mockResolvedValue(undefined),
             getJobImages,
+            setRequestNsfw: vi.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -805,6 +807,254 @@ describe('GenerateResultsPanelComponent', () => {
 
       expect(component.compactTiles()).toBe(false);
       expect(component.tileWidthVar()).toBe('492px');
+    });
+  });
+
+  describe('NSFW visibility', () => {
+    async function loadResults(
+      nsfw: boolean,
+      censor_nsfw: boolean,
+    ): Promise<void> {
+      const unflagged = resultImage('f', 'unflagged');
+      const flagged = resultImage('f', 'flagged');
+      flagged.metadata = { ...flagged.metadata, censored: true };
+      getJobImages.mockResolvedValue([unflagged, flagged]);
+      finishedJobs.set([
+        {
+          ...job('f', 'done'),
+          request: { prompt: 'a prompt', nsfw, censor_nsfw },
+        },
+      ]);
+      await loadThumbnails();
+    }
+
+    it.each([
+      { nsfw: false, censor_nsfw: false },
+      { nsfw: false, censor_nsfw: true },
+      { nsfw: true, censor_nsfw: false },
+      { nsfw: true, censor_nsfw: true },
+    ])(
+      'covers NSFW requests and worker-flagged results for request flags %j',
+      async (flags) => {
+        await loadResults(flags.nsfw, flags.censor_nsfw);
+        const tiles = component.tiles();
+        expect(tiles.map((tile) => tile.seed)).toEqual([
+          'unflagged',
+          'flagged',
+        ]);
+        expect(component.showNsfw()).toBe(false);
+        expect(tiles.map((tile) => component.isNsfwHidden(tile))).toEqual([
+          flags.nsfw,
+          true,
+        ]);
+        expect(component.hasNsfw()).toBe(true);
+        expect(component.visibleTiles()).toEqual(tiles);
+
+        component.toggleShowNsfw();
+        expect(tiles.map((tile) => component.isNsfwHidden(tile))).toEqual([
+          false,
+          false,
+        ]);
+        component.toggleShowNsfw();
+        expect(tiles.map((tile) => component.isNsfwHidden(tile))).toEqual([
+          flags.nsfw,
+          true,
+        ]);
+      },
+    );
+
+    it('offers an NSFW toggle for an allowed, uncensored request with no worker flags', async () => {
+      getJobImages.mockResolvedValue([resultImage('f', 'unflagged')]);
+      finishedJobs.set([
+        {
+          ...job('f', 'done'),
+          request: { prompt: 'a prompt', nsfw: true, censor_nsfw: false },
+        },
+      ]);
+      await loadThumbnails();
+
+      expect(component.hasNsfw()).toBe(true);
+      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+    });
+
+    it('covers an individually revealed image again after Show NSFW then Hide NSFW', async () => {
+      await loadResults(true, false);
+      const flagged = component.tiles()[1];
+      component.revealNsfw(flagged);
+      expect(component.isNsfwHidden(flagged)).toBe(false);
+
+      component.toggleShowNsfw();
+      component.toggleShowNsfw();
+
+      expect(component.showNsfw()).toBe(false);
+      expect(component.isNsfwHidden(flagged)).toBe(true);
+    });
+
+    it('changes every result in the selected request while retaining worker flags and other requests', async () => {
+      await loadResults(true, false);
+      getJobImages.mockResolvedValue([resultImage('other', 'other-image')]);
+      finishedJobs.update((jobs) => [
+        ...jobs,
+        {
+          ...job('other', 'done'),
+          request: { prompt: 'another prompt', nsfw: true },
+        },
+      ]);
+      await loadThumbnails();
+      const queue = TestBed.inject(GenerationQueueService);
+      vi.mocked(queue.setRequestNsfw).mockImplementation((localId, nsfw) => {
+        finishedJobs.update((jobs) =>
+          jobs.map((job) =>
+            job.localId === localId
+              ? { ...job, requestNsfwOverride: nsfw }
+              : job,
+          ),
+        );
+        return Promise.resolve();
+      });
+
+      await component.toggleRequestNsfw(component.tiles()[0]);
+
+      expect(queue.setRequestNsfw).toHaveBeenCalledWith('f', false);
+      expect(
+        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+      ).toEqual([false, true, true]);
+      expect(finishedJobs()[0].request.nsfw).toBe(true);
+      expect(finishedJobs()[1].requestNsfwOverride).toBeUndefined();
+
+      component.revealNsfw(component.tiles()[1]);
+      await component.toggleRequestNsfw(component.tiles()[0]);
+      expect(
+        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+      ).toEqual([true, true, true]);
+    });
+
+    it('reports a failed content marking save and keeps images covered', async () => {
+      await loadResults(true, false);
+      const queue = TestBed.inject(GenerationQueueService);
+      vi.mocked(queue.setRequestNsfw).mockRejectedValueOnce(
+        new Error('storage full'),
+      );
+
+      await component.toggleRequestNsfw(component.tiles()[0]);
+
+      expect(toastError).toHaveBeenCalledWith(
+        'generate.results.nsfw_mark_failed',
+        { transloco: true },
+      );
+      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+    });
+
+    it('invalidates a reveal when another tab changes the request content revision', async () => {
+      await loadResults(true, false);
+      const previous = component.tiles()[0];
+      component.revealNsfw(previous);
+      expect(component.isNsfwHidden(previous)).toBe(false);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          requestNsfwOverride: true,
+          requestNsfwRevision: 2,
+        })),
+      );
+
+      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+      component.revealNsfw(previous);
+      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+      component.revealNsfw(component.tiles()[0]);
+      expect(component.isNsfwHidden(component.tiles()[0])).toBe(false);
+    });
+
+    it('does not invalidate a reveal on an unrelated server metadata update', async () => {
+      await loadResults(true, false);
+      component.revealNsfw(component.tiles()[0]);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({ ...job, updatedAt: 99, kudos: 9 })),
+      );
+      expect(component.isNsfwHidden(component.tiles()[0])).toBe(false);
+    });
+
+    it('covers a late NSFW request recovery while honoring a saved SFW marking', async () => {
+      await loadResults(false, true);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          adopted: true,
+          requestRecovery: 'full',
+          request: { prompt: 'recovered', nsfw: true },
+        })),
+      );
+      expect(
+        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+      ).toEqual([true, true]);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          requestNsfwOverride: false,
+          requestNsfwRevision: 1,
+        })),
+      );
+      expect(
+        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+      ).toEqual([false, true]);
+    });
+
+    it('leaves every covered image visible while global showing is enabled after a peer edit', async () => {
+      await loadResults(true, false);
+      component.toggleShowNsfw();
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          requestNsfwOverride: true,
+          requestNsfwRevision: 1,
+        })),
+      );
+      expect(
+        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+      ).toEqual([false, false]);
+      component.toggleShowNsfw();
+      expect(
+        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+      ).toEqual([true, true]);
+    });
+
+    it.each([false, true])(
+      'applies global showing=%s to results arriving after an earlier reveal',
+      async (show) => {
+        await loadResults(true, false);
+        component.revealNsfw(component.tiles()[0]);
+        component.showNsfw.set(show);
+        getJobImages.mockResolvedValue([
+          resultImage('f', 'unflagged'),
+          resultImage('f', 'new-image'),
+        ]);
+        finishedJobs.update((jobs) =>
+          jobs.map((job) => ({
+            ...job,
+            resultImageIds: ['unflagged', 'new-image'],
+          })),
+        );
+        await loadThumbnails();
+
+        expect(component.tiles().map((tile) => tile.seed)).toEqual([
+          'unflagged',
+          'new-image',
+        ]);
+        expect(component.isNsfwHidden(component.tiles()[0])).toBe(false);
+        expect(component.isNsfwHidden(component.tiles()[1])).toBe(!show);
+      },
+    );
+
+    it('includes covered images in viewer navigation and permits opening them', async () => {
+      await loadResults(false, true);
+      const flagged = component.tiles()[1];
+      expect(component.isNsfwHidden(flagged)).toBe(true);
+      expect(component.viewerTiles()).toContainEqual(flagged);
+
+      component.openViewer(flagged);
+
+      expect(component.viewerTile()).toEqual(flagged);
+      expect(component.isNsfwHidden(flagged)).toBe(true);
     });
   });
 
@@ -3222,11 +3472,20 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
   let component: GenerateResultsPanelComponent;
   let host: HTMLElement;
 
-  async function render(prompts: string[]): Promise<void> {
+  async function render(
+    prompts: string[],
+    flags: {
+      nsfw?: boolean;
+      censor_nsfw?: boolean;
+      censored?: boolean;
+      workerNsfw?: boolean;
+    } = {},
+  ): Promise<void> {
     const finished = prompts.map((prompt, index) => ({
       ...job(`f${index}`, 'done'),
-      request: { prompt },
+      request: { prompt, nsfw: flags.nsfw, censor_nsfw: flags.censor_nsfw },
     }));
+    const finishedJobs = signal<LocalGenerationJob[]>(finished);
     await TestBed.configureTestingModule({
       imports: [
         GenerateResultsPanelComponent,
@@ -3236,6 +3495,19 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
         }),
       ],
       providers: [
+        {
+          provide: PromptCheckService,
+          useValue: {
+            reading: vi.fn(() => null),
+            load: vi.fn().mockResolvedValue(undefined),
+            priceVerdict: vi.fn().mockResolvedValue(undefined),
+            report: vi.fn(() => null),
+            isReading: vi.fn(() => false),
+            isJudging: vi.fn(() => false),
+            failure: signal(null),
+            verdictPrice: signal(null),
+          },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: TextGenerationDbService, useValue: textDbStub() },
@@ -3246,13 +3518,31 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
             hiddenJobs: signal([]),
             jobs: signal<LocalGenerationJob[]>(finished),
             pendingJobs: signal<LocalGenerationJob[]>([]),
-            finishedJobs: signal<LocalGenerationJob[]>(finished),
+            finishedJobs,
             cancel: vi.fn(),
             retry: vi.fn(),
             deleteJob: vi.fn(),
-            getJobImages: vi.fn((localId: string) =>
-              Promise.resolve([resultImage(localId, `${localId}-img`)]),
-            ),
+            getJobImages: vi.fn((localId: string) => {
+              const image = resultImage(localId, `${localId}-img`);
+              image.metadata = {
+                ...image.metadata,
+                censored: flags.censored,
+                genMetadata: flags.workerNsfw
+                  ? [{ type: 'information', value: 'nsfw' }]
+                  : image.metadata?.genMetadata,
+              };
+              return Promise.resolve([image]);
+            }),
+            setRequestNsfw: vi.fn((localId: string, nsfw: boolean) => {
+              finishedJobs.update((jobs) =>
+                jobs.map((job) =>
+                  job.localId === localId
+                    ? { ...job, requestNsfwOverride: nsfw }
+                    : job,
+                ),
+              );
+              return Promise.resolve();
+            }),
           },
         },
         {
@@ -3289,6 +3579,142 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
     fixture.detectChanges();
     return host.querySelector('.gs-viewer-img')!.getAttribute('alt');
   }
+
+  function buttonWithText(text: string): HTMLButtonElement {
+    const button = [...host.querySelectorAll('button')].find(
+      (candidate) => candidate.textContent?.trim() === text,
+    );
+    expect(button).toBeDefined();
+    return button!;
+  }
+
+  it.each([
+    { nsfw: false, censor_nsfw: false, censored: false },
+    { nsfw: false, censor_nsfw: true, censored: false },
+    { nsfw: true, censor_nsfw: false, censored: false },
+    { nsfw: true, censor_nsfw: true, censored: false },
+    { nsfw: false, censor_nsfw: false, censored: true },
+  ])(
+    'applies content covering to the rendered grid and viewer: %j',
+    async (flags) => {
+      await render(['a fox'], flags);
+      const covered = flags.nsfw || flags.censored;
+      expect(host.querySelector('.gs-tile-img--blur') !== null).toBe(covered);
+      component.openViewer(component.viewerTiles()[0]);
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-img') === null).toBe(covered);
+    },
+  );
+
+  it.each([
+    { nsfw: true, censor_nsfw: false },
+    { nsfw: false, censored: true },
+  ])(
+    'reveals a covered image explicitly and covers it again on Hide NSFW: %j',
+    async (flags) => {
+      await render(['a fox'], flags);
+      component.openViewer(component.viewerTiles()[0]);
+      fixture.detectChanges();
+      const reveal = host.querySelector<HTMLButtonElement>(
+        '.gs-viewer-stage .hd-btn',
+      )!;
+      expect(reveal.textContent).toContain(
+        TRANSLATIONS['generate.results.nsfw_reveal'],
+      );
+      reveal.click();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+      expect(host.querySelector('.gs-tile-img--blur')).toBeNull();
+
+      component.toggleShowNsfw();
+      component.toggleShowNsfw();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-img')).toBeNull();
+      expect(host.querySelector('.gs-tile-img--blur')).not.toBeNull();
+    },
+  );
+
+  it('keeps viewer navigation from revealing another image and wires the global Show and Hide buttons', async () => {
+    await render(['first image', 'second image'], { nsfw: true });
+    component.openViewer(component.viewerTiles()[0]);
+    fixture.detectChanges();
+    host.querySelector<HTMLButtonElement>('.gs-viewer-stage .hd-btn')!.click();
+    fixture.detectChanges();
+    expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+
+    component.viewerNext();
+    fixture.detectChanges();
+    expect(host.querySelector('.gs-viewer-img')).toBeNull();
+    component.viewerPrev();
+    fixture.detectChanges();
+    expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+
+    component.closeViewer();
+    fixture.detectChanges();
+    buttonWithText('Show NSFW').click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.gs-tile-img--blur')).toHaveLength(0);
+    buttonWithText('Hide NSFW').click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.gs-tile-img--blur')).toHaveLength(2);
+  });
+
+  it.each([false, true])(
+    'covers worker informational NSFW in the actual grid and viewer with censor_nsfw=%s',
+    async (censor_nsfw) => {
+      await render(['an unmarked request'], {
+        nsfw: false,
+        censored: false,
+        workerNsfw: true,
+        censor_nsfw,
+      });
+      expect(host.querySelector('.gs-tile-img--blur')).not.toBeNull();
+      expect(
+        host.querySelector('.gs-tile-tag--nsfw')?.getAttribute('title'),
+      ).toBe('Flagged by the worker');
+      expect(component.tiles()[0].provenance).toMatchObject({
+        workerNsfw: true,
+        censored: false,
+        censorReason: null,
+      });
+      component.openViewer(component.viewerTiles()[0]);
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-img')).toBeNull();
+      host
+        .querySelector<HTMLButtonElement>('.gs-viewer-stage .hd-btn')!
+        .click();
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
+    },
+  );
+
+  it('lets the reader mark every image in a request SFW and switch it back from the menus', async () => {
+    await render(['a fox'], { nsfw: true, censor_nsfw: false });
+    component.onTileContextMenu(
+      component.tiles()[0],
+      new MouseEvent('contextmenu'),
+    );
+    fixture.detectChanges();
+    buttonWithText('Mark request as SFW').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-tile-img--blur')).toBeNull();
+    expect(component.tiles()[0].request?.nsfw).toBe(true);
+    component.openViewer(component.viewerTiles()[0]);
+    component.toggleViewerMore();
+    fixture.detectChanges();
+    const mark = [
+      ...host.querySelectorAll<HTMLButtonElement>('.gs-opt-row'),
+    ].find((button) => button.textContent?.includes('Mark request as NSFW'));
+    expect(mark).toBeDefined();
+    mark!.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.gs-viewer-img')).toBeNull();
+    expect(host.querySelector('.gs-tile-img--blur')).not.toBeNull();
+  });
 
   beforeEach(() => {
     URL.createObjectURL = vi.fn(() => 'blob:test');

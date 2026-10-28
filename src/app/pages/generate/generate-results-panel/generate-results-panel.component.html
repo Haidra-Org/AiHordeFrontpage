@@ -751,7 +751,9 @@
                                 : tile.censorReason
                                   ? 'generate.results.censor_' +
                                     tile.censorReason
-                                  : 'generate.results.meta_flagged'
+                                  : tile.workerNsfw
+                                    ? 'generate.results.meta_flagged'
+                                    : 'generate.results.meta_nsfw_request'
                               ) | transloco
                             "
                           >
@@ -1734,23 +1736,35 @@
               <app-icon name="chevron-right" class="gs-viewer-nav-ico--flip" />
             </button>
           }
-          <button
-            type="button"
-            class="gs-viewer-imgbtn"
-            (click)="onViewerImageClick()"
-            [attr.aria-label]="'generate.results.close' | transloco"
-          >
-            <img
-              #viewerImg
-              class="gs-viewer-img"
-              [src]="view.url"
-              [alt]="
-                viewerPromptAlt() ||
-                ('generate.results.picture_alt'
-                  | transloco: { n: viewerIndex() + 1, total: viewerCount() })
-              "
-            />
-          </button>
+          @if (isNsfwHidden(view)) {
+            <button
+              type="button"
+              class="hd-btn hd-btn--tonal"
+              (click)="revealNsfw(view)"
+            >
+              <app-icon name="lock-closed" />
+              {{ "generate.results.nsfw_badge" | transloco }}
+              {{ "generate.results.nsfw_reveal" | transloco }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              class="gs-viewer-imgbtn"
+              (click)="onViewerImageClick()"
+              [attr.aria-label]="'generate.results.close' | transloco"
+            >
+              <img
+                #viewerImg
+                class="gs-viewer-img"
+                [src]="view.url"
+                [alt]="
+                  viewerPromptAlt() ||
+                  ('generate.results.picture_alt'
+                    | transloco: { n: viewerIndex() + 1, total: viewerCount() })
+                "
+              />
+            </button>
+          }
           @if (viewerCount() > 1) {
             <button
               type="button"
@@ -1848,6 +1862,7 @@
               type="button"
               class="gs-viewer-act"
               [attr.aria-pressed]="imageFullscreen()"
+              [disabled]="isNsfwHidden(view)"
               (click)="viewerFullscreen()"
             >
               <app-icon
@@ -1995,6 +2010,20 @@
      surface the width calls for. What the row above already carries is left
      out here rather than said twice. -->
 <ng-template #viewerMoreRows let-view>
+  <button type="button" class="gs-opt-row" (click)="toggleRequestNsfw(view)">
+    <app-icon name="lock-closed" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        (view.requestNsfw
+          ? "generate.results.mark_request_sfw"
+          : "generate.results.mark_request_nsfw"
+        ) | transloco
+      }}</span>
+      <span class="gs-opt-hint">{{
+        "generate.results.request_mark_help" | transloco
+      }}</span>
+    </span>
+  </button>
   @if (viewerNarrow()) {
     <p class="gs-opt-head">
       {{ "generate.results.use_in_request" | transloco }}
@@ -2318,6 +2347,21 @@
     >
       <app-icon name="bars-4" />
       {{ "generate.results.metadata" | transloco }}
+    </button>
+    <button
+      type="button"
+      class="gs-tile-menu-item"
+      role="menuitem"
+      [title]="'generate.results.request_mark_help' | transloco"
+      (click)="toggleRequestNsfw(menu.tile)"
+    >
+      <app-icon name="lock-closed" />
+      {{
+        (menu.tile.requestNsfw
+          ? "generate.results.mark_request_sfw"
+          : "generate.results.mark_request_nsfw"
+        ) | transloco
+      }}
     </button>
   </div>
 }

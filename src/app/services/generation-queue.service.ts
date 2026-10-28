@@ -27,6 +27,7 @@ import {
   EnqueueSourceImage,
   GenerationResultSelection,
   preserveGenerationResultState,
+  preserveGenerationRequestMark,
   LocalGenerationJob,
   LocalGenerationJobStatus,
   MAX_EXTRA_SOURCE_IMAGES,
@@ -713,6 +714,10 @@ export class GenerationQueueService {
         error,
       );
     }
+  }
+
+  public async setRequestNsfw(localId: string, nsfw: boolean): Promise<void> {
+    await this.patchJob(localId, { requestNsfwOverride: nsfw });
   }
 
   public async getJobImages(localId: string): Promise<StoredJobImage[]> {
@@ -1544,7 +1549,9 @@ export class GenerationQueueService {
       ...patch,
       updatedAt: this.now(),
     };
-    const updated = await this.db.putJob(proposed);
+    const updated = await (patch.requestNsfwOverride !== undefined
+      ? this.db.putJob(proposed, patch.requestNsfwOverride)
+      : this.db.putJob(proposed));
     const pendingDeletion = this.storageDeletions.get(localId);
     if (pendingDeletion) {
       await pendingDeletion.catch(() => undefined);
@@ -1623,13 +1630,26 @@ export class GenerationQueueService {
     }
     const newerResults =
       (incoming.resultRevision ?? 0) > (held.resultRevision ?? 0);
-    incoming =
-      newerResults && incoming.updatedAt < held.updatedAt
+    const newerMark =
+      (incoming.requestNsfwRevision ?? 0) > (held.requestNsfwRevision ?? 0);
+    if ((newerResults || newerMark) && incoming.updatedAt < held.updatedAt) {
+      let merged = newerResults
         ? preserveGenerationResultState(held, incoming)
-        : preserveGenerationResultState(incoming, held);
+        : held;
+      if (newerMark) merged = preserveGenerationRequestMark(merged, incoming);
+      incoming = merged;
+    } else {
+      incoming = preserveGenerationRequestMark(
+        preserveGenerationResultState(incoming, held),
+        held,
+      );
+    }
     const heldFinished = FINISHED_STATUSES.has(held.status);
     const incomingFinished = FINISHED_STATUSES.has(incoming.status);
     if (heldFinished && !incomingFinished) {
+      if (newerMark) {
+        this.replaceInState(preserveGenerationRequestMark(held, incoming));
+      }
       if (incoming.updatedAt >= held.updatedAt) {
         void this.patchJob(held.localId, {});
       }
@@ -1637,6 +1657,7 @@ export class GenerationQueueService {
     }
     if (
       newerResults ||
+      newerMark ||
       (incomingFinished && !heldFinished) ||
       incoming.updatedAt >= held.updatedAt
     ) {

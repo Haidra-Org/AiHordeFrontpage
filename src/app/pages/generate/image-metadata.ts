@@ -90,8 +90,10 @@ export interface ImageMetaError {
 
 /** The UI-facing view of one result image's provenance, derived from metadata. */
 export interface DerivedImageMeta {
-  /** True when the worker censored/flagged the image (the NSFW-marker signal). */
+  /** Cover images flagged by the worker or requested as possibly NSFW. */
   nsfw: boolean;
+  /** Detection or censorship by the worker; neither depends on a request marking. */
+  workerNsfw: boolean;
   censored: boolean;
   /** Why it was censored, when known: 'nsfw' | 'csam'. */
   censorReason: string | null;
@@ -102,9 +104,8 @@ export interface DerivedImageMeta {
 
 /**
  * Fold a result image's stored metadata into the signals the results grid needs.
- * NSFW is "censored/flagged only": an image is marked NSFW only when the worker
- * actually censored it or reported a censorship/csam reason, never merely because
- * the request permitted NSFW output.
+ * Requests marked as possibly NSFW need covering even when the worker returns
+ * no censorship signal. Censorship remains a separate fact about the result.
  *
  * `request` is the request the job was submitted with. A worker reports a
  * source-image fault whenever the job it popped names a source processing it
@@ -116,16 +117,21 @@ export interface DerivedImageMeta {
 export function deriveImageMeta(
   metadata: StoredJobImageMetadata | undefined,
   request?: ImageGenerationRequest,
+  requestNsfwOverride?: boolean,
 ): DerivedImageMeta {
   const gen = metadata?.genMetadata ?? [];
   const hasSourceInput = requestCarriesSourceInput(request);
   let censorReason: string | null = null;
+  let informationalNsfw = false;
   let aesthetic: number | null = null;
   const errors: ImageMetaError[] = [];
 
   for (const entry of gen) {
     if (entry.type === 'censorship') {
       censorReason = entry.value;
+    } else if (entry.type === 'information' && entry.value === 'nsfw') {
+      // Workers can flag an image while returning it unchanged.
+      informationalNsfw = true;
     } else if (entry.type === 'aesthetic_score') {
       const parsed =
         entry.ref !== undefined ? Number.parseFloat(entry.ref) : NaN;
@@ -148,7 +154,15 @@ export function deriveImageMeta(
     censorReason = 'csam';
   }
 
-  return { nsfw: censored, censored, censorReason, aesthetic, errors };
+  const workerNsfw = censored || informationalNsfw;
+  return {
+    nsfw: workerNsfw || (requestNsfwOverride ?? request?.nsfw) === true,
+    workerNsfw,
+    censored,
+    censorReason,
+    aesthetic,
+    errors,
+  };
 }
 
 /**
@@ -157,6 +171,7 @@ export function deriveImageMeta(
  * serialises, minus the request (which the panel reads from the request itself).
  */
 export interface ImageMetaProvenance {
+  workerNsfw: boolean;
   seed: string | null;
   model: string | null;
   workerName: string | null;
@@ -215,6 +230,7 @@ export function buildImageProvenance(
     workerId: metadata?.workerId ?? null,
     state: metadata?.state ?? null,
     censored: derived.censored,
+    workerNsfw: derived.workerNsfw,
     censorReason: derived.censorReason,
     aesthetic: derived.aesthetic,
     errors: derived.errors,
@@ -511,6 +527,7 @@ export function buildImageMetadataExport(
     state: metadata?.state ?? null,
     censored: derived.censored,
     censorship_reason: derived.censorReason,
+    worker_nsfw: derived.workerNsfw,
     aesthetic_score: derived.aesthetic,
     errors: derived.errors,
     gen_metadata: metadata?.genMetadata ?? [],

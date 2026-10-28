@@ -59,6 +59,100 @@ describe('GenerationDbService', () => {
     expect(loaded).toEqual(job);
   });
 
+  it('keeps a saved content marking when a stale tab writes newer job metadata', async () => {
+    const original = makeJob({
+      localId: 'marked',
+      status: 'done',
+      request: { prompt: 'a cat', nsfw: true },
+    });
+    await service.putJob(original);
+    const marked = await service.putJob(original, false);
+    const updated = await service.putJob({
+      ...original,
+      updatedAt: original.updatedAt + 100,
+      kudos: 7,
+    });
+
+    expect(updated).toMatchObject({
+      requestNsfwOverride: false,
+      requestNsfwRevision: 1,
+      kudos: 7,
+    });
+    expect(marked?.request).toEqual(original.request);
+    expect((await service.getJob('marked'))?.requestNsfwOverride).toBe(false);
+  });
+
+  it('edits only the marking when the store has newer server completion metadata', async () => {
+    const stale = makeJob({ localId: 'marked', updatedAt: 10 });
+    await service.putJob(stale);
+    await service.putJob({
+      ...stale,
+      status: 'done',
+      updatedAt: 20,
+      kudos: 8,
+      resultImageIds: ['finished'],
+      request: { prompt: 'recovered', nsfw: true },
+    });
+
+    await service.putJob({ ...stale, updatedAt: 30 }, false);
+
+    expect(await service.getJob('marked')).toMatchObject({
+      status: 'done',
+      updatedAt: 30,
+      completedAt: 20,
+      kudos: 8,
+      resultImageIds: ['finished'],
+      request: { prompt: 'recovered', nsfw: true },
+      requestNsfwOverride: false,
+      requestNsfwRevision: 1,
+    });
+  });
+
+  it('serializes competing content edits using store revisions even at the same timestamp', async () => {
+    const original = makeJob({ localId: 'marked' });
+    await service.putJob(original);
+
+    const edits = await Promise.all([
+      service.putJob(original, false),
+      service.putJob(original, true),
+      service.putJob(original, false),
+    ]);
+
+    expect(edits.map((job) => job?.requestNsfwRevision)).toEqual([1, 2, 3]);
+    expect(await service.getJob('marked')).toMatchObject({
+      requestNsfwOverride: false,
+      requestNsfwRevision: 3,
+    });
+    await service.putJob({
+      ...original,
+      requestNsfwOverride: true,
+      requestNsfwRevision: 2,
+    });
+    expect((await service.getJob('marked'))?.requestNsfwOverride).toBe(false);
+  });
+
+  it('retains an existing unversioned content marking on an unrelated update', async () => {
+    const original = makeJob({ localId: 'legacy', requestNsfwOverride: false });
+    await service.putJob(original);
+    await service.putJob({
+      ...original,
+      requestNsfwOverride: undefined,
+      kudos: 8,
+    });
+    expect(await service.getJob('legacy')).toMatchObject({
+      requestNsfwOverride: false,
+      kudos: 8,
+    });
+  });
+
+  it('does not recreate a deleted request when a content edit arrives late', async () => {
+    const original = makeJob({ localId: 'deleted' });
+    await service.putJob(original);
+    await service.deleteJobCascade(original.localId);
+    expect(await service.putJob(original, false)).toBeUndefined();
+    expect(await service.getJob(original.localId)).toBeUndefined();
+  });
+
   it('lists jobs newest first', async () => {
     await service.putJob(makeJob({ localId: 'old', createdAt: 100 }));
     await service.putJob(makeJob({ localId: 'new', createdAt: 300 }));
