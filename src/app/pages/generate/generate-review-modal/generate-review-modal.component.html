@@ -71,6 +71,11 @@
     </div>
 
     <div class="gs-modal-body gs-review-body">
+      @for (warning of warnings(); track warning.id) {
+        <p class="hd-callout hd-callout--accent" role="alert">
+          {{ warning.key | transloco: warning.params }}
+        </p>
+      }
       @if (view() === "summary") {
         @for (group of groups(); track group.id) {
           <div class="gs-meta-group">

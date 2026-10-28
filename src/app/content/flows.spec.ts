@@ -5,6 +5,7 @@ import {
   flowDef,
   flowFollowable,
   flowSteps,
+  flowStepTitleKey,
   flowTaskNameKey,
   flowUsesSource,
   flowsUsingSetting,
@@ -23,6 +24,30 @@ const LIBRARY_MANIFEST =
 const techniques = FLOWS.filter((flow) => !flow.concept);
 
 describe('flow registry', () => {
+  it('names CLIP skip in the model step only when the example needs a non-default value', () => {
+    for (const flow of techniques) {
+      for (const step of flow.steps) {
+        const original = `generate.learn.flows.${flow.id}.steps.${step.id}.title`;
+        expect(flowStepTitleKey(flow.id, step, false)).toBe(original);
+        expect(flowStepTitleKey(flow.id, step, true)).toBe(
+          step.anchorId === 'model'
+            ? 'generate.learn.model_clip_skip_title'
+            : original,
+        );
+      }
+    }
+  });
+  it('carries the recorded CLIP skip whenever a tutorial applies a model', () => {
+    for (const flow of techniques) {
+      const modelSteps = flow.steps.filter((step) =>
+        step.applyFields?.includes('model'),
+      );
+      expect(modelSteps.length).toBeGreaterThan(0);
+      for (const step of modelSteps) {
+        expect(step.applyFields).toContain('clip_skip');
+      }
+    }
+  });
   it('names each flow once', () => {
     expect(new Set(FLOWS.map((flow) => flow.id)).size).toBe(FLOWS.length);
   });
@@ -359,7 +384,12 @@ describe('the techniques that live in the workflow cards', () => {
       'generate',
     ]);
     const model = flowSteps('remix').find((step) => step.id === 'model');
-    expect(model?.applyFields).toEqual(['model', 'width', 'height']);
+    expect(model?.applyFields).toEqual([
+      'model',
+      'width',
+      'height',
+      'clip_skip',
+    ]);
   });
 });
 

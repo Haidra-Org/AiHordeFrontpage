@@ -1794,8 +1794,8 @@ describe('requirement hints', () => {
   it('flags a clip skip that differs from the suggested one', () => {
     expect(clipSkipRequirementHint({ clip_skip: 2 }, 2)?.violated).toBe(false);
     expect(clipSkipRequirementHint({ clip_skip: 2 }, 1)).toEqual({
-      key: 'generate.form.requirement.clip_skip_exact',
-      params: { value: 2 },
+      key: 'generate.form.requirement.clip_skip_mismatch',
+      params: { value: 2, current: 1 },
       violated: true,
     });
     expect(clipSkipRequirementHint({}, 1)).toBeNull();
@@ -2123,7 +2123,7 @@ describe('per-field advisories', () => {
 
   it('lets an exact CLIP skip outrank the note about high values', () => {
     expect(clipSkipAdvisory({ clip_skip: 1 }, 4)?.key).toBe(
-      'generate.form.requirement.clip_skip_exact',
+      'generate.form.requirement.clip_skip_mismatch',
     );
     expect(clipSkipAdvisory(null, 4)?.key).toBe(
       'generate.form.requirement.clip_skip_high',

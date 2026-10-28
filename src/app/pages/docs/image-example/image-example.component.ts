@@ -52,6 +52,7 @@ import {
   flowDef,
   flowFollowable,
   flowSteps,
+  flowStepTitleKey,
   isConceptFlow,
 } from '../../../content/flows';
 import { GsSweepScrubComponent } from '../../../components/gs-sweep-scrub/gs-sweep-scrub.component';
@@ -479,6 +480,11 @@ export class DocsImageExampleComponent {
       : {};
   });
 
+  public readonly requiresClipSkip = computed(() => {
+    const clipSkip = this.copyParams()['clip_skip'];
+    return typeof clipSkip === 'number' && clipSkip !== 1;
+  });
+
   /**
    * The spine as it is drawn: each step, the panel area it is about, and whether
    * it opens that area's run rather than continuing one. Consecutive steps in
@@ -802,7 +808,11 @@ export class DocsImageExampleComponent {
 
   /** A step's title: the same key the studio pane reads. */
   public stepTitleKey(flowId: string, step: FlowStep): string {
-    return `generate.learn.flows.${canonicalFlowId(flowId)}.steps.${step.id}.title`;
+    return flowStepTitleKey(
+      canonicalFlowId(flowId),
+      step,
+      this.requiresClipSkip(),
+    );
   }
 
   /** A step's body in the chosen register: the same key the studio pane reads. */

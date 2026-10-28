@@ -175,6 +175,7 @@
   @if (pendingReview(); as plan) {
     <app-generate-review-modal
       [request]="plan.request"
+      [warnings]="pendingReviewWarnings()"
       [kudos]="kudos()"
       (confirmed)="confirmReview()"
       (cancelled)="cancelReview()"

@@ -24,7 +24,11 @@ import {
   TutorialLevel,
   stepFieldLabelKey,
 } from '../../../services/tutorial-engine.service';
-import { FlowStep, isConceptFlow } from '../../../content/flows';
+import {
+  FlowStep,
+  flowStepTitleKey,
+  isConceptFlow,
+} from '../../../content/flows';
 import { docsExampleLink } from '../../../content/docs-links';
 import {
   SectionIdentity,
@@ -107,6 +111,7 @@ export class GenerateLearnSheetComponent {
   public readonly loadFailed = this.engine.loadFailed;
   public readonly revealNote = this.engine.revealNote;
   public readonly copyParams = this.engine.copyParams;
+  public readonly requiresClipSkip = this.engine.requiresClipSkip;
   public readonly runCost = this.engine.runCost;
 
   /** Whether the track being read teaches an idea rather than a technique. */
@@ -303,7 +308,11 @@ export class GenerateLearnSheetComponent {
   }));
 
   public titleKey(step: FlowStep): string {
-    return `generate.learn.flows.${this.engine.activeFlowId()}.steps.${step.id}.title`;
+    return flowStepTitleKey(
+      this.engine.activeFlowId() ?? '',
+      step,
+      this.requiresClipSkip(),
+    );
   }
 
   /** The field the step is about; null on a step that points at nothing. */

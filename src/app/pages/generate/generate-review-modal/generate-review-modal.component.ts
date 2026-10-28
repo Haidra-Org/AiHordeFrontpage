@@ -19,6 +19,7 @@ import { ImageGenerationRequest } from '../../../types/generation';
 import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
 import { highlightJson, stringifyAsJson } from '../../../helper/json-formatter';
 import { requestToFormValue } from '../generate-form.model';
+import type { RequestWarning } from '../request-lint';
 import {
   MetaGroup,
   MetaRowDeps,
@@ -34,9 +35,9 @@ const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
- * The last look at a request before it goes. Shown only when the reader has
- * asked for it: pressing Generate builds the request and hands it here, and
- * nothing is sent until the confirm in this dialog is pressed.
+ * The last look at a request before it goes. Shown on request or when a model
+ * recommends a different CLIP skip. Nothing is sent until the confirm in this
+ * dialog is pressed.
  *
  * The request is handed in whole rather than rebuilt, so what is read here and
  * what is sent are one object. The summary is drawn by the same row builder the
@@ -56,6 +57,7 @@ export class GenerateReviewModalComponent {
 
   /** The request as it would be sent. Never rebuilt here. */
   public readonly request = input.required<ImageGenerationRequest>();
+  public readonly warnings = input<readonly RequestWarning[]>([]);
   /** The studio's standing estimate, or null while there is none to quote. */
   public readonly kudos = input<number | null>(null);
 

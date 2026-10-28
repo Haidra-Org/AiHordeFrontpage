@@ -137,7 +137,7 @@ export const FLOWS: readonly FlowDef[] = [
         anchorId: 'prompt',
         applyFields: ['prompt', 'negativePrompt'],
       },
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'model', anchorId: 'model', applyFields: ['model', 'clip_skip'] },
       {
         // The panel sets width and height from one control (the size presets),
         // so this step writes the pair the reader would have set with one press.
@@ -213,7 +213,7 @@ export const FLOWS: readonly FlowDef[] = [
         // Apply the example's model and dimensions together for comparison.
         id: 'model',
         anchorId: 'model',
-        applyFields: ['model', 'width', 'height'],
+        applyFields: ['model', 'width', 'height', 'clip_skip'],
       },
       { id: 'generate', anchorId: 'generate' },
     ],
@@ -226,7 +226,7 @@ export const FLOWS: readonly FlowDef[] = [
       {
         id: 'model',
         anchorId: 'model',
-        applyFields: ['model', 'width', 'height'],
+        applyFields: ['model', 'width', 'height', 'clip_skip'],
       },
       {
         id: 'mode',
@@ -258,7 +258,7 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'transparent',
     section: 'source',
     steps: [
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'model', anchorId: 'model', applyFields: ['model', 'clip_skip'] },
       {
         id: 'mode',
         anchorId: 'source_mode',
@@ -299,7 +299,7 @@ export const FLOWS: readonly FlowDef[] = [
         // Remix is unavailable until a compatible model is selected.
         id: 'model',
         anchorId: 'model',
-        applyFields: ['model', 'width', 'height'],
+        applyFields: ['model', 'width', 'height', 'clip_skip'],
       },
       {
         id: 'mode',
@@ -333,7 +333,7 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'qr_code',
     section: 'workflows',
     steps: [
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'model', anchorId: 'model', applyFields: ['model', 'clip_skip'] },
       {
         id: 'prompt',
         anchorId: 'prompt',
@@ -354,7 +354,7 @@ export const FLOWS: readonly FlowDef[] = [
     next: 'remix',
     section: 'workflows',
     steps: [
-      { id: 'model', anchorId: 'model', applyFields: ['model'] },
+      { id: 'model', anchorId: 'model', applyFields: ['model', 'clip_skip'] },
       {
         id: 'prompt',
         anchorId: 'prompt',
@@ -494,6 +494,17 @@ export function isConceptFlow(flowId: string | null): boolean {
  */
 export function flowTaskNameKey(flowId: string): string {
   return `generate.tutorials.flows.${flowId}.task_name`;
+}
+
+/** Keep the model step's name consistent wherever the example is taught. */
+export function flowStepTitleKey(
+  flowId: string,
+  step: FlowStep,
+  requiresClipSkip: boolean,
+): string {
+  return step.anchorId === 'model' && requiresClipSkip
+    ? 'generate.learn.model_clip_skip_title'
+    : `generate.learn.flows.${flowId}.steps.${step.id}.title`;
 }
 
 /**

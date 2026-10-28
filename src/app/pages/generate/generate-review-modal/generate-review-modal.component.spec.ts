@@ -4,6 +4,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { GenerateReviewModalComponent } from './generate-review-modal.component';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
+import en from '../../../../assets/i18n/en.json';
 
 const REQUEST: ImageGenerationRequest = {
   prompt: 'a lighthouse ### blurry',
@@ -29,8 +30,9 @@ describe('GenerateReviewModalComponent', () => {
       imports: [
         GenerateReviewModalComponent,
         TranslocoTestingModule.forRoot({
-          langs: {},
-          translocoConfig: { defaultLang: 'en' },
+          langs: { en },
+          preloadLangs: true,
+          translocoConfig: { defaultLang: 'en', availableLangs: ['en'] },
         }),
       ],
       providers: [
@@ -79,6 +81,26 @@ describe('GenerateReviewModalComponent', () => {
     const code = el.querySelector('.gs-api-code')?.textContent ?? '';
     expect(JSON.parse(code)).toEqual(REQUEST);
     expect(el.querySelector('.gs-api-code .json-key')).toBeTruthy();
+  });
+
+  it('keeps the model warning visible in both the settings and JSON views', () => {
+    fixture.componentRef.setInput('warnings', [
+      {
+        id: 'clip_skip:Nova Anime XL',
+        section: 'sampling',
+        anchor: 'clip_skip',
+        key: 'generate.review.clip_skip_warning',
+        params: { model: 'Nova Anime XL', current: 1, value: 2 },
+      },
+    ]);
+    for (const view of ['summary', 'json'] as const) {
+      component.setView(view);
+      fixture.detectChanges();
+      const warning = el.querySelector('[role="alert"]')?.textContent ?? '';
+      expect(warning).toContain('Nova Anime XL');
+      expect(warning).toContain('CLIP skip is 1');
+      expect(warning).toContain('recommends 2');
+    }
   });
 
   it('opens with focus on the dialog rather than the confirm', () => {

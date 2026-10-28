@@ -144,6 +144,28 @@ export interface LintModelSelection {
   baseline: string | null;
 }
 
+/** Check each candidate: a request may be served by any of its selected models. */
+export function modelClipSkipWarnings(
+  models: readonly { name: string; requirements: ModelRequirements | null }[],
+  clipSkip: number,
+): readonly RequestWarning[] {
+  return models.flatMap(({ name, requirements }) => {
+    const expected = requirements?.clip_skip;
+    if (expected === undefined || expected === clipSkip) {
+      return [];
+    }
+    return [
+      {
+        id: `clip_skip:${name}`,
+        section: 'sampling' as const,
+        anchor: 'clip_skip' as const,
+        key: 'generate.review.clip_skip_warning',
+        params: { model: name, current: clipSkip, value: expected },
+      },
+    ];
+  });
+}
+
 /** Everything a rule may read about the request being described. */
 export interface RequestLintInput {
   /** The form value that would actually be submitted (simple mode already projected). */

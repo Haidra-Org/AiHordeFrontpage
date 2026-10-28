@@ -134,6 +134,42 @@ describe('GenerateLearnPanelComponent', () => {
     expect(text()).not.toContain(TRANSLATIONS['generate.learn.set_aside_note']);
   });
 
+  it('updates the model title and flag when the example changes CLIP skip', async () => {
+    const http = TestBed.inject(HttpTestingController);
+    const component = fixture.componentInstance;
+    const modelStep = flowSteps('txt2img').find(
+      (step) => step.anchorId === 'model',
+    )!;
+    const sizeStep = flowSteps('txt2img').find((step) => step.id === 'size')!;
+    engine.goTo(1);
+    for (const [world, clipSkip] of [
+      ['w2', 2],
+      ['w1', 1],
+    ] as const) {
+      engine.setWorld(world);
+      http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const directory = world === 'w2' ? 'txt2img--w2' : 'txt2img';
+      http.expectOne(`${EXAMPLES_ROOT}/${directory}/request.json`).flush({
+        ...request,
+        params: { ...request.params, clip_skip: clipSkip },
+      });
+      http.expectOne(`${EXAMPLES_ROOT}/${directory}/meta.json`).flush(meta);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+      expect(component.requiresClipSkip()).toBe(clipSkip !== 1);
+      expect(component.titleKey(modelStep)).toBe(
+        clipSkip === 2
+          ? 'generate.learn.model_clip_skip_title'
+          : 'generate.learn.flows.txt2img.steps.model.title',
+      );
+      expect(component.titleKey(sizeStep)).toBe(
+        'generate.learn.flows.txt2img.steps.size.title',
+      );
+      expect(text().includes('Model + Clip Skip')).toBe(clipSkip !== 1);
+    }
+  });
+
   it('says on the model step what the live list says about that model', () => {
     const modelStep = flowSteps('txt2img').findIndex(
       (step) => step.anchorId === 'model',

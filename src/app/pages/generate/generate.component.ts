@@ -161,6 +161,7 @@ import {
   FieldRejection,
   RequestWarning,
   evaluateRequestLint,
+  modelClipSkipWarnings,
   type FieldAnchorId,
   type LintModelSelection,
   rejectionField,
@@ -450,6 +451,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
 
   /** What the review dialog is holding, or null while nothing awaits a look. */
   public readonly pendingReview = signal<SubmitPlan | null>(null);
+  public readonly pendingReviewWarnings = signal<readonly RequestWarning[]>([]);
 
   /**
    * What a press of Generate ran into, or null while nothing is standing in the
@@ -2031,7 +2033,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     if (!plan) {
       return;
     }
-    if (this.reviewBeforeSend()) {
+    const clipWarnings = modelClipSkipWarnings(
+      (plan.request.models ?? []).map((name) => ({
+        name,
+        requirements: this.modelReference.requirementsFor(name),
+      })),
+      plan.request.params?.clip_skip ?? 1,
+    );
+    this.pendingReviewWarnings.set(clipWarnings);
+    if (this.reviewBeforeSend() || clipWarnings.length > 0) {
       this.pendingReview.set(plan);
       return;
     }

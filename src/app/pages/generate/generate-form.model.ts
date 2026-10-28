@@ -783,7 +783,9 @@ export function clipSkipRequirementHint(
   if (exact === undefined) {
     return null;
   }
-  return hint('clip_skip_exact', { value: exact }, clipSkip !== exact);
+  return clipSkip === exact
+    ? hint('clip_skip_exact', { value: exact }, false)
+    : hint('clip_skip_mismatch', { value: exact, current: clipSkip }, true);
 }
 
 /** The `sampler_name` values a model suggests; empty when it suggests none. */

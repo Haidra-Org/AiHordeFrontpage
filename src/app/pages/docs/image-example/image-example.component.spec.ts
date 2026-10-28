@@ -295,7 +295,7 @@ function flushAll(
 }
 
 /** Answers the companion files of whichever flow is on screen. */
-function flushDetail(harness: Harness): void {
+function flushDetail(harness: Harness, requestText = REQUEST_TEXT): void {
   const flow = harness.component.activeFlow();
   if (!flow || flow.status !== 'available') {
     return;
@@ -310,7 +310,7 @@ function flushDetail(harness: Harness): void {
     wall_time_seconds: 41.7,
     deviations: 'the requested model was swapped',
   });
-  harness.http.expectOne(`${base}/${flow.request}`).flush(REQUEST_TEXT);
+  harness.http.expectOne(`${base}/${flow.request}`).flush(requestText);
   if (flow.files.includes('request-before.json')) {
     harness.http
       .expectOne(`${base}/request-before.json`)
@@ -1064,6 +1064,38 @@ describe('DocsImageExampleComponent', () => {
 
   describe('the world the pictures are drawn from', () => {
     const VARIANT_ID = `${VARIANT_FLOW.id}--w2`;
+
+    it('updates the model step title from each selected example’s CLIP skip', () => {
+      flushAll(harness);
+      expect(harness.component.requiresClipSkip()).toBe(false);
+      TestBed.inject(TutorialEngineService).setWorld('w2');
+      harness.fixture.detectChanges();
+      flushDetail(
+        harness,
+        JSON.stringify({
+          ...JSON.parse(REQUEST_TEXT),
+          params: { ...JSON.parse(REQUEST_TEXT).params, clip_skip: 2 },
+        }),
+      );
+      expect(harness.component.requiresClipSkip()).toBe(true);
+      expect(
+        harness
+          .query<HTMLElement>('.gs-tut-step-title')
+          .some((heading) =>
+            heading.textContent?.includes('Model + Clip Skip'),
+          ),
+      ).toBe(true);
+      TestBed.inject(TutorialEngineService).setWorld('w1');
+      harness.fixture.detectChanges();
+      expect(harness.component.requiresClipSkip()).toBe(false);
+      expect(
+        harness
+          .query<HTMLElement>('.gs-tut-step-title')
+          .some((heading) =>
+            heading.textContent?.includes('Model + Clip Skip'),
+          ),
+      ).toBe(false);
+    });
 
     it('keeps world variants out of the picker and out of the URLs', () => {
       flushAll(harness);

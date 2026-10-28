@@ -337,7 +337,7 @@ describe('TutorialEngineService', () => {
       expect(engine.revealNote()).toBeNull();
     });
 
-    it('names the fields of one control per step, and no others', () => {
+    it('names only the fields taught by each step', () => {
       const named = flowSteps('txt2img')
         .filter((step) => step.applyFields?.length)
         .map((step) => [step.id, [...step.applyFields!]]);
@@ -347,7 +347,7 @@ describe('TutorialEngineService', () => {
         // is a real generation: writing one half without the other would send
         // the reader off to a different picture from the one on the page.
         ['prompt', ['prompt', 'negativePrompt']],
-        ['model', ['model']],
+        ['model', ['model', 'clip_skip']],
         // Width and height come off one control in the panel (the size
         // presets), so one press stays one step.
         ['size', ['width', 'height']],
@@ -366,7 +366,10 @@ describe('TutorialEngineService', () => {
 
       engine.goTo(1);
       engine.applyStep();
-      expect(host.applied[1]).toEqual({ model: request.models[0] });
+      expect(host.applied[1]).toEqual({
+        model: request.models[0],
+        clip_skip: request.params.clip_skip ?? 1,
+      });
 
       engine.goTo(3);
       engine.applyStep();
@@ -853,6 +856,7 @@ describe('TutorialEngineService', () => {
             model: request.models[0],
             width: request.params.width,
             height: request.params.height,
+            clip_skip: request.params.clip_skip,
           },
         ],
       ]);
@@ -940,7 +944,13 @@ describe('TutorialEngineService', () => {
         'generate',
       ]);
       expect(written).toEqual([
-        ['model', { model: request.models[0] }],
+        [
+          'model',
+          {
+            model: request.models[0],
+            clip_skip: request.params.clip_skip ?? 1,
+          },
+        ],
         ['prompt', { prompt: PROMPT, negativePrompt: NEGATIVE }],
         // Typing the text is what selects the workflow, so it is the whole of
         // what this step writes.
@@ -1128,6 +1138,22 @@ describe('TutorialEngineService', () => {
     expect(host.applied).toEqual([
       { prompt: 'a lighthouse', negativePrompt: '' },
     ]);
+  });
+
+  it('applies CLIP skip 2 from an anime example rather than the form default', async () => {
+    const started = engine.start('txt2img');
+    http.expectOne(`${EXAMPLES_ROOT}/manifest.json`).flush(manifest);
+    await settle();
+    flushExample('txt2img', {
+      ...request,
+      models: ['Nova Anime XL'],
+      params: { ...request.params, clip_skip: 2 },
+    });
+    await started;
+    engine.goTo(1);
+    engine.applyStep();
+    expect(host.applied).toEqual([{ model: 'Nova Anime XL', clip_skip: 2 }]);
+    expect(engine.copyParams()['clip_skip']).toBe(2);
   });
 
   it('reports a failure to fetch the example rather than running blind', async () => {

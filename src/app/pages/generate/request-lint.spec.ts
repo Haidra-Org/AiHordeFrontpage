@@ -4,6 +4,7 @@ import {
   FeatureCompatRuleId,
   RequestLintInput,
   evaluateRequestLint,
+  modelClipSkipWarnings,
   featureCompatRule,
   namedWorkerWarning,
   rejectionField,
@@ -41,6 +42,36 @@ function lintInput(
 function violated(input: RequestLintInput): FeatureCompatRuleId[] {
   return violatedCompatRules(input).map((rule) => rule.id);
 }
+
+describe('CLIP skip submission warnings', () => {
+  it('checks secondary models and preserves conflicting recommendations', () => {
+    const warnings = modelClipSkipWarnings(
+      [
+        { name: 'unknown', requirements: null },
+        { name: 'two', requirements: { clip_skip: 2 } },
+        { name: 'three', requirements: { clip_skip: 3 } },
+      ],
+      1,
+    );
+    expect(warnings.map((warning) => warning.params)).toEqual([
+      { model: 'two', current: 1, value: 2 },
+      { model: 'three', current: 1, value: 3 },
+    ]);
+  });
+
+  it('does not infer a requirement from missing metadata or from a model name', () => {
+    expect(
+      modelClipSkipWarnings(
+        [
+          { name: 'Pony unknown', requirements: null },
+          { name: 'unspecified', requirements: {} },
+          { name: 'matching', requirements: { clip_skip: 2 } },
+        ],
+        2,
+      ),
+    ).toEqual([]);
+  });
+});
 
 describe('feature compatibility rules', () => {
   it('names one rule per feature and can look each up by id', () => {

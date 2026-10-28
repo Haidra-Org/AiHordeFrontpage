@@ -156,6 +156,7 @@ export function tutorialCopyParams(
   // apart, as the panel does, so a step can talk about either one.
   params['negative'] = example.negativePrompt;
   params['model'] = example.model;
+  params['clip_skip'] = example.clip_skip;
   params['width'] = example.width;
   params['height'] = example.height;
   params['steps'] = example.steps;
@@ -439,6 +440,11 @@ export class TutorialEngineService {
     const request = this.request();
     return request ? requestToFormValue(request) : null;
   });
+
+  /** Read the recipe so guidance survives gaps in model-reference metadata. */
+  public readonly requiresClipSkip = computed(
+    () => (this.example()?.clip_skip ?? 1) !== 1,
+  );
 
   /** The values the step prose interpolates; see {@link tutorialCopyParams}. */
   public readonly copyParams = computed<Record<string, string | number>>(() => {

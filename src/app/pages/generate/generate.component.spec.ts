@@ -189,6 +189,8 @@ describe('GenerateComponent', () => {
           useValue: {
             names: signal(null),
             baselines,
+            requirements: signal(null),
+            requirementsFor: vi.fn().mockReturnValue(null),
             load: () => undefined,
             supportsRemix: (model: string) =>
               baselineSupportsRemix(baselines()?.[model] ?? null),
@@ -484,6 +486,56 @@ describe('GenerateComponent', () => {
     expect(component.pendingReview()?.request.prompt).toBe(
       'a castle on a hill',
     );
+  });
+
+  it('requires a look at a CLIP skip mismatch even with review switched off', async () => {
+    vi.mocked(
+      TestBed.inject(ModelReferenceService).requirementsFor,
+    ).mockReturnValue({ clip_skip: 2 });
+    component.form.patchValue({
+      prompt: 'a shrine',
+      model: 'Nova Anime XL',
+      clip_skip: 1,
+    });
+
+    await component.onCreate();
+
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(component.pendingReviewWarnings()[0]?.params).toEqual({
+      model: 'Nova Anime XL',
+      current: 1,
+      value: 2,
+    });
+    const request = component.pendingReview()?.request;
+    await component.confirmReview();
+    expect(enqueue.mock.calls[0][0]).toBe(request);
+    expect(request?.params?.clip_skip).toBe(1);
+    expect(component.reviewBeforeSend()).toBe(false);
+  });
+
+  it('checks secondary models and lets the reader return to correct CLIP skip', async () => {
+    vi.mocked(
+      TestBed.inject(ModelReferenceService).requirementsFor,
+    ).mockImplementation((name) =>
+      name === 'Nova Anime XL' ? { clip_skip: 2 } : null,
+    );
+    component.form.patchValue({
+      prompt: 'a shrine',
+      model: 'AlbedoBase XL (SDXL)',
+      extraModels: ['Nova Anime XL'],
+      clip_skip: 1,
+    });
+    await component.onCreate();
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(component.pendingReviewWarnings()[0]?.params['model']).toBe(
+      'Nova Anime XL',
+    );
+    component.cancelReview();
+    expect(enqueue).not.toHaveBeenCalled();
+    component.form.controls.clip_skip.setValue(2);
+    await component.onCreate();
+    expect(component.pendingReview()).toBeNull();
+    expect(enqueue).toHaveBeenCalledTimes(1);
   });
 
   it('sends nothing when the review is cancelled', async () => {
