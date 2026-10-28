@@ -26,10 +26,10 @@ globalThis.IntersectionObserver ??= class {
 
 describe('HomepageDoorsComponent', () => {
   let fixture: ComponentFixture<HomepageDoorsComponent>;
-  let navigate: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn<Router['navigateByUrl']>>;
 
   beforeEach(() => {
-    navigate = vi.fn().mockResolvedValue(true);
+    navigate = vi.fn<Router['navigateByUrl']>().mockResolvedValue(true);
     TestBed.configureTestingModule({
       imports: [
         HomepageDoorsComponent,

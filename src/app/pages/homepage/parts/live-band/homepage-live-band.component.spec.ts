@@ -135,7 +135,11 @@ describe('HomepageLiveBandComponent', () => {
    * is dropped here rather than counted as part of the figure.
    */
   function column(index: 1 | 2 | 3): string[] {
-    const rows = Array.from(fixture.nativeElement.querySelectorAll('tbody tr'));
+    const rows = Array.from(
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLTableRowElement>('tbody tr'),
+    );
     return rows.map((row) => {
       const cell = row.querySelectorAll('.home-ledger-figure')[
         index - 1
@@ -155,7 +159,9 @@ describe('HomepageLiveBandComponent', () => {
     setup({ performance: PERFORMANCE, stats: 'ok' });
 
     const heads = Array.from(
-      fixture.nativeElement.querySelectorAll('thead th'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLTableCellElement>('thead th'),
     );
     // Four columns: the measure's own, then the three domains, each a header
     // cell scoped to its column so a figure is never read without its name.

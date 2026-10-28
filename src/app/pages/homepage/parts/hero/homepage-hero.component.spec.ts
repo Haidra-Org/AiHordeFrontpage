@@ -29,6 +29,13 @@ function pool(...subjects: string[]): ShowcasePicture[] {
     prompt: `a ${subject}`,
     model: 'a model',
     subject,
+    file: `gallery/${subject}.webp`,
+    tags: [],
+    seed: '1',
+    seconds: 1,
+    kudos: 1,
+    width: 1024,
+    height: 1024,
   }));
 }
 
@@ -71,7 +78,7 @@ class InstantImage {
 describe('HomepageHeroComponent', () => {
   let fixture: ComponentFixture<HomepageHeroComponent>;
   let handoff: { set: ReturnType<typeof vi.fn> };
-  let navigate: ReturnType<typeof vi.fn>;
+  let navigate: ReturnType<typeof vi.fn<Router['navigate']>>;
 
   function setup(reducedMotion: boolean, phone = false): void {
     vi.stubGlobal('matchMedia', (query: string) => ({
@@ -101,7 +108,7 @@ describe('HomepageHeroComponent', () => {
 
     handoff = { set: vi.fn() };
     TestBed.overrideProvider(StudioHandoffService, { useValue: handoff });
-    navigate = vi.fn().mockResolvedValue(true);
+    navigate = vi.fn<Router['navigate']>().mockResolvedValue(true);
     TestBed.inject(Router).navigate = navigate;
 
     fixture = TestBed.createComponent(HomepageHeroComponent);
@@ -164,7 +171,9 @@ describe('HomepageHeroComponent', () => {
     setup(false);
 
     const images = Array.from(
-      fixture.nativeElement.querySelectorAll('.home-tile-img'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLImageElement>(
+        '.home-tile-img',
+      ),
     );
 
     // A tile that is hidden at this width, or off the end of the strip at a
