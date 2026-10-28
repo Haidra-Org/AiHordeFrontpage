@@ -1259,6 +1259,23 @@ export class GenerationQueueService {
       return;
     }
 
+    // The two endpoints can observe different snapshots. A partial full-status
+    // response must not freeze its consumption or results as the finished job.
+    if (!status.done) {
+      this.checkBackoffUntil.set(localId, now + FETCH_RETRY_INTERVAL_MS);
+      await this.patchJob(localId, {
+        status: status.processing > 0 ? 'processing' : 'queued',
+        kudos: status.kudos,
+        finishedCount: status.finished,
+        processingCount: status.processing,
+        waitingCount: status.waiting,
+        queuePosition: status.queue_position,
+        waitTime: status.wait_time,
+        lastCheckedAt: now,
+      });
+      return;
+    }
+
     const held = new Set(job.resultImageIds);
     let csamCensoredCount = 0;
     let missing = 0;

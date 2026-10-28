@@ -811,6 +811,21 @@ describe('GenerateResultsPanelComponent', () => {
   });
 
   describe('NSFW visibility', () => {
+    it('keeps whole-request kudos consistent between each image export and its metadata panel', async () => {
+      getJobImages.mockResolvedValue([
+        resultImage('f', 'one'),
+        resultImage('f', 'two'),
+      ]);
+      finishedJobs.set([{ ...job('f', 'done'), quotedKudos: 210, kudos: 145 }]);
+      await loadThumbnails();
+      for (const tile of component.tiles()) {
+        expect(tile.metaExport?.['kudos']).toEqual({
+          quoted: 210,
+          charged: 145,
+        });
+        expect(tile.provenance?.kudos).toEqual({ quoted: 210, charged: 145 });
+      }
+    });
     async function loadResults(
       nsfw: boolean,
       censor_nsfw: boolean,
@@ -3479,11 +3494,15 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
       censor_nsfw?: boolean;
       censored?: boolean;
       workerNsfw?: boolean;
+      quotedKudos?: number;
+      consumedKudos?: number;
     } = {},
   ): Promise<void> {
     const finished = prompts.map((prompt, index) => ({
       ...job(`f${index}`, 'done'),
       request: { prompt, nsfw: flags.nsfw, censor_nsfw: flags.censor_nsfw },
+      quotedKudos: flags.quotedKudos,
+      kudos: flags.consumedKudos,
     }));
     const finishedJobs = signal<LocalGenerationJob[]>(finished);
     await TestBed.configureTestingModule({
@@ -3631,6 +3650,41 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
       fixture.detectChanges();
       expect(host.querySelector('.gs-viewer-img')).toBeNull();
       expect(host.querySelector('.gs-tile-img--blur')).not.toBeNull();
+    },
+  );
+
+  it.each([
+    {
+      quotedKudos: 240,
+      consumedKudos: 137,
+      text: '137, though it was quoted at 240',
+    },
+    {
+      quotedKudos: 137,
+      consumedKudos: 240,
+      text: '240, though it was quoted at 137',
+    },
+    { quotedKudos: 137, consumedKudos: 137, text: '137, quoted at 137' },
+  ])(
+    'uses the same price comparison in the metadata panel and raw-JSON highlights: %j',
+    async (prices) => {
+      await render(['a fox'], prices);
+      component.openMeta(component.tiles()[0]);
+      fixture.detectChanges();
+      expect(host.querySelector('app-image-meta-panel')?.textContent).toContain(
+        prices.text,
+      );
+      component.metaJsonOpen.set(true);
+      fixture.detectChanges();
+      expect(
+        host.querySelector('app-studio-json-modal')?.textContent,
+      ).toContain(prices.text);
+      expect(component.metaData()).toMatchObject({
+        kudos: {
+          quoted: prices.quotedKudos,
+          charged: prices.consumedKudos,
+        },
+      });
     },
   );
 

@@ -890,6 +890,86 @@ describe('GenerationQueueService', () => {
     },
   );
 
+  it.each([0, 145, 255])(
+    'keeps dry-run estimate, submit quote, progress consumption and final %s kudos separate',
+    async (charged) => {
+      aiHorde.submitImageGenerationResult
+        .mockReturnValueOnce(of(submitSuccess('dry', 180)))
+        .mockReturnValue(of(submitSuccess('h1', 210)));
+      const queue = await createQueue();
+      expect(await queue.estimateKudos({ prompt: 'a cat' })).toBe(180);
+      const id = await queue.enqueue({ prompt: 'a cat' });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { kudos: 21 } })),
+      );
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+      expect(queue.jobs().find((job) => job.localId === id)).toMatchObject({
+        quotedKudos: 210,
+        kudos: 21,
+      });
+
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(checkResult({ check: { done: true, processing: 0, kudos: 99 } })),
+      );
+      aiHorde.getImageGenerationStatus.mockReturnValue(
+        of({ ...doneStatus(), kudos: charged }),
+      );
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        quotedKudos: 210,
+        kudos: charged,
+      });
+    },
+  );
+
+  it.each([
+    { partial: 37, final: 173 },
+    { partial: 84, final: 249 },
+    { partial: 0, final: 137 },
+  ])(
+    'does not freeze partial $partial consumption when the full status contradicts a completed check',
+    async ({ partial, final }) => {
+      const queue = await createQueue();
+      const id = await queue.enqueue({ prompt: 'a cat', params: { n: 2 } });
+      await vi.advanceTimersByTimeAsync(DISPATCH_TICK_MS);
+      aiHorde.checkImageGenerationResult.mockReturnValue(
+        of(
+          checkResult({
+            check: { done: true, processing: 0, finished: 2, kudos: final },
+          }),
+        ),
+      );
+      const complete = doneStatus();
+      complete.generations.push({ ...complete.generations[0], id: 'out-2' });
+      aiHorde.getImageGenerationStatus
+        .mockReturnValueOnce(
+          of({
+            ...complete,
+            done: false,
+            processing: 1,
+            finished: 1,
+            kudos: partial,
+            generations: complete.generations.slice(0, 1),
+          }),
+        )
+        .mockReturnValue(of({ ...complete, finished: 2, kudos: final }));
+
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS);
+
+      expect(queue.jobs().find((job) => job.localId === id)?.status).not.toBe(
+        'done',
+      );
+      await vi.advanceTimersByTimeAsync(POLL_TICK_MS * 2);
+      expect(aiHorde.getImageGenerationStatus).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(15_000);
+      expect(queue.finishedJobs()[0]).toMatchObject({
+        kudos: final,
+        resultImageIds: ['out-1', 'out-2'],
+      });
+    },
+  );
+
   it('fetches status and stores result blobs when a job finishes', async () => {
     aiHorde.submitImageGenerationResult.mockReturnValue(
       of(submitSuccess('h1')),

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TranslocoTestingModule } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import {
   ImageMetaPanelComponent,
   MetaApplyEvent,
@@ -9,6 +9,7 @@ import {
   PromptEditRequest,
 } from './image-meta-panel.component';
 import { buildPromptCheck } from '../../../helper/prompt-check';
+import en from '../../../../assets/i18n/en.json';
 import { ImageGenerationRequest } from '../../../types/generation';
 import { CivitaiResolverService } from '../../../services/civitai-resolver.service';
 import { ImageMetaProvenance } from '../image-metadata';
@@ -200,6 +201,37 @@ describe('ImageMetaPanelComponent', () => {
     expect(values).not.toContain('en.generate.results.censor_nsfw');
   });
 
+  it.each([
+    { quoted: 210, charged: 145 },
+    { quoted: 210, charged: 0 },
+    { quoted: null, charged: 145 },
+  ])(
+    'shows the supplied request kudos without substituting an estimate: %j',
+    (kudos) => {
+      const translate = vi.spyOn(TestBed.inject(TranslocoService), 'translate');
+      fixture.componentRef.setInput('provenance', { ...PROVENANCE, kudos });
+      fixture.detectChanges();
+      expect(
+        component
+          .infoRows()
+          .find((row) => row.label === 'en.generate.results.meta_kudos')?.value,
+      ).toBe(
+        kudos.quoted === null
+          ? 'en.generate.results.meta_kudos_one'
+          : 'en.generate.results.meta_kudos_diverged',
+      );
+      const expectedKey =
+        kudos.quoted === null
+          ? 'generate.results.meta_kudos_one'
+          : 'generate.results.meta_kudos_diverged';
+      const expectedParams =
+        kudos.quoted === null
+          ? { kudos: kudos.charged }
+          : { quoted: kudos.quoted, charged: kudos.charged };
+      expect(translate).toHaveBeenCalledWith(expectedKey, expectedParams);
+    },
+  );
+
   it('explains a CSAM filter result beside its censorship row', () => {
     fixture.componentRef.setInput('provenance', {
       ...PROVENANCE,
@@ -211,6 +243,78 @@ describe('ImageMetaPanelComponent', () => {
 
     expect(component.infoRows().map((row) => row.value)).toContain(
       'en.generate.results.censor_csam_explanation',
+    );
+  });
+
+  describe('rendered kudos comparison', () => {
+    beforeEach(async () => {
+      await fixture.whenStable();
+      const translator = TestBed.inject(TranslocoService);
+      translator.setAvailableLangs(['en']);
+      translator.setTranslation(en, 'en');
+    });
+
+    it('omits a kudos claim when neither figure is known', () => {
+      fixture.componentRef.setInput('provenance', {
+        ...PROVENANCE,
+        kudos: { quoted: null, charged: null },
+      });
+      fixture.detectChanges();
+      expect(
+        component.infoRows().find((row) => row.label === 'Kudos'),
+      ).toBeUndefined();
+      expect((fixture.nativeElement as HTMLElement).textContent).not.toContain(
+        'though it was quoted at',
+      );
+    });
+
+    it.each([
+      {
+        quoted: 240,
+        charged: 137,
+        text: '137, though it was quoted at 240',
+        tone: 'warn',
+      },
+      {
+        quoted: 137,
+        charged: 240,
+        text: '240, though it was quoted at 137',
+        tone: 'warn',
+      },
+      {
+        quoted: 240,
+        charged: 0,
+        text: '0, though it was quoted at 240',
+        tone: 'warn',
+      },
+      {
+        quoted: 137.2,
+        charged: 137.4,
+        text: '137, quoted at 137',
+        tone: 'default',
+      },
+      {
+        quoted: 137,
+        charged: 138,
+        text: '138, though it was quoted at 137',
+        tone: 'warn',
+      },
+      { quoted: null, charged: 137, text: '137', tone: 'default' },
+      { quoted: 240, charged: null, text: '240', tone: 'default' },
+    ])(
+      'renders the actual values and order for quote=$quoted, consumption=$charged',
+      ({ quoted, charged, text, tone }) => {
+        fixture.componentRef.setInput('provenance', {
+          ...PROVENANCE,
+          kudos: { quoted, charged },
+        });
+        fixture.detectChanges();
+        const row = component.infoRows().find((row) => row.label === 'Kudos');
+        expect(row).toMatchObject({ value: text, tone });
+        expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+          text,
+        );
+      },
     );
   });
 

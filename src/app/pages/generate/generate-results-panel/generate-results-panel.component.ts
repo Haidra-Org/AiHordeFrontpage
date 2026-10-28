@@ -887,6 +887,7 @@ export class GenerateResultsPanelComponent {
               // where the request is a placeholder or lacks its prompt.
               known === 'full' ? job.request : undefined,
               derived,
+              { quoted: job.quotedKudos ?? null, charged: job.kudos ?? null },
             ),
             provenance: buildImageProvenance(
               thumb.metadata,
