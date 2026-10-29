@@ -3514,8 +3514,6 @@
   "details.models.sort.queued": "Queued",
   "details.models.sort.jobs": "Jobs",
   "details.models.sort.eta": "ETA",
-  "details.models.type.image": "Image",
-  "details.models.type.text": "Text",
   "details.models.online": "Online",
   "details.models.load_failed": "The model list could not be loaded. Try again in a moment.",
   "details.models.no_results_hint": "Change the search or the filters to see more models.",
