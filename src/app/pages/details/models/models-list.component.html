@@ -42,203 +42,201 @@
     </div>
 
     @if (!error() && totalModels() > 0) {
-      <div class="hd-stats">
-        <div class="hd-stat">
-          <span class="hd-stat-label">{{
-            "details.models.total_models" | transloco
+      <div class="models-toolbar">
+        <div class="models-summary">
+          <span [title]="'details.models.total_models' | transloco">{{
+            "details.models.count_all" | transloco: { total: totalModels() }
           }}</span>
-          <span class="hd-stat-value">{{ formatNumber(totalModels()) }}</span>
-        </div>
-        <div class="hd-stat">
-          <span class="hd-stat-label">{{
-            totalQueuedLabelKey() | transloco
-          }}</span>
-          <span class="hd-stat-value">{{ totalQueuedValue() }}</span>
-          <span class="hd-stat-note">{{
-            totalQueuedUnit().technical.formatted
-          }}</span>
-        </div>
-      </div>
-
-      <div class="models-search">
-        <app-icon class="icon-sm models-search-icon" name="magnifying-glass" />
-        <input
-          #searchInput
-          type="text"
-          class="hd-input models-search-input"
-          role="combobox"
-          aria-autocomplete="list"
-          [attr.aria-expanded]="
-            autocompleteOpen() && autocompleteSuggestions().length > 0
-          "
-          aria-controls="model-autocomplete-list"
-          [placeholder]="'details.models.search_placeholder' | transloco"
-          [value]="searchQuery()"
-          (input)="onSearchChange($event)"
-          (focus)="onSearchFocus()"
-          (keydown)="onSearchKeydown($event)"
-          autocomplete="off"
-        />
-
-        @if (autocompleteOpen() && autocompleteSuggestions().length > 0) {
-          <div
-            id="model-autocomplete-list"
-            class="hd-menu models-search-menu"
-            role="listbox"
+          <span
+            >{{ totalQueuedLabelKey() | transloco }}:
+            <strong>{{ totalQueuedValue() }}</strong></span
           >
-            @for (
-              suggestion of autocompleteSuggestions();
-              track suggestion.name + suggestion.type;
-              let i = $index
-            ) {
-              <button
-                type="button"
-                role="option"
-                class="hd-menu-item models-search-option"
-                [class.models-search-option--active]="
-                  activeSuggestionIndex() === i
-                "
-                [attr.aria-selected]="activeSuggestionIndex() === i"
-                (mousedown)="selectSuggestion(suggestion)"
-              >
-                <span class="models-search-name">{{ suggestion.name }}</span>
-                <span class="models-search-meta">
-                  {{
-                    (suggestion.type === "image"
-                      ? "details.models.type.image"
-                      : "details.models.type.text"
-                    ) | transloco
-                  }}
-                  &middot;
-                  {{
-                    (suggestion.count === 1
-                      ? "details.models.worker_count_one"
-                      : "details.models.worker_count_other"
-                    ) | transloco: { count: suggestion.count }
-                  }}
-                </span>
-              </button>
-            }
+        </div>
+        <div class="models-controls">
+          <div class="models-search">
+            <app-icon
+              class="icon-sm models-search-icon"
+              name="magnifying-glass"
+            />
+            <input
+              type="search"
+              class="hd-input models-search-input"
+              [attr.aria-label]="
+                'details.models.search_placeholder' | transloco
+              "
+              [placeholder]="'details.models.search_placeholder' | transloco"
+              [value]="searchQuery()"
+              (input)="onSearchChange($event)"
+              autocomplete="off"
+            />
           </div>
-        }
-      </div>
-    }
-
-    @if (activeTab() === "image") {
-      <p class="models-docs-link">
-        <a routerLink="/docs/image/settings/model">{{
-          "details.models.docs_link" | transloco
-        }}</a>
-      </p>
-    }
-
-    @if (!error() && totalModels() > 0) {
-      <div class="models-filters">
-        @if (baselineOptions().length > 0) {
-          <div class="models-filter-group">
-            <span class="models-filter-label" id="models-filter-baseline">
-              {{ "details.models.filters.baseline" | transloco }}
-            </span>
+          @if (baselineOptions().length > 0) {
+            <label class="models-filter-group" for="models-baseline">
+              <span class="models-filter-label">{{
+                "details.models.filters.baseline" | transloco
+              }}</span>
+              <select
+                id="models-baseline"
+                class="hd-input"
+                [value]="baselineFilter() ?? ''"
+                (change)="onBaselineChange($event)"
+              >
+                <option value="">
+                  {{ "details.models.filters.baseline_any" | transloco }}
+                </option>
+                @for (baseline of baselineOptions(); track baseline) {
+                  <option [value]="baseline">
+                    {{ baselineLabel(baseline) }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost models-filter-toggle"
+            aria-controls="models-extra-filters"
+            [attr.aria-expanded]="extraFiltersOpen()"
+            (click)="extraFiltersOpen.set(!extraFiltersOpen())"
+          >
+            <app-icon class="icon-sm" name="adjustments-horizontal" />
+            @if (extraFilterCount() > 0) {
+              {{
+                "details.models.filters.expand_count"
+                  | transloco: { count: extraFilterCount() }
+              }}
+            } @else {
+              {{ "details.models.filters.expand" | transloco }}
+            }
+          </button>
+          <div
+            id="models-extra-filters"
+            class="models-extra-filters"
+            [class.models-extra-filters--open]="extraFiltersOpen()"
+          >
+            @if (capabilityOptions().length > 0) {
+              <label class="models-filter-group" for="models-capability">
+                <span class="models-filter-label">{{
+                  "details.models.filters.works_with" | transloco
+                }}</span>
+                <select
+                  id="models-capability"
+                  class="hd-input"
+                  [value]="capabilityFilter() ?? ''"
+                  (change)="onCapabilityChange($event)"
+                >
+                  <option value="">
+                    {{ "details.models.filters.capability_any" | transloco }}
+                  </option>
+                  @for (
+                    capability of capabilityOptions();
+                    track capability.id
+                  ) {
+                    <option [value]="capability.id">
+                      {{ capability.labelKey | transloco }}
+                    </option>
+                  }
+                </select>
+              </label>
+            }
             <div
-              class="models-filter-chips"
+              class="models-filter-toggles"
               role="group"
-              aria-labelledby="models-filter-baseline"
+              [attr.aria-label]="'details.models.filters.show' | transloco"
             >
               <button
                 type="button"
                 class="hd-chip"
-                [class.hd-chip--active]="baselineFilter() === null"
-                [attr.aria-pressed]="baselineFilter() === null"
-                (click)="setBaselineFilter(null)"
+                [class.hd-chip--active]="workersOnly()"
+                [attr.aria-pressed]="workersOnly()"
+                (click)="workersOnly.set(!workersOnly())"
               >
-                {{ "details.models.filters.baseline_any" | transloco }}
+                {{ "details.models.filters.workers_only" | transloco }}
               </button>
-              @for (baseline of baselineOptions(); track baseline) {
-                <button
-                  type="button"
-                  class="hd-chip"
-                  [class.hd-chip--active]="baselineFilter() === baseline"
-                  [attr.aria-pressed]="baselineFilter() === baseline"
-                  (click)="setBaselineFilter(baseline)"
-                >
-                  {{ baselineLabel(baseline) }}
-                </button>
-              }
+              <button
+                type="button"
+                class="hd-chip"
+                [class.hd-chip--active]="hideAdult()"
+                [attr.aria-pressed]="hideAdult()"
+                (click)="hideAdult.set(!hideAdult())"
+              >
+                {{ "details.models.filters.hide_adult" | transloco }}
+              </button>
             </div>
-          </div>
-        }
-
-        @if (capabilityOptions().length > 0) {
-          <div class="models-filter-group">
-            <span class="models-filter-label" id="models-filter-capability">
-              {{ "details.models.filters.works_with" | transloco }}
-            </span>
-            <div
-              class="models-filter-chips"
-              role="group"
-              aria-labelledby="models-filter-capability"
-            >
-              @for (capability of capabilityOptions(); track capability.id) {
-                <button
-                  type="button"
-                  class="hd-chip"
-                  [class.hd-chip--active]="capabilityFilter() === capability.id"
-                  [attr.aria-pressed]="capabilityFilter() === capability.id"
-                  (click)="setCapabilityFilter(capability.id)"
-                >
-                  <app-icon class="models-chip-icon" [name]="capability.icon" />
-                  {{ capability.labelKey | transloco }}
-                </button>
-              }
-            </div>
-          </div>
-        }
-
-        <div class="models-filter-group">
-          <span class="models-filter-label" id="models-filter-show">{{
-            "details.models.filters.show" | transloco
-          }}</span>
-          <div
-            class="models-filter-chips"
-            role="group"
-            aria-labelledby="models-filter-show"
-          >
-            <button
-              type="button"
-              class="hd-chip"
-              [class.hd-chip--active]="workersOnly()"
-              [attr.aria-pressed]="workersOnly()"
-              (click)="workersOnly.set(!workersOnly())"
-            >
-              {{ "details.models.filters.workers_only" | transloco }}
-            </button>
-            <button
-              type="button"
-              class="hd-chip"
-              [class.hd-chip--active]="hideAdult()"
-              [attr.aria-pressed]="hideAdult()"
-              (click)="hideAdult.set(!hideAdult())"
-            >
-              {{ "details.models.filters.hide_adult" | transloco }}
-            </button>
           </div>
         </div>
-
-        <div class="models-filters-foot">
-          <span class="hd-label">
-            @if (filtersActive()) {
-              {{
-                "details.models.count_filtered"
-                  | transloco
-                    : { shown: filteredRows().length, total: totalModels() }
-              }}
-            } @else {
-              {{
-                "details.models.count_all" | transloco: { total: totalModels() }
-              }}
+        @if (filtersActive()) {
+          <div class="models-active-filters">
+            <span class="models-result-count" role="status">{{
+              "details.models.count_filtered"
+                | transloco
+                  : { shown: filteredRows().length, total: totalModels() }
+            }}</span>
+            @if (baselineFilter(); as baseline) {
+              <button
+                type="button"
+                class="hd-chip hd-chip--active"
+                (click)="baselineFilter.set(null)"
+                [attr.aria-label]="
+                  'details.models.filters.remove'
+                    | transloco: { filter: baselineLabel(baseline) }
+                "
+              >
+                {{ baselineLabel(baseline) }} <span aria-hidden="true">×</span>
+              </button>
             }
-          </span>
-          @if (filtersActive()) {
+            @for (capability of capabilityOptions(); track capability.id) {
+              @if (capabilityFilter() === capability.id) {
+                <button
+                  type="button"
+                  class="hd-chip hd-chip--active"
+                  (click)="capabilityFilter.set(null)"
+                  [attr.aria-label]="
+                    'details.models.filters.remove'
+                      | transloco: { filter: (capability.labelKey | transloco) }
+                  "
+                >
+                  {{ capability.labelKey | transloco }}
+                  <span aria-hidden="true">×</span>
+                </button>
+              }
+            }
+            @if (workersOnly()) {
+              <button
+                type="button"
+                class="hd-chip hd-chip--active"
+                (click)="workersOnly.set(false)"
+                [attr.aria-label]="
+                  'details.models.filters.remove'
+                    | transloco
+                      : {
+                          filter:
+                            ('details.models.filters.workers_only' | transloco),
+                        }
+                "
+              >
+                {{ "details.models.filters.workers_only" | transloco }}
+                <span aria-hidden="true">×</span>
+              </button>
+            }
+            @if (hideAdult()) {
+              <button
+                type="button"
+                class="hd-chip hd-chip--active"
+                (click)="hideAdult.set(false)"
+                [attr.aria-label]="
+                  'details.models.filters.remove'
+                    | transloco
+                      : {
+                          filter:
+                            ('details.models.filters.hide_adult' | transloco),
+                        }
+                "
+              >
+                {{ "details.models.filters.hide_adult" | transloco }}
+                <span aria-hidden="true">×</span>
+              </button>
+            }
             <button
               type="button"
               class="hd-btn hd-btn--ghost hd-btn--dense"
@@ -246,8 +244,8 @@
             >
               {{ "details.models.filters.clear" | transloco }}
             </button>
-          }
-        </div>
+          </div>
+        }
       </div>
     }
 
@@ -339,6 +337,11 @@
             <option value="baseline">
               {{ "details.models.filters.baseline" | transloco }}
             </option>
+            @if (showsChat()) {
+              <option value="chat">
+                {{ "details.models.column.chat" | transloco }}
+              </option>
+            }
           </select>
           <button
             type="button"
@@ -355,6 +358,13 @@
         </div>
 
         <div class="models-caption">
+          @if (activeTab() === "image") {
+            <a
+              class="models-docs-link"
+              routerLink="/docs/image/settings/model"
+              >{{ "details.models.docs_link" | transloco }}</a
+            >
+          }
           <span class="models-caption-label">{{
             "details.models.columns_help.label" | transloco
           }}</span>
@@ -374,6 +384,9 @@
             @if (columnsHelpOpen()) {
               <p class="hd-help-note" role="note" id="models-columns-help">
                 {{ "details.models.columns_help.body" | transloco }}
+                @if (showsChat()) {
+                  {{ "details.models.columns_help.chat" | transloco }}
+                }
               </p>
             }
           </span>
@@ -382,6 +395,7 @@
         <div
           class="hd-list models-grid"
           [class.models-grid--text]="activeTab() !== 'image'"
+          [class.models-grid--chat]="showsChat()"
         >
           <div class="hd-list-head">
             <button
@@ -475,12 +489,29 @@
                 }}</span>
               }
             </button>
+            @if (showsChat()) {
+              <button
+                type="button"
+                class="hd-list-th hd-list-th--right"
+                [class.hd-list-th--active]="sortField() === 'chat'"
+                (click)="setSortField('chat')"
+              >
+                {{ "details.models.column.chat" | transloco }}
+                @if (sortField() === "chat") {
+                  <span class="hd-list-sort" aria-hidden="true">{{
+                    sortDirection() === "asc" ? "↑" : "↓"
+                  }}</span>
+                }
+              </button>
+            }
           </div>
 
           @for (row of filteredRows(); track row.model.name) {
             <div
               class="hd-list-row"
-              [class.hd-list-row--idle]="row.model.count === 0"
+              [class.hd-list-row--idle]="
+                row.model.count === 0 && chatFor(row) === null
+              "
             >
               <div class="models-list-identity">
                 <a
@@ -522,7 +553,7 @@
                       "details.models.badge.unclassified" | transloco
                     }}</span>
                   }
-                  @if (row.model.count === 0) {
+                  @if (row.model.count === 0 && chatFor(row) === null) {
                     <span class="hd-badge models-mark models-mark--idle">{{
                       "details.models.badge.no_workers" | transloco
                     }}</span>
@@ -579,6 +610,46 @@
                 "
                 >{{ formatEta(row.model.eta) }}</span
               >
+
+              @if (showsChat()) {
+                @let chat = chatFor(row);
+                <span
+                  class="models-list-value models-list-chat"
+                  [class.models-list-value--muted]="chat === null"
+                  data-chat-cell
+                >
+                  @if (chat) {
+                    <span aria-hidden="true"
+                      ><span class="models-desktop-value">{{
+                        formatNumber(chat.workers)
+                      }}</span
+                      ><span class="models-mobile-value">{{
+                        (chat.workers === 1
+                          ? "details.models.chat_worker_count_one"
+                          : "details.models.chat_worker_count_other"
+                        ) | transloco: { count: chat.workers }
+                      }}</span>
+                      <span class="models-list-sub">{{
+                        "details.models.chat_context"
+                          | transloco
+                            : { context: formatNumber(chat.max_context_length) }
+                      }}</span></span
+                    ><span class="sr-only">{{
+                      "details.models.chat_cell"
+                        | transloco
+                          : {
+                              workers: chat.workers,
+                              context: formatNumber(chat.max_context_length),
+                              reply: formatNumber(chat.max_length),
+                            }
+                    }}</span>
+                  } @else {
+                    <!-- Most text models do not have a chat worker, so a phone
+                         row leaves the cell empty instead of repeating a dash. -->
+                    <span class="models-desktop-value">-</span>
+                  }
+                </span>
+              }
 
               @if (activeTab() === "image") {
                 <a

@@ -19,6 +19,21 @@ export interface ActiveModel {
   type?: 'image' | 'text';
   /** True for custom models, false for known models; absent when unclassified. */
   custom?: boolean;
+  /** Present only on the text list requested with `chat=true`. */
+  chat?: ModelChatSummary;
+}
+
+/** A combined summary of the online chat workers serving one text model. */
+export interface ModelChatSummary {
+  /** How many online chat workers serve the model. */
+  workers: number;
+  /** The largest chat context among those workers. */
+  max_context_length: number;
+  /** The largest chat reply among those workers. */
+  max_length: number;
+  /** The sorted union of the workers' features, guarantees included. */
+  features: string[];
+  created: number;
 }
 
 /** Type of model: image or text */

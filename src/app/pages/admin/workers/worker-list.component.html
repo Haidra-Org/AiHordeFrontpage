@@ -341,8 +341,8 @@
               </div>
             </div>
 
-            <!-- Capability Statistics (Image workers only) -->
-            @if (workerType() === "image" && capabilityStats().length > 0) {
+            <!-- Capability Statistics (image capabilities, text chat jobs) -->
+            @if (capabilityStats().length > 0) {
               <div class="admin-border-t pt-6">
                 <h3 class="heading-admin-card mb-3">
                   {{ "admin.workers.stats.capabilities" | transloco }}
@@ -356,7 +356,13 @@
                     track capability.name
                   ) {
                     <div class="data-item-box admin-bg-dark">
-                      <div class="data-label mb-1">{{ capability.name }}</div>
+                      <div class="data-label mb-1">
+                        {{
+                          capability.labelKey
+                            ? (capability.labelKey | transloco)
+                            : capability.name
+                        }}
+                      </div>
                       <div class="admin-capability-values">
                         <div class="data-value text-lg">
                           {{ capability.totalPerformance | number: "1.2-2" }}
@@ -395,6 +401,19 @@
           class="form-input w-full"
         />
       </div>
+
+      @if (workerType() === "text") {
+        <button
+          type="button"
+          class="hd-chip gap-1"
+          [class.hd-chip--active]="chatJobsOnly()"
+          [attr.aria-pressed]="chatJobsOnly()"
+          (click)="chatJobsOnly.set(!chatJobsOnly())"
+        >
+          <app-icon name="chat-bubble" class="icon-sm" aria-hidden="true" />
+          {{ "admin.workers.filter_chat_jobs" | transloco }}
+        </button>
+      }
 
       <!-- Sort Key Select -->
       <div class="admin-filter-sort">

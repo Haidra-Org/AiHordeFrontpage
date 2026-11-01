@@ -26,7 +26,16 @@ import { AuthService } from '../../../services/auth.service';
 import { AdminWorkerService } from '../../../services/admin-worker.service';
 import { NetworkStatusService } from '../../../services/network-status.service';
 import { TeamService } from '../../../services/team.service';
-import { HordeWorker, WorkerType } from '../../../types/horde-worker';
+import {
+  HordeWorker,
+  WorkerChatDeclaration,
+  WorkerType,
+} from '../../../types/horde-worker';
+import {
+  chatHasJsonSchema,
+  chatHasTools,
+  chatReadsImages,
+} from './chat-features';
 import { Team } from '../../../types/team';
 import { WorkerCardComponent } from './worker-card.component';
 import { WorkerRowComponent } from './worker-row.component';
@@ -52,6 +61,30 @@ type SortKey =
   | 'uptime'
   | 'megapixelsteps_generated';
 type SortOrder = 'asc' | 'desc';
+
+/** The number of listed workers with one capability, and their speed. */
+interface CapabilityStat {
+  name: string;
+  /**
+   * Shown in place of `name` when the capability does not have a short API
+   * name.
+   */
+  labelKey?: string;
+  totalPerformance: number;
+  workerCount: number;
+}
+
+function stat(name: string, labelKey: string): CapabilityStat {
+  return { name, labelKey, totalPerformance: 0, workerCount: 0 };
+}
+
+/** Used for a chat worker when the horde did not send a declaration. */
+const EMPTY_CHAT_DECLARATION: WorkerChatDeclaration = {
+  model_id: '',
+  features: [],
+  limits: { max_context_length: 0, max_length: 0, tools_max_temperature: null },
+  image_transports: [],
+};
 
 const WORKER_VIEW_MODE_STORAGE_KEY = 'workers.view_mode';
 
@@ -129,6 +162,8 @@ export class WorkerListComponent implements OnInit {
   public loading = signal<boolean>(true);
   public errorMessage = signal<string | null>(null);
   public filterText = signal<string>('');
+  /** Whether the text tab lists only workers that accept chat jobs. */
+  public chatJobsOnly = signal<boolean>(false);
   public workerType = signal<WorkerType>('image');
   public sortKey = signal<SortKey>('name');
   public sortOrder = signal<SortOrder>('asc');
@@ -214,6 +249,7 @@ export class WorkerListComponent implements OnInit {
     if (this.workerType() === type) return;
     this.workerType.set(type);
     this.filterText.set('');
+    this.chatJobsOnly.set(false);
     // Reset sort key if MPS generated is selected but not available for this type
     if (type !== 'image' && this.sortKey() === 'megapixelsteps_generated') {
       this.sortKey.set('name');
@@ -234,6 +270,11 @@ export class WorkerListComponent implements OnInit {
         const ownerUserId = extractUserId(w.owner);
         return ownerUserId !== null && ownerUserId.toString() === ownerId;
       });
+    }
+
+    // Only text workers take chat jobs, so the toggle exists on that tab alone.
+    if (this.workerType() === 'text' && this.chatJobsOnly()) {
+      result = result.filter((w) => w.accepts_chat_jobs === true);
     }
 
     // Apply text filter (includes team name)
@@ -427,13 +468,56 @@ export class WorkerListComponent implements OnInit {
     };
   }
 
-  public capabilityStats = computed(() => {
+  public capabilityStats = computed((): CapabilityStat[] => {
     const workers = this.filteredWorkers();
-    const capabilities: {
-      name: string;
-      totalPerformance: number;
-      workerCount: number;
-    }[] = [];
+    const capabilities: CapabilityStat[] = [];
+
+    if (this.workerType() === 'text') {
+      // The text counterpart of the image capabilities: the chat job kind
+      // and the chat features most often used to filter workers. A worker
+      // without a stored declaration counts only as a chat worker.
+      const textCapabilities: {
+        stat: CapabilityStat;
+        has: (worker: HordeWorker, chat: WorkerChatDeclaration) => boolean;
+      }[] = [
+        {
+          stat: stat('chat', 'admin.workers.text.chat_jobs'),
+          has: () => true,
+        },
+        {
+          stat: stat('chat_only', 'admin.workers.stats.chat_only'),
+          has: (worker) => worker.accepts_prompt_jobs === false,
+        },
+        {
+          stat: stat('reads_images', 'admin.workers.text.reads_images'),
+          has: (_, chat) => chatReadsImages(chat),
+        },
+        {
+          stat: stat('tools', 'admin.workers.chat.feature.tools.title'),
+          has: (_, chat) => chatHasTools(chat),
+        },
+        {
+          stat: stat(
+            'json_schema',
+            'admin.workers.chat.feature.json_schema.title',
+          ),
+          has: (_, chat) => chatHasJsonSchema(chat),
+        },
+      ];
+      workers.forEach((w) => {
+        if (!w.accepts_chat_jobs) return;
+        const chat = w.chat ?? EMPTY_CHAT_DECLARATION;
+        const performance = this.units.parseWorkerPerformance(w.performance);
+        textCapabilities.forEach((entry) => {
+          if (!entry.has(w, chat)) return;
+          entry.stat.totalPerformance += performance;
+          entry.stat.workerCount++;
+        });
+      });
+      return textCapabilities
+        .map((entry) => entry.stat)
+        .filter((c) => c.workerCount > 0);
+    }
 
     if (this.workerType() === 'image') {
       const img2img = { name: 'img2img', totalPerformance: 0, workerCount: 0 };

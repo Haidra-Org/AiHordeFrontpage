@@ -5,7 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { computed, signal } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../../assets/i18n/en.json';
 import {
@@ -100,6 +100,7 @@ function configure(): void {
               },
             ]),
           getClassifiedTextModels: () => of([]),
+          getChatTextModels: () => of([]),
           getImageModelStats: () =>
             of({ day: {}, month: { Deliberate: 400 }, total: {} }),
           getTextModelStats: () => of({ day: {}, month: {}, total: {} }),
@@ -247,6 +248,112 @@ describe('ModelDetailComponent text classification', () => {
       expect(host.textContent).not.toContain('No model is called');
     },
   );
+});
+
+describe('ModelDetailComponent chat jobs', () => {
+  const name = 'koboldcpp/Some-Chat-Model';
+
+  async function openText(
+    chatModels: ReturnType<AiHordeService['getChatTextModels']>,
+    count = 1,
+  ): Promise<HTMLElement> {
+    configure();
+    vi.spyOn(
+      TestBed.inject(AiHordeService),
+      'getChatTextModels',
+    ).mockReturnValue(chatModels);
+    vi.spyOn(
+      TestBed.inject(AiHordeService),
+      'getClassifiedTextModels',
+    ).mockReturnValue(of([{ name, count }]));
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl(
+      `/details/models/text/${encodeURIComponent(name)}`,
+      ModelDetailComponent,
+    );
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    return harness.fixture.nativeElement as HTMLElement;
+  }
+
+  it('shows how many chat workers serve the model, their largest limits and what they declared', async () => {
+    const host = await openText(
+      of([
+        {
+          name,
+          count: 1,
+          chat: {
+            workers: 2,
+            max_context_length: 16384,
+            max_length: 1024,
+            features: ['prompt_overflow_refused', 'seed', 'tools'],
+            created: 0,
+          },
+        },
+      ]),
+    );
+    const stat = host.querySelector('[data-model-chat-stat]');
+    expect(stat?.textContent).toContain('Chat workers');
+    expect(stat?.textContent).toContain('2');
+    expect(stat?.textContent).toContain('up to 16,384 tokens of context');
+
+    const card = host.querySelector('[data-model-chat]');
+    expect(card?.textContent).toContain('16,384');
+    expect(card?.textContent).toContain('1,024');
+    const named = Array.from(
+      card?.querySelectorAll('[data-chat-capability]') ?? [],
+    ).map((el) => el.getAttribute('data-chat-capability'));
+    expect(named).toEqual(['seed', 'tools', 'prompt_overflow_refused']);
+    expect(card?.textContent).toContain('Refuses long prompts');
+    expect(card?.querySelector('.worker-cap--off')).toBeNull();
+    expect(
+      card?.querySelector(
+        '[data-chat-capability="prompt_overflow_refused"] app-icon[name="badge-check"]',
+      ),
+    ).not.toBeNull();
+  });
+
+  it('reports zero chat workers for a model missing from the chat list', async () => {
+    const host = await openText(of([]));
+    expect(host.querySelector('[data-model-chat-stat]')?.textContent).toContain(
+      'no chat worker is online',
+    );
+    expect(host.querySelector('[data-model-chat]')).toBeNull();
+  });
+
+  it('does not call a model idle when only chat workers run it', async () => {
+    const host = await openText(
+      of([
+        {
+          name,
+          count: 0,
+          chat: {
+            workers: 1,
+            max_context_length: 4096,
+            max_length: 256,
+            features: [],
+            created: 0,
+          },
+        },
+      ]),
+      0,
+    );
+    const summary = host.querySelector('.model-detail-summary')?.textContent;
+    expect(summary).toContain('only chat workers are running it');
+    expect(summary).not.toContain('nobody is running this model');
+  });
+
+  it('hides chat jobs when the chat list cannot be read', async () => {
+    const host = await openText(throwError(() => new Error('offline')));
+    expect(host.querySelector('[data-model-chat-stat]')).toBeNull();
+    expect(host.querySelector('[data-model-chat]')).toBeNull();
+  });
+
+  it('does not show chat jobs on an image model', async () => {
+    const harness = await open('/details/models/image/Deliberate');
+    const host = harness.fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[data-model-chat]')).toBeNull();
+  });
 });
 
 describe('ModelDetailComponent', () => {

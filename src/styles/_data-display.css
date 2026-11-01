@@ -1829,6 +1829,154 @@
     text-decoration: line-through;
   }
 
+  /* Text job kinds use the text domain's hue, just as each image capability
+     has its own hue. The reads-images badge uses the image domain's hue. */
+  .worker-cap--prompt-jobs,
+  .worker-cap--chat-jobs {
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .worker-cap--reads-images {
+    --hd-zone-tint: var(--hd-purple-tint);
+    --hd-zone-tint-border: var(--hd-purple-tint-border);
+  }
+
+  /* A one-sentence note under the capabilities that affects how the rest of
+     the section should be read, such as the chat-only note. */
+  .worker-card-note {
+    margin-top: var(--hd-space-2);
+    font-size: var(--hd-text-xs);
+    line-height: 1.45;
+    color: var(--hd-muted);
+  }
+
+  /* A text worker's limits per job kind. Both job kinds have the same two
+     limits, so a small table is quicker to read than four label rows. A job
+     kind that the worker does not take is left out of the table. */
+  .worker-limits {
+    width: 100%;
+    margin-top: var(--hd-space-2);
+    margin-bottom: var(--hd-space-2);
+    border-collapse: collapse;
+    font-size: var(--hd-text-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .worker-limits th,
+  .worker-limits td {
+    padding: var(--hd-space-1) 0;
+    text-align: right;
+  }
+
+  .worker-limits th:first-child {
+    text-align: left;
+  }
+
+  .worker-limits thead th {
+    font-size: var(--hd-text-xs);
+    font-weight: 500;
+    color: var(--hd-muted);
+    border-bottom: 1px solid var(--hd-border);
+  }
+
+  .worker-limits tbody th {
+    font-weight: 500;
+    color: var(--hd-ink-2);
+  }
+
+  .worker-limits td {
+    color: var(--hd-ink);
+  }
+
+  .worker-limits tbody tr + tr > * {
+    border-top: 1px solid var(--hd-border-subtle);
+  }
+
+  /* Space above a block that follows a table or a run of rows in the same
+     section, such as the chat features under the limits. Without it, the
+     block's label looks like another row. */
+  .worker-card-subsection {
+    margin-top: var(--hd-space-2);
+  }
+
+  /* A chat declaration in labelled rows: the label column is as wide as
+     its longest label, and the badges wrap beside it. */
+  .chat-caps {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--hd-space-2) var(--hd-space-3);
+    margin: 0;
+  }
+
+  .chat-caps-group {
+    display: contents;
+  }
+
+  .chat-caps-label {
+    font-size: var(--hd-text-xs);
+    color: var(--hd-muted);
+  }
+
+  .chat-caps-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hd-space-1);
+    margin: 0;
+  }
+
+  /* Each group has one hue for its badges, so a returning reader can find a
+     row by colour. The row label gives the same information in words. */
+  .chat-caps-group--sampling {
+    --hd-zone-tint: var(--hd-accent-tint);
+    --hd-zone-tint-border: var(--hd-accent-tint-border);
+  }
+
+  .chat-caps-group--images {
+    --hd-zone-tint: var(--hd-purple-tint);
+    --hd-zone-tint-border: var(--hd-purple-tint-border);
+  }
+
+  .chat-caps-group--tools {
+    --hd-zone-tint: var(--hd-teal-tint);
+    --hd-zone-tint-border: var(--hd-teal-tint-border);
+  }
+
+  .chat-caps-group--format {
+    --hd-zone-tint: var(--hd-indigo-tint);
+    --hd-zone-tint-border: var(--hd-indigo-tint-border);
+  }
+
+  .chat-caps-group--guarantees {
+    --hd-zone-tint: var(--hd-green-tint);
+    --hd-zone-tint-border: var(--hd-green-tint-border);
+  }
+
+  .chat-caps-group--other {
+    --hd-zone-tint: var(--hd-seg-track);
+    --hd-zone-tint-border: var(--hd-border);
+  }
+
+  /* A guarantee is a stronger commitment than a feature, so it has a check
+     glyph in addition to its hue. The glyph keeps guarantees distinguishable
+     without colour. */
+  .chat-cap {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-1);
+  }
+
+  .chat-cap-icon {
+    width: 1em;
+    height: 1em;
+    flex: none;
+    color: var(--hd-green);
+  }
+
+  .worker-cap--off .chat-cap-icon {
+    color: var(--hd-muted);
+  }
+
   /* How many of a thing the dialog is showing, beside its title. */
   .worker-dialog-count {
     font-size: var(--hd-text-sm);

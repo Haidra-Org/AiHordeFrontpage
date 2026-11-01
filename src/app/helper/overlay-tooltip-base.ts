@@ -13,6 +13,13 @@ const SHOW_DELAY_MS = 200;
 const CLICK_CLOSE_GUARD_MS = 600;
 
 /**
+ * The one tooltip open on the page. Showing a tooltip closes any other.
+ * Without this, moving the pointer quickly over several triggers leaves their
+ * tooltips open together.
+ */
+const openTooltip: { current: OverlayTooltipBase | null } = { current: null };
+
+/**
  * Shared base for CDK-Overlay-based tooltips / popovers.
  *
  * Handles:
@@ -49,6 +56,9 @@ export abstract class OverlayTooltipBase implements OnDestroy {
     this.clearShowTimer();
     this.overlayRef?.dispose();
     this.overlayRef = null;
+    if (openTooltip.current === this) {
+      openTooltip.current = null;
+    }
   }
 
   protected scheduleShow(): void {
@@ -60,6 +70,11 @@ export abstract class OverlayTooltipBase implements OnDestroy {
   protected show(): void {
     this.clearShowTimer();
     this.clearHideTimer();
+
+    if (openTooltip.current && openTooltip.current !== this) {
+      openTooltip.current.hide();
+    }
+    openTooltip.current = this;
 
     if (!this.overlayRef) {
       this.overlayRef = this.createOverlay();
@@ -85,6 +100,9 @@ export abstract class OverlayTooltipBase implements OnDestroy {
     this.visible = false;
     this.clearHideTimer();
     this.clearShowTimer();
+    if (openTooltip.current === this) {
+      openTooltip.current = null;
+    }
     if (this.overlayRef?.hasAttached()) {
       this.overlayRef.detach();
       this.onDetach();
@@ -92,6 +110,8 @@ export abstract class OverlayTooltipBase implements OnDestroy {
   }
 
   protected scheduleHide(): void {
+    // The pointer has already left, so cancel any pending show.
+    this.clearShowTimer();
     this.clearHideTimer();
     this.hideTimer = setTimeout(() => this.hide(), HIDE_DELAY_MS);
   }

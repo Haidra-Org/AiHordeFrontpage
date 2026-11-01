@@ -37,7 +37,7 @@ function makeWorker(overrides: Partial<HordeWorker> = {}): HordeWorker {
   };
 }
 
-describe('WorkerCardComponent suspicion', () => {
+describe('WorkerCardComponent', () => {
   let fixture: ComponentFixture<WorkerCardComponent>;
   let getWorkerSuspicionEvents: ReturnType<typeof vi.fn>;
 
@@ -46,6 +46,7 @@ describe('WorkerCardComponent suspicion', () => {
   const render = async (
     isModerator: boolean,
     prompts: EndpointAvailability = 'unknown',
+    worker: HordeWorker = makeWorker(),
   ): Promise<void> => {
     getWorkerSuspicionEvents = vi.fn(() =>
       of({ events: [], next_cursor: null }),
@@ -93,7 +94,7 @@ describe('WorkerCardComponent suspicion', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(WorkerCardComponent);
-    fixture.componentRef.setInput('worker', makeWorker());
+    fixture.componentRef.setInput('worker', worker);
     fixture.componentRef.setInput('isModerator', isModerator);
     fixture.detectChanges();
     await fixture.whenStable();
@@ -149,5 +150,244 @@ describe('WorkerCardComponent suspicion', () => {
     expect(getWorkerSuspicionEvents).toHaveBeenCalledWith(
       expect.objectContaining({ worker_id: 'worker-1' }),
     );
+  });
+
+  const textWorker = (overrides: Partial<HordeWorker> = {}): HordeWorker =>
+    makeWorker({
+      type: 'text',
+      performance: '10 tokens per second',
+      models: ['koboldcpp/Model-A'],
+      max_context_length: 8192,
+      max_length: 512,
+      ...overrides,
+    });
+
+  const chatWorker = (overrides: Partial<HordeWorker> = {}): HordeWorker =>
+    textWorker({
+      accepts_chat_jobs: true,
+      accepts_prompt_jobs: true,
+      nonconformant_replies: 3,
+      chat: {
+        model_id: 'koboldcpp/Model-A',
+        features: ['json_schema', 'prompt_overflow_refused', 'seed', 'vision'],
+        limits: {
+          max_context_length: 16384,
+          max_length: 1024,
+          tools_max_temperature: 1.0,
+        },
+        image_transports: ['base64', 'messages_url'],
+      },
+      ...overrides,
+    });
+
+  const capabilities = (): HTMLElement | null =>
+    host().querySelector('[data-text-capabilities]');
+
+  const chatSection = (): HTMLElement | null =>
+    host().querySelector('[data-chat-section]');
+
+  const limitsRow = (kind: 'prompt' | 'chat'): string | null => {
+    const row = host().querySelector(`[data-limits="${kind}"]`);
+    if (!row) return null;
+    return Array.from(row.children)
+      .map((cell) => cell.textContent?.trim())
+      .join(' ');
+  };
+
+  const jobKind = (kind: string): Element | null =>
+    host().querySelector(`[data-job-kind="${kind}"]`);
+
+  /** Each group's names, with the undeclared ones marked by a leading `-`. */
+  const groups = (): Record<string, string[]> =>
+    Object.fromEntries(
+      Array.from(host().querySelectorAll('[data-chat-group]')).map((group) => [
+        group.getAttribute('data-chat-group'),
+        Array.from(group.querySelectorAll('[data-chat-capability]')).map(
+          (badge) =>
+            (badge.getAttribute('data-declared') === 'true' ? '' : '-') +
+            badge.getAttribute('data-chat-capability'),
+        ),
+      ]),
+    );
+
+  it("lists a chat worker's job kinds and the limits for each", async () => {
+    await render(false, 'unknown', chatWorker());
+
+    expect(host().querySelector('[data-chat-indicator]')).not.toBeNull();
+    expect(jobKind('prompt')?.getAttribute('data-declared')).toBe('true');
+    expect(jobKind('chat')?.getAttribute('data-declared')).toBe('true');
+    expect(limitsRow('prompt')).toBe(
+      'admin.workers.text.prompt_jobs 8,192 512',
+    );
+    expect(limitsRow('chat')).toBe('admin.workers.text.chat_jobs 16,384 1,024');
+    expect(capabilities()?.textContent).toContain(
+      'admin.workers.chat.tools_max_temperature',
+    );
+    expect(host().querySelector('[data-chat-only]')).toBeNull();
+  });
+
+  it('groups every chat feature, guarantee and image transport and marks the undeclared ones', async () => {
+    await render(false, 'unknown', chatWorker());
+
+    expect(groups()).toEqual({
+      sampling: [
+        'seed',
+        '-presence_penalty',
+        '-frequency_penalty',
+        '-reasoning_effort',
+      ],
+      images: ['vision', '-url', 'base64', 'messages_url'],
+      tools: ['-tools', '-tools_with_response_format'],
+      format: ['-json_object', 'json_schema'],
+      guarantees: [
+        '-tool_choice_enforced',
+        '-single_tool_call_enforced',
+        '-structured_output_enforced',
+        'prompt_overflow_refused',
+      ],
+    });
+    const off = host().querySelector('[data-chat-capability="tools"]');
+    expect(off?.classList).toContain('worker-cap--off');
+    expect(off?.getAttribute('aria-label')).toBe(
+      'admin.workers.chat.capability_off',
+    );
+  });
+
+  it('labels each chat badge in words and keeps the API name for its tooltip', async () => {
+    await render(false, 'unknown', chatWorker());
+
+    const seed = host().querySelector('[data-chat-capability="seed"]');
+    expect(seed?.textContent?.trim()).toBe(
+      'admin.workers.chat.feature.seed.title',
+    );
+    expect(
+      host().querySelector(
+        '[data-chat-capability="prompt_overflow_refused"] app-icon[name="badge-check"]',
+      ),
+    ).not.toBeNull();
+    expect(
+      host().querySelector('[data-chat-capability="seed"] app-icon'),
+    ).toBeNull();
+  });
+
+  it('shows the chat model only when the card does not already show it', async () => {
+    await render(false, 'unknown', chatWorker());
+    expect(capabilities()?.textContent).not.toContain(
+      'admin.workers.chat.model',
+    );
+    TestBed.resetTestingModule();
+
+    await render(
+      false,
+      'unknown',
+      chatWorker({ models: ['koboldcpp/Model-A', 'koboldcpp/Model-B'] }),
+    );
+    expect(capabilities()?.textContent).toContain('admin.workers.chat.model');
+    expect(capabilities()?.textContent).toContain('koboldcpp/Model-A');
+  });
+
+  it('notes once that a chat-only worker does not take plain text jobs and omits their limits', async () => {
+    await render(false, 'unknown', chatWorker({ accepts_prompt_jobs: false }));
+
+    expect(jobKind('prompt')?.classList).toContain('worker-cap--off');
+    expect(host().querySelectorAll('[data-chat-only]').length).toBe(1);
+    expect(limitsRow('prompt')).toBeNull();
+    expect(limitsRow('chat')).not.toBeNull();
+  });
+
+  it('reports reading images only with vision and a url or base64 transport', async () => {
+    await render(false, 'unknown', chatWorker());
+    expect(jobKind('images')?.getAttribute('data-declared')).toBe('true');
+    TestBed.resetTestingModule();
+
+    const onlyMessages = chatWorker();
+    onlyMessages.chat = {
+      ...onlyMessages.chat!,
+      image_transports: ['messages_url'],
+    };
+    await render(false, 'unknown', onlyMessages);
+    expect(jobKind('images')?.getAttribute('data-declared')).toBe('false');
+    expect(jobKind('images')?.classList).toContain('worker-cap--off');
+  });
+
+  it('lists an undescribed name under Other, without a description', async () => {
+    const worker = chatWorker();
+    worker.chat = { ...worker.chat!, features: ['seed', 'future_feature'] };
+    await render(false, 'unknown', worker);
+
+    expect(groups()['other']).toEqual(['future_feature']);
+    const unknown = host().querySelector(
+      '[data-chat-capability="future_feature"]',
+    );
+    expect(unknown?.textContent?.trim()).toBe('future_feature');
+    expect(unknown?.hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('counts refused replies beside the other job counters on a chat worker', async () => {
+    await render(false, 'unknown', chatWorker());
+    expect(
+      host().querySelector('[data-nonconformant-replies]')?.textContent,
+    ).toContain('3');
+  });
+
+  it('keeps an earlier refused-reply count on a worker that no longer takes chat jobs', async () => {
+    await render(
+      false,
+      'unknown',
+      textWorker({ accepts_chat_jobs: false, nonconformant_replies: 0 }),
+    );
+    expect(host().querySelector('[data-nonconformant-replies]')).toBeNull();
+    TestBed.resetTestingModule();
+
+    await render(
+      false,
+      'unknown',
+      textWorker({ accepts_chat_jobs: false, nonconformant_replies: 2 }),
+    );
+    expect(
+      host().querySelector('[data-nonconformant-replies]')?.textContent,
+    ).toContain('2');
+  });
+
+  it('shows a text worker that does not take chat jobs with chat struck out and its plain text limits', async () => {
+    await render(
+      false,
+      'unknown',
+      textWorker({ accepts_chat_jobs: false, accepts_prompt_jobs: true }),
+    );
+
+    expect(host().querySelector('[data-chat-indicator]')).toBeNull();
+    expect(
+      host().querySelector(
+        '.worker-status-icon-muted app-worker-status-icon[type="chat"]',
+      ),
+    ).not.toBeNull();
+    expect(jobKind('chat')?.classList).toContain('worker-cap--off');
+    expect(limitsRow('prompt')).toBe(
+      'admin.workers.text.prompt_jobs 8,192 512',
+    );
+    expect(limitsRow('chat')).toBeNull();
+    expect(chatSection()).toBeNull();
+  });
+
+  it('shows only plain text limits when the horde does not send the job kinds', async () => {
+    await render(false, 'unknown', textWorker());
+
+    expect(
+      host().querySelector('app-worker-status-icon[type="chat"]'),
+    ).toBeNull();
+    expect(jobKind('prompt')).toBeNull();
+    expect(limitsRow('prompt')).toBe(
+      'admin.workers.text.prompt_jobs 8,192 512',
+    );
+    expect(chatSection()).toBeNull();
+    expect(host().querySelector('[data-nonconformant-replies]')).toBeNull();
+  });
+
+  it('does not show text capabilities on an image worker that has the counter', async () => {
+    await render(false, 'unknown', makeWorker({ nonconformant_replies: 0 }));
+
+    expect(capabilities()).toBeNull();
+    expect(host().querySelector('[data-nonconformant-replies]')).toBeNull();
   });
 });

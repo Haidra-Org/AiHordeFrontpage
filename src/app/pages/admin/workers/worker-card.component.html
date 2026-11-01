@@ -567,6 +567,26 @@
         </div>
       }
     }
+    @if (showsChat()) {
+      @if (acceptsChat()) {
+        <div
+          class="worker-card-icon-pad"
+          data-chat-indicator
+          [appTouchTooltip]="'admin.workers.card.chat'"
+          [appTouchTooltipDesc]="iconDesc('chat')"
+          [appTouchTooltipPreferBelow]="true"
+        >
+          <app-worker-status-icon type="chat" />
+        </div>
+      } @else {
+        <div
+          class="worker-card-icon-pad worker-status-icon-muted"
+          aria-hidden="true"
+        >
+          <app-worker-status-icon type="chat" />
+        </div>
+      }
+    }
     <!-- Worker type indicator + JSON trigger (right-aligned) -->
     <div
       class="worker-card-icon-pad ml-auto"
@@ -867,6 +887,20 @@
           }
         </div>
       }
+      @if (showsNonconformant()) {
+        <div class="worker-card-row" data-nonconformant-replies>
+          <span
+            class="worker-card-label"
+            [appTouchTooltip]="'admin.workers.card.nonconformant_replies'"
+            [appTouchTooltipDesc]="'admin.workers.card.nonconformant_replies_description'"
+            [appTouchTooltipPreferBelow]="true"
+            >{{ "admin.workers.card.nonconformant_replies" | transloco }}:</span
+          >
+          <span class="worker-card-value">{{
+            worker().nonconformant_replies ?? 0 | formatNumber
+          }}</span>
+        </div>
+      }
     </div>
 
     <!-- Capabilities & Features -->
@@ -1029,6 +1063,171 @@
             >SDXL ControlNet</span
           >
         </div>
+      </div>
+    }
+
+    <!-- Capabilities (Text workers) -->
+    @if (worker().type === "text") {
+      <div class="mt-3 pt-3 worker-card-section" data-text-capabilities>
+        <span class="worker-card-label worker-card-section-label"
+          >{{ "admin.workers.card.capabilities" | transloco }}:</span
+        >
+        <!-- When the horde does not send the job kinds, chat support is
+             unknown, so the kinds are listed only when it sends them. -->
+        @if (showsChat()) {
+          <div class="worker-card-badges-wrap">
+            <span
+              class="hd-badge worker-cap worker-cap--prompt-jobs"
+              [class.worker-cap--off]="!takesPromptJobs()"
+              data-job-kind="prompt"
+              [attr.data-declared]="takesPromptJobs()"
+              >{{ "admin.workers.text.prompt_jobs" | transloco }}
+              @if (!takesPromptJobs()) {
+                <span class="sr-only">{{
+                  "admin.workers.text.not_taken" | transloco
+                }}</span>
+              }
+            </span>
+            <span
+              class="hd-badge worker-cap worker-cap--chat-jobs"
+              [class.worker-cap--off]="!acceptsChat()"
+              data-job-kind="chat"
+              [attr.data-declared]="acceptsChat()"
+              >{{ "admin.workers.text.chat_jobs" | transloco }}
+              @if (!acceptsChat()) {
+                <span class="sr-only">{{
+                  "admin.workers.text.not_taken" | transloco
+                }}</span>
+              }
+            </span>
+            <span
+              class="hd-badge worker-cap worker-cap--reads-images"
+              [class.worker-cap--off]="!chatReadsImages()"
+              data-job-kind="images"
+              [attr.data-declared]="chatReadsImages()"
+              [appTouchTooltip]="'admin.workers.text.reads_images'"
+              [appTouchTooltipDesc]="'admin.workers.text.reads_images_description'"
+              [appTouchTooltipPreferBelow]="true"
+              [attr.aria-label]="
+                chatReadsImages()
+                  ? ('admin.workers.text.reads_images' | transloco)
+                  : ('admin.workers.text.capability_off'
+                    | transloco
+                      : {
+                          name: ('admin.workers.text.reads_images' | transloco),
+                        })
+              "
+              >{{ "admin.workers.text.reads_images" | transloco }}</span
+            >
+          </div>
+        }
+        @if (chatOnly()) {
+          <p class="worker-card-note" data-chat-only>
+            {{ "admin.workers.text.chat_only_note" | transloco }}
+          </p>
+        }
+        @if (takesPromptJobs() || chat()) {
+          <table class="worker-limits" data-text-limits>
+            <caption class="sr-only">
+              {{
+                "admin.workers.text.limits_caption" | transloco
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">
+                  {{ "admin.workers.text.limits_tokens" | transloco }}
+                </th>
+                <th scope="col">
+                  {{ "admin.workers.text.max_context" | transloco }}
+                </th>
+                <th scope="col">
+                  {{ "admin.workers.text.max_reply" | transloco }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (takesPromptJobs()) {
+                <tr data-limits="prompt">
+                  <th scope="row">
+                    {{ "admin.workers.text.prompt_jobs" | transloco }}
+                  </th>
+                  <td>
+                    @if (worker().max_context_length !== undefined) {
+                      {{ worker().max_context_length! | formatNumber }}
+                    } @else {
+                      -
+                    }
+                  </td>
+                  <td>
+                    @if (worker().max_length !== undefined) {
+                      {{ worker().max_length! | formatNumber }}
+                    } @else {
+                      -
+                    }
+                  </td>
+                </tr>
+              }
+              @if (chat(); as chat) {
+                <tr data-limits="chat">
+                  <th scope="row">
+                    {{ "admin.workers.text.chat_jobs" | transloco }}
+                  </th>
+                  <td>{{ chat.limits.max_context_length | formatNumber }}</td>
+                  <td>{{ chat.limits.max_length | formatNumber }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        @if (chat(); as chat) {
+          @if (chatModel(); as model) {
+            <div class="worker-card-col">
+              <span class="worker-card-label"
+                >{{ "admin.workers.chat.model" | transloco }}:</span
+              >
+              <a
+                [routerLink]="getModelLink(model)"
+                class="worker-link truncate"
+                [title]="model"
+                >{{ model }}</a
+              >
+            </div>
+          }
+          @if (
+            chat.limits.tools_max_temperature !== null &&
+            chat.limits.tools_max_temperature !== undefined
+          ) {
+            <div class="worker-card-row">
+              <span
+                class="worker-card-label"
+                [appTouchTooltip]="'admin.workers.chat.tools_max_temperature'"
+                [appTouchTooltipDesc]="'admin.workers.chat.tools_max_temperature_description'"
+                [appTouchTooltipPreferBelow]="true"
+                >{{
+                  "admin.workers.chat.tools_max_temperature" | transloco
+                }}:</span
+              >
+              <span class="worker-card-value">{{
+                chat.limits.tools_max_temperature | formatNumber: 1
+              }}</span>
+            </div>
+          }
+          <div class="worker-card-col worker-card-subsection" data-chat-section>
+            <span
+              class="worker-card-label worker-card-section-label"
+              [appTouchTooltip]="'admin.workers.chat.features'"
+              [appTouchTooltipDesc]="'admin.workers.chat.features_description'"
+              [appTouchTooltipPreferBelow]="true"
+              >{{ "admin.workers.chat.features" | transloco }}:</span
+            >
+            <app-chat-capabilities
+              [features]="chat.features"
+              [transports]="chat.image_transports"
+              [showUndeclared]="true"
+            />
+          </div>
+        }
       </div>
     }
 

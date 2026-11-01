@@ -41,6 +41,7 @@ import {
   UnitConversionService,
 } from '../../../services/unit-conversion.service';
 import { IconComponent } from '../../../components/icon/icon.component';
+import { ChatCapabilitiesComponent } from '../../admin/workers/chat-capabilities.component';
 import { useScrollLock } from '../../../helper/scroll-lock';
 import {
   baselineLabel,
@@ -202,7 +203,13 @@ export function textSettingRows(
  */
 @Component({
   selector: 'app-model-detail',
-  imports: [RouterLink, TranslocoPipe, DecimalPipe, IconComponent],
+  imports: [
+    RouterLink,
+    TranslocoPipe,
+    DecimalPipe,
+    IconComponent,
+    ChatCapabilitiesComponent,
+  ],
   templateUrl: './model-detail.component.html',
   styleUrl: './model-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -247,6 +254,14 @@ export class ModelDetailComponent {
   /** The horde's live numbers for this model, per kind. */
   private readonly imageStatus = signal<ActiveModel | null>(null);
   private readonly textStatus = signal<ActiveModel | null>(null);
+
+  /**
+   * The chat list's entry for this text model, null when the list does not
+   * include it. `textChatLoaded` distinguishes a missing entry from a list
+   * that has not loaded or failed to load.
+   */
+  private readonly textChatStatus = signal<ActiveModel | null>(null);
+  private readonly textChatLoaded = signal(false);
 
   /** Requests this model served, in the last month and since it was published. */
   public readonly usageMonth = signal(0);
@@ -301,6 +316,16 @@ export class ModelDetailComponent {
   /** The live numbers for this model, whichever kind it is. */
   public readonly status = computed<ActiveModel | null>(() =>
     this.kind() === 'image' ? this.imageStatus() : this.textStatus(),
+  );
+
+  /** Whether the chat list has loaded for this text model. */
+  public readonly showsChat = computed(
+    () => this.kind() === 'text' && this.textChatLoaded(),
+  );
+
+  /** The summary of chat declarations for this model, or null. */
+  public readonly chat = computed(() =>
+    this.kind() === 'text' ? (this.textChatStatus()?.chat ?? null) : null,
   );
 
   /** The image record, or null on a text model or one nothing lists. */
@@ -626,6 +651,26 @@ export class ModelDetailComponent {
       },
       error: () => this.loading.set(false),
     });
+
+    if (kind === 'text') {
+      this.textChatLoaded.set(false);
+      this.textChatStatus.set(null);
+      this.aiHorde
+        .getChatTextModels()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (list) => {
+            this.textChatStatus.set(
+              list.find((model) => model.name === name) ?? null,
+            );
+            this.textChatLoaded.set(true);
+          },
+          error: () => {
+            // Without the chat list the page hides chat jobs. An empty
+            // result would wrongly show that chat jobs are not served.
+          },
+        });
+    }
 
     const stats =
       kind === 'image'

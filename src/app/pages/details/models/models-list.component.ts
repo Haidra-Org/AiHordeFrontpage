@@ -18,7 +18,11 @@ import { DecimalPipe } from '@angular/common';
 import { TranslatorService } from '../../../services/translator.service';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { ModelReferenceService } from '../../../services/model-reference.service';
-import { ActiveModel, mergeModelList } from '../../../types/active-model';
+import {
+  ActiveModel,
+  mergeModelList,
+  ModelChatSummary,
+} from '../../../types/active-model';
 import { setPageTitle } from '../../../helper/page-title';
 import {
   SynthesizedUnit,
@@ -43,14 +47,8 @@ export type ModelsSortField =
   | 'queued'
   | 'usage'
   | 'eta'
-  | 'performance';
-
-/** Represents an autocomplete suggestion for model search. */
-interface ModelSuggestion {
-  name: string;
-  type: ModelsTab;
-  count: number;
-}
+  | 'performance'
+  | 'chat';
 
 /** One row of the list: a model, and everything the row prints about it. */
 export interface ModelRow {
@@ -74,9 +72,6 @@ export interface ModelRow {
   templateUrl: './models-list.component.html',
   styleUrl: './models-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(document:click)': 'onDocumentClick($event)',
-  },
 })
 export class ModelsListComponent implements OnInit {
   private readonly title = inject(Title);
@@ -119,6 +114,26 @@ export class ModelsListComponent implements OnInit {
   private readonly imageUsage = signal<Record<string, number>>({});
   private readonly textUsage = signal<Record<string, number>>({});
 
+  /**
+   * The chat declaration summary for each text model, keyed by model name.
+   * Null until the chat list loads, and when it fails to load. On a failed
+   * load the column stays hidden, because an empty map would wrongly show
+   * that chat jobs are not served.
+   */
+  private readonly textChat = signal<ReadonlyMap<
+    string,
+    ModelChatSummary
+  > | null>(null);
+
+  /**
+   * Whether the text tab shows the chat column. A horde that does not list
+   * chat workers also returns an empty list, so the column appears only when
+   * chat workers serve at least one model.
+   */
+  public readonly showsChat = computed(
+    () => this.activeTab() === 'text' && (this.textChat()?.size ?? 0) > 0,
+  );
+
   /** Search query for filtering models. */
   public readonly searchQuery = signal('');
 
@@ -137,6 +152,15 @@ export class ModelsListComponent implements OnInit {
   /** Whether the note about what the columns hold is open. */
   public readonly columnsHelpOpen = signal(false);
 
+  public readonly extraFiltersOpen = signal(false);
+
+  public readonly extraFilterCount = computed(
+    () =>
+      Number(this.capabilityFilter() !== null) +
+      Number(this.workersOnly()) +
+      Number(this.hideAdult()),
+  );
+
   /** Sort field. */
   public readonly sortField = signal<ModelsSortField>('count');
 
@@ -145,12 +169,6 @@ export class ModelsListComponent implements OnInit {
 
   /** Track whether initial type has been applied. */
   private initialTypeApplied = false;
-
-  /** Autocomplete dropdown open state. */
-  public readonly autocompleteOpen = signal(false);
-
-  /** Currently active suggestion index for keyboard navigation. */
-  public readonly activeSuggestionIndex = signal(-1);
 
   /**
    * The whole image reference with the horde's live counts laid over it, so a
@@ -164,39 +182,6 @@ export class ModelsListComponent implements OnInit {
   private readonly textModels = computed(() =>
     mergeModelList(this.reference.textNames(), this.textStatus(), false),
   );
-
-  /** Autocomplete suggestions based on current search query. */
-  public readonly autocompleteSuggestions = computed<ModelSuggestion[]>(() => {
-    const query = this.searchQuery().toLowerCase().trim();
-    if (!query) return [];
-
-    const suggestions: ModelSuggestion[] = [];
-    for (const model of this.imageModels()) {
-      if (model.name.toLowerCase().includes(query)) {
-        suggestions.push({
-          name: model.name,
-          type: 'image',
-          count: model.count,
-        });
-      }
-    }
-    for (const model of this.textModels()) {
-      if (model.name.toLowerCase().includes(query)) {
-        suggestions.push({
-          name: model.name,
-          type: 'text',
-          count: model.count,
-        });
-      }
-    }
-
-    suggestions.sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.name.localeCompare(b.name);
-    });
-
-    return suggestions.slice(0, 10);
-  });
 
   /** Every row of the current tab, before any filter. */
   public readonly allRows = computed<ModelRow[]>(() => {
@@ -250,7 +235,11 @@ export class ModelsListComponent implements OnInit {
       ) {
         return false;
       }
-      if (workersOnly && row.model.count === 0) return false;
+      // The text count excludes chat-only workers, so a model served only by
+      // them still counts as running.
+      if (workersOnly && row.model.count === 0 && this.chatFor(row) === null) {
+        return false;
+      }
       if (hideAdult && row.nsfw) return false;
       return true;
     });
@@ -271,6 +260,9 @@ export class ModelsListComponent implements OnInit {
         comparison = (a.model.eta ?? 0) - (b.model.eta ?? 0);
       } else if (field === 'performance') {
         comparison = (a.model.performance ?? 0) - (b.model.performance ?? 0);
+      } else if (field === 'chat') {
+        comparison =
+          (this.chatFor(a)?.workers ?? 0) - (this.chatFor(b)?.workers ?? 0);
       }
       if (comparison === 0) {
         comparison = a.model.name.localeCompare(b.model.name);
@@ -298,14 +290,14 @@ export class ModelsListComponent implements OnInit {
   });
 
   /**
-   * The queued total as a bare number. The unit is named once, on the tile's
+   * The queued total as a bare number. The unit is named once, on the summary's
    * label, so the number beside it stays a number.
    */
   public readonly totalQueuedValue = computed(() =>
     this.scaled(this.totalQueuedUnit(), 1),
   );
 
-  /** The label over the queued total, which names the unit it is counted in. */
+  /** The label beside the queued total, including its unit. */
   public readonly totalQueuedLabelKey = computed(() =>
     this.activeTab() === 'image'
       ? 'details.models.total_queued_image'
@@ -381,6 +373,12 @@ export class ModelsListComponent implements OnInit {
       return baselineLabel(row.baseline);
     }
     return row.family;
+  }
+
+  /** The chat declaration summary for a text row's model. */
+  public chatFor(row: ModelRow): ModelChatSummary | null {
+    if (this.activeTab() !== 'text') return null;
+    return this.textChat()?.get(row.model.name) ?? null;
   }
 
   /** Where a row's name links to. */
@@ -529,90 +527,39 @@ export class ModelsListComponent implements OnInit {
         // The list reads without the counts; a column of zeroes is honest.
       },
     });
+
+    if (tab === 'text') {
+      this.aiHorde
+        .getChatTextModels()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (list) => {
+            this.textChat.set(
+              new Map(
+                list.flatMap((model) =>
+                  model.chat ? [[model.name, model.chat] as const] : [],
+                ),
+              ),
+            );
+          },
+          error: () => this.textChat.set(null),
+        });
+    }
   }
 
   public onSearchChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.searchQuery.set(input.value);
-    this.activeSuggestionIndex.set(-1);
-    if (input.value.trim()) {
-      this.autocompleteOpen.set(true);
-    }
   }
 
-  /** Handle search input focus - open autocomplete if there's a query. */
-  public onSearchFocus(): void {
-    if (this.searchQuery().trim()) {
-      this.autocompleteOpen.set(true);
-    }
+  public onBaselineChange(event: Event): void {
+    this.baselineFilter.set((event.target as HTMLSelectElement).value || null);
   }
 
-  /** Handle keyboard navigation in the autocomplete. */
-  public onSearchKeydown(event: KeyboardEvent): void {
-    const suggestions = this.autocompleteSuggestions();
-    if (!this.autocompleteOpen() || suggestions.length === 0) {
-      if (event.key === 'Escape') {
-        this.autocompleteOpen.set(false);
-      }
-      return;
-    }
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        this.activeSuggestionIndex.update((idx) =>
-          idx < suggestions.length - 1 ? idx + 1 : 0,
-        );
-        break;
-
-      case 'ArrowUp':
-        event.preventDefault();
-        this.activeSuggestionIndex.update((idx) =>
-          idx > 0 ? idx - 1 : suggestions.length - 1,
-        );
-        break;
-
-      case 'Enter': {
-        event.preventDefault();
-        const activeIdx = this.activeSuggestionIndex();
-        const suggestion = suggestions.at(
-          activeIdx >= 0 && activeIdx < suggestions.length ? activeIdx : 0,
-        );
-        if (suggestion) {
-          this.selectSuggestion(suggestion);
-        }
-        break;
-      }
-
-      case 'Escape':
-        event.preventDefault();
-        this.autocompleteOpen.set(false);
-        this.activeSuggestionIndex.set(-1);
-        break;
-
-      case 'Tab':
-        this.autocompleteOpen.set(false);
-        break;
-    }
-  }
-
-  /** Open the page of the model somebody picked out of the suggestions. */
-  public selectSuggestion(suggestion: ModelSuggestion): void {
-    this.autocompleteOpen.set(false);
-    this.activeSuggestionIndex.set(-1);
-    void this.router.navigate([
-      '/details/models',
-      suggestion.type,
-      suggestion.name,
-    ]);
-  }
-
-  /** Handle clicks outside the autocomplete to close it. */
-  public onDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.models-search')) {
-      this.autocompleteOpen.set(false);
-    }
+  public onCapabilityChange(event: Event): void {
+    this.capabilityFilter.set(
+      (event.target as HTMLSelectElement).value || null,
+    );
   }
 
   public setBaselineFilter(baseline: string | null): void {

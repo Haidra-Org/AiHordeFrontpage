@@ -133,6 +133,12 @@ export class WorkerRowComponent {
         labelKey: 'admin.workers.card.flagged',
       });
     }
+    if (worker.type === 'text' && worker.accepts_chat_jobs) {
+      flags.push({
+        type: 'chat',
+        labelKey: 'admin.workers.card.chat',
+      });
+    }
 
     return flags;
   });

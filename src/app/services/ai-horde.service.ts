@@ -289,6 +289,20 @@ export class AiHordeService {
   }
 
   /**
+   * Text models served by at least one online chat worker, each with a
+   * combined summary of those workers' chat declarations. A horde that does
+   * not support `chat=true` returns its whole text list without `chat`
+   * objects, so entries without one are dropped and the result is then empty.
+   */
+  public getChatTextModels(): Observable<ActiveModel[]> {
+    return this.cache
+      .cachedGet<
+        ActiveModel[]
+      >(`${this.baseUrl}/status/models?type=text&chat=true`, undefined, { ttl: CacheTTL.LONG, category: 'models' })
+      .pipe(map((models) => models.filter((model) => !!model.chat)));
+  }
+
+  /**
    * The server recognizes worker-qualified and quantized names against its own
    * reference. Metadata availability cannot establish that pricing status.
    * Keep the complete live list if either classification request fails or the

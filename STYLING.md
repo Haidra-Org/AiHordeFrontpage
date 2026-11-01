@@ -88,6 +88,25 @@ every new page should take.
   submodule.
 - Every value reads an `--hd-*` token. There is no `@theme` token, no glass token, and no literal.
 - There is no `.dark` rule in the file, because there is nothing left for one to do.
+- Model details place identity, samples, live status and actions before reference information in document order.
+  On desktop, the image model heading spans the page, with the preview and live stats aligned beneath it.
+  Published previews span the control and content rows, so capabilities and settings start right after the studio
+  actions, even when the preview is taller. Missing-preview notes keep the compact two-row layout.
+  Below 1024px, samples use a centered horizontal crop (128px on phones, 160px on tablets). Desktop keeps the square
+  preview. Missing image samples occupy a compact note, and text models do not reserve preview space. Thumbnails scroll
+  in one row. The full-picture view uses a native dialog with the shared scroll lock, focus restoration and sample
+  navigation. The dialog styles are in `_models.css`. Text model details use a full-width identity and live-stat row
+  before balanced reference and settings/worker columns on desktop, with a single reading column below 1024px.
+- Model list controls use inline totals and compact baseline/capability selects. Below 1024px, secondary filters
+  collapse behind a disclosure. Active filter chips stay visible, each with its own remove action. Below 640px,
+  search takes a full row. Coarse pointers keep 44px control targets.
+- Below 640px, model rows give the name the full width and allow it to wrap. Marks sit in
+  `.models-list-marks`, followed by labeled worker and queue values. `.models-mobile-sort` keeps sorting available
+  when the desktop column headings are hidden. `.models-mobile-value` and `.models-desktop-value` switch the value
+  labels at the same breakpoint. Backend text-model classification is independent of reference metadata.
+- When the horde lists chat workers, the text tab adds a Chat workers column (`.models-grid--chat`) at every width.
+  The count is formatted like the Workers column, with the largest chat context under it in `.models-list-sub`. The class
+  list for the toolbar and the column is in [docs/component-patterns.md](docs/component-patterns.md#model-list-_modelscss).
 
 ## File tree
 

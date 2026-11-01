@@ -428,7 +428,13 @@ export interface TextGenerationStatusResponse {
  */
 export type TextWorker = Pick<
   HordeWorker,
-  'id' | 'name' | 'online' | 'models' | 'max_length' | 'max_context_length'
+  | 'id'
+  | 'name'
+  | 'online'
+  | 'models'
+  | 'max_length'
+  | 'max_context_length'
+  | 'accepts_prompt_jobs'
 >;
 
 export type CheckTextResult =

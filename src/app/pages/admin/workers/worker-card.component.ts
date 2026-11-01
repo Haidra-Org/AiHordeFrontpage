@@ -38,6 +38,8 @@ import {
 } from '../../../helper/bridge-agent';
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
+import { ChatCapabilitiesComponent } from './chat-capabilities.component';
+import { chatReadsImages } from './chat-features';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import {
@@ -68,6 +70,7 @@ import { DEFAULT_PROMPTS, promptsParams } from '../review/review-query';
     JsonInspectorTriggerComponent,
     IconComponent,
     SuspicionHistoryComponent,
+    ChatCapabilitiesComponent,
   ],
   templateUrl: './worker-card.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -136,6 +139,71 @@ export class WorkerCardComponent {
   public readonly singleModel = computed(() => {
     const models = this.worker().models;
     return models?.length === 1 ? (models.at(0) ?? null) : null;
+  });
+
+  /**
+   * Whether the card shows chat job details. Only text workers take chat
+   * jobs, and when the horde does not send the field, chat support is unknown.
+   */
+  public readonly showsChat = computed(
+    () =>
+      this.worker().type === 'text' &&
+      this.worker().accepts_chat_jobs !== undefined,
+  );
+
+  public readonly acceptsChat = computed(
+    () => this.showsChat() && this.worker().accepts_chat_jobs === true,
+  );
+
+  /**
+   * Whether the worker takes plain text jobs. If the horde does not send the
+   * field, chat-only workers do not exist there, so every text worker takes
+   * them.
+   */
+  public readonly takesPromptJobs = computed(
+    () =>
+      this.worker().type === 'text' &&
+      this.worker().accepts_prompt_jobs !== false,
+  );
+
+  /**
+   * A worker that takes chat jobs but not plain text jobs. Its plain text
+   * limits do not apply to any job it serves, so the card omits them.
+   */
+  public readonly chatOnly = computed(
+    () => this.acceptsChat() && !this.takesPromptJobs(),
+  );
+
+  public readonly chat = computed(() =>
+    this.acceptsChat() ? (this.worker().chat ?? null) : null,
+  );
+
+  /**
+   * The chat model, named only when the card does not already show it as the
+   * worker's one model.
+   */
+  public readonly chatModel = computed(() => {
+    const modelId = this.chat()?.model_id;
+    if (!modelId || modelId === this.singleModel()) return null;
+    return modelId;
+  });
+
+  public readonly chatReadsImages = computed(() => {
+    const chat = this.chat();
+    return chat ? chatReadsImages(chat) : false;
+  });
+
+  /**
+   * The refused-reply counter. It only increases on chat jobs, so for a worker
+   * that does not take them, the card shows it only when the count is above
+   * zero.
+   */
+  public readonly showsNonconformant = computed(() => {
+    const worker = this.worker();
+    if (worker.type !== 'text' || worker.nonconformant_replies === undefined) {
+      return false;
+    }
+    return this.acceptsChat() || worker.nonconformant_replies > 0;
   });
 
   public readonly rawJsonSections = computed<readonly JsonInspectorSection[]>(

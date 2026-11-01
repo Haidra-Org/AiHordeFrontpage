@@ -330,9 +330,21 @@ export interface TextModelReach {
 }
 
 /**
+ * Whether a text worker takes plain text requests, which are the requests sent
+ * by this service. A chat-only worker lists models and limits, but those limits
+ * do not apply to any job it serves, and it does not pick up plain text
+ * requests. If the horde does not send the field, chat-only workers do not
+ * exist there.
+ */
+export function takesPromptJobs(worker: TextWorker): boolean {
+  return worker.accepts_prompt_jobs !== false;
+}
+
+/**
  * The models something can still answer on. A model whose every online worker
  * is one the request is keeping off has nobody left to write on it, so a retry
- * asking for it waits until the horde gives up on it.
+ * asking for it waits until the horde gives up on it. Chat-only workers are not
+ * counted, since they do not take plain text requests.
  *
  * A model no listed worker carries is left in: the worker listing is a hint
  * about who is up, not a roster of who may answer.
@@ -346,7 +358,10 @@ export function reachableModels(
   if (avoided.size === 0) return models;
   return models.filter((model) => {
     const carrying = reach.workers.filter(
-      (worker) => worker.online && (worker.models ?? []).includes(model.name),
+      (worker) =>
+        worker.online &&
+        takesPromptJobs(worker) &&
+        (worker.models ?? []).includes(model.name),
     );
     return carrying.length === 0 || !carrying.every((w) => avoided.has(w.id));
   });
@@ -915,6 +930,9 @@ export class PromptDraftService {
    * it will not be answering, so sizing a request to fit its ceiling would let
    * through one that no worker still eligible can pick up.
    *
+   * Chat-only workers are excluded for the same reason. They do not take plain
+   * text requests, so their limits do not apply to this one.
+   *
    * Null where no worker carrying the model says what it will take.
    */
   public async workerLimitsFor(
@@ -925,6 +943,7 @@ export class PromptDraftService {
     const carrying = (await this.textWorkers()).filter(
       (worker) =>
         worker.online &&
+        takesPromptJobs(worker) &&
         !avoided.has(worker.id) &&
         (worker.models ?? []).includes(model),
     );

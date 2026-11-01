@@ -23,10 +23,18 @@ let nextTooltipId = 0;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (desc()) {
-      <strong class="touch-tooltip-title">{{ title() }}</strong>
+      <strong class="touch-tooltip-title"
+        >{{ title() }}
+        @if (code()) {
+          <code class="tooltip-code">{{ code() }}</code>
+        }
+      </strong>
       <span class="touch-tooltip-desc">{{ desc() }}</span>
     } @else {
       {{ title() }}
+      @if (code()) {
+        <code class="tooltip-code">{{ code() }}</code>
+      }
     }
   `,
   host: {
@@ -37,6 +45,8 @@ let nextTooltipId = 0;
 export class TouchTooltipContentComponent {
   readonly title = input.required<string>();
   readonly desc = input<string>();
+  /** A literal shown beside the title as code, never translated. */
+  readonly code = input<string>();
 }
 
 /**
@@ -69,6 +79,11 @@ export class TouchTooltipDirective extends OverlayTooltipBase {
 
   public readonly appTouchTooltip = input.required<string>();
   public readonly appTouchTooltipDesc = input<string>();
+  /**
+   * An identifier shown as code beside the title, such as an API field name,
+   * so a plain-language label can be matched to it.
+   */
+  public readonly appTouchTooltipCode = input<string>();
   public readonly appTouchTooltipPreferBelow = input(false);
   public readonly appTouchTooltipDisabled = input(false);
 
@@ -131,5 +146,6 @@ export class TouchTooltipDirective extends OverlayTooltipBase {
       'desc',
       descKey ? this.transloco.translate(descKey) : undefined,
     );
+    this.contentRef.setInput('code', this.appTouchTooltipCode());
   }
 }

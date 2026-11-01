@@ -1,4 +1,7 @@
-<div class="stack-lg model-detail">
+<div
+  class="stack-lg model-detail"
+  [class.model-detail--text]="kind() === 'text'"
+>
   <div>
     <a class="hd-btn hd-btn--ghost hd-btn--dense" [routerLink]="listLink()">
       <app-icon name="arrow-left" />
@@ -172,10 +175,34 @@
             <span class="hd-stat-note">{{
               (status()?.count
                 ? "details.model_detail.serving_now"
-                : "details.model_detail.serving_none"
+                : chat()
+                  ? "details.model_detail.serving_chat_only"
+                  : "details.model_detail.serving_none"
               ) | transloco
             }}</span>
           </div>
+
+          @if (showsChat()) {
+            <div class="hd-stat" data-model-chat-stat>
+              <span class="hd-stat-label">{{
+                "details.model_detail.chat_workers" | transloco
+              }}</span>
+              <span class="hd-stat-value">{{
+                chat()?.workers ?? 0 | number
+              }}</span>
+              <span class="hd-stat-note">
+                @if (chat(); as chat) {
+                  {{
+                    "details.model_detail.chat_context_note"
+                      | transloco
+                        : { context: (chat.max_context_length | number) }
+                  }}
+                } @else {
+                  {{ "details.model_detail.chat_serving_none" | transloco }}
+                }
+              </span>
+            </div>
+          }
 
           <div class="hd-stat">
             <span class="hd-stat-label">{{
@@ -384,6 +411,36 @@
       </div>
 
       <div class="model-detail-main">
+        <!-- The text counterpart of "Works with": the chat features declared
+             by the online chat workers for this model. -->
+        @if (chat(); as chat) {
+          <div class="hd-card" data-model-chat>
+            <p class="hd-card-title">
+              {{ "details.model_detail.chat_title" | transloco }}
+            </p>
+            <p class="model-detail-note">
+              {{ "details.model_detail.chat_note" | transloco }}
+            </p>
+            <dl class="model-detail-facts">
+              <div class="model-detail-fact">
+                <dt>
+                  {{ "details.model_detail.chat_max_context" | transloco }}
+                </dt>
+                <dd>{{ chat.max_context_length | number }}</dd>
+              </div>
+              <div class="model-detail-fact">
+                <dt>
+                  {{ "details.model_detail.chat_max_length" | transloco }}
+                </dt>
+                <dd>{{ chat.max_length | number }}</dd>
+              </div>
+            </dl>
+            @if (chat.features.length > 0) {
+              <app-chat-capabilities [features]="chat.features" />
+            }
+          </div>
+        }
+
         @if (capabilities().length > 0) {
           <div class="hd-card">
             <p class="hd-card-title">

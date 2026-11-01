@@ -222,6 +222,24 @@ describe('picking a text model', () => {
       ).toEqual(['aphrodite/TheDrummer/Behemoth-X-123B-v2.1']);
     });
 
+    it('skips a model when its only remaining worker is chat-only', () => {
+      const workers: TextWorker[] = [
+        worker('w-silent', [
+          'koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
+        ]),
+        {
+          ...worker('w-chat', [
+            'koboldcpp/Gemma-4-E4B-it-Ultra-Uncensored-Heretic',
+          ]),
+          accepts_prompt_jobs: false,
+        },
+        worker('w-ok', ['koboldcpp/gemma-4-31B-it-heretic']),
+      ];
+      expect(
+        pickTextModel(pool, 'auto', { workers, avoided: ['w-silent'] }).models,
+      ).toEqual(['koboldcpp/gemma-4-31B-it-heretic']);
+    });
+
     it('leaves a model the reader named outright alone', () => {
       const workers = [worker('w-silent', ['x/y'])];
       expect(
@@ -784,6 +802,61 @@ describe('PromptDraftService', () => {
       maxLength: 512,
       maxContextLength: 4096,
     });
+  });
+
+  it('does not size a text request on a chat-only worker', async () => {
+    const pending = service.workerLimitsFor('koboldcpp/gemma');
+    http.expectOne(`${API_BASE_URL}/workers?type=text`).flush([
+      {
+        id: 'w-text',
+        name: 'Text',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 80,
+        max_context_length: 2048,
+        accepts_prompt_jobs: true,
+      },
+      {
+        // Without the field, the worker still counts.
+        id: 'w-older',
+        name: 'Older horde',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 120,
+        max_context_length: 1024,
+      },
+      {
+        id: 'w-chat',
+        name: 'Chat only',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 4096,
+        max_context_length: 32768,
+        accepts_chat_jobs: true,
+        accepts_prompt_jobs: false,
+      },
+    ]);
+
+    await expect(pending).resolves.toEqual({
+      maxLength: 120,
+      maxContextLength: 2048,
+    });
+  });
+
+  it('returns null limits when only chat-only workers serve the model', async () => {
+    const pending = service.workerLimitsFor('koboldcpp/gemma');
+    http.expectOne(`${API_BASE_URL}/workers?type=text`).flush([
+      {
+        id: 'w-chat',
+        name: 'Chat only',
+        online: true,
+        models: ['koboldcpp/gemma'],
+        max_length: 4096,
+        max_context_length: 32768,
+        accepts_prompt_jobs: false,
+      },
+    ]);
+    await expect(pending).resolves.toBeNull();
   });
 
   it('reports no limits when nothing online carries the model or says what it takes', async () => {

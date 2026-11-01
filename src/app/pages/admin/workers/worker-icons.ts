@@ -73,6 +73,13 @@ export const WORKER_STATUS_ICONS: WorkerIconDef[] = [
     descriptionKey: 'help.glossary.page.workers.icon_trusted.description',
   },
   {
+    type: 'chat',
+    iconName: 'chat-bubble',
+    colorClass: 'worker-type-text',
+    labelKey: 'admin.workers.card.chat',
+    descriptionKey: 'help.glossary.page.workers.icon_chat.description',
+  },
+  {
     type: 'type_image',
     iconName: 'photo-alt',
     colorClass: 'worker-type-image',

@@ -95,6 +95,7 @@ describe('ModelsListComponent', () => {
           useValue: {
             getImageModels: () => of(STATUS_MODELS),
             getClassifiedTextModels: () => of([]),
+            getChatTextModels: () => of([]),
             getImageModelStats: () =>
               of({ day: {}, month: { Deliberate: 812 }, total: {} }),
             getTextModelStats: () => of({ day: {}, month: {}, total: {} }),
@@ -295,6 +296,126 @@ describe('ModelsListComponent', () => {
     ).toContain('Canonical.IQ4_XS::worker');
   });
 
+  describe('the chat column', () => {
+    function textTabWithChat(): HTMLElement[] {
+      const api = TestBed.inject(AiHordeService);
+      vi.spyOn(api, 'getClassifiedTextModels').mockReturnValue(
+        of([
+          { name: 'Chatty', count: 3, custom: false },
+          { name: 'Plain', count: 2, custom: false },
+        ]),
+      );
+      vi.spyOn(api, 'getChatTextModels').mockReturnValue(
+        of([
+          {
+            name: 'Chatty',
+            count: 3,
+            chat: {
+              workers: 2,
+              max_context_length: 8192,
+              max_length: 512,
+              features: [],
+              created: 0,
+            },
+          },
+        ]),
+      );
+      fixture.detectChanges();
+      fixture.componentInstance.setActiveTab('text');
+      fixture.detectChanges();
+      return [
+        ...fixture.nativeElement.querySelectorAll('.hd-list-row'),
+      ] as HTMLElement[];
+    }
+
+    it('heads the column and shows the chat worker count over the largest chat context', () => {
+      const rows = textTabWithChat();
+      const heads = Array.from(
+        fixture.nativeElement.querySelectorAll('.hd-list-th'),
+      ).map((th) => (th as HTMLElement).textContent?.trim());
+      expect(heads).toContain('Chat workers');
+      const chatty = rows.find((row) => row.textContent?.includes('Chatty'))!;
+      const cell = chatty.querySelector('.models-list-chat') as HTMLElement;
+      expect(
+        cell.querySelector('.models-desktop-value')?.textContent?.trim(),
+      ).toBe('2');
+      expect(cell.querySelector('.models-list-sub')?.textContent?.trim()).toBe(
+        '8,192 context',
+      );
+      expect(cell.querySelector('.sr-only')?.textContent).toContain(
+        'Largest chat context: 8,192 tokens. Largest chat reply: 512 tokens.',
+      );
+      const plain = rows.find((row) => row.textContent?.includes('Plain'))!;
+      expect(plain.querySelector('.models-list-chat')?.classList).toContain(
+        'models-list-value--muted',
+      );
+    });
+
+    it('counts a model run only by chat-only workers as running', () => {
+      const api = TestBed.inject(AiHordeService);
+      vi.spyOn(api, 'getClassifiedTextModels').mockReturnValue(
+        of([
+          { name: 'ChatOnly', count: 0, custom: false },
+          { name: 'Idle', count: 0, custom: false },
+        ]),
+      );
+      vi.spyOn(api, 'getChatTextModels').mockReturnValue(
+        of([
+          {
+            name: 'ChatOnly',
+            count: 0,
+            chat: {
+              workers: 1,
+              max_context_length: 4096,
+              max_length: 256,
+              features: [],
+              created: 0,
+            },
+          },
+        ]),
+      );
+      fixture.detectChanges();
+      fixture.componentInstance.setActiveTab('text');
+      fixture.componentInstance.workersOnly.set(true);
+      fixture.detectChanges();
+      expect(rowNames()).toEqual(['ChatOnly']);
+      expect(
+        fixture.nativeElement.querySelector('.hd-list-row--idle'),
+      ).toBeNull();
+    });
+
+    it('sorts on the chat worker count', () => {
+      textTabWithChat();
+      fixture.componentInstance.setSortField('chat');
+      expect(
+        fixture.componentInstance.filteredRows().map((row) => row.model.name),
+      ).toEqual(['Chatty', 'Plain']);
+    });
+
+    it('hides the chat column when the horde does not list any chat workers', () => {
+      fixture.detectChanges();
+      fixture.componentInstance.setActiveTab('text');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.showsChat()).toBe(false);
+      expect(
+        fixture.nativeElement.querySelector('.models-list-chat'),
+      ).toBeNull();
+    });
+
+    it('does not show chat details on the image tab', () => {
+      textTabWithChat();
+      fixture.componentInstance.setActiveTab('image');
+      fixture.detectChanges();
+      expect(fixture.componentInstance.showsChat()).toBe(false);
+      expect(
+        fixture.nativeElement.querySelector('.models-list-chat'),
+      ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('.models-grid--chat'),
+      ).toBeNull();
+    });
+  });
+
   it('sorts from the mobile selector and direction button', () => {
     fixture.detectChanges();
     const select = fixture.nativeElement.querySelector(
@@ -310,5 +431,57 @@ describe('ModelsListComponent', () => {
     button.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.sortDirection()).toBe('asc');
+  });
+
+  it('folds the secondary filters behind a toggle that counts the active ones', () => {
+    fixture.detectChanges();
+    const toggle = fixture.nativeElement.querySelector(
+      '.models-filter-toggle',
+    ) as HTMLButtonElement;
+    const panel = fixture.nativeElement.querySelector(
+      '#models-extra-filters',
+    ) as HTMLElement;
+    expect(toggle.getAttribute('aria-controls')).toBe('models-extra-filters');
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.textContent?.trim()).toBe('More filters');
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.classList).toContain('models-extra-filters--open');
+
+    fixture.componentInstance.workersOnly.set(true);
+    fixture.componentInstance.hideAdult.set(true);
+    fixture.detectChanges();
+    expect(toggle.textContent?.trim()).toBe('More filters (2 active)');
+  });
+
+  it('lists each active filter as a chip that removes only that filter', () => {
+    fixture.detectChanges();
+    fixture.componentInstance.setBaselineFilter('stable_diffusion_xl');
+    fixture.componentInstance.workersOnly.set(true);
+    fixture.detectChanges();
+
+    const chips = (): HTMLButtonElement[] =>
+      Array.from(
+        fixture.nativeElement.querySelectorAll(
+          '.models-active-filters .hd-chip',
+        ),
+      );
+    expect(chips().length).toBe(2);
+    const workersChip = chips().find((chip) =>
+      chip
+        .getAttribute('aria-label')
+        ?.includes('Remove filter: Only models with a worker'),
+    );
+    expect(workersChip).toBeDefined();
+
+    workersChip!.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.workersOnly()).toBe(false);
+    expect(fixture.componentInstance.baselineFilter()).toBe(
+      'stable_diffusion_xl',
+    );
+    expect(chips().length).toBe(1);
   });
 });

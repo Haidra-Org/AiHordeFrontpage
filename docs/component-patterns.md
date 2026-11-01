@@ -21,6 +21,7 @@ tokens, surfaces and form shells, see [design-system.md](design-system.md).
 - [Tooltip extensions (`_tooltips.css`)](#tooltip-extensions-_tooltipscss)
 - [Collapsible and accordion system (`_collapsibles.css`)](#collapsible-and-accordion-system-_collapsiblescss)
 - [Data display (`_data-display.css`)](#data-display-_data-displaycss)
+- [Model list (`_models.css`)](#model-list-_modelscss)
 - [Loading and empty states (`_utilities.css`)](#loading-and-empty-states-_utilitiescss)
 - [Animation and motion](#animation-and-motion)
 - [Icon system](#icon-system)
@@ -252,6 +253,36 @@ are shared. The frontpage adds domain tinting and the skeleton set.
 .domain-label--*        /* Inline text color per domain */
 ```
 
+### Text Worker Capabilities
+
+The worker card has a Capabilities section for text workers, laid out like the image one: `.worker-cap` badges, with
+`.worker-cap--off` striking out what the worker does not do.
+
+```css
+.worker-cap--prompt-jobs   /* Plain text jobs, in the text hue */
+.worker-cap--chat-jobs     /* Chat jobs, in the text hue */
+.worker-cap--reads-images  /* Reads images in chat messages (vision plus an image transport), in the image hue */
+.worker-card-note          /* One muted sentence under the badges, such as the chat-only note */
+.worker-limits             /* The token limits table: one row for each job kind taken by the worker */
+.worker-card-subsection    /* Space above a block that follows the table, such as the chat features */
+```
+
+`app-chat-capabilities` draws a chat declaration as labelled rows of `.worker-cap` badges. Each badge has a
+plain-language label, and its tooltip adds the meaning and the API name. A worker card lists every described name and
+strikes out the undeclared ones. A model page summarises several workers, so it lists only declared names.
+
+```css
+.chat-caps                 /* The rows: a label column and a wrapping badge column */
+.chat-caps-group--sampling /* One hue per row: sampling, images, tools, format, guarantees, other */
+.chat-caps-label           /* The row label */
+.chat-caps-badges          /* The row's badges */
+.chat-cap                  /* A badge that may include a glyph */
+.chat-cap-icon             /* The check glyph on a guarantee, so guarantees are distinguishable without colour */
+```
+
+The model list and model page reuse `app-chat-capabilities`. Their chat classes are under
+[Model list](#model-list-_modelscss).
+
 ### Skeleton Loading
 
 ```css
@@ -261,6 +292,37 @@ are shared. The frontpage adds domain tinting and the skeleton set.
 .skeleton-bar-lg        /* 70% width */
 .skeleton-box           /* Container for skeleton groups */
 .skeleton-box-dashed    /* Dashed border "missing" state */
+```
+
+---
+
+## Model list (`_models.css`)
+
+The `/details/models` list is drawn on HD; [STYLING.md](../STYLING.md) describes its layout at each width.
+
+### Toolbar
+
+```css
+.models-toolbar            /* Summary, controls and active filters. Sets --hd-sec* from the accent */
+.models-summary            /* Inline totals: model count and queued work */
+.models-controls           /* Search, baseline select, the filter toggle and the secondary filters */
+.models-filter-group       /* A label and its select on one line */
+.models-filter-toggle      /* "More filters" disclosure, shown only below 1024px */
+.models-extra-filters      /* Secondary filters, collapsed below 1024px unless --open */
+.models-extra-filters--open
+.models-filter-toggles     /* The on/off filter chips */
+.models-active-filters     /* Result count, one removable chip per active filter, and Clear */
+.models-mobile-sort        /* Sort select and direction button, shown below 640px where column heads are hidden */
+```
+
+### Chat column
+
+The text tab adds a Chat workers column when the horde lists chat workers:
+
+```css
+.models-grid--chat         /* On .models-grid: adds the chat track to the text tab's columns */
+.models-list-chat          /* The chat cell: chat worker count */
+.models-list-sub           /* A smaller muted second line in a value cell: the largest chat context */
 ```
 
 ---

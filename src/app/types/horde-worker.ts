@@ -17,6 +17,29 @@ export interface WorkerMessage {
 
 export type WorkerType = 'image' | 'text' | 'interrogation';
 
+/** A text worker's chat job limits, separate from its text limits. */
+export interface WorkerChatLimits {
+  max_context_length: number;
+  max_length: number;
+  /**
+   * The highest temperature that the backend applies unchanged when tools are
+   * present. Null when every temperature is applied unchanged.
+   */
+  tools_max_temperature: number | null;
+}
+
+/**
+ * A text worker's chat job declaration from its last pop, as stored by the
+ * horde. `features` and `image_transports` are strings rather than unions
+ * because a newer horde can add names without a description on this site.
+ */
+export interface WorkerChatDeclaration {
+  model_id: string;
+  features: string[];
+  limits: WorkerChatLimits;
+  image_transports: string[];
+}
+
 export interface HordeWorker {
   type: WorkerType;
   name: string;
@@ -60,6 +83,18 @@ export interface HordeWorker {
   max_length?: number;
   max_context_length?: number;
   tokens_generated?: number;
+  /** Whether the worker's last pop opted into chat jobs. */
+  accepts_chat_jobs?: boolean;
+  /**
+   * Whether the worker takes plain text jobs. False means the worker is
+   * chat-only, and its `max_length` and `max_context_length` do not apply to
+   * any job it serves.
+   */
+  accepts_prompt_jobs?: boolean;
+  /** Absent when the worker does not accept chat jobs. */
+  chat?: WorkerChatDeclaration;
+  /** Replies refused by the horde for breaking a strict request's contract. */
+  nonconformant_replies?: number;
   messages?: WorkerMessage[];
 }
 
