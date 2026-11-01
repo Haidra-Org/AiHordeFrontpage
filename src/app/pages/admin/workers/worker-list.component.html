@@ -402,19 +402,6 @@
         />
       </div>
 
-      @if (workerType() === "text") {
-        <button
-          type="button"
-          class="hd-chip gap-1"
-          [class.hd-chip--active]="chatJobsOnly()"
-          [attr.aria-pressed]="chatJobsOnly()"
-          (click)="chatJobsOnly.set(!chatJobsOnly())"
-        >
-          <app-icon name="chat-bubble" class="icon-sm" aria-hidden="true" />
-          {{ "admin.workers.filter_chat_jobs" | transloco }}
-        </button>
-      }
-
       <!-- Sort Key Select -->
       <div class="admin-filter-sort">
         <label for="worker-sort-key" class="text-sm text-secondary"
@@ -515,36 +502,74 @@
         </p>
       </div>
     } @else {
-      @if (workerViewMode() === "card") {
-        <!-- Worker Grid (Card View) -->
-        <div class="worker-grid">
-          @for (worker of filteredWorkers(); track worker.id) {
-            <app-worker-card
-              [attr.data-worker-id]="worker.id"
-              [worker]="worker"
-              [isModerator]="auth.currentUser()?.moderator ?? false"
-              [viewMode]="viewMode()"
-              [pinHeaderOnMobile]="true"
-              [availableTeams]="teams()"
-              [highlighted]="isWorkerHighlighted(worker.id)"
-              (workerUpdated)="onWorkerUpdated()"
-              (workerDeleted)="onWorkerDeleted($event)"
-              (clearHighlight)="onHighlightCleared()"
-            />
-          }
-        </div>
-      } @else {
-        <!-- Worker Row List -->
-        <div class="worker-row-list">
-          @for (worker of filteredWorkers(); track worker.id) {
-            <app-worker-row
-              [attr.data-worker-id]="worker.id"
-              [worker]="worker"
-              [isModerator]="auth.currentUser()?.moderator ?? false"
-              [viewMode]="viewMode()"
-              [highlighted]="isWorkerHighlighted(worker.id)"
-              (openDetail)="openWorkerDetail($event)"
-            />
+      @for (section of workerSections(); track section.id) {
+        @if (section.id && section.headingKey) {
+          <h2
+            class="worker-section-heading"
+            [class.worker-section--chat]="section.id === 'chat'"
+          >
+            <button
+              type="button"
+              class="worker-section-toggle"
+              [attr.aria-expanded]="isTextSectionOpen(section.id)"
+              [attr.aria-controls]="'worker-section-' + section.id"
+              (click)="toggleTextSection(section.id)"
+            >
+              <app-icon
+                name="chevron-down"
+                class="worker-section-chevron"
+                [class.worker-section-chevron--open]="
+                  isTextSectionOpen(section.id)
+                "
+                aria-hidden="true"
+              />
+              <span>{{ section.headingKey | transloco }}</span>
+              <span class="worker-section-count">{{
+                section.workers.length
+              }}</span>
+            </button>
+          </h2>
+        }
+        <div
+          class="worker-section"
+          [class.worker-section--railed]="section.id !== null"
+          [class.worker-section--chat]="section.id === 'chat'"
+          [attr.id]="section.id ? 'worker-section-' + section.id : null"
+        >
+          @if (!section.id || isTextSectionOpen(section.id)) {
+            @if (workerViewMode() === "card") {
+              <!-- Worker Grid (Card View) -->
+              <div class="worker-grid">
+                @for (worker of section.workers; track worker.id) {
+                  <app-worker-card
+                    [attr.data-worker-id]="worker.id"
+                    [worker]="worker"
+                    [isModerator]="auth.currentUser()?.moderator ?? false"
+                    [viewMode]="viewMode()"
+                    [pinHeaderOnMobile]="true"
+                    [availableTeams]="teams()"
+                    [highlighted]="isWorkerHighlighted(worker.id)"
+                    (workerUpdated)="onWorkerUpdated()"
+                    (workerDeleted)="onWorkerDeleted($event)"
+                    (clearHighlight)="onHighlightCleared()"
+                  />
+                }
+              </div>
+            } @else {
+              <!-- Worker Row List -->
+              <div class="worker-row-list">
+                @for (worker of section.workers; track worker.id) {
+                  <app-worker-row
+                    [attr.data-worker-id]="worker.id"
+                    [worker]="worker"
+                    [isModerator]="auth.currentUser()?.moderator ?? false"
+                    [viewMode]="viewMode()"
+                    [highlighted]="isWorkerHighlighted(worker.id)"
+                    (openDetail)="openWorkerDetail($event)"
+                  />
+                }
+              </div>
+            }
           }
         </div>
       }

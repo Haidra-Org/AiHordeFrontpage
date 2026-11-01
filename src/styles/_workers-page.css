@@ -327,6 +327,123 @@
     align-self: center;
   }
 
+  /* On phones the bar runs to both screen edges with square corners, so
+     cards scrolling under it do not show beside it or above its corners.
+     The containers above it are centred, so 50% - 50vw reaches each edge.
+     The padding grows by the same amount to keep the tabs in line with the
+     page content. The page wrapper clips horizontal overflow. */
+  @media (max-width: 639.98px) {
+    .worker-subtabs {
+      margin-inline: calc(50% - 50vw);
+      padding-inline: calc(14px + 50vw - 50%);
+      border-radius: 0;
+    }
+  }
+
+  /* =================================================================
+     WORKER SECTIONS
+     The text tab lists chat workers and plain text workers under two
+     headings that fold. The headings scroll with the list so they do
+     not stack under the pinned bars above.
+
+     A heading is a line of text with a rule to the right, and a rail runs
+     down the left of the cards under it. The heading has more space above
+     it than below, so it reads as part of the cards that follow. The chat
+     section takes the text hue. The plain section stays neutral.
+     ================================================================= */
+
+  .worker-section-heading,
+  .worker-section--railed {
+    --worker-section-hue: var(--hd-border);
+  }
+
+  .worker-section-heading.worker-section--chat,
+  .worker-section--railed.worker-section--chat {
+    --worker-section-hue: var(--hd-accent);
+  }
+
+  .worker-section-heading {
+    margin: 0 0 var(--hd-space-2);
+    font-size: var(--hd-text-md);
+  }
+
+  .worker-section + .worker-section-heading {
+    margin-top: var(--hd-space-6);
+  }
+
+  .worker-section--railed {
+    padding-left: var(--hd-space-2);
+    border-left: 3px solid var(--worker-section-hue);
+  }
+
+  .worker-section-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+    width: 100%;
+    min-height: 40px;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--hd-ink);
+    text-align: left;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+
+  /* The rule fills the rest of the line after the label and count. */
+  .worker-section-toggle::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--worker-section-hue);
+  }
+
+  .worker-section-toggle:hover {
+    color: var(--hd-accent-text);
+  }
+
+  .worker-section-toggle:focus-visible {
+    outline: 2px solid var(--hd-focus-ring);
+    outline-offset: 2px;
+  }
+
+  @media (pointer: coarse) {
+    .worker-section-toggle {
+      min-height: 44px;
+    }
+  }
+
+  .worker-section-chevron {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: var(--hd-label);
+    transform: rotate(-90deg);
+    transition: transform var(--hd-dur-fast) var(--hd-ease);
+  }
+
+  .worker-section-chevron--open {
+    transform: none;
+  }
+
+  .worker-section-count {
+    padding: 0 var(--hd-space-2);
+    font-size: var(--hd-text-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--hd-ink-2);
+    background: var(--hd-panel);
+    border: 1px solid var(--hd-border-subtle);
+    border-radius: var(--hd-radius-pill);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .worker-section-chevron {
+      transition: none;
+    }
+  }
+
   /* The notice that a filtered owner has no workers: one sentence and the
      way back out of the filter. */
   .worker-owner-missing {

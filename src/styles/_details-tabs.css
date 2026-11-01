@@ -1052,6 +1052,18 @@
     z-index: 30;
   }
 
+  /* On phones the row runs to both screen edges, so content scrolling
+     under it does not show beside it. The shells above it are centred, so
+     50% - 50vw reaches each edge. The padding grows by the same amount to
+     keep the links in line with the page content. The page wrapper clips
+     horizontal overflow. */
+  @media (max-width: 639.98px) {
+    .details-nav {
+      margin-inline: calc(50% - 50vw);
+      padding-inline: calc(14px + 50vw - 50%);
+    }
+  }
+
   .details-panel {
     padding-top: var(--hd-space-4);
 

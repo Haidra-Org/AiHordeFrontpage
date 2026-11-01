@@ -55,7 +55,12 @@ describe('WorkerCardComponent', () => {
       imports: [
         WorkerCardComponent,
         TranslocoTestingModule.forRoot({
-          langs: { en: {} },
+          langs: {
+            en: {
+              'admin.workers.chat.features_count':
+                '{{ declared }} of {{ total }} declared',
+            },
+          },
           translocoConfig: { availableLangs: ['en'], defaultLang: 'en' },
         }),
       ],
@@ -197,6 +202,16 @@ describe('WorkerCardComponent', () => {
   const jobKind = (kind: string): Element | null =>
     host().querySelector(`[data-job-kind="${kind}"]`);
 
+  const chatToggle = (): HTMLButtonElement | null =>
+    host().querySelector<HTMLButtonElement>('[data-chat-toggle]');
+
+  /** Opens the folded chat features so their badges render. */
+  const openChatFeatures = async (): Promise<void> => {
+    chatToggle()?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+  };
+
   /** Each group's names, with the undeclared ones marked by a leading `-`. */
   const groups = (): Record<string, string[]> =>
     Object.fromEntries(
@@ -226,8 +241,40 @@ describe('WorkerCardComponent', () => {
     expect(host().querySelector('[data-chat-only]')).toBeNull();
   });
 
+  it('folds the chat features by default and counts the declared names in the head', async () => {
+    await render(false, 'unknown', chatWorker());
+
+    expect(chatToggle()?.getAttribute('aria-expanded')).toBe('false');
+    expect(host().querySelector('app-chat-capabilities')).toBeNull();
+    expect(host().querySelector('[data-chat-count]')?.textContent?.trim()).toBe(
+      '6 of 16 declared',
+    );
+
+    await openChatFeatures();
+    expect(chatToggle()?.getAttribute('aria-expanded')).toBe('true');
+    expect(chatToggle()?.getAttribute('aria-controls')).toBeTruthy();
+    expect(host().querySelector('app-chat-capabilities')).not.toBeNull();
+    const listed = host().querySelectorAll('[data-chat-capability]');
+    const declared = host().querySelectorAll(
+      '[data-chat-capability][data-declared="true"]',
+    );
+    expect(listed.length).toBe(16);
+    expect(declared.length).toBe(6);
+  });
+
+  it('counts a declared name without a description in both numbers', async () => {
+    const worker = chatWorker();
+    worker.chat = { ...worker.chat!, features: ['seed', 'future_feature'] };
+    await render(false, 'unknown', worker);
+
+    expect(host().querySelector('[data-chat-count]')?.textContent?.trim()).toBe(
+      '4 of 17 declared',
+    );
+  });
+
   it('groups every chat feature, guarantee and image transport and marks the undeclared ones', async () => {
     await render(false, 'unknown', chatWorker());
+    await openChatFeatures();
 
     expect(groups()).toEqual({
       sampling: [
@@ -255,6 +302,7 @@ describe('WorkerCardComponent', () => {
 
   it('labels each chat badge in words and keeps the API name for its tooltip', async () => {
     await render(false, 'unknown', chatWorker());
+    await openChatFeatures();
 
     const seed = host().querySelector('[data-chat-capability="seed"]');
     expect(seed?.textContent?.trim()).toBe(
@@ -314,6 +362,7 @@ describe('WorkerCardComponent', () => {
     const worker = chatWorker();
     worker.chat = { ...worker.chat!, features: ['seed', 'future_feature'] };
     await render(false, 'unknown', worker);
+    await openChatFeatures();
 
     expect(groups()['other']).toEqual(['future_feature']);
     const unknown = host().querySelector(
@@ -370,6 +419,33 @@ describe('WorkerCardComponent', () => {
     expect(chatSection()).toBeNull();
   });
 
+  it('badges the name with the text section the worker belongs to', async () => {
+    const kind = (): string | null =>
+      host()
+        .querySelector('.worker-card-kind')
+        ?.getAttribute('data-text-kind') ?? null;
+
+    const show = (worker: HordeWorker): void => {
+      fixture.componentRef.setInput('worker', worker);
+      fixture.detectChanges();
+    };
+
+    await render(false, 'unknown', chatWorker());
+    expect(kind()).toBe('chat');
+
+    show(chatWorker({ accepts_prompt_jobs: false }));
+    expect(kind()).toBe('chat_only');
+
+    show(textWorker({ accepts_chat_jobs: false }));
+    expect(kind()).toBe('text');
+
+    show(textWorker());
+    expect(kind()).toBeNull();
+
+    show(makeWorker());
+    expect(kind()).toBeNull();
+  });
+
   it('shows only plain text limits when the horde does not send the job kinds', async () => {
     await render(false, 'unknown', textWorker());
 
@@ -389,5 +465,106 @@ describe('WorkerCardComponent', () => {
 
     expect(capabilities()).toBeNull();
     expect(host().querySelector('[data-nonconformant-replies]')).toBeNull();
+  });
+
+  const bridgeLine = (): HTMLElement | null =>
+    host().querySelector('[data-bridge-agent]');
+
+  it('links the bridge name to its contact when the contact is a web address', async () => {
+    await render(
+      false,
+      'unknown',
+      makeWorker({
+        bridge_agent:
+          'AI Horde Worker reGen:10.1.2:https://github.com/Haidra-Org/horde-worker-reGen',
+      }),
+    );
+
+    const link = bridgeLine()?.querySelector('[data-bridge-link]');
+    expect(link?.getAttribute('href')).toBe(
+      'https://github.com/Haidra-Org/horde-worker-reGen',
+    );
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toContain('noopener');
+    expect(link?.textContent).toContain('AI Horde Worker reGen v10.1.2');
+    expect(bridgeLine()?.querySelector('[data-bridge-contact]')).toBeNull();
+    expect(host().textContent).not.toContain(
+      'admin.workers.card.software_contact:',
+    );
+  });
+
+  it('shows the bridge name and a contact that is not a web address as text', async () => {
+    await render(
+      false,
+      'unknown',
+      makeWorker({ bridge_agent: 'KoboldCpp:1.2:someone@example.com' }),
+    );
+
+    expect(bridgeLine()?.querySelector('a')).toBeNull();
+    expect(bridgeLine()?.textContent).toContain('KoboldCpp v1.2');
+    expect(
+      bridgeLine()?.querySelector('[data-bridge-contact]')?.textContent,
+    ).toBe('someone@example.com');
+  });
+
+  it('does not link a contact with a scheme other than http or https', async () => {
+    await render(
+      false,
+      'unknown',
+      makeWorker({ bridge_agent: 'Bridge:1:javascript:alert(1)' }),
+    );
+
+    expect(bridgeLine()?.querySelector('a')).toBeNull();
+    expect(
+      bridgeLine()?.querySelector('[data-bridge-contact]')?.textContent,
+    ).toBe('javascript:alert(1)');
+  });
+
+  it('shows an unsplittable bridge agent string as written', async () => {
+    await render(false, 'unknown', makeWorker({ bridge_agent: 'agent' }));
+
+    expect(bridgeLine()?.textContent).toContain('agent');
+    expect(bridgeLine()?.querySelector('a')).toBeNull();
+  });
+
+  it('leaves out the info line when the worker has not set it', async () => {
+    await render(false);
+    expect(host().querySelector('[data-worker-info]')).toBeNull();
+    expect(host().textContent).not.toContain('admin.workers.card.info');
+    TestBed.resetTestingModule();
+
+    await render(false, 'unknown', makeWorker({ info: 'RX 6600 8GB' }));
+    expect(host().querySelector('[data-worker-info]')?.textContent).toContain(
+      'RX 6600 8GB',
+    );
+  });
+
+  it('keeps an unset info line for a moderator, who can set it', async () => {
+    await render(true);
+
+    const info = host().querySelector('[data-worker-info]');
+    expect(info?.querySelector('button')?.textContent).toContain(
+      'admin.workers.button.set_info',
+    );
+  });
+
+  it('does not repeat the worker type in a row, and labels the type icon with it', async () => {
+    await render(false, 'unknown', textWorker());
+
+    expect(host().textContent).not.toContain('admin.workers.card.type');
+    expect(
+      host().querySelector('[data-worker-type]')?.getAttribute('aria-label'),
+    ).toBe('admin.workers.type.text_worker');
+  });
+
+  it('lists the counters as label and value pairs', async () => {
+    await render(false);
+
+    const pairs = Array.from(host().querySelectorAll('[data-stats] > div')).map(
+      (pair) =>
+        `${pair.querySelector('dt')?.textContent?.trim()}=${pair.querySelector('dd')?.textContent?.trim()}`,
+    );
+    expect(pairs).toContain('admin.workers.card.threads=2');
+    expect(pairs).toContain('admin.workers.card.requests_fulfilled=12');
   });
 });

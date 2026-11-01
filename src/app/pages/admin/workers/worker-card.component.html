@@ -428,6 +428,25 @@
             </button>
           </div>
         </div>
+
+        <!-- Below 900px the name pins while the card scrolls past, and the
+             section heading is out of view. The badge says which section
+             the card belongs to. -->
+        @if (textJobBadge(); as kind) {
+          <span
+            class="hd-badge worker-cap worker-card-kind"
+            [class.worker-cap--chat-jobs]="kind !== 'text'"
+            [attr.data-text-kind]="kind"
+            >{{
+              (kind === "chat_only"
+                ? "admin.workers.card.kind_chat_only"
+                : kind === "chat"
+                  ? "admin.workers.card.kind_chat"
+                  : "admin.workers.type.text"
+              ) | transloco
+            }}</span
+          >
+        }
       </div>
 
       <!-- Highlight badge (right-aligned) -->
@@ -593,6 +612,8 @@
       [appTouchTooltip]="getWorkerTypeTooltipKey()"
       [appTouchTooltipDesc]="iconDesc(getWorkerTypeIcon())"
       [appTouchTooltipPreferBelow]="true"
+      [attr.aria-label]="getWorkerTypeTooltipKey() | transloco"
+      data-worker-type
     >
       <app-worker-status-icon
         [type]="getWorkerTypeIcon()"
@@ -609,29 +630,6 @@
   <div class="worker-card-content worker-card-section">
     <!-- Basic Information -->
     <div class="worker-card-info-group">
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.type" | transloco }}:</span
-        >
-        @switch (worker().type) {
-          @case ("image") {
-            <span class="hd-badge worker-type-label domain-hue--image">{{
-              "admin.workers.type.image" | transloco
-            }}</span>
-          }
-          @case ("text") {
-            <span class="hd-badge worker-type-label domain-hue--text">{{
-              "admin.workers.type.text" | transloco
-            }}</span>
-          }
-          @case ("interrogation") {
-            <span class="hd-badge worker-type-label domain-hue--alchemy">{{
-              "admin.workers.type.interrogation" | transloco
-            }}</span>
-          }
-        }
-      </div>
-
       <div class="worker-card-row">
         <span class="worker-card-label"
           >{{ "admin.workers.card.owner" | transloco }}:</span
@@ -697,65 +695,75 @@
           }}</span>
         }
       </div>
-      <div class="worker-card-col">
-        <span class="worker-card-label">
-          {{ "admin.workers.card.info" | transloco }}:
-          @if (canSetInfo()) {
-            <button
-              type="button"
-              class="worker-inline-action ml-1.5"
-              (click)="openInfoDialog()"
-              [attr.aria-label]="'admin.workers.action.set_info' | transloco"
-            >
-              @if (worker().info) {
-                {{ "admin.workers.button.edit" | transloco }}
-              } @else {
-                {{ "admin.workers.button.set_info" | transloco }}
-              }
-            </button>
+      <!-- An unset info line is left out, except for the people who can set
+           it, who need the button to reach it. -->
+      @if (worker().info || canSetInfo()) {
+        <div class="worker-card-col" data-worker-info>
+          <span class="worker-card-label">
+            {{ "admin.workers.card.info" | transloco }}:
+            @if (canSetInfo()) {
+              <button
+                type="button"
+                class="worker-inline-action ml-1.5"
+                (click)="openInfoDialog()"
+                [attr.aria-label]="'admin.workers.action.set_info' | transloco"
+              >
+                @if (worker().info) {
+                  {{ "admin.workers.button.edit" | transloco }}
+                } @else {
+                  {{ "admin.workers.button.set_info" | transloco }}
+                }
+              </button>
+            }
+          </span>
+          @if (worker().info) {
+            <span class="worker-card-value">{{ worker().info }}</span>
           }
-        </span>
-        @if (worker().info) {
-          <span class="worker-card-value">{{ worker().info }}</span>
-        } @else {
-          <span class="worker-card-value worker-card-value-muted">{{
-            "admin.common.unset" | transloco
-          }}</span>
-        }
-      </div>
-      <div class="worker-card-col">
+        </div>
+      }
+      <div class="worker-card-row" data-bridge-agent>
         <span class="worker-card-label"
           >{{ "admin.workers.card.bridge_agent" | transloco }}:</span
         >
         @if (getParsedBridgeAgent(); as parsed) {
-          <span class="worker-card-value" [title]="worker().bridge_agent"
-            >{{ parsed.name }} v{{ parsed.version }}</span
-          >
+          <span class="worker-card-value worker-card-bridge">
+            @if (bridgeContactUrl(); as url) {
+              <a
+                [href]="url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="worker-link"
+                [title]="url"
+                data-bridge-link
+                >{{ parsed.name }} v{{ parsed.version
+                }}<span class="sr-only">{{
+                  "admin.workers.card.opens_new_tab" | transloco
+                }}</span></a
+              >
+            } @else {
+              <span [title]="worker().bridge_agent"
+                >{{ parsed.name }} v{{ parsed.version }}</span
+              >
+              <span
+                class="worker-card-bridge-contact"
+                [title]="
+                  ('admin.workers.card.software_contact' | transloco) +
+                  ': ' +
+                  parsed.contact
+                "
+                data-bridge-contact
+                >{{ parsed.contact }}</span
+              >
+            }
+          </span>
         } @else {
-          <span class="worker-card-value" [title]="worker().bridge_agent">{{
-            worker().bridge_agent
-          }}</span>
+          <span
+            class="worker-card-value worker-card-bridge"
+            [title]="worker().bridge_agent"
+            >{{ worker().bridge_agent }}</span
+          >
         }
       </div>
-      @if (getParsedBridgeAgent(); as parsed) {
-        <div class="worker-card-col">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.software_contact" | transloco }}:</span
-          >
-          @if (parsed.contact) {
-            <span
-              class="worker-card-value worker-card-contact"
-              [title]="parsed.contact"
-              >{{ parsed.contact }}</span
-            >
-          } @else {
-            <span
-              class="worker-card-value worker-card-value-muted worker-card-contact"
-              >{{ "admin.common.none" | transloco }}</span
-            >
-          }
-        </div>
-      }
       @if (isModerator()) {
         <div class="worker-card-col">
           <span class="worker-card-label"
@@ -795,59 +803,59 @@
     </div>
 
     <!-- Performance Metrics -->
-    <div class="worker-card-info-group-bordered">
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.uptime" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{
-          formatUptime(worker().uptime)
-        }}</span>
+    <dl class="worker-card-info-group-bordered worker-card-stats" data-stats>
+      <div class="worker-card-stat">
+        <dt class="worker-card-label">
+          {{ "admin.workers.card.uptime" | transloco }}
+        </dt>
+        <dd class="worker-card-value">
+          {{ formatUptime(worker().uptime) }}
+        </dd>
       </div>
       <div
-        class="worker-card-row"
+        class="worker-card-stat"
         [class.worker-speed-highlight-low]="isLowSpeed()"
         [class.worker-speed-highlight-high]="isHighSpeed()"
       >
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.speed" | transloco }}:</span
-        >
+        <dt class="worker-card-label">
+          {{ "admin.workers.card.speed" | transloco }}
+        </dt>
         @if (getPerformanceUnit(); as perfUnit) {
-          <span class="worker-card-value">
+          <dd class="worker-card-value">
             {{ perfUnit.primary.value.toFixed(2) }}
             <app-unit-tooltip
               [unit]="perfUnit"
               [primaryOverride]="perfUnit.primary.unit"
             />
-          </span>
+          </dd>
         } @else {
-          <span class="worker-card-value">{{ worker().performance }}</span>
+          <dd class="worker-card-value">{{ worker().performance }}</dd>
         }
       </div>
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.threads" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{ worker().threads }}</span>
+      <div class="worker-card-stat">
+        <dt class="worker-card-label">
+          {{ "admin.workers.card.threads" | transloco }}
+        </dt>
+        <dd class="worker-card-value">{{ worker().threads }}</dd>
       </div>
-      <div class="worker-card-row">
-        <span class="worker-card-label"
-          >{{ "admin.workers.card.requests_fulfilled" | transloco }}:</span
-        >
-        <span class="worker-card-value">{{
-          worker().requests_fulfilled | formatNumber
-        }}</span>
+      <div class="worker-card-stat">
+        <dt class="worker-card-label">
+          {{ "admin.workers.card.requests_fulfilled" | transloco }}
+        </dt>
+        <dd class="worker-card-value">
+          {{ worker().requests_fulfilled | formatNumber }}
+        </dd>
       </div>
       @if (
         worker().type === "image" &&
         worker().megapixelsteps_generated !== undefined
       ) {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.mps_generated" | transloco }}:</span
-          >
+        <div class="worker-card-stat">
+          <dt class="worker-card-label">
+            {{ "admin.workers.card.mps_generated" | transloco }}
+          </dt>
           @if (getMpsGeneratedUnit(); as mpsUnit) {
-            <span class="worker-card-value">
+            <dd class="worker-card-value">
               {{ mpsUnit.primary.value.toFixed(1) }}
               <app-unit-tooltip
                 [unit]="mpsUnit"
@@ -855,23 +863,23 @@
                   mpsUnit.primary.prefix + mpsUnit.primary.unit
                 "
               />
-            </span>
+            </dd>
           } @else {
-            <span class="worker-card-value">{{
-              worker().megapixelsteps_generated ?? 0 | formatNumber
-            }}</span>
+            <dd class="worker-card-value">
+              {{ worker().megapixelsteps_generated ?? 0 | formatNumber }}
+            </dd>
           }
         </div>
       }
       @if (
         worker().type === "text" && worker().tokens_generated !== undefined
       ) {
-        <div class="worker-card-row">
-          <span class="worker-card-label"
-            >{{ "admin.workers.card.tokens_generated" | transloco }}:</span
-          >
+        <div class="worker-card-stat">
+          <dt class="worker-card-label">
+            {{ "admin.workers.card.tokens_generated" | transloco }}
+          </dt>
           @if (getTokensGeneratedUnit(); as tokensUnit) {
-            <span class="worker-card-value">
+            <dd class="worker-card-value">
               {{ tokensUnit.primary.value.toFixed(1) }}
               <app-unit-tooltip
                 [unit]="tokensUnit"
@@ -879,29 +887,35 @@
                   tokensUnit.primary.prefix + tokensUnit.primary.unit
                 "
               />
-            </span>
+            </dd>
           } @else {
-            <span class="worker-card-value">{{
-              worker().tokens_generated ?? 0 | formatNumber
-            }}</span>
+            <dd class="worker-card-value">
+              {{ worker().tokens_generated ?? 0 | formatNumber }}
+            </dd>
           }
         </div>
       }
       @if (showsNonconformant()) {
-        <div class="worker-card-row" data-nonconformant-replies>
-          <span
-            class="worker-card-label"
-            [appTouchTooltip]="'admin.workers.card.nonconformant_replies'"
-            [appTouchTooltipDesc]="'admin.workers.card.nonconformant_replies_description'"
-            [appTouchTooltipPreferBelow]="true"
-            >{{ "admin.workers.card.nonconformant_replies" | transloco }}:</span
-          >
-          <span class="worker-card-value">{{
-            worker().nonconformant_replies ?? 0 | formatNumber
-          }}</span>
+        <div class="worker-card-stat" data-nonconformant-replies>
+          <dt class="worker-card-label">
+            <span
+              [appTouchTooltip]="'admin.workers.card.nonconformant_replies'"
+              [appTouchTooltipDesc]="'admin.workers.card.nonconformant_replies_description'"
+              [appTouchTooltipPreferBelow]="true"
+              [attr.aria-label]="
+                'admin.workers.card.nonconformant_replies' | transloco
+              "
+              >{{
+                "admin.workers.card.nonconformant_replies" | transloco
+              }}</span
+            >
+          </dt>
+          <dd class="worker-card-value">
+            {{ worker().nonconformant_replies ?? 0 | formatNumber }}
+          </dd>
         </div>
       }
-    </div>
+    </dl>
 
     <!-- Capabilities & Features -->
     <div class="worker-card-info-group-bordered-last">
@@ -1213,19 +1227,46 @@
               }}</span>
             </div>
           }
-          <div class="worker-card-col worker-card-subsection" data-chat-section>
-            <span
-              class="worker-card-label worker-card-section-label"
-              [appTouchTooltip]="'admin.workers.chat.features'"
-              [appTouchTooltipDesc]="'admin.workers.chat.features_description'"
-              [appTouchTooltipPreferBelow]="true"
-              >{{ "admin.workers.chat.features" | transloco }}:</span
+          <!-- The full list is long, so it stays folded until the reader
+               opens it. The count in the head is enough for most visits. -->
+          <div
+            class="hd-disclosure worker-card-subsection worker-chat-disclosure"
+            [class.hd-disclosure--open]="chatFeaturesOpen()"
+            data-chat-section
+          >
+            <button
+              type="button"
+              class="hd-disclosure-head worker-chat-disclosure-head"
+              [attr.aria-expanded]="chatFeaturesOpen()"
+              [attr.aria-controls]="chatFeaturesOpen() ? chatFeaturesId : null"
+              (click)="chatFeaturesOpen.set(!chatFeaturesOpen())"
+              data-chat-toggle
             >
-            <app-chat-capabilities
-              [features]="chat.features"
-              [transports]="chat.image_transports"
-              [showUndeclared]="true"
-            />
+              <span class="hd-disclosure-name">{{
+                "admin.workers.chat.features" | transloco
+              }}</span>
+              <span class="hd-disclosure-sum" data-chat-count>{{
+                "admin.workers.chat.features_count"
+                  | transloco: chatFeatureCount()
+              }}</span>
+              <app-icon
+                name="chevron-right"
+                class="hd-disclosure-chev"
+                aria-hidden="true"
+              />
+            </button>
+            @if (chatFeaturesOpen()) {
+              <div class="hd-disclosure-body" [id]="chatFeaturesId">
+                <p class="worker-card-note worker-chat-disclosure-note">
+                  {{ "admin.workers.chat.features_description" | transloco }}
+                </p>
+                <app-chat-capabilities
+                  [features]="chat.features"
+                  [transports]="chat.image_transports"
+                  [showUndeclared]="true"
+                />
+              </div>
+            }
           </div>
         }
       </div>

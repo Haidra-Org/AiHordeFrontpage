@@ -253,6 +253,25 @@ are shared. The frontpage adds domain tinting and the skeleton set.
 .domain-label--*        /* Inline text color per domain */
 ```
 
+### Worker Card Layout
+
+The worker card keeps the type in the top bar icon, which has the type as its accessible name, so there is no Worker Type
+row. Info is listed only when set, or when the viewer can set it. Bridge Agent and Software Contact share one line.
+
+```css
+.worker-card-bridge         /* The agent name and version; linked to the contact when it is an http(s) address */
+.worker-card-bridge-contact /* A contact that is not a web address, as a muted line under the name */
+.worker-card-stats          /* The counters as a two-column <dl> grid */
+.worker-card-stat           /* One counter tile, label above value */
+```
+
+Below 900px, `.worker-card-body--sticky-mobile` pins the card's name under the page's sticky bars at z-index 10, under
+the worker type tabs (z-index 20), so a header that leaves with the end of its card passes under them. On the workers
+list, `::before`/`::after` squares (page colour outside the corner curve) fill a pinned header's rounded top corners.
+The space beside it is left clear for the section rail. Below 640px,
+the worker type tabs (`.worker-subtabs`) and the details tab row (`.details-nav`) run to both screen edges instead
+(`margin-inline: calc(50% - 50vw)` with matching padding), and the worker type tabs drop their rounded corners.
+
 ### Text Worker Capabilities
 
 The worker card has a Capabilities section for text workers, laid out like the image one: `.worker-cap` badges, with
@@ -265,6 +284,34 @@ The worker card has a Capabilities section for text workers, laid out like the i
 .worker-card-note          /* One muted sentence under the badges, such as the chat-only note */
 .worker-limits             /* The token limits table: one row for each job kind taken by the worker */
 .worker-card-subsection    /* Space above a block that follows the table, such as the chat features */
+.worker-chat-disclosure    /* The chat features as an hd-disclosure, closed by default */
+.worker-chat-disclosure-head /* The head button: "Chat features" and the declared count, such as "10 of 16 declared" */
+```
+
+The declared count uses the same grouping as the open list (`chatCapabilityGroups(..., true)`), so both numbers match
+what the disclosure shows when open.
+
+### Worker List Sections
+
+When the horde sends `accepts_chat_jobs`, the text tab of the workers list splits into Chat workers (chat-only workers
+included) and Plain text only, in card and row views. Both start open. Each viewer's folded sections are stored in
+localStorage under `workers.text_sections_folded`, and storage errors leave both open. A link to a worker in a folded
+section opens it without changing the stored choice. The headings scroll with the list.
+
+A heading is a line of text (chevron, title, count) with a rule to the right, and a 3px rail runs down the left of the
+cards under it. The heading has more space above than below, so it groups with the cards that follow. The chat section
+uses the text hue (`--hd-accent`) for the rule and rail. The plain section uses `--hd-border`. Below 900px, where card
+names pin and the heading scrolls out of view, each text card shows a Chat, Chat only or Text badge beside its name.
+
+```css
+.worker-section-heading         /* <h2> wrapping the fold button */
+.worker-section--railed         /* The cards under a heading: left rail and a small inset */
+.worker-section--chat           /* On the heading and the cards: text hue for the rule and rail */
+.worker-card-kind               /* The Chat / Chat only / Text badge in the card name row, hidden from 900px */
+.worker-section-toggle          /* The fold button, borderless, with the rule as ::after. 44px on coarse pointers */
+.worker-section-chevron         /* Rotated while folded */
+.worker-section-chevron--open
+.worker-section-count           /* The worker count pill */
 ```
 
 `app-chat-capabilities` draws a chat declaration as labelled rows of `.worker-cap` badges. Each badge has a

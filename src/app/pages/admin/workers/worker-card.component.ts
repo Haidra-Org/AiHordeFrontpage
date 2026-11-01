@@ -39,7 +39,7 @@ import {
 import { WorkerStatusIconComponent } from './worker-status-icon.component';
 import { WORKER_ICON_MAP } from './worker-icons';
 import { ChatCapabilitiesComponent } from './chat-capabilities.component';
-import { chatReadsImages } from './chat-features';
+import { chatCapabilityGroups, chatReadsImages } from './chat-features';
 import { extractApiError } from '../../../helper/extract-api-error';
 import { copyToClipboard } from '../../../helper/copy-to-clipboard';
 import {
@@ -53,6 +53,8 @@ import { GlossaryService } from '../../../services/glossary.service';
 import { ToastService } from '../../../services/toast.service';
 import { AdminModerationService } from '../../../services/admin-moderation.service';
 import { DEFAULT_PROMPTS, promptsParams } from '../review/review-query';
+
+let nextChatFeaturesId = 0;
 
 @Component({
   selector: 'app-worker-card',
@@ -174,6 +176,19 @@ export class WorkerCardComponent {
     () => this.acceptsChat() && !this.takesPromptJobs(),
   );
 
+  /**
+   * The text section the worker belongs to, for the badge beside its name.
+   * Null on image and alchemy workers, and when the horde does not send the
+   * job kinds, because the list does not split into sections then.
+   */
+  public readonly textJobBadge = computed(
+    (): 'chat' | 'chat_only' | 'text' | null => {
+      if (!this.showsChat()) return null;
+      if (this.chatOnly()) return 'chat_only';
+      return this.acceptsChat() ? 'chat' : 'text';
+    },
+  );
+
   public readonly chat = computed(() =>
     this.acceptsChat() ? (this.worker().chat ?? null) : null,
   );
@@ -191,6 +206,28 @@ export class WorkerCardComponent {
   public readonly chatReadsImages = computed(() => {
     const chat = this.chat();
     return chat ? chatReadsImages(chat) : false;
+  });
+
+  public readonly chatFeaturesOpen = signal(false);
+  public readonly chatFeaturesId = `worker-chat-features-${nextChatFeaturesId++}`;
+
+  /**
+   * How many of the listed chat names the worker declares, out of all the
+   * names listed when the features are open. Both numbers come from the same
+   * grouping, so the count in the head matches the list under it.
+   */
+  public readonly chatFeatureCount = computed(() => {
+    const chat = this.chat();
+    if (!chat) return { declared: 0, total: 0 };
+    const badges = chatCapabilityGroups(
+      chat.features,
+      chat.image_transports,
+      true,
+    ).flatMap((group) => group.badges);
+    return {
+      declared: badges.filter((badge) => badge.declared).length,
+      total: badges.length,
+    };
   });
 
   /**
@@ -481,6 +518,24 @@ export class WorkerCardComponent {
     const parsed = parseBridgeAgent(this.worker().bridge_agent);
     return parsed && parsed.contact ? parsed : null;
   }
+
+  /**
+   * The bridge contact as a link target. Only http and https contacts are
+   * linked. The contact is free text written by the worker's software, and
+   * any other scheme could run script or open an app.
+   */
+  public readonly bridgeContactUrl = computed(() => {
+    const contact = parseBridgeAgent(this.worker().bridge_agent)?.contact;
+    if (!contact) return null;
+    try {
+      const url = new URL(contact);
+      return url.protocol === 'http:' || url.protocol === 'https:'
+        ? url.href
+        : null;
+    } catch {
+      return null;
+    }
+  });
 
   public getSortedModels(): string[] {
     return [...(this.worker().models ?? [])].sort((a, b) =>

@@ -1037,10 +1037,11 @@
 
   /* =================================================================
      WORKER CARD (HD family)
-     One machine on the network, printed as a column of label/value
-     rows under its name and the row of marks saying what state it is
-     in. Every rule below reads an `--hd-*` token, so both themes come
-     out of the token file and no `.dark` rule belongs here.
+     One machine on the network, shown as label/value rows and a grid of
+     counters under its name and status icons. Every rule below uses an
+     `--hd-*` token, so both themes come from the token file. The one
+     `.dark` rule is the pinned header's gap fill. It has to match the page
+     background, which is not an `--hd-*` token.
      ================================================================= */
 
   .worker-card {
@@ -1103,15 +1104,30 @@
     color: var(--hd-ink);
   }
 
-  /* The contact line always takes two lines, so a grid of cards does
-     not go ragged over whether one was filled in. */
-  .worker-card-contact {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    min-height: 2lh;
-    overflow: hidden;
+  /* The bridge name and version sit at the value end of the row. A
+     contact that is not a link goes on a separate, quieter line under
+     them. */
+  .worker-card-bridge {
+    min-width: 0;
+    text-align: end;
     overflow-wrap: anywhere;
+  }
+
+  /* A finger needs a taller target than the line of text. The negative
+     margin takes the padding back out of the layout. */
+  @media (pointer: coarse) {
+    .worker-card-bridge > a {
+      display: inline-block;
+      padding-block: 13px;
+      margin-block: -13px;
+    }
+  }
+
+  .worker-card-bridge-contact {
+    display: block;
+    font-size: var(--hd-text-xs);
+    font-weight: 400;
+    color: var(--hd-muted);
   }
 
   .worker-card-value-muted {
@@ -1389,17 +1405,87 @@
 
   /* In one column the cards are tall, so the name stays in view while
      the card is scrolled past. --sticky-offset is what the page-level
-     sticky headers above have already claimed. */
+     sticky headers above have already claimed. The z-index is below the
+     worker type tabs, so a header leaving at the end of its card slides
+     under them.
+
+     The header covers the card's top and side borders and draws the
+     same borders itself, so a pinned header still looks like the top of
+     the card. The negative margins are the card's padding plus its border
+     width, which is narrower on phones. */
   @media (max-width: 899px) {
     .worker-card-body--sticky-mobile {
       position: sticky;
       top: var(--sticky-offset, 80px);
-      z-index: 20;
-      margin: calc(var(--hd-space-3) * -1) calc(var(--hd-space-3) * -1) 0;
+      z-index: 10;
+      margin: calc((var(--hd-space-3) + 2px) * -1)
+        calc((var(--hd-space-3) + 1px) * -1) 0;
       padding: var(--hd-space-2) var(--hd-space-3);
-      border-bottom: 1px solid var(--hd-border);
+      border: 1px solid var(--hd-card-border);
+      border-top: 2px solid var(--hd-zone-tint-border, var(--hd-card-border));
+      border-bottom-color: var(--hd-border);
       border-radius: var(--hd-radius-md) var(--hd-radius-md) 0 0;
       background: var(--hd-card);
+    }
+
+    .worker-card--issue > .worker-card-body--sticky-mobile {
+      border-top-color: var(--hd-danger);
+    }
+
+    /* On the workers list the cards sit directly on the page background.
+       While a header is pinned, the card's content scrolls past under its
+       rounded top corners. Each corner gets a square in the page colour
+       that is transparent inside the curve. The squares sit on the outer
+       border edge: 2px above the padding box and 1px to the side. Where the
+       header is not pinned, the squares sit on the page background and do
+       not show. Other pages put the cards on a panel of a different colour,
+       so the squares are left off there.
+
+       The space beside a pinned header is left clear. The tab bars above
+       run to the screen edges, and the section rail beside the cards must
+       stay visible. */
+    .admin-container-lg .worker-card-body--sticky-mobile {
+      --worker-pin-fill: var(--color-surface-secondary);
+    }
+
+    .dark .admin-container-lg .worker-card-body--sticky-mobile {
+      --worker-pin-fill: var(--color-gray-800);
+    }
+
+    .admin-container-lg .worker-card-body--sticky-mobile::before,
+    .admin-container-lg .worker-card-body--sticky-mobile::after {
+      content: "";
+      position: absolute;
+      top: -2px;
+      width: var(--hd-radius-md);
+      height: var(--hd-radius-md);
+      pointer-events: none;
+    }
+
+    .admin-container-lg .worker-card-body--sticky-mobile::before {
+      left: -1px;
+      background: radial-gradient(
+        circle at 100% 100%,
+        transparent calc(var(--hd-radius-md) - 0.5px),
+        var(--worker-pin-fill) var(--hd-radius-md)
+      );
+    }
+
+    .admin-container-lg .worker-card-body--sticky-mobile::after {
+      right: -1px;
+      background: radial-gradient(
+        circle at 0% 100%,
+        transparent calc(var(--hd-radius-md) - 0.5px),
+        var(--worker-pin-fill) var(--hd-radius-md)
+      );
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .worker-card-body--sticky-mobile {
+      margin: calc((var(--hd-space-2-5) + 2px) * -1)
+        calc((var(--hd-space-2-5) + 1px) * -1) 0;
+      padding-inline: var(--hd-space-2-5);
     }
   }
 
@@ -1417,6 +1503,20 @@
     align-items: center;
     gap: var(--hd-space-2);
     min-width: 0;
+  }
+
+  /* From 900px the name does not pin and the section heading stays close
+     to the cards, so the badge is only shown below that width. */
+  .worker-card-kind {
+    flex: none;
+    align-self: flex-start;
+    margin-left: auto;
+  }
+
+  @media (min-width: 900px) {
+    .worker-card-kind {
+      display: none;
+    }
   }
 
   .worker-card-status-icon-wrap {
@@ -1497,11 +1597,13 @@
     padding: 2px;
   }
 
+  /* The first group sits under the divider below the status icons, so it
+     gets the same space above as the bordered groups further down. */
   .worker-card-info-group {
     display: flex;
     flex-direction: column;
     gap: var(--hd-space-1);
-    padding-bottom: var(--hd-space-2-5);
+    padding-block: var(--hd-space-2-5);
   }
 
   .worker-card-col {
@@ -1521,6 +1623,31 @@
 
   .worker-card-info-group-bordered {
     padding-bottom: var(--hd-space-2-5);
+  }
+
+  /* The counters are short numbers, so two of them fit side by side even
+     on a phone. Each one is a small tile with the label above the value,
+     so each label stays next to its value in either column. */
+  .worker-card-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--hd-space-1) var(--hd-space-2);
+    margin: 0;
+  }
+
+  .worker-card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: var(--hd-space-1) var(--hd-space-2);
+    border-radius: var(--hd-radius-sm);
+    background: var(--hd-field-soft);
+  }
+
+  .worker-card-stat > dd {
+    margin: 0;
+    overflow-wrap: anywhere;
   }
 
   .worker-card-section-label {
@@ -1762,20 +1889,6 @@
     gap: var(--hd-space-2);
   }
 
-  .worker-type-label {
-    display: inline-flex;
-    align-items: center;
-    min-height: 20px;
-    padding: 0 var(--hd-space-2);
-    border: 1px solid var(--hd-zone-tint-border, var(--hd-card-border));
-    border-radius: var(--hd-radius-sm);
-    background: var(--hd-zone-tint, var(--hd-seg-track));
-    color: var(--hd-ink);
-    font-size: var(--hd-text-xs);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
   /* What the eye is looking for first is which capabilities are switched
      off, so the ones in force take a plate and the ones that are not take
      a bare outline and the strike that says so without colour. Each one
@@ -1898,6 +2011,20 @@
      block's label looks like another row. */
   .worker-card-subsection {
     margin-top: var(--hd-space-2);
+  }
+
+  /* The chat features fold into one line on the card. The whole head is
+     the button, so it fills the row without the browser's button style. */
+  .worker-chat-disclosure-head {
+    width: 100%;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .worker-chat-disclosure-note {
+    margin-top: 0;
   }
 
   /* A chat declaration in labelled rows: the label column is as wide as

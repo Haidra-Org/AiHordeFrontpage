@@ -88,6 +88,24 @@ const EMPTY_CHAT_DECLARATION: WorkerChatDeclaration = {
 
 const WORKER_VIEW_MODE_STORAGE_KEY = 'workers.view_mode';
 
+/** Storage key for the folded text sections in this browser, as a JSON list. */
+const TEXT_SECTIONS_FOLDED_STORAGE_KEY = 'workers.text_sections_folded';
+
+/** The two groups of workers on the text tab. */
+export type TextSectionId = 'chat' | 'plain';
+
+const TEXT_SECTION_IDS: readonly TextSectionId[] = ['chat', 'plain'];
+
+/**
+ * A group of listed workers. `id` is null when the tab shows a single list
+ * without a heading.
+ */
+export interface WorkerSection {
+  id: TextSectionId | null;
+  headingKey: string | null;
+  workers: HordeWorker[];
+}
+
 @Component({
   selector: 'app-worker-list',
   imports: [
@@ -162,8 +180,8 @@ export class WorkerListComponent implements OnInit {
   public loading = signal<boolean>(true);
   public errorMessage = signal<string | null>(null);
   public filterText = signal<string>('');
-  /** Whether the text tab lists only workers that accept chat jobs. */
-  public chatJobsOnly = signal<boolean>(false);
+  /** The text sections the viewer has folded. Both start open. */
+  public foldedTextSections = signal<ReadonlySet<TextSectionId>>(new Set());
   public workerType = signal<WorkerType>('image');
   public sortKey = signal<SortKey>('name');
   public sortOrder = signal<SortOrder>('asc');
@@ -187,6 +205,7 @@ export class WorkerListComponent implements OnInit {
 
   constructor() {
     this.workerViewMode.set(this.loadWorkerViewModePreference());
+    this.foldedTextSections.set(this.loadFoldedTextSections());
 
     effect(() => {
       this.storeWorkerViewModePreference(this.workerViewMode());
@@ -222,7 +241,18 @@ export class WorkerListComponent implements OnInit {
       const workerId = this.highlightedId();
       if (!isPlatformBrowser(this.platformId)) return;
       if (!workerId || !this.pendingScrollToWorker) return;
-      if (!this.filteredWorkers().some((w) => w.id === workerId)) return;
+      const section = this.workerSections().find((s) =>
+        s.workers.some((w) => w.id === workerId),
+      );
+      if (!section) return;
+      // When the address points at a worker in a folded section, that
+      // section opens so the card can be shown. The stored choice does not
+      // change.
+      if (section.id && !this.isTextSectionOpen(section.id)) {
+        const folded = new Set(this.foldedTextSections());
+        folded.delete(section.id);
+        this.foldedTextSections.set(folded);
+      }
       this.pendingScrollToWorker = false;
       setTimeout(() =>
         document
@@ -249,7 +279,6 @@ export class WorkerListComponent implements OnInit {
     if (this.workerType() === type) return;
     this.workerType.set(type);
     this.filterText.set('');
-    this.chatJobsOnly.set(false);
     // Reset sort key if MPS generated is selected but not available for this type
     if (type !== 'image' && this.sortKey() === 'megapixelsteps_generated') {
       this.sortKey.set('name');
@@ -270,11 +299,6 @@ export class WorkerListComponent implements OnInit {
         const ownerUserId = extractUserId(w.owner);
         return ownerUserId !== null && ownerUserId.toString() === ownerId;
       });
-    }
-
-    // Only text workers take chat jobs, so the toggle exists on that tab alone.
-    if (this.workerType() === 'text' && this.chatJobsOnly()) {
-      result = result.filter((w) => w.accepts_chat_jobs === true);
     }
 
     // Apply text filter (includes team name)
@@ -334,6 +358,52 @@ export class WorkerListComponent implements OnInit {
 
     return result;
   });
+
+  /**
+   * The listed workers in display order, split on the text tab into chat
+   * workers and the rest. When the horde does not send `accepts_chat_jobs`
+   * for any text worker, the text tab shows one list. The check uses every
+   * text worker, including filtered-out ones, so typing in the search box
+   * does not switch the layout.
+   */
+  public readonly workerSections = computed((): WorkerSection[] => {
+    const workers = this.filteredWorkers();
+    const single: WorkerSection[] = [{ id: null, headingKey: null, workers }];
+    if (this.workerType() !== 'text') return single;
+    const hordeSendsChatField = this.workers().some(
+      (w) => w.type === 'text' && w.accepts_chat_jobs !== undefined,
+    );
+    if (!hordeSendsChatField) return single;
+
+    const sections: WorkerSection[] = [
+      {
+        id: 'chat',
+        headingKey: 'admin.workers.sections.chat',
+        workers: workers.filter((w) => w.accepts_chat_jobs === true),
+      },
+      {
+        id: 'plain',
+        headingKey: 'admin.workers.sections.plain',
+        workers: workers.filter((w) => w.accepts_chat_jobs !== true),
+      },
+    ];
+    return sections.filter((section) => section.workers.length > 0);
+  });
+
+  public isTextSectionOpen(id: TextSectionId): boolean {
+    return !this.foldedTextSections().has(id);
+  }
+
+  public toggleTextSection(id: TextSectionId): void {
+    const folded = new Set(this.foldedTextSections());
+    if (folded.has(id)) {
+      folded.delete(id);
+    } else {
+      folded.add(id);
+    }
+    this.foldedTextSections.set(folded);
+    this.storeFoldedTextSections(folded);
+  }
 
   /** Computed: whether the owner filter returned no results across all worker types */
   public readonly ownerNotFound = computed(() => {
@@ -727,6 +797,34 @@ export class WorkerListComponent implements OnInit {
 
     try {
       localStorage.setItem(WORKER_VIEW_MODE_STORAGE_KEY, mode);
+    } catch {
+      // localStorage may be unavailable
+    }
+  }
+
+  /** Any storage problem leaves both sections open, so the workers stay in view. */
+  private loadFoldedTextSections(): ReadonlySet<TextSectionId> {
+    if (!isPlatformBrowser(this.platformId)) return new Set();
+
+    try {
+      const stored = localStorage.getItem(TEXT_SECTIONS_FOLDED_STORAGE_KEY);
+      const parsed: unknown = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(parsed)) return new Set();
+      const list: unknown[] = parsed;
+      return new Set(TEXT_SECTION_IDS.filter((id) => list.includes(id)));
+    } catch {
+      return new Set();
+    }
+  }
+
+  private storeFoldedTextSections(folded: ReadonlySet<TextSectionId>): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    try {
+      localStorage.setItem(
+        TEXT_SECTIONS_FOLDED_STORAGE_KEY,
+        JSON.stringify([...folded]),
+      );
     } catch {
       // localStorage may be unavailable
     }
