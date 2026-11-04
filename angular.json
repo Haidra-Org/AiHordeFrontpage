@@ -101,7 +101,7 @@
                 {
                   "glob": "**/*",
                   "output": "/assets/param-sweeps",
-                  "input": "docs/haidra-assets/assets/param-sweeps"
+                  "input": "evidence/param-sweeps"
                 }
               ]
             },
@@ -127,7 +127,7 @@
                 {
                   "glob": "**/*",
                   "output": "/assets/param-sweeps",
-                  "input": "docs/haidra-assets/assets/param-sweeps"
+                  "input": "evidence/param-sweeps"
                 }
               ]
             }

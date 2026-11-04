@@ -2,6 +2,10 @@
 
 .github/*-instructions.md
 
+# The rendered sweep library, written by haidra-param-sweeps with PARAM_SWEEPS_OUTPUT_ROOT pointing here
+# and published to object storage. The local and lan builds serve it from this folder.
+/evidence/
+
 tmp*.png
 tmp*.log
 tmp*/**

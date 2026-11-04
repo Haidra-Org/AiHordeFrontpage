@@ -23,8 +23,9 @@ require; when a rule here and the code disagree, fix one of them rather than wor
   `src/app/i18n-coverage.spec.ts`; no hardcoded English in templates or TypeScript, including pluralisation.
 - Reader-facing copy makes only claims it can stand behind: general facts, named limits and published suggestions,
   or observations labelled as being about the example shown (copy.md, Claims). The scope of an example is stated
-  once per page or strip in its own element, never repeated in captions. Sweep captions in the haidra-assets
-  `param_sweeps` specs are reader-facing copy and are held to the same standard.
+  once per page or strip in its own element, never repeated in captions. Sweep captions in the
+  [haidra-param-sweeps](https://github.com/Haidra-Org/haidra-param-sweeps) specs are reader-facing copy and are
+  held to the same standard.
 - Documentation content (tutorial flows, settings reference, sections, examples) lives in `src/app/content/` as data.
   Pages take their identity from those registries; components render them. Do not author copy or step logic in
   components.
@@ -62,4 +63,9 @@ Report what was run and what was not. A change that was not run is not done.
 - `src/shared/design-system`: the shared Horde design system. Changes there are commits in the submodule on a branch,
   then a pointer bump here. The same submodule is consumed by other Haidra-Org frontends; keep it neutral (no
   page-specific names) and additive unless the change is coordinated across consumers.
-- `docs/haidra-assets`: shared documentation standards and the evidence-library tooling.
+- `docs/haidra-assets`: shared documentation standards.
+
+The evidence library is rendered by [haidra-param-sweeps](https://github.com/Haidra-Org/haidra-param-sweeps), a
+separate repository. For local work, render or download it into the gitignored `evidence/param-sweeps/` folder
+(set `PARAM_SWEEPS_OUTPUT_ROOT` to that path). The local and lan builds and `src/app/content/flows.spec.ts` read
+it from there.

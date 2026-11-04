@@ -17,8 +17,7 @@ import { DEFAULT_GENERATE_FORM_VALUE } from '../pages/generate/generate-form.mod
 import { existsSync, readFileSync } from 'node:fs';
 
 /** Where the evidence library's example manifest sits in a working checkout. */
-const LIBRARY_MANIFEST =
-  'docs/haidra-assets/assets/param-sweeps/tutorials/manifest.json';
+const LIBRARY_MANIFEST = 'evidence/param-sweeps/tutorials/manifest.json';
 
 /** The techniques, which are every flow that is not a concept track. */
 const techniques = FLOWS.filter((flow) => !flow.concept);

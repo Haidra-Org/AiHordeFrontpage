@@ -26,13 +26,9 @@ typings/
 out-tsc/
 tmp-chrome-*/
 
-# The local build needs only the published sweep assets. Design working files
-# can be several gigabytes and never become part of the application image.
+# Design working files under docs/ can be several gigabytes and never become part of the
+# application image. The local build reads the rendered sweep library from evidence/ instead.
 /docs/**
-!/docs/haidra-assets/
-!/docs/haidra-assets/assets/
-!/docs/haidra-assets/assets/param-sweeps/
-!/docs/haidra-assets/assets/param-sweeps/**
 
 # e2e
 e2e/*.js
