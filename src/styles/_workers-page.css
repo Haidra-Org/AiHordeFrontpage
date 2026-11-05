@@ -319,7 +319,7 @@
     position: sticky;
     z-index: 20;
     margin-bottom: var(--hd-space-4);
-    border-radius: var(--hd-radius-md) var(--hd-radius-md) 0 0;
+    border-radius: 0;
   }
 
   .worker-subtabs-refresh {

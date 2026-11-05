@@ -72,6 +72,10 @@ takes the neutral, deeper charcoal instead, because a hue in the surround biases
 (the shell, the workspace and the storage page), `/alchemy`, the app landing and the `/docs` shell all carry it beside
 `gen-studio`. The modifier only speaks under `.dark`; the light values are shared.
 
+Worker subtabs use square corners so scrolling cards cannot show through their sticky background.
+Worker cards always reserve an Info value line, using "Unset" for blank values. Info text truncates
+with an ellipsis; its button exposes the full text on hover and opens the existing CDK dialog on activation.
+
 ### The worked example
 
 The contribution routes use `_contribute.css` for a canvas-level hero and full-width

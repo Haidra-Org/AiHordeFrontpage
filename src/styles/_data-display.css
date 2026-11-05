@@ -1130,6 +1130,48 @@
     color: var(--hd-muted);
   }
 
+  .worker-info-preview {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-align: start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .worker-info-preview:hover {
+    text-decoration: underline;
+  }
+
+  .worker-info-preview:focus-visible {
+    outline: 2px solid var(--hd-accent);
+    outline-offset: 2px;
+  }
+
+  @media (pointer: coarse) {
+    .worker-info-preview {
+      min-height: 44px;
+    }
+
+    [data-worker-info] > .worker-card-value-muted {
+      min-height: 44px;
+      align-content: center;
+    }
+  }
+
+  .worker-info-full {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    max-height: 60vh;
+    overflow-y: auto;
+    color: var(--hd-ink);
+  }
+
   .worker-card-value-muted {
     color: var(--hd-muted);
     font-style: italic;

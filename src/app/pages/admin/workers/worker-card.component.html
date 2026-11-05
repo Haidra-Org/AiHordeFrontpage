@@ -246,6 +246,19 @@
         </button>
       </div>
     }
+    @case ("info-view") {
+      <h3 class="modal-title">{{ "admin.workers.card.info" | transloco }}</h3>
+      <p class="worker-info-full">{{ worker().info }}</p>
+      <div class="dialog-actions">
+        <button
+          type="button"
+          (click)="closeDialog()"
+          class="hd-btn hd-btn--tonal"
+        >
+          {{ "admin.workers.dialog.close" | transloco }}
+        </button>
+      </div>
+    }
     @case ("info") {
       <h3 class="modal-title">
         {{
@@ -695,32 +708,40 @@
           }}</span>
         }
       </div>
-      <!-- An unset info line is left out, except for the people who can set
-           it, who need the button to reach it. -->
-      @if (worker().info || canSetInfo()) {
-        <div class="worker-card-col" data-worker-info>
-          <span class="worker-card-label">
-            {{ "admin.workers.card.info" | transloco }}:
-            @if (canSetInfo()) {
-              <button
-                type="button"
-                class="worker-inline-action ml-1.5"
-                (click)="openInfoDialog()"
-                [attr.aria-label]="'admin.workers.action.set_info' | transloco"
-              >
-                @if (worker().info) {
-                  {{ "admin.workers.button.edit" | transloco }}
-                } @else {
-                  {{ "admin.workers.button.set_info" | transloco }}
-                }
-              </button>
-            }
-          </span>
-          @if (worker().info) {
-            <span class="worker-card-value">{{ worker().info }}</span>
+      <div class="worker-card-col" data-worker-info>
+        <span class="worker-card-label">
+          {{ "admin.workers.card.info" | transloco }}:
+          @if (canSetInfo()) {
+            <button
+              type="button"
+              class="worker-inline-action ml-1.5"
+              (click)="openInfoDialog()"
+              [attr.aria-label]="'admin.workers.action.set_info' | transloco"
+            >
+              @if (worker().info) {
+                {{ "admin.workers.button.edit" | transloco }}
+              } @else {
+                {{ "admin.workers.button.set_info" | transloco }}
+              }
+            </button>
           }
-        </div>
-      }
+        </span>
+        @if (worker().info?.trim()) {
+          <button
+            type="button"
+            class="worker-card-value worker-info-preview"
+            [title]="worker().info"
+            aria-haspopup="dialog"
+            (click)="openInfoViewDialog()"
+          >
+            {{ worker().info }}
+          </button>
+        } @else {
+          <span class="worker-card-value worker-card-value-muted">{{
+            "admin.common.unset" | transloco
+          }}</span>
+        }
+      </div>
       <div class="worker-card-row" data-bridge-agent>
         <span class="worker-card-label"
           >{{ "admin.workers.card.bridge_agent" | transloco }}:</span

@@ -527,16 +527,44 @@ describe('WorkerCardComponent', () => {
     expect(bridgeLine()?.querySelector('a')).toBeNull();
   });
 
-  it('leaves out the info line when the worker has not set it', async () => {
+  it('always shows the info line, with an unset fallback', async () => {
     await render(false);
-    expect(host().querySelector('[data-worker-info]')).toBeNull();
-    expect(host().textContent).not.toContain('admin.workers.card.info');
+    expect(host().querySelector('[data-worker-info]')?.textContent).toContain(
+      'admin.common.unset',
+    );
     TestBed.resetTestingModule();
 
     await render(false, 'unknown', makeWorker({ info: 'RX 6600 8GB' }));
     expect(host().querySelector('[data-worker-info]')?.textContent).toContain(
       'RX 6600 8GB',
     );
+  });
+
+  it('opens the full info in a read-only dialog and closes it', async () => {
+    const info = 'First line\nSecond line with more details';
+    await render(false, 'unknown', makeWorker({ info }));
+    const preview = host().querySelector<HTMLButtonElement>(
+      '.worker-info-preview',
+    );
+    expect(preview?.title).toBe(info);
+    preview?.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog?.querySelector('.worker-info-full')?.textContent).toBe(info);
+    expect(dialog?.querySelector('textarea')).toBeNull();
+    dialog?.querySelector<HTMLButtonElement>('button')?.click();
+    fixture.detectChanges();
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('treats whitespace-only info as unset', async () => {
+    await render(false, 'unknown', makeWorker({ info: '  \n ' }));
+    expect(host().querySelector('[data-worker-info]')?.textContent).toContain(
+      'admin.common.unset',
+    );
+    expect(host().querySelector('.worker-info-preview')).toBeNull();
   });
 
   it('keeps an unset info line for a moderator, who can set it', async () => {

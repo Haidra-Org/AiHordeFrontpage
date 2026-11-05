@@ -110,7 +110,13 @@ export class WorkerCardComponent {
   // Dialog state
   public dialogOpen = signal<boolean>(false);
   public dialogType = signal<
-    'models' | 'maintenance' | 'pause' | 'delete' | 'team' | 'info'
+    | 'models'
+    | 'maintenance'
+    | 'pause'
+    | 'delete'
+    | 'team'
+    | 'info'
+    | 'info-view'
   >('models');
   public maintenanceReason = signal<string>('');
   public modelSearch = signal<string>('');
@@ -570,6 +576,9 @@ export class WorkerCardComponent {
       panelClass: 'modal-panel',
       maxWidth,
       ariaModal: true,
+      ...(this.dialogType() === 'info-view'
+        ? { ariaLabel: this.transloco.translate('admin.workers.card.info') }
+        : {}),
     });
     this.cdkDialogRef.closed
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -578,6 +587,11 @@ export class WorkerCardComponent {
         this.cdkDialogRef = null;
       });
     this.dialogOpen.set(true);
+  }
+
+  public openInfoViewDialog(): void {
+    this.dialogType.set('info-view');
+    this.openCdkDialog();
   }
 
   public openModelsDialog(): void {
