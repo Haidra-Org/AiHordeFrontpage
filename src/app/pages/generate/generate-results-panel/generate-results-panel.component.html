@@ -1395,10 +1395,10 @@
                     </dl>
                     @if (
                       tile.insight?.trend !== "steady" ||
-                      tile.insight?.capacityChanged ||
-                      tile.insight?.modelOfferChanged ||
-                      tile.insight?.sizeOfferChanged ||
-                      tile.insight?.returnedToQueue ||
+                      tile.insight.capacityChanged ||
+                      tile.insight.modelOfferChanged ||
+                      tile.insight.sizeOfferChanged ||
+                      tile.insight.returnedToQueue ||
                       (tile.restartedCount ?? 0) > 0
                     ) {
                       <div class="gs-wait-changes">

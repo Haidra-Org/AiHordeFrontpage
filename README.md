@@ -2,7 +2,7 @@
 
 The homepage for [AI Horde](https://aihorde.net/), a community-driven distributed cluster for generating images and text using open-source AI models.
 
-Built with **Angular 21** and **Tailwind CSS 4**.
+Built with **Angular 22** and **Tailwind CSS 4**.
 
 ## Prerequisites
 

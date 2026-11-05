@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { provideTransloco } from '@jsverse/transloco';
@@ -84,6 +86,10 @@ describe('StyleFormComponent', () => {
         provideTransloco({
           config: { availableLangs: ['en'], defaultLang: 'en' },
         }),
+        // LoRA and embedding lookups reach CivitAI through HttpClient. The
+        // testing backend keeps them off the network.
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: AiHordeService, useValue: aiHordeMock },
         {
           provide: SamplerConstraintsService,

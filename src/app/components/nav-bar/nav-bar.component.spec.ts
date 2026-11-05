@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -45,6 +47,11 @@ describe('NavBarComponent GitHub star link', () => {
       ],
       providers: [
         provideRouter([]),
+        // HttpClient defaults to the fetch backend. Without the testing
+        // backend, icon loads would call the stubbed global fetch and break
+        // the call-count checks.
+        provideHttpClient(),
+        provideHttpClientTesting(),
         {
           provide: AuthService,
           useValue: { isLoggedIn: signal(false), currentUser: signal(null) },

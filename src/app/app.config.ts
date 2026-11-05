@@ -10,6 +10,7 @@ import { routes } from './app.routes';
 import {
   provideClientHydration,
   withEventReplay,
+  withNoIncrementalHydration,
 } from '@angular/platform-browser';
 import {
   provideHttpClient,
@@ -48,7 +49,7 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled',
       }),
     ),
-    provideClientHydration(withEventReplay()),
+    provideClientHydration(withEventReplay(), withNoIncrementalHydration()),
     provideHttpClient(
       withFetch(),
       withInterceptors([clientAgentInterceptor, rateLimitInterceptor]),

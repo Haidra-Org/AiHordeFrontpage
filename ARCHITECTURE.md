@@ -8,7 +8,7 @@ Technical overview of the AI Horde frontend for developer navigation. For more o
 
 | Layer      | Technology                                                                           |
 | ---------- | ------------------------------------------------------------------------------------ |
-| Framework  | Angular 21 (standalone components, signals, SSR)                                     |
+| Framework  | Angular 22 (standalone components, signals, SSR)                                     |
 | Styling    | Tailwind CSS 4 (PostCSS, CSS-first `@theme` config)                                  |
 | i18n       | Transloco                                                                            |
 | HTTP       | `HordeApiCacheService` wrapping Angular `HttpClient`                                 |
@@ -507,7 +507,8 @@ export (`helper/source-image.ts`) flattens any painted pixel to white on black.
 
 ## SSR & Hydration
 
-- **Bootstrap**: `app.config.ts` provides `provideClientHydration()`
+- **Bootstrap**: `app.config.ts` provides `provideClientHydration(withEventReplay(), withNoIncrementalHydration())`.
+  Incremental hydration is opted out because no `@defer` block uses a `hydrate` trigger.
 - **Server config**: `app.config.server.ts` merges `provideServerRendering(withRoutes(serverRoutes))`
 - **Platform checks**: Browser-only APIs are guarded with `isPlatformBrowser()` or `afterNextRender()`
 - **Icon system**: Uses `afterRenderEffect()` so DOM manipulation only runs client-side
