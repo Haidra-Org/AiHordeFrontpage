@@ -16,3 +16,9 @@ out-tsc
 *.sw?
 # Ignore MacOS specific files:
 .DS_Store
+# Submodules are separate repositories. haidra-assets keeps its own formatting,
+# and the design system's code is checked here but its Markdown is not.
+docs/haidra-assets/
+src/shared/design-system/**/*.md
+# Audit and coverage output written by the CI scripts:
+a11y-report

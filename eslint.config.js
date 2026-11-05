@@ -5,7 +5,6 @@ const tseslint = require("typescript-eslint");
 const angular = require("angular-eslint");
 const rxjsX = require("eslint-plugin-rxjs-x");
 const vitest = require("@vitest/eslint-plugin");
-const { parse } = require("path");
 module.exports = defineConfig(
   {
     ignores: [
@@ -18,6 +17,34 @@ module.exports = defineConfig(
       "src/shared/design-system/",
       "docs/haidra-assets/",
     ],
+  },
+  // Root config files and the Node scripts are plain JavaScript that runs under
+  // Node, so they get the base rules and Node's globals.
+  {
+    files: ["**/*.js", "**/*.mjs"],
+    extends: [eslint.configs.recommended],
+    languageOptions: {
+      ecmaVersion: "latest",
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+        URL: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+      },
+    },
+  },
+  {
+    files: ["**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        require: "readonly",
+        module: "writable",
+        __dirname: "readonly",
+      },
+    },
   },
   {
     files: ["**/*.ts"],

@@ -12,112 +12,111 @@ concurrency:
 
 env:
   NODE_VERSION: 24.22.2
-  NPM_VERSION: 11.6.2
 
 jobs:
-  lint:
-    name: Lint
+  static:
+    name: Static checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
-      - run: npm run lint
-
-  prettier-config-sync:
-    name: Prettier Config Sync
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
-      - run: npm ci
-      - run: npm run lint:prettier-sync
-
-  format-check:
-    name: Format Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
-      - run: npm ci
-      - run: npm run format:check
-
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
-      - run: npm ci
-      - run: npm run typecheck:app
-      - run: npm run typecheck:spec
-
-  css-lint-duplicates:
-    name: CSS Lint (duplicate selector check)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
-      - run: npm ci
-      - run: npm run lint:css
+      - name: Lint
+        run: npm run lint
+      - name: Prettier config sync
+        run: npm run lint:prettier-sync
+      - name: Format check
+        run: npm run format:check
+      - name: Type check (app)
+        run: npm run typecheck:app
+      - name: Type check (specs)
+        run: npm run typecheck:spec
+      - name: CSS duplicate selector check
+        run: npm run lint:css
 
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npx vitest run --coverage
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      # Production dependencies only. The dev toolchain does not ship, and
+      # Dependabot raises its advisories as pull requests.
+      - run: npm audit --omit=dev --audit-level=moderate
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, prettier-config-sync, format-check, typecheck, test]
+    needs: [static, test]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Build the Docker image
+        run: docker build -t aihorde-frontpage:ci .
+      - name: Start the image
+        run: >
+          docker run -d --name frontpage -p 8006:8006
+          -e NG_ALLOWED_HOSTS=localhost,127.0.0.1
+          aihorde-frontpage:ci
+      - name: SSR smoke test
+        run: node scripts/ssr-smoke.mjs --base http://localhost:8006
+      - name: Server log
+        if: always()
+        run: docker logs frontpage
+
+  a11y:
+    name: Accessibility audit
+    runs-on: ubuntu-latest
+    needs: [static, test]
+    # Report-only until the existing violations are fixed. Remove this line to
+    # make new violations fail the run.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm install -g npm@${{ env.NPM_VERSION }}
       - run: npm ci
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start the SSR server
+        run: >
+          PORT=4209 NG_ALLOWED_HOSTS=localhost,127.0.0.1
+          nohup node dist/ai-horde-website/server/server.mjs > server.log 2>&1 &
+      - run: node scripts/ssr-smoke.mjs --base http://localhost:4209
+      - run: node scripts/a11y-audit.mjs --base http://localhost:4209 --out a11y-report
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: a11y-report
+          path: |
+            a11y-report/
+            server.log

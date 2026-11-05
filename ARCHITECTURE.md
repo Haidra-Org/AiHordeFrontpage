@@ -86,40 +86,40 @@ All routes use lazy loading via `loadComponent()` and `loadChildren()`.
 
 ### Core Services
 
-| Service                | Purpose                                                                         |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| `HordeApiCacheService` | TTL-based HTTP cache with category invalidation. All API calls go through this. |
-| `AiHordeService`       | Domain methods for stats, performance, news, models, workers, teams, styles     |
-| `StyleService`         | CRUD over the horde's native `/v2/styles` user styles and collections           |
-| `HordeStylesService`   | Curated style-preset catalogue from the AI-Horde-Styles GitHub JSONs (applied client-side, with `applyStyle` `{p}`/`{np}` merge) |
-| `StylePreviewsService` | Lazy, stale-while-revalidate style preview renders from the AI-Horde-Styles-Previews GitHub JSONs |
-| `StyleUsageService`    | Per-style generation counts, backing the style browser's "most used" ordering   |
-| `CivitaiService`       | Typed public CivitAI model search for LoRAs and textual inversions              |
-| `AuthService`          | User authentication, session state, API key management, kudos balance signal    |
-| `DatabaseService`      | Local data persistence (localStorage/IndexedDB)                                 |
-| `GenerationQueueService` | Client-side image generation queue: dispatch, polling, result download          |
-| `GenerationDbService`  | IndexedDB persistence for generation jobs and their image blobs                  |
-| `TabSyncService`       | Cross-tab bus (BroadcastChannel, typed topics) and per-job Web Locks            |
-| `AlchemyQueueService`  | Client-side alchemy queue: submission, polling, result-image capture             |
-| `AlchemyDbService`     | IndexedDB persistence for alchemy jobs, results and their image blobs            |
-| `TextGenerationQueueService` | Client-side text request queue for prompt drafts: submission, polling, cancel, landing takes as drafts |
-| `TextGenerationDbService` | IndexedDB persistence for text requests while they run and for a day after     |
-| `PromptDraftDbService` | IndexedDB persistence for drafts a text model wrote, with stars                  |
-| `PromptHistoryDbService` | IndexedDB persistence for prompts sent to image generation, with counts and stars |
-| `ToastService`         | Signal-based notification system with auto-dismiss                              |
-| `ThemeService`         | Theme management (`'light' \| 'dark' \| 'system'`)                              |
-| `IconRegistryService`  | Register and retrieve SVG icon paths by name                                    |
-| `TranslatorService`    | Transloco wrapper for i18n                                                      |
+| Service                      | Purpose                                                                                                                          |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `HordeApiCacheService`       | TTL-based HTTP cache with category invalidation. All API calls go through this.                                                  |
+| `AiHordeService`             | Domain methods for stats, performance, news, models, workers, teams, styles                                                      |
+| `StyleService`               | CRUD over the horde's native `/v2/styles` user styles and collections                                                            |
+| `HordeStylesService`         | Curated style-preset catalogue from the AI-Horde-Styles GitHub JSONs (applied client-side, with `applyStyle` `{p}`/`{np}` merge) |
+| `StylePreviewsService`       | Lazy, stale-while-revalidate style preview renders from the AI-Horde-Styles-Previews GitHub JSONs                                |
+| `StyleUsageService`          | Per-style generation counts, backing the style browser's "most used" ordering                                                    |
+| `CivitaiService`             | Typed public CivitAI model search for LoRAs and textual inversions                                                               |
+| `AuthService`                | User authentication, session state, API key management, kudos balance signal                                                     |
+| `DatabaseService`            | Local data persistence (localStorage/IndexedDB)                                                                                  |
+| `GenerationQueueService`     | Client-side image generation queue: dispatch, polling, result download                                                           |
+| `GenerationDbService`        | IndexedDB persistence for generation jobs and their image blobs                                                                  |
+| `TabSyncService`             | Cross-tab bus (BroadcastChannel, typed topics) and per-job Web Locks                                                             |
+| `AlchemyQueueService`        | Client-side alchemy queue: submission, polling, result-image capture                                                             |
+| `AlchemyDbService`           | IndexedDB persistence for alchemy jobs, results and their image blobs                                                            |
+| `TextGenerationQueueService` | Client-side text request queue for prompt drafts: submission, polling, cancel, landing takes as drafts                           |
+| `TextGenerationDbService`    | IndexedDB persistence for text requests while they run and for a day after                                                       |
+| `PromptDraftDbService`       | IndexedDB persistence for drafts a text model wrote, with stars                                                                  |
+| `PromptHistoryDbService`     | IndexedDB persistence for prompts sent to image generation, with counts and stars                                                |
+| `ToastService`               | Signal-based notification system with auto-dismiss                                                                               |
+| `ThemeService`               | Theme management (`'light' \| 'dark' \| 'system'`)                                                                               |
+| `IconRegistryService`        | Register and retrieve SVG icon paths by name                                                                                     |
+| `TranslatorService`          | Transloco wrapper for i18n                                                                                                       |
 
 ### Admin Services
 
-| Service                  | Purpose                                          |
-| ------------------------ | ------------------------------------------------ |
-| `AdminUserService`       | User lookup, modification, shared key management |
-| `AdminWorkerService`     | Worker management operations                     |
-| `AdminOperationsService` | Bulk admin operations                            |
-| `AdminFilterService`     | Filter/flag management                           |
-| `AdminModerationService` | Moderation overview; report listings by subject (over the thresholds, watching, escalated) and the decisions on them; prompt moderation log, its notes and evidence holds; benign worker reports; alert settings; worker suspicion log; one availability signal per endpoint family |
+| Service                   | Purpose                                                                                                                                                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AdminUserService`        | User lookup, modification, shared key management                                                                                                                                                                                                                                                  |
+| `AdminWorkerService`      | Worker management operations                                                                                                                                                                                                                                                                      |
+| `AdminOperationsService`  | Bulk admin operations                                                                                                                                                                                                                                                                             |
+| `AdminFilterService`      | Filter/flag management                                                                                                                                                                                                                                                                            |
+| `AdminModerationService`  | Moderation overview; report listings by subject (over the thresholds, watching, escalated) and the decisions on them; prompt moderation log, its notes and evidence holds; benign worker reports; alert settings; worker suspicion log; one availability signal per endpoint family               |
 | `ModerationCountsService` | The moderator queue counts the dashboard, the admin tabs and the account menu share: subjects over the alert thresholds by kind, escalated subjects, and the overview queues; polls every five minutes for a moderator, in the browser, while the page is visible, and probes the prompt log once |
 
 #### The admin shell and the review page
@@ -283,13 +283,13 @@ queues start no loops, so injecting them during SSR is safe.
 Each studio owns its own IndexedDB database, opened through the shared
 `openStudioDb` helper in `services/idb-open.ts`:
 
-| Database | Version | Stores |
-|---|---|---|
-| `ai-horde-frontpage` | 2 | `generationJobs` (key `localId`, indexes `status`, `createdAt`), `generationImages` (key `[localId, imageId]`, index `localId`) |
-| `ai-horde-frontpage-alchemy` | 1 | `alchemyJobs` (key `localId`, indexes `createdAt`, `jobId`), `alchemyImages` (key `[localId, imageId]`, index `localId`) |
-| `ai-horde-frontpage-text-requests` | 1 | `requests` (key `localId`, index `createdAt`) |
-| `ai-horde-frontpage-prompt-drafts` | 1 | `drafts` (key `id`, index `createdAt`) |
-| `ai-horde-frontpage-prompt-history` | 1 | `sent` (key: hash of prompt and negative, index `lastSentAt`), `meta` (the one-time seed marker) |
+| Database                            | Version | Stores                                                                                                                          |
+| ----------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ai-horde-frontpage`                | 2       | `generationJobs` (key `localId`, indexes `status`, `createdAt`), `generationImages` (key `[localId, imageId]`, index `localId`) |
+| `ai-horde-frontpage-alchemy`        | 1       | `alchemyJobs` (key `localId`, indexes `createdAt`, `jobId`), `alchemyImages` (key `[localId, imageId]`, index `localId`)        |
+| `ai-horde-frontpage-text-requests`  | 1       | `requests` (key `localId`, index `createdAt`)                                                                                   |
+| `ai-horde-frontpage-prompt-drafts`  | 1       | `drafts` (key `id`, index `createdAt`)                                                                                          |
+| `ai-horde-frontpage-prompt-history` | 1       | `sent` (key: hash of prompt and negative, index `lastSentAt`), `meta` (the one-time seed marker)                                |
 
 Alchemy is separate rather than two more stores in the existing database. Adding
 stores there would mean opening it at a higher version, and an older bundle that
@@ -352,6 +352,7 @@ fetched stays active and retries for a bounded window (`fetchRetryFrom`),
 then becomes done with a placeholder per missing picture (`fetchFailedCount`).
 Every count the studio shows is a count of pictures: stored results plus
 censored and unfetched placeholders, the same set the grid draws.
+
 ### Generation queue
 
 `GenerationQueueService` exposes `jobs`, `pendingJobs`, and `finishedJobs`

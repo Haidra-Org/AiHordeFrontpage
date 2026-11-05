@@ -1,9 +1,11 @@
-// Runs axe-core (WCAG 2.2 AA tags) over the studio and docs surfaces at three
-// widths in both themes against a running dev server, and writes one JSON and
-// one Markdown report. Usage:
+// Runs axe-core (WCAG 2.2 AA tags) over the studio and docs surfaces against a
+// running server, and writes one JSON and one Markdown report. Every route gets
+// the full rule set at a phone and a desktop width in the light theme, and the
+// colour-contrast rule alone in the dark theme, because contrast is the only
+// rule whose result depends on the theme. Usage:
 //
-//   npx ng serve --configuration development
-//   node scripts/a11y-audit.mjs [--base http://localhost:4209] [--out <dir>]
+//   npx ng serve --configuration development   (or the SSR build)
+//   node scripts/a11y-audit.mjs [--base http://localhost:4209] [--out <dir>] [--jobs <n>]
 //
 // Violations are grouped by rule so a fault repeated across a list reads as one
 // finding with its instances, which is how it gets fixed.
@@ -20,6 +22,9 @@ const option = (name, fallback) => {
 };
 const base = option("--base", "http://localhost:4209");
 const outDir = option("--out", path.join(os.tmpdir(), "aihorde-a11y"));
+const jobs = Number(
+  option("--jobs", String(Math.min(8, os.availableParallelism()))),
+);
 
 const ROUTES = [
   "/",
@@ -43,9 +48,18 @@ const ROUTES = [
   "/faq",
   "/sponsors",
 ];
-const WIDTHS = [390, 768, 1280];
-const THEMES = ["light", "dark"];
+// Pages whose content arrives from an API after load, and an element that is
+// there once it has. The scan waits a bounded time for it, then runs anyway.
+const DATA_READY = {
+  "/": ".github-star-badge__count",
+  "/details/models": ".hd-list-row",
+  "/details/styles": "app-style-card",
+  "/details/leaderboard": ".leaderboard-name",
+};
+const PHONE = 390;
+const DESKTOP = 1280;
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+const CONTRAST_ONLY = ["color-contrast"];
 
 /** Storage the page reads on load: the theme, and the studio's first-visit flags so the audit sees the working studio; the welcome dialog is audited on its own below. */
 function seedStorage(theme, welcomed) {
@@ -55,8 +69,11 @@ function seedStorage(theme, welcomed) {
   `;
 }
 
-async function audit(page, label) {
-  const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
+async function audit(page, label, rules) {
+  const builder = new AxeBuilder({ page });
+  const results = await (
+    rules ? builder.withRules(rules) : builder.withTags(TAGS)
+  ).analyze();
   return results.violations.map((violation) => ({
     id: violation.id,
     impact: violation.impact,
@@ -74,21 +91,30 @@ async function main() {
   const browser = await chromium.launch();
   const findings = [];
   const scenarios = [];
-  for (const theme of THEMES) {
-    for (const width of WIDTHS) {
-      for (const route of ROUTES) {
-        scenarios.push({ route, width, theme, welcomed: true });
-      }
+  for (const route of ROUTES) {
+    for (const width of [PHONE, DESKTOP]) {
+      scenarios.push({ route, width, theme: "light", welcomed: true });
+    }
+    for (const width of [PHONE, DESKTOP]) {
       scenarios.push({
-        route: "/generate/image",
+        route,
         width,
-        theme,
-        welcomed: false,
-        note: "welcome dialog",
+        theme: "dark",
+        welcomed: true,
+        rules: CONTRAST_ONLY,
       });
     }
   }
-  for (const scenario of scenarios) {
+  for (const width of [PHONE, DESKTOP]) {
+    scenarios.push({
+      route: "/generate/image",
+      width,
+      theme: "light",
+      welcomed: false,
+      note: "welcome dialog",
+    });
+  }
+  const runScenario = async (scenario) => {
     const context = await browser.newContext({
       viewport: {
         width: scenario.width,
@@ -96,17 +122,39 @@ async function main() {
       },
       colorScheme: scenario.theme,
       hasTouch: scenario.width < 600,
+      // The site honours reduced motion, so no scan lands mid-transition.
+      reducedMotion: "reduce",
     });
     await context.addInitScript(seedStorage(scenario.theme, scenario.welcomed));
     const page = await context.newPage();
-    const label = `${scenario.route} @${scenario.width} ${scenario.theme}${scenario.note ? ` (${scenario.note})` : ""}`;
+    const notes = [scenario.note, scenario.rules && "contrast only"].filter(
+      Boolean,
+    );
+    const label = `${scenario.route} @${scenario.width} ${scenario.theme}${notes.length ? ` (${notes.join(", ")})` : ""}`;
     try {
+      // Playwright discourages networkidle for readiness. These pages poll the
+      // live AI Horde API, so the network is rarely idle. The page is ready to
+      // scan once it has loaded and the routed page sits after the root
+      // router-outlet. Most pages have no <main> to wait for.
       await page.goto(base + scenario.route, {
-        waitUntil: "networkidle",
+        waitUntil: "load",
         timeout: 60000,
       });
-      await page.waitForTimeout(1500);
-      findings.push(...(await audit(page, label)));
+      await page
+        .locator("app-root router-outlet + *")
+        .first()
+        .waitFor({ timeout: 15000 });
+      const dataReady = DATA_READY[scenario.route];
+      if (dataReady) {
+        await page
+          .locator(dataReady)
+          .first()
+          .waitFor({ state: "attached", timeout: 30000 })
+          .catch(() => {
+            process.stdout.write(`no data in 30s on ${label}\n`);
+          });
+      }
+      findings.push(...(await audit(page, label, scenario.rules)));
       process.stdout.write(`audited ${label}\n`);
     } catch (error) {
       findings.push({
@@ -120,7 +168,16 @@ async function main() {
     } finally {
       await context.close();
     }
-  }
+  };
+  // Each scenario has its own browser context, so several run side by side.
+  const queue = [...scenarios];
+  await Promise.all(
+    Array.from({ length: jobs }, async () => {
+      while (queue.length > 0) {
+        await runScenario(queue.shift());
+      }
+    }),
+  );
   await browser.close();
 
   await mkdir(outDir, { recursive: true });
@@ -183,6 +240,12 @@ async function main() {
   process.stdout.write(
     `${byRule.size} rules failed across ${findings.length} route/width/theme hits; report in ${outDir}\n`,
   );
+  // A page that failed to load is reported but does not fail the run, because
+  // the pages call the live AI Horde API and an outage there is not a defect
+  // here. Any axe violation fails it.
+  if (findings.some((finding) => finding.id !== "audit-error")) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {

@@ -1,5 +1,5 @@
 # ── Build stage ──────────────────────────────────────────────────
-FROM node:24-slim AS build
+FROM node:24.22.2-slim AS build
 
 ARG BUILD_CONFIG=production
 ENV NG_CLI_ANALYTICS="false"
@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build -- --configuration=${BUILD_CONFIG}
 
 # ── Runtime stage ────────────────────────────────────────────────
-FROM node:24-slim
+FROM node:24.22.2-slim
 
 ENV NODE_ENV=production
 ENV PORT=8006

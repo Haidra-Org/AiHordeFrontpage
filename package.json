@@ -18,8 +18,10 @@
     "lint:prettier-sync": "node scripts/check-prettier-config-sync.mjs",
     "lint:css": "node scripts/lint-css-duplicates.mjs",
     "lint:fix": "ng lint --fix",
-    "format": "prettier --write \"src/**/*.{ts,html,css,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,html,css,json}\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "smoke:ssr": "node scripts/ssr-smoke.mjs",
+    "audit:a11y": "node scripts/a11y-audit.mjs",
     "typecheck:app": "tsc --noEmit -p tsconfig.app.json",
     "typecheck:spec": "tsc --noEmit -p tsconfig.spec.json",
     "typecheck": "npm run typecheck:app && npm run typecheck:spec",
@@ -76,17 +78,15 @@
   },
   "lint-staged": {
     "*.ts": [
+      "eslint --fix --rule \"@typescript-eslint/no-unnecessary-type-assertion: off\"",
+      "eslint",
+      "prettier --write"
+    ],
+    "*.{html,js,mjs}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "*.html": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.css": [
-      "prettier --write"
-    ],
-    "*.json": [
+    "*.{css,json,md,yml,yaml}": [
       "prettier --write"
     ]
   }

@@ -86,22 +86,45 @@ follow.
 - Modals must trap focus and restore it on close.
 - Must pass AXE checks and meet WCAG AA minimums.
 
-## Pre-Commit Checks
+## Git Hooks
 
-The project uses Husky + lint-staged. On commit, the following run automatically:
+The project uses Husky and lint-staged.
 
-- **ESLint** (`--fix`) on `.ts` and `.html` files
-- **Prettier** on `.ts`, `.html`, `.css`, and `.json` files
+On commit, staged files are checked:
+
+- **ESLint** with `--fix` on `.ts`, `.html`, `.js` and `.mjs` files.
+- **Prettier** on `.ts`, `.html`, `.js`, `.mjs`, `.css`, `.json`, `.md` and `.yml` files.
+
+`@typescript-eslint/no-unnecessary-type-assertion` is reported on commit but never autofixed. Its fix can remove a
+cast that feeds generic inference, which widens a type without a compile error. Remove a flagged cast by hand, and
+check the inferred type of whatever the cast fed. `npm run lint:fix` still applies that fix, so read its diff.
+
+On push, `npm run typecheck` runs, then the Vitest specs affected by changes since the branch left `main`.
 
 ## CI Pipeline
 
-Pull requests run these checks (all must pass):
+Pull requests and pushes to `main` run these jobs. All must pass except the accessibility audit, which only reports
+for now:
 
-1. **Lint** — `npm run lint`
-2. **Format** — `npm run format-check`
-3. **Typecheck** — `npx tsc --noEmit`
-4. **Test** — `npm test` (Vitest with coverage thresholds)
-5. **Build** — `npm run build` (SSR production build)
+1. **Static checks**: `npm run lint`, `npm run lint:prettier-sync`, `npm run format:check`, `npm run typecheck:app`,
+   `npm run typecheck:spec` and `npm run lint:css`.
+2. **Test**: `npx vitest run --coverage`. The thresholds in `vite.config.ts` sit just under current coverage, so a
+   drop fails the run. Raise them when coverage rises.
+3. **Dependency audit**: `npm audit --omit=dev --audit-level=moderate` over the production dependencies.
+4. **Build**: builds the Docker image, starts it, and runs `npm run smoke:ssr` against it.
+5. **Accessibility audit**: builds the site, serves the SSR build and runs `npm run audit:a11y`. Every route gets the
+   full WCAG rule set at 390px and 1280px in the light theme, and the colour-contrast rule alone at both widths in the
+   dark theme, since contrast is the only rule that depends on the theme. Scans run in parallel and start once the
+   routed page is attached, plus a bounded wait for API-loaded content on the data pages. The script exits non-zero on
+   any axe violation, and a page that fails to load is reported without failing it. The job is report-only
+   (`continue-on-error`) until the existing violations are fixed. The report is uploaded as the `a11y-report`
+   artifact.
+
+Dependabot (`.github/dependabot.yml`) opens weekly pull requests for npm packages, GitHub Actions, the Docker base
+image and the Discord scripts' Python packages. The Angular packages are grouped so they move together.
+
+The Node version is pinned in `.nvmrc`, `package.json` engines, `NODE_VERSION` in `.github/workflows/ci.yml` and the
+`Dockerfile` base image. Change all four together.
 
 ## Pull Requests
 
@@ -122,4 +145,3 @@ Pull requests run these checks (all must pass):
 - [docs/design-system.md](docs/design-system.md) — Frontpage tokens, surfaces and form shells
 - [docs/component-patterns.md](docs/component-patterns.md) — Frontpage CSS class catalog
 - [docs/design-language.md](docs/design-language.md) — The studio's zones, identity hues and remaining idioms
-- [docs/plans/](docs/plans/) — Outstanding improvement plans

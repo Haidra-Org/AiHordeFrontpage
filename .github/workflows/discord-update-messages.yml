@@ -29,9 +29,9 @@ jobs:
   update-discord:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -41,12 +41,14 @@ jobs:
       - name: Update Discord messages
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          SECTION: ${{ inputs.section }}
         run: |
-          ARGS=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            ARGS="$ARGS --dry-run"
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then
+            args+=(--dry-run)
           fi
-          if [ -n "${{ inputs.section }}" ]; then
-            ARGS="$ARGS --section ${{ inputs.section }}"
+          if [ -n "$SECTION" ]; then
+            args+=(--section "$SECTION")
           fi
-          python scripts/discord/update_messages.py $ARGS
+          python scripts/discord/update_messages.py "${args[@]}"
