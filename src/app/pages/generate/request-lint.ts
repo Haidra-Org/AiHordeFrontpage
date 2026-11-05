@@ -806,7 +806,7 @@ const RANGE_FIELD_ANCHORS: Readonly<Record<BoundedFieldName, FieldAnchorId>> = {
  * shows the same sentence and only has to know where to send the reader.
  */
 const SOURCE_MESSAGE_ANCHORS: ReadonlyMap<string, FieldAnchorId> = new Map([
-  ['generate.source.error_no_image', 'source' as FieldAnchorId],
+  ['generate.source.error_no_image', 'source'],
   ['generate.source.error_no_control_type', 'control_type'],
   ['generate.source.error_no_room', 'source_mode'],
   ['generate.source.error_no_mask', 'source'],

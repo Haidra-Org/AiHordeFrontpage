@@ -20,7 +20,7 @@ describe('FloatingActionService', () => {
       cssClass: 'btn-primary',
       disabled: signal(false),
       visible: signal(true),
-      action: () => undefined as void,
+      action: () => undefined,
     };
   }
 

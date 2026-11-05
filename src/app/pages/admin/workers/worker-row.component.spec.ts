@@ -135,7 +135,7 @@ describe('WorkerRowComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyName({ stopPropagation } as unknown as Event);
 
@@ -170,7 +170,7 @@ describe('WorkerRowComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyId({ stopPropagation } as unknown as Event);
 

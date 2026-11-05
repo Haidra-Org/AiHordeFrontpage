@@ -146,7 +146,7 @@ export function eventFilterOf(ref: SubjectRef): PromptModerationEventQuery {
   const identity = identityOf(ref);
   return Object.fromEntries(
     Object.entries(identity).filter(([, value]) => value !== undefined),
-  ) as PromptModerationEventQuery;
+  );
 }
 
 /** A length of time as a translation key and the count it takes. */

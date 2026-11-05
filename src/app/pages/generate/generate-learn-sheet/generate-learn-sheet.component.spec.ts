@@ -323,7 +323,7 @@ describe('GenerateLearnSheetComponent', () => {
             clientX: 200 + dx,
             clientY: 400,
             bubbles: true,
-          }) as unknown as PointerEvent,
+          }),
         );
       }
     };

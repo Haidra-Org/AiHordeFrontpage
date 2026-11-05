@@ -56,7 +56,7 @@ describe('GsAnchorLinkComponent', () => {
     vi.useFakeTimers();
     writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('isSecureContext', true);
-    vi.stubGlobal('navigator', { clipboard: { writeText } } as unknown);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
 
     await TestBed.configureTestingModule({
       imports: [

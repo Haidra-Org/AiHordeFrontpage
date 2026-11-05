@@ -1578,7 +1578,7 @@ function coerceStyleSnapshot(raw: unknown): StyleValueSnapshot | null {
   for (const field of present) {
     snapshot[field] = coerced[field];
   }
-  return snapshot as StyleValueSnapshot;
+  return snapshot;
 }
 
 /** Validate a persisted style-detach snapshot, falling back to "nothing detached". */

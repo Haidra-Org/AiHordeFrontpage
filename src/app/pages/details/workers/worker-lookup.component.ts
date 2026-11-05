@@ -5,6 +5,7 @@ import {
   DestroyRef,
   inject,
   OnInit,
+  Signal,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -66,9 +67,12 @@ export class WorkerLookupComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly workerService = inject(AdminWorkerService);
 
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   public readonly worker = signal<HordeWorker | null>(null);
   public readonly loading = signal(true);
@@ -79,11 +83,7 @@ export class WorkerLookupComponent implements OnInit {
   });
 
   public readonly lookupValue = computed(() => {
-    return (
-      (this.params()['workerId'] as string | undefined) ??
-      (this.params()['workerName'] as string | undefined) ??
-      ''
-    );
+    return this.params()['workerId'] ?? this.params()['workerName'] ?? '';
   });
 
   public readonly breadcrumbs = computed<BreadcrumbItem[]>(() => {

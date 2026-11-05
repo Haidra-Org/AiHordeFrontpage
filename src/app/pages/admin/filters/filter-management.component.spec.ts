@@ -75,7 +75,7 @@ describe('FilterManagementComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await Promise.resolve(component.copyToClipboard('filter-id-123'));
 
@@ -103,7 +103,7 @@ describe('FilterManagementComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await Promise.resolve(component.copyToClipboard('filter-id-999'));
 

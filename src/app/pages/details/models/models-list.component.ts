@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   OnInit,
+  Signal,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -84,9 +85,12 @@ export class ModelsListComponent implements OnInit {
   public readonly unitConversion = inject(UnitConversionService);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   /** Model type from route (image or text). */
   private readonly routeModelType = computed<ModelsTab | null>(() => {

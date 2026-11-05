@@ -323,7 +323,7 @@ describe('PromptDraftCardComponent', () => {
     const body = el().querySelector('.alchemy-draft__body') as HTMLElement;
     const event = new Event('drop', { bubbles: true });
     Object.defineProperty(event, 'dataTransfer', {
-      value: { files: [picked] } as unknown as DataTransfer,
+      value: { files: [picked] },
     });
     body.dispatchEvent(event);
   };

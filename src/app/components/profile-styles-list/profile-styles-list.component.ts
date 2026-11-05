@@ -332,7 +332,7 @@ export class ProfileStylesListComponent implements OnInit {
       styleRefs.map((ref) => ({
         id: ref.id,
         style: null,
-        type: ref.type as StyleType,
+        type: ref.type,
         loading: true,
         error: false,
       })),
@@ -352,7 +352,7 @@ export class ProfileStylesListComponent implements OnInit {
             map((style) => ({
               id: ref.id,
               style,
-              type: ref.type as StyleType,
+              type: ref.type,
             })),
             catchError(() => of(null)),
           );
@@ -385,7 +385,7 @@ export class ProfileStylesListComponent implements OnInit {
                 : {
                     id: ref.id,
                     style: null,
-                    type: ref.type as StyleType,
+                    type: ref.type,
                     loading: false,
                     error: true,
                   };

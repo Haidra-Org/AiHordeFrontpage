@@ -127,6 +127,8 @@ export class KudosLeaderboardComponent implements OnInit {
       .getKudosLeaderboard(4, 25)
       .pipe(map((users) => ({ page: 4, users })));
 
+    const pages: Record<number, LeaderboardUser[]> = {};
+
     // Merge all page requests - they will emit as they complete
     merge(page1$, page2$, page3$, page4$)
       .pipe(
@@ -138,10 +140,7 @@ export class KudosLeaderboardComponent implements OnInit {
             acc.loadedCount++;
             return acc;
           },
-          {
-            pages: {} as Record<number, LeaderboardUser[]>,
-            loadedCount: 0,
-          },
+          { pages, loadedCount: 0 },
         ),
       )
       .subscribe({

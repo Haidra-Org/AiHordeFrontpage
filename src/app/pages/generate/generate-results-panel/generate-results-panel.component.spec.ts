@@ -1999,7 +1999,7 @@ describe('GenerateResultsPanelComponent', () => {
             return Promise.resolve();
           },
         },
-      } as unknown as Navigator);
+      });
       getJobImages.mockResolvedValue([resultImage('a', 'a-img')]);
       finishedJobs.set([
         {

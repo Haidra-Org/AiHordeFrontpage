@@ -208,7 +208,7 @@ describe('UserManagementComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyActiveGenerationId('img-copy');
 
@@ -237,7 +237,7 @@ describe('UserManagementComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     component.copiedActiveGenerationId.set('existing-id');
 

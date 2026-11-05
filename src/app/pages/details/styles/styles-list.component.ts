@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   OnInit,
+  Signal,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -69,13 +70,16 @@ export class StylesListComponent implements OnInit {
   private readonly maxPages = 40;
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   /** Style ID to highlight from route. */
   public readonly highlightStyleId = computed<string | null>(() => {
-    return (this.params()['highlightStyleId'] as string | undefined) ?? null;
+    return this.params()['highlightStyleId'] ?? null;
   });
 
   /** Style type from route (image, text, collections) — used both for tab selection and highlight navigation. */
@@ -326,20 +330,20 @@ export class StylesListComponent implements OnInit {
       return this.styleService.getImageStyles({
         ...params,
         page,
-      }) as Observable<StyleList>;
+      });
     }
 
     if (tab === 'text') {
       return this.styleService.getTextStyles({
         ...params,
         page,
-      }) as Observable<StyleList>;
+      });
     }
 
     return this.styleService.getCollections({
       sort: params.sort,
       page,
-    }) as Observable<StyleList>;
+    });
   }
 
   private appendPageResults(

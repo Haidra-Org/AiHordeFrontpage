@@ -161,7 +161,7 @@ describe('AdminGenerationTrackerComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyGenerationId('gen-copy');
 
@@ -190,7 +190,7 @@ describe('AdminGenerationTrackerComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     component.copiedGenerationId.set('existing-copy');
 

@@ -32,7 +32,7 @@ describe('copyToClipboard', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     const copied = await copyToClipboard('gen-123');
 
@@ -48,7 +48,7 @@ describe('copyToClipboard', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     const copied = await copyToClipboard('gen-456');
 
@@ -62,7 +62,7 @@ describe('copyToClipboard', () => {
     const execSpy = mockExecCommand(false);
 
     vi.stubGlobal('isSecureContext', false);
-    vi.stubGlobal('navigator', {} as unknown as Navigator);
+    vi.stubGlobal('navigator', {});
 
     const copied = await copyToClipboard('gen-789');
 
@@ -86,7 +86,7 @@ describe('copyToClipboard', () => {
     });
 
     vi.stubGlobal('isSecureContext', false);
-    vi.stubGlobal('navigator', {} as unknown as Navigator);
+    vi.stubGlobal('navigator', {});
 
     const copied = await copyToClipboard('gen-000');
 

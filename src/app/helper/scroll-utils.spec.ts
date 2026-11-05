@@ -7,19 +7,18 @@ import {
 describe('scroll-utils', () => {
   function makeElement(rect: Partial<DOMRect>): HTMLElement {
     return {
-      getBoundingClientRect: () =>
-        ({
-          top: 0,
-          left: 0,
-          width: 0,
-          height: 0,
-          right: 0,
-          bottom: 0,
-          x: 0,
-          y: 0,
-          toJSON: () => ({}),
-          ...rect,
-        }) as DOMRect,
+      getBoundingClientRect: () => ({
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0,
+        right: 0,
+        bottom: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+        ...rect,
+      }),
     } as unknown as HTMLElement;
   }
 

@@ -140,7 +140,7 @@ describe('GsSweepScrubComponent', () => {
       x: 0,
       y: 0,
       toJSON: () => ({}),
-    } as DOMRect);
+    });
   };
 
   /**
@@ -184,7 +184,7 @@ describe('GsSweepScrubComponent', () => {
     for (const observer of FakeResizeObserver.instances) {
       observer.callback(
         [{ contentRect: { width } } as unknown as ResizeObserverEntry],
-        observer as unknown as ResizeObserver,
+        observer,
       );
     }
     fixture.detectChanges();
@@ -198,7 +198,7 @@ describe('GsSweepScrubComponent', () => {
     for (const observer of FakeResizeObserver.instances) {
       observer.callback(
         [{ contentRect: { width, height } } as unknown as ResizeObserverEntry],
-        observer as unknown as ResizeObserver,
+        observer,
       );
     }
     fixture.detectChanges();
@@ -222,7 +222,7 @@ describe('GsSweepScrubComponent', () => {
       x: left,
       y: top,
       toJSON: () => ({}),
-    } as DOMRect);
+    });
   };
 
   /**
@@ -284,10 +284,7 @@ describe('GsSweepScrubComponent', () => {
       finePointer: options?.finePointer ?? false,
     });
     FakeResizeObserver.instances = [];
-    vi.stubGlobal(
-      'ResizeObserver',
-      FakeResizeObserver as unknown as typeof ResizeObserver,
-    );
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
     try {
       // The view the reader last asked for lasts a session, and one test is not
       // the next test's session.
@@ -522,7 +519,7 @@ describe('GsSweepScrubComponent', () => {
         x: 0,
         y: 0,
         toJSON: () => ({}),
-      } as DOMRect);
+      });
 
       pointer(stage, 'pointerdown', { clientX: 150, clientY: 150 });
       pointer(stage, 'pointermove', { clientX: 260, clientY: 152 });
@@ -741,7 +738,7 @@ describe('GsSweepScrubComponent', () => {
           x: 0,
           y: 600,
           toJSON: () => ({}),
-        } as DOMRect;
+        };
       });
       try {
         openPlate();

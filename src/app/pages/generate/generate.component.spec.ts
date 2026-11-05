@@ -2422,7 +2422,7 @@ describe('GenerateComponent', () => {
             return Promise.resolve();
           },
         },
-      } as unknown as Navigator);
+      });
       component.form.controls.prompt.setValue('a fox in the snow');
       component.form.controls.styleName.setValue('curated:Test');
 

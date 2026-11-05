@@ -5,6 +5,7 @@ import {
   DestroyRef,
   inject,
   OnInit,
+  Signal,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -52,9 +53,12 @@ export class UserProfileComponent implements OnInit {
   private readonly transloco = inject(TranslocoService);
   private readonly aiHordeService = inject(AiHordeService);
 
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   public readonly user = signal<HordeUser | null>(null);
   public readonly loading = signal(true);
@@ -65,9 +69,12 @@ export class UserProfileComponent implements OnInit {
    * state so a visitor can link to the records and the back button returns to
    * the profile.
    */
-  private readonly query = toSignal(this.route.queryParams, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly query: Signal<Record<string, string>> = toSignal(
+    this.route.queryParams,
+    {
+      initialValue: {},
+    },
+  );
   public readonly activeTab = computed<'profile' | 'records'>(() =>
     this.query()['tab'] === 'records' ? 'records' : 'profile',
   );

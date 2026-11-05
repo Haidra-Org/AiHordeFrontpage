@@ -49,7 +49,7 @@ describe('JsonInspectorComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyActiveSection();
 
@@ -74,7 +74,7 @@ describe('JsonInspectorComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyActiveSection();
 

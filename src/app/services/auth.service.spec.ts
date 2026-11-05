@@ -18,7 +18,7 @@ function fakeUser(overrides: Partial<HordeUser> = {}): HordeUser {
     kudos: 1000,
     trusted: true,
     ...overrides,
-  } as HordeUser;
+  };
 }
 
 describe('AuthService', () => {

@@ -3,7 +3,7 @@ import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CivitaiSelectionComponent } from './civitai-selection.component';
 import { CivitaiResolverService } from '../../services/civitai-resolver.service';
-import type { LoraSelection, TiSelection } from '../../types/civitai-asset';
+import type { LoraSelection } from '../../types/civitai-asset';
 
 const lora = (
   name: string,
@@ -77,9 +77,7 @@ describe('CivitaiSelectionComponent', () => {
 
     it('tells a LoRA row apart from an embedding row', () => {
       expect(component.isLora(lora('1'))).toBe(true);
-      expect(component.isLora({ name: '1', strength: 1 } as TiSelection)).toBe(
-        false,
-      );
+      expect(component.isLora({ name: '1', strength: 1 })).toBe(false);
     });
   });
 

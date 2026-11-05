@@ -46,7 +46,7 @@ describe('RememberedHeightDirective', () => {
   /** Report a size change the way the browser does after a drag. */
   const resized = (): void => {
     for (const observer of FakeResizeObserver.instances) {
-      observer.callback([], observer as unknown as ResizeObserver);
+      observer.callback([], observer);
     }
   };
 
@@ -61,10 +61,7 @@ describe('RememberedHeightDirective', () => {
   beforeEach(() => {
     localStorage.clear();
     FakeResizeObserver.instances = [];
-    vi.stubGlobal(
-      'ResizeObserver',
-      FakeResizeObserver as unknown as typeof ResizeObserver,
-    );
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
     vi.useFakeTimers();
   });
 

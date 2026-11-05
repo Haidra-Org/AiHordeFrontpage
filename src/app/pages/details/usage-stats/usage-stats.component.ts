@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   OnInit,
+  Signal,
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
@@ -91,9 +92,12 @@ export class UsageStatsComponent implements OnInit {
   public readonly units = inject(UnitConversionService);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   /** Tab from route (overview, image, text). */
   private readonly routeTab = computed<UsageTab | null>(() => {

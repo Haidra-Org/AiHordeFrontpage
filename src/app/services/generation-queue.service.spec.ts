@@ -133,7 +133,7 @@ function checkResult(
       is_possible: true,
       ...(overrides as { check?: object }).check,
     },
-  } as CheckImageResult;
+  };
 }
 
 function doneStatus(): GenerationStatusResponse {

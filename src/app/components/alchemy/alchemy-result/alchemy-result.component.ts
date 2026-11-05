@@ -67,9 +67,7 @@ function kindOpenMemory(): Partial<Record<ResultKind, boolean>> {
   try {
     const raw = globalThis.localStorage?.getItem(KIND_OPEN_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return isRecord(parsed)
-      ? (parsed as Partial<Record<ResultKind, boolean>>)
-      : {};
+    return isRecord(parsed) ? parsed : {};
   } catch {
     return {};
   }

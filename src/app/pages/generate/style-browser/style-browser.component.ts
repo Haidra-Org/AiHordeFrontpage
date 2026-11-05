@@ -675,7 +675,7 @@ export class StyleBrowserComponent implements OnInit, OnDestroy {
       }
       return this.previewsSvc
         .recordPreviewUrls(record)
-        .map((url) => ({ variant: 'person' as StylePreviewVariant, url }));
+        .map((url) => ({ variant: 'person', url }));
     }
     const name = parsed?.value ?? key;
     if (variant !== 'all') {

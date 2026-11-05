@@ -23,7 +23,6 @@ import { GsCompareWipeComponent } from '../gs-compare-wipe/gs-compare-wipe.compo
 import { GsSettingChipComponent } from '../gs-setting-chip/gs-setting-chip.component';
 import {
   GsRecipeChipsComponent,
-  RecipeParams,
   RecipeRequest,
 } from '../gs-recipe-chips/gs-recipe-chips.component';
 import {
@@ -2382,10 +2381,7 @@ export class GsSweepScrubComponent {
     const params = record['params'];
     return {
       models: typeof model === 'string' ? [model] : undefined,
-      params:
-        params && typeof params === 'object'
-          ? (params as RecipeParams)
-          : undefined,
+      params: params && typeof params === 'object' ? params : undefined,
     };
   });
 

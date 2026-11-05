@@ -139,7 +139,7 @@ export class FullscreenService {
     // the request below is refused or absent.
     if (this._phone()) this.setImmersive(true);
 
-    const element = this._target() as FullscreenCapableElement | null;
+    const element: FullscreenCapableElement | null = this._target();
     if (!this.available || !element) return;
 
     const request =

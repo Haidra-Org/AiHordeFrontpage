@@ -156,7 +156,7 @@ describe('StyleService', () => {
   describe('write operations', () => {
     it('createImageStyle sends POST with apikey header', () => {
       const payload = { name: 'New Style', prompt: 'test {p}' };
-      service.createImageStyle(payload as never).subscribe();
+      service.createImageStyle(payload).subscribe();
 
       const req = httpTesting.expectOne(`${API_BASE}/styles/image`);
       expect(req.request.method).toBe('POST');
@@ -169,7 +169,7 @@ describe('StyleService', () => {
     });
 
     it('updateImageStyle sends PATCH to correct URL', () => {
-      service.updateImageStyle('s1', { name: 'Updated' } as never).subscribe();
+      service.updateImageStyle('s1', { name: 'Updated' }).subscribe();
       const req = httpTesting.expectOne(`${API_BASE}/styles/image/s1`);
       expect(req.request.method).toBe('PATCH');
       req.flush({ id: 's1' });
@@ -220,7 +220,7 @@ describe('StyleService', () => {
   describe('image style examples', () => {
     it('addImageStyleExample sends POST to the example endpoint', () => {
       service
-        .addImageStyleExample('s1', { url: 'https://img.example.com' } as never)
+        .addImageStyleExample('s1', { url: 'https://img.example.com' })
         .subscribe();
       const req = httpTesting.expectOne(`${API_BASE}/styles/image/s1/example`);
       expect(req.request.method).toBe('POST');
@@ -229,7 +229,7 @@ describe('StyleService', () => {
 
     it('updateImageStyleExample sends PATCH', () => {
       service
-        .updateImageStyleExample('s1', 'ex1', { primary: true } as never)
+        .updateImageStyleExample('s1', 'ex1', { primary: true })
         .subscribe();
       const req = httpTesting.expectOne(
         `${API_BASE}/styles/image/s1/example/ex1`,

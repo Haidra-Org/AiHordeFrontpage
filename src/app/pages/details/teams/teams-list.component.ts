@@ -7,6 +7,7 @@ import {
   ElementRef,
   inject,
   OnInit,
+  Signal,
   signal,
   viewChild,
 } from '@angular/core';
@@ -50,18 +51,21 @@ export class TeamsListComponent implements OnInit {
   private readonly stickyRegistry = inject(StickyRegistryService);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   /** Owner ID to filter by from route. */
   public readonly filterOwnerId = computed<string | null>(() => {
-    return (this.params()['ownerId'] as string | undefined) ?? null;
+    return this.params()['ownerId'] ?? null;
   });
 
   /** Team ID to highlight from route. */
   public readonly highlightTeamId = computed<string | null>(() => {
-    return (this.params()['highlightTeamId'] as string | undefined) ?? null;
+    return this.params()['highlightTeamId'] ?? null;
   });
 
   /** Reference to highlighted team element for scrolling. */

@@ -4048,29 +4048,28 @@ describe('GenerateFormComponent worker picker keyboard', () => {
   // Which groups are folded is remembered, so each render starts from nothing.
   beforeEach(() => localStorage.clear());
 
-  const worker = (id: string, name: string): HordeWorker =>
-    ({
-      type: 'image',
-      id,
-      name,
-      online: true,
-      maintenance_mode: false,
-      nsfw: false,
-      models: ['a model'],
-      max_pixels: 1024 * 1024,
-      img2img: true,
-      requests_fulfilled: 0,
-      kudos_rewards: 0,
-      performance: '',
-      threads: 1,
-      uptime: 0,
-      paused: false,
-      trusted: true,
-      flagged: false,
-      suspicious: 0,
-      uncompleted_jobs: 0,
-      bridge_agent: '',
-    }) as HordeWorker;
+  const worker = (id: string, name: string): HordeWorker => ({
+    type: 'image',
+    id,
+    name,
+    online: true,
+    maintenance_mode: false,
+    nsfw: false,
+    models: ['a model'],
+    max_pixels: 1024 * 1024,
+    img2img: true,
+    requests_fulfilled: 0,
+    kudos_rewards: 0,
+    performance: '',
+    threads: 1,
+    uptime: 0,
+    paused: false,
+    trusted: true,
+    flagged: false,
+    suspicious: 0,
+    uncompleted_jobs: 0,
+    bridge_agent: '',
+  });
 
   async function renderPicker(): Promise<{
     host: HTMLElement;

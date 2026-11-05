@@ -79,10 +79,7 @@ describe('StickyRegistryService', () => {
     vi.useFakeTimers();
 
     FakeResizeObserver.instances = [];
-    vi.stubGlobal(
-      'ResizeObserver',
-      FakeResizeObserver as unknown as typeof ResizeObserver,
-    );
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
 
     vi.stubGlobal(
       'requestAnimationFrame',

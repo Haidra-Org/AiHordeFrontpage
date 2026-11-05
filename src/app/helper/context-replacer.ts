@@ -12,7 +12,7 @@ export function replaceContext<
       }
       copy[target] = (copy[target] as string).replaceAll(
         `{${key}}`,
-        context[key as keyof typeof context] as string,
+        context[key as keyof typeof context],
       ) as TSource[TKey];
     }
   }

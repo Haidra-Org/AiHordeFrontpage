@@ -63,9 +63,7 @@ describe('AppLandingComponent', () => {
 
   it('sends each door where it says it goes', () => {
     const router = TestBed.inject(Router);
-    const navigate = vi
-      .spyOn(router, 'navigateByUrl')
-      .mockResolvedValue(true as unknown as boolean);
+    const navigate = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
 
     for (const door of doors()) {
       door.click();

@@ -9,6 +9,7 @@ import {
   ElementRef,
   inject,
   PLATFORM_ID,
+  Signal,
   signal,
   untracked,
   viewChild,
@@ -226,9 +227,12 @@ export class ModelDetailComponent {
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   public readonly unitConversion = inject(UnitConversionService);
 
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   /** The kind named in the address, or null when the address names only a model. */
   private readonly routeKind = computed<ModelKind | null>(() => {

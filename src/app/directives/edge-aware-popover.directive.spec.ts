@@ -29,18 +29,17 @@ class HostComponent {
 
 /** jsdom lays nothing out, so both boxes are measured by hand. */
 function place(element: Element, left: number, width: number): void {
-  element.getBoundingClientRect = (): DOMRect =>
-    ({
-      left,
-      right: left + width,
-      width,
-      top: 0,
-      bottom: 0,
-      height: 0,
-      x: left,
-      y: 0,
-      toJSON: () => ({}),
-    }) as DOMRect;
+  element.getBoundingClientRect = (): DOMRect => ({
+    left,
+    right: left + width,
+    width,
+    top: 0,
+    bottom: 0,
+    height: 0,
+    x: left,
+    y: 0,
+    toJSON: () => ({}),
+  });
 }
 
 describe('EdgeAwarePopoverDirective', () => {
@@ -148,18 +147,17 @@ describe('EdgeAwarePopoverDirective', () => {
     const { pop, fixture } = await render(0, 0, 214);
     pop.style.position = 'fixed';
     place(pop, 0, 214);
-    pop.getBoundingClientRect = (): DOMRect =>
-      ({
-        left: 0,
-        right: 214,
-        width: 214,
-        top: 0,
-        bottom: 420,
-        height: 420,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    pop.getBoundingClientRect = (): DOMRect => ({
+      left: 0,
+      right: 214,
+      width: 214,
+      top: 0,
+      bottom: 420,
+      height: 420,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
     fixture.componentInstance.point.set({ x: 340, y: 460 });
     fixture.detectChanges();
     await Promise.resolve();
@@ -172,18 +170,17 @@ describe('EdgeAwarePopoverDirective', () => {
     setViewport(360, 240);
     const { pop, fixture } = await render(0, 0, 214);
     pop.style.position = 'fixed';
-    pop.getBoundingClientRect = (): DOMRect =>
-      ({
-        left: 0,
-        right: 214,
-        width: 214,
-        top: 0,
-        bottom: 216,
-        height: 216,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    pop.getBoundingClientRect = (): DOMRect => ({
+      left: 0,
+      right: 214,
+      width: 214,
+      top: 0,
+      bottom: 216,
+      height: 216,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
     fixture.componentInstance.point.set({ x: 20, y: 220 });
     fixture.detectChanges();
     await Promise.resolve();
@@ -197,18 +194,17 @@ describe('EdgeAwarePopoverDirective', () => {
     setViewport(800, 700);
     const { pop, fixture } = await render(0, 0, 200, 'end');
     pop.style.position = 'fixed';
-    pop.getBoundingClientRect = (): DOMRect =>
-      ({
-        left: 0,
-        right: 200,
-        width: 200,
-        top: 0,
-        bottom: 300,
-        height: 300,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    pop.getBoundingClientRect = (): DOMRect => ({
+      left: 0,
+      right: 200,
+      width: 200,
+      top: 0,
+      bottom: 300,
+      height: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
     fixture.componentInstance.fixedAnchor.set({
       top: 100,
       right: 500,
@@ -227,18 +223,17 @@ describe('EdgeAwarePopoverDirective', () => {
     setViewport(800, 700);
     const { pop, fixture } = await render(0, 0, 200, 'end');
     pop.style.position = 'fixed';
-    pop.getBoundingClientRect = (): DOMRect =>
-      ({
-        left: 0,
-        right: 200,
-        width: 200,
-        top: 0,
-        bottom: 300,
-        height: 300,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    pop.getBoundingClientRect = (): DOMRect => ({
+      left: 0,
+      right: 200,
+      width: 200,
+      top: 0,
+      bottom: 300,
+      height: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
     fixture.componentInstance.fixedAnchor.set({
       top: 600,
       right: 500,
@@ -272,7 +267,7 @@ describe('EdgeAwarePopoverDirective', () => {
         x: 0,
         y: 0,
         toJSON: () => ({}),
-      } as DOMRect;
+      };
     };
     fixture.componentInstance.fixedAnchor.set({
       top: 300,
@@ -308,7 +303,7 @@ describe('EdgeAwarePopoverDirective', () => {
         x: 0,
         y: 0,
         toJSON: () => ({}),
-      } as DOMRect;
+      };
     };
     fixture.componentInstance.fixedAnchor.set({
       top: 456,
@@ -330,18 +325,17 @@ describe('EdgeAwarePopoverDirective', () => {
     stickyOffset.set(64);
     const { pop, fixture } = await render(0, 0, 214);
     pop.style.position = 'fixed';
-    pop.getBoundingClientRect = (): DOMRect =>
-      ({
-        left: 0,
-        right: 214,
-        width: 214,
-        top: 0,
-        bottom: 200,
-        height: 200,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    pop.getBoundingClientRect = (): DOMRect => ({
+      left: 0,
+      right: 214,
+      width: 214,
+      top: 0,
+      bottom: 200,
+      height: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
     fixture.componentInstance.point.set({ x: 20, y: 30 });
     fixture.detectChanges();
     await Promise.resolve();
@@ -362,18 +356,17 @@ describe('EdgeAwarePopoverDirective', () => {
       configurable: true,
       value: 300,
     });
-    pop.getBoundingClientRect = (): DOMRect =>
-      ({
-        left: 0,
-        right: 192,
-        width: 192,
-        top: 0,
-        bottom: 288,
-        height: 288,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    pop.getBoundingClientRect = (): DOMRect => ({
+      left: 0,
+      right: 192,
+      width: 192,
+      top: 0,
+      bottom: 288,
+      height: 288,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
     fixture.componentInstance.fixedAnchor.set({
       top: 600,
       right: 500,

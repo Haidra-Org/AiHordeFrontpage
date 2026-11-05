@@ -69,7 +69,7 @@ describe('StyleDetailComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyToClipboard('style-123');
 
@@ -101,7 +101,7 @@ describe('StyleDetailComponent', () => {
     vi.stubGlobal('isSecureContext', true);
     vi.stubGlobal('navigator', {
       clipboard: { writeText },
-    } as unknown as Navigator);
+    });
 
     await component.copyToClipboard('style-999');
 

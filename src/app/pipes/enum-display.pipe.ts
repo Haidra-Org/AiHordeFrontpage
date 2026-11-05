@@ -96,15 +96,13 @@ export class EnumDisplayPipe implements PipeTransform {
   ): string | undefined {
     switch (displayType) {
       case 'label':
-        return this.enumDisplayService.getItemTypeLabel(value as ItemType);
+        return this.enumDisplayService.getItemTypeLabel(value);
       case 'badge':
-        return this.enumDisplayService.getItemTypeBadgeClass(value as ItemType);
+        return this.enumDisplayService.getItemTypeBadgeClass(value);
       case 'translation':
-        return this.enumDisplayService.getItemTypeTranslationKey(
-          value as ItemType,
-        );
+        return this.enumDisplayService.getItemTypeTranslationKey(value);
       default:
-        return this.enumDisplayService.getItemTypeLabel(value as ItemType);
+        return this.enumDisplayService.getItemTypeLabel(value);
     }
   }
 
@@ -117,13 +115,13 @@ export class EnumDisplayPipe implements PipeTransform {
   ): string | undefined {
     switch (displayType) {
       case 'label':
-        return this.enumDisplayService.getDomainLabel(value as Domain);
+        return this.enumDisplayService.getDomainLabel(value);
       case 'badge':
-        return this.enumDisplayService.getDomainBadgeClass(value as Domain);
+        return this.enumDisplayService.getDomainBadgeClass(value);
       case 'translation':
         return undefined; // Domains don't have translation keys currently
       default:
-        return this.enumDisplayService.getDomainLabel(value as Domain);
+        return this.enumDisplayService.getDomainLabel(value);
     }
   }
 
@@ -136,13 +134,13 @@ export class EnumDisplayPipe implements PipeTransform {
   ): string | undefined {
     switch (displayType) {
       case 'label':
-        return this.enumDisplayService.getPlatformLabel(value as Platform);
+        return this.enumDisplayService.getPlatformLabel(value);
       case 'badge':
-        return this.enumDisplayService.getPlatformBadgeClass(value as Platform);
+        return this.enumDisplayService.getPlatformBadgeClass(value);
       case 'translation':
         return undefined; // Platforms don't have translation keys currently
       default:
-        return this.enumDisplayService.getPlatformLabel(value as Platform);
+        return this.enumDisplayService.getPlatformLabel(value);
     }
   }
 
@@ -155,19 +153,13 @@ export class EnumDisplayPipe implements PipeTransform {
   ): string | undefined {
     switch (displayType) {
       case 'label':
-        return this.enumDisplayService.getFunctionTypeLabel(
-          value as FunctionKind,
-        );
+        return this.enumDisplayService.getFunctionTypeLabel(value);
       case 'badge':
-        return this.enumDisplayService.getFunctionTypeBadgeClass(
-          value as FunctionKind,
-        );
+        return this.enumDisplayService.getFunctionTypeBadgeClass(value);
       case 'translation':
         return undefined; // Function types don't have translation keys currently
       default:
-        return this.enumDisplayService.getFunctionTypeLabel(
-          value as FunctionKind,
-        );
+        return this.enumDisplayService.getFunctionTypeLabel(value);
     }
   }
 

@@ -30,7 +30,6 @@ import { FooterColorService } from '../../services/footer-color.service';
 import { setPageMeta } from '../../helper/page-meta';
 import { StickyRegistryService } from '../../services/sticky-registry.service';
 import { scrollToElement as scrollToEl } from '../../helper/scroll-utils';
-import { SortedItems } from '../../types/sorted-items';
 import { NoSorterKeyValue } from '../../types/no-sorter-key-value';
 import { copyToClipboard } from '../../helper/copy-to-clipboard';
 import { ToastService } from '../../services/toast.service';
@@ -74,7 +73,7 @@ export class FaqComponent implements OnInit, OnDestroy {
   private observer?: IntersectionObserver;
 
   public readonly faq = toSignal(this.dataService.faq, {
-    initialValue: new Map<string, FaqItem[]>() as SortedItems<FaqItem>,
+    initialValue: new Map<string, FaqItem[]>(),
   });
   public expandedFaqs = signal<Set<string>>(new Set());
   public collapsedSections = signal<Set<string>>(new Set());

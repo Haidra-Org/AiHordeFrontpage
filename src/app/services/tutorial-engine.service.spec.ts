@@ -198,18 +198,17 @@ describe('TutorialEngineService', () => {
    */
   function placed(top: number, height: number): HTMLElement {
     const element = document.createElement('div');
-    element.getBoundingClientRect = (): DOMRect =>
-      ({
-        top,
-        bottom: top + height,
-        height,
-        left: 0,
-        right: 0,
-        width: 0,
-        x: 0,
-        y: top,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    element.getBoundingClientRect = (): DOMRect => ({
+      top,
+      bottom: top + height,
+      height,
+      left: 0,
+      right: 0,
+      width: 0,
+      x: 0,
+      y: top,
+      toJSON: () => ({}),
+    });
     return element;
   }
 

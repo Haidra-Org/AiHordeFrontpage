@@ -118,7 +118,7 @@ describe('AdminFilterService', () => {
   describe('createFilter()', () => {
     it('sends PUT with apikey and invalidates cache', () => {
       const payload = { regex: 'bad.*word', filter_type: 10 };
-      service.createFilter(payload as never).subscribe();
+      service.createFilter(payload).subscribe();
 
       const req = httpTesting.expectOne(`${API_BASE}/filters`);
       expect(req.request.method).toBe('PUT');
@@ -144,9 +144,7 @@ describe('AdminFilterService', () => {
 
   describe('updateFilter()', () => {
     it('sends PATCH to correct URL', () => {
-      service
-        .updateFilter('f1', { description: 'updated' } as never)
-        .subscribe();
+      service.updateFilter('f1', { description: 'updated' }).subscribe();
       const req = httpTesting.expectOne(`${API_BASE}/filters/f1`);
       expect(req.request.method).toBe('PATCH');
       req.flush({ id: 'f1' });
@@ -156,7 +154,7 @@ describe('AdminFilterService', () => {
     it('returns null when no API key', () => {
       mockAuth.getStoredApiKey.mockReturnValue(null);
       let result: unknown = 'not-null';
-      service.updateFilter('f1', {} as never).subscribe((r) => (result = r));
+      service.updateFilter('f1', {}).subscribe((r) => (result = r));
       expect(result).toBeNull();
     });
   });
@@ -190,7 +188,7 @@ describe('AdminFilterService', () => {
 
   describe('testPrompt()', () => {
     it('sends POST with prompt data', () => {
-      service.testPrompt({ prompt: 'hello world' } as never).subscribe();
+      service.testPrompt({ prompt: 'hello world' }).subscribe();
       const req = httpTesting.expectOne(`${API_BASE}/filters`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ prompt: 'hello world' });

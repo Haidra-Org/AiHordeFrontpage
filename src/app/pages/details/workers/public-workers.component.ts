@@ -5,6 +5,7 @@ import {
   DestroyRef,
   inject,
   OnInit,
+  Signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -30,9 +31,12 @@ export class PublicWorkersComponent implements OnInit {
   private readonly router = inject(Router);
 
   /** Route parameters as signals. */
-  private readonly params = toSignal(this.route.params, {
-    initialValue: {} as Record<string, string>,
-  });
+  private readonly params: Signal<Record<string, string>> = toSignal(
+    this.route.params,
+    {
+      initialValue: {},
+    },
+  );
 
   /** Initial worker type from route (image, text, interrogation). */
   public readonly initialWorkerType = computed<WorkerType | null>(() => {
@@ -45,12 +49,12 @@ export class PublicWorkersComponent implements OnInit {
 
   /** Worker ID to highlight/filter from route. */
   public readonly highlightWorkerId = computed<string | null>(() => {
-    return (this.params()['workerId'] as string | undefined) ?? null;
+    return this.params()['workerId'] ?? null;
   });
 
   /** Owner ID to filter by from route. */
   public readonly filterOwnerId = computed<string | null>(() => {
-    return (this.params()['ownerId'] as string | undefined) ?? null;
+    return this.params()['ownerId'] ?? null;
   });
 
   ngOnInit(): void {

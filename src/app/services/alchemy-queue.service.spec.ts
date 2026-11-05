@@ -118,9 +118,7 @@ describe('AlchemyQueueService', () => {
     const tick = (
       service as unknown as { pollTick(): Promise<void> }
     ).pollTick();
-    (await sentRequest(`${API_BASE}/interrogate/status/${id}`)).flush(
-      status as unknown as object,
-    );
+    (await sentRequest(`${API_BASE}/interrogate/status/${id}`)).flush(status);
     await tick;
     await settle();
   }

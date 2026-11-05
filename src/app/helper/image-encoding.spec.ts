@@ -54,12 +54,12 @@ describe('fileToResizedBase64', () => {
       height: 0,
       getContext: vi.fn(() => ({ drawImage })),
     };
-    vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
       if (tag === 'canvas') {
         return canvas as unknown as HTMLElement;
       }
       return document.createElement(tag);
-    }) as typeof document.createElement);
+    });
 
     close = vi.fn();
     vi.stubGlobal(

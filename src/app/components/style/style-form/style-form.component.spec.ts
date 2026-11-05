@@ -28,7 +28,7 @@ describe('StyleFormComponent', () => {
     params: { width: 512, height: 512 },
     creator: 'user',
     use_count: 1,
-  } as ImageStyle;
+  };
 
   const imageStyleB: ImageStyle = {
     id: 'img-b',
@@ -42,7 +42,7 @@ describe('StyleFormComponent', () => {
     params: { width: 768, height: 768 },
     creator: 'user',
     use_count: 2,
-  } as ImageStyle;
+  };
 
   const textStyle: TextStyle = {
     id: 'txt-a',
@@ -56,7 +56,7 @@ describe('StyleFormComponent', () => {
     params: { temperature: 0.7 },
     creator: 'user',
     use_count: 3,
-  } as TextStyle;
+  };
 
   const contract = signal<SamplerConstraintsDocument | null>(null);
   const samplerConstraintsMock = { contract, load: vi.fn() };
@@ -262,7 +262,7 @@ describe('StyleFormComponent', () => {
           loras: [{ name: '246091', model: 0.8, clip: 0.6, is_version: true }],
           tis: [{ name: '7808', strength: 0.5 }],
         },
-      } as ImageStyle);
+      });
 
       expect(component.form.controls['loras'].value).toEqual([
         { name: '246091', model: 0.8, clip: 0.6, is_version: true },
@@ -280,7 +280,7 @@ describe('StyleFormComponent', () => {
           ...imageStyleA.params,
           loras: [{ name: '1', model: 1, clip: 1, sha256: hash }],
         },
-      } as ImageStyle);
+      });
 
       expect(component.form.controls['loras'].value[0].sha256).toBe(hash);
     });
@@ -345,7 +345,7 @@ describe('StyleFormComponent', () => {
         const component = imageForm({
           ...imageStyleA,
           models: ['ModelA', 'ModelB'],
-        } as ImageStyle);
+        });
 
         // Narrowing to one would be the editor picking a side for the author.
         expect(component.styleBaseline()).toBeNull();
@@ -362,7 +362,7 @@ describe('StyleFormComponent', () => {
       const component = imageForm({
         ...imageStyleB,
         prompt: '{p}{np}',
-      } as ImageStyle);
+      });
 
       component.appendToPrompt('detailed');
 

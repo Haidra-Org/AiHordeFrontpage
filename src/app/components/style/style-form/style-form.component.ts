@@ -459,7 +459,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
           child &&
           typeof child === 'object' &&
           !Array.isArray(child) &&
-          Object.keys(child as Record<string, unknown>).length === 0
+          Object.keys(child).length === 0
         ) {
           continue;
         }

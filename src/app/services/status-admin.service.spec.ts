@@ -133,7 +133,7 @@ describe('StatusAdminService', () => {
     );
     const req = http.expectOne(`${INTERNAL}/incidents/inc-1`);
     expect(req.request.method).toBe('PATCH');
-    req.flush({ id: 'inc-1' } as AdminIncident);
+    req.flush({ id: 'inc-1' });
     await promise;
   });
 
@@ -146,7 +146,7 @@ describe('StatusAdminService', () => {
     );
     const req = http.expectOne(`${INTERNAL}/incidents/inc-1/updates`);
     expect(req.request.method).toBe('POST');
-    req.flush({ id: 'inc-1' } as AdminIncident);
+    req.flush({ id: 'inc-1' });
     await promise;
   });
 
@@ -156,7 +156,7 @@ describe('StatusAdminService', () => {
     );
     const req = http.expectOne(`${INTERNAL}/incidents/inc-1/resolve`);
     expect(req.request.method).toBe('POST');
-    req.flush({ id: 'inc-1' } as AdminIncident);
+    req.flush({ id: 'inc-1' });
     await promise;
   });
 
@@ -196,7 +196,7 @@ describe('StatusAdminService', () => {
     );
     const req = http.expectOne(`${INTERNAL}/alerts/fp-1/promote`);
     expect(req.request.method).toBe('POST');
-    req.flush({ id: 'inc-9' } as AdminIncident);
+    req.flush({ id: 'inc-9' });
     await promotePromise;
   });
 });

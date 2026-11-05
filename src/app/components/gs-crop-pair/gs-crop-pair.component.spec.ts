@@ -69,7 +69,7 @@ describe('GsCropPairComponent', () => {
     for (const observer of FakeResizeObserver.instances) {
       observer.callback(
         [{ contentRect: { width } } as unknown as ResizeObserverEntry],
-        observer as unknown as ResizeObserver,
+        observer,
       );
     }
     fixture.detectChanges();
@@ -77,10 +77,7 @@ describe('GsCropPairComponent', () => {
 
   beforeEach(async () => {
     FakeResizeObserver.instances = [];
-    vi.stubGlobal(
-      'ResizeObserver',
-      FakeResizeObserver as unknown as typeof ResizeObserver,
-    );
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [

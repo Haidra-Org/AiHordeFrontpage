@@ -286,10 +286,7 @@ describe('evaluateWorkerFeasibility', () => {
       { bridge_agent: 'AI Horde Worker reGen:17.9.1:https://example.com' },
     ],
   ])('reports the missing %s capability', (id, need, lack) => {
-    const result = evaluateWorkerFeasibility(
-      [worker(lack)],
-      requirement(need as Partial<WorkerRequirement>),
-    );
+    const result = evaluateWorkerFeasibility([worker(lack)], requirement(need));
     expect(result?.blockedBy).toBe(id);
     expect(result?.message.key).toBe(`generate.workers.none_${id}_one`);
   });

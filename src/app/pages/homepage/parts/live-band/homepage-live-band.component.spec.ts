@@ -45,7 +45,7 @@ const PERFORMANCE = {
   past_minute_megapixelsteps: 1200,
   queued_tokens: 6000,
   past_minute_tokens: 3600,
-} as unknown as HordePerformance;
+};
 
 function imageTotals(images: number): ImageTotalStats {
   const point = { images, ps: 0 };

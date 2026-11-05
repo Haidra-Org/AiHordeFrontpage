@@ -527,8 +527,7 @@ export const FIELD_LABEL_KEY: Readonly<Record<LedgerField, string>> = {
 const FIELD_GROUP: ReadonlyMap<LedgerField, LedgerSection> = new Map(
   (Object.keys(FIELD_LABEL_KEY) as LedgerField[]).map((field) => [
     field,
-    (GROUP_IDS.find((group) => GROUP_FIELDS[group].includes(field)) ??
-      'compose') as LedgerSection,
+    GROUP_IDS.find((group) => GROUP_FIELDS[group].includes(field)) ?? 'compose',
   ]),
 );
 
