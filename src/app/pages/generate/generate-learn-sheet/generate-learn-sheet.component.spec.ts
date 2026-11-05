@@ -567,6 +567,10 @@ describe('GenerateLearnSheetComponent', () => {
 
     it('shows the picture whole, with what the run cost, and hands focus back', async () => {
       await pictureArrives();
+      // The sheet starts at peek with its body hidden, and a hidden button
+      // cannot take focus back, so the reader opens the sheet first.
+      first<HTMLButtonElement>('.gs-sheet-btn[aria-expanded="false"]').click();
+      await settle();
       stage().click();
       await settle();
 
