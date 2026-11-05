@@ -36,9 +36,7 @@ const REQUESTS_STORE = 'requests';
  * that waits for the answer in code and draws no progress of its own.
  */
 export type TextRequestContext =
-  | { kind: 'studio' }
-  | { kind: 'alchemy'; jobId: string }
-  | { kind: 'awaited' };
+  { kind: 'studio' } | { kind: 'alchemy'; jobId: string } | { kind: 'awaited' };
 
 /** The one string two equal contexts share. */
 export function textRequestContextKey(context: TextRequestContext): string {

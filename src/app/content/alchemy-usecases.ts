@@ -25,11 +25,7 @@ import { SettingLink } from './settings';
  * from the page about it.
  */
 export type AlchemyUseCaseId =
-  | 'describe'
-  | 'control_map'
-  | 'enlarge'
-  | 'fix_faces'
-  | 'cut_out';
+  'describe' | 'control_map' | 'enlarge' | 'fix_faces' | 'cut_out';
 
 /**
  * The forms that answer a question about the picture, in the order the panel

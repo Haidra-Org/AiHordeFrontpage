@@ -115,8 +115,7 @@ export interface AlchemySubmission {
  * worded it, with its return code where it sent one.
  */
 export type AlchemySubmitOutcome =
-  | { kind: 'submitted'; id: string }
-  | { kind: 'refused'; error: HordeApiError };
+  { kind: 'submitted'; id: string } | { kind: 'refused'; error: HordeApiError };
 
 /** A result image the horde has published but that is not yet held locally. */
 interface UnresolvedImage {

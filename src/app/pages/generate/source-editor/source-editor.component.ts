@@ -86,14 +86,7 @@ export interface SourceEditorResult {
 }
 
 export type SourceEditorTool =
-  | 'brush'
-  | 'eraser'
-  | 'rect'
-  | 'ellipse'
-  | 'line'
-  | 'select'
-  | 'crop'
-  | 'pan';
+  'brush' | 'eraser' | 'rect' | 'ellipse' | 'line' | 'select' | 'crop' | 'pan';
 
 /** Which of the two inks a brush stroke is laid down in. */
 export type SourceEditorInk = 'mask' | 'color';

@@ -143,9 +143,10 @@ export class AiHordeService {
 
   public getNews(count?: number): Observable<NewsItem[]> {
     return this.cache
-      .cachedGet<
-        HordeNewsItem[]
-      >(`${this.baseUrl}/status/news`, undefined, { ttl: CacheTTL.VERY_LONG, category: 'news' })
+      .cachedGet<HordeNewsItem[]>(`${this.baseUrl}/status/news`, undefined, {
+        ttl: CacheTTL.VERY_LONG,
+        category: 'news',
+      })
       .pipe(
         map((newsItems) => (count ? newsItems.slice(0, count) : newsItems)),
         map((newsItems) => {
@@ -296,9 +297,11 @@ export class AiHordeService {
    */
   public getChatTextModels(): Observable<ActiveModel[]> {
     return this.cache
-      .cachedGet<
-        ActiveModel[]
-      >(`${this.baseUrl}/status/models?type=text&chat=true`, undefined, { ttl: CacheTTL.LONG, category: 'models' })
+      .cachedGet<ActiveModel[]>(
+        `${this.baseUrl}/status/models?type=text&chat=true`,
+        undefined,
+        { ttl: CacheTTL.LONG, category: 'models' },
+      )
       .pipe(map((models) => models.filter((model) => !!model.chat)));
   }
 
@@ -383,9 +386,11 @@ export class AiHordeService {
     limit = 25,
   ): Observable<LeaderboardUser[]> {
     return this.cache
-      .cachedGet<
-        HordeUser[]
-      >(`${this.baseUrl}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
+      .cachedGet<HordeUser[]>(
+        `${this.baseUrl}/users?page=${page}&sort=kudos`,
+        undefined,
+        { ttl: CacheTTL.MEDIUM, category: 'leaderboard' },
+      )
       .pipe(
         map((users) =>
           users.slice(0, limit).map((user) => ({
@@ -404,9 +409,11 @@ export class AiHordeService {
    */
   public getKudosLeaderboardPage(page: number): Observable<LeaderboardUser[]> {
     return this.cache
-      .cachedGet<
-        HordeUser[]
-      >(`${this.baseUrl}/users?page=${page}&sort=kudos`, undefined, { ttl: CacheTTL.MEDIUM, category: 'leaderboard' })
+      .cachedGet<HordeUser[]>(
+        `${this.baseUrl}/users?page=${page}&sort=kudos`,
+        undefined,
+        { ttl: CacheTTL.MEDIUM, category: 'leaderboard' },
+      )
       .pipe(
         map((users) =>
           users.map((user) => ({

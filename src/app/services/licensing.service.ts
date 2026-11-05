@@ -75,10 +75,7 @@ export type LicensingCategory = (typeof LICENSING_CATEGORIES)[number];
 
 /** What the reference says about using an asset's output commercially. */
 export type LicensingStatus =
-  | 'allowed'
-  | 'allowed_with_conditions'
-  | 'prohibited'
-  | 'unknown';
+  'allowed' | 'allowed_with_conditions' | 'prohibited' | 'unknown';
 
 /** The conditions a licence attaches, as the reference enumerates them. */
 export const LICENSING_OBLIGATIONS = [

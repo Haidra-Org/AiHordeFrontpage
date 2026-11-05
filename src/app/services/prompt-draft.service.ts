@@ -31,10 +31,7 @@ const ANONYMOUS_API_KEY = '0000000000';
  * has workers, the biggest of them, any model at all, or one named outright.
  */
 export type PromptDraftModelPick =
-  | 'auto'
-  | 'quality'
-  | 'any'
-  | { model: string };
+  'auto' | 'quality' | 'any' | { model: string };
 
 /**
  * What the model is being asked to do. `write` turns a reading into a prompt

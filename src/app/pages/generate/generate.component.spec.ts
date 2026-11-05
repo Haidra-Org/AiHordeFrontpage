@@ -344,8 +344,7 @@ describe('GenerateComponent', () => {
     vi.advanceTimersByTime(1000);
 
     const request = estimateKudos.mock.calls.at(-1)?.[0] as
-      | ImageGenerationRequest
-      | undefined;
+      ImageGenerationRequest | undefined;
     // The dry run has to be the same request, or the price is for settings
     // nothing will run at.
     expect(request?.style).toBe('style-1');
@@ -392,8 +391,7 @@ describe('GenerateComponent', () => {
     await vi.waitFor(() => expect(estimateKudos).toHaveBeenCalled());
 
     const request = estimateKudos.mock.calls.at(-1)?.[0] as
-      | ImageGenerationRequest
-      | undefined;
+      ImageGenerationRequest | undefined;
     expect(request?.source_image).toBeTypeOf('string');
     expect(request?.extra_source_images).toHaveLength(1);
     expect(request?.extra_source_images?.[0].strength).toBe(0.5);
@@ -416,8 +414,7 @@ describe('GenerateComponent', () => {
     await vi.waitFor(() => expect(estimateKudos).toHaveBeenCalled());
 
     const request = estimateKudos.mock.calls.at(-1)?.[0] as
-      | ImageGenerationRequest
-      | undefined;
+      ImageGenerationRequest | undefined;
     expect(request?.extra_source_images).toBeUndefined();
   });
 

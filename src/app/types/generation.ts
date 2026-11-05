@@ -62,10 +62,7 @@ export type ImageControlType = AnnotationControlType | 'hough';
  * a compositional remix workflow rather than a denoise-from-source pass.
  */
 export type ImageSourceProcessing =
-  | 'img2img'
-  | 'inpainting'
-  | 'outpainting'
-  | 'remix';
+  'img2img' | 'inpainting' | 'outpainting' | 'remix';
 
 /**
  * Named special-purpose generation workflows. The horde currently constrains

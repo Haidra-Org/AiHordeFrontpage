@@ -35,8 +35,7 @@ export const SUSPICION_HISTORY_PAGE_SIZE = 20;
  * Whose history to read: one worker's, or every worker an account owns.
  */
 export type SuspicionHistoryFilter =
-  | { worker_id: string }
-  | { user_id: number };
+  { worker_id: string } | { user_id: number };
 
 /**
  * `section` reads the history as soon as it is shown, under its own heading.

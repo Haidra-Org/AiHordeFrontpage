@@ -63,10 +63,7 @@ const PROBE_WINDOW_SECONDS = 2_592_000;
  * probed by the counts that read them anyway.
  */
 export type ProbedEndpoint =
-  | 'promptEvents'
-  | 'reportingWorkers'
-  | 'falsePositives'
-  | 'settings';
+  'promptEvents' | 'reportingWorkers' | 'falsePositives' | 'settings';
 
 /** A remembered detail answer and whose it is, so a change to it can drop it. */
 interface MemoEntry {

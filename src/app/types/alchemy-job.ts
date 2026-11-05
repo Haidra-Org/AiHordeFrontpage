@@ -17,10 +17,7 @@ export type AlchemySourceMode = 'url' | 'upload' | 'none';
  * small copy of it every tile and table cell can afford to show.
  */
 export type StoredAlchemyImageKind =
-  | 'source'
-  | 'thumb'
-  | 'result'
-  | 'result-thumb';
+  'source' | 'thumb' | 'result' | 'result-thumb';
 
 /** The image id a result's small copy is stored under. */
 export function resultThumbImageId(resultKey: string): string {

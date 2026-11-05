@@ -28,9 +28,10 @@ export class AdminWorkerService {
     const options = apiKey ? { headers: { apikey: apiKey } } : {};
 
     return this.cache
-      .cachedGet<
-        HordeWorker[]
-      >(`${this.baseUrl}/workers`, options, { ttl: CacheTTL.SHORT, category: 'admin-workers' })
+      .cachedGet<HordeWorker[]>(`${this.baseUrl}/workers`, options, {
+        ttl: CacheTTL.SHORT,
+        category: 'admin-workers',
+      })
       .pipe(catchError(() => of([])));
   }
 

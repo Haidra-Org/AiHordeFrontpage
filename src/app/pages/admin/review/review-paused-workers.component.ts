@@ -537,13 +537,11 @@ export class ReviewPausedWorkersComponent {
               this.bulkStopping()
                 ? EMPTY
                 : this.request(target.id, action).pipe(
-                    map(
-                      (answer): BulkResult => ({
-                        ...target,
-                        ok: answer !== null,
-                        message: null,
-                      }),
-                    ),
+                    map((answer): BulkResult => ({
+                      ...target,
+                      ok: answer !== null,
+                      message: null,
+                    })),
                     catchError((error: unknown) =>
                       of<BulkResult>({
                         ...target,

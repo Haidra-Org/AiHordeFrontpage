@@ -8,12 +8,7 @@ import { WorkerChatDeclaration } from '../../../types/horde-worker';
  * transports in a separate list, so each name's group is recorded here.
  */
 export type ChatCapabilityGroupId =
-  | 'sampling'
-  | 'images'
-  | 'tools'
-  | 'format'
-  | 'guarantees'
-  | 'other';
+  'sampling' | 'images' | 'tools' | 'format' | 'guarantees' | 'other';
 
 /** Where a name comes from in the worker's chat declaration. */
 export type ChatCapabilitySource = 'feature' | 'transport';

@@ -54,9 +54,7 @@ export interface RejectedSamplerSchedulerPairing {
  * repeat it as advice.
  */
 export type RecommendationProvenance =
-  | 'upstream_author'
-  | 'user_ruled'
-  | 'community';
+  'upstream_author' | 'user_ruled' | 'community';
 
 /** One sampler/scheduler pairing the horde suggests without enforcing it. */
 export interface SamplerRecommendation {

@@ -109,9 +109,7 @@ export interface ModerationOverviewQuery {
 
 /** Why a prompt was stopped. */
 export type PromptModerationReason =
-  | 'filter_rejection'
-  | 'model_rejection'
-  | 'worker_csam';
+  'filter_rejection' | 'model_rejection' | 'worker_csam';
 
 /** What happened to the request the prompt belonged to. */
 export type PromptModerationOutcome = 'rejected' | 'censored';
@@ -262,10 +260,7 @@ export type ModerationSubjectKind = 'account' | 'proxied_account' | 'ip';
 
 /** Where a subject stands after a moderator's latest decision on it. */
 export type SubjectDecisionOutcome =
-  | 'benign'
-  | 'actioned'
-  | 'watching'
-  | 'escalated';
+  'benign' | 'actioned' | 'watching' | 'escalated';
 
 /** What a moderator did, recorded with an `actioned` decision once it succeeded. */
 export type SubjectAction =

@@ -57,9 +57,11 @@ export class AdminOperationsService {
   public getIPTimeout(ipaddr: string): Observable<IPTimeout | null> {
     const encodedIP = encodeURIComponent(ipaddr);
     return this.cache
-      .cachedGet<
-        IPTimeout[]
-      >(`${this.baseUrl}/operations/ipaddr/${encodedIP}`, { headers: this.getHeaders() }, { ttl: CacheTTL.SHORT, category: 'admin-ops' })
+      .cachedGet<IPTimeout[]>(
+        `${this.baseUrl}/operations/ipaddr/${encodedIP}`,
+        { headers: this.getHeaders() },
+        { ttl: CacheTTL.SHORT, category: 'admin-ops' },
+      )
       .pipe(map((result) => result?.at(0) ?? null));
   }
 

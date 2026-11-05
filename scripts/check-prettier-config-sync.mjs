@@ -29,10 +29,13 @@ function toWorkspaceRelative(filePath) {
   return path.relative(repoRoot, filePath).split(path.sep).join("/");
 }
 
-function normalizeConfig(config) {
+// An option left unset formats with Prettier's default, so it compares equal to
+// that default. Prettier 3.9 stops applying .editorconfig at the submodule's
+// package.json, which leaves useTabs unset there and false in the main project.
+function normalizeConfig(config, defaults) {
   const normalized = {};
   for (const option of optionsToCompare) {
-    normalized[option] = config?.[option];
+    normalized[option] = config?.[option] ?? defaults[option];
   }
 
   return normalized;
@@ -86,8 +89,13 @@ async function main() {
     );
   }
 
-  const normalizedRootConfig = normalizeConfig(rootConfig);
-  const normalizedDesignConfig = normalizeConfig(designConfig);
+  const { options: supportedOptions } = await prettier.getSupportInfo();
+  const defaults = Object.fromEntries(
+    supportedOptions.map((option) => [option.name, option.default]),
+  );
+
+  const normalizedRootConfig = normalizeConfig(rootConfig, defaults);
+  const normalizedDesignConfig = normalizeConfig(designConfig, defaults);
   const configDiff = getConfigDiff(
     normalizedRootConfig,
     normalizedDesignConfig,

@@ -11,11 +11,7 @@ export type DisplayType = 'label' | 'badge' | 'translation';
  * Category of enum to process
  */
 export type EnumCategory =
-  | 'itemType'
-  | 'domain'
-  | 'platform'
-  | 'functionType'
-  | 'category';
+  'itemType' | 'domain' | 'platform' | 'functionType' | 'category';
 
 /**
  * Pipe for converting enum values to display strings in templates.

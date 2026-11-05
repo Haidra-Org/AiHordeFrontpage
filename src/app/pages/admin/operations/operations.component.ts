@@ -25,11 +25,7 @@ import { extractApiError } from '../../../helper/extract-api-error';
 import { ToastService } from '../../../services/toast.service';
 
 type DialogType =
-  | 'deleteIP'
-  | 'blockWorker'
-  | 'unblockWorker'
-  | 'refreshIP'
-  | 'batchRefreshIP';
+  'deleteIP' | 'blockWorker' | 'unblockWorker' | 'refreshIP' | 'batchRefreshIP';
 
 @Component({
   selector: 'app-operations',

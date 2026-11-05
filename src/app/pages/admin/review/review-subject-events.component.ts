@@ -148,12 +148,7 @@ export type StoredText =
  * away; `not_recorded` is an event that never held any.
  */
 export type TextView =
-  | 'shown'
-  | 'loading'
-  | 'failed'
-  | 'unavailable'
-  | 'removed'
-  | 'not_recorded';
+  'shown' | 'loading' | 'failed' | 'unavailable' | 'removed' | 'not_recorded';
 
 interface EventList {
   events: PromptModerationEvent[];

@@ -59,9 +59,11 @@ export class TeamService {
    */
   public getTeams(): Observable<Team[]> {
     return this.cache
-      .cachedGet<
-        Team[]
-      >(this.baseUrl, { context: this.teamContext }, { ttl: CacheTTL.LONG, category: 'teams' })
+      .cachedGet<Team[]>(
+        this.baseUrl,
+        { context: this.teamContext },
+        { ttl: CacheTTL.LONG, category: 'teams' },
+      )
       .pipe(catchError(() => of([])));
   }
 

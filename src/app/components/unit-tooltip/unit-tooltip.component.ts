@@ -44,12 +44,7 @@ interface TooltipStyles {
  * - 'bottom-right': Combines bottom and right positioning
  */
 export type TooltipPosition =
-  | 'auto'
-  | 'left'
-  | 'right'
-  | 'bottom'
-  | 'bottom-left'
-  | 'bottom-right';
+  'auto' | 'left' | 'right' | 'bottom' | 'bottom-left' | 'bottom-right';
 
 /**
  * Tooltip dimension constants for edge detection.

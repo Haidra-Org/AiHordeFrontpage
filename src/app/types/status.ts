@@ -9,22 +9,14 @@
 
 /** Effective state a component can occupy (matches `ComponentStatusValue`). */
 export type ComponentStatusValue =
-  | 'operational'
-  | 'degraded'
-  | 'partial'
-  | 'down'
-  | 'maintenance'
-  | 'unknown';
+  'operational' | 'degraded' | 'partial' | 'down' | 'maintenance' | 'unknown';
 
 /** Severity bucket for an operator-authored incident. */
 export type IncidentSeverity = 'info' | 'minor' | 'major' | 'critical';
 
 /** Workflow state of an operator-authored incident. */
 export type IncidentStatus =
-  | 'investigating'
-  | 'identified'
-  | 'monitoring'
-  | 'resolved';
+  'investigating' | 'identified' | 'monitoring' | 'resolved';
 
 export interface PublicComponent {
   id: string;

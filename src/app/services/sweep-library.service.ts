@@ -89,10 +89,7 @@ export interface SweepStop {
  * source and the map it was drawn from.
  */
 export type SweepPresentation =
-  | 'strip'
-  | 'grid'
-  | 'tile_repeat_3x3'
-  | 'triptych';
+  'strip' | 'grid' | 'tile_repeat_3x3' | 'triptych';
 
 /**
  * Which kind of source picture a strip was rendered from, where one sweep runs

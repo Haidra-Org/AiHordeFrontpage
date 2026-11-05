@@ -78,8 +78,7 @@ export interface PromptLibrarySentEntry extends PromptLibraryEntryBase {
 
 /** One row of the library, whichever list it came from. */
 export type PromptLibraryEntry =
-  | PromptLibraryDraftEntry
-  | PromptLibrarySentEntry;
+  PromptLibraryDraftEntry | PromptLibrarySentEntry;
 
 export function draftEntry(draft: StoredPromptDraft): PromptLibraryDraftEntry {
   return {

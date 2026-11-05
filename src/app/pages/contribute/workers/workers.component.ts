@@ -39,8 +39,7 @@ export class WorkersComponent {
       if (!isPlatformBrowser(this.platformId)) return;
       // Show arrival highlight if the navigation came from the notification system
       const nav = performance.getEntriesByType('navigation')[0] as
-        | PerformanceNavigationTiming
-        | undefined;
+        PerformanceNavigationTiming | undefined;
       const isSpaNav = nav?.type === 'navigate' || nav?.type === 'reload';
       if (isSpaNav || document.referrer === '') {
         this.arrivalHighlight.set(true);

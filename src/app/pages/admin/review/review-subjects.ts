@@ -536,9 +536,7 @@ export function rulesVerdict(
 
 /** How a subject's state is worded: the outcome, or whether a watch still runs. */
 export type SubjectStateLabel =
-  | Exclude<SubjectDecisionOutcome, 'watching'>
-  | 'watching'
-  | 'watch_ended';
+  Exclude<SubjectDecisionOutcome, 'watching'> | 'watching' | 'watch_ended';
 
 /** A subject's state for its chip: the outcome's colour and icon, and its words. */
 export interface SubjectState {

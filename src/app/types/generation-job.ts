@@ -354,11 +354,7 @@ export interface LocalGenerationJob {
  *   without it.
  */
 export type AdoptedRequestRecovery =
-  | 'pending'
-  | 'full'
-  | 'settings'
-  | 'refused'
-  | 'failed';
+  'pending' | 'full' | 'settings' | 'refused' | 'failed';
 
 /**
  * How much of what a job asked for this browser holds: the whole request,
