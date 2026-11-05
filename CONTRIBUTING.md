@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the AI Horde frontend.
 
 ```bash
 # Prerequisites: Node.js 24 via NVM
-nvm use 24.12.0
+nvm use 24.22.2
 
 # Install dependencies
 npm ci

@@ -11,8 +11,8 @@ Built with **Angular 21** and **Tailwind CSS 4**.
 
 ```bash
 # Windows (We recommend nvm-windows for ease of use)
-nvm install 24.12.0
-nvm use 24.12.0
+nvm install 24.22.2
+nvm use 24.22.2
 
 # Verify
 node -v  # Should output v24.x
