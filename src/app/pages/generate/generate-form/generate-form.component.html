@@ -2547,12 +2547,17 @@
               />
             }
             <span class="gs-mono" aria-hidden="true">{{ fit.eligible }}</span>
-            <span class="gs-fit-unit" aria-hidden="true">{{
-              (fit.eligible === 1
-                ? "generate.form.workers_unit_one"
-                : "generate.form.workers_unit_other"
-              ) | transloco
-            }}</span>
+            <!-- Angular drops the whitespace between these spans, so the
+                 button's text would read "15Workers" and no longer match its
+                 name. The flex gap draws the space on screen. -->
+            <span class="gs-fit-unit" aria-hidden="true"
+              >&ngsp;{{
+                (fit.eligible === 1
+                  ? "generate.form.workers_unit_one"
+                  : "generate.form.workers_unit_other"
+                ) | transloco
+              }}</span
+            >
           </button>
           @if (fitOpen()) {
             <div
@@ -2651,9 +2656,9 @@
                 >~{{ kudosShown() }}</span
               >
             }
-            <span class="gs-kudos-unit" aria-hidden="true">{{
-              "generate.form.kudos_unit" | transloco
-            }}</span>
+            <span class="gs-kudos-unit" aria-hidden="true"
+              >&ngsp;{{ "generate.form.kudos_unit" | transloco }}</span
+            >
           </button>
           @if (kudosOpen()) {
             <div

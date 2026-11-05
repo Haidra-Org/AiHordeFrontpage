@@ -93,9 +93,6 @@ jobs:
     name: Accessibility audit
     runs-on: ubuntu-latest
     needs: [static, test]
-    # Report-only until the existing violations are fixed. Remove this line to
-    # make new violations fail the run.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
         with:

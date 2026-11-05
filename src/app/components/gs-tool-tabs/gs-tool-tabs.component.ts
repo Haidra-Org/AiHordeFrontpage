@@ -52,7 +52,7 @@ import {
           [routerLink]="imageLink"
           routerLinkActive="gs-subtab--active"
           ariaCurrentWhenActive="page"
-          [attr.aria-label]="'generate.shell.tab_image' | transloco"
+          [attr.aria-label]="'generate.shell.tab_image_name' | transloco"
         >
           <app-icon name="photo" class="gs-ico-sm" />
           <span class="gs-subtab-long" aria-hidden="true">

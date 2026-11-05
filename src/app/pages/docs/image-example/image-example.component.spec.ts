@@ -608,7 +608,7 @@ describe('DocsImageExampleComponent', () => {
     expect(harness.query('.gs-tut-img')).toHaveLength(3);
     for (const stage of stages) {
       expect(stage.querySelector('.gs-tut-img')).toBeTruthy();
-      expect(stage.getAttribute('aria-label')).toBeTruthy();
+      expect(stage.querySelector('.sr-only')?.textContent?.trim()).toBeTruthy();
     }
   });
 

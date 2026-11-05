@@ -144,7 +144,7 @@ describe('GenerateShellComponent', () => {
     // The short word is for the eye. A reader who cannot see the icon over it
     // gets the name that says what the tool is.
     expect(links().map((link) => link.getAttribute('aria-label'))).toEqual([
-      translations['generate.shell.tab_image'],
+      translations['generate.shell.tab_image_name'],
       translations['generate.shell.tab_alchemy'],
       translations['generate.shell.tab_docs'],
     ]);

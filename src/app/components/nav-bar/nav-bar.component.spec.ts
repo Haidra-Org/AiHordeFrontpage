@@ -25,6 +25,9 @@ describe('NavBarComponent GitHub star link', () => {
     (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>(
       '.github-widget a.github-star-badge',
     )!;
+  /** The link's accessible name, which comes from its visible and hidden text. */
+  const starName = (): string =>
+    (starLink().textContent ?? '').replace(/\s+/g, ' ').trim();
 
   const render = async (): Promise<void> => {
     await TestBed.configureTestingModule({
@@ -34,11 +37,9 @@ describe('NavBarComponent GitHub star link', () => {
           langs: {
             en: {
               'nav.github_star': 'Star',
-              'nav.github_star_label': 'Star AI-Horde on GitHub',
-              'nav.github_star_label_count_one':
-                'Star AI-Horde on GitHub, {{ count }} star',
-              'nav.github_star_label_count_other':
-                'Star AI-Horde on GitHub, {{ count }} stars',
+              'nav.github_star_label': 'AI-Horde on GitHub',
+              'nav.github_star_label_count_one': 'star, AI-Horde on GitHub',
+              'nav.github_star_label_count_other': 'stars, AI-Horde on GitHub',
             },
           },
           translocoConfig: { defaultLang: 'en', availableLangs: ['en'] },
@@ -98,8 +99,8 @@ describe('NavBarComponent GitHub star link', () => {
 
     const link = starLink();
     expect(link).toBeTruthy();
-    expect(link.textContent).toContain('Star');
-    expect(link.getAttribute('aria-label')).toBe('Star AI-Horde on GitHub');
+    expect(link.getAttribute('aria-label')).toBeNull();
+    expect(starName()).toBe('Star AI-Horde on GitHub');
     const widget = link.closest('.github-widget')!;
     expect(widget.querySelector('iframe, script')).toBeNull();
     expect(document.querySelector('script[src*="buttons.github.io"]')).toBe(
@@ -118,10 +119,7 @@ describe('NavBarComponent GitHub star link', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       'https://api.github.com/repos/Haidra-Org/AI-Horde',
     );
-    expect(starLink().textContent).toContain('1,234');
-    expect(starLink().getAttribute('aria-label')).toBe(
-      'Star AI-Horde on GitHub, 1234 stars',
-    );
+    expect(starName()).toBe('Star 1,234 stars, AI-Horde on GitHub');
     expect(sessionStorage.getItem(STORAGE_KEY)).toBe('1234');
   });
 
@@ -130,19 +128,15 @@ describe('NavBarComponent GitHub star link', () => {
     await render();
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(starLink().getAttribute('aria-label')).toBe(
-      'Star AI-Horde on GitHub, 1 star',
-    );
+    expect(starName()).toBe('Star 1 star, AI-Horde on GitHub');
   });
 
   it('leaves the count out when the request fails', async () => {
     fetchMock.mockResolvedValue(new Response('', { status: 403 }));
     await render();
 
-    expect(starLink().textContent?.trim()).toBe('Star');
-    expect(starLink().getAttribute('aria-label')).toBe(
-      'Star AI-Horde on GitHub',
-    );
+    expect(starLink().querySelector('.github-star-badge__count')).toBeNull();
+    expect(starName()).toBe('Star AI-Horde on GitHub');
     expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 });

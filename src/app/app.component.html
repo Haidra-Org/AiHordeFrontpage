@@ -2,7 +2,9 @@
 <div class="wrapper" [class.wrapper--flush]="hideFooter()">
   <app-nav-bar />
 
-  <router-outlet></router-outlet>
+  <main class="app-main">
+    <router-outlet></router-outlet>
+  </main>
   @if (!hideFooter()) {
     <footer class="footer-shell" [class.footer-dark]="darkFooter()">
       <div class="footer-container">

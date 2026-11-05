@@ -51,19 +51,23 @@
               href="https://github.com/Haidra-org/AI-Horde"
               target="_blank"
               rel="noopener noreferrer"
-              [attr.aria-label]="
-                githubStarLabelKey() | transloco: { count: githubStars() }
-              "
             >
-              <span class="github-star-badge__label" aria-hidden="true">
+              <!-- The name is the visible words followed by hidden context, so
+                   a speech user can say what they see (WCAG 2.5.3). -->
+              <span class="github-star-badge__label">
                 <app-icon name="star" class="github-star-badge__icon" />
                 {{ "nav.github_star" | transloco }}
               </span>
               @if (githubStars() !== null) {
-                <span class="github-star-badge__count" aria-hidden="true">{{
+                <span class="github-star-badge__count">{{
                   githubStars() | number
                 }}</span>
               }
+              <span class="sr-only"
+                >&ngsp;{{
+                  githubStarLabelKey() | transloco: { count: githubStars() }
+                }}</span
+              >
             </a>
           </div>
         </div>

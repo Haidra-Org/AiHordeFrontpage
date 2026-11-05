@@ -642,8 +642,9 @@
     background-color: var(--color-bg-secondary);
   }
 
+  /* Gray-300 on gray-700 is 7.0:1. Gray-400 measured 4.05:1. */
   .dark .model-rank-badge {
-    @apply bg-gray-700 text-gray-400;
+    @apply bg-gray-700 text-gray-300;
   }
 
   /* Top 3 rank badges get special styling */

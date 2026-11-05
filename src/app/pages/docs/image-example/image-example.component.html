@@ -563,12 +563,17 @@
                     #shotTrigger
                     type="button"
                     class="gs-tut-stage"
-                    [attr.aria-label]="
-                      'generate.tutorials.enlarge'
-                        | transloco: { name: shot.labelKey | transloco }
-                    "
                     (click)="openEnlarged(i)"
                   >
+                    <!-- Hidden words ahead of the visible size badge make the
+                         name, so the badge's text stays part of it (WCAG
+                         2.5.3). -->
+                    <span class="sr-only"
+                      >{{
+                        "generate.tutorials.enlarge"
+                          | transloco: { name: shot.labelKey | transloco }
+                      }}&ngsp;</span
+                    >
                     <img
                       class="gs-tut-img"
                       [class.gs-tut-img--alpha]="shot.alpha"

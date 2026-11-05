@@ -389,14 +389,14 @@ describe('DocsShellComponent', () => {
     ).toContain('page');
   });
 
-  it('gives the page it renders the document its main landmark', async () => {
+  it('leaves the main landmark to the app shell', async () => {
     await go('/docs/image/control-types');
 
-    const mains = (fixture.nativeElement as HTMLElement).querySelectorAll(
-      'main',
-    );
-    expect(mains).toHaveLength(1);
-    expect(mains[0].className).toContain('gs-learn-outlet');
+    // AppComponent wraps every routed page in the document's one <main>, so a
+    // second one here would split the landmark.
+    const shell = fixture.nativeElement as HTMLElement;
+    expect(shell.querySelectorAll('main')).toHaveLength(0);
+    expect(shell.querySelector('.gs-learn-outlet')?.tagName).toBe('DIV');
   });
 
   it('brings the entry it marks into the middle of the row', async () => {

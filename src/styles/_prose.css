@@ -103,9 +103,11 @@
   }
 
   /* Prose links */
+  /* The accent text token holds 4.5:1 in both themes. Blue-500 on white is
+     3.7:1. */
   .prose-content a {
-    @apply text-blue-500 underline underline-offset-2 transition-colors duration-150;
-    @apply dark:text-blue-400;
+    @apply underline underline-offset-2 transition-colors duration-150;
+    color: var(--hd-accent-text);
   }
 
   .prose-content a:hover {

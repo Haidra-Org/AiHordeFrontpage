@@ -60,6 +60,33 @@ const PHONE = 390;
 const DESKTOP = 1280;
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const CONTRAST_ONLY = ["color-contrast"];
+// axe files these under best-practice rather than a WCAG tag, so the tag scan
+// skips them. They catch a page with no main landmark, or content left outside
+// every landmark.
+const LANDMARK_RULES = ["landmark-one-main", "region"];
+// The studio's sticky overlays: the docked chips, the Generate row and the
+// phone tab bar. The form scrolls under them by design, so whichever control
+// sits at their line when axe scans counts as partly hidden. _generate.css
+// reserves scroll padding for them (--gs-dock-reserve), so a control that is
+// focused or scrolled to comes to rest clear of them. A target-size hit whose
+// only cover is one of these is dropped; any other cover still fails.
+const STICKY_OVERLAY =
+  /\.gs-(dock|dock-chip|genbtn|submitrow|subtabs|subtab)\b/;
+
+/** Whether axe failed this node's target size only because a sticky overlay covers it. */
+function coveredOnlyByStickyOverlay(node) {
+  const obscured = node.any.filter((check) => /obscured/i.test(check.message));
+  return (
+    obscured.length > 0 &&
+    obscured.every(
+      (check) =>
+        check.relatedNodes.length > 0 &&
+        check.relatedNodes.every((related) =>
+          STICKY_OVERLAY.test(related.target.join(" ")),
+        ),
+    )
+  );
+}
 
 /** Storage the page reads on load: the theme, and the studio's first-visit flags so the audit sees the working studio; the welcome dialog is audited on its own below. */
 function seedStorage(theme, welcomed) {
@@ -70,11 +97,25 @@ function seedStorage(theme, welcomed) {
 }
 
 async function audit(page, label, rules) {
-  const builder = new AxeBuilder({ page });
-  const results = await (
-    rules ? builder.withRules(rules) : builder.withTags(TAGS)
-  ).analyze();
-  return results.violations.map((violation) => ({
+  const passes = rules ? [rules] : [null, LANDMARK_RULES];
+  const violations = [];
+  for (const only of passes) {
+    const builder = new AxeBuilder({ page });
+    const results = await (
+      only ? builder.withRules(only) : builder.withTags(TAGS)
+    ).analyze();
+    for (const violation of results.violations) {
+      if (violation.id === "target-size") {
+        violation.nodes = violation.nodes.filter(
+          (node) => !coveredOnlyByStickyOverlay(node),
+        );
+      }
+      if (violation.nodes.length > 0) {
+        violations.push(violation);
+      }
+    }
+  }
+  return violations.map((violation) => ({
     id: violation.id,
     impact: violation.impact,
     help: violation.help,

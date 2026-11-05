@@ -103,8 +103,7 @@ On push, `npm run typecheck` runs, then the Vitest specs affected by changes sin
 
 ## CI Pipeline
 
-Pull requests and pushes to `main` run these jobs. All must pass except the accessibility audit, which only reports
-for now:
+Pull requests and pushes to `main` run these jobs (all must pass):
 
 1. **Static checks**: `npm run lint`, `npm run lint:prettier-sync`, `npm run format:check`, `npm run typecheck:app`,
    `npm run typecheck:spec` and `npm run lint:css`.
@@ -113,12 +112,12 @@ for now:
 3. **Dependency audit**: `npm audit --omit=dev --audit-level=moderate` over the production dependencies.
 4. **Build**: builds the Docker image, starts it, and runs `npm run smoke:ssr` against it.
 5. **Accessibility audit**: builds the site, serves the SSR build and runs `npm run audit:a11y`. Every route gets the
-   full WCAG rule set at 390px and 1280px in the light theme, and the colour-contrast rule alone at both widths in the
-   dark theme, since contrast is the only rule that depends on the theme. Scans run in parallel and start once the
-   routed page is attached, plus a bounded wait for API-loaded content on the data pages. The script exits non-zero on
-   any axe violation, and a page that fails to load is reported without failing it. The job is report-only
-   (`continue-on-error`) until the existing violations are fixed. The report is uploaded as the `a11y-report`
-   artifact.
+   full WCAG rule set at 390px and 1280px in the light theme, plus axe's `landmark-one-main` and `region` rules, and
+   the colour-contrast rule alone at both widths in the dark theme, since contrast is the only rule that depends on
+   the theme. Scans run in parallel and start once the routed page is attached, plus a bounded wait for API-loaded
+   content on the data pages. Any axe violation fails the job, and a page that fails to load is reported without
+   failing it. A target-size hit is dropped when the only thing covering the control is one of the studio's sticky
+   overlays, which the form scrolls under by design. The report is uploaded as the `a11y-report` artifact.
 
 Dependabot (`.github/dependabot.yml`) opens weekly pull requests for npm packages, GitHub Actions, the Docker base
 image and the Discord scripts' Python packages. The Angular packages are grouped so they move together.

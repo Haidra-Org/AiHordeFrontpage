@@ -1025,8 +1025,19 @@ const FILM_PAGE_FRACTION = 0.8;
                                 index() === i ? 'true' : null
                               "
                               [attr.aria-label]="
-                                'generate.sweeps.stop_go'
-                                  | transloco: { value: namedValue(option) }
+                                option.crop
+                                  ? ('generate.sweeps.stop_go_detail_film'
+                                    | transloco
+                                      : {
+                                          tag:
+                                            'generate.sweeps.crop_tag'
+                                            | transloco,
+                                          value: valueTextOf(option),
+                                          setting:
+                                            parameterLabelKey() | transloco,
+                                        })
+                                  : ('generate.sweeps.stop_go'
+                                    | transloco: { value: namedValue(option) })
                               "
                               (click)="goToStop(i)"
                             >

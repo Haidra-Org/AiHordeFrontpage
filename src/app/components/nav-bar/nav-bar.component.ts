@@ -94,6 +94,7 @@ export class NavBarComponent implements OnInit, AfterViewInit, OnDestroy {
    * tab stops ahead of the navigation.
    */
   public readonly githubStars = signal<number | null>(null);
+  /** The hidden words read after the visible "Star" and count. */
   public readonly githubStarLabelKey = computed(() => {
     const stars = this.githubStars();
     if (stars === null) return 'nav.github_star_label';
