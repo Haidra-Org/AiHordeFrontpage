@@ -116,7 +116,7 @@
   },
   {
     "question": "Does the horde spy on my prompts and generations?",
-    "answer": "<p>No, the AI Horde itself does not store such details for surveillance or data collection purposes. Prompts and generations are only stored in memory temporarily during processing and are deleted shortly after the generation is delivered or canceled.</p><p>The system retains requests only long enough to facilitate job processing and result retrieval. Once you've retrieved your results or the request expires, the data is permanently removed from our systems. Read our <a href='/privacy'>privacy policy</a> for more details.</p>",
+    "answer": "<p>No. The AI Horde keeps a request and its results only while the request is processed and until you retrieve the results or the request expires. After that they are deleted. Workers receive the prompt without your account or IP address.</p><p>There is one exception. When the prompt filter rejects a prompt, or a worker reports a generation as suspected child sexual abuse material, the Horde keeps a moderation record so that a human moderator can review it. The record includes the prompt, your account and your IP address. The prompt and IP address are removed after a set time, and the record is later anonymized, unless a moderator acts on it. The <a href='/privacy'>privacy policy</a> lists what is recorded and for how long.</p>",
     "section": "Horde"
   },
   {
