@@ -145,11 +145,87 @@ describe('CivitaiDetailComponent', () => {
     });
   });
 
+  it('requires placement for a new TI and offers a reference without trained words', async () => {
+    await open({
+      kind: 'ti',
+      model: { ...MODEL, versions: [version(11, { trainedWords: [] })] },
+    });
+    const applied = vi.fn();
+    component.apply.subscribe(applied);
+    component.onApply();
+    expect(applied).not.toHaveBeenCalled();
+    expect(component.reference()).toBe('embedding:1');
+    component.setInjectTi('negprompt');
+    component.onApply();
+    expect(applied).toHaveBeenCalledWith(
+      expect.objectContaining({ inject_ti: 'negprompt' }),
+    );
+  });
+
+  it('inserts a weighted reference and changes automatic placement to manual', async () => {
+    await open({
+      kind: 'ti',
+      current: {
+        name: '1',
+        strength: 0.7,
+        inject_ti: 'prompt',
+        baseModel: 'SD 1.5',
+      },
+    });
+    fixture.componentRef.setInput('prompts', {
+      prompt: 'portrait',
+      negativePrompt: 'blur',
+    });
+    const edits = vi.fn();
+    const applied = vi.fn();
+    component.promptEdit.subscribe(edits);
+    component.apply.subscribe(applied);
+    component.insertTi('negprompt');
+    expect(edits).not.toHaveBeenCalled();
+    expect(component.shownPrompts()?.negativePrompt).toBe(
+      'blur, (embedding:1:0.7)',
+    );
+    expect(component.injectTi()).toBeNull();
+    component.tiStrength.set(1);
+    expect(component.insertedReference()).toEqual({
+      text: '(embedding:1:0.7)',
+      target: 'negprompt',
+    });
+    component.onApply();
+    expect(edits).toHaveBeenCalledTimes(1);
+    expect(edits).toHaveBeenCalledWith({
+      target: 'negprompt',
+      text: 'blur, (embedding:1:0.7)',
+    });
+    expect(applied).toHaveBeenCalledWith(
+      expect.objectContaining({ name: '1', strength: 1 }),
+    );
+    expect(applied.mock.calls[0][0]).not.toHaveProperty('inject_ti');
+  });
+
+  it('discards inserted and typed prompt text when closed without applying', async () => {
+    await open({ kind: 'ti' });
+    fixture.componentRef.setInput('prompts', {
+      prompt: 'portrait',
+      negativePrompt: '',
+    });
+    const edits = vi.fn();
+    const applied = vi.fn();
+    component.promptEdit.subscribe(edits);
+    component.apply.subscribe(applied);
+    component.insertTi('prompt');
+    component.editDraft('negprompt', 'blur');
+    component.onClose();
+    expect(edits).not.toHaveBeenCalled();
+    expect(applied).not.toHaveBeenCalled();
+  });
+
   it('hands back an embedding named by its model page', async () => {
     await open({ kind: 'ti' });
     const applied: (LoraSelection | TiSelection)[] = [];
     component.apply.subscribe((entry) => applied.push(entry));
 
+    component.setInjectTi(null);
     component.onApply();
 
     // The horde's embedding payload has no version field at all.
@@ -185,30 +261,68 @@ describe('CivitaiDetailComponent', () => {
       expect(component.canInject('detailed')).toBe(true);
     });
 
-    it('passes the raw word to whoever owns the prompt', async () => {
-      await open();
-      const appended: string[] = [];
-      component.appendToPrompt.subscribe((word) => appended.push(word));
-
-      component.onAppendTrigger('detailed');
-
-      expect(appended).toEqual(['detailed']);
+    it('inserts a LoRA trigger into the chosen prompt and opens the shared editor', async () => {
+      await open({ versionId: 11 });
+      fixture.componentRef.setInput('prompts', {
+        prompt: 'portrait',
+        negativePrompt: 'blur',
+      });
+      fixture.detectChanges();
+      component.setTrigger('detailed');
+      const edited = vi.fn();
+      const applied = vi.fn();
+      component.promptEdit.subscribe(edited);
+      component.apply.subscribe(applied);
+      component.insertLora('detailed', 'negprompt');
+      fixture.detectChanges();
+      expect(component.promptsOpen()).toBe(true);
+      expect(component.injectTrigger()).toBeNull();
+      const editors = fixture.nativeElement.querySelectorAll('textarea');
+      expect(editors.length).toBe(2);
+      expect(editors[1].value).toBe('blur, detailed');
+      editors[0].value = 'portrait, sharp';
+      editors[0].dispatchEvent(new Event('input'));
+      expect(edited).not.toHaveBeenCalled();
+      component.onApply();
+      expect(edited.mock.calls).toEqual([
+        [{ target: 'prompt', text: 'portrait, sharp' }],
+        [{ target: 'negprompt', text: 'blur, detailed' }],
+      ]);
+      expect(applied).toHaveBeenCalledWith(
+        expect.objectContaining({ name: '11' }),
+      );
+      expect(applied.mock.calls[0][0]).not.toHaveProperty('inject_trigger');
     });
 
-    // The prompt it wrote into is behind this panel and the picker over it, so
-    // the button is the only place the press can be seen to have worked.
-    it('says on the button which word went into the prompt', async () => {
-      await open();
-      vi.useFakeTimers();
-      try {
-        component.onAppendTrigger('detailed');
-        expect(component.promptedWord()).toBe('detailed');
+    it('disables the TI trigger buttons while placement is automatic', async () => {
+      await open({ kind: 'ti' });
+      const triggerButtons = (): HTMLButtonElement[] => [
+        ...(
+          fixture.nativeElement as HTMLElement
+        ).querySelectorAll<HTMLButtonElement>(
+          '.hd-asset-detail-reference .hd-btn, .hd-asset-detail-actions .hd-btn',
+        ),
+      ];
+      component.setInjectTi('negprompt');
+      fixture.detectChanges();
+      expect(triggerButtons().length).toBe(3);
+      expect(triggerButtons().every((button) => button.disabled)).toBe(true);
+      component.setInjectTi(null);
+      fixture.detectChanges();
+      expect(triggerButtons().some((button) => button.disabled)).toBe(false);
+    });
 
-        vi.advanceTimersByTime(5000);
-        expect(component.promptedWord()).toBeNull();
-      } finally {
-        vi.useRealTimers();
-      }
+    it('opens the same prompt editor after TI insertion', async () => {
+      await open({ kind: 'ti' });
+      fixture.componentRef.setInput('prompts', {
+        prompt: 'portrait',
+        negativePrompt: '',
+      });
+      fixture.detectChanges();
+      component.insertTi('prompt');
+      fixture.detectChanges();
+      expect(component.promptsOpen()).toBe(true);
+      expect(fixture.nativeElement.querySelectorAll('textarea').length).toBe(2);
     });
 
     it('carries the wildcard through as the horde spells it', async () => {

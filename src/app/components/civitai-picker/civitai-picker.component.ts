@@ -1,3 +1,5 @@
+import type { AssetPrompts, PromptEdit } from '../../types/ti-prompt';
+import { type PromptInsertion } from '../../types/ti-prompt';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -131,7 +133,9 @@ export class CivitaiPickerComponent implements OnInit {
 
   public readonly lorasChange = output<LoraSelection[]>();
   public readonly tisChange = output<TiSelection[]>();
-  public readonly appendToPrompt = output<string>();
+  public readonly prompts = input<AssetPrompts | null>(null);
+  public readonly promptEdit = output<PromptEdit>();
+  public readonly appendToPrompt = output<PromptInsertion>();
   public readonly closed = output<void>();
 
   public readonly queryControl = new FormControl('', { nonNullable: true });
@@ -162,6 +166,7 @@ export class CivitaiPickerComponent implements OnInit {
   public readonly columnOptions = COLUMN_OPTIONS;
   public readonly columns = signal(clampColumns(this.db.get(COLUMNS_PREF_KEY)));
   public readonly manualOpen = signal(false);
+  public readonly manualPlacement = signal('');
   public readonly revealed = signal<ReadonlySet<string>>(new Set());
 
   public readonly manualName = new FormControl('', { nonNullable: true });
@@ -433,21 +438,7 @@ export class CivitaiPickerComponent implements OnInit {
     void this.cache.putSearchResult(model);
 
     if (model.type === 'TextualInversion') {
-      const version = model.versions[0];
-      this.tisChange.emit([
-        ...this.tis(),
-        {
-          // Always the model page: the horde's embedding payload has no field
-          // for a version.
-          name: String(model.id),
-          strength: DEFAULT_LORA_STRENGTH,
-          label: model.name,
-          baseModel: version?.baseModel,
-          thumbnailUrl: model.preview?.url,
-          modelId: model.id,
-          triggerWords: version?.trainedWords,
-        },
-      ]);
+      this.openDetails(model);
       return;
     }
 
@@ -566,7 +557,14 @@ export class CivitaiPickerComponent implements OnInit {
       return;
     }
     if (this.tab() === 'ti') {
-      const entry = manualTiSelection({ name });
+      if (!this.manualPlacement()) return;
+      const entry = manualTiSelection({
+        name,
+        injectTi:
+          this.manualPlacement() === 'manual'
+            ? undefined
+            : (this.manualPlacement() as 'prompt' | 'negprompt'),
+      });
       if (entry) {
         this.tisChange.emit([...this.tis(), entry]);
       }
@@ -579,6 +577,7 @@ export class CivitaiPickerComponent implements OnInit {
         this.lorasChange.emit([...this.loras(), entry]);
       }
     }
+    this.manualPlacement.set('');
     this.manualName.setValue('');
     this.manualIsVersion.set(false);
   }

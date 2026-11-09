@@ -424,6 +424,22 @@ describe('ImageMetaPanelComponent', () => {
       expect(rowValue('tis')).toContain('generate.results.meta_ti_id');
     });
 
+    it('labels TIs as requested and omits the unused strength for manual placement', () => {
+      fixture.componentRef.setInput('request', {
+        ...withAssets,
+        params: { ...withAssets.params, tis: [{ name: '7808', strength: 3 }] },
+      });
+      fixture.detectChanges();
+      const row = component.groups()[1].rows.find((row) => row.id === 'tis');
+      expect(row?.labelKey).toBe('generate.results.meta_tis_requested');
+      expect(rowValue('tis')).toContain(
+        'generate.civitai.detail_inject_ti_none',
+      );
+      expect(rowValue('tis')).not.toContain(
+        'generate.results.meta_weight_strength',
+      );
+    });
+
     it('hands every identifier in the request to the resolver', () => {
       fixture.componentRef.setInput('request', withAssets);
       fixture.detectChanges();

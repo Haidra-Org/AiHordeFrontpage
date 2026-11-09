@@ -2,8 +2,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CivitaiSelectionComponent } from './civitai-selection.component';
+import { PromptReviewService } from '../../services/prompt-review.service';
 import { CivitaiResolverService } from '../../services/civitai-resolver.service';
 import type { LoraSelection } from '../../types/civitai-asset';
+import type { PromptInsertion } from '../../types/ti-prompt';
 
 const lora = (
   name: string,
@@ -28,6 +30,7 @@ describe('CivitaiSelectionComponent', () => {
         }),
       ],
       providers: [
+        PromptReviewService,
         {
           provide: CivitaiResolverService,
           useValue: { metaFor, requestAll, request: vi.fn() },
@@ -43,6 +46,99 @@ describe('CivitaiSelectionComponent', () => {
     fixture.componentRef.setInput('loras', loras);
     fixture.detectChanges();
   }
+
+  describe('a Manual TI', () => {
+    const range = (): HTMLInputElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'input[type="range"]',
+      );
+
+    it('sets the insert strength while its trigger is not written', () => {
+      fixture.componentRef.setInput('tis', [{ name: '1', strength: 0.7 }]);
+      fixture.componentRef.setInput('prompts', {
+        prompt: 'a cat',
+        negativePrompt: '',
+      });
+      fixture.detectChanges();
+      expect(component.manualWeight('1')).toEqual({ state: 'missing' });
+      const changes = vi.fn();
+      const edits = vi.fn();
+      component.tisChange.subscribe(changes);
+      component.promptEdit.subscribe(edits);
+      component.onTiSlide(0, component.tis()[0], 0.5);
+      component.onTiRelease(0, component.tis()[0], 0.5);
+      expect(changes).toHaveBeenCalledWith([{ name: '1', strength: 0.5 }]);
+      expect(edits).not.toHaveBeenCalled();
+      expect(range()).not.toBeNull();
+    });
+
+    it('rewrites the written weight once, on release', () => {
+      fixture.componentRef.setInput('tis', [{ name: '1', strength: 1 }]);
+      fixture.componentRef.setInput('prompts', {
+        prompt: 'a cat',
+        negativePrompt: 'blur, (embedding:1:0.8)',
+      });
+      fixture.detectChanges();
+      expect(range()?.value).toBe('0.8');
+      const edits = vi.fn();
+      const changes = vi.fn();
+      component.promptEdit.subscribe(edits);
+      component.tisChange.subscribe(changes);
+      const entry = component.tis()[0];
+      component.onTiSlide(0, entry, 0.6);
+      component.onTiSlide(0, entry, 0.45);
+      expect(component.tiSliderValue(0, entry)).toBe(0.45);
+      expect(edits).not.toHaveBeenCalled();
+      component.onTiRelease(0, entry, 0.45);
+      expect(edits.mock.calls).toEqual([
+        [{ target: 'negprompt', text: 'blur, (embedding:1:0.45)' }],
+      ]);
+      expect(changes).toHaveBeenCalledWith([{ name: '1', strength: 0.45 }]);
+    });
+
+    it('hides the slider when the trigger is written more than once', () => {
+      fixture.componentRef.setInput('tis', [{ name: '1', strength: 1 }]);
+      fixture.componentRef.setInput('prompts', {
+        prompt: 'embedding:1 cat, (embedding:1:0.8)',
+        negativePrompt: '',
+      });
+      fixture.detectChanges();
+      expect(component.manualWeight('1')).toEqual({ state: 'multiple' });
+      expect(range()).toBeNull();
+    });
+
+    it('warns and hides the slider when the trigger is in both prompts', () => {
+      fixture.componentRef.setInput('tis', [{ name: '1', strength: 1 }]);
+      fixture.componentRef.setInput('prompts', {
+        prompt: 'embedding:1 cat',
+        negativePrompt: '(embedding:1:0.8)',
+      });
+      fixture.detectChanges();
+      expect(component.manualWeight('1')).toEqual({ state: 'both' });
+      expect(range()).toBeNull();
+      const status = (fixture.nativeElement as HTMLElement).querySelector(
+        '.gs-cvsel-manual',
+      );
+      expect(status?.classList.contains('gs-sublabel--warn')).toBe(true);
+      expect(status?.textContent).toContain('generate.civitai.ti_manual_both');
+    });
+  });
+
+  it('shows strength for automatic placement and emits explicit row placement changes', () => {
+    fixture.componentRef.setInput('tis', [
+      { name: '1', strength: 0.7, inject_ti: 'prompt' },
+    ]);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('input[type="range"]')).not.toBeNull();
+    fixture.componentRef.setInput('tis', [{ name: '1', strength: 0.7 }]);
+    const changes = vi.fn();
+    component.tisChange.subscribe(changes);
+    component.setPlacement(0, 'negprompt');
+    expect(changes).toHaveBeenCalledWith([
+      { name: '1', strength: 0.7, inject_ti: 'negprompt' },
+    ]);
+  });
 
   describe('naming a row', () => {
     it('prefers the name chosen alongside the selection', () => {
@@ -241,7 +337,7 @@ describe('CivitaiSelectionComponent', () => {
     });
 
     it('hands a trigger word to whoever owns the prompt', () => {
-      const appended: string[] = [];
+      const appended: PromptInsertion[] = [];
       component.appendToPrompt.subscribe((text) => appended.push(text));
 
       component.onAppendTrigger('detailed');
@@ -249,6 +345,174 @@ describe('CivitaiSelectionComponent', () => {
       // The studio's prompt is plain text and a style's is a template, so the
       // list never writes to either itself.
       expect(appended).toEqual(['detailed']);
+    });
+
+    describe('trigger chips with the prompts in view', () => {
+      const prompts = (prompt: string): void => {
+        fixture.componentRef.setInput('prompts', {
+          prompt,
+          negativePrompt: '',
+        });
+      };
+
+      it('adds a missing trigger and turns off the automatic trigger', () => {
+        setLoras([lora('a', { inject_trigger: 'any' })]);
+        prompts('a cat');
+        const edits = vi.fn();
+        const changes = vi.fn();
+        component.promptEdit.subscribe(edits);
+        component.lorasChange.subscribe(changes);
+        component.onTrigger(0, 'detailed');
+        expect(edits).toHaveBeenCalledWith({
+          target: 'prompt',
+          text: 'a cat, detailed',
+        });
+        expect(changes.mock.calls[0][0][0]).not.toHaveProperty(
+          'inject_trigger',
+        );
+        expect(component.triggerAnnouncement()).toEqual({
+          action: 'added',
+          word: 'detailed',
+        });
+      });
+
+      it('removes its own entry without asking', () => {
+        setLoras([lora('a')]);
+        const edits = vi.fn();
+        component.promptEdit.subscribe(edits);
+        prompts('a cat');
+        component.onTrigger(0, 'detailed');
+        prompts('a cat, detailed');
+        component.onTrigger(0, 'detailed');
+        expect(edits.mock.calls[1][0]).toEqual({
+          target: 'prompt',
+          text: 'a cat',
+        });
+        expect(component.pendingRemoval()).toBeNull();
+      });
+
+      it('asks before removing a word the user wrote, or edited after adding', () => {
+        setLoras([lora('a')]);
+        const edits = vi.fn();
+        component.promptEdit.subscribe(edits);
+        prompts('a detailed cat');
+        component.onTrigger(0, 'detailed');
+        expect(edits).not.toHaveBeenCalled();
+        expect(component.pendingRemoval()).toEqual({
+          index: 0,
+          word: 'detailed',
+        });
+        component.closeRemoval();
+        expect(component.pendingRemoval()).toBeNull();
+
+        prompts('a cat');
+        component.onTrigger(0, 'detailed');
+        prompts('a cat, (detailed:1.2)');
+        component.onTrigger(0, 'detailed');
+        expect(edits).toHaveBeenCalledTimes(1);
+        expect(component.pendingRemoval()).not.toBeNull();
+      });
+
+      it('removes every written use on confirmation', () => {
+        setLoras([lora('a')]);
+        const edits = vi.fn();
+        component.promptEdit.subscribe(edits);
+        prompts('a detailed cat, (detailed:1.2)');
+        component.onTrigger(0, 'detailed');
+        component.confirmRemoval();
+        expect(edits).toHaveBeenCalledWith({ target: 'prompt', text: 'a cat' });
+        expect(component.pendingRemoval()).toBeNull();
+      });
+
+      it('asks the host to show the first written use', () => {
+        setLoras([lora('a')]);
+        const reveals = vi.fn();
+        TestBed.inject(PromptReviewService).connect(reveals);
+        prompts('a Detailed cat');
+        component.onTrigger(0, 'detailed');
+        component.showInPrompt();
+        expect(reveals).toHaveBeenCalledWith({
+          target: 'prompt',
+          start: 2,
+          end: 10,
+        });
+        expect(component.pendingRemoval()).not.toBeNull();
+      });
+
+      it('steps through every match and offers to remove all of them', () => {
+        setLoras([lora('a', { triggerWords: ['detailed'] })]);
+        const reveals = vi.fn();
+        TestBed.inject(PromptReviewService).connect(reveals);
+        prompts('detailed, a detailed background');
+        fixture.detectChanges();
+        const host = fixture.nativeElement as HTMLElement;
+        expect(
+          host.querySelector('.gs-cvsel-trigger-count')?.textContent,
+        ).toContain('2');
+        component.onTrigger(0, 'detailed');
+        fixture.detectChanges();
+        expect(host.querySelector('.gs-cvsel-confirm')?.textContent).toContain(
+          'generate.civitai.trigger_confirm_many',
+        );
+        component.showInPrompt();
+        component.showInPrompt();
+        component.showInPrompt();
+        expect(reveals.mock.calls.map(([range]) => range.start)).toEqual([
+          0, 12, 0,
+        ]);
+      });
+
+      it('removes its own entry and reports the uses that remain', () => {
+        setLoras([lora('a')]);
+        const edits = vi.fn();
+        component.promptEdit.subscribe(edits);
+        prompts('a detailed cat');
+        component.closeRemoval();
+        component.onTrigger(0, 'detailed');
+        expect(component.pendingRemoval()).not.toBeNull();
+        component.closeRemoval();
+
+        setLoras([lora('b')]);
+        prompts('a cat');
+        component.onTrigger(0, 'sharp');
+        prompts('a sharp knife, sharp');
+        component.onTrigger(0, 'sharp');
+        expect(edits).toHaveBeenLastCalledWith({
+          target: 'prompt',
+          text: 'a sharp knife',
+        });
+        expect(component.triggerAnnouncement()).toEqual({
+          action: 'removed_left_one',
+          word: 'sharp',
+          count: 1,
+        });
+      });
+
+      it('shows the warning under the row with focus on Cancel', async () => {
+        setLoras([lora('a', { triggerWords: ['detailed'] })]);
+        prompts('a detailed cat');
+        fixture.detectChanges();
+        component.onTrigger(0, 'detailed');
+        fixture.detectChanges();
+        await fixture.whenStable();
+        const host = fixture.nativeElement as HTMLElement;
+        expect(host.querySelector('.gs-cvsel-confirm')).not.toBeNull();
+        expect(
+          document.activeElement?.hasAttribute('data-confirm-cancel'),
+        ).toBe(true);
+      });
+
+      it('marks the chip pressed while its word is in the prompt', () => {
+        setLoras([lora('a', { triggerWords: ['detailed', 'sharp'] })]);
+        prompts('(detailed:1.2) cat');
+        fixture.detectChanges();
+        const chips = [
+          ...(fixture.nativeElement as HTMLElement).querySelectorAll(
+            '.gs-cvsel-trigger',
+          ),
+        ].map((chip) => chip.getAttribute('aria-pressed'));
+        expect(chips).toEqual(['true', 'false']);
+      });
     });
 
     it('opens the details on the row that was asked about', () => {

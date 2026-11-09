@@ -221,6 +221,21 @@ describe('deriveImageMeta', () => {
     ]);
   });
 
+  it.each(['download_failed', 'parse_failed', 'baseline_mismatch'] as const)(
+    'keeps the requested TI and reports its worker %s warning separately',
+    (value) => {
+      const request = {
+        ...TXT2IMG_REQUEST,
+        params: { tis: [{ name: '7808', strength: 1 }] },
+      };
+      expect(
+        deriveImageMeta(metadata([{ type: 'ti', value, ref: '7808' }]), request)
+          .errors,
+      ).toEqual([{ type: 'ti', value, ref: '7808' }]);
+      expect(request.params.tis).toHaveLength(1);
+    },
+  );
+
   it('keeps lora and ti faults regardless of the source inputs', () => {
     const derived = deriveImageMeta(
       metadata([

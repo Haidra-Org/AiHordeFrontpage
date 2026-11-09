@@ -1,3 +1,17 @@
+import { revealTextareaRange } from '../../../helper/reveal-textarea-range';
+import { PromptReviewService } from '../../../services/prompt-review.service';
+import { PromptReviewBarComponent } from '../../prompt-review-bar/prompt-review-bar.component';
+import {
+  type AssetPrompts,
+  type PromptEdit,
+  type PromptRange,
+  selectManualLora,
+} from '../../../types/ti-prompt';
+import {
+  type PromptInsertion,
+  selectManualTi,
+  insertStyleReference,
+} from '../../../types/ti-prompt';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -171,12 +185,16 @@ export interface StyleFormSubmitEvent {
     ToggleCheckboxComponent,
     ModelAutocompleteComponent,
     IconComponent,
+    PromptReviewBarComponent,
   ],
+  providers: [PromptReviewService],
   templateUrl: './style-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StyleFormComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
+  /** Shared with the LoRA list, which reviews trigger words in the template. */
+  private readonly promptReview = inject(PromptReviewService);
   private readonly aiHorde = inject(AiHordeService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
@@ -372,15 +390,70 @@ export class StyleFormComponent implements OnInit, OnChanges {
    * template around {p} and {np} rather than plain text, so the word goes just
    * before the negative half where there is one, and on the end otherwise.
    */
-  public appendToPrompt(trigger: string): void {
+  public assetPrompts(): AssetPrompts {
+    const text = String(this.form.controls['prompt']?.value ?? '');
+    const marker = text.indexOf('###');
+    return {
+      prompt: marker < 0 ? text : text.slice(0, marker),
+      negativePrompt: marker < 0 ? '' : text.slice(marker + 3),
+      template: true,
+    };
+  }
+
+  public editAssetPrompt(edit: PromptEdit): void {
+    const current = this.assetPrompts();
+    const positive = edit.target === 'prompt' ? edit.text : current.prompt;
+    const negative =
+      edit.target === 'negprompt' ? edit.text : current.negativePrompt;
+    const hadDelimiter = String(
+      this.form.controls['prompt']?.value ?? '',
+    ).includes('###');
+    this.form.controls['prompt']?.setValue(
+      positive + (hadDelimiter || negative ? '###' + negative : ''),
+    );
+    this.form.markAsDirty();
+  }
+
+  /**
+   * Scrolls to a span of one template half and selects it. The template is a
+   * single field, so a negative-half span is offset past the `###` delimiter.
+   */
+  public revealPromptRange(range: PromptRange): void {
+    const input = document.querySelector<HTMLTextAreaElement>('#style-prompt');
+    if (!input) return;
+    const marker = input.value.indexOf('###');
+    const offset = range.target === 'negprompt' && marker >= 0 ? marker + 3 : 0;
+    revealTextareaRange(input, range.start + offset, range.end + offset);
+  }
+
+  public appendToPrompt(insertion: PromptInsertion): void {
+    const event =
+      typeof insertion === 'string'
+        ? { text: insertion, target: 'prompt' as const }
+        : insertion;
+    if (event.lora)
+      this.setLoras(
+        selectManualLora(
+          (this.form.value as ImageStyleFormValue).loras ?? [],
+          event.lora,
+          event.previousLoraName,
+        ),
+      );
+    if (event.ti)
+      this.setTis(
+        selectManualTi(
+          (this.form.value as ImageStyleFormValue).tis ?? [],
+          event.ti,
+        ),
+      );
     const control = this.form.controls['prompt'];
-    const current = String(control?.value ?? '');
-    const marker = current.indexOf('{np}');
-    const next =
-      marker >= 0
-        ? `${current.slice(0, marker).trimEnd()}, ${trigger} ${current.slice(marker)}`
-        : `${current.trimEnd()}, ${trigger}`;
-    control?.setValue(next.replace(/^,\s*/, ''));
+    control?.setValue(
+      insertStyleReference(
+        String(control.value ?? ''),
+        event.text,
+        event.target,
+      ),
+    );
     this.form.markAsDirty();
   }
 
@@ -416,6 +489,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
+    this.promptReview.connect((range) => this.revealPromptRange(range));
     this.initializeForm();
     this.loadModels();
     if (this.isImageStyle()) {

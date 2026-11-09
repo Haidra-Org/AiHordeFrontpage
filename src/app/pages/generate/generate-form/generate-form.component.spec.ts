@@ -4628,3 +4628,59 @@ describe('GenerateFormComponent post-processing selects', () => {
     expect(chosen(host, 'generate-upscaler')).toBe('');
   });
 });
+
+describe('studio TI insertion', () => {
+  it('selects manual placement in place and inserts once into the requested prompt', async () => {
+    const { component, form } = await createComponent(null);
+    const ti = { name: '1', strength: 0.7, inject_ti: 'prompt' as const };
+    const other = { name: '2', strength: 1 };
+    form.controls.tis.setValue([ti, other]);
+    form.controls.prompt.setValue('portrait');
+    const event = {
+      text: '(embedding:1:0.7)',
+      target: 'negprompt' as const,
+      ti,
+    };
+    component.appendToPrompt(event);
+    component.appendToPrompt(event);
+    expect(form.controls.tis.value).toEqual([
+      { name: '1', strength: 0.7 },
+      other,
+    ]);
+    expect(form.controls.prompt.value).toBe('portrait');
+    expect(form.controls.negativePrompt.value).toBe('(embedding:1:0.7)');
+    expect(form.controls.negativePrompt.dirty).toBe(true);
+  });
+});
+
+describe('asset prompt editor', () => {
+  it('updates the written prompt immediately and marks it dirty', async () => {
+    const { component, form } = await createComponent(null);
+    form.controls.negativePrompt.setValue('keep');
+    component.editAssetPrompt({ target: 'prompt', text: 'changed text' });
+    expect(form.controls.prompt.value).toBe('changed text');
+    expect(form.controls.prompt.dirty).toBe(true);
+    expect(form.controls.negativePrompt.value).toBe('keep');
+  });
+
+  it('keeps a manually inserted LoRA selected once and disables its automatic trigger', async () => {
+    const { component, form } = await createComponent(null);
+    const lora = {
+      name: '11',
+      model: 0.7,
+      clip: 1,
+      inject_trigger: 'detail',
+      is_version: true,
+    };
+    const other = { name: '12', model: 1, clip: 1 };
+    form.controls.loras.setValue([lora, other]);
+    const event = { text: 'detail', target: 'negprompt' as const, lora };
+    component.appendToPrompt(event);
+    component.appendToPrompt(event);
+    expect(form.controls.loras.value).toEqual([
+      { name: '11', model: 0.7, clip: 1, is_version: true },
+      other,
+    ]);
+    expect(form.controls.negativePrompt.value).toBe('detail');
+  });
+});

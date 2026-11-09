@@ -204,12 +204,11 @@ describe('CivitaiPickerComponent', () => {
         model(7808, { type: 'TextualInversion', rawType: 'TextualInversion' }),
       );
 
-      // The horde's embedding payload has no version field at all.
-      expect(emitted[0][0]).toMatchObject({
-        name: '7808',
-        label: 'Model 7808',
+      expect(emitted).toEqual([]);
+      expect(component.detailTarget()).toMatchObject({
+        kind: 'ti',
+        modelId: 7808,
       });
-      expect(emitted[0][0]).not.toHaveProperty('is_version');
     });
   });
 
@@ -278,6 +277,22 @@ describe('CivitaiPickerComponent', () => {
   });
 
   describe('adding by hand', () => {
+    it('requires a fresh placement choice for each hand-entered TI', () => {
+      start();
+      component.setTab('ti');
+      const changed = vi.fn();
+      component.tisChange.subscribe(changed);
+      component.manualName.setValue('7808');
+      component.addManual();
+      expect(changed).not.toHaveBeenCalled();
+      component.manualPlacement.set('negprompt');
+      component.addManual();
+      expect(changed).toHaveBeenCalledWith([
+        expect.objectContaining({ name: '7808', inject_ti: 'negprompt' }),
+      ]);
+      expect(component.manualPlacement()).toBe('');
+    });
+
     it('offers the version question only where the horde would accept it', () => {
       start();
       component.manualName.setValue('epi_noiseoffset');

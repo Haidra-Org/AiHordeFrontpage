@@ -298,6 +298,10 @@
               </button>
             }
           </div>
+          <app-prompt-review-bar
+            target="prompt"
+            [text]="form().controls.prompt.value"
+          />
           <!-- The one thing a reader meeting the panel has to be told: every
                other card can be left as it is. It goes once two pictures have
                come back, which is proof enough that the reader knows. -->
@@ -1561,6 +1565,11 @@
               </button>
             </div>
             <app-civitai-selection
+              [prompts]="{
+                prompt: form().controls.prompt.value,
+                negativePrompt: form().controls.negativePrompt.value,
+              }"
+              (promptEdit)="editAssetPrompt($event)"
               [loras]="loras()"
               [tis]="tis()"
               [baseline]="modelBaseline()"
@@ -3028,6 +3037,11 @@
 
 @if (civitOpen()) {
   <app-civitai-picker
+    [prompts]="{
+      prompt: form().controls.prompt.value,
+      negativePrompt: form().controls.negativePrompt.value,
+    }"
+    (promptEdit)="editAssetPrompt($event)"
     [loras]="loras()"
     [tis]="tis()"
     [baseline]="modelBaseline()"

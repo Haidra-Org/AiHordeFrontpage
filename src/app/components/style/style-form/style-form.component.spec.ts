@@ -36,7 +36,7 @@ describe('StyleFormComponent', () => {
     id: 'img-b',
     name: 'Image Style B',
     info: 'This is image style B info text.',
-    prompt: '{p}{np}',
+    prompt: '{p} ### {np}',
     public: false,
     nsfw: true,
     tags: ['b'],
@@ -364,16 +364,46 @@ describe('StyleFormComponent', () => {
       });
     });
 
+    it('inserts a TI into the negative half and keeps manual selection in place', () => {
+      const component = imageForm({
+        ...imageStyleB,
+        prompt: '{p} ### bad, {np}',
+      });
+      const ti = { name: '1', strength: 0.7, inject_ti: 'prompt' as const };
+      const other = { name: '2', strength: 1 };
+      component.setTis([ti, other]);
+      const event = {
+        text: '(embedding:1:0.7)',
+        target: 'negprompt' as const,
+        ti,
+      };
+      component.appendToPrompt(event);
+      component.appendToPrompt(event);
+      expect(component.form.controls['tis'].value).toEqual([
+        { name: '1', strength: 0.7 },
+        other,
+      ]);
+      expect(component.form.controls['prompt'].value).toBe(
+        '{p} ### bad, {np}, (embedding:1:0.7)',
+      );
+      expect(
+        JSON.parse(component.form.controls['tis_json'].value as string),
+      ).toEqual([{ name: '1', strength: 0.7 }, other]);
+    });
+
     it('puts a trigger word before the negative half of the template', () => {
       const component = imageForm({
         ...imageStyleB,
-        prompt: '{p}{np}',
+        prompt: '{p} ### {np}',
       });
 
+      component.editAssetPrompt({ target: 'negprompt', text: '{np}, soft' });
+      expect(component.assetPrompts().negativePrompt).toBe('{np}, soft');
+      component.editAssetPrompt({ target: 'negprompt', text: '{np}' });
       component.appendToPrompt('detailed');
 
       expect(component.form.controls['prompt'].value).toBe(
-        '{p}, detailed {np}',
+        '{p}, detailed ### {np}',
       );
     });
   });

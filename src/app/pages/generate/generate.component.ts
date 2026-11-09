@@ -161,6 +161,7 @@ import {
   FieldRejection,
   RequestWarning,
   evaluateRequestLint,
+  tiLintValue,
   modelClipSkipWarnings,
   type FieldAnchorId,
   type LintModelSelection,
@@ -671,6 +672,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const state = this.sourceState();
     return evaluateRequestLint({
       value,
+      tiValue: tiLintValue(value, this.resolveApplied(this.formValue())),
       baseline: this.modelBaseline(),
       selectedModels: this.selectedModels(),
       requirements: this.modelRequirements(),

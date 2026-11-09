@@ -132,6 +132,10 @@
                 : ('styles.form.prompt_placeholder_text' | transloco)
             "
           ></textarea>
+          <app-prompt-review-bar
+            target="prompt"
+            [text]="assetPrompts().prompt"
+          />
           @if (
             baseForm.controls.prompt.invalid && baseForm.controls.prompt.touched
           ) {
@@ -420,6 +424,8 @@
                  is elsewhere, so it brings the same scope the picker does. -->
             <div class="gs-civit-scope">
               <app-civitai-selection
+                [prompts]="assetPrompts()"
+                (promptEdit)="editAssetPrompt($event)"
                 [loras]="imageForm.controls.loras.value ?? []"
                 [tis]="imageForm.controls.tis.value ?? []"
                 [baseline]="styleBaseline()"
@@ -484,6 +490,8 @@
           @if (civitaiOpen()) {
             <div class="gs-civit-scope">
               <app-civitai-picker
+                [prompts]="assetPrompts()"
+                (promptEdit)="editAssetPrompt($event)"
                 [loras]="imageForm.controls.loras.value ?? []"
                 [tis]="imageForm.controls.tis.value ?? []"
                 [baseline]="styleBaseline()"

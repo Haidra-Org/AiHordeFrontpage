@@ -1,3 +1,16 @@
+import { revealTextareaRange } from '../../../helper/reveal-textarea-range';
+import {
+  type PromptEdit,
+  type PromptRange,
+  selectManualLora,
+} from '../../../types/ti-prompt';
+import { PromptReviewService } from '../../../services/prompt-review.service';
+import { PromptReviewBarComponent } from '../../../components/prompt-review-bar/prompt-review-bar.component';
+import {
+  type PromptInsertion,
+  selectManualTi,
+  insertPromptReference,
+} from '../../../types/ti-prompt';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -601,7 +614,9 @@ const SUMMARY_SEPARATOR = ' · ';
     RouterLink,
     GsSheetComponent,
     EdgeAwarePopoverDirective,
+    PromptReviewBarComponent,
   ],
+  providers: [PromptReviewService],
   templateUrl: './generate-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -625,6 +640,8 @@ export class GenerateFormComponent implements OnInit {
   public readonly fullscreen = inject(FullscreenService);
   private readonly toast = inject(ToastService);
   private readonly anchors = inject(TutorialAnchorService);
+  /** Shared with the LoRA list, which reviews trigger words in the prompt. */
+  public readonly promptReview = inject(PromptReviewService);
   private readonly injector = inject(Injector);
   private readonly transloco = inject(TranslocoService);
   private readonly db = inject(DatabaseService);
@@ -1651,6 +1668,7 @@ export class GenerateFormComponent implements OnInit {
   });
 
   public ngOnInit(): void {
+    this.promptReview.connect((range) => this.revealPromptRange(range));
     this.restoreGroupsOpen();
     void this.countDrafts();
     this.value.set(this.form().getRawValue());
@@ -2508,10 +2526,35 @@ export class GenerateFormComponent implements OnInit {
    * style editor's is a template, which is why the selection list asks its host
    * to do this rather than writing anywhere itself.
    */
-  public appendToPrompt(trigger: string): void {
-    const control = this.form().controls.prompt;
-    const current = control.value.trim();
-    control.setValue(current ? `${current}, ${trigger}` : trigger);
+  public editAssetPrompt(edit: PromptEdit): void {
+    const control =
+      edit.target === 'prompt'
+        ? this.form().controls.prompt
+        : this.form().controls.negativePrompt;
+    control.setValue(edit.text);
+    control.markAsDirty();
+  }
+
+  public appendToPrompt(insertion: PromptInsertion): void {
+    const event =
+      typeof insertion === 'string'
+        ? { text: insertion, target: 'prompt' as const }
+        : insertion;
+    if (event.lora)
+      this.setLoras(
+        selectManualLora(
+          this.form().controls.loras.value,
+          event.lora,
+          event.previousLoraName,
+        ),
+      );
+    if (event.ti)
+      this.setTis(selectManualTi(this.form().controls.tis.value, event.ti));
+    const control =
+      event.target === 'negprompt'
+        ? this.form().controls.negativePrompt
+        : this.form().controls.prompt;
+    control.setValue(insertPromptReference(control.value, event.text));
     control.markAsDirty();
   }
 
@@ -3489,6 +3532,18 @@ export class GenerateFormComponent implements OnInit {
     }
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
+  }
+
+  /** Scrolls to a span of one prompt field and selects it, e.g. a trigger word. */
+  public revealPromptRange(range: PromptRange): void {
+    const input =
+      range.target === 'prompt'
+        ? this.promptInput()?.nativeElement
+        : document.querySelector<HTMLTextAreaElement>(
+            '#generate-negative-prompt',
+          );
+    if (!input) return;
+    revealTextareaRange(input, range.start, range.end);
   }
 
   public setSaveName(value: string): void {

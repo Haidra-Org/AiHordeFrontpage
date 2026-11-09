@@ -1,3 +1,6 @@
+import type { AppliedStyle } from '../../services/style-record';
+import { tiConfigToSelection } from '../../types/civitai-asset';
+import { promptHasWord, tiReferences } from '../../types/ti-prompt';
 import {
   baselineSupportsControlNet,
   baselineSupportsMask,
@@ -13,6 +16,8 @@ import {
 } from '../../services/model-reference.service';
 import {
   activeLoras,
+  INJECT_TRIGGER_ANY,
+  activeTis,
   HORDE_MAX_LORAS,
   HORDE_MAX_TIS,
 } from '../../types/civitai-asset';
@@ -22,6 +27,7 @@ import {
 } from '../../services/civitai-base-models';
 import {
   cfgAdvisory,
+  splitCombinedPrompt,
   clipSkipAdvisory,
   hiresUnneededHint,
   offeredSamplers,
@@ -170,6 +176,7 @@ export function modelClipSkipWarnings(
 export interface RequestLintInput {
   /** The form value that would actually be submitted (simple mode already projected). */
   value: GenerateFormValue;
+  tiValue?: GenerateFormValue;
   /** The primary model's normalised baseline; null when nothing is known. */
   baseline: string | null;
   /**
@@ -415,6 +422,127 @@ export function loraLimitWarning(
     key: 'generate.lint.lora_limit',
     params: { count, max: HORDE_MAX_LORAS, dropped: count - HORDE_MAX_LORAS },
   };
+}
+
+/**
+ * Two trigger problems per LoRA. A trigger in both the prompt and the negative
+ * prompt pulls the picture both ways. A LoRA set to add its trigger while that
+ * trigger is already written applies it twice, because the worker prepends
+ * the trigger without checking the prompt.
+ */
+export function loraTriggerWarnings(
+  value: GenerateFormValue,
+): RequestWarning[] {
+  const warnings: RequestWarning[] = [];
+  for (const lora of activeLoras(value.loras)) {
+    const auto = lora.inject_trigger;
+    // A trigger in the prompt, written or added by the worker, and also in the
+    // negative prompt pulls the picture both ways. With "any", the word the
+    // worker picks is not known in advance, so only written words count.
+    const added = (word: string): boolean =>
+      auto === 'all' || auto?.toLowerCase() === word.toLowerCase();
+    const opposed = (lora.triggerWords ?? []).find(
+      (word) =>
+        promptHasWord(value.negativePrompt, word) &&
+        (added(word) || promptHasWord(value.prompt, word)),
+    );
+    if (opposed !== undefined)
+      warnings.push({
+        id: `lora_trigger_both_prompts:${lora.name}`,
+        section: 'model',
+        anchor: 'loras',
+        key: 'generate.lint.trigger_both_prompts',
+        params: { name: lora.label ?? lora.name, trigger: opposed },
+      });
+    if (!auto) continue;
+    const candidates =
+      auto === INJECT_TRIGGER_ANY || auto === 'all'
+        ? (lora.triggerWords ?? [])
+        : [auto];
+    const written = candidates.find((word) =>
+      promptHasWord(value.prompt, word),
+    );
+    if (written === undefined) continue;
+    warnings.push({
+      id: `lora_trigger_duplicate:${lora.name}`,
+      section: 'model',
+      anchor: 'loras',
+      key: 'generate.lint.lora_trigger_duplicate',
+      params: { name: lora.label ?? lora.name, trigger: written },
+    });
+  }
+  return warnings;
+}
+
+/** TI assets and tokens follow the style even when other sections detach. */
+export function tiLintValue(
+  value: GenerateFormValue,
+  applied: AppliedStyle | null,
+): GenerateFormValue {
+  if (!applied) return value;
+  const [prompt, negativePrompt] = splitCombinedPrompt(applied.prompt);
+  return {
+    ...value,
+    prompt,
+    negativePrompt,
+    tis:
+      applied.forcedParams.tis?.map(tiConfigToSelection) ??
+      (applied.hordeApplied ? [] : value.tis),
+  };
+}
+
+export function tiPromptWarnings(value: GenerateFormValue): RequestWarning[] {
+  const sent = activeTis(value.tis);
+  const refs = new Set(tiReferences(`${value.prompt} ${value.negativePrompt}`));
+  const warnings: RequestWarning[] = [];
+  for (const ti of sent) {
+    const referenced = refs.has(ti.name);
+    const kind =
+      ti.inject_ti && referenced
+        ? 'ti_duplicate'
+        : !ti.inject_ti && !referenced
+          ? 'ti_missing_reference'
+          : null;
+    if (kind)
+      warnings.push({
+        id: `${kind}:${ti.name}`,
+        section: 'model',
+        anchor: 'loras',
+        key: `generate.lint.${kind}`,
+        params: {
+          name: ti.label ?? ti.name,
+          reference: `embedding:${ti.name}`,
+        },
+      });
+    // Written there, or added there by automatic placement.
+    const inPrompt =
+      ti.inject_ti === 'prompt' || tiReferences(value.prompt).includes(ti.name);
+    const inNegative =
+      ti.inject_ti === 'negprompt' ||
+      tiReferences(value.negativePrompt).includes(ti.name);
+    if (inPrompt && inNegative)
+      warnings.push({
+        id: `ti_both_prompts:${ti.name}`,
+        section: 'model',
+        anchor: 'loras',
+        key: 'generate.lint.trigger_both_prompts',
+        params: {
+          name: ti.label ?? ti.name,
+          trigger: `embedding:${ti.name}`,
+        },
+      });
+  }
+  for (const name of refs) {
+    if (!sent.some((ti) => ti.name === name))
+      warnings.push({
+        id: `ti_unselected:${name}`,
+        section: 'model',
+        anchor: 'loras',
+        key: 'generate.lint.ti_unselected',
+        params: { reference: `embedding:${name}` },
+      });
+  }
+  return warnings;
 }
 
 /** As {@link loraLimitWarning}, for textual inversions and their own cap. */
@@ -716,7 +844,9 @@ export function evaluateRequestLint(
   );
 
   push(loraLimitWarning(value));
-  push(tiLimitWarning(value));
+  warnings.push(...loraTriggerWarnings(input.tiValue ?? value));
+  push(tiLimitWarning(input.tiValue ?? value));
+  warnings.push(...tiPromptWarnings(input.tiValue ?? value));
   // A LoRA that suits any one of the selected models is not a mismatch: that
   // model can serve the request. The line shown is the primary's, which is the
   // model the rest of the panel's advice speaks for.

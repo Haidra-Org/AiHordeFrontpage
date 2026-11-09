@@ -1,4 +1,12 @@
+import type { AssetPrompts, PromptEdit } from '../../types/ti-prompt';
+import { copyToClipboard } from '../../helper/copy-to-clipboard';
+import { ToastService } from '../../services/toast.service';
+import { insertPromptReference, tiReference } from '../../types/ti-prompt';
 import {
+  afterNextRender,
+  ElementRef,
+  Injector,
+  viewChild,
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -48,15 +56,6 @@ export interface CivitaiDetailTarget {
 const SAFE_NSFW_LEVEL = 1;
 
 /**
- * How long the confirmation on "put it in my prompt" stands.
- *
- * The prompt box is behind this panel and the picker over it, so the press has
- * no visible result anywhere the reader can see. The button says what happened
- * itself, and long enough to be read rather than glimpsed.
- */
-const PROMPT_CONFIRM_MS = 2600;
-
-/**
  * Everything known about one CivitAI asset, and the controls for the copy of it
  * a request will carry.
  *
@@ -70,6 +69,13 @@ const PROMPT_CONFIRM_MS = 2600;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CivitaiDetailComponent {
+  private readonly injector = inject(Injector);
+  private readonly promptEditor =
+    viewChild<ElementRef<HTMLTextAreaElement>>('promptEditor');
+  private readonly negativeEditor =
+    viewChild<ElementRef<HTMLTextAreaElement>>('negativeEditor');
+  public readonly promptsOpen = signal(false);
+  private readonly toast = inject(ToastService);
   private readonly civitai = inject(CivitaiService);
   private readonly cache = inject(CivitaiCacheService);
   private readonly destroyRef = inject(DestroyRef);
@@ -83,8 +89,18 @@ export class CivitaiDetailComponent {
 
   public readonly apply = output<LoraSelection | TiSelection>();
   public readonly remove = output<void>();
-  public readonly appendToPrompt = output<string>();
+  public readonly prompts = input<AssetPrompts | null>(null);
+  public readonly promptEdit = output<PromptEdit>();
   public readonly closed = output<void>();
+  /**
+   * Prompt text changed inside the dialog, held until Apply so that closing
+   * the dialog discards it together with the rest of the unsaved settings.
+   * Null until the first edit, so the host's prompts show through until then.
+   */
+  private readonly draftPrompts = signal<AssetPrompts | null>(null);
+  public readonly shownPrompts = computed(
+    () => this.draftPrompts() ?? this.prompts(),
+  );
 
   public readonly model = signal<CivitaiModel | null>(null);
   public readonly loading = signal(false);
@@ -95,11 +111,6 @@ export class CivitaiDetailComponent {
   public readonly revealed = signal<ReadonlySet<string>>(new Set());
   /** The preview being shown whole, or null when the strip is as large as it gets. */
   public readonly enlarged = signal<string | null>(null);
-  /** The word most recently written into the prompt, while its notice stands. */
-  public readonly promptedWord = signal<string | null>(null);
-
-  private promptConfirmTimer: ReturnType<typeof setTimeout> | null = null;
-
   public readonly minStrength = MIN_LORA_STRENGTH;
   public readonly maxStrength = MAX_LORA_STRENGTH;
   public readonly injectTargets = TI_INJECT_TARGETS;
@@ -111,6 +122,26 @@ export class CivitaiDetailComponent {
   public readonly tiStrength = signal(DEFAULT_LORA_STRENGTH);
   public readonly injectTrigger = signal<string | null>(null);
   public readonly injectTi = signal<TiInjectTarget | null>(null);
+  public readonly placementChosen = signal(false);
+  public readonly insertedReference = signal<{
+    text: string;
+    target: TiInjectTarget;
+  } | null>(null);
+  public readonly reference = computed(() =>
+    tiReference(
+      String(
+        this.model()?.id ?? this.current()?.name ?? this.target().modelId ?? '',
+      ),
+    ),
+  );
+  public readonly weightedReference = computed(() =>
+    tiReference(
+      String(
+        this.model()?.id ?? this.current()?.name ?? this.target().modelId ?? '',
+      ),
+      this.tiStrength(),
+    ),
+  );
   public readonly sha256 = signal('');
 
   public readonly isLora = computed(() => this.target().kind === 'lora');
@@ -135,14 +166,13 @@ export class CivitaiDetailComponent {
   public readonly isEditing = computed(() => this.current() !== null);
 
   constructor() {
-    this.destroyRef.onDestroy(() => {
-      if (this.promptConfirmTimer !== null) {
-        clearTimeout(this.promptConfirmTimer);
-      }
-    });
-
     effect((onCleanup) => {
       const target = this.target();
+      this.placementChosen.set(false);
+      this.insertedReference.set(null);
+      this.draftPrompts.set(null);
+      this.injectTi.set(null);
+      this.tiStrength.set(DEFAULT_LORA_STRENGTH);
       this.model.set(null);
       this.resolvedVersion.set(null);
       this.versionChanged.set(false);
@@ -167,6 +197,7 @@ export class CivitaiDetailComponent {
       } else {
         this.tiStrength.set(entry.strength);
         this.injectTi.set(entry.inject_ti ?? null);
+        this.placementChosen.set(true);
       }
     });
   }
@@ -293,26 +324,30 @@ export class CivitaiDetailComponent {
 
   public setInjectTi(target: TiInjectTarget | null): void {
     this.injectTi.set(target);
+    this.placementChosen.set(true);
   }
 
-  /**
-   * Hand the word to the host's prompt, and say so on the button.
-   *
-   * Saying so is the point: the prompt is two layers below this panel, so
-   * without it the press looks like it did nothing.
-   */
-  public onAppendTrigger(word: string): void {
-    this.appendToPrompt.emit(word);
-    this.promptedWord.set(word);
-    if (this.promptConfirmTimer !== null) {
-      clearTimeout(this.promptConfirmTimer);
-    }
-    this.promptConfirmTimer = setTimeout(
-      () => this.promptedWord.set(null),
-      PROMPT_CONFIRM_MS,
+  public insertTi(target: TiInjectTarget): void {
+    const name = String(
+      this.model()?.id ?? this.current()?.name ?? this.target().modelId ?? '',
+    );
+    if (!name) return;
+    this.setInjectTi(null);
+    this.insertDraft(target, tiReference(name, this.tiStrength()));
+    this.revealPrompt(target, tiReference(name, this.tiStrength()));
+    this.insertedReference.set({
+      text: tiReference(name, this.tiStrength()),
+      target,
+    });
+  }
+  public async copyReference(): Promise<void> {
+    const copied = await copyToClipboard(this.reference());
+    this.toast.show(
+      copied ? 'success' : 'error',
+      copied ? 'generate.civitai.ti_copied' : 'generate.civitai.ti_copy_failed',
+      { transloco: true },
     );
   }
-
   public enlarge(url: string): void {
     this.enlarged.set(url);
   }
@@ -352,65 +387,135 @@ export class CivitaiDetailComponent {
    * embedding is named by its model page instead: the horde's payload has no
    * field to carry a version for one.
    */
+  private loraSelection(): LoraSelection | null {
+    const model = this.model();
+    const version = this.selectedVersion();
+    const current = this.current();
+    const previous = current && 'clip' in current ? current : null;
+    // Metadata can be missing or still loading. Only an explicit version
+    // choice changes how an existing model ID is interpreted.
+    const pinned =
+      this.selectedVersionId() !== null &&
+      (!previous || previous.is_version === true || this.versionChanged());
+    const entry: LoraSelection = {
+      ...previous,
+      name: pinned
+        ? String(this.selectedVersionId())
+        : (previous?.name ?? (model ? String(model.id) : '')),
+      model: this.modelStrength(),
+      clip: this.clipStrength(),
+      label: model?.name ?? previous?.label,
+      versionLabel: version?.name ?? previous?.versionLabel,
+      baseModel: version?.baseModel ?? previous?.baseModel,
+      thumbnailUrl: model?.preview?.url ?? previous?.thumbnailUrl,
+      modelId: model?.id ?? version?.modelId ?? previous?.modelId,
+      triggerWords: version?.trainedWords ?? previous?.triggerWords,
+    };
+    if (pinned) {
+      entry.is_version = true;
+    }
+    const trigger = this.injectTrigger();
+    if (trigger) {
+      entry.inject_trigger = trigger;
+    } else {
+      delete entry.inject_trigger;
+    }
+    const hash = this.sha256().trim();
+    if (this.allowSha256() && hash) {
+      entry.sha256 = hash;
+    } else {
+      delete entry.sha256;
+    }
+    return entry.name ? entry : null;
+  }
+
+  public insertLora(word: string, target: TiInjectTarget): void {
+    this.injectTrigger.set(null);
+    this.insertDraft(target, word);
+    this.revealPrompt(target, word);
+  }
+
+  public editDraft(target: TiInjectTarget, text: string): void {
+    const base = this.shownPrompts();
+    if (!base) return;
+    this.draftPrompts.set(
+      target === 'prompt'
+        ? { ...base, prompt: text }
+        : { ...base, negativePrompt: text },
+    );
+  }
+
+  private insertDraft(target: TiInjectTarget, text: string): void {
+    const base = this.shownPrompts();
+    if (!base) return;
+    this.editDraft(
+      target,
+      insertPromptReference(
+        target === 'prompt' ? base.prompt : base.negativePrompt,
+        text,
+      ),
+    );
+  }
+
+  /** Hands the host each half of the draft that differs from its prompts. */
+  private commitDraft(): void {
+    const draft = this.draftPrompts();
+    const saved = this.prompts();
+    if (!draft || !saved) return;
+    if (draft.prompt !== saved.prompt)
+      this.promptEdit.emit({ target: 'prompt', text: draft.prompt });
+    if (draft.negativePrompt !== saved.negativePrompt)
+      this.promptEdit.emit({ target: 'negprompt', text: draft.negativePrompt });
+  }
+
+  private revealPrompt(target: TiInjectTarget, text: string): void {
+    if (!this.prompts()) return;
+    this.promptsOpen.set(true);
+    afterNextRender(
+      () => {
+        const editor = (
+          target === 'prompt' ? this.promptEditor() : this.negativeEditor()
+        )?.nativeElement;
+        if (!editor) return;
+        editor.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+        editor.focus({ preventScroll: true });
+        const start = editor.value.lastIndexOf(text);
+        if (start >= 0) editor.setSelectionRange(start, start + text.length);
+      },
+      { injector: this.injector },
+    );
+  }
+
   public onApply(): void {
     const model = this.model();
     const version = this.selectedVersion();
 
     if (this.isLora()) {
-      const current = this.current();
-      const previous = current && 'clip' in current ? current : null;
-      // Metadata can be missing or still loading. Only an explicit version
-      // choice changes how an existing model ID is interpreted.
-      const pinned =
-        this.selectedVersionId() !== null &&
-        (!previous || previous.is_version === true || this.versionChanged());
-      const entry: LoraSelection = {
-        ...previous,
-        name: pinned
-          ? String(this.selectedVersionId())
-          : (previous?.name ?? (model ? String(model.id) : '')),
-        model: this.modelStrength(),
-        clip: this.clipStrength(),
-        label: model?.name ?? previous?.label,
-        versionLabel: version?.name ?? previous?.versionLabel,
-        baseModel: version?.baseModel ?? previous?.baseModel,
-        thumbnailUrl: model?.preview?.url ?? previous?.thumbnailUrl,
-        modelId: model?.id ?? version?.modelId ?? previous?.modelId,
-        triggerWords: version?.trainedWords ?? previous?.triggerWords,
-      };
-      if (pinned) {
-        entry.is_version = true;
-      }
-      const trigger = this.injectTrigger();
-      if (trigger) {
-        entry.inject_trigger = trigger;
-      } else {
-        delete entry.inject_trigger;
-      }
-      const hash = this.sha256().trim();
-      if (this.allowSha256() && hash) {
-        entry.sha256 = hash;
-      } else {
-        delete entry.sha256;
-      }
-      if (!entry.name) return;
+      const entry = this.loraSelection();
+      if (!entry) return;
+      this.commitDraft();
       this.apply.emit(entry);
       return;
     }
 
+    if (!this.placementChosen()) return;
+    const previous = this.current();
     const entry: TiSelection = {
-      name: model ? String(model.id) : (this.current()?.name ?? ''),
+      ...previous,
+      name: String(model?.id ?? previous?.name ?? this.target().modelId ?? ''),
       strength: this.tiStrength(),
-      label: model?.name,
-      baseModel: version?.baseModel,
-      thumbnailUrl: model?.preview?.url,
-      modelId: model?.id,
-      triggerWords: version?.trainedWords,
+      label: model?.name ?? previous?.label,
+      baseModel: version?.baseModel ?? previous?.baseModel,
+      thumbnailUrl: model?.preview?.url ?? previous?.thumbnailUrl,
+      modelId: model?.id ?? previous?.modelId,
     };
+    if (!entry.name) return;
+    delete entry.inject_ti;
     const target = this.injectTi();
     if (target) {
       entry.inject_ti = target;
     }
+    this.commitDraft();
     this.apply.emit(entry);
   }
 

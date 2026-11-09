@@ -147,16 +147,104 @@
     @if (row.entry.triggerWords?.length) {
       <div class="gs-cvsel-triggers">
         @for (word of row.entry.triggerWords; track word) {
+          @let count = triggerCount(word);
           <button
             type="button"
             class="gs-cvsel-trigger"
-            (click)="onAppendTrigger(word)"
-            [title]="'generate.civitai.detail_trigger_to_prompt' | transloco"
+            [attr.data-trigger]="i + ':' + word"
+            [attr.aria-pressed]="count === null ? null : count > 0"
+            (click)="onTrigger(i, word)"
+            [title]="
+              (count === null
+                ? 'generate.civitai.trigger_chip_add'
+                : count === 0
+                  ? 'generate.civitai.trigger_chip_absent'
+                  : count === 1
+                    ? 'generate.civitai.trigger_chip_present'
+                    : 'generate.civitai.trigger_chip_present_many'
+              ) | transloco: { count: count }
+            "
           >
+            <span aria-hidden="true">{{ count ? "&#10003;" : "+" }}</span>
             {{ word }}
+            @if (count !== null && count > 1) {
+              <span class="gs-cvsel-trigger-count"
+                >{{ count
+                }}<span class="sr-only">
+                  {{
+                    "generate.civitai.trigger_chip_count_label" | transloco
+                  }}</span
+                ></span
+              >
+            }
           </button>
         }
       </div>
+      @if (pendingRemoval(); as pending) {
+        @let pendingCount = triggerCount(pending.word) ?? 0;
+        @if (pending.index === i && pendingCount > 0) {
+          @let message =
+            pendingCount === 1
+              ? "generate.civitai.trigger_confirm"
+              : "generate.civitai.trigger_confirm_many";
+          <div
+            class="gs-cvsel-confirm"
+            role="group"
+            [attr.aria-label]="
+              message | transloco: { word: pending.word, count: pendingCount }
+            "
+            (keydown.escape)="closeRemoval()"
+          >
+            <p class="gs-sublabel--warn">
+              {{
+                message | transloco: { word: pending.word, count: pendingCount }
+              }}
+            </p>
+            <div class="gs-cvsel-confirm-actions">
+              <button
+                type="button"
+                class="gs-cvsel-confirm-btn gs-cvsel-confirm-btn--primary"
+                (click)="confirmRemoval()"
+              >
+                {{
+                  (pendingCount === 1
+                    ? "generate.civitai.trigger_confirm_remove"
+                    : "generate.civitai.trigger_confirm_remove_all"
+                  ) | transloco: { count: pendingCount }
+                }}
+              </button>
+              @if (reviews?.connected) {
+                <button
+                  type="button"
+                  class="gs-cvsel-confirm-btn"
+                  data-confirm-show
+                  (click)="showInPrompt()"
+                >
+                  {{
+                    (pendingCount === 1
+                      ? "generate.civitai.trigger_confirm_show"
+                      : "generate.civitai.trigger_confirm_show_next"
+                    )
+                      | transloco
+                        : {
+                            next: reviews?.nextNumber(pendingCount),
+                            count: pendingCount,
+                          }
+                  }}
+                </button>
+              }
+              <button
+                type="button"
+                class="gs-cvsel-confirm-btn"
+                data-confirm-cancel
+                (click)="closeRemoval()"
+              >
+                {{ "generate.civitai.trigger_confirm_cancel" | transloco }}
+              </button>
+            </div>
+          </div>
+        }
+      }
     }
   </div>
 }
@@ -202,8 +290,8 @@
             </span>
           }
         </div>
-        <div class="gs-addon-sub truncate">
-          {{ "generate.form.ti_embedding" | transloco }}
+        <div class="gs-addon-sub gs-mono truncate">
+          embedding:{{ row.entry.name }}
         </div>
       </div>
 
@@ -253,25 +341,94 @@
       </div>
     </div>
 
-    <div>
-      <div class="gs-slabel">
-        {{ "generate.form.ti_strength_short" | transloco }}
-        <span class="gs-mono gs-purple float-right">
-          {{ row.entry.strength | number: "1.2-2" }}
-        </span>
+    <div
+      class="gs-cvsel-placement"
+      role="group"
+      [attr.aria-labelledby]="'ti-placement-' + i"
+    >
+      <span class="gs-slabel" [id]="'ti-placement-' + i">
+        {{ "generate.civitai.detail_inject_ti" | transloco }}
+      </span>
+      <div class="gs-cvsel-placement-row">
+        <div
+          class="gs-cvsel-auto"
+          [class.gs-cvsel-auto--on]="!!row.entry.inject_ti"
+          role="group"
+          [attr.aria-labelledby]="'ti-auto-' + i"
+        >
+          <span class="gs-cvsel-auto-label" [id]="'ti-auto-' + i">
+            {{ "generate.civitai.ti_placement_automatic" | transloco }}
+          </span>
+          <div class="gs-seg gs-seg--compact">
+            @for (option of autoPlacements; track option) {
+              <button
+                type="button"
+                class="gs-seg-opt"
+                [attr.aria-pressed]="row.entry.inject_ti === option"
+                (click)="setPlacement(i, option)"
+              >
+                {{ "generate.civitai.ti_placement_" + option | transloco }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="gs-seg gs-seg--compact">
+          <button
+            type="button"
+            class="gs-seg-opt"
+            [attr.aria-pressed]="!row.entry.inject_ti"
+            (click)="setPlacement(i, 'manual')"
+          >
+            {{ "generate.civitai.ti_placement_manual" | transloco }}
+          </button>
+        </div>
       </div>
-      <input
-        class="gs-range gs-range--purple mt-1"
-        type="range"
-        [min]="minStrength"
-        [max]="maxStrength"
-        step="0.05"
-        [value]="row.entry.strength"
-        [style.--gs-range-fill.%]="fill(row.entry.strength)"
-        (input)="setTiStrength(i, rangeValue($event))"
-        [attr.aria-label]="'generate.form.ti_strength_short' | transloco"
-      />
     </div>
+    @let manual = row.entry.inject_ti ? null : manualWeight(row.entry.name);
+    @if (!row.entry.inject_ti) {
+      @if (manual?.state === "missing") {
+        <div class="gs-cvsel-manual gs-sublabel--warn">
+          <span>{{ "generate.civitai.ti_manual_missing" | transloco }}</span>
+          <button
+            type="button"
+            class="gs-cvsel-details"
+            (click)="onDetails(row.entry, i)"
+          >
+            {{ "generate.civitai.ti_manual_insert" | transloco }}
+          </button>
+        </div>
+      } @else {
+        <p
+          class="gs-cvsel-manual"
+          [class.gs-sublabel--warn]="manual?.state === 'both'"
+        >
+          {{ manualStatusKey(manual) | transloco }}
+        </p>
+      }
+    }
+    @if (manual?.state !== "multiple" && manual?.state !== "both") {
+      @let weight = tiSliderValue(i, row.entry);
+      <div class="mt-2">
+        <div class="gs-slabel">
+          {{ "generate.form.ti_strength_short" | transloco }}
+          <span class="gs-mono gs-purple float-right">
+            {{ weight | number: "1.2-2" }}
+          </span>
+        </div>
+        <input
+          class="gs-range gs-range--purple mt-1"
+          type="range"
+          [min]="minStrength"
+          [max]="maxStrength"
+          step="0.05"
+          [value]="weight"
+          [style.--gs-range-fill.%]="fill(weight)"
+          (input)="onTiSlide(i, row.entry, rangeValue($event))"
+          (change)="onTiRelease(i, row.entry, rangeValue($event))"
+          [attr.aria-label]="'generate.form.ti_strength_short' | transloco"
+        />
+      </div>
+    }
   </div>
 }
 
@@ -282,16 +439,27 @@
     {{ "generate.civitai.moved_announce" | transloco: parts }}
   }
 </p>
+<!-- The prompt is usually scrolled out of view, so a trigger chip's effect on
+     it is announced here as well as shown on the chip. -->
+<p class="sr-only" role="status" aria-live="polite">
+  @if (triggerAnnouncement(); as said) {
+    {{
+      "generate.civitai.trigger_" + said.action
+        | transloco: { word: said.word, count: said.count }
+    }}
+  }
+</p>
 
 @if (openRow(); as open) {
   <app-civitai-detail
+    [prompts]="prompts()"
+    (promptEdit)="promptEdit.emit($event)"
     [target]="open.target"
     [baseline]="baseline()"
     [current]="openEntry()"
     [allowSha256]="allowSha256()"
     (apply)="onDetailApply($event)"
     (remove)="onDetailRemove()"
-    (appendToPrompt)="appendToPrompt.emit($event)"
     (closed)="closeDetails()"
   />
 }

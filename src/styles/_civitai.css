@@ -282,6 +282,63 @@
   color: var(--gs-muted);
 }
 
+.gs-cvsel-placement {
+  display: grid;
+  gap: var(--gs-space-1);
+}
+.gs-cvsel-placement-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--gs-space-2);
+}
+/* The two placements where the worker adds the trigger itself sit in one
+   tinted, labelled area, apart from Manual, so the difference reads before
+   any help text does. */
+.gs-cvsel-auto {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gs-space-2);
+  padding: 2px 2px 2px var(--gs-space-2);
+  border: 1px dashed color-mix(in srgb, var(--gs-purple) 45%, transparent);
+  border-radius: var(--gs-radius-md);
+  background: color-mix(in srgb, var(--gs-purple) 8%, transparent);
+}
+.gs-cvsel-auto--on {
+  border-style: solid;
+  border-color: var(--gs-purple);
+  background: color-mix(in srgb, var(--gs-purple) 16%, transparent);
+}
+.gs-cvsel-auto-label {
+  font-size: var(--gs-text-xs);
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+.gen-studio .gs-seg--compact .gs-seg-opt,
+.gs-civit-scope .gs-seg--compact .gs-seg-opt {
+  min-height: 28px;
+  padding: 0 var(--gs-space-2);
+  font-size: var(--gs-text-xs);
+}
+@media (pointer: coarse) {
+  .gen-studio .gs-seg--compact .gs-seg-opt,
+  .gs-civit-scope .gs-seg--compact .gs-seg-opt {
+    min-height: 38px;
+  }
+}
+/* Takes the slider's place on a Manual row: the weight lives in the prompt. */
+.gs-cvsel-manual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-2);
+  margin: var(--gs-space-2) 0 0;
+  font-size: var(--gs-text-xs);
+  color: var(--gs-muted);
+}
+
 .gs-cvsel-actions {
   display: flex;
   align-items: center;
@@ -351,6 +408,74 @@
 .gs-cvsel-trigger:hover {
   border-color: var(--gs-purple);
   color: var(--gs-purple);
+}
+/* Filled while the word is in the prompt, so the chip shows the result of a
+   click that changes a prompt scrolled out of view. */
+.gs-cvsel-trigger[aria-pressed="true"] {
+  border-color: var(--gs-purple);
+  background: var(--gs-seg-active);
+  color: var(--gs-seg-active-ink);
+}
+/* Trigger words are often common words, so a chip shows how many times its
+   word is written before a click can remove them. */
+.gs-cvsel-trigger-count {
+  margin-left: 3px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--gs-border-soft);
+  color: var(--gs-ink);
+  font-variant-numeric: tabular-nums;
+}
+/* Asks before a chip changes text the user wrote. Inline under the chips so
+   the question stays next to the click that raised it. */
+.gs-cvsel-confirm {
+  display: grid;
+  gap: var(--gs-space-2);
+  margin-top: var(--gs-space-2);
+  padding: var(--gs-space-2) var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  font-size: var(--gs-text-xs);
+}
+.gs-cvsel-confirm p {
+  margin: 0;
+}
+.gs-cvsel-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gs-space-2);
+}
+.gs-cvsel-confirm-btn {
+  min-height: 28px;
+  padding: 0 var(--gs-space-3);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius-sm);
+  background: none;
+  color: var(--gs-label);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.gs-cvsel-confirm-btn:hover {
+  border-color: var(--gs-purple);
+  color: var(--gs-purple);
+}
+.gs-cvsel-confirm-btn--primary {
+  border-color: var(--gs-purple);
+  color: var(--gs-purple);
+}
+.gs-cvsel-confirm-btn:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .gs-cvsel-confirm-btn {
+    min-height: 44px;
+  }
+}
+.gs-cvsel-trigger:focus-visible {
+  outline: 2px solid var(--gs-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ------- Detail panel ------------------------------------------------ */
@@ -869,6 +994,12 @@
 .gs-civit-scope .gs-muted {
   color: var(--gs-muted);
 }
+.gs-civit-scope .gs-sublabel--warn {
+  color: #b45309;
+}
+.dark .gs-civit-scope .gs-sublabel--warn {
+  color: #fbbf24;
+}
 .gs-civit-scope .gs-seg {
   display: inline-flex;
   gap: 2px;
@@ -1298,5 +1429,202 @@
   .gs-civit-scope .gs-modal-panel--browser .gs-sb-bar .gs-modal-search {
     flex: 1 1 160px;
     padding: 7px 12px;
+  }
+}
+
+/* Placement leads the adjustment flow; manual actions stay with their reference. */
+.hd-asset-detail {
+  display: grid;
+  gap: var(--hd-space-6);
+  margin-top: var(--hd-space-6);
+  color: var(--hd-ink);
+}
+.hd-asset-detail-section {
+  display: grid;
+  gap: var(--hd-space-3);
+  min-width: 0;
+}
+.hd-asset-detail-heading {
+  margin: 0;
+  font-size: var(--hd-text-md);
+  font-weight: 700;
+  line-height: 1.4;
+}
+.hd-asset-detail-note {
+  margin: 0;
+  color: var(--hd-muted);
+  font-size: var(--hd-text-sm);
+  line-height: 1.6;
+}
+.hd-asset-detail-placement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--hd-space-3);
+}
+.hd-asset-detail-placement .hd-seg-opt {
+  white-space: normal;
+  padding-block: var(--hd-space-2);
+}
+/* As the studio row: the automatic placements share one tinted, labelled
+   area, apart from Manual. */
+.hd-asset-auto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hd-space-2);
+  padding: 4px 4px 4px var(--hd-space-3);
+  border: 1px dashed color-mix(in srgb, var(--hd-accent) 45%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--hd-accent) 8%, transparent);
+}
+.hd-asset-auto--on {
+  border-style: solid;
+  border-color: var(--hd-accent);
+  background: color-mix(in srgb, var(--hd-accent) 16%, transparent);
+}
+.hd-asset-auto-label {
+  font-size: var(--hd-text-sm);
+  font-weight: 700;
+  color: var(--hd-accent-text);
+}
+/* The trigger buttons are not needed while the worker adds the trigger. */
+.hd-asset-detail .hd-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.hd-asset-detail-field {
+  display: grid;
+  gap: var(--hd-space-3);
+}
+.hd-asset-detail-label,
+.hd-asset-detail-reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hd-space-3);
+}
+.hd-asset-detail-label {
+  font-size: var(--hd-text-md);
+  font-weight: 700;
+}
+.hd-asset-detail-value {
+  font-size: var(--hd-text-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--hd-label);
+}
+.hd-asset-detail-range {
+  width: 100%;
+  accent-color: var(--hd-accent);
+}
+.hd-asset-detail-range:focus-visible {
+  outline: 2px solid var(--hd-focus-ring);
+  outline-offset: var(--hd-space-1);
+}
+.hd-asset-detail-range:disabled {
+  opacity: 0.5;
+}
+.hd-asset-detail-reference code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--hd-text-md);
+  color: var(--hd-ink);
+}
+.hd-asset-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hd-space-2);
+}
+.hd-asset-detail-actions > button {
+  flex: 1 1 12rem;
+  white-space: normal;
+}
+.hd-asset-detail-status:empty {
+  display: none;
+}
+.hd-asset-detail-version {
+  padding-top: var(--hd-space-4);
+  border-top: 1px solid var(--hd-border);
+}
+@media (pointer: coarse) {
+  .hd-asset-detail button,
+  .hd-asset-detail-range {
+    min-height: 44px;
+  }
+}
+
+.hd-asset-trigger {
+  display: grid;
+  gap: var(--hd-space-2);
+  padding-block: var(--hd-space-3);
+  border-bottom: 1px solid var(--hd-border);
+}
+.hd-asset-trigger code {
+  overflow-wrap: anywhere;
+  color: var(--hd-ink);
+  font-size: var(--hd-text-md);
+}
+.hd-asset-prompt-peek {
+  display: grid;
+  gap: var(--hd-space-4);
+  margin-top: var(--hd-space-6);
+  padding-top: var(--hd-space-4);
+  border-top: 1px solid var(--hd-border);
+}
+.hd-asset-prompt-toggle {
+  justify-self: start;
+}
+.hd-asset-prompt-peek textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.6;
+  min-height: 6rem;
+}
+
+/* Under a prompt field while a trigger word is reviewed there. Site tokens,
+   because the style editor's prompt field is outside the studio scope. */
+.prompt-review-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hd-space-2);
+  margin-top: var(--hd-space-2);
+  padding: var(--hd-space-2) var(--hd-space-3);
+  border: 1px solid var(--hd-border);
+  border-radius: 8px;
+  font-size: var(--hd-text-sm);
+  color: var(--hd-ink);
+}
+.prompt-review-bar-text {
+  margin: 0;
+}
+.prompt-review-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hd-space-2);
+}
+.prompt-review-bar-btn {
+  min-height: 28px;
+  padding: 0 var(--hd-space-3);
+  border: 1px solid var(--hd-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--hd-accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.prompt-review-bar-btn:hover {
+  border-color: var(--hd-accent);
+}
+.prompt-review-bar-btn:focus-visible {
+  outline: 2px solid var(--hd-focus-ring);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .prompt-review-bar-btn {
+    min-height: 44px;
   }
 }

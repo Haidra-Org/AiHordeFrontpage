@@ -4,6 +4,9 @@ import {
   FeatureCompatRuleId,
   RequestLintInput,
   evaluateRequestLint,
+  tiPromptWarnings,
+  loraTriggerWarnings,
+  tiLintValue,
   modelClipSkipWarnings,
   featureCompatRule,
   namedWorkerWarning,
@@ -1371,5 +1374,139 @@ describe('submit blockers', () => {
       'steps',
       'source',
     ]);
+  });
+});
+
+describe('TI prompt checks', () => {
+  it('checks missing, unselected and duplicated references without rewriting prompts', () => {
+    const value = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: '(embedding:2:0.7) embedding:3',
+      tis: [
+        { name: '1', strength: 1 },
+        { name: '2', strength: 0.4, inject_ti: 'negprompt' as const },
+      ],
+    };
+    expect(tiPromptWarnings(value).map((w) => w.id)).toEqual([
+      'ti_missing_reference:1',
+      'ti_duplicate:2',
+      'ti_both_prompts:2',
+      'ti_unselected:3',
+    ]);
+    expect(value.prompt).toBe('(embedding:2:0.7) embedding:3');
+  });
+  it('accepts a manual reference in either prompt and ignores its unused strength', () => {
+    expect(
+      tiPromptWarnings({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        negativePrompt: '(embedding:1:-0.7)',
+        tis: [{ name: '1', strength: 3 }],
+      }),
+    ).toEqual([]);
+  });
+  it('warns when a LoRA adds a trigger that is already written anywhere in the prompt', () => {
+    const lora = (name: string, inject_trigger?: string): LoraSelection => ({
+      name,
+      model: 1,
+      clip: 1,
+      inject_trigger,
+      triggerWords: ['sks style', 'detailed'],
+    });
+    const warnings = loraTriggerWarnings({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'a cat in (sks style:1.2) at dusk',
+      loras: [
+        lora('1', 'sks style'),
+        lora('2', 'any'),
+        lora('3', 'detailed'),
+        lora('4'),
+      ],
+    });
+    expect(warnings.map((w) => [w.id, w.params?.['trigger']])).toEqual([
+      ['lora_trigger_duplicate:1', 'sks style'],
+      ['lora_trigger_duplicate:2', 'sks style'],
+    ]);
+  });
+  it('warns when a trigger is in both the prompt and the negative prompt', () => {
+    const lora = (name: string, inject_trigger?: string): LoraSelection => ({
+      name,
+      model: 1,
+      clip: 1,
+      inject_trigger,
+      triggerWords: ['detailed'],
+    });
+    const loraIds = loraTriggerWarnings({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'a cat',
+      negativePrompt: 'detailed',
+      loras: [lora('written'), lora('added', 'detailed'), lora('any', 'any')],
+    }).map((w) => w.id);
+    expect(loraIds).toEqual(['lora_trigger_both_prompts:added']);
+
+    const tiIds = tiPromptWarnings({
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'embedding:1 cat',
+      negativePrompt: '(embedding:1:0.5), embedding:3',
+      tis: [
+        { name: '1', strength: 1 },
+        { name: '2', strength: 1, inject_ti: 'prompt' },
+        { name: '3', strength: 1, inject_ti: 'prompt' },
+      ],
+    }).map((w) => w.id);
+    expect(tiIds).toContain('ti_both_prompts:1');
+    expect(tiIds).toContain('ti_both_prompts:3');
+    expect(tiIds).not.toContain('ti_both_prompts:2');
+  });
+  it('warns about a referenced selection beyond the active cap', () => {
+    const tis = Array.from({ length: 21 }, (_, i) => ({
+      name: String(i),
+      strength: 1,
+      inject_ti: 'prompt' as const,
+    }));
+    expect(
+      tiPromptWarnings({
+        ...DEFAULT_GENERATE_FORM_VALUE,
+        prompt: 'embedding:20',
+        tis,
+      }).map((w) => w.id),
+    ).toEqual(['ti_unselected:20']);
+  });
+});
+
+describe('effective style TI checks', () => {
+  it('checks style tokens and replacement TIs instead of the unstyled controls', () => {
+    const raw = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'portrait',
+      tis: [{ name: 'raw', strength: 1 }],
+    };
+    const applied = {
+      prompt: 'portrait###(embedding:style:0.7)',
+      forcedParams: { tis: [{ name: 'style', strength: 3 }] },
+    };
+    const value = tiLintValue(raw, applied);
+    expect(tiPromptWarnings(value)).toEqual([]);
+    expect(
+      evaluateRequestLint(lintInput({ value: raw, tiValue: value })).filter(
+        (warning) => warning.id.startsWith('ti_'),
+      ),
+    ).toEqual([]);
+    expect(raw.tis[0].name).toBe('raw');
+  });
+  it('does not treat raw TIs as selected when the Horde applies a style with no TIs', () => {
+    const raw = {
+      ...DEFAULT_GENERATE_FORM_VALUE,
+      prompt: 'embedding:1',
+      tis: [{ name: '1', strength: 1 }],
+    };
+    expect(
+      tiPromptWarnings(
+        tiLintValue(raw, {
+          prompt: raw.prompt,
+          forcedParams: {},
+          hordeApplied: true,
+        }),
+      ).map((w) => w.id),
+    ).toEqual(['ti_unselected:1']);
   });
 });

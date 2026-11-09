@@ -336,10 +336,35 @@
             {{ "generate.civitai.manual_is_version" | transloco }}
           </label>
         }
+        @if (tab() === "ti") {
+          <label class="hd-label"
+            >{{ "generate.civitai.detail_inject_ti" | transloco }}
+            <select
+              class="hd-input"
+              [value]="manualPlacement()"
+              (change)="manualPlacement.set($any($event.target).value)"
+            >
+              <option value="" disabled>
+                {{ "generate.civitai.ti_choose" | transloco }}
+              </option>
+              <option value="prompt">
+                {{ "generate.civitai.detail_inject_ti_prompt" | transloco }}
+              </option>
+              <option value="negprompt">
+                {{ "generate.civitai.detail_inject_ti_negprompt" | transloco }}
+              </option>
+              <option value="manual">
+                {{ "generate.civitai.detail_inject_ti_none" | transloco }}
+              </option>
+            </select>
+          </label>
+        }
         <button
           type="button"
           class="gs-civit-add"
-          [disabled]="!manualName.value.trim()"
+          [disabled]="
+            !manualName.value.trim() || (tab() === 'ti' && !manualPlacement())
+          "
           (click)="addManual()"
         >
           {{ "generate.civitai.manual_add" | transloco }}
@@ -351,13 +376,14 @@
 
 @if (detailTarget(); as target) {
   <app-civitai-detail
+    [prompts]="prompts()"
+    (promptEdit)="promptEdit.emit($event)"
     [target]="target"
     [current]="detailCurrent()"
     [baseline]="baseline()"
     [allowSha256]="allowSha256()"
     (apply)="onDetailApply($event)"
     (remove)="onDetailRemove()"
-    (appendToPrompt)="appendToPrompt.emit($event)"
     (closed)="closeDetails()"
   />
 }

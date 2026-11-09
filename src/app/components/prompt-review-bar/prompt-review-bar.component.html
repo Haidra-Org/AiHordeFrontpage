@@ -1,0 +1,36 @@
+@if (reviews?.review(); as review) {
+  @let total = count(review.word);
+  @if (review.target === target() && total > 0) {
+    <div class="prompt-review-bar" role="group" [attr.aria-label]="review.word">
+      <p class="prompt-review-bar-text">
+        {{
+          (total === 1
+            ? "generate.civitai.review_one"
+            : "generate.civitai.review_many"
+          ) | transloco: { word: review.word, count: total }
+        }}
+      </p>
+      <div class="prompt-review-bar-actions">
+        @if (total > 1) {
+          <button
+            type="button"
+            class="prompt-review-bar-btn"
+            (click)="reviews?.showNext(text())"
+          >
+            {{
+              "generate.civitai.review_show_next"
+                | transloco: { next: reviews?.nextNumber(total), count: total }
+            }}
+          </button>
+        }
+        <button
+          type="button"
+          class="prompt-review-bar-btn"
+          (click)="reviews?.back()"
+        >
+          {{ "generate.civitai.review_back" | transloco }}
+        </button>
+      </div>
+    </div>
+  }
+}

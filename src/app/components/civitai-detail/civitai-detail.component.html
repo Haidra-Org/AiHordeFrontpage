@@ -115,231 +115,385 @@
         }
       }
 
-      <h4 class="gs-cv-detail-heading">
-        {{ "generate.civitai.detail_triggers" | transloco }}
-      </h4>
-      @if (triggerWords().length === 0) {
-        <p class="gs-cv-detail-note">
-          {{ "generate.civitai.detail_triggers_none" | transloco }}
-        </p>
-      } @else {
-        <p class="gs-cv-detail-note">
-          {{
-            (isLora()
-              ? "generate.civitai.detail_triggers_note"
-              : "generate.civitai.detail_triggers_note_ti"
-            ) | transloco
-          }}
-        </p>
-        <div class="gs-cv-triggers">
-          @for (word of triggerWords(); track word) {
-            <div class="gs-cv-trigger-row">
-              <span class="gs-cv-trigger-word" [title]="word">{{ word }}</span>
-              @if (isLora()) {
-                @if (canInject(word)) {
-                  <button
-                    type="button"
-                    class="gs-cv-trigger-act"
-                    [class.gs-cv-trigger-act--on]="injectTrigger() === word"
-                    (click)="setTrigger(word)"
-                  >
-                    {{ "generate.civitai.detail_trigger_inject" | transloco }}
-                  </button>
-                } @else {
-                  <!-- Said rather than greyed out: a dead control leaves the
-                       reader guessing which of the two offers is missing. -->
-                  <span class="gs-cv-trigger-why">
-                    {{ "generate.civitai.detail_trigger_too_long" | transloco }}
+      @if (isLora() && versions().length > 0) {
+        <section class="hd-asset-detail hd-asset-detail-section">
+          <h4 class="hd-asset-detail-heading">
+            {{ "generate.civitai.detail_versions" | transloco }}
+          </h4>
+          <div class="gs-cv-versions" role="radiogroup">
+            @for (version of versions(); track version.id) {
+              <button
+                type="button"
+                class="gs-cv-version"
+                role="radio"
+                [attr.aria-checked]="version.id === selectedVersionId()"
+                [class.gs-cv-version--on]="version.id === selectedVersionId()"
+                (click)="selectVersion(version.id)"
+              >
+                <span class="gs-cv-version-name">{{ version.name }}</span>
+                <span class="gs-cv-version-base">{{ version.baseModel }}</span>
+                @if (version.fileSizeKb) {
+                  <span class="gs-cv-version-size">
+                    {{ version.fileSizeKb / 1000 | number: "1.0-0" }} MB
                   </span>
                 }
-              }
-              <button
-                type="button"
-                class="gs-cv-trigger-act"
-                [class.gs-cv-trigger-act--done]="promptedWord() === word"
-                (click)="onAppendTrigger(word)"
-              >
-                {{
-                  (promptedWord() === word
-                    ? "generate.civitai.detail_trigger_to_prompt_done"
-                    : "generate.civitai.detail_trigger_to_prompt"
-                  ) | transloco
-                }}
-              </button>
-            </div>
-          }
-          @if (isLora()) {
-            <div class="gs-cv-trigger-row">
-              <span class="gs-cv-trigger-word">
-                {{ "generate.civitai.detail_trigger_inject_any" | transloco }}
-              </span>
-              <button
-                type="button"
-                class="gs-cv-trigger-act"
-                [class.gs-cv-trigger-act--on]="injectTrigger() === injectAny"
-                (click)="setTrigger(injectAny)"
-              >
-                {{ "generate.civitai.detail_trigger_inject" | transloco }}
-              </button>
-              <button
-                type="button"
-                class="gs-cv-trigger-act"
-                [class.gs-cv-trigger-act--on]="injectTrigger() === null"
-                (click)="setTrigger(null)"
-              >
-                {{ "generate.civitai.detail_trigger_inject_none" | transloco }}
-              </button>
-            </div>
-          }
-        </div>
-        <p class="sr-only" role="status" aria-live="polite">
-          @if (promptedWord(); as word) {
-            {{ "generate.civitai.detail_trigger_to_prompt_done" | transloco }}:
-            {{ word }}
-          }
-        </p>
-      }
-
-      <h4 class="gs-cv-detail-heading">
-        {{ "generate.civitai.detail_strength" | transloco }}
-      </h4>
-      @if (isLora()) {
-        <label class="gs-cv-field">
-          <span class="gs-slabel">
-            {{ "generate.form.lora_model_short" | transloco }}
-            <span class="gs-mono gs-purple float-right">
-              {{ modelStrength() | number: "1.2-2" }}
-            </span>
-          </span>
-          <input
-            class="gs-range gs-range--purple"
-            type="range"
-            [min]="minStrength"
-            [max]="maxStrength"
-            step="0.05"
-            [value]="modelStrength()"
-            (input)="modelStrength.set(numberValue($event))"
-          />
-        </label>
-        <label class="gs-cv-field">
-          <span class="gs-slabel">
-            {{ "generate.form.lora_clip_short" | transloco }}
-            <span class="gs-mono gs-purple float-right">
-              {{ clipStrength() | number: "1.2-2" }}
-            </span>
-          </span>
-          <input
-            class="gs-range gs-range--purple"
-            type="range"
-            [min]="minStrength"
-            [max]="maxStrength"
-            step="0.05"
-            [value]="clipStrength()"
-            (input)="clipStrength.set(numberValue($event))"
-          />
-        </label>
-        @if (allowSha256()) {
-          <label class="gs-cv-field">
-            <span class="gs-slabel">
-              {{ "generate.civitai.detail_sha256" | transloco }}
-            </span>
-            <input
-              class="form-input gs-cv-hash"
-              type="text"
-              spellcheck="false"
-              [value]="sha256()"
-              (input)="sha256.set(textValue($event))"
-              [placeholder]="
-                selectedVersion()?.sha256 ??
-                ('generate.civitai.detail_sha256_hint' | transloco)
-              "
-            />
-          </label>
-        }
-      } @else {
-        <label class="gs-cv-field">
-          <span class="gs-slabel">
-            {{ "generate.form.ti_strength_short" | transloco }}
-            <span class="gs-mono gs-purple float-right">
-              {{ tiStrength() | number: "1.2-2" }}
-            </span>
-          </span>
-          <input
-            class="gs-range gs-range--purple"
-            type="range"
-            [min]="minStrength"
-            [max]="maxStrength"
-            step="0.05"
-            [value]="tiStrength()"
-            (input)="tiStrength.set(numberValue($event))"
-          />
-        </label>
-        <div class="gs-cv-field">
-          <span class="gs-slabel">
-            {{ "generate.civitai.detail_inject_ti" | transloco }}
-          </span>
-          <p class="gs-cv-detail-note gs-cv-field-note">
-            {{ "generate.civitai.detail_inject_ti_note" | transloco }}
-          </p>
-          <div class="gs-seg" role="group">
-            @for (target of injectTargets; track target) {
-              <button
-                type="button"
-                class="gs-seg-opt"
-                [attr.aria-pressed]="injectTi() === target"
-                (click)="setInjectTi(target)"
-              >
-                {{ "generate.civitai.detail_inject_ti_" + target | transloco }}
+                @if (suitsBaseline(version)) {
+                  <span class="gs-cv-version-fit">
+                    {{
+                      "generate.civitai.detail_version_compatible" | transloco
+                    }}
+                  </span>
+                }
+                @if (!isFetchable(version)) {
+                  <span class="gs-cv-version-locked">
+                    {{
+                      "generate.civitai.detail_version_early_access" | transloco
+                    }}
+                  </span>
+                }
               </button>
             }
-            <button
-              type="button"
-              class="gs-seg-opt"
-              [attr.aria-pressed]="injectTi() === null"
-              (click)="setInjectTi(null)"
-            >
-              {{ "generate.civitai.detail_inject_ti_none" | transloco }}
-            </button>
           </div>
+        </section>
+      }
+      @if (isLora()) {
+        <div class="hd-asset-detail">
+          <section
+            class="hd-asset-detail-section"
+            aria-labelledby="lora-triggers-heading"
+          >
+            <h4 id="lora-triggers-heading" class="hd-asset-detail-heading">
+              {{ "generate.civitai.detail_triggers" | transloco }}
+            </h4>
+            <p class="hd-asset-detail-note">
+              {{ "generate.civitai.detail_triggers_note" | transloco }}
+            </p>
+            @if (!triggerWords().length) {
+              <p class="hd-asset-detail-note">
+                {{ "generate.civitai.detail_triggers_none" | transloco }}
+              </p>
+            }
+            @for (word of triggerWords(); track word) {
+              <div class="hd-asset-trigger">
+                <code>{{ word }}</code>
+                <div class="hd-asset-detail-actions">
+                  @for (target of injectTargets; track target) {
+                    <button
+                      type="button"
+                      class="hd-btn"
+                      (click)="insertLora(word, target)"
+                    >
+                      {{ "generate.civitai.ti_insert_" + target | transloco }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+            <p class="hd-asset-detail-note">
+              {{ "generate.civitai.trigger_insert_note" | transloco }}
+            </p>
+          </section>
+          <section
+            class="hd-asset-detail-section"
+            aria-labelledby="lora-auto-heading"
+          >
+            <h4 id="lora-auto-heading" class="hd-asset-detail-heading">
+              {{ "generate.civitai.trigger_auto_heading" | transloco }}
+            </h4>
+            <p class="hd-asset-detail-note">
+              {{ "generate.civitai.trigger_auto_note" | transloco }}
+            </p>
+            <label class="hd-asset-detail-field">
+              <span class="sr-only">{{
+                "generate.civitai.trigger_auto_heading" | transloco
+              }}</span>
+              <select
+                class="hd-input"
+                [value]="injectTrigger() ?? ''"
+                (change)="setTrigger(textValue($event) || null)"
+              >
+                <option value="">
+                  {{
+                    "generate.civitai.detail_trigger_inject_none" | transloco
+                  }}
+                </option>
+                @if (triggerWords().length || injectTrigger() === injectAny) {
+                  <option [value]="injectAny">
+                    {{
+                      "generate.civitai.detail_trigger_inject_any" | transloco
+                    }}
+                  </option>
+                }
+                @if (
+                  injectTrigger() &&
+                  injectTrigger() !== injectAny &&
+                  !triggerWords().includes(injectTrigger()!)
+                ) {
+                  <option [value]="injectTrigger()">
+                    {{ injectTrigger() }}
+                  </option>
+                }
+                @for (word of triggerWords(); track word) {
+                  <option [value]="word" [disabled]="!canInject(word)">
+                    {{ word }}
+                  </option>
+                }
+              </select>
+            </label>
+          </section>
+        </div>
+      }
+      @if (isLora()) {
+        <section class="hd-asset-detail hd-asset-detail-section">
+          <h4 class="hd-asset-detail-heading">
+            {{ "generate.civitai.detail_strength" | transloco }}
+          </h4>
+          <label class="hd-asset-detail-field">
+            <span class="hd-asset-detail-label">
+              {{ "generate.form.lora_model_short" | transloco }}
+              <span class="hd-asset-detail-value">
+                {{ modelStrength() | number: "1.2-2" }}
+              </span>
+            </span>
+            <input
+              class="hd-asset-detail-range"
+              type="range"
+              [min]="minStrength"
+              [max]="maxStrength"
+              step="0.05"
+              [value]="modelStrength()"
+              (input)="modelStrength.set(numberValue($event))"
+            />
+          </label>
+          <label class="hd-asset-detail-field">
+            <span class="hd-asset-detail-label">
+              {{ "generate.form.lora_clip_short" | transloco }}
+              <span class="hd-asset-detail-value">
+                {{ clipStrength() | number: "1.2-2" }}
+              </span>
+            </span>
+            <input
+              class="hd-asset-detail-range"
+              type="range"
+              [min]="minStrength"
+              [max]="maxStrength"
+              step="0.05"
+              [value]="clipStrength()"
+              (input)="clipStrength.set(numberValue($event))"
+            />
+          </label>
+          @if (allowSha256()) {
+            <label class="hd-asset-detail-field">
+              <span class="hd-asset-detail-label">
+                {{ "generate.civitai.detail_sha256" | transloco }}
+              </span>
+              <input
+                class="form-input gs-cv-hash"
+                type="text"
+                spellcheck="false"
+                [value]="sha256()"
+                (input)="sha256.set(textValue($event))"
+                [placeholder]="
+                  selectedVersion()?.sha256 ??
+                  ('generate.civitai.detail_sha256_hint' | transloco)
+                "
+              />
+            </label>
+          }
+        </section>
+      } @else {
+        <div class="hd-asset-detail">
+          <section
+            class="hd-asset-detail-section"
+            aria-labelledby="ti-placement-heading"
+          >
+            <h4 id="ti-placement-heading" class="hd-asset-detail-heading">
+              {{ "generate.civitai.detail_inject_ti" | transloco }}
+            </h4>
+            <p class="hd-asset-detail-note">
+              {{ "generate.civitai.detail_inject_ti_note" | transloco }}
+            </p>
+            @if (!placementChosen()) {
+              <p class="hd-asset-detail-note">
+                {{ "generate.civitai.ti_choose" | transloco }}
+              </p>
+            }
+            <div
+              class="hd-asset-detail-placement"
+              role="group"
+              aria-labelledby="ti-placement-heading"
+            >
+              <div
+                class="hd-asset-auto"
+                [class.hd-asset-auto--on]="injectTi() !== null"
+                role="group"
+                aria-labelledby="ti-auto-heading"
+              >
+                <span id="ti-auto-heading" class="hd-asset-auto-label">
+                  {{ "generate.civitai.ti_placement_automatic" | transloco }}
+                </span>
+                <div class="hd-seg">
+                  @for (target of injectTargets; track target) {
+                    <button
+                      type="button"
+                      class="hd-seg-opt"
+                      [attr.aria-pressed]="injectTi() === target"
+                      (click)="setInjectTi(target)"
+                    >
+                      {{
+                        "generate.civitai.detail_inject_ti_" + target
+                          | transloco
+                      }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <div class="hd-seg">
+                <button
+                  type="button"
+                  class="hd-seg-opt"
+                  [attr.aria-pressed]="placementChosen() && injectTi() === null"
+                  (click)="setInjectTi(null)"
+                >
+                  {{ "generate.civitai.detail_inject_ti_none" | transloco }}
+                </button>
+              </div>
+            </div>
+          </section>
+          <section class="hd-asset-detail-section">
+            <label class="hd-asset-detail-field">
+              <span class="hd-asset-detail-label">
+                {{ "generate.form.ti_strength_short" | transloco }}
+                <span class="hd-asset-detail-value">
+                  {{ tiStrength() | number: "1.2-2" }}
+                </span>
+              </span>
+              <input
+                class="hd-asset-detail-range"
+                type="range"
+                [min]="minStrength"
+                [max]="maxStrength"
+                step="0.05"
+                [value]="tiStrength()"
+                (input)="tiStrength.set(numberValue($event))"
+              />
+            </label>
+            @if (injectTi() === null) {
+              <p class="hd-asset-detail-note">
+                {{
+                  "generate.civitai.ti_manual_note"
+                    | transloco: { reference: weightedReference() }
+                }}
+              </p>
+            }
+          </section>
+          <section
+            class="hd-asset-detail-section"
+            aria-labelledby="ti-reference-heading"
+          >
+            <h4 id="ti-reference-heading" class="hd-asset-detail-heading">
+              {{ "generate.civitai.ti_reference" | transloco }}
+            </h4>
+            @if (injectTi() !== null) {
+              <p class="hd-asset-detail-note">
+                {{ "generate.civitai.ti_trigger_automatic" | transloco }}
+              </p>
+            }
+            <div class="hd-asset-detail-reference">
+              <code>{{ reference() }}</code>
+              <button
+                type="button"
+                class="hd-btn"
+                [disabled]="injectTi() !== null"
+                (click)="copyReference()"
+              >
+                {{ "generate.civitai.ti_copy" | transloco }}
+              </button>
+            </div>
+            <div class="hd-asset-detail-actions">
+              @for (target of injectTargets; track target) {
+                <button
+                  type="button"
+                  class="hd-btn"
+                  [disabled]="injectTi() !== null"
+                  (click)="insertTi(target)"
+                >
+                  {{ "generate.civitai.ti_insert_" + target | transloco }}
+                </button>
+              }
+            </div>
+            <p
+              class="hd-asset-detail-note hd-asset-detail-status"
+              role="status"
+              aria-live="polite"
+            >
+              @if (insertedReference(); as inserted) {
+                {{
+                  "generate.civitai.ti_inserted_" + inserted.target
+                    | transloco: { reference: inserted.text }
+                }}
+              }
+            </p>
+          </section>
+          <p class="hd-asset-detail-note hd-asset-detail-version">
+            {{ "generate.civitai.ti_version_note" | transloco }}
+          </p>
         </div>
       }
 
-      @if (isLora() && versions().length > 0) {
-        <h4 class="gs-cv-detail-heading">
-          {{ "generate.civitai.detail_versions" | transloco }}
-        </h4>
-        <div class="gs-cv-versions" role="radiogroup">
-          @for (version of versions(); track version.id) {
-            <button
-              type="button"
-              class="gs-cv-version"
-              role="radio"
-              [attr.aria-checked]="version.id === selectedVersionId()"
-              [class.gs-cv-version--on]="version.id === selectedVersionId()"
-              (click)="selectVersion(version.id)"
-            >
-              <span class="gs-cv-version-name">{{ version.name }}</span>
-              <span class="gs-cv-version-base">{{ version.baseModel }}</span>
-              @if (version.fileSizeKb) {
-                <span class="gs-cv-version-size">
-                  {{ version.fileSizeKb / 1000 | number: "1.0-0" }} MB
-                </span>
-              }
-              @if (suitsBaseline(version)) {
-                <span class="gs-cv-version-fit">
-                  {{ "generate.civitai.detail_version_compatible" | transloco }}
-                </span>
-              }
-              @if (!isFetchable(version)) {
-                <span class="gs-cv-version-locked">
-                  {{
-                    "generate.civitai.detail_version_early_access" | transloco
-                  }}
-                </span>
-              }
-            </button>
+      @if (shownPrompts(); as currentPrompts) {
+        <section class="hd-asset-prompt-peek">
+          <button
+            type="button"
+            class="hd-btn hd-asset-prompt-toggle"
+            [attr.aria-expanded]="promptsOpen()"
+            aria-controls="asset-prompt-editor"
+            (click)="promptsOpen.set(!promptsOpen())"
+          >
+            {{
+              (promptsOpen()
+                ? "generate.civitai.prompts_hide"
+                : "generate.civitai.prompts_show"
+              ) | transloco
+            }}
+          </button>
+          @if (promptsOpen()) {
+            <div id="asset-prompt-editor" class="hd-asset-detail-section">
+              <p class="hd-asset-detail-note">
+                {{
+                  (currentPrompts.template
+                    ? "generate.civitai.prompts_template_note"
+                    : "generate.civitai.prompts_note"
+                  ) | transloco
+                }}
+              </p>
+              <label class="hd-asset-detail-field">
+                <span class="hd-asset-detail-label">{{
+                  "generate.civitai.detail_inject_ti_prompt" | transloco
+                }}</span>
+                <textarea
+                  #promptEditor
+                  class="hd-textarea"
+                  rows="4"
+                  [value]="currentPrompts.prompt"
+                  (input)="editDraft('prompt', textValue($event))"
+                ></textarea>
+              </label>
+              <label class="hd-asset-detail-field">
+                <span class="hd-asset-detail-label">{{
+                  "generate.civitai.detail_inject_ti_negprompt" | transloco
+                }}</span>
+                <textarea
+                  #negativeEditor
+                  class="hd-textarea"
+                  rows="3"
+                  [value]="currentPrompts.negativePrompt"
+                  (input)="editDraft('negprompt', textValue($event))"
+                ></textarea>
+              </label>
+            </div>
           }
-        </div>
+        </section>
       }
     </div>
 
@@ -349,7 +503,12 @@
           {{ "generate.civitai.detail_remove" | transloco }}
         </button>
       }
-      <button type="button" class="gs-modal-done" (click)="onApply()">
+      <button
+        type="button"
+        class="gs-modal-done"
+        [disabled]="!isLora() && !placementChosen()"
+        (click)="onApply()"
+      >
         {{
           (isEditing()
             ? "generate.civitai.detail_apply_update"

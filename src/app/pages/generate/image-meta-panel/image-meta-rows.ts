@@ -102,17 +102,20 @@ function tiLabel(deps: MetaRowDeps, entry: FormTiEntry): string {
     'generate.results.meta_ti_id',
   );
   const attributes = [
-    deps.translate('generate.results.meta_weight_strength', {
-      value: entry.strength,
-    }),
+    deps.translate(
+      entry.inject_ti === 'prompt'
+        ? 'generate.civitai.detail_inject_ti_prompt'
+        : entry.inject_ti === 'negprompt'
+          ? 'generate.civitai.detail_inject_ti_negprompt'
+          : 'generate.civitai.detail_inject_ti_none',
+    ),
   ];
-  if (entry.inject_ti) {
+  if (entry.inject_ti)
     attributes.push(
-      deps.translate('generate.results.meta_inject', {
-        target: entry.inject_ti,
+      deps.translate('generate.results.meta_weight_strength', {
+        value: entry.strength,
       }),
     );
-  }
   return `${name} (${attributes.join(', ')})`;
 }
 
@@ -228,7 +231,7 @@ export function buildMetaGroups(
   if (value.tis.length > 0) {
     sampling.push({
       id: 'tis',
-      labelKey: label('tis'),
+      labelKey: 'generate.results.meta_tis_requested',
       value: value.tis.map((ti) => tiLabel(deps, ti)).join(' · '),
       keys: ['tis'],
     });
