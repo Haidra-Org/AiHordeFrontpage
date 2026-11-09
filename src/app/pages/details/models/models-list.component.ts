@@ -60,6 +60,7 @@ export interface ModelRow {
   family: string;
   /** Weight count of a text model, already shortened for printing. */
   parameters: string;
+  parameterCount: number | null;
   nsfw: boolean;
   inpainting: boolean;
   /** How many pictures or texts this model made in the last month. */
@@ -153,6 +154,36 @@ export class ModelsListComponent implements OnInit {
   /** Whether models marked adult are left out. */
   public readonly hideAdult = signal(false);
 
+  public readonly showTextDetails = signal(true);
+  public readonly parameterFilter = signal('');
+  public readonly listingFilter = signal('');
+  public readonly chatOnly = signal(false);
+  public readonly parameterRanges = [
+    { id: 'small', key: 'details.models.filters.parameters_small' },
+    { id: 'medium', key: 'details.models.filters.parameters_medium' },
+    { id: 'large', key: 'details.models.filters.parameters_large' },
+    { id: 'largest', key: 'details.models.filters.parameters_largest' },
+    { id: 'unknown', key: 'details.models.filters.parameters_unknown' },
+  ] as const;
+  public readonly listingOptions = [
+    { id: 'listed', key: 'details.models.status.listed' },
+    { id: 'unlisted', key: 'details.models.badge.custom' },
+    { id: 'unclassified', key: 'details.models.badge.unclassified' },
+  ] as const;
+  public listingStatus(row: ModelRow): string {
+    return row.model.custom === false
+      ? 'listed'
+      : row.model.custom === true
+        ? 'unlisted'
+        : 'unclassified';
+  }
+  public onParameterChange(event: Event): void {
+    this.parameterFilter.set((event.target as HTMLSelectElement).value);
+  }
+  public onListingChange(event: Event): void {
+    this.listingFilter.set((event.target as HTMLSelectElement).value);
+  }
+
   /** Whether the note about what the columns hold is open. */
   public readonly columnsHelpOpen = signal(false);
 
@@ -162,7 +193,12 @@ export class ModelsListComponent implements OnInit {
     () =>
       Number(this.capabilityFilter() !== null) +
       Number(this.workersOnly()) +
-      Number(this.hideAdult()),
+      Number(this.hideAdult()) +
+      (this.activeTab() === 'text'
+        ? Number(!!this.parameterFilter()) +
+          Number(!!this.listingFilter()) +
+          Number(this.chatOnly())
+        : 0),
   );
 
   /** Sort field. */
@@ -201,13 +237,11 @@ export class ModelsListComponent implements OnInit {
 
   /** The baselines the current tab can be narrowed to, most common first. */
   public readonly baselineOptions = computed<string[]>(() => {
-    if (this.activeTab() !== 'image') {
-      return [];
-    }
     const counts = new Map<string, number>();
     for (const row of this.allRows()) {
-      if (row.baseline !== '') {
-        counts.set(row.baseline, (counts.get(row.baseline) ?? 0) + 1);
+      const family = this.activeTab() === 'image' ? row.baseline : row.family;
+      if (family !== '') {
+        counts.set(family, (counts.get(family) ?? 0) + 1);
       }
     }
     return [...counts.entries()]
@@ -232,7 +266,11 @@ export class ModelsListComponent implements OnInit {
 
     const filtered = this.allRows().filter((row) => {
       if (query && !row.model.name.toLowerCase().includes(query)) return false;
-      if (baseline !== null && row.baseline !== baseline) return false;
+      if (
+        baseline !== null &&
+        (this.activeTab() === 'image' ? row.baseline : row.family) !== baseline
+      )
+        return false;
       if (
         capability !== null &&
         !row.capabilities.some((entry) => entry.id === capability)
@@ -245,6 +283,32 @@ export class ModelsListComponent implements OnInit {
         return false;
       }
       if (hideAdult && row.nsfw) return false;
+      if (this.activeTab() === 'text') {
+        if (
+          this.listingFilter() &&
+          this.listingStatus(row) !== this.listingFilter()
+        )
+          return false;
+        if (this.chatOnly() && this.chatFor(row) === null) return false;
+        const size = row.parameterCount;
+        switch (this.parameterFilter()) {
+          case 'small':
+            if (size === null || size >= 7e9) return false;
+            break;
+          case 'medium':
+            if (size === null || size < 7e9 || size >= 20e9) return false;
+            break;
+          case 'large':
+            if (size === null || size < 20e9 || size >= 70e9) return false;
+            break;
+          case 'largest':
+            if (size === null || size < 70e9) return false;
+            break;
+          case 'unknown':
+            if (size !== null) return false;
+            break;
+        }
+      }
       return true;
     });
 
@@ -332,7 +396,11 @@ export class ModelsListComponent implements OnInit {
       this.capabilityFilter() !== null ||
       this.workersOnly() ||
       this.hideAdult() ||
-      this.searchQuery().trim() !== '',
+      this.searchQuery().trim() !== '' ||
+      (this.activeTab() === 'text' &&
+        (!!this.parameterFilter() ||
+          !!this.listingFilter() ||
+          this.chatOnly())),
   );
 
   private imageRow(model: ActiveModel, usage: number): ModelRow {
@@ -343,6 +411,7 @@ export class ModelsListComponent implements OnInit {
       baseline,
       family: '',
       parameters: '',
+      parameterCount: null,
       nsfw: record?.nsfw ?? false,
       inpainting: record?.inpainting ?? false,
       usage,
@@ -357,6 +426,8 @@ export class ModelsListComponent implements OnInit {
       baseline: '',
       family: record?.baseline ?? '',
       parameters: formatParameterCount(record?.parameters ?? null),
+      parameterCount:
+        record?.parameters && record.parameters > 0 ? record.parameters : null,
       nsfw: record?.nsfw ?? false,
       inpainting: false,
       usage,
@@ -365,7 +436,9 @@ export class ModelsListComponent implements OnInit {
   }
 
   /** The printed name of a baseline token. */
-  public readonly baselineLabel = baselineLabel;
+  public baselineLabel(value: string): string {
+    return this.activeTab() === 'text' ? value : baselineLabel(value);
+  }
 
   /**
    * What the family column prints: the baseline an image model was built on,
@@ -471,6 +544,9 @@ export class ModelsListComponent implements OnInit {
     // one of them says nothing about the other.
     this.baselineFilter.set(null);
     this.capabilityFilter.set(null);
+    this.parameterFilter.set('');
+    this.listingFilter.set('');
+    this.chatOnly.set(false);
     this.sortField.set('count');
     this.sortDirection.set('desc');
     void this.router.navigate(['/details/models', tab], { replaceUrl: true });
@@ -546,7 +622,10 @@ export class ModelsListComponent implements OnInit {
               ),
             );
           },
-          error: () => this.textChat.set(null),
+          error: () => {
+            // A failed refresh must not turn an active chat filter into an empty list.
+            if (!this.chatOnly()) this.textChat.set(null);
+          },
         });
     }
   }
@@ -585,6 +664,9 @@ export class ModelsListComponent implements OnInit {
   public clearFilters(): void {
     this.baselineFilter.set(null);
     this.capabilityFilter.set(null);
+    this.parameterFilter.set('');
+    this.listingFilter.set('');
+    this.chatOnly.set(false);
     this.workersOnly.set(false);
     this.hideAdult.set(false);
     this.searchQuery.set('');

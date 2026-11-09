@@ -3601,7 +3601,11 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
 
   function buttonWithText(text: string): HTMLButtonElement {
     const button = [...host.querySelectorAll('button')].find(
-      (candidate) => candidate.textContent?.trim() === text,
+      (candidate) =>
+        (
+          candidate.querySelector('.gs-opt-label')?.textContent ??
+          candidate.textContent
+        )?.trim() === text,
     );
     expect(button).toBeDefined();
     return button!;
@@ -3704,6 +3708,8 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
     expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
 
     component.closeViewer();
+    fixture.detectChanges();
+    host.querySelector<HTMLButtonElement>('.hd-results-view')!.click();
     fixture.detectChanges();
     buttonWithText('Show NSFW').click();
     fixture.detectChanges();

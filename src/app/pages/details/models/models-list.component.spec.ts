@@ -4,7 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { signal } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../../assets/i18n/en.json';
 import { ModelsListComponent } from './models-list.component';
@@ -483,5 +483,167 @@ describe('ModelsListComponent', () => {
       'stable_diffusion_xl',
     );
     expect(chips().length).toBe(1);
+  });
+  describe('text model metadata and filters', () => {
+    const longBaseline =
+      'An exceptionally long published baseline family / Extended instruction tuned edition';
+    function textList(): ModelsListComponent {
+      const api = TestBed.inject(AiHordeService);
+      const reference = TestBed.inject(ModelReferenceService);
+      const names = ['Small', 'Medium', 'Large', 'Largest', 'Unknown size'];
+      const sizes = [6.9e9, 7e9, 20e9, 70e9, null];
+      vi.spyOn(api, 'getClassifiedTextModels').mockReturnValue(
+        of(
+          names.map((name, index) => ({
+            name,
+            count: index === 1 ? 0 : 2,
+            custom: index === 3 ? undefined : index === 1,
+          })),
+        ),
+      );
+      vi.spyOn(api, 'getChatTextModels').mockReturnValue(
+        of([
+          {
+            name: 'Medium',
+            count: 0,
+            chat: {
+              workers: 2,
+              max_context_length: 8192,
+              max_length: 512,
+              features: [],
+              created: 0,
+            },
+          },
+        ]),
+      );
+      vi.spyOn(reference, 'textNames').mockReturnValue(names);
+      vi.spyOn(reference, 'textRecordFor').mockImplementation(
+        (name) =>
+          ({
+            name,
+            baseline: name === 'Small' ? longBaseline : 'Other family',
+            parameters: sizes[names.indexOf(name)],
+          }) as ReturnType<ModelReferenceService['textRecordFor']>,
+      );
+      fixture.detectChanges();
+      fixture.componentInstance.setActiveTab('text');
+      fixture.detectChanges();
+      return fixture.componentInstance;
+    }
+
+    it('puts full metadata beneath names and hides it without changing the models', () => {
+      textList();
+      const host = fixture.nativeElement as HTMLElement;
+      expect(
+        host
+          .querySelector('.models-text-metadata')
+          ?.parentElement?.querySelector('.models-list-name'),
+      ).not.toBeNull();
+      expect(host.textContent).toContain(longBaseline);
+      expect(host.querySelectorAll('.models-list-family')).toHaveLength(0);
+      expect(host.querySelectorAll('.models-text-metadata')).toHaveLength(5);
+      const before = rowNames();
+      host.querySelector<HTMLButtonElement>('.models-details-toggle')!.click();
+      fixture.detectChanges();
+      expect(host.querySelectorAll('.models-text-metadata')).toHaveLength(0);
+      expect(rowNames()).toEqual(before);
+      expect(
+        host.querySelector('.models-details-toggle')?.textContent,
+      ).toContain('Show model details');
+    });
+
+    it('keeps baseline sorting available on the text table and exposes metadata as a disclosure', () => {
+      textList();
+      const host = fixture.nativeElement as HTMLElement;
+      expect(
+        host
+          .querySelector('.models-details-toggle')
+          ?.getAttribute('aria-expanded'),
+      ).toBe('true');
+      host.querySelector<HTMLButtonElement>('.models-baseline-sort')!.click();
+      fixture.detectChanges();
+      expect(fixture.componentInstance.sortField()).toBe('baseline');
+      expect(
+        host
+          .querySelector('.models-baseline-sort')
+          ?.getAttribute('aria-pressed'),
+      ).toBe('true');
+    });
+
+    it('keeps last successful chat data when refreshing an active chat filter fails', () => {
+      const component = textList();
+      component.chatOnly.set(true);
+      vi.spyOn(
+        TestBed.inject(AiHordeService),
+        'getChatTextModels',
+      ).mockReturnValue(throwError(() => new Error('offline')));
+      component.loadModels();
+      expect(component.chatOnly()).toBe(true);
+      expect(component.filteredRows().map((row) => row.model.name)).toEqual([
+        'Medium',
+      ]);
+    });
+
+    it('uses inclusive lower bounds for parameter sizes and keeps unknown sizes separate', () => {
+      const component = textList();
+      for (const [range, name] of [
+        ['small', 'Small'],
+        ['medium', 'Medium'],
+        ['large', 'Large'],
+        ['largest', 'Largest'],
+        ['unknown', 'Unknown size'],
+      ]) {
+        component.parameterFilter.set(range);
+        expect(component.filteredRows().map((row) => row.model.name)).toEqual([
+          name,
+        ]);
+      }
+    });
+
+    it('combines baseline and backend listing status and clears the text filters', () => {
+      const component = textList();
+      component.baselineFilter.set(longBaseline);
+      component.listingFilter.set('listed');
+      expect(component.filteredRows().map((row) => row.model.name)).toEqual([
+        'Small',
+      ]);
+      component.listingFilter.set('unlisted');
+      expect(component.filteredRows()).toEqual([]);
+      component.baselineFilter.set(null);
+      component.listingFilter.set('unclassified');
+      expect(component.filteredRows().map((row) => row.model.name)).toEqual([
+        'Largest',
+      ]);
+      component.chatOnly.set(true);
+      component.parameterFilter.set('medium');
+      component.clearFilters();
+      expect(component.filteredRows()).toHaveLength(5);
+      expect(component.extraFilterCount()).toBe(0);
+      expect(component.showTextDetails()).toBe(true);
+    });
+
+    it('includes chat-only models and leaves image filters and rows unchanged on switching tabs', () => {
+      const component = textList();
+      component.chatOnly.set(true);
+      component.workersOnly.set(true);
+      expect(component.filteredRows().map((row) => row.model.name)).toEqual([
+        'Medium',
+      ]);
+      component.setActiveTab('image');
+      fixture.detectChanges();
+      expect(component.chatOnly()).toBe(false);
+      expect(component.filteredRows().map((row) => row.model.name)).toContain(
+        'Deliberate',
+      );
+      expect(
+        fixture.nativeElement.querySelector('.models-text-metadata'),
+      ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('.models-details-toggle'),
+      ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('.models-list-family'),
+      ).not.toBeNull();
+    });
   });
 });

@@ -1,4 +1,4 @@
-<div class="flex h-full min-h-0 flex-col">
+<div class="flex h-full min-h-0 flex-col hd-results-layout">
   <!-- While a tutorial has the pane, the pane's header is the tutorial's: what
        it teaches, where the reader is in it, which world it is drawn in, and
        the way out. The results header comes back when the reader leaves; two
@@ -156,44 +156,15 @@
   }
 
   @if (hasFinished() && !selectMode() && !tutorialOpen()) {
-    <div class="gs-view-bar">
-      <!-- While a tutorial has the pane, the gallery is a strip under it rather
-           than the thing being looked at: laying it out and captioning it are
-           choices about a view the reader is not in. The filters stay, because
-           they change what is there rather than how it is arranged. -->
-      @if (!tutorialOpen()) {
-        <div class="gs-options gs-view-menu" #viewMenuHost>
-          <button
-            type="button"
-            class="gs-view-toggle"
-            [class.gs-view-toggle--on]="viewMenuOpen()"
-            (click)="toggleViewMenu()"
-            [attr.aria-expanded]="viewMenuOpen()"
-            aria-haspopup="dialog"
-          >
-            <app-icon
-              name="adjustments-horizontal"
-              class="gs-ico-sm"
-              aria-hidden="true"
-            />
-            {{ "generate.results.view_menu" | transloco }}
-          </button>
-          @if (viewMenuOpen() && !viewerNarrow()) {
-            <div
-              class="gs-options-pop gs-view-pop"
-              role="dialog"
-              [attr.aria-label]="'generate.results.view_menu' | transloco"
-            >
-              <ng-container *ngTemplateOutlet="viewRows" />
-            </div>
-          }
-        </div>
-      }
-
+    <div class="gs-view-bar hd-results-toolbar">
       <!-- Searches every tile, pending ones included, by the words of its
            prompt. The count beside it is the only sign for a reader who cannot
            see the grid shrink, so it is announced as well as shown. -->
-      <div class="gs-view-search" role="search">
+      <div
+        class="gs-view-search"
+        [class.hd-results-search--filled]="!!query()"
+        role="search"
+      >
         <div class="gs-find-row">
           <app-icon name="magnifying-glass" class="gs-find-ico" />
           <input
@@ -221,15 +192,15 @@
               <app-icon name="x-mark" class="gs-ico-sm" />
             </button>
           }
+          <app-info-tooltip
+            termKey="generate.results.search_hint"
+            labelKey="generate.results.search_hint_title"
+            [termParams]="searchHintParams"
+          />
         </div>
         <span id="gs-results-search-hint" class="sr-only">
           {{ "generate.results.search_hint" | transloco: searchHintParams }}
         </span>
-        <app-info-tooltip
-          termKey="generate.results.search_hint"
-          labelKey="generate.results.search_hint_title"
-          [termParams]="searchHintParams"
-        />
         <span class="gs-view-search-count" aria-live="polite">
           @if (searching()) {
             {{
@@ -241,121 +212,83 @@
         </span>
       </div>
 
-      @if (styleOptions().length > 0) {
-        <label class="gs-view-ctl">
-          <app-icon name="paintbrush" class="gs-ico-sm" />
-          <span class="gs-view-ctl-label">
-            {{ "generate.results.style_filter" | transloco }}
-          </span>
-          <select
-            class="gs-view-select"
-            (change)="styleFilter.set($any($event.target).value)"
-            [attr.aria-label]="'generate.results.style_filter' | transloco"
-          >
-            <option value="" [selected]="styleFilter() === ''">
-              {{ "generate.results.style_all" | transloco }}
-            </option>
-            @for (option of styleOptions(); track option.key) {
-              <option
-                [value]="option.key"
-                [selected]="styleFilter() === option.key"
+      @if (styleOptions().length > 0 || hasErrors()) {
+        <div class="hd-results-filters">
+          @if (styleOptions().length > 0) {
+            <label class="gs-view-ctl">
+              <app-icon name="paintbrush" class="gs-ico-sm" />
+              <span class="gs-view-ctl-label">
+                {{ "generate.results.style_filter" | transloco }}
+              </span>
+              <select
+                class="gs-view-select"
+                (change)="styleFilter.set($any($event.target).value)"
+                [attr.aria-label]="'generate.results.style_filter' | transloco"
               >
-                {{ option.name }} ({{ option.count }})
-              </option>
-            }
-          </select>
-        </label>
-      }
+                <option value="" [selected]="styleFilter() === ''">
+                  {{ "generate.results.style_all" | transloco }}
+                </option>
+                @for (option of styleOptions(); track option.key) {
+                  <option
+                    [value]="option.key"
+                    [selected]="styleFilter() === option.key"
+                  >
+                    {{ option.name }} ({{ option.count }})
+                  </option>
+                }
+              </select>
+            </label>
+          }
 
-      @if (hasNsfw()) {
-        <button
-          type="button"
-          class="gs-view-toggle"
-          [class.gs-view-toggle--on]="showNsfw()"
-          [attr.aria-pressed]="showNsfw()"
-          (click)="toggleShowNsfw()"
-        >
-          {{
-            (showNsfw()
-              ? "generate.results.nsfw_hide"
-              : "generate.results.nsfw_show"
-            ) | transloco
-          }}
-        </button>
-      }
-      @if (hasAesthetic()) {
-        <button
-          type="button"
-          class="gs-view-toggle"
-          [class.gs-view-toggle--on]="sortMode() === 'aesthetic'"
-          [attr.aria-pressed]="sortMode() === 'aesthetic'"
-          (click)="toggleSort()"
-        >
-          <app-icon name="star" class="gs-ico-sm" />
-          {{ "generate.results.sort_aesthetic" | transloco }}
-        </button>
-      }
-      <!-- Kept in the bar rather than in the empty state alone, so the written
-           reference is still one press away once results exist. -->
-      <a class="gs-view-toggle" [routerLink]="referenceLink">
-        <app-icon name="question-mark-circle" class="gs-ico-sm" />
-        {{ "generate.results.open_reference" | transloco }}
-      </a>
-
-      @if (hasErrors()) {
-        <button
-          type="button"
-          class="gs-view-toggle gs-view-toggle--warn"
-          [class.gs-view-toggle--on]="errorsOnly()"
-          [attr.aria-pressed]="errorsOnly()"
-          (click)="toggleErrorsOnly()"
-        >
-          <app-icon name="warning-triangle" class="gs-ico-sm" />
-          {{ "generate.results.filter_errors" | transloco }}
-        </button>
-      }
-
-      <!-- What today came to. Folded away by default: it is a footnote to the
-           work, not part of doing it, and every figure is read off the jobs
-           already stored here rather than asked for. -->
-      @if (sessionStats(); as stats) {
-        @if (stats.images > 0) {
-          <div class="gs-today">
+          @if (hasErrors()) {
             <button
               type="button"
-              class="gs-view-toggle"
-              [class.gs-view-toggle--on]="statsOpen()"
-              [attr.aria-expanded]="statsOpen()"
-              (click)="statsOpen.set(!statsOpen())"
+              class="hd-btn hd-btn--ghost"
+              [class.hd-btn--tonal]="errorsOnly()"
+              [attr.aria-pressed]="errorsOnly()"
+              (click)="toggleErrorsOnly()"
             >
-              <app-icon name="clock" class="gs-ico-sm" />
-              {{
-                (stats.images === 1
-                  ? "generate.results.today_one"
-                  : "generate.results.today_other"
-                ) | transloco: { count: stats.images }
-              }}
+              <app-icon name="warning-triangle" class="gs-ico-sm" />
+              {{ "generate.results.filter_errors" | transloco }}
             </button>
-            @if (statsOpen()) {
-              <ul class="gs-today-list">
-                <li>
-                  {{
-                    "generate.results.today_kudos"
-                      | transloco: { kudos: stats.kudos }
-                  }}
-                </li>
-                @if (stats.averageWaitSeconds !== null) {
-                  <li>
-                    {{
-                      "generate.results.today_wait"
-                        | transloco: { seconds: stats.averageWaitSeconds }
-                    }}
-                  </li>
-                }
-              </ul>
+          }
+        </div>
+      }
+      @if (!tutorialOpen()) {
+        <div class="gs-options gs-view-menu" #viewMenuHost>
+          <button
+            type="button"
+            class="hd-btn hd-btn--ghost hd-results-view"
+            [attr.aria-label]="
+              (sortMode() === 'aesthetic'
+                ? 'generate.results.view_top_rated'
+                : 'generate.results.view_menu'
+              ) | transloco
+            "
+            (click)="toggleViewMenu()"
+            [attr.aria-expanded]="viewMenuOpen()"
+            aria-haspopup="dialog"
+          >
+            <app-icon
+              name="adjustments-horizontal"
+              class="gs-ico-sm"
+              aria-hidden="true"
+            />
+            {{ "generate.results.view_menu" | transloco }}
+            @if (sortMode() === "aesthetic") {
+              <app-icon name="star" class="gs-ico-sm" aria-hidden="true" />
             }
-          </div>
-        }
+          </button>
+          @if (viewMenuOpen() && !viewerNarrow()) {
+            <div
+              class="gs-options-pop gs-view-pop"
+              role="dialog"
+              [attr.aria-label]="'generate.results.view_menu' | transloco"
+            >
+              <ng-container *ngTemplateOutlet="viewRows" />
+            </div>
+          }
+        </div>
       }
     </div>
   }
@@ -1662,6 +1595,51 @@
         }
       </div>
 
+      @if (hasFinished()) {
+        <div class="hd-results-summary">
+          <!-- What today came to. Folded away by default: it is a footnote to the
+           work, not part of doing it, and every figure is read off the jobs
+           already stored here rather than asked for. -->
+          @if (sessionStats(); as stats) {
+            @if (stats.images > 0) {
+              <div class="hd-results-today">
+                <button
+                  type="button"
+                  class="hd-results-summary-toggle"
+                  [attr.aria-expanded]="statsOpen()"
+                  (click)="statsOpen.set(!statsOpen())"
+                >
+                  <app-icon name="clock" class="gs-ico-sm" />
+                  {{
+                    (stats.images === 1
+                      ? "generate.results.today_one"
+                      : "generate.results.today_other"
+                    ) | transloco: { count: stats.images }
+                  }}
+                </button>
+                @if (statsOpen()) {
+                  <ul class="gs-today-list">
+                    <li>
+                      {{
+                        "generate.results.today_kudos"
+                          | transloco: { kudos: stats.kudos }
+                      }}
+                    </li>
+                    @if (stats.averageWaitSeconds !== null) {
+                      <li>
+                        {{
+                          "generate.results.today_wait"
+                            | transloco: { seconds: stats.averageWaitSeconds }
+                        }}
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
       @if (retentionFull()) {
         <div class="gs-retention">
           <app-icon name="info-circle" class="gs-ico-sm" />
@@ -2484,6 +2462,56 @@
       }}</span>
     </button>
   }
+  @if (hasNsfw()) {
+    <button
+      type="button"
+      class="gs-opt-row gs-opt-row--switch"
+      [class.gs-opt-row--on]="showNsfw()"
+      [attr.aria-pressed]="showNsfw()"
+      (click)="toggleShowNsfw()"
+    >
+      <app-icon name="lock-closed" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text"
+        ><span class="gs-opt-label">{{
+          (showNsfw()
+            ? "generate.results.nsfw_hide"
+            : "generate.results.nsfw_show"
+          ) | transloco
+        }}</span></span
+      >
+      <span class="gs-opt-state" aria-hidden="true">{{
+        (showNsfw() ? "generate.form.options_on" : "generate.form.options_off")
+          | transloco
+      }}</span>
+    </button>
+  }
+  @if (hasAesthetic()) {
+    <button
+      type="button"
+      class="gs-opt-row gs-opt-row--switch"
+      [class.gs-opt-row--on]="sortMode() === 'aesthetic'"
+      [attr.aria-pressed]="sortMode() === 'aesthetic'"
+      (click)="toggleSort()"
+    >
+      <app-icon name="star" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text"
+        ><span class="gs-opt-label">{{
+          "generate.results.sort_aesthetic" | transloco
+        }}</span></span
+      >
+      <span class="gs-opt-state" aria-hidden="true">{{
+        (sortMode() === "aesthetic"
+          ? "generate.form.options_on"
+          : "generate.form.options_off"
+        ) | transloco
+      }}</span>
+    </button>
+  }
+  <!-- The form can be offscreen while browsing results, so help stays nearby. -->
+  <a class="hd-results-reference" [routerLink]="referenceLink">
+    <app-icon name="question-mark-circle" class="gs-ico-sm" />
+    {{ "generate.results.open_reference" | transloco }}
+  </a>
 </ng-template>
 
 @if (viewMenuOpen() && viewerNarrow()) {

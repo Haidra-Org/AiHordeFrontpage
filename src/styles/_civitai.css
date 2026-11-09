@@ -244,6 +244,15 @@
   cursor: pointer;
   font-family: inherit;
 }
+.gs-civit-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.gs-cv-add-hint {
+  align-self: center;
+  font-size: 11px;
+  color: var(--gs-muted);
+}
 
 /* ------- Selected rows: order, cap and details ----------------------- */
 
@@ -1359,6 +1368,11 @@
 }
 .gs-civit-scope .gs-modal-done:hover {
   background: var(--gs-blue-hover);
+}
+.gs-civit-scope .gs-modal-done:disabled {
+  background: var(--gs-blue);
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 .gs-civit-scope .gs-shimmer {
   background: linear-gradient(90deg, #eef0f3 25%, #e0e3e8 50%, #eef0f3 75%);

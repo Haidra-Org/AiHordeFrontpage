@@ -4131,6 +4131,135 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   padding: 8px 22px;
   border-bottom: 1px solid var(--gs-border-results);
 }
+/* The pane's width, including a split desktop workspace, decides whether
+   search and filters need separate rows. */
+.gen-studio .hd-results-layout {
+  container: results / inline-size;
+}
+.gen-studio .hd-results-toolbar {
+  --hd-results-target: 28px;
+  flex-wrap: nowrap;
+  gap: var(--hd-space-2);
+  padding: var(--hd-space-2) var(--hd-space-3);
+}
+.gen-studio .hd-results-toolbar .gs-view-search {
+  flex: 1 1 160px;
+  max-width: none;
+}
+.gen-studio .hd-results-toolbar .gs-find-row {
+  min-width: 0;
+}
+.gen-studio .hd-results-toolbar .gs-view-search .gs-find-input {
+  padding-right: calc(var(--hd-results-target) + 4px);
+  min-height: var(--hd-results-target);
+  font-size: var(--hd-text-sm);
+}
+.gen-studio .hd-results-toolbar .hd-results-search--filled .gs-find-input {
+  padding-right: calc(var(--hd-results-target) * 2 + 4px);
+}
+.gen-studio .hd-results-toolbar .gs-view-search .gs-find-clear {
+  right: var(--hd-results-target);
+  width: var(--hd-results-target);
+  height: var(--hd-results-target);
+}
+.gen-studio .hd-results-toolbar app-info-tooltip {
+  position: absolute;
+  right: 0;
+  display: inline-flex;
+}
+.gen-studio .hd-results-toolbar .info-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--hd-results-target);
+  height: var(--hd-results-target);
+}
+.gen-studio .hd-results-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--hd-space-2);
+  flex: 0 1 300px;
+  min-width: 0;
+}
+.gen-studio .hd-results-filters .gs-view-ctl {
+  flex: 1;
+  min-width: 0;
+}
+.gen-studio .hd-results-filters .gs-view-select {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  min-height: var(--hd-results-target);
+  font-size: var(--hd-text-sm);
+}
+.gen-studio .hd-results-toolbar .hd-btn {
+  flex: none;
+  min-height: var(--hd-results-target);
+  padding-inline: var(--hd-space-2);
+}
+.gen-studio .hd-results-toolbar .gs-view-pop {
+  left: auto;
+  right: 0;
+}
+.gen-studio .hd-results-reference {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hd-space-1);
+  min-height: 44px;
+  padding-inline: var(--hd-space-2);
+  color: var(--hd-ink-2);
+  font-size: var(--hd-text-sm);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gen-studio .hd-results-reference:focus-visible,
+.gen-studio .hd-results-summary-toggle:focus-visible {
+  outline: 2px solid var(--hd-focus-ring);
+  outline-offset: 2px;
+}
+.gen-studio .hd-results-today {
+  margin-top: var(--hd-space-3);
+  color: var(--hd-ink-2);
+}
+.gen-studio .hd-results-summary-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hd-space-1);
+  border: 0;
+  padding: 0;
+  min-height: 44px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: var(--hd-text-sm);
+  cursor: pointer;
+}
+@container results (max-width: 640px) {
+  .gen-studio .hd-results-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .gen-studio .hd-results-toolbar .gs-view-search {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .gen-studio .hd-results-toolbar .gs-view-menu {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .gen-studio .hd-results-filters {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+@media (pointer: coarse) {
+  .gen-studio .hd-results-toolbar {
+    --hd-results-target: 44px;
+  }
+  .gen-studio .hd-results-toolbar .gs-view-search .gs-find-input {
+    font-size: 16px;
+  }
+}
 /* The day's tally, at the end of the view bar. Its detail unfolds in place
    rather than in a popover: three numbers do not earn one. */
 .gen-studio .gs-today {
@@ -5185,6 +5314,11 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
 }
 .gen-studio .gs-modal-done:hover {
   background: var(--gs-blue-hover);
+}
+.gen-studio .gs-modal-done:disabled {
+  background: var(--gs-blue);
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* compact confirm dialog (permanent-delete warning), studio-native */

@@ -1,4 +1,4 @@
-<div class="stack-lg">
+<div class="stack-lg" [class.models-page--text]="activeTab() === 'text'">
   <div class="details-area">
     <div class="details-area-bar">
       <div
@@ -114,6 +114,59 @@
             class="models-extra-filters"
             [class.models-extra-filters--open]="extraFiltersOpen()"
           >
+            @if (activeTab() === "text") {
+              <label class="models-filter-group" for="models-parameters">
+                <span class="models-filter-label">{{
+                  "details.models.filters.parameters" | transloco
+                }}</span>
+                <select
+                  id="models-parameters"
+                  class="hd-input"
+                  [value]="parameterFilter()"
+                  (change)="onParameterChange($event)"
+                >
+                  <option value="">
+                    {{ "details.models.filters.parameters_any" | transloco }}
+                  </option>
+                  @for (range of parameterRanges; track range.id) {
+                    <option [value]="range.id">
+                      {{ range.key | transloco }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="models-filter-group" for="models-listing">
+                <span class="models-filter-label">{{
+                  "details.models.filters.listing" | transloco
+                }}</span>
+                <select
+                  id="models-listing"
+                  class="hd-input"
+                  [value]="listingFilter()"
+                  (change)="onListingChange($event)"
+                >
+                  <option value="">
+                    {{ "details.models.filters.listing_any" | transloco }}
+                  </option>
+                  @for (option of listingOptions; track option.id) {
+                    <option [value]="option.id">
+                      {{ option.key | transloco }}
+                    </option>
+                  }
+                </select>
+              </label>
+              @if (showsChat()) {
+                <button
+                  type="button"
+                  class="hd-chip"
+                  [class.hd-chip--active]="chatOnly()"
+                  [attr.aria-pressed]="chatOnly()"
+                  (click)="chatOnly.set(!chatOnly())"
+                >
+                  {{ "details.models.filters.chat_only" | transloco }}
+                </button>
+              }
+            }
             @if (capabilityOptions().length > 0) {
               <label class="models-filter-group" for="models-capability">
                 <span class="models-filter-label">{{
@@ -236,6 +289,58 @@
                 {{ "details.models.filters.hide_adult" | transloco }}
                 <span aria-hidden="true">×</span>
               </button>
+            }
+            @if (activeTab() === "text") {
+              @for (range of parameterRanges; track range.id) {
+                @if (parameterFilter() === range.id) {
+                  <button
+                    type="button"
+                    class="hd-chip hd-chip--active"
+                    (click)="parameterFilter.set('')"
+                    [attr.aria-label]="
+                      'details.models.filters.remove'
+                        | transloco: { filter: (range.key | transloco) }
+                    "
+                  >
+                    {{ range.key | transloco }}
+                    <span aria-hidden="true">×</span>
+                  </button>
+                }
+              }
+              @for (option of listingOptions; track option.id) {
+                @if (listingFilter() === option.id) {
+                  <button
+                    type="button"
+                    class="hd-chip hd-chip--active"
+                    (click)="listingFilter.set('')"
+                    [attr.aria-label]="
+                      'details.models.filters.remove'
+                        | transloco: { filter: (option.key | transloco) }
+                    "
+                  >
+                    {{ option.key | transloco }}
+                    <span aria-hidden="true">×</span>
+                  </button>
+                }
+              }
+              @if (chatOnly()) {
+                <button
+                  type="button"
+                  class="hd-chip hd-chip--active"
+                  (click)="chatOnly.set(false)"
+                  [attr.aria-label]="
+                    'details.models.filters.remove'
+                      | transloco
+                        : {
+                            filter:
+                              ('details.models.filters.chat_only' | transloco),
+                          }
+                  "
+                >
+                  {{ "details.models.filters.chat_only" | transloco }}
+                  <span aria-hidden="true">×</span>
+                </button>
+              }
             }
             <button
               type="button"
@@ -365,37 +470,78 @@
               >{{ "details.models.docs_link" | transloco }}</a
             >
           }
-          <span class="models-caption-label">{{
-            "details.models.columns_help.label" | transloco
-          }}</span>
-          <span class="hd-help">
+          @if (activeTab() === "text") {
             <button
               type="button"
-              class="hd-help-btn"
-              aria-controls="models-columns-help"
-              [attr.aria-expanded]="columnsHelpOpen()"
-              (click)="toggleColumnsHelp()"
+              class="hd-btn hd-btn--ghost models-details-toggle"
+              [attr.aria-expanded]="showTextDetails()"
+              (click)="showTextDetails.set(!showTextDetails())"
             >
-              <span aria-hidden="true">?</span>
-              <span class="sr-only">{{
-                "details.models.columns_help.label" | transloco
-              }}</span>
+              {{
+                (showTextDetails()
+                  ? "details.models.hide_details"
+                  : "details.models.show_details"
+                ) | transloco
+              }}
             </button>
-            @if (columnsHelpOpen()) {
-              <p class="hd-help-note" role="note" id="models-columns-help">
-                {{ "details.models.columns_help.body" | transloco }}
-                @if (showsChat()) {
-                  {{ "details.models.columns_help.chat" | transloco }}
-                }
-              </p>
-            }
-          </span>
+          }
+          @if (activeTab() === "text") {
+            <button
+              type="button"
+              class="hd-btn hd-btn--ghost hd-btn--dense models-baseline-sort"
+              [attr.aria-pressed]="sortField() === 'baseline'"
+              (click)="setSortField('baseline')"
+            >
+              {{ "details.models.sort_baseline" | transloco }}
+              @if (sortField() === "baseline") {
+                <span aria-hidden="true">{{
+                  sortDirection() === "asc" ? "↑" : "↓"
+                }}</span>
+                <span class="sr-only">{{
+                  (sortDirection() === "asc"
+                    ? "details.models.sort.ascending"
+                    : "details.models.sort.descending"
+                  ) | transloco
+                }}</span>
+              }
+            </button>
+          }
+          <div class="models-columns-help">
+            <span class="models-caption-label">{{
+              "details.models.columns_help.label" | transloco
+            }}</span>
+            <span class="hd-help">
+              <button
+                type="button"
+                class="hd-help-btn"
+                aria-controls="models-columns-help"
+                [attr.aria-expanded]="columnsHelpOpen()"
+                (click)="toggleColumnsHelp()"
+              >
+                <span aria-hidden="true">?</span>
+                <span class="sr-only">{{
+                  "details.models.columns_help.label" | transloco
+                }}</span>
+              </button>
+              @if (columnsHelpOpen()) {
+                <p class="hd-help-note" role="note" id="models-columns-help">
+                  {{ "details.models.columns_help.body" | transloco }}
+                  @if (showsChat()) {
+                    {{ "details.models.columns_help.chat" | transloco }}
+                  }
+                </p>
+              }
+            </span>
+          </div>
         </div>
 
         <div
           class="hd-list models-grid"
           [class.models-grid--text]="activeTab() !== 'image'"
           [class.models-grid--chat]="showsChat()"
+          [class.models-grid--compact]="
+            activeTab() === 'text' && !showTextDetails()
+          "
         >
           <div class="hd-list-head">
             <button
@@ -411,19 +557,21 @@
                 }}</span>
               }
             </button>
-            <button
-              type="button"
-              class="hd-list-th models-col-family"
-              [class.hd-list-th--active]="sortField() === 'baseline'"
-              (click)="setSortField('baseline')"
-            >
-              {{ "details.models.filters.baseline" | transloco }}
-              @if (sortField() === "baseline") {
-                <span class="hd-list-sort" aria-hidden="true">{{
-                  sortDirection() === "asc" ? "↑" : "↓"
-                }}</span>
-              }
-            </button>
+            @if (activeTab() === "image") {
+              <button
+                type="button"
+                class="hd-list-th models-col-family"
+                [class.hd-list-th--active]="sortField() === 'baseline'"
+                (click)="setSortField('baseline')"
+              >
+                {{ "details.models.filters.baseline" | transloco }}
+                @if (sortField() === "baseline") {
+                  <span class="hd-list-sort" aria-hidden="true">{{
+                    sortDirection() === "asc" ? "↑" : "↓"
+                  }}</span>
+                }
+              </button>
+            }
             <button
               type="button"
               class="hd-list-th hd-list-th--right"
@@ -520,55 +668,54 @@
                   [title]="row.model.name"
                   >{{ row.model.name }}</a
                 >
-                <div class="models-list-marks">
-                  @if (row.parameters !== "") {
-                    <span class="hd-badge models-mark models-mark--spec">{{
-                      row.parameters
-                    }}</span>
-                  }
-                  @if (row.inpainting) {
-                    <span class="hd-badge models-mark models-mark--spec">{{
-                      "details.models.badge.inpainting" | transloco
-                    }}</span>
-                  }
-                  <!-- Whether a model makes adult pictures is still said, and
-                     still filtered on; it is read out rather than printed,
-                     because it was on most rows and told the eye nothing. -->
-                  @if (row.nsfw) {
-                    <span class="sr-only">{{
-                      "details.models.badge.adult" | transloco
-                    }}</span>
-                  }
-                  @if (row.model.custom) {
-                    <span class="hd-badge models-mark models-mark--custom">{{
-                      "details.models.badge.custom" | transloco
-                    }}</span>
-                  }
-                  @if (
-                    activeTab() === "text" &&
-                    row.model.count > 0 &&
-                    row.model.custom === undefined
-                  ) {
-                    <span class="hd-badge models-mark">{{
-                      "details.models.badge.unclassified" | transloco
-                    }}</span>
-                  }
-                  @if (row.model.count === 0 && chatFor(row) === null) {
-                    <span class="hd-badge models-mark models-mark--idle">{{
-                      "details.models.badge.no_workers" | transloco
-                    }}</span>
-                  }
-                </div>
-              </div>
-
-              <span class="models-list-family models-col-family">
-                @if (familyLabel(row) !== "") {
-                  <span class="hd-badge models-mark models-mark--family">{{
-                    familyLabel(row)
+                @if (activeTab() === "text" && row.nsfw) {
+                  <span class="sr-only">{{
+                    "details.models.badge.adult" | transloco
                   }}</span>
                 }
-              </span>
+                @if (activeTab() === "image") {
+                  <div class="models-list-marks">
+                    @if (row.parameters !== "") {
+                      <span class="hd-badge models-mark models-mark--spec">{{
+                        row.parameters
+                      }}</span>
+                    }
+                    @if (row.inpainting) {
+                      <span class="hd-badge models-mark models-mark--spec">{{
+                        "details.models.badge.inpainting" | transloco
+                      }}</span>
+                    }
+                    <!-- Whether a model makes adult pictures is still said, and
+                     still filtered on; it is read out rather than printed,
+                     because it was on most rows and told the eye nothing. -->
+                    @if (row.nsfw) {
+                      <span class="sr-only">{{
+                        "details.models.badge.adult" | transloco
+                      }}</span>
+                    }
+                    @if (row.model.custom) {
+                      <span class="hd-badge models-mark models-mark--custom">{{
+                        "details.models.badge.custom" | transloco
+                      }}</span>
+                    }
+                    @if (row.model.count === 0 && chatFor(row) === null) {
+                      <span class="hd-badge models-mark models-mark--idle">{{
+                        "details.models.badge.no_workers" | transloco
+                      }}</span>
+                    }
+                  </div>
+                }
+              </div>
 
+              @if (activeTab() === "image") {
+                <span class="models-list-family models-col-family">
+                  @if (familyLabel(row) !== "") {
+                    <span class="hd-badge models-mark models-mark--family">{{
+                      familyLabel(row)
+                    }}</span>
+                  }
+                </span>
+              }
               <span
                 class="models-list-value"
                 [class.models-list-value--muted]="row.model.count === 0"
@@ -651,6 +798,35 @@
                 </span>
               }
 
+              @if (activeTab() === "text" && showTextDetails()) {
+                <div class="models-text-metadata">
+                  @if (row.family) {
+                    <span class="models-text-baseline"
+                      ><span class="models-text-meta-label">{{
+                        "details.models.filters.baseline" | transloco
+                      }}</span>
+                      {{ row.family }}</span
+                    >
+                  }
+                  @if (row.parameters) {
+                    <span
+                      ><span class="models-text-meta-label">{{
+                        "details.models.filters.parameters" | transloco
+                      }}</span>
+                      {{ row.parameters }}</span
+                    >
+                  }
+                  @for (option of listingOptions; track option.id) {
+                    @if (listingStatus(row) === option.id) {
+                      <span
+                        class="models-text-status"
+                        [class.models-mark--custom]="row.model.custom === true"
+                        >{{ option.key | transloco }}</span
+                      >
+                    }
+                  }
+                </div>
+              }
               @if (activeTab() === "image") {
                 <a
                   class="hd-btn hd-btn--ghost hd-btn--icon models-list-try"

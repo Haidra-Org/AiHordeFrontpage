@@ -439,6 +439,143 @@
     }
   }
 
+  /* Text metadata needs the row's width, rather than a fixed family column.
+     Long published names wrap without taking space away from the live counts. */
+  .models-page--text .models-toolbar,
+  .models-page--text .models-controls {
+    min-width: 0;
+  }
+  .models-page--text .models-filter-group {
+    flex: 0 1 18rem;
+  }
+  .models-page--text .models-filter-group .hd-input {
+    width: 0;
+    flex: 1;
+  }
+  .models-page--text .models-filter-toggle.hd-btn {
+    display: inline-flex;
+  }
+  .models-page--text .models-extra-filters {
+    display: none;
+    flex-basis: 100%;
+  }
+  .models-page--text .models-extra-filters--open {
+    display: flex;
+  }
+  .models-columns-help {
+    display: contents;
+  }
+  .models-page--text .models-columns-help {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--hd-space-2);
+  }
+  .models-baseline-sort {
+    display: none;
+  }
+  .models-page--text .models-details-toggle {
+    margin-right: auto;
+    font-size: var(--hd-text-sm);
+  }
+  .models-grid--text .hd-list-row {
+    align-items: start;
+    min-height: 68px;
+    padding-block: var(--hd-space-1);
+    row-gap: var(--hd-space-1);
+  }
+  .models-grid--text.models-grid--compact .hd-list-row {
+    min-height: 46px;
+  }
+  .models-grid--text .models-list-identity {
+    align-items: flex-start;
+    overflow: visible;
+  }
+  .models-grid--text .models-list-name {
+    overflow: visible;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.3;
+  }
+  .models-text-metadata {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--hd-space-1) var(--hd-space-4);
+    min-width: 0;
+    color: var(--hd-ink-2);
+    font-size: var(--hd-text-sm);
+    line-height: 1.3;
+  }
+  .models-text-metadata > span {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .models-text-meta-label {
+    color: var(--hd-muted);
+    margin-right: var(--hd-space-1);
+  }
+  .models-text-status.models-mark--custom {
+    background: none;
+    color: var(--hd-purple);
+  }
+  .models-page--text .models-active-filters .hd-chip {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  @media (max-width: 639.98px) {
+    .models-page--text .models-controls > .models-filter-group {
+      flex: 1;
+    }
+    .models-page--text .models-extra-filters .models-filter-group {
+      flex-basis: 100%;
+    }
+    .models-grid--text .hd-list-row {
+      column-gap: var(--hd-space-2);
+    }
+    .models-grid--text.models-grid--chat {
+      --hd-list-cols: repeat(3, minmax(0, 1fr));
+    }
+    .models-grid--text .models-list-chat {
+      white-space: normal;
+    }
+  }
+  @media (min-width: 640px) {
+    /* Most published names need at most two lines at table widths. Reserving
+       that space keeps numeric rows aligned without clipping longer names. */
+    .models-grid--text .models-list-identity {
+      min-height: calc(var(--hd-text-md) * 2.6);
+    }
+    .models-grid--text.models-grid--compact .models-list-identity {
+      min-height: 0;
+    }
+    .models-baseline-sort {
+      display: inline-flex;
+    }
+    .models-grid--text {
+      --hd-list-cols: minmax(0, 1fr) 4rem 5rem 3.5rem;
+    }
+    .models-grid--text.models-grid--chat {
+      --hd-list-cols: minmax(0, 1fr) 4rem 5rem 3.5rem 6rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .models-grid--text {
+      --hd-list-cols: minmax(0, 1fr) 4.5rem 6rem 6rem 7rem 3.5rem;
+    }
+    .models-grid--text.models-grid--chat {
+      --hd-list-cols: minmax(0, 1fr) 4.5rem 6rem 6rem 7rem 3.5rem 7rem;
+    }
+  }
+  @media (pointer: coarse) {
+    .models-details-toggle,
+    .models-baseline-sort {
+      min-height: 44px;
+    }
+  }
+
   /* A mouse can be aimed, so the row stays quiet until it is pointed at
      or something inside it takes focus. A finger has nothing to hover
      with, and the way in has to be there before it is pressed. */

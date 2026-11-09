@@ -108,6 +108,11 @@ every new page should take.
   `.models-list-marks`, followed by labeled worker and queue values. `.models-mobile-sort` keeps sorting available
   when the desktop column headings are hidden. `.models-mobile-value` and `.models-desktop-value` switch the value
   labels at the same breakpoint. Backend text-model classification is independent of reference metadata.
+- The text-model list gives model identity and live values the first line, with baseline, parameter count and backend
+  listed status beneath them across the row. Names and metadata wrap; the image-model table keeps its existing columns.
+  Desktop text rows use a 68px minimum with details and 46px without; phone rows wrap naturally with tight gaps.
+  A table-level control hides the text metadata without filtering models. Text filters add baseline, parameter-size
+  ranges, backend listed status and chat availability; unknown sizes and unavailable classification remain explicit.
 - When the horde lists chat workers, the text tab adds a Chat workers column (`.models-grid--chat`) at every width.
   The count is formatted like the Workers column, with the largest chat context under it in `.models-list-sub`. The class
   list for the toolbar and the column is in [docs/component-patterns.md](docs/component-patterns.md#model-list-_modelscss).
