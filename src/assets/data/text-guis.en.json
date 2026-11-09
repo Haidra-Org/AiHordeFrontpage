@@ -111,5 +111,17 @@
         "url": "https://discord.com/channels/781145214752129095/1107642180346073198/1395172494402523307"
       }
     ]
+  },
+  {
+    "name": "On My Chat",
+    "description": "An open-source AI assistant and workspace supporting Hybrid AI Horde + local Ollama inference. Features a dedicated Work mode (private multilingual RAG over local documents, spreadsheets, and code) and a Fun mode for Roleplay powered by AI Horde 70B–123B models, with native SillyTavern character card import, Personas, voice TTS, and zero-port-forwarding P2P Web/mobile access.",
+    "image": "assets/img/guis/onmychat.png",
+    "link": "https://onmychat.com",
+    "categories": ["Web", "Desktop"],
+    "itemType": "gui-text",
+    "domain": ["text"],
+    "functionKind": "frontend",
+    "platform": ["web", "windows", "linux", "macos"],
+    "sourceControlLink": "https://github.com/alexeyvolkoff/onmychat"
   }
 ]

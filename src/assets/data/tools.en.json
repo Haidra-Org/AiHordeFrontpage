@@ -33,6 +33,18 @@
     "recommended": true
   },
   {
+    "name": "On My Chat (ComfyUI Dreamer Worker)",
+    "description": "Open-source self-hosted AI node featuring a built-in, idle-aware AI Horde image worker ('Dreamer') for ComfyUI. Automatically contributes idle local GPU cycles (SDXL DMD2 and Krea 2 with configurable daily quotas) to the Horde and includes a live web dashboard at /horde.",
+    "image": "assets/img/guis/onmychat-worker.png",
+    "link": "https://github.com/alexeyvolkoff/onmychat",
+    "categories": ["Worker", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server", "windows", "linux", "macos"],
+    "functionKind": "worker",
+    "sourceControlLink": "https://github.com/alexeyvolkoff/onmychat"
+  },
+  {
     "name": "Godot Engine plugin",
     "description": "Easily integrate AI Horde image generation into your games.",
     "link": "https://github.com/Haidra-Org/AI-Horde-Godot-Addon",
