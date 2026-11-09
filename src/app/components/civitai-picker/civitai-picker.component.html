@@ -365,10 +365,18 @@
           [disabled]="
             !manualName.value.trim() || (tab() === 'ti' && !manualPlacement())
           "
+          [attr.aria-describedby]="
+            tab() === 'ti' && !manualPlacement() ? 'cv-manual-add-hint' : null
+          "
           (click)="addManual()"
         >
           {{ "generate.civitai.manual_add" | transloco }}
         </button>
+        @if (tab() === "ti" && !manualPlacement()) {
+          <span id="cv-manual-add-hint" class="gs-cv-add-hint">
+            {{ "generate.civitai.ti_choose_to_add" | transloco }}
+          </span>
+        }
       </div>
     }
   </div>

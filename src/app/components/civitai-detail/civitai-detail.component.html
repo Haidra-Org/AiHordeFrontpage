@@ -503,10 +503,18 @@
           {{ "generate.civitai.detail_remove" | transloco }}
         </button>
       }
+      @if (!isLora() && !placementChosen()) {
+        <span id="cv-detail-apply-hint" class="gs-modal-foot-note">
+          {{ "generate.civitai.ti_choose_to_add" | transloco }}
+        </span>
+      }
       <button
         type="button"
         class="gs-modal-done"
         [disabled]="!isLora() && !placementChosen()"
+        [attr.aria-describedby]="
+          !isLora() && !placementChosen() ? 'cv-detail-apply-hint' : null
+        "
         (click)="onApply()"
       >
         {{
