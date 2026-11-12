@@ -15,18 +15,18 @@
           <button
             type="button"
             class="prompt-review-bar-btn"
-            (click)="reviews?.showNext(text())"
+            (click)="reviews.showNext(text())"
           >
             {{
               "generate.civitai.review_show_next"
-                | transloco: { next: reviews?.nextNumber(total), count: total }
+                | transloco: { next: reviews.nextNumber(total), count: total }
             }}
           </button>
         }
         <button
           type="button"
           class="prompt-review-bar-btn"
-          (click)="reviews?.back()"
+          (click)="reviews.back()"
         >
           {{ "generate.civitai.review_back" | transloco }}
         </button>
