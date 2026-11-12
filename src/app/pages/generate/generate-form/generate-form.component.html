@@ -2767,6 +2767,9 @@
     <div
       class="gs-submitrow flex items-center justify-between gap-2"
       [class.gs-submitrow--pinned]="generatePinned()"
+      [class.gs-submitrow--top]="
+        generatePinned() && pinGeneratePosition() === 'top'
+      "
       [class.flex-wrap]="panelSize() === 'normal'"
       [class.flex-nowrap]="panelSize() !== 'normal'"
       [class.w-full]="panelSize() === 'normal'"
@@ -3007,6 +3010,26 @@
         (pinGenerate()
           ? "generate.form.options_on"
           : "generate.form.options_off"
+        ) | transloco
+      }}</span>
+    </button>
+  }
+  @if (pinnable() && pinGenerate()) {
+    <button
+      type="button"
+      class="gs-opt-row"
+      (click)="togglePinGeneratePosition()"
+    >
+      <app-icon name="pin" class="gs-ico-sm" aria-hidden="true" />
+      <span class="gs-opt-text">
+        <span class="gs-opt-label">{{
+          "generate.form.pin_generate_position" | transloco
+        }}</span>
+      </span>
+      <span class="gs-opt-state">{{
+        (pinGeneratePosition() === "top"
+          ? "generate.form.pin_generate_top"
+          : "generate.form.pin_generate_bottom"
         ) | transloco
       }}</span>
     </button>

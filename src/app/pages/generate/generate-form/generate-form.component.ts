@@ -760,18 +760,19 @@ export class GenerateFormComponent implements OnInit {
 
   /**
    * Whether keeping Generate on screen is on offer at all. The docked bar
-   * belongs to the studio's own screen, which is the only place it has a bottom
-   * to sit above, so a host that draws the panel elsewhere leaves this off.
+   * belongs to the studio's own screen, so a host that draws the panel
+   * elsewhere leaves this off.
    */
   public readonly pinnable = input(false);
 
   /**
-   * Whether Generate is kept at the foot of the screen. Narrow viewports act on
+   * Whether Generate is kept on screen. Narrow viewports act on
    * it; wider ones keep the button in the footer either way, where it is always
    * in view. The parent owns the preference; the panel draws the switch and
    * wears the class that docks its own footer row.
    */
   public readonly pinGenerate = input(false);
+  public readonly pinGeneratePosition = input<'top' | 'bottom'>('bottom');
 
   public readonly create = output<void>();
   /** A style the browser reached that the studio does not hold yet. */
@@ -781,6 +782,7 @@ export class GenerateFormComponent implements OnInit {
   public readonly confirmResultActionsChange = output<boolean>();
   public readonly undoResultAction = output<void>();
   public readonly pinGenerateChange = output<boolean>();
+  public readonly pinGeneratePositionChange = output<'top' | 'bottom'>();
   /** Ask the parent to open a preview of the request this form would submit. */
   public readonly preview = output<void>();
   /** Ask the parent to copy an address that reopens the studio on this form. */
@@ -3248,6 +3250,12 @@ export class GenerateFormComponent implements OnInit {
 
   public togglePinGenerate(): void {
     this.pinGenerateChange.emit(!this.pinGenerate());
+  }
+
+  public togglePinGeneratePosition(): void {
+    this.pinGeneratePositionChange.emit(
+      this.pinGeneratePosition() === 'top' ? 'bottom' : 'top',
+    );
   }
 
   /** Whether the footer's submit row is the docked bar rather than a row. */

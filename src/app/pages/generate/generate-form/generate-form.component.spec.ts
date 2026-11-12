@@ -3299,6 +3299,36 @@ describe('GenerateFormComponent docked Generate', () => {
     expect(button?.disabled).toBe(false);
   });
 
+  it('offers both positions for the same pinned submit row', async () => {
+    const { host, fixture } = await render();
+    fixture.componentRef.setInput('pinGenerate', true);
+    fixture.componentRef.setInput('pinGeneratePosition', 'top');
+    fixture.detectChanges();
+    expect(
+      host
+        .querySelector('.gs-submitrow--pinned.gs-submitrow--top .gs-genbtn')
+        ?.getAttribute('type'),
+    ).toBe('submit');
+    openOptions(host, fixture);
+    const positionRow = optionRow(
+      host,
+      en['generate.form.pin_generate_position'],
+    );
+    expect(positionRow?.textContent).toContain(
+      en['generate.form.pin_generate_top'],
+    );
+    let asked: string | null = null;
+    fixture.componentInstance.pinGeneratePositionChange.subscribe(
+      (position) => (asked = position),
+    );
+    positionRow!.click();
+    expect(asked).toBe('bottom');
+    fixture.componentRef.setInput('pinGeneratePosition', 'bottom');
+    fixture.detectChanges();
+    expect(host.querySelector('.gs-submitrow--top')).toBeNull();
+    expect(host.querySelectorAll('.gs-genbtn')).toHaveLength(1);
+  });
+
   it('offers the switch only where the studio owns the screen', async () => {
     const { host, fixture } = await render();
     const pinRow = (): HTMLElement | null =>

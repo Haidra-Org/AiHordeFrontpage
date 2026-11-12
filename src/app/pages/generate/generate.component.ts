@@ -238,8 +238,9 @@ interface SetAsideDraft {
 /** Whether Generate opens the review dialog instead of sending straight away. */
 const REVIEW_KEY = 'aihorde.generate.review_before_send';
 
-/** Whether Generate stays at the foot of the screen on a narrow viewport. */
+/** Whether Generate stays visible on a narrow viewport. */
 const PIN_GENERATE_KEY = 'aihorde.generate.pinned_generate';
+const PIN_GENERATE_POSITION_KEY = 'aihorde.generate.pinned_generate_position';
 
 /** Whether result actions ask before changing the current controls. */
 const RESULT_ACTION_CONFIRM_KEY = 'aihorde.generate.confirm_result_actions';
@@ -426,11 +427,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public readonly reviewBeforeSend = signal(this.db.get(REVIEW_KEY) === true);
 
   /**
-   * Whether Generate is kept at the foot of a narrow screen. Off by default:
+   * Whether Generate is kept on a narrow screen. Off by default:
    * the bar costs a band of a phone's screen, and it only pays for itself for
    * someone sending one request after another.
    */
   public readonly pinGenerate = signal(this.db.get(PIN_GENERATE_KEY) === true);
+  public readonly pinGeneratePosition = signal<'top' | 'bottom'>(
+    this.db.get(PIN_GENERATE_POSITION_KEY) === 'top' ? 'top' : 'bottom',
+  );
 
   /** Result actions ask before replacing controls unless the reader opts out. */
   public readonly confirmResultActions = signal(
@@ -2060,6 +2064,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   public setPinGenerate(on: boolean): void {
     this.pinGenerate.set(on);
     this.db.store(PIN_GENERATE_KEY, on);
+  }
+
+  public setPinGeneratePosition(position: 'top' | 'bottom'): void {
+    this.pinGeneratePosition.set(position);
+    this.db.store(PIN_GENERATE_POSITION_KEY, position);
   }
 
   /** Send exactly what the dialog was showing; the plan is not rebuilt. */

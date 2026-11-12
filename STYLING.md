@@ -68,7 +68,9 @@ the accent on its filter bar. Identity hues are audited as graphic colour: glyph
 
 The studio's expanded prompt editor uses the visual viewport's height and offset so its text scrolls within the area
 left by the keyboard. Done stays in the header. The viewport meta tag requests `interactive-widget=resizes-content`
-for browsers that support it, keeping fixed mobile controls clear of the keyboard. Styles stay in `_generate.css`.
+for browsers that support it, keeping fixed mobile controls clear of the keyboard. The pinned Generate row offers
+top and bottom positions in Options; `.gs-submitrow--top` clears the compact navigation and reserves space at the
+start of the studio. Fullscreen removes that navigation offset. Styles stay in `_generate.css`.
 
 ### The two dark ramps
 

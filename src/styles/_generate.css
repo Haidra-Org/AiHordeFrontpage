@@ -1476,6 +1476,29 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
 }
 
+@media (max-width: 1023.98px) {
+  .gen-studio .gs-submitrow--pinned.gs-submitrow--top {
+    top: var(--nav-height-mobile-compact, 48px);
+    bottom: auto;
+    border-top: 0;
+    border-bottom: 1px solid var(--gs-border);
+    box-shadow: var(--gs-elev-2);
+  }
+  .gen-studio.gs-shell:is(:fullscreen, :-webkit-full-screen)
+    .gs-submitrow--pinned.gs-submitrow--top,
+  body.gs-immersive .gen-studio .gs-submitrow--pinned.gs-submitrow--top {
+    top: env(safe-area-inset-top, 0px);
+    bottom: auto;
+  }
+  .gen-studio .gs-shell-outlet:has(.gs-submitrow--top) {
+    padding-top: var(--gs-pinbar-height);
+    padding-bottom: calc(var(--gs-tabbar-height) + var(--gs-safe-bottom));
+  }
+  .gen-studio.gs-shell:has(.gs-submitrow--top) .gs-fs-exit {
+    top: calc(env(safe-area-inset-top) + var(--gs-pinbar-height) + 10px);
+  }
+}
+
 /* ------- fields ----------------------------------------------------- */
 .gen-studio .gs-textarea,
 .gen-studio .gs-input,
@@ -2119,6 +2142,15 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     .gs-dock,
   body.gs-immersive .gen-studio form:has(.gs-submitrow--pinned) .gs-dock {
     bottom: calc(var(--gs-pinbar-height) + 8px);
+  }
+  .gen-studio form:has(.gs-submitrow--top) .gs-dock {
+    bottom: calc(var(--gs-tabbar-height) + var(--gs-safe-bottom) + 8px);
+  }
+  .gen-studio.gs-shell:is(:fullscreen, :-webkit-full-screen)
+    form:has(.gs-submitrow--top)
+    .gs-dock,
+  body.gs-immersive .gen-studio form:has(.gs-submitrow--top) .gs-dock {
+    bottom: 8px;
   }
 }
 /* From here the body is its own scroll pane and nothing is docked to the

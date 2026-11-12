@@ -585,6 +585,20 @@ describe('GenerateComponent', () => {
     );
   });
 
+  it('remembers the pinned Generate position across visits', () => {
+    expect(component.pinGeneratePosition()).toBe('bottom');
+    component.setPinGeneratePosition('top');
+    expect(component.pinGeneratePosition()).toBe('top');
+    expect(
+      localStorage.getItem('aihorde.generate.pinned_generate_position'),
+    ).toBe('"top"');
+    component.setPinGeneratePosition('bottom');
+    expect(component.pinGeneratePosition()).toBe('bottom');
+    expect(
+      localStorage.getItem('aihorde.generate.pinned_generate_position'),
+    ).toBe('"bottom"');
+  });
+
   it('surfaces enqueue failures through the toast with error details', async () => {
     const consoleError = vi
       .spyOn(console, 'error')
