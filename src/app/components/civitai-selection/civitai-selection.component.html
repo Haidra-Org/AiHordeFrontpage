@@ -103,17 +103,44 @@
       </div>
     </div>
 
-    <div class="flex gap-3.5">
-      <div class="flex-1">
+    <div class="hd-lora-strengths">
+      <div>
         <div class="gs-slabel">
           {{ "generate.form.lora_model_short" | transloco }}
-          <span class="gs-mono gs-purple float-right">
-            {{ row.entry.model | number: "1.2-2" }}
-          </span>
         </div>
+        <app-number-stepper
+          [value]="row.entry.model"
+          [min]="minStrength"
+          [max]="maxStrength"
+          [step]="0.05"
+          [label]="
+            ('generate.form.lora_model_short' | transloco) +
+            ' ' +
+            (rowName(row.entry) ?? row.entry.name)
+          "
+          (valueChange)="setLoraStrength(i, 'model', $event)"
+        >
+          <input
+            class="hd-input hd-stepper-value"
+            type="number"
+            inputmode="decimal"
+            [min]="minStrength"
+            [max]="maxStrength"
+            step="any"
+            [value]="row.entry.model"
+            (change)="setLoraNumberEntry(i, 'model', $event)"
+            [attr.aria-label]="
+              ('generate.form.lora_model_short' | transloco) +
+              ' ' +
+              (rowName(row.entry) ?? row.entry.name)
+            "
+          />
+        </app-number-stepper>
         <input
           class="gs-range gs-range--purple mt-1"
           type="range"
+          [appScrollSafeRange]="row.entry.model"
+          (valueRestored)="setLoraStrength(i, 'model', $event)"
           [min]="minStrength"
           [max]="maxStrength"
           step="0.05"
@@ -123,16 +150,43 @@
           [attr.aria-label]="'generate.form.lora_model_short' | transloco"
         />
       </div>
-      <div class="flex-1">
+      <div>
         <div class="gs-slabel">
           {{ "generate.form.lora_clip_short" | transloco }}
-          <span class="gs-mono gs-purple float-right">
-            {{ row.entry.clip | number: "1.2-2" }}
-          </span>
         </div>
+        <app-number-stepper
+          [value]="row.entry.clip"
+          [min]="minStrength"
+          [max]="maxStrength"
+          [step]="0.05"
+          [label]="
+            ('generate.form.lora_clip_short' | transloco) +
+            ' ' +
+            (rowName(row.entry) ?? row.entry.name)
+          "
+          (valueChange)="setLoraStrength(i, 'clip', $event)"
+        >
+          <input
+            class="hd-input hd-stepper-value"
+            type="number"
+            inputmode="decimal"
+            [min]="minStrength"
+            [max]="maxStrength"
+            step="any"
+            [value]="row.entry.clip"
+            (change)="setLoraNumberEntry(i, 'clip', $event)"
+            [attr.aria-label]="
+              ('generate.form.lora_clip_short' | transloco) +
+              ' ' +
+              (rowName(row.entry) ?? row.entry.name)
+            "
+          />
+        </app-number-stepper>
         <input
           class="gs-range gs-range--purple mt-1"
           type="range"
+          [appScrollSafeRange]="row.entry.clip"
+          (valueRestored)="setLoraStrength(i, 'clip', $event)"
           [min]="minStrength"
           [max]="maxStrength"
           step="0.05"

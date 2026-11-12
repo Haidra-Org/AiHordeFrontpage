@@ -1061,31 +1061,47 @@
                   <label class="gs-slabel" for="generate-cfg">
                     {{ "generate.form.cfg_short" | transloco }} </label
                   ><app-gs-help topic="cfg" />
-                  <input
-                    id="generate-cfg"
-                    class="gs-numfield gs-mono ml-auto"
-                    [class.gs-field--invalid]="
-                      form().controls.cfg_scale.invalid
-                    "
-                    [attr.aria-invalid]="
-                      form().controls.cfg_scale.invalid ? 'true' : null
-                    "
-                    type="number"
-                    inputmode="decimal"
-                    autocomplete="off"
+                  <app-number-stepper
+                    class="ml-auto"
+                    [value]="form().controls.cfg_scale.value"
                     [min]="minCfg"
                     [max]="maxCfg"
                     [step]="cfgStep"
-                    [value]="form().controls.cfg_scale.value"
-                    (input)="setNumberEntry(form().controls.cfg_scale, $event)"
-                    [attr.aria-describedby]="
-                      describedBy('cfg', 'generate-cfg-range')
-                    "
-                  />
+                    [label]="'generate.form.cfg_short' | transloco"
+                    [disabled]="form().controls.cfg_scale.disabled"
+                    (valueChange)="setCfg($event)"
+                  >
+                    <input
+                      id="generate-cfg"
+                      class="hd-input hd-stepper-value"
+                      [class.gs-field--invalid]="
+                        form().controls.cfg_scale.invalid
+                      "
+                      [attr.aria-invalid]="
+                        form().controls.cfg_scale.invalid ? 'true' : null
+                      "
+                      type="number"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      [min]="minCfg"
+                      [max]="maxCfg"
+                      [step]="cfgStep"
+                      [disabled]="form().controls.cfg_scale.disabled"
+                      [value]="form().controls.cfg_scale.value"
+                      (input)="
+                        setNumberEntry(form().controls.cfg_scale, $event)
+                      "
+                      [attr.aria-describedby]="
+                        describedBy('cfg', 'generate-cfg-range')
+                      "
+                    />
+                  </app-number-stepper>
                 </div>
                 <input
                   class="gs-range mt-1.5"
                   type="range"
+                  [appScrollSafeRange]="form().controls.cfg_scale.value"
+                  (valueRestored)="setCfg($event)"
                   formControlName="cfg_scale"
                   [min]="cfgSliderMin"
                   [max]="cfgSliderMax"

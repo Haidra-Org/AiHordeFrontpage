@@ -44,6 +44,8 @@ import {
   type TiSelection,
 } from '../../types/civitai-asset';
 import { rangeFillPercent } from '../../pages/generate/generate-form.model';
+import { NumberStepperComponent } from '../number-stepper/number-stepper.component';
+import { ScrollSafeRangeDirective } from '../../directives/scroll-safe-range.directive';
 
 /** A row as the template draws it: the entry plus where it sits. */
 interface SelectionRow<T> {
@@ -70,7 +72,13 @@ type ManualWeight =
  */
 @Component({
   selector: 'app-civitai-selection',
-  imports: [TranslocoPipe, DecimalPipe, CivitaiDetailComponent],
+  imports: [
+    TranslocoPipe,
+    DecimalPipe,
+    CivitaiDetailComponent,
+    NumberStepperComponent,
+    ScrollSafeRangeDirective,
+  ],
   templateUrl: './civitai-selection.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -222,6 +230,24 @@ export class CivitaiSelectionComponent {
       i === index ? { ...entry, [field]: value } : entry,
     );
     this.lorasChange.emit(next);
+  }
+
+  public setLoraNumberEntry(
+    index: number,
+    field: 'model' | 'clip',
+    event: Event,
+  ): void {
+    const element = event.target as HTMLInputElement;
+    const parsed = element.valueAsNumber;
+    const entry = this.loras()[index];
+    if (!entry) return;
+    const previous = entry[field];
+    // Commit on leaving the field so a minus sign or a cleared entry can be typed.
+    const value = Number.isFinite(parsed)
+      ? Math.max(MIN_LORA_STRENGTH, Math.min(MAX_LORA_STRENGTH, parsed))
+      : previous;
+    element.value = String(value);
+    if (value !== previous) this.setLoraStrength(index, field, value);
   }
 
   public setTiStrength(index: number, value: number): void {

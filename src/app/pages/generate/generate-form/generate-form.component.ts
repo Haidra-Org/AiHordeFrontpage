@@ -54,6 +54,8 @@ import { TutorialAnchorDirective } from '../../../directives/tutorial-anchor.dir
 import { TutorialAnchorService } from '../../../services/tutorial-anchor.service';
 import { CivitaiSelectionComponent } from '../../../components/civitai-selection/civitai-selection.component';
 import { RememberedHeightDirective } from '../../../directives/remembered-height.directive';
+import { ScrollSafeRangeDirective } from '../../../directives/scroll-safe-range.directive';
+import { NumberStepperComponent } from '../../../components/number-stepper/number-stepper.component';
 import { EdgeAwarePopoverDirective } from '../../../directives/edge-aware-popover.directive';
 import { GsPromptEditorComponent } from '../../../components/gs-prompt-editor/gs-prompt-editor.component';
 import { ModelAutocompleteComponent } from '../../../components/model-autocomplete/model-autocomplete.component';
@@ -604,6 +606,8 @@ const SUMMARY_SEPARATOR = ' · ';
     GsHelpComponent,
     TutorialAnchorDirective,
     RememberedHeightDirective,
+    ScrollSafeRangeDirective,
+    NumberStepperComponent,
     GsPromptEditorComponent,
     ModelAutocompleteComponent,
     CivitaiPickerComponent,
@@ -2648,6 +2652,13 @@ export class GenerateFormComponent implements OnInit {
       return;
     }
     control.setValue(parsed);
+    control.markAsDirty();
+  }
+
+  public setCfg(value: number): void {
+    const control = this.form().controls.cfg_scale;
+    if (control.disabled) return;
+    control.setValue(value);
     control.markAsDirty();
   }
 

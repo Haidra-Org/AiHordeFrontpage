@@ -557,6 +557,8 @@
   "generate.form.review_before_send_hint": "Generate shows you the request first, and nothing is sent until you confirm.",
   "generate.form.confirm_result_actions": "Confirm changes from results",
   "generate.form.confirm_result_actions_hint": "Ask before a result replaces your settings or becomes the source image.",
+  "number_stepper.decrease": "Decrease {{ label }} by {{ step }}",
+  "number_stepper.increase": "Increase {{ label }} by {{ step }}",
   "generate.form.pin_generate": "Keep Generate on screen",
   "generate.form.pin_generate_position": "Generate bar position",
   "generate.form.pin_generate_top": "Top",

@@ -326,6 +326,45 @@ describe('CivitaiSelectionComponent', () => {
       expect(emitted[0][0]).toMatchObject({ name: 'a', clip: 1 });
     });
 
+    it('accepts precise typed model and CLIP weights independently', () => {
+      setLoras([lora('a')]);
+      const fields = (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLInputElement>('input[type="number"]');
+      const emitted = vi.fn();
+      component.lorasChange.subscribe(emitted);
+      fields[0].value = '0.123';
+      fields[0].dispatchEvent(new Event('change'));
+      expect(emitted).toHaveBeenLastCalledWith([
+        expect.objectContaining({ model: 0.123, clip: 1 }),
+      ]);
+      fields[1].value = '-0.75';
+      fields[1].dispatchEvent(new Event('change'));
+      expect(emitted).toHaveBeenLastCalledWith([
+        expect.objectContaining({ model: 1, clip: -0.75 }),
+      ]);
+    });
+
+    it('shows bounded values on commit and restores an unfinished number', () => {
+      setLoras([lora('a')]);
+      const field = (
+        fixture.nativeElement as HTMLElement
+      ).querySelector<HTMLInputElement>('input[type="number"]')!;
+      const emitted = vi.fn();
+      component.lorasChange.subscribe(emitted);
+      field.value = '8';
+      field.dispatchEvent(new Event('change'));
+      expect(field.value).toBe('5');
+      expect(emitted).toHaveBeenLastCalledWith([
+        expect.objectContaining({ model: 5 }),
+      ]);
+      emitted.mockClear();
+      field.value = '';
+      field.dispatchEvent(new Event('change'));
+      expect(field.value).toBe('1');
+      expect(emitted).not.toHaveBeenCalled();
+    });
+
     it('removes the row that was asked for', () => {
       setLoras([lora('a'), lora('b'), lora('c')]);
       const emitted: LoraSelection[][] = [];

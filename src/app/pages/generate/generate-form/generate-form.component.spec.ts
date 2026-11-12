@@ -1682,6 +1682,37 @@ describe('GenerateFormComponent structure', () => {
     ).toBe('blur, text');
   });
 
+  it('steps CFG by 0.5 and keeps exact typed values beyond the slider', async () => {
+    const fixture = await renderFixture();
+    unfoldAll(fixture);
+    const host = fixture.nativeElement as HTMLElement;
+    const control = fixture.componentInstance.form().controls.cfg_scale;
+    const field = host.querySelector<HTMLInputElement>('#generate-cfg')!;
+    field.value = '2.5';
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const buttons = field
+      .closest('app-number-stepper')!
+      .querySelectorAll<HTMLButtonElement>('button');
+    buttons[1].click();
+    fixture.detectChanges();
+    expect(control.value).toBe(3);
+    expect(field.value).toBe('3');
+    expect(control.dirty).toBe(true);
+    field.value = '99.5';
+    field.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    buttons[1].click();
+    fixture.detectChanges();
+    expect(control.value).toBe(100);
+    expect(field.value).toBe('100');
+    expect(buttons[1].disabled).toBe(true);
+    control.disable();
+    fixture.detectChanges();
+    expect(field.disabled).toBe(true);
+    expect(buttons[0].disabled).toBe(true);
+  });
+
   it('lets a typed step count run past the slider, and marks one past the horde', async () => {
     const fixture = await renderFixture();
     unfoldAll(fixture);

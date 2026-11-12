@@ -113,6 +113,16 @@ are shared. The frontpage adds the layout around them:
 For structured configuration forms, see the form shell system in
 [design-system.md](design-system.md#form-shell-primitives). Modals are shared in full; see the shared catalog.
 
+`NumberStepperComponent` wraps a number field with decrement and increment buttons. Its `.hd-number-stepper`,
+`.hd-number-step` and `.hd-stepper-value` rules live in `_forms.css`; coarse pointers get 44px targets.
+CFG steps by 0.5 within 0–100. LoRA model and CLIP strengths step by 0.05 within -5–5 and also accept typed decimals.
+The LoRA controls wrap through `.hd-lora-strengths` so both fields stay readable on narrow screens. The existing
+sliders keep a linear scale. `ScrollSafeRangeDirective` restores a slider's starting value on touch cancellation;
+`.hd-scroll-safe-range` in `_forms.css` allows vertical page scrolling across those tracks in both the studio and style editor.
+
+`number-stepper.component.spec.ts`, `scroll-safe-range.directive.spec.ts`, `civitai-selection.component.spec.ts`
+and `generate-form.component.spec.ts` cover precision, bounds, locked controls and cancelled gestures.
+
 ---
 
 ## Badges (`_badges.css`)
