@@ -33,6 +33,18 @@
     "recommended": true
   },
   {
+    "name": "Direct (ComfyUI Dreamer Worker)",
+    "description": "Open-source self-hosted AI node featuring a built-in, idle-aware AI Horde image worker ('Dreamer') for ComfyUI with horde-safety NSFW/CSAM scanning and strict AI-Horde-image-model-reference SHA256 checkpoint verification. Automatically contributes idle local GPU cycles (standard SDXL and optional daily-capped Krea 2) to the Horde and includes a live web dashboard at /horde.",
+    "image": "assets/img/guis/direct-worker.png",
+    "link": "https://docs.disk.direct/horde/",
+    "categories": ["Worker", "Image Generation"],
+    "itemType": "tool",
+    "domain": ["image"],
+    "platform": ["server", "windows", "linux", "macos"],
+    "functionKind": "worker",
+    "sourceControlLink": "https://github.com/alexeyvolkoff/direct"
+  },
+  {
     "name": "Godot Engine plugin",
     "description": "Easily integrate AI Horde image generation into your games.",
     "link": "https://github.com/Haidra-Org/AI-Horde-Godot-Addon",
