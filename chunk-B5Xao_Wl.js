@@ -1,0 +1,1 @@
+import{_n as ae}from"./chunk-CpZqeoBA.js";var o=(()=>{class t{constructor(){this.pending=null}set(n){this.pending=n}has(){return this.pending!==null}consume(){let n=this.pending;return this.pending=null,n}static{this.ɵfac=function(i){return new(i||t)}}static{this.ɵprov=ae({token:t,factory:t.ɵfac,providedIn:`root`})}}return t})();export{o as t};

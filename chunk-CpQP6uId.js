@@ -1,0 +1,1 @@
+var o=[{path:``,redirectTo:`workers`,pathMatch:`full`},{path:`workers`,loadComponent:()=>import(`./chunk-B3Z7fqSY.js`).then(e=>e.WorkersComponent)},{path:`joining`,redirectTo:`workers`,pathMatch:`full`},{path:`donate`,loadComponent:()=>import(`./chunk-1_IjRZaF.js`).then(e=>e.DonateComponent)}];export{o as contributeRoutes};

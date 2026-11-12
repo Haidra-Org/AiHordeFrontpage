@@ -629,7 +629,7 @@
     "platform": ["server"],
     "functionKind": "bot",
     "sourceControlLink": "https://github.com/amiantos/ai-horde-irc",
-    "discordSection": "programs",
-    "discordNote": "an instance runs as AIHorde on irc.libera.chat — join #aihorde to try it"
+    "discordSection": "horde-tools",
+    "discordDescription": "an image bot running as AIHorde on irc.libera.chat (join #aihorde to try it)"
   }
 ]
