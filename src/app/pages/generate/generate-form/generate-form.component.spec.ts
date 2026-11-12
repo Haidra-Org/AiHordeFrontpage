@@ -1656,6 +1656,30 @@ describe('GenerateFormComponent structure', () => {
     expect(fixture.componentInstance.form().controls.prompt.value).toBe(
       'a fox in the snow',
     );
+    host.querySelector<HTMLButtonElement>('.gs-prompt-editor-done')!.click();
+    fixture.detectChanges();
+    expect(
+      host.querySelector<HTMLTextAreaElement>('[formControlName="prompt"]')
+        ?.value,
+    ).toBe('a fox in the snow');
+
+    buttons[1].click();
+    fixture.detectChanges();
+    const negativeArea = host.querySelector<HTMLTextAreaElement>(
+      '.gs-prompt-editor-area',
+    )!;
+    negativeArea.value = 'blur, text';
+    negativeArea.dispatchEvent(new Event('input'));
+    host.querySelector<HTMLButtonElement>('.gs-prompt-editor-done')!.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.form().controls.negativePrompt.value).toBe(
+      'blur, text',
+    );
+    expect(
+      host.querySelector<HTMLTextAreaElement>(
+        '[formControlName="negativePrompt"]',
+      )?.value,
+    ).toBe('blur, text');
   });
 
   it('lets a typed step count run past the slider, and marks one past the horde', async () => {

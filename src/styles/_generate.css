@@ -19306,7 +19306,13 @@ html:has(app-gs-sheet) {
    it is open. It sits in the modal band, above the nav's own layer. */
 .gen-studio .gs-prompt-editor {
   position: fixed;
-  inset: var(--nav-height-mobile-compact, 48px) 0 0 0;
+  inset: auto 0 auto 0;
+  top: calc(
+    var(--gs-editor-viewport-top, 0px) + var(--gs-editor-nav-height, 48px)
+  );
+  height: calc(
+    var(--gs-editor-viewport-height, 100dvh) - var(--gs-editor-nav-height, 48px)
+  );
   z-index: 60;
   display: flex;
   flex-direction: column;
@@ -19314,6 +19320,10 @@ html:has(app-gs-sheet) {
 }
 .gen-studio .gs-prompt-editor-head {
   flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gs-space-3);
   padding: var(--gs-space-3) var(--gs-space-4);
   border-bottom: 1px solid var(--gs-border);
 }
@@ -19335,6 +19345,8 @@ html:has(app-gs-sheet) {
   background: var(--gs-panel);
   border: 0;
   resize: none;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
 }
 .gen-studio .gs-prompt-editor-area:focus {
   outline: 2px solid var(--gs-focus-ring);
@@ -19343,17 +19355,13 @@ html:has(app-gs-sheet) {
 .gen-studio .gs-prompt-editor-area::placeholder {
   color: var(--gs-muted);
 }
-.gen-studio .gs-prompt-editor-foot {
-  flex: none;
-  display: flex;
-  justify-content: flex-end;
-  padding: var(--gs-space-3) var(--gs-space-4);
-  padding-bottom: calc(var(--gs-space-3) + var(--gs-safe-bottom));
-  border-top: 1px solid var(--gs-border);
-}
 .gen-studio .gs-prompt-editor-done {
   min-height: 44px;
   min-width: 96px;
+}
+.gen-studio.gs-shell:is(:fullscreen, :-webkit-full-screen) .gs-prompt-editor,
+body.gs-immersive .gen-studio .gs-prompt-editor {
+  --gs-editor-nav-height: 0px;
 }
 @media (forced-colors: active) {
   .gen-studio .gs-prompt-expand,

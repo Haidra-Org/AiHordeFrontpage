@@ -64,6 +64,12 @@ Every primitive that reads one falls back to the accent, so a page that supplies
 studio supplies all six from its own zone and section hues in `_generate.css`. `_models.css` supplies `--hd-sec*` from
 the accent on its filter bar. Identity hues are audited as graphic colour: glyphs and edges only, never text.
 
+### Mobile studio controls
+
+The studio's expanded prompt editor uses the visual viewport's height and offset so its text scrolls within the area
+left by the keyboard. Done stays in the header. The viewport meta tag requests `interactive-widget=resizes-content`
+for browsers that support it, keeping fixed mobile controls clear of the keyboard. Styles stay in `_generate.css`.
+
 ### The two dark ramps
 
 Dark HD has two surface ramps. The default is a slate matched to the site's own dark body, so an HD plane on an ordinary

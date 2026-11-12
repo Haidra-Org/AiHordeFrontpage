@@ -2,6 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   PLATFORM_ID,
   afterNextRender,
@@ -10,7 +11,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 import { A11yModule } from '@angular/cdk/a11y';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { useScrollLock } from '../../helper/scroll-lock';
@@ -31,10 +32,11 @@ let nextInstance = 0;
  */
 @Component({
   selector: 'app-gs-prompt-editor',
-  imports: [ReactiveFormsModule, TranslocoPipe, A11yModule],
+  imports: [TranslocoPipe, A11yModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div
+      #panel
       class="gs-prompt-editor"
       role="dialog"
       aria-modal="true"
@@ -44,15 +46,6 @@ let nextInstance = 0;
     >
       <div class="gs-prompt-editor-head">
         <h2 class="gs-prompt-editor-title" [id]="titleId">{{ heading() }}</h2>
-      </div>
-      <textarea
-        #area
-        class="gs-prompt-editor-area"
-        [formControl]="control()"
-        [placeholder]="placeholder()"
-        [attr.aria-label]="heading()"
-      ></textarea>
-      <div class="gs-prompt-editor-foot">
         <button
           type="button"
           class="gs-btn-primary gs-prompt-editor-done"
@@ -61,6 +54,16 @@ let nextInstance = 0;
           {{ 'generate.form.prompt_editor_done' | transloco }}
         </button>
       </div>
+      <textarea
+        #area
+        class="gs-prompt-editor-area"
+        [value]="control().value"
+        [disabled]="control().disabled"
+        (input)="updateValue()"
+        (blur)="control().markAsTouched()"
+        [placeholder]="placeholder()"
+        [attr.aria-label]="heading()"
+      ></textarea>
     </div>
   `,
 })
@@ -76,6 +79,8 @@ export class GsPromptEditorComponent {
   public readonly titleId = `gs-prompt-editor-${nextInstance++}`;
 
   private readonly area = viewChild<ElementRef<HTMLTextAreaElement>>('area');
+  private readonly panel = viewChild<ElementRef<HTMLElement>>('panel');
+  private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   /**
    * The editor covers the page, so the page stops scrolling beneath it: a drag
@@ -94,6 +99,27 @@ export class GsPromptEditorComponent {
     this.scrollLock.enable();
 
     afterNextRender(() => {
+      const viewport = window.visualViewport;
+      if (viewport) {
+        const fitViewport = (): void => {
+          const style = this.panel()?.nativeElement.style;
+          style?.setProperty(
+            '--gs-editor-viewport-top',
+            `${viewport.offsetTop}px`,
+          );
+          style?.setProperty(
+            '--gs-editor-viewport-height',
+            `${viewport.height}px`,
+          );
+        };
+        fitViewport();
+        viewport.addEventListener('resize', fitViewport);
+        viewport.addEventListener('scroll', fitViewport);
+        this.destroyRef.onDestroy(() => {
+          viewport.removeEventListener('resize', fitViewport);
+          viewport.removeEventListener('scroll', fitViewport);
+        });
+      }
       const area = this.area()?.nativeElement;
       if (!area) {
         return;
@@ -106,8 +132,20 @@ export class GsPromptEditorComponent {
     });
   }
 
+  public updateValue(): void {
+    const area = this.area()?.nativeElement;
+    const control = this.control();
+    if (!area || control.disabled || area.value === control.value) return;
+    // A second forms value accessor suppresses updates to the inline field.
+    // Writing through the control keeps both views and keyboard composition in sync.
+    control.markAsDirty();
+    control.setValue(area.value);
+  }
+
   public close(): void {
-    this.opener?.focus();
+    this.updateValue();
+    this.control().markAsTouched();
+    this.opener?.focus({ preventScroll: true });
     this.closed.emit();
   }
 }

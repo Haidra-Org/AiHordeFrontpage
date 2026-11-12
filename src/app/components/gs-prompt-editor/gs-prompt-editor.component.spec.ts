@@ -1,14 +1,15 @@
 import { Component, signal } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GsPromptEditorComponent } from './gs-prompt-editor.component';
 import en from '../../../assets/i18n/en.json';
 
 @Component({
-  imports: [GsPromptEditorComponent],
+  imports: [GsPromptEditorComponent, ReactiveFormsModule],
   template: `
+    <textarea class="inline-prompt" [formControl]="control"></textarea>
     <button #trigger type="button" (click)="open.set(true)">open</button>
     @if (open()) {
       <app-gs-prompt-editor
@@ -82,6 +83,27 @@ describe('GsPromptEditorComponent', () => {
     fixture.detectChanges();
 
     expect(host.control.value).toBe('a cat in a hat');
+    expect(host.control.dirty).toBe(true);
+    expect(
+      el().querySelector<HTMLTextAreaElement>('.inline-prompt')?.value,
+    ).toBe('a cat in a hat');
+  });
+
+  it('keeps the final keyboard text on close and reopen', () => {
+    openEditor();
+    area().dispatchEvent(new CompositionEvent('compositionstart'));
+    area().value = 'a cat in a hat';
+    area().dispatchEvent(new Event('input'));
+
+    (el().querySelector('.gs-prompt-editor-done') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(host.control.value).toBe('a cat in a hat');
+    expect(
+      el().querySelector<HTMLTextAreaElement>('.inline-prompt')?.value,
+    ).toBe('a cat in a hat');
+    openEditor();
+    expect(area().value).toBe('a cat in a hat');
   });
 
   it('closes on Done and hands focus back to what opened it', () => {
@@ -106,5 +128,35 @@ describe('GsPromptEditorComponent', () => {
     expect(host.closedCount).toBe(1);
     expect(el().querySelector('.gs-prompt-editor')).toBeNull();
     expect(document.activeElement).toBe(trigger());
+  });
+
+  it('fits the visible viewport and releases its listeners on close', () => {
+    const viewport = Object.assign(new EventTarget(), {
+      height: 500,
+      offsetTop: 20,
+    });
+    vi.stubGlobal('visualViewport', viewport);
+    const remove = vi.spyOn(viewport, 'removeEventListener');
+    openEditor();
+
+    expect(dialog().style.getPropertyValue('--gs-editor-viewport-height')).toBe(
+      '500px',
+    );
+    viewport.height = 300;
+    viewport.dispatchEvent(new Event('resize'));
+    expect(dialog().style.getPropertyValue('--gs-editor-viewport-height')).toBe(
+      '300px',
+    );
+    viewport.offsetTop = 40;
+    viewport.dispatchEvent(new Event('scroll'));
+    expect(dialog().style.getPropertyValue('--gs-editor-viewport-top')).toBe(
+      '40px',
+    );
+
+    (el().querySelector('.gs-prompt-editor-done') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(host.control.touched).toBe(true);
+    expect(remove).toHaveBeenCalledWith('resize', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('scroll', expect.any(Function));
   });
 });
