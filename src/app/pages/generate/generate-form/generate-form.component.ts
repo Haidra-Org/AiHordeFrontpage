@@ -777,6 +777,12 @@ export class GenerateFormComponent implements OnInit {
    */
   public readonly pinGenerate = input(false);
   public readonly pinGeneratePosition = input<'top' | 'bottom'>('bottom');
+  public readonly generatePinnedAtTop = computed(
+    () =>
+      this.pinnable() &&
+      this.pinGenerate() &&
+      this.pinGeneratePosition() === 'top',
+  );
 
   public readonly create = output<void>();
   /** A style the browser reached that the studio does not hold yet. */

@@ -2,6 +2,7 @@
   [formGroup]="form()"
   (ngSubmit)="onCreate()"
   class="flex min-h-0 flex-1 flex-col"
+  [class.gs-form--generate-top]="generatePinnedAtTop()"
 >
   <!-- Panel header: title + expand control + Simple/Advanced segmented toggle -->
   <header class="gs-panel-header">
@@ -2783,9 +2784,7 @@
     <div
       class="gs-submitrow flex items-center justify-between gap-2"
       [class.gs-submitrow--pinned]="generatePinned()"
-      [class.gs-submitrow--top]="
-        generatePinned() && pinGeneratePosition() === 'top'
-      "
+      [class.gs-submitrow--top]="generatePinnedAtTop()"
       [class.flex-wrap]="panelSize() === 'normal'"
       [class.flex-nowrap]="panelSize() !== 'normal'"
       [class.w-full]="panelSize() === 'normal'"

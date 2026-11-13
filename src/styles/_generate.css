@@ -1490,8 +1490,12 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
     top: env(safe-area-inset-top, 0px);
     bottom: auto;
   }
-  .gen-studio .gs-shell-outlet:has(.gs-submitrow--top) {
+  /* Keep the reserve on the form's own state: WebKit can delay updating an
+     ancestor :has() layout when the fixed row changes position. */
+  .gen-studio .gs-form--generate-top {
     padding-top: var(--gs-pinbar-height);
+  }
+  .gen-studio .gs-shell-outlet:has(.gs-submitrow--top) {
     padding-bottom: calc(var(--gs-tabbar-height) + var(--gs-safe-bottom));
   }
   .gen-studio.gs-shell:has(.gs-submitrow--top) .gs-fs-exit {

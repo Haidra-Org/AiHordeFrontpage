@@ -3360,6 +3360,35 @@ describe('GenerateFormComponent docked Generate', () => {
     expect(host.querySelectorAll('.gs-genbtn')).toHaveLength(1);
   });
 
+  it('updates the top reserve with the bar when placement or pinning changes', async () => {
+    const { host, fixture } = await render();
+    const form = host.querySelector('form')!;
+    const row = host.querySelector('.gs-submitrow')!;
+    const expectTop = (active: boolean): void => {
+      expect(form.classList.contains('gs-form--generate-top')).toBe(active);
+      expect(row.classList.contains('gs-submitrow--top')).toBe(active);
+    };
+    fixture.componentRef.setInput('pinGenerate', true);
+    fixture.detectChanges();
+    expectTop(false);
+    fixture.componentRef.setInput('pinGeneratePosition', 'top');
+    fixture.detectChanges();
+    expectTop(true);
+    fixture.componentRef.setInput('pinGenerate', false);
+    fixture.detectChanges();
+    expectTop(false);
+    fixture.componentRef.setInput('pinGenerate', true);
+    fixture.detectChanges();
+    expectTop(true);
+    fixture.componentRef.setInput('pinGeneratePosition', 'bottom');
+    fixture.detectChanges();
+    expectTop(false);
+    fixture.componentRef.setInput('pinGeneratePosition', 'top');
+    fixture.componentRef.setInput('pinnable', false);
+    fixture.detectChanges();
+    expectTop(false);
+  });
+
   it('offers the switch only where the studio owns the screen', async () => {
     const { host, fixture } = await render();
     const pinRow = (): HTMLElement | null =>
