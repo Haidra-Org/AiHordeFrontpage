@@ -254,5 +254,17 @@
     "domain": ["image"],
     "functionKind": "frontend",
     "platform": ["windows", "linux"]
+  },
+  {
+    "name": "AI Assistant Direct",
+    "description": "An open-source AI assistant and Creative Studio with AI Horde image generation, an AI Art Director for prompt refinement and multi-scene storyboards, SillyTavern character card compatibility, and a built-in ComfyUI Dreamer worker.",
+    "image": "assets/img/guis/direct.png",
+    "link": "https://aiassistant.direct",
+    "categories": ["Web", "Desktop"],
+    "itemType": "gui-image",
+    "domain": ["image"],
+    "functionKind": "frontend",
+    "platform": ["web", "windows", "linux", "macos"],
+    "sourceControlLink": "https://github.com/alexeyvolkoff/direct"
   }
 ]
