@@ -34,7 +34,7 @@
   },
   {
     "name": "Direct (ComfyUI Dreamer Worker)",
-    "description": "Open-source self-hosted AI node featuring a built-in, idle-aware AI Horde image worker ('Dreamer') for ComfyUI with horde-safety NSFW/CSAM scanning and strict AI-Horde-image-model-reference SHA256 checkpoint verification. Automatically contributes idle local GPU cycles (standard SDXL and optional daily-capped Krea 2) to the Horde and includes a live web dashboard at /horde.",
+    "description": "Open-source self-hosted AI node featuring a built-in, idle-aware AI Horde SDXL image worker ('Dreamer') for ComfyUI with horde-safety NSFW/CSAM scanning, strict AI-Horde-image-model-reference SHA256 checkpoint verification, and in-memory zero-retention WebSocket output. Contributes idle local GPU cycles to the Horde and includes a local owner console at /horde.",
     "image": "assets/img/guis/direct-worker.png",
     "link": "https://docs.disk.direct/horde/",
     "categories": ["Worker", "Image Generation"],
