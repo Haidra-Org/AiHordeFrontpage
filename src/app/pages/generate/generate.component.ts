@@ -273,6 +273,7 @@ interface SubmitPlan {
   styleKey: string;
   /** That style's name as the reader saw it, for the results grid to label by. */
   styleName: string;
+  styleNsfw?: boolean;
 }
 
 /**
@@ -2215,25 +2216,24 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       return null;
     }
     const hasSourceImage = usesSource && state.sourceBlob !== null;
+    const style = this.styleRecords().get(effective.styleName);
     return {
       request: this.buildRequest(effective, this.buildOptions(hasSourceImage)),
       sourceImages: usesSource ? this.buildEnqueueSources(state) : [],
       styleKey: effective.styleName,
-      styleName: this.styleRecords().get(effective.styleName)?.name ?? '',
+      styleName: style?.name ?? '',
+      styleNsfw: style?.source === 'native' ? style.nsfw : undefined,
     };
   }
 
   private async submit(plan: SubmitPlan): Promise<void> {
-    const { request, sourceImages, styleKey, styleName } = plan;
+    const { request, sourceImages, styleKey, styleName, styleNsfw } = plan;
     try {
       await this.queue.enqueue(
         request,
         sourceImages.length > 0 ? sourceImages : undefined,
-        // The request itself keeps no trace of the style that shaped it, so the
-        // selection is recorded on the job for the results grid to group by.
-        // The key groups; the name is what the grid shows, and it is recorded
-        // beside the key because a style can be withdrawn or renamed later.
-        styleKey ? { styleKey, styleName } : undefined,
+        // Keep the label and content marking from submission in case the style changes.
+        styleKey ? { styleKey, styleName, styleNsfw } : undefined,
       );
       // One submit is one use of the style, however many images it asks for.
       if (styleKey) {

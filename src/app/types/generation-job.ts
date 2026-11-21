@@ -317,6 +317,8 @@ export interface LocalGenerationJob {
   styleName?: string;
   /** That style's source-qualified key, which is what groups and counts. */
   styleKey?: string;
+  /** NSFW flag of the API style at submission, when the request omits its own flag. */
+  styleNsfw?: boolean;
   resultImageIds: string[];
   /** Keeps a visible result in the grid without retaining the filter image. */
   csamCensoredCount?: number;

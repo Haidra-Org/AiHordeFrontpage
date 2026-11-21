@@ -257,6 +257,7 @@
       @if (!tutorialOpen()) {
         <div class="gs-options gs-view-menu" #viewMenuHost>
           <button
+            #viewButton
             type="button"
             class="hd-btn hd-btn--ghost hd-results-view"
             [attr.aria-label]="
@@ -505,17 +506,24 @@
         <app-icon name="warning-triangle" />
         <div>
           <div class="gs-empty-title">
-            {{ "generate.results.filter_empty_title" | transloco }}
-          </div>
-          <div class="gs-empty-sub">
             {{
-              (searching()
-                ? "generate.results.filter_empty_search_sub"
-                : "generate.results.filter_empty_sub"
+              (allResultsHidden()
+                ? "generate.results.nsfw_empty_title"
+                : "generate.results.filter_empty_title"
               ) | transloco
             }}
           </div>
-          @if (searching()) {
+          <div class="gs-empty-sub">
+            {{
+              (allResultsHidden()
+                ? "generate.results.nsfw_empty_sub"
+                : searching()
+                  ? "generate.results.filter_empty_search_sub"
+                  : "generate.results.filter_empty_sub"
+              ) | transloco
+            }}
+          </div>
+          @if (searching() && !allResultsHidden()) {
             <button
               type="button"
               class="gs-view-toggle gs-empty-clear"
@@ -629,7 +637,7 @@
                     >
                       <img
                         class="gs-tile-img"
-                        [class.gs-tile-img--blur]="isNsfwHidden(tile)"
+                        [class.gs-tile-img--blur]="isNsfwBlurred(tile)"
                         [src]="tile.url"
                         alt=""
                         loading="lazy"
@@ -707,7 +715,7 @@
                         }
                       </div>
                     }
-                    @if (isNsfwHidden(tile)) {
+                    @if (isNsfwBlurred(tile)) {
                       <button
                         type="button"
                         class="gs-tile-veil"
@@ -1714,7 +1722,7 @@
               <app-icon name="chevron-right" class="gs-viewer-nav-ico--flip" />
             </button>
           }
-          @if (isNsfwHidden(view)) {
+          @if (isNsfwBlurred(view)) {
             <button
               type="button"
               class="hd-btn hd-btn--tonal"
@@ -1840,7 +1848,7 @@
               type="button"
               class="gs-viewer-act"
               [attr.aria-pressed]="imageFullscreen()"
-              [disabled]="isNsfwHidden(view)"
+              [disabled]="isNsfwBlurred(view)"
               (click)="viewerFullscreen()"
             >
               <app-icon
@@ -2462,29 +2470,28 @@
       }}</span>
     </button>
   }
-  @if (hasNsfw()) {
-    <button
-      type="button"
-      class="gs-opt-row gs-opt-row--switch"
-      [class.gs-opt-row--on]="showNsfw()"
-      [attr.aria-pressed]="showNsfw()"
-      (click)="toggleShowNsfw()"
-    >
-      <app-icon name="lock-closed" class="gs-ico-sm" aria-hidden="true" />
-      <span class="gs-opt-text"
-        ><span class="gs-opt-label">{{
-          (showNsfw()
-            ? "generate.results.nsfw_hide"
-            : "generate.results.nsfw_show"
-          ) | transloco
-        }}</span></span
-      >
-      <span class="gs-opt-state" aria-hidden="true">{{
-        (showNsfw() ? "generate.form.options_on" : "generate.form.options_off")
-          | transloco
+  <label class="gs-opt-row gs-opt-row--field">
+    <app-icon name="lock-closed" class="gs-ico-sm" aria-hidden="true" />
+    <span class="gs-opt-text">
+      <span class="gs-opt-label">{{
+        "generate.results.nsfw_visibility" | transloco
       }}</span>
-    </button>
-  }
+    </span>
+    <select
+      class="gs-view-select"
+      (change)="setNsfwVisibility($any($event.target).value)"
+    >
+      <option value="show" [selected]="nsfwVisibility() === 'show'">
+        {{ "generate.results.nsfw_show" | transloco }}
+      </option>
+      <option value="blur" [selected]="nsfwVisibility() === 'blur'">
+        {{ "generate.results.nsfw_blur" | transloco }}
+      </option>
+      <option value="hide" [selected]="nsfwVisibility() === 'hide'">
+        {{ "generate.results.nsfw_hide" | transloco }}
+      </option>
+    </select>
+  </label>
   @if (hasAesthetic()) {
     <button
       type="button"

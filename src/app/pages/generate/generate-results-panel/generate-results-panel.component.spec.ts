@@ -857,28 +857,27 @@ describe('GenerateResultsPanelComponent', () => {
           'unflagged',
           'flagged',
         ]);
-        expect(component.showNsfw()).toBe(false);
-        expect(tiles.map((tile) => component.isNsfwHidden(tile))).toEqual([
+        expect(component.nsfwVisibility()).toBe('blur');
+        expect(tiles.map((tile) => component.isNsfwBlurred(tile))).toEqual([
           flags.nsfw,
           true,
         ]);
-        expect(component.hasNsfw()).toBe(true);
         expect(component.visibleTiles()).toEqual(tiles);
 
-        component.toggleShowNsfw();
-        expect(tiles.map((tile) => component.isNsfwHidden(tile))).toEqual([
+        component.setNsfwVisibility('show');
+        expect(tiles.map((tile) => component.isNsfwBlurred(tile))).toEqual([
           false,
           false,
         ]);
-        component.toggleShowNsfw();
-        expect(tiles.map((tile) => component.isNsfwHidden(tile))).toEqual([
+        component.setNsfwVisibility('blur');
+        expect(tiles.map((tile) => component.isNsfwBlurred(tile))).toEqual([
           flags.nsfw,
           true,
         ]);
       },
     );
 
-    it('offers an NSFW toggle for an allowed, uncensored request with no worker flags', async () => {
+    it('blurs an NSFW request when the worker supplies no flags', async () => {
       getJobImages.mockResolvedValue([resultImage('f', 'unflagged')]);
       finishedJobs.set([
         {
@@ -888,21 +887,20 @@ describe('GenerateResultsPanelComponent', () => {
       ]);
       await loadThumbnails();
 
-      expect(component.hasNsfw()).toBe(true);
-      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+      expect(component.isNsfwBlurred(component.tiles()[0])).toBe(true);
     });
 
-    it('covers an individually revealed image again after Show NSFW then Hide NSFW', async () => {
+    it('covers an individually revealed image again after switching from Show back to Blur', async () => {
       await loadResults(true, false);
       const flagged = component.tiles()[1];
       component.revealNsfw(flagged);
-      expect(component.isNsfwHidden(flagged)).toBe(false);
+      expect(component.isNsfwBlurred(flagged)).toBe(false);
 
-      component.toggleShowNsfw();
-      component.toggleShowNsfw();
+      component.setNsfwVisibility('show');
+      component.setNsfwVisibility('blur');
 
-      expect(component.showNsfw()).toBe(false);
-      expect(component.isNsfwHidden(flagged)).toBe(true);
+      expect(component.nsfwVisibility()).toBe('blur');
+      expect(component.isNsfwBlurred(flagged)).toBe(true);
     });
 
     it('changes every result in the selected request while retaining worker flags and other requests', async () => {
@@ -932,7 +930,7 @@ describe('GenerateResultsPanelComponent', () => {
 
       expect(queue.setRequestNsfw).toHaveBeenCalledWith('f', false);
       expect(
-        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+        component.tiles().map((tile) => component.isNsfwBlurred(tile)),
       ).toEqual([false, true, true]);
       expect(finishedJobs()[0].request.nsfw).toBe(true);
       expect(finishedJobs()[1].requestNsfwOverride).toBeUndefined();
@@ -940,7 +938,7 @@ describe('GenerateResultsPanelComponent', () => {
       component.revealNsfw(component.tiles()[1]);
       await component.toggleRequestNsfw(component.tiles()[0]);
       expect(
-        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+        component.tiles().map((tile) => component.isNsfwBlurred(tile)),
       ).toEqual([true, true, true]);
     });
 
@@ -957,14 +955,14 @@ describe('GenerateResultsPanelComponent', () => {
         'generate.results.nsfw_mark_failed',
         { transloco: true },
       );
-      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+      expect(component.isNsfwBlurred(component.tiles()[0])).toBe(true);
     });
 
     it('invalidates a reveal when another tab changes the request content revision', async () => {
       await loadResults(true, false);
       const previous = component.tiles()[0];
       component.revealNsfw(previous);
-      expect(component.isNsfwHidden(previous)).toBe(false);
+      expect(component.isNsfwBlurred(previous)).toBe(false);
       finishedJobs.update((jobs) =>
         jobs.map((job) => ({
           ...job,
@@ -973,11 +971,11 @@ describe('GenerateResultsPanelComponent', () => {
         })),
       );
 
-      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+      expect(component.isNsfwBlurred(component.tiles()[0])).toBe(true);
       component.revealNsfw(previous);
-      expect(component.isNsfwHidden(component.tiles()[0])).toBe(true);
+      expect(component.isNsfwBlurred(component.tiles()[0])).toBe(true);
       component.revealNsfw(component.tiles()[0]);
-      expect(component.isNsfwHidden(component.tiles()[0])).toBe(false);
+      expect(component.isNsfwBlurred(component.tiles()[0])).toBe(false);
     });
 
     it('does not invalidate a reveal on an unrelated server metadata update', async () => {
@@ -986,7 +984,7 @@ describe('GenerateResultsPanelComponent', () => {
       finishedJobs.update((jobs) =>
         jobs.map((job) => ({ ...job, updatedAt: 99, kudos: 9 })),
       );
-      expect(component.isNsfwHidden(component.tiles()[0])).toBe(false);
+      expect(component.isNsfwBlurred(component.tiles()[0])).toBe(false);
     });
 
     it('covers a late NSFW request recovery while honoring a saved SFW marking', async () => {
@@ -1000,7 +998,7 @@ describe('GenerateResultsPanelComponent', () => {
         })),
       );
       expect(
-        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+        component.tiles().map((tile) => component.isNsfwBlurred(tile)),
       ).toEqual([true, true]);
       finishedJobs.update((jobs) =>
         jobs.map((job) => ({
@@ -1010,13 +1008,13 @@ describe('GenerateResultsPanelComponent', () => {
         })),
       );
       expect(
-        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+        component.tiles().map((tile) => component.isNsfwBlurred(tile)),
       ).toEqual([false, true]);
     });
 
     it('leaves every covered image visible while global showing is enabled after a peer edit', async () => {
       await loadResults(true, false);
-      component.toggleShowNsfw();
+      component.setNsfwVisibility('show');
       finishedJobs.update((jobs) =>
         jobs.map((job) => ({
           ...job,
@@ -1025,11 +1023,11 @@ describe('GenerateResultsPanelComponent', () => {
         })),
       );
       expect(
-        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+        component.tiles().map((tile) => component.isNsfwBlurred(tile)),
       ).toEqual([false, false]);
-      component.toggleShowNsfw();
+      component.setNsfwVisibility('blur');
       expect(
-        component.tiles().map((tile) => component.isNsfwHidden(tile)),
+        component.tiles().map((tile) => component.isNsfwBlurred(tile)),
       ).toEqual([true, true]);
     });
 
@@ -1038,7 +1036,7 @@ describe('GenerateResultsPanelComponent', () => {
       async (show) => {
         await loadResults(true, false);
         component.revealNsfw(component.tiles()[0]);
-        component.showNsfw.set(show);
+        component.setNsfwVisibility(show ? 'show' : 'blur');
         getJobImages.mockResolvedValue([
           resultImage('f', 'unflagged'),
           resultImage('f', 'new-image'),
@@ -1055,21 +1053,117 @@ describe('GenerateResultsPanelComponent', () => {
           'unflagged',
           'new-image',
         ]);
-        expect(component.isNsfwHidden(component.tiles()[0])).toBe(false);
-        expect(component.isNsfwHidden(component.tiles()[1])).toBe(!show);
+        expect(component.isNsfwBlurred(component.tiles()[0])).toBe(false);
+        expect(component.isNsfwBlurred(component.tiles()[1])).toBe(!show);
       },
     );
 
     it('includes covered images in viewer navigation and permits opening them', async () => {
       await loadResults(false, true);
       const flagged = component.tiles()[1];
-      expect(component.isNsfwHidden(flagged)).toBe(true);
+      expect(component.isNsfwBlurred(flagged)).toBe(true);
       expect(component.viewerTiles()).toContainEqual(flagged);
 
       component.openViewer(flagged);
 
       expect(component.viewerTile()).toEqual(flagged);
-      expect(component.isNsfwHidden(flagged)).toBe(true);
+      expect(component.isNsfwBlurred(flagged)).toBe(true);
+    });
+
+    it('excludes flagged images from search and navigation and closes their viewer and metadata', async () => {
+      await loadResults(false, true);
+      const [safe, flagged] = component.tiles();
+      component.revealNsfw(flagged);
+      component.openViewer(flagged);
+      component.openMeta(flagged);
+      component.toggleSelected(safe.key);
+      component.toggleSelected(flagged.key);
+
+      component.setNsfwVisibility('hide');
+      fixture.detectChanges();
+      expect(component.visibleTiles()).toEqual([safe]);
+      expect(component.viewerTiles()).toEqual([safe]);
+      expect(component.viewerKey()).toBeNull();
+      expect(component.metaOpen()).toBe(false);
+      expect(component.selectedResults()).toEqual(new Set([safe.key]));
+      component.query.set('seed:flagged');
+      expect(component.visibleTiles()).toEqual([]);
+      component.query.set('');
+      component.openViewer(flagged);
+      component.openMeta(flagged);
+      expect(component.viewerKey()).toBeNull();
+      expect(component.metaTile()).toBeNull();
+
+      component.setNsfwVisibility('blur');
+      expect(component.visibleTiles()).toEqual([safe, flagged]);
+      expect(component.isNsfwBlurred(flagged)).toBe(true);
+    });
+
+    it('uses a captured API style flag and honors the reader’s request marking alongside worker flags', async () => {
+      await loadResults(false, true);
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          request: { prompt: 'a styled prompt', style: 'style-id' },
+          styleNsfw: true,
+        })),
+      );
+      expect(component.tiles().map((tile) => tile.requestNsfw)).toEqual([
+        true,
+        true,
+      ]);
+      expect(
+        component.tiles().every((tile) => component.isNsfwBlurred(tile)),
+      ).toBe(true);
+      component.setNsfwVisibility('hide');
+      expect(component.visibleTiles()).toEqual([]);
+
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          requestNsfwOverride: false,
+        })),
+      );
+      expect(component.visibleTiles().map((tile) => tile.seed)).toEqual([
+        'unflagged',
+      ]);
+    });
+
+    it('closes grid metadata if a peer marks its image NSFW while Hide is selected', async () => {
+      await loadResults(false, true);
+      component.setNsfwVisibility('hide');
+      component.openMeta(component.visibleTiles()[0]);
+      fixture.detectChanges();
+      expect(component.metaTile()?.seed).toBe('unflagged');
+
+      finishedJobs.update((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          requestNsfwOverride: true,
+          requestNsfwRevision: 1,
+        })),
+      );
+      fixture.detectChanges();
+      expect(component.metaTile()).toBeNull();
+      expect(component.metaOpen()).toBe(false);
+      expect(component.viewerTiles()).toEqual([]);
+    });
+
+    it('restores the visibility choice when Studio reopens', async () => {
+      const prefs = new Map<string, unknown>();
+      dbStore.mockImplementation((key: string, value: unknown) =>
+        prefs.set(key, value),
+      );
+      dbGet.mockImplementation((key: string) => prefs.get(key));
+      component.setNsfwVisibility('hide');
+      fixture.destroy();
+      fixture = TestBed.createComponent(GenerateResultsPanelComponent);
+      component = fixture.componentInstance;
+
+      await loadResults(false, true);
+      expect(component.visibleTiles().map((tile) => tile.seed)).toEqual([
+        'unflagged',
+      ]);
     });
   });
 
@@ -3633,7 +3727,7 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
     { nsfw: true, censor_nsfw: false },
     { nsfw: false, censored: true },
   ])(
-    'reveals a covered image explicitly and covers it again on Hide NSFW: %j',
+    'reveals a covered image explicitly and covers it again in Blur: %j',
     async (flags) => {
       await render(['a fox'], flags);
       component.openViewer(component.viewerTiles()[0]);
@@ -3649,8 +3743,8 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
       expect(host.querySelector('.gs-viewer-img')).not.toBeNull();
       expect(host.querySelector('.gs-tile-img--blur')).toBeNull();
 
-      component.toggleShowNsfw();
-      component.toggleShowNsfw();
+      component.setNsfwVisibility('show');
+      component.setNsfwVisibility('blur');
       fixture.detectChanges();
       expect(host.querySelector('.gs-viewer-img')).toBeNull();
       expect(host.querySelector('.gs-tile-img--blur')).not.toBeNull();
@@ -3692,7 +3786,7 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
     },
   );
 
-  it('keeps viewer navigation from revealing another image and wires the global Show and Hide buttons', async () => {
+  it('keeps viewer navigation from revealing another image and wires Show, Blur and Hide', async () => {
     await render(['first image', 'second image'], { nsfw: true });
     component.openViewer(component.viewerTiles()[0]);
     fixture.detectChanges();
@@ -3711,11 +3805,27 @@ describe('GenerateResultsPanelComponent viewer picture description', () => {
     fixture.detectChanges();
     host.querySelector<HTMLButtonElement>('.hd-results-view')!.click();
     fixture.detectChanges();
-    buttonWithText('Show NSFW').click();
+    const visibility = [
+      ...host.querySelectorAll<HTMLSelectElement>('.gs-view-pop select'),
+    ].find((select) =>
+      Array.from(select.options).some((option) => option.value === 'hide'),
+    )!;
+    expect(
+      [...visibility.options].map((option) => option.textContent?.trim()),
+    ).toEqual(['Show', 'Blur', 'Hide']);
+    expect(visibility.value).toBe('blur');
+    const selectMode = (mode: string): void => {
+      visibility.value = mode;
+      visibility.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+    selectMode('show');
     fixture.detectChanges();
     expect(host.querySelectorAll('.gs-tile-img--blur')).toHaveLength(0);
-    buttonWithText('Hide NSFW').click();
-    fixture.detectChanges();
+    selectMode('hide');
+    expect(host.querySelector('.gs-tile-img')).toBeNull();
+    expect(host.textContent).toContain('NSFW results are hidden');
+    selectMode('blur');
     expect(host.querySelectorAll('.gs-tile-img--blur')).toHaveLength(2);
   });
 

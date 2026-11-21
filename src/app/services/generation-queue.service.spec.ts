@@ -2006,6 +2006,22 @@ describe('GenerationQueueService', () => {
     });
   });
 
+  it('keeps an API style’s NSFW marking with the stored job and its retry', async () => {
+    const queue = await createQueue();
+    const request = { prompt: 'a cat', style: 'style-id' };
+    const localId = await queue.enqueue(request, undefined, {
+      styleName: 'Studio style',
+      styleKey: 'native:style-id',
+      styleNsfw: true,
+    });
+    const retryId = await queue.retry(localId);
+
+    for (const id of [localId, retryId]) {
+      expect(fakeDb.jobs.get(id)).toMatchObject({ request, styleNsfw: true });
+      expect(fakeDb.jobs.get(id)?.request.nsfw).toBeUndefined();
+    }
+  });
+
   it('refuses to retry an adopted job', async () => {
     const queue = await createQueue();
     await queue.adoptActive(['elsewhere-1']);

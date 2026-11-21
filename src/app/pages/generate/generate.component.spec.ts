@@ -310,6 +310,7 @@ describe('GenerateComponent', () => {
       prompt: '{p}, ink ### {np}, blurry',
       params: { steps: 8 },
       models: ['SDXL 1.0'],
+      nsfw: true,
     });
     component.form.patchValue({
       prompt: 'a cat',
@@ -326,6 +327,11 @@ describe('GenerateComponent', () => {
     expect(request.prompt).toBe('a cat ### blurry');
     expect(request.params?.steps).toBeUndefined();
     expect(request.models).toBeUndefined();
+    expect(request.nsfw).toBeUndefined();
+    expect(enqueue.mock.calls.at(-1)?.[2]).toMatchObject({
+      styleKey: 'native:style-1',
+      styleNsfw: true,
+    });
   });
 
   it('prices that style as the horde will run it', () => {

@@ -115,6 +115,7 @@ import {
 
 /** How a batch of result tiles may be ordered. */
 type ResultSortMode = 'default' | 'aesthetic';
+type NsfwVisibility = 'show' | 'blur' | 'hide';
 
 /** Selectable columns-per-row values for the results grid. */
 const PER_ROW_OPTIONS = [2, 3, 4, 5, 6] as const;
@@ -123,6 +124,7 @@ const DEFAULT_PER_ROW = 4;
 const SHOW_PROMPTS_KEY = 'aihorde.generate.show_prompts';
 const SHOW_QUICK_ACTIONS_KEY = 'aihorde.generate.show_quick_actions';
 const META_PINNED_KEY = 'aihorde.generate.meta_pinned';
+const NSFW_VISIBILITY_KEY = 'aihorde.generate.results.nsfw_visibility';
 
 /**
  * Narrowest tile the grid will render. A per-row preference chosen on a wide
@@ -671,6 +673,8 @@ export class GenerateResultsPanelComponent {
   public readonly viewMenuOpen = signal(false);
   private readonly viewMenuHost =
     viewChild<ElementRef<HTMLElement>>('viewMenuHost');
+  private readonly viewButton =
+    viewChild<ElementRef<HTMLButtonElement>>('viewButton');
 
   /**
    * The full retention note is read once per visit; after that a one-line
@@ -753,8 +757,12 @@ export class GenerateResultsPanelComponent {
     this.db.get(META_PINNED_KEY) === true,
   );
 
-  /** Reveal NSFW/flagged images globally; individual tiles can also be revealed. */
-  public readonly showNsfw = signal(false);
+  private readonly storedNsfwVisibility = this.db.get(NSFW_VISIBILITY_KEY);
+  public readonly nsfwVisibility = signal<NsfwVisibility>(
+    this.storedNsfwVisibility === 'show' || this.storedNsfwVisibility === 'hide'
+      ? this.storedNsfwVisibility
+      : 'blur',
+  );
   private readonly revealedNsfw = signal<ReadonlyMap<string, string>>(
     new Map(),
   );
@@ -853,12 +861,14 @@ export class GenerateResultsPanelComponent {
       const prompt = positivePrompt(job.request.prompt);
       const known = requestKnowledge(job);
       if (job.status === 'done') {
+        const requestNsfw =
+          job.requestNsfwOverride ?? job.request.nsfw ?? job.styleNsfw ?? false;
         const thumbs = thumbnails.get(job.localId) ?? [];
         thumbs.forEach((thumb, index) => {
           const derived = deriveImageMeta(
             thumb.metadata,
             job.request,
-            job.requestNsfwOverride,
+            requestNsfw,
           );
           tiles.push({
             key: `${job.localId}-${thumb.imageId}`,
@@ -875,7 +885,7 @@ export class GenerateResultsPanelComponent {
             nsfw: derived.nsfw,
             censored: derived.censored,
             workerNsfw: derived.workerNsfw,
-            requestNsfw: job.requestNsfwOverride ?? job.request.nsfw === true,
+            requestNsfw,
             requestNsfwRevision: job.requestNsfwRevision,
             censorReason: derived.censorReason,
             aesthetic: derived.aesthetic,
@@ -993,12 +1003,12 @@ export class GenerateResultsPanelComponent {
     return tiles.filter((tile) => !this.hiddenTiles().has(tile.key));
   });
 
-  /** Whether any finished image reported an aesthetic score / error / NSFW flag. */
+  /** Whether any visible image reported an aesthetic score or error. */
   public readonly hasAesthetic = computed(() =>
-    this.tiles().some((tile) => tile.aesthetic != null),
+    this.unhiddenTiles().some((tile) => tile.aesthetic != null),
   );
   public readonly hasErrors = computed(() =>
-    this.tiles().some(
+    this.unhiddenTiles().some(
       (tile) =>
         tile.kind === 'error' ||
         tile.kind === 'censored' ||
@@ -1006,8 +1016,22 @@ export class GenerateResultsPanelComponent {
         (tile.errors?.length ?? 0) > 0,
     ),
   );
-  public readonly hasNsfw = computed(() =>
-    this.tiles().some((tile) => tile.nsfw === true),
+  private readonly hiddenNsfwKeys = computed(
+    () =>
+      new Set(
+        this.nsfwVisibility() === 'hide'
+          ? this.tiles()
+              .filter((tile) => tile.nsfw === true)
+              .map((tile) => tile.key)
+          : [],
+      ),
+  );
+  private readonly unhiddenTiles = computed(() => {
+    const hidden = this.hiddenNsfwKeys();
+    return this.tiles().filter((tile) => !hidden.has(tile.key));
+  });
+  public readonly allResultsHidden = computed(
+    () => this.hiddenNsfwKeys().size > 0 && this.unhiddenTiles().length === 0,
   );
 
   /**
@@ -1019,7 +1043,7 @@ export class GenerateResultsPanelComponent {
     { key: string; name: string; count: number }[]
   >(() => {
     const counts = new Map<string, { name: string; count: number }>();
-    for (const tile of this.tiles()) {
+    for (const tile of this.unhiddenTiles()) {
       if (!tile.styleKey) {
         continue;
       }
@@ -1062,7 +1086,7 @@ export class GenerateResultsPanelComponent {
    * finished images are reordered when sorting by score.
    */
   public readonly visibleTiles = computed<ResultTile[]>(() => {
-    let list = this.tiles();
+    let list = this.unhiddenTiles();
     const terms = this.parsedQuery();
     if (terms.length > 0) {
       const ids = this.requestIds();
@@ -1200,14 +1224,15 @@ export class GenerateResultsPanelComponent {
     const key = this.metaKey();
     const selection = this.metaSelection();
     const tiles = this.tiles();
+    const hidden = this.hiddenNsfwKeys();
     const exact = tiles.find((tile) => tile.key === key);
-    if (exact) return exact;
+    if (exact) return hidden.has(exact.key) ? null : exact;
     const job = [...this.pendingJobs(), ...this.finishedJobs()].find(
       (job) => job.localId === selection?.jobLocalId,
     );
     if (!job || !selection) return null;
     const replacement = tiles.find((tile) => tile.jobLocalId === job.localId);
-    if (replacement) return replacement;
+    if (replacement) return hidden.has(replacement.key) ? null : replacement;
     const known = requestKnowledge(job);
     return {
       ...selection,
@@ -1465,6 +1490,10 @@ export class GenerateResultsPanelComponent {
           void this.loadThumbnails(job.localId);
         }
       }
+    });
+    effect(() => {
+      const hidden = this.hiddenNsfwKeys();
+      if (hidden.size > 0) untracked(() => this.dismissHiddenResults(hidden));
     });
     // The grid element comes and goes with the empty/filtered states, so the
     // observer is re-pointed whenever it appears rather than attached once.
@@ -1867,7 +1896,11 @@ export class GenerateResultsPanelComponent {
   // --- Viewer --------------------------------------------------------------
 
   public openViewer(tile: ResultTile): void {
-    if (tile.kind !== 'done' || !tile.url) {
+    if (
+      tile.kind !== 'done' ||
+      !tile.url ||
+      this.hiddenNsfwKeys().has(tile.key)
+    ) {
       return;
     }
     const wasClosed = this.viewerKey() === null;
@@ -2512,6 +2545,7 @@ export class GenerateResultsPanelComponent {
 
   /** Primary tap on a result tile: enter/exit selection, or open the viewer. */
   public activateTile(tile: ResultTile): void {
+    if (this.hiddenNsfwKeys().has(tile.key)) return;
     if (this.selectMode()) {
       this.toggleSelected(this.selectionKey(tile));
     } else {
@@ -2650,10 +2684,30 @@ export class GenerateResultsPanelComponent {
     this.viewMenuOpen.set(false);
   }
 
-  public toggleShowNsfw(): void {
-    this.showNsfw.update((value) => !value);
-    if (!this.showNsfw()) {
-      this.revealedNsfw.set(new Map());
+  public setNsfwVisibility(mode: NsfwVisibility): void {
+    if (mode === this.nsfwVisibility()) return;
+    this.revealedNsfw.set(new Map());
+    this.nsfwVisibility.set(mode);
+    this.db.store(NSFW_VISIBILITY_KEY, mode);
+  }
+
+  private dismissHiddenResults(hidden: ReadonlySet<string>): void {
+    const viewer = this.viewerKey();
+    if (viewer !== null && hidden.has(viewer)) {
+      this.closeViewer();
+      this.viewButton()?.nativeElement.focus({ preventScroll: true });
+    } else if (this.metaOpen() && this.metaTile() === null) {
+      this.closeMeta();
+    }
+    const menu = this.tileMenu();
+    if (menu && hidden.has(menu.tile.key)) this.closeTileMenu();
+    const flipped = this.flippedTile();
+    if (flipped !== null && hidden.has(flipped)) this.flippedTile.set(null);
+    const selected = this.selectedResults();
+    if ([...selected].some((key) => hidden.has(key))) {
+      this.selectedResults.set(
+        new Set([...selected].filter((key) => !hidden.has(key))),
+      );
     }
   }
 
@@ -2669,11 +2723,10 @@ export class GenerateResultsPanelComponent {
     }
   }
 
-  /** Whether a tile should be blurred: NSFW, not globally shown, not revealed. */
-  public isNsfwHidden(tile: ResultTile): boolean {
+  public isNsfwBlurred(tile: ResultTile): boolean {
     return (
       tile.nsfw === true &&
-      !this.showNsfw() &&
+      this.nsfwVisibility() === 'blur' &&
       this.revealedNsfw().get(tile.key) !== this.nsfwRevealVersion(tile)
     );
   }
@@ -2743,6 +2796,7 @@ export class GenerateResultsPanelComponent {
   }
 
   public revealNsfw(tile: ResultTile): void {
+    if (!this.isNsfwBlurred(tile)) return;
     this.revealedNsfw.update((current) =>
       new Map(current).set(tile.key, this.nsfwRevealVersion(tile)),
     );
@@ -2833,6 +2887,7 @@ export class GenerateResultsPanelComponent {
   }
 
   public openMeta(tile: ResultTile): void {
+    if (this.hiddenNsfwKeys().has(tile.key)) return;
     this.metaSelection.set(tile);
     this.metaKey.set(tile.key);
     this.metaOpen.set(true);
@@ -2865,6 +2920,7 @@ export class GenerateResultsPanelComponent {
     this.metaOpen.set(false);
     this.metaJsonOpen.set(false);
     this.metaSelection.set(null);
+    this.metaKey.set(null);
   }
 
   public async downloadSubmittedBody(): Promise<void> {
