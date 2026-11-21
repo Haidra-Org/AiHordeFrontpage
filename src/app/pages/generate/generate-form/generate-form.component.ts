@@ -731,6 +731,7 @@ export class GenerateFormComponent implements OnInit {
    * drives the native-size guidance and the model-change size snap.
    */
   public readonly modelBaseline = input<string | null>(null);
+  public readonly effectiveModelName = input('');
   /**
    * The settings the selected model recommends. Null means the model names none
    * (or none is selected), in which case no guidance is shown.

@@ -64,6 +64,7 @@ export const CIVITAI_BASE_MODELS_BY_BASELINE: Readonly<
   flux_dev: ['Flux.1 D', 'Flux.1 Krea', 'Flux.1 Kontext'],
   flux_schnell: ['Flux.1 S'],
   qwen_image: ['Qwen'],
+  moss_image: ['MOSS Image'],
 };
 
 /**

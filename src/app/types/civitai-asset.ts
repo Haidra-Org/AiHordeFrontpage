@@ -305,7 +305,7 @@ export interface VersionCandidate {
 }
 
 /** Whether a worker could actually download this version's file. */
-function isFetchable(version: VersionCandidate): boolean {
+export function isFetchableLoraVersion(version: VersionCandidate): boolean {
   const availability = version.availability ?? null;
   return (
     version.paidAccess !== true &&
@@ -339,7 +339,7 @@ export function pickDefaultVersion<T extends VersionCandidate>(
     return null;
   }
   const sorted = [...versions].sort(newestFirst);
-  const fetchable = sorted.filter(isFetchable);
+  const fetchable = sorted.filter(isFetchableLoraVersion);
   return (
     fetchable.find((version) => suits(version.baseModel)) ??
     fetchable[0] ??

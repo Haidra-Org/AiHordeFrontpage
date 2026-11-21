@@ -48,8 +48,8 @@
       </button>
     </div>
 
-    <div class="gs-modal-search-bar">
-      <div class="gs-modal-search">
+    <div class="gs-modal-search-bar flex-wrap">
+      <div class="gs-modal-search min-w-40">
         <app-icon name="magnifying-glass" class="gs-ico-sm gs-muted" />
         <input
           type="text"
@@ -57,6 +57,34 @@
           [placeholder]="'generate.civitai.search_placeholder' | transloco"
         />
       </div>
+      <label class="gs-cv-filter gs-cv-model-scope">
+        <span>{{ "generate.civitai.base_model_label" | transloco }}</span>
+        <select (change)="setBaseModel(selectValue($event))">
+          @if (offersModelScope() || baseModelChoice() === "mine") {
+            <option value="mine" [selected]="baseModelChoice() === 'mine'">
+              @if (myBaseModels().length > 0) {
+                {{
+                  "generate.civitai.base_model_mine"
+                    | transloco: { names: myBaseModels().join(", ") }
+                }}
+              } @else {
+                {{ "generate.civitai.base_model_mine_unknown" | transloco }}
+              }
+            </option>
+          }
+          <option value="all" [selected]="baseModelChoice() === 'all'">
+            {{ "generate.civitai.base_model_all" | transloco }}
+          </option>
+          @for (group of baseModelGroups; track group.baseline) {
+            <option
+              [value]="group.baseline"
+              [selected]="baseModelChoice() === group.baseline"
+            >
+              {{ group.labels.join(", ") }}
+            </option>
+          }
+        </select>
+      </label>
       <div class="gs-seg" role="group">
         <button
           type="button"
@@ -91,31 +119,6 @@
 
     @if (filtersOpen()) {
       <div class="gs-cv-filters">
-        <label class="gs-cv-filter">
-          <span>{{ "generate.civitai.base_model_label" | transloco }}</span>
-          <select
-            [value]="baseModelChoice()"
-            (change)="setBaseModel(selectValue($event))"
-          >
-            @if (myBaseModels().length > 0) {
-              <option value="mine">
-                {{
-                  "generate.civitai.base_model_mine"
-                    | transloco: { names: myBaseModels().join(", ") }
-                }}
-              </option>
-            }
-            <option value="all">
-              {{ "generate.civitai.base_model_all" | transloco }}
-            </option>
-            @for (group of baseModelGroups; track group.baseline) {
-              <option [value]="group.baseline">
-                {{ group.labels.join(", ") }}
-              </option>
-            }
-          </select>
-        </label>
-
         <label class="gs-cv-filter">
           <span>{{ "generate.civitai.sort_label" | transloco }}</span>
           <select
@@ -157,7 +160,14 @@
     }
 
     <div class="gs-modal-body">
-      @if (loading()) {
+      @if (scopeUnavailable()) {
+        <div class="gs-modal-state">
+          <p>{{ "generate.civitai.base_model_scope_unknown" | transloco }}</p>
+          <button type="button" class="hd-btn" (click)="setBaseModel('all')">
+            {{ "generate.civitai.base_model_all" | transloco }}
+          </button>
+        </div>
+      } @else if (loading()) {
         <div class="gs-civit-grid" aria-hidden="true">
           @for (n of [1, 2, 3, 4, 5, 6]; track n) {
             <div class="gs-civit-card">
@@ -259,7 +269,15 @@
                     type="button"
                     class="gs-civit-split-btn gs-civit-split-btn--add"
                     [class.gs-civit-split-btn--remove]="isAdded(model)"
-                    [disabled]="loraReadOnly() && tab() === 'lora'"
+                    [disabled]="
+                      (loraReadOnly() && tab() === 'lora') ||
+                      (!isAdded(model) && !canAdd(model))
+                    "
+                    [title]="
+                      !isAdded(model) && !canAdd(model)
+                        ? ('generate.civitai.base_model_no_version' | transloco)
+                        : null
+                    "
                     (click)="toggle(model)"
                   >
                     {{
@@ -399,6 +417,7 @@
     [target]="target"
     [current]="detailCurrent()"
     [baseline]="baseline()"
+    [allowedLoraBaseModels]="scopedLoraLabels()"
     [allowSha256]="allowSha256()"
     (apply)="onDetailApply($event)"
     (remove)="onDetailRemove()"

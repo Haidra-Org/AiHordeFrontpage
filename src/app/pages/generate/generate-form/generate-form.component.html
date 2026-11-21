@@ -3127,6 +3127,7 @@
     (promptEdit)="editAssetPrompt($event)"
     [loras]="loras()"
     [loraReadOnly]="loraState().locked"
+    [modelName]="effectiveModelName()"
     [tis]="tis()"
     [baseline]="modelBaseline()"
     (lorasChange)="setLoras($event)"

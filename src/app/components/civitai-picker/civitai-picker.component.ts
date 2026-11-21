@@ -19,8 +19,16 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, merge, startWith, switchMap } from 'rxjs';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import {
+  EMPTY,
+  Subject,
+  debounceTime,
+  exhaustMap,
+  merge,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { IconComponent } from '../icon/icon.component';
 import {
@@ -44,6 +52,7 @@ import { DatabaseService } from '../../services/database.service';
 import {
   DEFAULT_LORA_STRENGTH,
   isNumericAssetId,
+  isFetchableLoraVersion,
   manualLoraSelection,
   manualTiSelection,
   pickDefaultVersion,
@@ -130,6 +139,7 @@ export class CivitaiPickerComponent implements OnInit {
   public readonly tis = input<readonly TiSelection[]>([]);
   /** The host model's normalised baseline; drives the default filter. */
   public readonly baseline = input<string | null>(null);
+  public readonly modelName = input('');
   public readonly allowSha256 = input(false);
 
   public readonly lorasChange = output<LoraSelection[]>();
@@ -156,7 +166,7 @@ export class CivitaiPickerComponent implements OnInit {
 
   public readonly sort = signal<CivitaiSort>('Most Downloaded');
   public readonly period = signal<CivitaiPeriod>('AllTime');
-  public readonly baseModelChoice = signal<BaseModelChoice>('mine');
+  private readonly chosenBaseModel = signal<BaseModelChoice | null>(null);
 
   public readonly showMature = signal(
     this.db.get<boolean>(MATURE_PREF_KEY, false) === true,
@@ -218,6 +228,26 @@ export class CivitaiPickerComponent implements OnInit {
     () => this.loras().length + this.tis().length,
   );
 
+  public readonly offersModelScope = computed(
+    () =>
+      this.myBaseModels().length > 0 ||
+      (this.tab() === 'lora' && this.modelName().trim() !== ''),
+  );
+
+  public readonly baseModelChoice = computed(
+    () => this.chosenBaseModel() ?? (this.offersModelScope() ? 'mine' : 'all'),
+  );
+
+  public readonly scopeUnavailable = computed(
+    () => this.baseModelChoice() === 'mine' && this.myBaseModels().length === 0,
+  );
+
+  public readonly scopedLoraLabels = computed(() =>
+    this.tab() === 'lora' && this.baseModelChoice() === 'mine'
+      ? this.myBaseModels()
+      : null,
+  );
+
   /** The labels the current base-model choice searches; empty means no filter. */
   public readonly activeBaseModels = computed<readonly string[]>(() => {
     const choice = this.baseModelChoice();
@@ -234,12 +264,17 @@ export class CivitaiPickerComponent implements OnInit {
   public readonly myBaseModels = computed(() =>
     civitaiBaseModelsFor(this.baseline()),
   );
+  private readonly searchScope = computed(() => ({
+    type:
+      this.tab() === 'ti' ? ('TextualInversion' as const) : ('LORA' as const),
+    baseModels: this.scopeUnavailable() ? null : this.activeBaseModels(),
+  }));
 
   public readonly filtersActive = computed(
     () =>
       this.sort() !== 'Most Downloaded' ||
       this.period() !== 'AllTime' ||
-      this.baseModelChoice() !== 'mine' ||
+      this.chosenBaseModel() !== null ||
       this.tagControl.value.trim() !== '' ||
       this.creatorControl.value.trim() !== '',
   );
@@ -258,67 +293,70 @@ export class CivitaiPickerComponent implements OnInit {
       this.tagControl.valueChanges.pipe(debounceTime(350)),
       this.creatorControl.valueChanges.pipe(debounceTime(350)),
       this.retrigger,
+      toObservable(this.searchScope, { injector: this.injector }),
     )
       .pipe(
-        startWith(null),
         switchMap(() => {
           this.results.set([]);
           this.cursor.set(null);
-          this.loading.set(true);
+          this.loadingMore.set(false);
           this.errored.set(false);
-          return this.civitai.searchModels(this.searchParams(null));
+          const { type, baseModels } = this.searchScope();
+          this.loading.set(baseModels !== null);
+          if (baseModels === null) return EMPTY;
+          const params = this.searchParams(type, baseModels);
+          return this.civitai.searchModels(params).pipe(
+            tap((result) => {
+              this.loading.set(false);
+              if (result.kind === 'success') {
+                this.results.set(this.presentable(result.items));
+                this.cursor.set(result.metadata.nextCursor);
+              } else {
+                this.errored.set(true);
+              }
+            }),
+            switchMap(() =>
+              this.loadMore.pipe(
+                exhaustMap(() => {
+                  const cursor = this.cursor();
+                  if (cursor === null) return EMPTY;
+                  this.loadingMore.set(true);
+                  return this.civitai.searchModels({ ...params, cursor });
+                }),
+                tap((result) => {
+                  this.loadingMore.set(false);
+                  if (result.kind === 'success') {
+                    this.results.update((current) => [
+                      ...current,
+                      ...this.presentable(result.items),
+                    ]);
+                    this.cursor.set(result.metadata.nextCursor);
+                  } else {
+                    this.cursor.set(null);
+                  }
+                }),
+              ),
+            ),
+          );
         }),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((result) => {
-        this.loading.set(false);
-        if (result.kind === 'success') {
-          this.results.set(this.presentable(result.items));
-          this.cursor.set(result.metadata.nextCursor);
-        } else {
-          this.errored.set(true);
-          this.results.set([]);
-          this.cursor.set(null);
-        }
-      });
-
-    this.loadMore
-      .pipe(
-        switchMap(() => {
-          this.loadingMore.set(true);
-          return this.civitai.searchModels(this.searchParams(this.cursor()));
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((result) => {
-        this.loadingMore.set(false);
-        if (result.kind === 'success') {
-          this.results.update((current) => [
-            ...current,
-            ...this.presentable(result.items),
-          ]);
-          this.cursor.set(result.metadata.nextCursor);
-        } else {
-          this.cursor.set(null);
-        }
-      });
+      .subscribe();
   }
 
   private searchParams(
-    cursor: string | null,
+    type: CivitaiModelType,
+    baseModels: readonly string[],
   ): Parameters<CivitaiService['searchModels']>[0] {
-    const type: CivitaiModelType =
-      this.tab() === 'ti' ? 'TextualInversion' : 'LORA';
     return {
       query: this.queryControl.value.trim() || undefined,
       type,
-      baseModels: this.activeBaseModels(),
+      baseModels,
       sort: this.sort(),
       period: this.period(),
       nsfw: this.showMature() ? true : undefined,
       tag: this.tagControl.value.trim() || undefined,
       username: this.creatorControl.value.trim() || undefined,
-      cursor: cursor ?? undefined,
     };
   }
 
@@ -335,7 +373,6 @@ export class CivitaiPickerComponent implements OnInit {
     if (this.tab() !== tab) {
       this.tab.set(tab);
       this.manualIsVersion.set(false);
-      this.retrigger.next();
     }
   }
 
@@ -350,16 +387,15 @@ export class CivitaiPickerComponent implements OnInit {
   }
 
   public setBaseModel(choice: BaseModelChoice): void {
-    this.baseModelChoice.set(choice);
-    this.retrigger.next();
+    this.chosenBaseModel.set(choice);
   }
 
   public resetFilters(): void {
     this.sort.set('Most Downloaded');
     this.period.set('AllTime');
-    this.baseModelChoice.set('mine');
-    this.tagControl.setValue('');
-    this.creatorControl.setValue('');
+    this.chosenBaseModel.set(null);
+    this.tagControl.setValue('', { emitEvent: false });
+    this.creatorControl.setValue('', { emitEvent: false });
     this.retrigger.next();
   }
 
@@ -427,6 +463,29 @@ export class CivitaiPickerComponent implements OnInit {
     );
   }
 
+  private versionToAdd(model: CivitaiModel) {
+    const labels = this.scopedLoraLabels();
+    const versions =
+      labels === null
+        ? model.versions
+        : model.versions.filter(
+            (version) =>
+              labels.includes(version.baseModel ?? '') &&
+              isFetchableLoraVersion(version),
+          );
+    return pickDefaultVersion(versions, (baseModel) =>
+      civitaiBaseModelMatchesBaseline(baseModel, this.baseline()),
+    );
+  }
+
+  public canAdd(model: CivitaiModel): boolean {
+    return (
+      this.scopedLoraLabels() === null ||
+      model.type === 'TextualInversion' ||
+      this.versionToAdd(model) !== null
+    );
+  }
+
   /** Add the model, or take it out again if it is already chosen. */
   public toggle(model: CivitaiModel): void {
     if (model.type !== 'TextualInversion' && this.loraReadOnly()) return;
@@ -435,6 +494,7 @@ export class CivitaiPickerComponent implements OnInit {
       this.removeEntry(model, existing);
       return;
     }
+    if (!this.canAdd(model)) return;
     // Remembered whole and now, not when something later asks: a freshly chosen
     // entry already knows its name, so nothing would ever look it up, and the
     // first time it mattered would be a reload with no network.
@@ -445,9 +505,7 @@ export class CivitaiPickerComponent implements OnInit {
       return;
     }
 
-    const version = pickDefaultVersion(model.versions, (baseModel) =>
-      civitaiBaseModelMatchesBaseline(baseModel, this.baseline()),
-    );
+    const version = this.versionToAdd(model);
     const entry: LoraSelection = {
       name: version ? String(version.id) : String(model.id),
       model: DEFAULT_LORA_STRENGTH,
@@ -500,6 +558,12 @@ export class CivitaiPickerComponent implements OnInit {
   public onDetailApply(entry: LoraSelection | TiSelection): void {
     if ('clip' in entry) {
       if (this.loraReadOnly()) return;
+      const labels = this.scopedLoraLabels();
+      if (
+        labels !== null &&
+        (!entry.is_version || !labels.includes(entry.baseModel ?? ''))
+      )
+        return;
       const without = this.loras().filter(
         (lora) =>
           lora === this.detailCurrent() ||

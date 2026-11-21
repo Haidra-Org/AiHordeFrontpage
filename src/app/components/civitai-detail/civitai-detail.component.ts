@@ -37,6 +37,7 @@ import {
   MAX_LORA_STRENGTH,
   MIN_LORA_STRENGTH,
   TI_INJECT_TARGETS,
+  isFetchableLoraVersion,
   pickDefaultVersion,
   type CivitaiAssetKind,
   type LoraSelection,
@@ -82,6 +83,7 @@ export class CivitaiDetailComponent {
 
   public readonly target = input.required<CivitaiDetailTarget>();
   public readonly baseline = input<string | null>(null);
+  public readonly allowedLoraBaseModels = input<readonly string[] | null>(null);
   /** The entry already chosen, when opened from the selected list. */
   public readonly current = input<LoraSelection | TiSelection | null>(null);
   /** A style may pin a file hash; a generation never does. */
@@ -146,17 +148,34 @@ export class CivitaiDetailComponent {
 
   public readonly isLora = computed(() => this.target().kind === 'lora');
 
-  public readonly versions = computed<CivitaiModelVersion[]>(
-    () => this.model()?.versions ?? [],
-  );
+  public readonly versions = computed<CivitaiModelVersion[]>(() => {
+    const versions = this.model()?.versions ?? [];
+    return this.allowedLoraBaseModels() === null
+      ? versions
+      : versions.filter((version) => this.versionInScope(version));
+  });
 
   public readonly selectedVersion = computed<CivitaiModelVersion | null>(() => {
     const id = this.selectedVersionId();
-    return (
+    const version =
       this.versions().find((version) => version.id === id) ??
-      (this.resolvedVersion()?.id === id ? this.resolvedVersion() : null)
-    );
+      (this.resolvedVersion()?.id === id ? this.resolvedVersion() : null);
+    return version && this.versionInScope(version) ? version : null;
   });
+
+  public readonly canApplyLora = computed(
+    () =>
+      this.allowedLoraBaseModels() === null || this.selectedVersion() !== null,
+  );
+
+  private versionInScope(version: CivitaiModelVersion): boolean {
+    const labels = this.allowedLoraBaseModels();
+    return (
+      labels === null ||
+      (labels.includes(version.baseModel ?? '') &&
+        isFetchableLoraVersion(version))
+    );
+  }
 
   /** Trigger words of the version in view, which is what a request would use. */
   public readonly triggerWords = computed<readonly string[]>(
@@ -263,18 +282,26 @@ export class CivitaiDetailComponent {
 
   private adopt(model: CivitaiModel): void {
     this.model.set(model);
-    if (untracked(this.selectedVersionId) === null) {
-      this.selectedVersionId.set(this.defaultVersion(model)?.id ?? null);
+    if (
+      untracked(this.selectedVersionId) === null ||
+      (this.allowedLoraBaseModels() !== null && this.selectedVersion() === null)
+    ) {
+      this.selectedVersionId.set(this.defaultVersion()?.id ?? null);
     }
   }
 
-  private defaultVersion(model: CivitaiModel): CivitaiModelVersion | null {
-    return pickDefaultVersion(model.versions, (baseModel) =>
+  private defaultVersion(): CivitaiModelVersion | null {
+    return pickDefaultVersion(this.versions(), (baseModel) =>
       civitaiBaseModelMatchesBaseline(baseModel, this.baseline()),
     );
   }
 
   public selectVersion(id: number): void {
+    if (
+      this.allowedLoraBaseModels() !== null &&
+      !this.versions().some((version) => version.id === id)
+    )
+      return;
     this.versionChanged.set(true);
     this.selectedVersionId.set(id);
   }
@@ -294,12 +321,7 @@ export class CivitaiDetailComponent {
   }
 
   /** A worker cannot download an early-access or paid file at all. */
-  public isFetchable(version: CivitaiModelVersion): boolean {
-    return (
-      !version.paidAccess &&
-      (version.availability === null || version.availability === 'Public')
-    );
-  }
+  public readonly isFetchable = isFetchableLoraVersion;
 
   public isCovered(url: string, level: number): boolean {
     return level > SAFE_NSFW_LEVEL && !this.revealed().has(url);
@@ -396,7 +418,10 @@ export class CivitaiDetailComponent {
     // choice changes how an existing model ID is interpreted.
     const pinned =
       this.selectedVersionId() !== null &&
-      (!previous || previous.is_version === true || this.versionChanged());
+      (!previous ||
+        previous.is_version === true ||
+        this.versionChanged() ||
+        this.allowedLoraBaseModels() !== null);
     const entry: LoraSelection = {
       ...previous,
       name: pinned
@@ -491,6 +516,7 @@ export class CivitaiDetailComponent {
     const version = this.selectedVersion();
 
     if (this.isLora()) {
+      if (!this.canApplyLora()) return;
       const entry = this.loraSelection();
       if (!entry) return;
       this.commitDraft();

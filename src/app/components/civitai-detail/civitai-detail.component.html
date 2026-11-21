@@ -507,13 +507,19 @@
         <span id="cv-detail-apply-hint" class="gs-modal-foot-note">
           {{ "generate.civitai.ti_choose_to_add" | transloco }}
         </span>
+      } @else if (isLora() && !loading() && !canApplyLora()) {
+        <span id="cv-detail-apply-hint" class="gs-modal-foot-note">
+          {{ "generate.civitai.base_model_no_version" | transloco }}
+        </span>
       }
       <button
         type="button"
         class="gs-modal-done"
-        [disabled]="!isLora() && !placementChosen()"
+        [disabled]="isLora() ? !canApplyLora() : !placementChosen()"
         [attr.aria-describedby]="
-          !isLora() && !placementChosen() ? 'cv-detail-apply-hint' : null
+          (isLora() ? !loading() && !canApplyLora() : !placementChosen())
+            ? 'cv-detail-apply-hint'
+            : null
         "
         (click)="onApply()"
       >

@@ -1,11 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CivitaiPickerComponent } from './civitai-picker.component';
 import {
   CivitaiModel,
   CivitaiModelVersion,
+  CivitaiSearchResult,
   CivitaiService,
 } from '../../services/civitai.service';
 import { CivitaiCacheService } from '../../services/civitai-cache.service';
@@ -247,8 +248,108 @@ describe('CivitaiPickerComponent', () => {
       expect(lastParams()['baseModels']).toContain('SD 1.5');
 
       component.setBaseModel('all');
+      fixture.detectChanges();
       // The escape has to actually stop filtering, not filter to something else.
       expect(lastParams()['baseModels']).toEqual([]);
+    });
+
+    it.each(['Moss-Image-Base', 'MOSS-Image-SFT'])(
+      'searches the CivitAI Moss label for %s',
+      (name) => {
+        fixture.componentRef.setInput('modelName', name);
+        fixture.componentRef.setInput('baseline', 'moss_image');
+        start();
+
+        const scope = (
+          fixture.nativeElement as HTMLElement
+        ).querySelector<HTMLSelectElement>(
+          '.gs-modal-search-bar .gs-cv-model-scope select',
+        );
+        expect(scope?.value).toBe('mine');
+        expect(lastParams()).toMatchObject({
+          type: 'LORA',
+          baseModels: ['MOSS Image'],
+        });
+      },
+    );
+
+    it('waits for an explicit broad search if the selected model has no known compatibility', () => {
+      fixture.componentRef.setInput('modelName', 'Unlisted image model');
+      start();
+      expect(searchModels).not.toHaveBeenCalled();
+      const scope = (
+        fixture.nativeElement as HTMLElement
+      ).querySelector<HTMLSelectElement>('.gs-cv-model-scope select');
+      expect(scope?.value).toBe('mine');
+
+      scope!.value = 'all';
+      scope!.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(lastParams()['baseModels']).toEqual([]);
+      expect(
+        [...scope!.options].some((option) => option.value === 'mine'),
+      ).toBe(true);
+    });
+
+    it('pins a matching downloadable version and offers All models for an incompatible listing', () => {
+      const mixed = model(1, {
+        versions: [
+          version(14, { baseModel: 'Pony', publishedAt: '2026-11-05' }),
+          version(13, {
+            baseModel: 'MOSS Image',
+            paidAccess: true,
+            publishedAt: '2026-11-04',
+          }),
+          version(12, { baseModel: 'MOSS Image', publishedAt: '2026-11-03' }),
+        ],
+      });
+      const mismatch = model(2, {
+        versions: [version(21, { baseModel: 'Pony' })],
+      });
+      respond([mixed, mismatch]);
+      fixture.componentRef.setInput('baseline', 'moss_image');
+      start();
+      const additions: LoraSelection[][] = [];
+      component.lorasChange.subscribe((entries) => additions.push(entries));
+      const buttons = (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('.gs-civit-split-btn--add');
+      expect(buttons[1].disabled).toBe(true);
+      component.toggle(mismatch);
+      expect(additions).toEqual([]);
+      buttons[0].click();
+      expect(additions[0]).toMatchObject([
+        { name: '12', is_version: true, baseModel: 'MOSS Image' },
+      ]);
+
+      component.setBaseModel('all');
+      fixture.detectChanges();
+      component.toggle(mismatch);
+      expect(additions[1]).toMatchObject([{ name: '21', is_version: true }]);
+    });
+
+    it('refreshes a locked search when the selected model changes and discards its old next page', () => {
+      fixture.componentRef.setInput('baseline', 'moss_image');
+      respond([model(1)], 'MOSS-PAGE');
+      start();
+      const latePage = new Subject<CivitaiSearchResult>();
+      searchModels.mockReturnValueOnce(latePage);
+      component.onLoadMore();
+      expect(lastParams()).toMatchObject({
+        cursor: 'MOSS-PAGE',
+        baseModels: ['MOSS Image'],
+      });
+
+      respond([model(2)]);
+      fixture.componentRef.setInput('baseline', 'stable_diffusion_1');
+      fixture.detectChanges();
+      latePage.next({
+        kind: 'success',
+        items: [model(3)],
+        metadata: { nextCursor: null },
+      });
+      expect(lastParams()['baseModels']).toContain('SD 1.5');
+      expect(component.results().map((item) => item.id)).toEqual([2]);
     });
 
     it('starts a new list when the tab changes', () => {
@@ -258,6 +359,7 @@ describe('CivitaiPickerComponent', () => {
 
       respond([]);
       component.setTab('ti');
+      fixture.detectChanges();
 
       expect(component.results()).toEqual([]);
       expect(component.cursor()).toBeNull();

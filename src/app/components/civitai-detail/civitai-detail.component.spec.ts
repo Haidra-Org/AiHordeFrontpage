@@ -69,6 +69,7 @@ describe('CivitaiDetailComponent', () => {
       baseline: string | null;
       current: LoraSelection | TiSelection | null;
       allowSha256: boolean;
+      allowedLoraBaseModels: readonly string[] | null;
       modelId: number | null;
       versionId: number | null;
     }> = {},
@@ -82,6 +83,10 @@ describe('CivitaiDetailComponent', () => {
       versionId: overrides.versionId ?? null,
     });
     fixture.componentRef.setInput('baseline', overrides.baseline ?? null);
+    fixture.componentRef.setInput(
+      'allowedLoraBaseModels',
+      overrides.allowedLoraBaseModels ?? null,
+    );
     fixture.componentRef.setInput('current', overrides.current ?? null);
     fixture.componentRef.setInput(
       'allowSha256',
@@ -118,6 +123,36 @@ describe('CivitaiDetailComponent', () => {
         },
       ],
     });
+  });
+
+  it('only applies a compatible downloadable version when opened from scoped search', async () => {
+    await open({
+      allowedLoraBaseModels: ['MOSS Image'],
+      baseline: 'moss_image',
+      versionId: 12,
+      model: {
+        ...MODEL,
+        versions: [
+          version(12, { baseModel: 'Pony' }),
+          version(13, { baseModel: 'MOSS Image', paidAccess: true }),
+          version(14, { baseModel: 'MOSS Image' }),
+        ],
+      },
+    });
+    const apply = vi.fn();
+    component.apply.subscribe(apply);
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelectorAll('.gs-cv-version')).toHaveLength(1);
+    component.selectVersion(12);
+    component.onApply();
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: '14',
+        is_version: true,
+        baseModel: 'MOSS Image',
+      }),
+    );
   });
 
   it('starts on the version the chosen model can load', async () => {

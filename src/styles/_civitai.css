@@ -893,6 +893,11 @@
   font-family: inherit;
   max-width: 220px;
 }
+@media (pointer: coarse) {
+  .gs-cv-model-scope select {
+    min-height: 44px;
+  }
+}
 .gs-cv-manual-check {
   display: inline-flex;
   align-items: center;
