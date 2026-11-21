@@ -62,6 +62,7 @@
           type="button"
           class="gs-seg-opt"
           [attr.aria-pressed]="tab() === 'lora'"
+          [disabled]="loraReadOnly()"
           (click)="setTab('lora')"
         >
           {{ "generate.civitai.tab_lora" | transloco }}
@@ -249,6 +250,7 @@
                   <button
                     type="button"
                     class="gs-civit-split-btn"
+                    [disabled]="loraReadOnly() && tab() === 'lora'"
                     (click)="openDetails(model)"
                   >
                     {{ "generate.civitai.details" | transloco }}
@@ -257,6 +259,7 @@
                     type="button"
                     class="gs-civit-split-btn gs-civit-split-btn--add"
                     [class.gs-civit-split-btn--remove]="isAdded(model)"
+                    [disabled]="loraReadOnly() && tab() === 'lora'"
                     (click)="toggle(model)"
                   >
                     {{
@@ -300,7 +303,12 @@
     </div>
 
     <div class="gs-modal-footer gs-cv-footer">
-      <button type="button" class="gs-civit-link" (click)="toggleManual()">
+      <button
+        type="button"
+        class="gs-civit-link"
+        [disabled]="loraReadOnly() && tab() === 'lora'"
+        (click)="toggleManual()"
+      >
         {{ "generate.civitai.manual_toggle" | transloco }}
       </button>
       <span class="gs-modal-foot-note">
@@ -363,7 +371,9 @@
           type="button"
           class="gs-civit-add"
           [disabled]="
-            !manualName.value.trim() || (tab() === 'ti' && !manualPlacement())
+            !manualName.value.trim() ||
+            (tab() === 'ti' && !manualPlacement()) ||
+            (loraReadOnly() && tab() === 'lora')
           "
           [attr.aria-describedby]="
             tab() === 'ti' && !manualPlacement() ? 'cv-manual-add-hint' : null

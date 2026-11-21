@@ -1587,9 +1587,19 @@
             <div class="gs-group-actions" groupActions>
               <app-gs-help topic="loras" />
               <button type="button" class="gs-civit-link" (click)="openCivit()">
-                {{ "generate.form.add_from_civitai" | transloco }}
+                {{
+                  (loraState().locked
+                    ? "generate.form.add_embeddings_from_civitai"
+                    : "generate.form.add_from_civitai"
+                  ) | transloco
+                }}
               </button>
             </div>
+            @if (loraState().locked) {
+              <p class="gs-empty-line">
+                {{ "generate.form.style_loras_locked" | transloco }}
+              </p>
+            }
             <app-civitai-selection
               [prompts]="{
                 prompt: form().controls.prompt.value,
@@ -1597,12 +1607,38 @@
               }"
               (promptEdit)="editAssetPrompt($event)"
               [loras]="loras()"
+              [styleLoras]="loraState().supplied"
+              [loraReadOnly]="loraState().locked"
               [tis]="tis()"
               [baseline]="modelBaseline()"
               (lorasChange)="setLoras($event)"
               (tisChange)="setTis($event)"
               (appendToPrompt)="appendToPrompt($event)"
             />
+            @if (removedStyleLora()) {
+              <p class="gs-warn" role="status">
+                {{
+                  "generate.form.style_lora_sampling_note"
+                    | transloco: { settings: samplingSummary() }
+                }}
+              </p>
+              <button
+                type="button"
+                class="gs-civit-link"
+                (click)="goToField('steps')"
+              >
+                {{ "generate.form.style_lora_review_sampling" | transloco }}
+              </button>
+            }
+            @if (loraState().overridden) {
+              <button
+                type="button"
+                class="gs-civit-link"
+                (click)="restoreStyleLoras()"
+              >
+                {{ "generate.form.style_lora_restore" | transloco }}
+              </button>
+            }
             <ng-container
               *ngTemplateOutlet="
                 lintLines;
@@ -3090,6 +3126,7 @@
     }"
     (promptEdit)="editAssetPrompt($event)"
     [loras]="loras()"
+    [loraReadOnly]="loraState().locked"
     [tis]="tis()"
     [baseline]="modelBaseline()"
     (lorasChange)="setLoras($event)"

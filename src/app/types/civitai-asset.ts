@@ -239,7 +239,9 @@ export function manualTiSelection(input: {
  * naming the same asset are one selection to the horde, so `origin` is not part
  * of it: letting both stand would spend two of the five slots on one LoRA.
  */
-function loraIdentity(entry: LoraSelection): string {
+export function loraIdentity(
+  entry: Pick<LoraSelection, 'name' | 'is_version'>,
+): string {
   return `${entry.is_version === true}:${entry.name}`;
 }
 

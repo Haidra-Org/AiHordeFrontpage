@@ -34,6 +34,11 @@
           <span class="gs-tag gs-tag--lora">
             {{ "generate.form.tag_lora" | transloco }}
           </span>
+          @if (isStyleLora(row.entry)) {
+            <span class="gs-cvsel-pill">
+              {{ "generate.civitai.lora_from_style" | transloco }}
+            </span>
+          }
           @if (!row.active) {
             <span class="gs-cvsel-pill">
               {{ "generate.civitai.inactive_pill" | transloco }}
@@ -87,6 +92,7 @@
         <button
           type="button"
           class="gs-cvsel-details"
+          [disabled]="loraReadOnly()"
           (click)="onDetails(row.entry, i)"
         >
           {{ "generate.civitai.details" | transloco }}
@@ -94,6 +100,7 @@
         <button
           type="button"
           class="gs-addon-remove"
+          [disabled]="loraReadOnly()"
           (click)="remove('lora', i)"
           [attr.aria-label]="'generate.form.remove' | transloco"
           [title]="'generate.form.remove' | transloco"
@@ -109,6 +116,7 @@
           {{ "generate.form.lora_model_short" | transloco }}
         </div>
         <app-number-stepper
+          [disabled]="loraReadOnly()"
           [value]="row.entry.model"
           [min]="minStrength"
           [max]="maxStrength"
@@ -127,6 +135,7 @@
             [min]="minStrength"
             [max]="maxStrength"
             step="any"
+            [disabled]="loraReadOnly()"
             [value]="row.entry.model"
             (change)="setLoraNumberEntry(i, 'model', $event)"
             [attr.aria-label]="
@@ -144,6 +153,7 @@
           [min]="minStrength"
           [max]="maxStrength"
           step="0.05"
+          [disabled]="loraReadOnly()"
           [value]="row.entry.model"
           [style.--gs-range-fill.%]="fill(row.entry.model)"
           (input)="setLoraStrength(i, 'model', rangeValue($event))"
@@ -155,6 +165,7 @@
           {{ "generate.form.lora_clip_short" | transloco }}
         </div>
         <app-number-stepper
+          [disabled]="loraReadOnly()"
           [value]="row.entry.clip"
           [min]="minStrength"
           [max]="maxStrength"
@@ -173,6 +184,7 @@
             [min]="minStrength"
             [max]="maxStrength"
             step="any"
+            [disabled]="loraReadOnly()"
             [value]="row.entry.clip"
             (change)="setLoraNumberEntry(i, 'clip', $event)"
             [attr.aria-label]="
@@ -190,6 +202,7 @@
           [min]="minStrength"
           [max]="maxStrength"
           step="0.05"
+          [disabled]="loraReadOnly()"
           [value]="row.entry.clip"
           [style.--gs-range-fill.%]="fill(row.entry.clip)"
           (input)="setLoraStrength(i, 'clip', rangeValue($event))"
@@ -198,7 +211,7 @@
       </div>
     </div>
 
-    @if (row.entry.triggerWords?.length) {
+    @if (!loraReadOnly() && row.entry.triggerWords?.length) {
       <div class="gs-cvsel-triggers">
         @for (word of row.entry.triggerWords; track word) {
           @let count = triggerCount(word);

@@ -4,6 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { WritableSignal, computed, signal } from '@angular/core';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { convertToParamMap, provideRouter } from '@angular/router';
@@ -13,6 +14,8 @@ import { ActiveModel } from '../../types/active-model';
 import en from '../../../assets/i18n/en.json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GenerateComponent } from './generate.component';
+import { GenerateFormComponent } from './generate-form/generate-form.component';
+import { CivitaiPickerComponent } from '../../components/civitai-picker/civitai-picker.component';
 import { AiHordeService } from '../../services/ai-horde.service';
 import { GenerationQueueService } from '../../services/generation-queue.service';
 import { ToastService } from '../../services/toast.service';
@@ -2777,6 +2780,141 @@ describe('GenerateComponent style locks', () => {
     fixture.detectChanges();
     expect(steps.value).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
     expect(cfg_scale.disabled).toBe(true);
+    fixture.destroy();
+  });
+});
+
+describe('GenerateComponent style LoRAs', () => {
+  it('shows a GitHub preset’s LoRA, flags a removal for sampling review, and restores the draft on clearing the style', async () => {
+    await createWholeStudio();
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const studio = fixture.componentInstance;
+    const panel = fixture.debugElement.query(
+      By.directive(GenerateFormComponent),
+    ).componentInstance as GenerateFormComponent;
+    const root = fixture.nativeElement as HTMLElement;
+    const selection = () =>
+      root.querySelector<HTMLElement>('app-civitai-selection')!;
+    const style = {
+      source: 'curated' as const,
+      key: 'curated:Fast preset',
+      name: 'Fast preset',
+      prompt: '{p}{np}',
+      params: {
+        steps: 8,
+        sampler_name: 'lcm' as const,
+        loras: [{ name: '247778', is_version: true }],
+      },
+      models: [],
+    };
+    studio.registerStyle(style);
+    studio.form.patchValue({
+      prompt: 'a fox',
+      loras: [{ name: 'personal', model: 0.5, clip: 1 }],
+      styleName: style.key,
+    });
+    if (!panel.isGroupOpen('loras')) panel.toggleGroup('loras');
+    fixture.detectChanges();
+
+    expect(selection().textContent).toContain('247778');
+    expect(selection().textContent).toContain('From style');
+    expect(selection().textContent).not.toContain('personal');
+    selection().querySelector<HTMLButtonElement>('.gs-addon-remove')!.click();
+    fixture.detectChanges();
+    expect(selection().textContent).not.toContain('247778');
+    expect(root.textContent).toContain('Review the current sampling settings');
+    expect(root.textContent).toContain('8 steps');
+    studio.openPreview();
+    expect(studio.previewRequest()?.params?.loras).toBeUndefined();
+    expect(studio.previewRequest()?.params?.steps).toBe(8);
+
+    studio.closePreview();
+    studio.form.controls.styleName.setValue('');
+    fixture.detectChanges();
+    expect(selection().textContent).toContain('personal');
+    expect(root.textContent).not.toContain(
+      'Review the current sampling settings',
+    );
+    fixture.destroy();
+  });
+
+  it('adds a second LoRA to an editable API style and keeps a locked style readable', async () => {
+    await createWholeStudio();
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const studio = fixture.componentInstance;
+    const panel = fixture.debugElement.query(
+      By.directive(GenerateFormComponent),
+    ).componentInstance as GenerateFormComponent;
+    const root = fixture.nativeElement as HTMLElement;
+    const selection = () =>
+      root.querySelector<HTMLElement>('app-civitai-selection')!;
+    const style = {
+      source: 'native' as const,
+      id: 'editable',
+      key: 'native:editable',
+      name: 'Editable style',
+      prompt: '{p}{np}',
+      params: { loras: [{ name: '247778', is_version: true, model: 0.7 }] },
+      models: [],
+      parameterPolicy: { override: 'all' as const },
+    };
+    const locked = {
+      ...style,
+      id: 'locked',
+      key: 'native:locked',
+      parameterPolicy: null,
+    };
+    studio.registerStyle(style);
+    studio.registerStyle(locked);
+    studio.form.patchValue({ prompt: 'a fox', styleName: style.key });
+    if (!panel.isGroupOpen('loras')) panel.toggleGroup('loras');
+    panel.openCivit();
+    fixture.detectChanges();
+    const picker = fixture.debugElement.query(
+      By.directive(CivitaiPickerComponent),
+    ).componentInstance as CivitaiPickerComponent;
+    picker.manualName.setValue('second');
+    picker.addManual();
+    panel.closeCivit();
+    fixture.detectChanges();
+
+    expect(selection().querySelectorAll('.gs-addon')).toHaveLength(2);
+    expect(selection().textContent).toContain('247778');
+    expect(selection().textContent).toContain('second');
+    expect(root.textContent).not.toContain(
+      'Review the current sampling settings',
+    );
+    studio.openPreview();
+    expect(studio.previewRequest()?.style).toBe('editable');
+    expect(
+      studio.previewRequest()?.params?.loras?.map((lora) => lora.name),
+    ).toEqual(['247778', 'second']);
+
+    studio.closePreview();
+    studio.form.controls.styleName.setValue(locked.key);
+    fixture.detectChanges();
+    expect(selection().textContent).toContain('247778');
+    expect(
+      selection().querySelector<HTMLInputElement>('input[type="number"]'),
+    ).toMatchObject({
+      value: '0.7',
+      disabled: true,
+    });
+    expect(
+      selection().querySelector<HTMLButtonElement>('.gs-addon-remove')
+        ?.disabled,
+    ).toBe(true);
+    expect(root.textContent).toContain(
+      'This style controls which LoRAs are used',
+    );
+    panel.openCivit();
+    fixture.detectChanges();
+    expect(
+      root.querySelector<HTMLButtonElement>('app-civitai-picker .gs-seg-opt')
+        ?.disabled,
+    ).toBe(true);
     fixture.destroy();
   });
 });

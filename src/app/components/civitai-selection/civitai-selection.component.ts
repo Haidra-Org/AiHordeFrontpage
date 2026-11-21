@@ -37,6 +37,7 @@ import {
   MAX_LORA_STRENGTH,
   MIN_LORA_STRENGTH,
   activeLoras,
+  loraIdentity,
   activeTis,
   isNumericAssetId,
   type CivitaiAssetKind,
@@ -88,6 +89,10 @@ export class CivitaiSelectionComponent {
   private readonly injector = inject(Injector);
 
   public readonly loras = input<readonly LoraSelection[]>([]);
+  public readonly styleLoras = input<
+    readonly Pick<LoraSelection, 'name' | 'is_version'>[]
+  >([]);
+  public readonly loraReadOnly = input(false);
   public readonly tis = input<readonly TiSelection[]>([]);
   /** Null where the host does not enforce a cap, as the style editor does not. */
   public readonly maxLoras = input<number | null>(HORDE_MAX_LORAS);
@@ -117,6 +122,14 @@ export class CivitaiSelectionComponent {
 
   /** Announced when a row moves, because only a sighted reader sees it move. */
   public readonly announcement = signal('');
+
+  private readonly styleLoraIds = computed(
+    () => new Set(this.styleLoras().map(loraIdentity)),
+  );
+
+  public isStyleLora(entry: LoraSelection): boolean {
+    return this.styleLoraIds().has(loraIdentity(entry));
+  }
 
   public readonly loraRows = computed<SelectionRow<LoraSelection>[]>(() => {
     const sent = new Set(activeLoras(this.loras()));
@@ -226,6 +239,7 @@ export class CivitaiSelectionComponent {
     field: 'model' | 'clip',
     value: number,
   ): void {
+    if (this.loraReadOnly()) return;
     const next = this.loras().map((entry, i) =>
       i === index ? { ...entry, [field]: value } : entry,
     );
@@ -260,6 +274,7 @@ export class CivitaiSelectionComponent {
 
   public remove(kind: CivitaiAssetKind, index: number): void {
     if (kind === 'lora') {
+      if (this.loraReadOnly()) return;
       this.lorasChange.emit(this.loras().filter((_, i) => i !== index));
     } else {
       this.tisChange.emit(this.tis().filter((_, i) => i !== index));
@@ -271,6 +286,7 @@ export class CivitaiSelectionComponent {
     index: number,
     delta: -1 | 1,
   ): boolean {
+    if (kind === 'lora' && this.loraReadOnly()) return false;
     const length = kind === 'lora' ? this.loras().length : this.tis().length;
     const target = index + delta;
     return target >= 0 && target < length;
@@ -372,6 +388,7 @@ export class CivitaiSelectionComponent {
    */
   public onDetails(entry: LoraSelection | TiSelection, index: number): void {
     const kind: CivitaiAssetKind = this.isLora(entry) ? 'lora' : 'ti';
+    if (kind === 'lora' && this.loraReadOnly()) return;
     this.openRow.set({
       kind,
       index,
@@ -418,6 +435,7 @@ export class CivitaiSelectionComponent {
       return;
     }
     if (open.kind === 'lora') {
+      if (this.loraReadOnly()) return;
       this.lorasChange.emit(
         this.loras().map((row, i) =>
           i === open.index ? (entry as LoraSelection) : row,
@@ -568,6 +586,7 @@ export class CivitaiSelectionComponent {
    * word is already written, which would apply it twice.
    */
   public onTrigger(index: number, word: string): void {
+    if (this.loraReadOnly()) return;
     const prompts = this.prompts();
     const count = this.triggerCount(word);
     if (!prompts || count === null) {

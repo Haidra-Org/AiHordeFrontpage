@@ -78,6 +78,24 @@ describe('studioLinkParams', () => {
     expect(parsed?.styleKey).toBe('native:abc-123');
   });
 
+  it('carries explicit removal of a style’s LoRAs while keeping legacy links as inheritance', () => {
+    const request = { prompt: 'a fox', params: { loras: [] } };
+    const styleKey = 'curated:Watercolour';
+    const edited = studioLinkParams(request, styleKey, true);
+    expect(parseStudioLink(mapOf({ ...edited }))).toMatchObject({
+      styleKey,
+      overridesStyleLoras: true,
+      request,
+    });
+    expect(
+      parseStudioLink(mapOf({ ...edited, style: 'Ink' }))?.overridesStyleLoras,
+    ).toBeUndefined();
+    expect(
+      parseStudioLink(mapOf({ ...studioLinkParams(request, styleKey) }))
+        ?.overridesStyleLoras,
+    ).toBeUndefined();
+  });
+
   it('stays short enough for an address bar', () => {
     const request = buildImageRequest(
       value({

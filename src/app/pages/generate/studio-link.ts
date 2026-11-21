@@ -39,6 +39,7 @@ export interface StudioLinkPayload {
   request: ImageGenerationRequest;
   /** The style's source-qualified key, or null when the link names none. */
   styleKey: string | null;
+  overridesStyleLoras?: boolean;
   kind: 'simple' | 'full';
   /**
    * What the settings are of, where the link says: a published example names
@@ -96,6 +97,7 @@ function fromBase64Url(text: string): Uint8Array | null {
 export function studioLinkParams(
   request: ImageGenerationRequest,
   styleKey: string | null,
+  overridesStyleLoras = false,
 ): StudioLinkParams {
   const body: Record<string, unknown> = {
     v: STUDIO_LINK_VERSION,
@@ -104,6 +106,7 @@ export function studioLinkParams(
   const named = styleQueryParams(styleKey);
   if (named !== null) {
     Object.assign(body, named);
+    if (overridesStyleLoras) body['overridesStyleLoras'] = true;
   }
   return { r: toBase64Url(deflateSync(strToU8(JSON.stringify(body)))) };
 }
@@ -135,8 +138,13 @@ export function studioLinkAddress(
   router: Router,
   request: ImageGenerationRequest,
   styleKey: string | null,
+  overridesStyleLoras = false,
 ): string | null {
-  const packed = studioLinkParams(request, null);
+  const packed = studioLinkParams(
+    request,
+    overridesStyleLoras ? styleKey : null,
+    overridesStyleLoras,
+  );
   if (packed.r.length > STUDIO_LINK_MAX_PARAM_CHARS) {
     return null;
   }
@@ -187,7 +195,10 @@ function sanitizeRequest(raw: ImageGenerationRequest): ImageGenerationRequest {
 /** Read the packed parameter, or null when it is absent, stale or malformed. */
 function unpackRequest(
   packed: string,
-): { request: ImageGenerationRequest; styleKey: string | null } | null {
+): Pick<
+  StudioLinkPayload,
+  'request' | 'styleKey' | 'overridesStyleLoras'
+> | null {
   if (packed.length === 0 || packed.length > STUDIO_LINK_MAX_PARAM_CHARS) {
     return null;
   }
@@ -226,6 +237,9 @@ function unpackRequest(
   const styleId = record['styleId'];
   return {
     request: sanitizeRequest(request),
+    ...(record['overridesStyleLoras'] === true
+      ? { overridesStyleLoras: true }
+      : {}),
     styleKey:
       typeof styleId === 'string' && styleId !== ''
         ? styleRecordKey('native', styleId)
@@ -274,6 +288,11 @@ function readLink(
     return {
       request,
       styleKey: named ?? unpacked.styleKey,
+      ...(unpacked.overridesStyleLoras &&
+      unpacked.styleKey !== null &&
+      (named === null || named === unpacked.styleKey)
+        ? { overridesStyleLoras: true }
+        : {}),
       kind: 'full',
       title,
     };

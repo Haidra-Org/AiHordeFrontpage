@@ -126,6 +126,7 @@ export class CivitaiPickerComponent implements OnInit {
 
   public readonly kind = input<CivitaiAssetKind>('lora');
   public readonly loras = input<readonly LoraSelection[]>([]);
+  public readonly loraReadOnly = input(false);
   public readonly tis = input<readonly TiSelection[]>([]);
   /** The host model's normalised baseline; drives the default filter. */
   public readonly baseline = input<string | null>(null);
@@ -244,7 +245,7 @@ export class CivitaiPickerComponent implements OnInit {
   );
 
   public ngOnInit(): void {
-    this.tab.set(this.kind());
+    this.tab.set(this.loraReadOnly() ? 'ti' : this.kind());
     this.manualName.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
@@ -330,6 +331,7 @@ export class CivitaiPickerComponent implements OnInit {
   }
 
   public setTab(tab: CivitaiAssetKind): void {
+    if (tab === 'lora' && this.loraReadOnly()) return;
     if (this.tab() !== tab) {
       this.tab.set(tab);
       this.manualIsVersion.set(false);
@@ -427,6 +429,7 @@ export class CivitaiPickerComponent implements OnInit {
 
   /** Add the model, or take it out again if it is already chosen. */
   public toggle(model: CivitaiModel): void {
+    if (model.type !== 'TextualInversion' && this.loraReadOnly()) return;
     const existing = this.entryFor(model);
     if (existing) {
       this.removeEntry(model, existing);
@@ -476,6 +479,7 @@ export class CivitaiPickerComponent implements OnInit {
   // --- Details --------------------------------------------------------------
 
   public openDetails(model: CivitaiModel): void {
+    if (model.type !== 'TextualInversion' && this.loraReadOnly()) return;
     const current = this.entryFor(model);
     this.detailCurrent.set(current);
     this.detailTarget.set({
@@ -495,6 +499,7 @@ export class CivitaiPickerComponent implements OnInit {
 
   public onDetailApply(entry: LoraSelection | TiSelection): void {
     if ('clip' in entry) {
+      if (this.loraReadOnly()) return;
       const without = this.loras().filter(
         (lora) =>
           lora === this.detailCurrent() ||
@@ -552,6 +557,7 @@ export class CivitaiPickerComponent implements OnInit {
   }
 
   public addManual(): void {
+    if (this.tab() === 'lora' && this.loraReadOnly()) return;
     const name = this.manualName.value.trim();
     if (!name) {
       return;
@@ -588,10 +594,13 @@ export class CivitaiPickerComponent implements OnInit {
 
   public onDetailRemove(): void {
     const entry = this.detailCurrent();
-    if (entry && 'clip' in entry)
-      this.lorasChange.emit(this.loras().filter((lora) => lora !== entry));
-    else if (entry)
+    if (entry && 'clip' in entry) {
+      if (!this.loraReadOnly()) {
+        this.lorasChange.emit(this.loras().filter((lora) => lora !== entry));
+      }
+    } else if (entry) {
       this.tisChange.emit(this.tis().filter((ti) => ti !== entry));
+    }
     this.closeDetails();
   }
 

@@ -1225,6 +1225,11 @@ export interface StyleDetachState {
   sections: StyleLockSection[];
 }
 
+export interface StyleLoraOverride {
+  style: string;
+  loras: FormLoraEntry[];
+}
+
 /**
  * The section each field a style can pin is frozen and handed back with. The
  * form's own control names are used, so a snapshot of these fields can be
@@ -1288,6 +1293,7 @@ export interface GenerateFormValue {
   styleName: string;
   /** Sections the user opted out of the style for; see {@link StyleDetachState}. */
   styleDetach: StyleDetachState;
+  styleLoraOverride: StyleLoraOverride | null;
   prompt: string;
   negativePrompt: string;
   n: number;
@@ -1418,6 +1424,7 @@ export type GenerateFormGroup = FormGroup<GenerateFormControls>;
 export const DEFAULT_GENERATE_FORM_VALUE: GenerateFormValue = {
   styleName: '',
   styleDetach: { style: '', sections: [] },
+  styleLoraOverride: null,
   prompt: '',
   negativePrompt: '',
   n: 1,
@@ -1710,6 +1717,24 @@ export function coerceFormValue(raw: unknown): GenerateFormValue {
       merged.styleDetach = coerceStyleDetach(value);
       continue;
     }
+    if (key === 'styleLoraOverride') {
+      if (
+        typeof value === 'object' &&
+        value !== null &&
+        'style' in value &&
+        typeof value.style === 'string' &&
+        'loras' in value &&
+        Array.isArray(value.loras)
+      ) {
+        merged.styleLoraOverride = {
+          style: storedStyleKey(value.style),
+          loras: value.loras
+            .map(coerceLoraEntry)
+            .filter((entry): entry is FormLoraEntry => entry !== null),
+        };
+      }
+      continue;
+    }
     if (key === 'loras') {
       if (Array.isArray(value)) {
         merged.loras = value
@@ -1870,6 +1895,7 @@ export function createGenerateForm(
   return new FormGroup<GenerateFormControls>({
     styleName: control(value.styleName),
     styleDetach: control(value.styleDetach),
+    styleLoraOverride: control(value.styleLoraOverride),
     prompt: control(value.prompt),
     negativePrompt: control(value.negativePrompt),
     n: bounded(value.n, 'n'),
@@ -2448,10 +2474,14 @@ export function buildStyledImageRequest(
   applied: AppliedStyle | null,
   options: BuildImageRequestOptions = {},
 ): ImageGenerationRequest {
-  const request = buildImageRequest(value, options);
   if (!applied) {
-    return request;
+    return buildImageRequest(value, options);
   }
+  const loras = styleLoras(value, applied);
+  const request = buildImageRequest(
+    { ...value, loras: loras.entries },
+    options,
+  );
 
   request.prompt = applied.prompt;
   const params: ImageGenerationParams = request.params ?? {};
@@ -2526,7 +2556,7 @@ export function buildStyledImageRequest(
       params.denoising_strength = forced.denoising_strength;
     }
   }
-  if (forced.loras) params.loras = forced.loras;
+  if (forced.loras && !loras.overridden) params.loras = forced.loras;
   if (forced.tis) params.tis = forced.tis;
 
   request.params = params;
@@ -2607,6 +2637,9 @@ export function buildHordeStyleRequest(
   ) {
     params.karras = effective.scheduler === 'karras';
   }
+  if (styleLoras(value, applied).overridden) {
+    params.loras = built.loras ?? [];
+  }
   request.params = params;
   // The style names the models its settings were written for and whether it is
   // adult, and the horde reads both off the style rather than off the request.
@@ -2636,7 +2669,7 @@ export function styledFormValue(
   }
   const forced = applied.forcedParams;
   if (applied.hordeApplied) {
-    const styled = { ...value };
+    const styled = { ...value, loras: styleLoras(value, applied).entries };
     const defaults = styleFormDefaults(value, forced, applied.parameterPolicy);
     for (const field of STYLE_PINNED_FIELDS) {
       if (
@@ -2651,7 +2684,10 @@ export function styledFormValue(
   const detached = detachedStyleSections(value);
   const pinned = (section: StyleLockSection): boolean =>
     !detached.includes(section);
-  const styled: GenerateFormValue = { ...value };
+  const styled: GenerateFormValue = {
+    ...value,
+    loras: styleLoras(value, applied).entries,
+  };
 
   if (pinned('model') && forced.model !== undefined) {
     styled.model = forced.model;
@@ -2757,6 +2793,36 @@ function loraConfigToForm(lora: StyleLoraConfig): FormLoraEntry {
     entry.is_version = lora.is_version;
   }
   return entry;
+}
+
+export function styleLoras(
+  value: Pick<GenerateFormValue, 'styleName' | 'loras' | 'styleLoraOverride'>,
+  applied: Pick<
+    AppliedStyle,
+    'forcedParams' | 'hordeApplied' | 'parameterPolicy'
+  > | null,
+) {
+  const supplied = applied?.forcedParams.loras ?? [];
+  const usesStyleList = applied?.hordeApplied === true || supplied.length > 0;
+  const locked =
+    applied?.hordeApplied === true &&
+    !styleAllowsParameter(applied.parameterPolicy, 'loras');
+  const override =
+    usesStyleList &&
+    !locked &&
+    value.styleName &&
+    value.styleLoraOverride?.style === value.styleName
+      ? value.styleLoraOverride
+      : null;
+  return {
+    supplied,
+    usesStyleList,
+    locked,
+    overridden: override !== null,
+    entries:
+      override?.loras ??
+      (usesStyleList ? supplied.map(loraConfigToForm) : value.loras),
+  };
 }
 
 function tiConfigToForm(ti: StyleTextualInversionConfig): FormTiEntry {
@@ -2878,6 +2944,12 @@ export function requestToFormValue(
   result.return_control_map = params.return_control_map === true;
   if (Array.isArray(params.loras)) {
     result.loras = params.loras.map(loraConfigToForm);
+    if (result.styleName) {
+      result.styleLoraOverride = {
+        style: result.styleName,
+        loras: result.loras,
+      };
+    }
   }
   if (Array.isArray(params.tis)) {
     result.tis = params.tis.map(tiConfigToForm);
@@ -3076,6 +3148,7 @@ export function kudosBreakdown(
  */
 const LEDGER_EXCLUDED: readonly (keyof GenerateFormValue)[] = [
   'styleDetach',
+  'styleLoraOverride',
   'valuesBeforeStyle',
 ];
 

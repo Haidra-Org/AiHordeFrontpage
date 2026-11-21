@@ -174,6 +174,7 @@ import {
   stepsAdvisory,
   styleAllowsField,
   styleFormDefaults,
+  styleLoras,
   styleScheduleOverride,
   styledFormValue,
   suggestedSamplers,
@@ -208,6 +209,7 @@ import {
 } from '../../../services/worker-pool.service';
 import type { HordeWorker } from '../../../types/horde-worker';
 import { PromptDraftCardComponent } from '../../../components/prompt-draft/prompt-draft-card.component';
+import { loraIdentity } from '../../../types/civitai-asset';
 import {
   ImageSchedulerName,
   MAX_FLOW_SHIFT,
@@ -445,7 +447,7 @@ const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
 /** A setting the changed-settings ledger can list. */
 type LedgerField = Exclude<
   keyof GenerateFormValue,
-  'styleDetach' | 'valuesBeforeStyle'
+  'styleDetach' | 'styleLoraOverride' | 'valuesBeforeStyle'
 >;
 
 /** Where a ledger row is listed: a collapsible group, or the compose cards. */
@@ -1933,7 +1935,7 @@ export class GenerateFormComponent implements OnInit {
     }
     return [...GROUP_FIELDS[group], ...sharedGroupFields(group, value)].some(
       (field) =>
-        JSON.stringify(value[field]) !==
+        JSON.stringify(field === 'loras' ? this.loras() : value[field]) !==
         JSON.stringify(DEFAULT_GENERATE_FORM_VALUE[field]),
     );
   }
@@ -1969,7 +1971,10 @@ export class GenerateFormComponent implements OnInit {
     // A setting two cards can own is listed under the one that has it, so the
     // row leads to the control the value was actually set from.
     const shared = new Set(sharedGroupFields('qr', value));
-    for (const field of changedFields(value) as LedgerField[]) {
+    for (const field of changedFields({
+      ...value,
+      loras: this.loras(),
+    }) as LedgerField[]) {
       const section = shared.has(field)
         ? 'qr'
         : (FIELD_GROUP.get(field) ?? 'compose');
@@ -2131,11 +2136,10 @@ export class GenerateFormComponent implements OnInit {
 
   public readonly lorasSummary = computed(() => {
     const value = this.value();
+    const count = this.loras().length;
     return value
       ? this.summaryLine([
-          value.loras.length > 0
-            ? this.counted('generate.groups.loras_count', value.loras.length)
-            : null,
+          count > 0 ? this.counted('generate.groups.loras_count', count) : null,
           value.tis.length > 0
             ? this.counted('generate.groups.tis_count', value.tis.length)
             : null,
@@ -2545,9 +2549,29 @@ export class GenerateFormComponent implements OnInit {
 
   // --- Persisted LoRA / TI rows -------------------------------------------
 
-  public loras(): FormLoraEntry[] {
-    return this.form().controls.loras.value;
-  }
+  public readonly loraState = computed(() => {
+    const forcedParams = this.forcedParams();
+    const native = this.nativeStyle();
+    return styleLoras(
+      this.value() ?? this.form().getRawValue(),
+      forcedParams
+        ? {
+            forcedParams,
+            hordeApplied: native !== undefined,
+            parameterPolicy: native?.parameterPolicy,
+          }
+        : null,
+    );
+  });
+
+  public readonly loras = computed(() => this.loraState().entries);
+
+  public readonly removedStyleLora = computed(() => {
+    const state = this.loraState();
+    if (!state.overridden) return false;
+    const current = new Set(state.entries.map(loraIdentity));
+    return state.supplied.some((lora) => !current.has(loraIdentity(lora)));
+  });
 
   public tis(): FormTiEntry[] {
     return this.form().controls.tis.value;
@@ -2555,9 +2579,22 @@ export class GenerateFormComponent implements OnInit {
 
   /** Take an edited selection list onto the form, marking it as the user's. */
   public setLoras(next: FormLoraEntry[]): void {
-    const control = this.form().controls.loras;
+    const state = this.loraState();
+    if (state.locked) return;
+    const controls = this.form().controls;
+    if (state.usesStyleList) {
+      const control = controls.styleLoraOverride;
+      control.setValue({ style: this.selectedStyleKey(), loras: next });
+      control.markAsDirty();
+      return;
+    }
+    const control = controls.loras;
     control.setValue(next);
     control.markAsDirty();
+  }
+
+  public restoreStyleLoras(): void {
+    this.form().controls.styleLoraOverride.setValue(null);
   }
 
   public setTis(next: FormTiEntry[]): void {
@@ -2585,14 +2622,12 @@ export class GenerateFormComponent implements OnInit {
       typeof insertion === 'string'
         ? { text: insertion, target: 'prompt' as const }
         : insertion;
-    if (event.lora)
+    if (event.lora) {
+      if (this.loraState().locked) return;
       this.setLoras(
-        selectManualLora(
-          this.form().controls.loras.value,
-          event.lora,
-          event.previousLoraName,
-        ),
+        selectManualLora(this.loras(), event.lora, event.previousLoraName),
       );
+    }
     if (event.ti)
       this.setTis(selectManualTi(this.form().controls.tis.value, event.ti));
     const control =
@@ -2604,9 +2639,7 @@ export class GenerateFormComponent implements OnInit {
   }
 
   public removeLora(index: number): void {
-    const control = this.form().controls.loras;
-    control.setValue(control.value.filter((_, i) => i !== index));
-    control.markAsDirty();
+    this.setLoras(this.loras().filter((_, i) => i !== index));
   }
 
   public removeTi(index: number): void {
@@ -2621,13 +2654,11 @@ export class GenerateFormComponent implements OnInit {
     field: 'model' | 'clip',
     value: number,
   ): void {
-    const control = this.form().controls.loras;
-    control.setValue(
-      control.value.map((lora, i) =>
+    this.setLoras(
+      this.loras().map((lora, i) =>
         i === index ? { ...lora, [field]: value } : lora,
       ),
     );
-    control.markAsDirty();
   }
 
   public setTiStrength(index: number, value: number): void {
@@ -3131,12 +3162,17 @@ export class GenerateFormComponent implements OnInit {
    * picking another style (or clearing it) always starts from its own values.
    */
   private onStyleNameChanged(): void {
-    const control = this.form().controls.styleDetach;
+    const controls = this.form().controls;
+    const control = controls.styleDetach;
     if (
       control.value.sections.length > 0 &&
       control.value.style !== this.form().controls.styleName.value
     ) {
       control.setValue({ style: '', sections: [] }, { emitEvent: false });
+    }
+    const override = controls.styleLoraOverride;
+    if (override.value && override.value.style !== controls.styleName.value) {
+      override.setValue(null, { emitEvent: false });
     }
     this.syncDetachedSections();
   }

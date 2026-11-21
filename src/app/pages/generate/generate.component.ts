@@ -125,6 +125,7 @@ import {
   buildStyledImageRequest,
   styledFormValue,
   styleAllowsParameter,
+  styleLoras,
   coerceFormValue,
   createGenerateForm,
   detachedStyleSections,
@@ -542,7 +543,10 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       // A preset carries no image, so its source-mode fields describe nothing
       // and are left out of the request entirely.
       return pending
-        ? buildImageRequest(pending, this.buildOptions(false))
+        ? buildImageRequest(
+            { ...pending, loras: this.presetLoras(pending) },
+            this.buildOptions(false),
+          )
         : null;
     },
   );
@@ -1486,11 +1490,17 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    */
   public async copyStudioLink(): Promise<void> {
     const effective = this.effectiveValue();
-    const request = buildImageRequest(effective, this.buildOptions(false));
+    const loras = styleLoras(effective, this.resolveApplied(effective));
+    const request = buildImageRequest(
+      loras.overridden ? { ...effective, loras: loras.entries } : effective,
+      this.buildOptions(false),
+    );
+    if (loras.overridden && request.params) request.params.loras ??= [];
     const address = studioLinkAddress(
       this.router,
       request,
       effective.styleName.trim() || null,
+      loras.overridden,
     );
     if (address === null) {
       this.toast.error('generate.link.too_large', { transloco: true });
@@ -1579,6 +1589,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
             DEFAULT_GENERATE_FORM_VALUE[key];
         }
       }
+      if (offeredKeys.includes('loras') && !applied.has('loras')) {
+        next.styleLoraOverride = null;
+      }
       // Nothing here can re-attach a source image, so a replace has to leave the
       // form describing a plain txt2img rather than a mode with no image. The
       // one exception is a link, which named a mode the reader chose to follow:
@@ -1593,7 +1606,9 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         // Index assignment is sound: pending and next share the field's type.
         (next as Record<keyof GenerateFormValue, unknown>)[key] = pending[key];
       }
+      if (event.keys.includes('loras')) next.loras = this.presetLoras(pending);
       next.styleName = '';
+      next.styleLoraOverride = null;
     }
     this.form.setValue(next);
     this.form.markAsDirty();
@@ -1601,6 +1616,14 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       transloco: true,
       messageParams: { count: event.keys.length },
     });
+  }
+
+  private presetLoras(value: GenerateFormValue): GenerateFormValue['loras'] {
+    const applied = this.resolveApplied(value);
+    if (!applied && value.styleLoraOverride?.style === value.styleName) {
+      return value.styleLoraOverride.loras;
+    }
+    return styleLoras(value, applied).entries;
   }
 
   /**
@@ -2440,6 +2463,15 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     const settings = requestToFormValue(payload.request);
     if (payload.styleKey !== null) {
       settings.styleName = payload.styleKey;
+      if (
+        payload.overridesStyleLoras &&
+        Array.isArray(payload.request.params?.loras)
+      ) {
+        settings.styleLoraOverride = {
+          style: payload.styleKey,
+          loras: settings.loras,
+        };
+      }
     }
     // The picture itself cannot travel in an address, so a request that works
     // on one arrives wanting one. The mode is kept and the section asks.

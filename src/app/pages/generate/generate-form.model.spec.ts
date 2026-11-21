@@ -828,6 +828,130 @@ describe('buildHordeStyleRequest', () => {
   });
 });
 
+describe('LoRAs in styles', () => {
+  const style: StyleRecord = {
+    source: 'native',
+    key: 'native:shared-look',
+    id: 'shared-look',
+    name: 'Shared look',
+    prompt: '{p} ### {np}',
+    params: {
+      loras: [
+        { name: '247778', is_version: true, model: 0.7, inject_trigger: 'any' },
+      ],
+      steps: 8,
+    },
+    models: [],
+    parameterPolicy: { override: 'listed', overridable: ['loras'] },
+  };
+
+  it('inherits the native list until the user adds to it, then carries the full list', () => {
+    const form = value({
+      styleName: style.key,
+      loras: [{ name: 'personal', model: 1, clip: 1 }],
+    });
+    const applied = applyStyle(style, 'a fox', '');
+    const effective = styledFormValue(form, applied);
+    expect(effective.loras).toEqual([
+      {
+        name: '247778',
+        is_version: true,
+        model: 0.7,
+        clip: 1,
+        inject_trigger: 'any',
+      },
+    ]);
+    expect(buildHordeStyleRequest(form, style).params?.loras).toBeUndefined();
+    expect(
+      kudosBreakdown(effective, null).find((line) => line.id === 'loras')
+        ?.params?.['count'],
+    ).toBe(1);
+
+    const withSecond = value({
+      ...form,
+      styleLoraOverride: {
+        style: style.key,
+        loras: [...effective.loras, { name: 'second', model: 0.5, clip: 0.8 }],
+      },
+    });
+    expect(buildHordeStyleRequest(withSecond, style)).toMatchObject({
+      style: style.id,
+      params: {
+        loras: [
+          {
+            name: '247778',
+            is_version: true,
+            model: 0.7,
+            clip: 1,
+            inject_trigger: 'any',
+          },
+          { name: 'second', model: 0.5, clip: 0.8 },
+        ],
+      },
+    });
+  });
+
+  it('round-trips explicit removal of the final native LoRA through a stored request and draft', () => {
+    const form = value({
+      styleName: style.key,
+      styleLoraOverride: { style: style.key, loras: [] },
+    });
+    const request = buildHordeStyleRequest(form, style);
+    expect(request.params?.loras).toEqual([]);
+    const recovered = coerceFormValue(
+      JSON.parse(JSON.stringify(requestToFormValue(request))),
+    );
+    expect(styledFormValue(recovered, applyStyle(style, '', '')).loras).toEqual(
+      [],
+    );
+    expect(buildHordeStyleRequest(recovered, style).params?.loras).toEqual([]);
+  });
+
+  it('uses the native list when the policy disallows LoRA changes or the edit belongs to another style', () => {
+    const form = value({
+      styleName: style.key,
+      styleLoraOverride: { style: style.key, loras: [] },
+    });
+    const locked: StyleRecord = {
+      ...style,
+      parameterPolicy: { override: 'listed', overridable: ['steps'] },
+    };
+    for (const [draft, record] of [
+      [form, locked],
+      [
+        { ...form, styleLoraOverride: { style: 'native:other', loras: [] } },
+        style,
+      ],
+    ] as const) {
+      expect(
+        buildHordeStyleRequest(draft, record).params?.loras,
+      ).toBeUndefined();
+      expect(
+        styledFormValue(draft, applyStyle(record, '', '')).loras.map(
+          (entry) => entry.name,
+        ),
+      ).toEqual(['247778']);
+    }
+  });
+
+  it('can clear a GitHub preset’s LoRAs while leaving its sampling settings applied', () => {
+    const record: StyleRecord = {
+      ...style,
+      source: 'curated',
+      key: 'curated:Shared look',
+    };
+    const form = value({
+      styleName: record.key,
+      styleLoraOverride: { style: record.key, loras: [] },
+    });
+    const applied = applyStyle(record, 'a fox', '');
+    const request = buildStyledImageRequest(form, applied);
+    expect(request.style).toBeUndefined();
+    expect(request.params?.loras).toBeUndefined();
+    expect(request.params?.steps).toBe(8);
+  });
+});
+
 describe('buildStyledImageRequest', () => {
   it('is identical to buildImageRequest when no style is applied', () => {
     const form = value({ prompt: 'a fox', negativePrompt: 'blurry' });
