@@ -704,7 +704,9 @@
           </div>
           <div
             class="gs-size-tool"
-            [class.gs-locked]="isSectionLocked('dimensions')"
+            [class.gs-locked]="
+              isFieldLocked('width') && isFieldLocked('height')
+            "
           >
             <div class="gs-size-scale">
               <div>
@@ -720,7 +722,7 @@
                   type="button"
                   class="gs-size-scale-opt"
                   [attr.aria-pressed]="sizeFamily() === 512"
-                  [disabled]="isSectionLocked('dimensions')"
+                  [disabled]="sizeActionsLocked()"
                   (click)="setSizeBase(512)"
                 >
                   <strong>512</strong>
@@ -730,7 +732,7 @@
                   type="button"
                   class="gs-size-scale-opt"
                   [attr.aria-pressed]="sizeFamily() === 1024"
-                  [disabled]="isSectionLocked('dimensions')"
+                  [disabled]="sizeActionsLocked()"
                   (click)="setSizeBase(1024)"
                 >
                   <strong>1024</strong>
@@ -756,10 +758,10 @@
                     inputmode="numeric"
                     autocomplete="off"
                     [min]="minDimension"
-                    [max]="maxDimension"
+                    [max]="styleCeiling('width', maxDimension)"
                     [step]="dimensionStep"
                     [value]="form().controls.width.value"
-                    [disabled]="isSectionLocked('dimensions')"
+                    [disabled]="isFieldLocked('width')"
                     (input)="setNumberEntry(form().controls.width, $event)"
                   />
                   <span>px</span>
@@ -769,7 +771,7 @@
                   type="range"
                   formControlName="width"
                   [min]="minDimension"
-                  [max]="maxDimension"
+                  [max]="styleCeiling('width', maxDimension)"
                   [step]="dimensionStep"
                   [style.--gs-range-fill.%]="
                     rangeFill(
@@ -784,7 +786,7 @@
               <button
                 type="button"
                 class="gs-size-swap gs-chip--swap"
-                [disabled]="isSectionLocked('dimensions')"
+                [disabled]="sizeActionsLocked()"
                 (click)="swapDimensions()"
                 [attr.aria-label]="'generate.aspect.swap' | transloco"
                 [title]="'generate.aspect.swap' | transloco"
@@ -804,10 +806,10 @@
                     inputmode="numeric"
                     autocomplete="off"
                     [min]="minDimension"
-                    [max]="maxDimension"
+                    [max]="styleCeiling('height', maxDimension)"
                     [step]="dimensionStep"
                     [value]="form().controls.height.value"
-                    [disabled]="isSectionLocked('dimensions')"
+                    [disabled]="isFieldLocked('height')"
                     (input)="setNumberEntry(form().controls.height, $event)"
                   />
                   <span>px</span>
@@ -817,7 +819,7 @@
                   type="range"
                   formControlName="height"
                   [min]="minDimension"
-                  [max]="maxDimension"
+                  [max]="styleCeiling('height', maxDimension)"
                   [step]="dimensionStep"
                   [style.--gs-range-fill.%]="
                     rangeFill(
@@ -864,7 +866,7 @@
                     [attr.aria-pressed]="
                       isPresetActive(preset.width, preset.height)
                     "
-                    [disabled]="isSectionLocked('dimensions')"
+                    [disabled]="sizeActionsLocked()"
                     (click)="applyPreset(preset.width, preset.height)"
                   >
                     <span>{{ preset.labelKey | transloco }}</span>
@@ -1011,8 +1013,9 @@
                     inputmode="numeric"
                     autocomplete="off"
                     [min]="minSteps"
-                    [max]="maxSteps"
+                    [max]="maxSteps()"
                     step="1"
+                    [disabled]="isFieldLocked('steps')"
                     [value]="form().controls.steps.value"
                     (input)="setNumberEntry(form().controls.steps, $event)"
                     [attr.aria-describedby]="
@@ -1025,22 +1028,26 @@
                   type="range"
                   formControlName="steps"
                   [min]="stepsSliderMin"
-                  [max]="stepsSliderMax"
+                  [max]="stepsSliderMax()"
                   step="1"
                   [style.--gs-range-fill.%]="
                     rangeFill(
                       form().controls.steps.value,
                       stepsSliderMin,
-                      stepsSliderMax
+                      stepsSliderMax()
                     )
                   "
                   [attr.aria-label]="'generate.form.steps_short' | transloco"
                 />
-                @if (form().controls.steps.invalid) {
+                @if (
+                  form().controls.steps.invalid ||
+                  (!isFieldLocked("steps") &&
+                    form().controls.steps.value > maxSteps())
+                ) {
                   <p id="generate-steps-range" class="gs-warn mt-1.5">
                     {{
                       "generate.form.number_out_of_range"
-                        | transloco: { min: minSteps, max: maxSteps }
+                        | transloco: { min: minSteps, max: maxSteps() }
                     }}
                   </p>
                 }
@@ -1397,6 +1404,7 @@
                               ? ('generate.form.knob_auto' | transloco)
                               : setting[1].default
                           "
+                          [disabled]="isFieldLocked(setting[0])"
                           [value]="samplerControl(setting[0]).value ?? ''"
                           [class.gs-field--invalid]="
                             samplerSettingInvalid(setting[0], setting[1])
@@ -1492,6 +1500,7 @@
                           [max]="maxFlowShift"
                           step="any"
                           [placeholder]="'generate.form.knob_auto' | transloco"
+                          [disabled]="isFieldLocked('flow_shift')"
                           [value]="form().controls.flow_shift.value ?? ''"
                           [class.gs-field--invalid]="flowShiftInvalid()"
                           [attr.aria-invalid]="
@@ -2805,7 +2814,7 @@
             type="button"
             class="gs-batch-btn"
             (click)="stepBatch(1)"
-            [disabled]="form().controls.n.value >= maxBatch"
+            [disabled]="form().controls.n.value >= maxBatch()"
             [attr.aria-label]="'generate.footer.batch_increase' | transloco"
           >
             <span aria-hidden="true">&plus;</span>
@@ -3161,9 +3170,6 @@
 
 <ng-template #styleLock let-section="section" let-value="value">
   <span class="gs-lock">
-    <!-- A style the horde applies is read over the request rather than merged
-         into it, so there is nothing here to take back and no press offering
-         it: the badge says who set the values and stands alone. -->
     @if (hordeAppliesStyle()) {
       <span
         class="gs-lock-badge"

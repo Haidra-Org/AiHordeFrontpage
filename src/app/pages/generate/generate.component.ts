@@ -124,6 +124,7 @@ import {
   buildHordeStyleRequest,
   buildStyledImageRequest,
   styledFormValue,
+  styleAllowsParameter,
   coerceFormValue,
   createGenerateForm,
   detachedStyleSections,
@@ -392,9 +393,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * is reached, whether by a link or by a pick in the style browser.
    */
   public readonly styleRecords = signal<Map<string, StyleRecord>>(new Map());
-  /** Params the currently-selected style forces, for "set by style" hints. */
-  public readonly forcedParams = signal<StyleForcedParams | null>(null);
-
   public readonly sourceState =
     signal<GenerateSourceState>(DEFAULT_SOURCE_STATE);
   /** Whether the source section's validation hint should be shown. */
@@ -565,6 +563,19 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
     this.form.getRawValue(),
   );
 
+  private readonly selectedStyleKey = computed(
+    () => this.formValue().styleName,
+  );
+  private readonly selectedStyle = computed(() =>
+    this.styleRecords().get(this.selectedStyleKey()),
+  );
+
+  /** Params the currently-selected style forces, for "set by style" hints. */
+  public readonly forcedParams = computed<StyleForcedParams | null>(() => {
+    const style = this.selectedStyle();
+    return style ? applyStyle(style, '', '').forcedParams : null;
+  });
+
   /**
    * The name of the style the horde applies to the request, or null when the
    * studio applies the selection itself or nothing is selected. The horde reads
@@ -572,7 +583,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
    * the source card's warning are about.
    */
   public readonly hordeStyleName = computed<string | null>(() => {
-    const record = this.styleRecords().get(this.formValue().styleName);
+    const record = this.selectedStyle();
     return record?.source === 'native' ? record.name : null;
   });
 
@@ -1030,12 +1041,11 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
           this.persist();
           void this.updateKudos();
         });
-      // The "set by style" hints and the source reset on leaving advanced must
-      // react immediately, so track raw form changes without the kudos debounce.
+      // Guidance and request comparisons must follow edits before the next
+      // kudos quote arrives.
       this.form.valueChanges
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(() => this.onFormChanged());
-      this.refreshForcedParams();
+        .subscribe(() => this.formValue.set(this.form.getRawValue()));
       void this.updateKudos();
       this.applyStudioLink();
     }
@@ -1382,15 +1392,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   }
 
   /**
-   * React to any form change: refresh the style hints. The source section is
-   * shown in both detail levels, so its state stands whichever one is current.
-   */
-  private onFormChanged(): void {
-    this.formValue.set(this.form.getRawValue());
-    this.refreshForcedParams();
-  }
-
-  /**
    * Ask the model reference whether the model the request would run on supports
    * a feature. "Any model" and a reference that has not loaded both answer null,
    * because gating is guidance and must never lock a user out on a guess.
@@ -1404,11 +1405,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       return null;
     }
     return supports(model);
-  }
-
-  private refreshForcedParams(): void {
-    const applied = this.resolveApplied(this.form.getRawValue());
-    this.forcedParams.set(applied?.forcedParams ?? null);
   }
 
   /**
@@ -2105,6 +2101,29 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       sourceMessage: source.valid ? null : source.validationMessage,
       translate: (key) => this.transloco.translate(key),
     });
+    const style = this.styleRecords().get(effective.styleName);
+    const policy =
+      style?.source === 'native' ? style.parameterPolicy : undefined;
+    const ceilingFields = [
+      ['n', 'generate', 'generate.help.batch.title'],
+      ['steps', 'steps', 'generate.form.steps_short'],
+      ['width', 'size', 'generate.form.width_short'],
+      ['height', 'size', 'generate.form.height_short'],
+    ] as const;
+    for (const [field, anchor, label] of ceilingFields) {
+      const max = policy?.ceilings?.[field];
+      if (
+        max !== undefined &&
+        (field === 'n' || styleAllowsParameter(policy, field)) &&
+        effective[field] > max
+      ) {
+        blockers.push({
+          anchor,
+          key: 'generate.blockers.style_ceiling',
+          params: { field: this.transloco.translate(label), max },
+        });
+      }
+    }
     if (blockers.length === 0) {
       return blockers;
     }
@@ -2371,8 +2390,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
           })),
         );
         this.stylesLoaded = true;
-        // A style may already be selected from persisted state; surface its hints.
-        this.refreshForcedParams();
         this.answerPinnedStyle();
       });
   }
@@ -2484,10 +2501,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
         .getImageStyle(parsed.value)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: (style) => {
-            this.registerStyle(fromNativeImageStyle(style));
-            this.refreshForcedParams();
-          },
+          next: (style) => this.registerStyle(fromNativeImageStyle(style)),
           error: () => this.dropPinnedStyle(pinned),
         });
       return;

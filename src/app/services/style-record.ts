@@ -5,6 +5,7 @@ import type {
   ImageStyleParams,
   StyleExample,
   StyleLoraConfig,
+  StyleParameterPolicy,
   StyleTextualInversionConfig,
 } from '../types/style';
 import type { HordeStylePreset } from './horde-styles.service';
@@ -37,6 +38,7 @@ export interface StyleRecord {
   /** Template carrying the `{p}` and `{np}` placeholders. */
   prompt: string;
   params: ImageStyleParams;
+  parameterPolicy?: StyleParameterPolicy | null;
   /** Every model the style declares; empty when it names none. */
   models: string[];
   nsfw?: boolean;
@@ -163,6 +165,7 @@ export function fromNativeImageStyle(style: ImageStyle): StyleRecord {
     models: style.models ? [...style.models] : [],
     nsfw: style.nsfw,
   };
+  if (style.parameter_policy) record.parameterPolicy = style.parameter_policy;
   if (style.tags && style.tags.length > 0) record.tags = [...style.tags];
   if (style.creator) record.creator = style.creator;
   if (style.info) record.info = style.info;
@@ -179,7 +182,22 @@ export function fromNativeImageStyle(style: ImageStyle): StyleRecord {
  * shows in its own single-model field, while `models` is every model the style
  * declares and is what the request routes on.
  */
-export interface StyleForcedParams {
+export const STYLE_SAMPLER_FIELDS = [
+  'hires_fix_denoising_strength',
+  'sampler_eta',
+  'sampler_s_noise',
+  'sampler_s_churn',
+  'sampler_s_tmin',
+  'sampler_s_tmax',
+  'sampler_order',
+  'sampler_solver_type',
+  'flow_shift',
+] as const satisfies readonly (keyof ImageStyleParams)[];
+
+export interface StyleForcedParams extends Pick<
+  ImageStyleParams,
+  (typeof STYLE_SAMPLER_FIELDS)[number]
+> {
   model?: string;
   models?: string[];
   width?: number;
@@ -189,6 +207,7 @@ export interface StyleForcedParams {
   sampler_name?: ImageSamplerName;
   clip_skip?: number;
   karras?: boolean;
+  scheduler?: ImageStyleParams['scheduler'];
   hires_fix?: boolean;
   loras?: StyleLoraConfig[];
   tis?: StyleTextualInversionConfig[];
@@ -205,12 +224,9 @@ export interface AppliedStyle {
   /** Final prompt string, negative folded in via the horde `###` separator. */
   prompt: string;
   forcedParams: StyleForcedParams;
-  /**
-   * Whether the horde applies this style rather than the studio. It replaces
-   * the request's parameters with the style's own, so anything describing what
-   * will be sent has to stop offering the reader a way around them.
-   */
+  /** Whether the Horde applies the style and enforces its parameter policy. */
   hordeApplied?: boolean;
+  parameterPolicy?: StyleParameterPolicy | null;
 }
 
 /**
@@ -304,6 +320,13 @@ export function applyStyle(
   };
   if (record.source === 'native') {
     applied.hordeApplied = true;
+    applied.parameterPolicy = record.parameterPolicy;
+    if (params.scheduler !== undefined)
+      forcedParams.scheduler = params.scheduler;
+    for (const field of STYLE_SAMPLER_FIELDS) {
+      if (params[field] !== undefined)
+        Object.assign(forcedParams, { [field]: params[field] });
+    }
     // The horde replaces the request's parameters with the style's, so a
     // setting the style leaves out runs at the horde's default rather than at
     // the reader's value; the forced view names that default so the frozen

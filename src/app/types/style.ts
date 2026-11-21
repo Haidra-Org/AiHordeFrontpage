@@ -1,3 +1,6 @@
+import type { ImageSchedulerName } from './sampler-constraints';
+import type { ImageGenerationParams } from './generation';
+
 /**
  * Style types for AI Horde styles API.
  * Styles are prompt templates with pre-configured parameters.
@@ -93,7 +96,18 @@ export type ImagePostProcessor = (typeof IMAGE_POST_PROCESSORS)[number];
 /**
  * Parameters for image style generation.
  */
-export interface ImageStyleParams {
+export interface ImageStyleParams extends Pick<
+  ImageGenerationParams,
+  | 'hires_fix_denoising_strength'
+  | 'sampler_eta'
+  | 'sampler_s_noise'
+  | 'sampler_s_churn'
+  | 'sampler_s_tmin'
+  | 'sampler_s_tmax'
+  | 'sampler_order'
+  | 'sampler_solver_type'
+  | 'flow_shift'
+> {
   /** The sampler to use for generation. */
   sampler_name?: ImageSamplerName;
   /** Classifier-Free Guidance scale. Range: 0-100, Default: 7.5 */
@@ -110,6 +124,7 @@ export interface ImageStyleParams {
   post_processing?: ImagePostProcessor[];
   /** Whether to use Karras noise schedule. */
   karras?: boolean;
+  scheduler?: ImageSchedulerName;
   /** Whether to generate tileable images. */
   tiling?: boolean;
   /** Whether to apply hires fix for upscaling. */
@@ -128,6 +143,12 @@ export interface ImageStyleParams {
   transparent?: boolean;
 }
 
+export interface StyleParameterPolicy {
+  override?: 'none' | 'listed' | 'all';
+  overridable?: string[];
+  ceilings?: Partial<Record<'n' | 'steps' | 'width' | 'height', number>>;
+}
+
 /**
  * An image generation style (Stable Diffusion).
  */
@@ -142,6 +163,7 @@ export interface ImageStyle {
   prompt: string;
   /** Generation parameters. */
   params?: ImageStyleParams;
+  parameter_policy?: StyleParameterPolicy | null;
   /** Whether this style is publicly listed. */
   public: boolean;
   /** Whether this style contains NSFW content. */

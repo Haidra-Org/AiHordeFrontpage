@@ -697,6 +697,113 @@ describe('buildHordeStyleRequest', () => {
       .toBe('Inky');
   });
 
+  it('sends only permitted edits while retaining the style ID and template inputs', () => {
+    const form = value({
+      prompt: 'a fox',
+      negativePrompt: 'blurry',
+      steps: 17,
+      cfg_scale: 4,
+      sampler_name: 'k_euler',
+      width: 768,
+      height: 640,
+      n: 2,
+    });
+    const record: StyleRecord = {
+      ...style,
+      parameterPolicy: { override: 'listed', overridable: ['steps', 'width'] },
+    };
+
+    const request = buildHordeStyleRequest(form, record);
+    expect(request.style).toBe(style.id);
+    expect(request.prompt).toBe('a fox ### blurry');
+    expect(request.models).toBeUndefined();
+    expect(request.params).toEqual({ n: 2, steps: 17, width: 768 });
+
+    const effective = styledFormValue(
+      form,
+      applyStyle(record, 'a fox', 'blurry'),
+    );
+    expect(effective).toMatchObject({
+      steps: 17,
+      cfg_scale: 2,
+      width: 768,
+      height: 512,
+    });
+    expect(
+      kudosBreakdown(effective, null).find((line) => line.id === 'steps')
+        ?.params?.['steps'],
+    ).toBe(17);
+  });
+
+  it('keeps request dimensions for legacy styles and drops them under an explicit none policy', () => {
+    const form = value({ width: 768, height: 640, steps: 28, n: 2 });
+    expect(buildHordeStyleRequest(form, style).params).toEqual({
+      n: 2,
+      width: 768,
+      height: 640,
+    });
+    expect(
+      buildHordeStyleRequest(form, {
+        ...style,
+        parameterPolicy: { override: 'none' },
+      }).params,
+    ).toEqual({ n: 2 });
+  });
+
+  it('carries explicit off values when all sampling and finishing parameters are overridable', () => {
+    const form = value({
+      sampler_name: 'k_euler',
+      scheduler: 'normal',
+      steps: 16,
+      cfg_scale: 0,
+      hires_fix: false,
+      tiling: false,
+      post_processing: [],
+    });
+    const request = buildHordeStyleRequest(form, {
+      ...style,
+      params: {
+        ...style.params,
+        hires_fix: true,
+        karras: true,
+        tiling: true,
+        post_processing: ['GFPGAN'],
+      },
+      parameterPolicy: { override: 'all' },
+    });
+    expect(request.params).toMatchObject({
+      sampler_name: 'k_euler',
+      scheduler: 'normal',
+      steps: 16,
+      cfg_scale: 0,
+      hires_fix: false,
+      tiling: false,
+      post_processing: [],
+    });
+    expect(request.params?.karras).toBeUndefined();
+  });
+
+  it('overrides a legacy Karras schedule only when the style has no modern schedule', () => {
+    const form = value({ scheduler: 'normal' });
+    const record: StyleRecord = {
+      ...style,
+      params: { ...style.params, karras: true },
+      parameterPolicy: { override: 'listed', overridable: ['karras'] },
+    };
+    expect(buildHordeStyleRequest(form, record).params).toEqual({
+      n: 1,
+      karras: false,
+    });
+    const modern: StyleRecord = {
+      ...record,
+      params: { ...record.params, scheduler: 'exponential' },
+    };
+    expect(buildHordeStyleRequest(form, modern).params).toEqual({ n: 1 });
+    expect(
+      styledFormValue(form, applyStyle(modern, 'a fox', '')).scheduler,
+    ).toBe('exponential');
+  });
+
   it('keeps the source picture, which the horde reads beside the style', () => {
     const request = buildHordeStyleRequest(
       value({ prompt: 'a fox', sourceMode: 'img2img' }),

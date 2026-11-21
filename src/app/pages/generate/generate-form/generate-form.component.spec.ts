@@ -344,6 +344,62 @@ async function createHordeStyleComponent(
 }
 
 describe('GenerateFormComponent horde-applied style locks', () => {
+  it('applies the style’s denoising value only while a source mode is selected', async () => {
+    const { fixture, form } = await createHordeStyleComponent(
+      hordeRecord({ denoising_strength: 0.4 }),
+    );
+    const { denoising_strength, sourceMode } = form.controls;
+    const original = denoising_strength.value;
+    expect(original).not.toBe(0.4);
+
+    sourceMode.setValue('img2img');
+    fixture.detectChanges();
+    expect(denoising_strength.value).toBe(0.4);
+    expect(denoising_strength.disabled).toBe(true);
+
+    sourceMode.setValue('none');
+    fixture.detectChanges();
+    expect(denoising_strength.value).toBe(original);
+  });
+
+  it('starts editable controls at style values, retains edits, and restores the draft on removal', async () => {
+    const record: StyleRecord = {
+      ...hordeRecord({ steps: 8, cfg_scale: 2, sampler_name: 'k_euler' }),
+      parameterPolicy: {
+        override: 'listed',
+        overridable: ['steps', 'cfg_scale'],
+      },
+    };
+    const { fixture, form } = await createHordeStyleComponent(record);
+    expect(form.controls.steps.enabled).toBe(true);
+    expect(form.controls.cfg_scale.enabled).toBe(true);
+    expect(form.controls.sampler_name.disabled).toBe(true);
+    expect(form.controls.steps.value).toBe(8);
+    expect(form.controls.cfg_scale.value).toBe(2);
+    expect(form.controls.sampler_name.value).toBe('k_euler');
+
+    form.controls.steps.setValue(14);
+    fixture.detectChanges();
+    expect(form.controls.steps.value).toBe(14);
+
+    form.controls.styleName.setValue('');
+    fixture.componentRef.setInput('forcedParams', null);
+    fixture.detectChanges();
+    expect(form.controls.sampler_name.enabled).toBe(true);
+    expect(form.controls.steps.value).toBe(30);
+  });
+
+  it('lets the user edit width while the style controls height', async () => {
+    const { form } = await createHordeStyleComponent({
+      ...hordeRecord({ width: 768, height: 1024 }),
+      parameterPolicy: { override: 'listed', overridable: ['width'] },
+    });
+    expect(form.controls.width.enabled).toBe(true);
+    expect(form.controls.width.value).toBe(768);
+    expect(form.controls.height.disabled).toBe(true);
+    expect(form.controls.height.value).toBe(1024);
+  });
+
   it('locks the sampling and finishing controls a style names nothing for', async () => {
     const { component, form } = await createHordeStyleComponent(
       hordeRecord({ steps: 8 }),

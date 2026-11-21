@@ -11,9 +11,11 @@ import {
   ImagePostProcessor,
   ImageSamplerName,
   StyleLoraConfig,
+  StyleParameterPolicy,
   StyleTextualInversionConfig,
 } from '../../types/style';
 import {
+  applyStyle,
   storedStyleKey,
   styleRecordKey,
   type AppliedStyle,
@@ -1241,6 +1243,15 @@ export const STYLE_PINNED_FIELD_SECTION = {
   clip_skip: 'sampling',
   scheduler: 'sampling',
   hires_fix: 'sampling',
+  hires_fix_denoising_strength: 'sampling',
+  sampler_eta: 'sampling',
+  sampler_s_noise: 'sampling',
+  sampler_s_churn: 'sampling',
+  sampler_s_tmin: 'sampling',
+  sampler_s_tmax: 'sampling',
+  sampler_order: 'sampling',
+  sampler_solver_type: 'sampling',
+  flow_shift: 'sampling',
   post_processing: 'finishing',
   facefixer_strength: 'finishing',
   tiling: 'finishing',
@@ -2044,6 +2055,44 @@ export interface BuildImageRequestOptions {
   baselineForModel?: (modelName: string) => string | null;
 }
 
+export function styleAllowsParameter(
+  policy: StyleParameterPolicy | null | undefined,
+  parameter: keyof ImageGenerationParams,
+): boolean {
+  return (
+    policy?.override === 'all' ||
+    (policy?.override === 'listed' &&
+      policy.overridable?.includes(parameter) === true)
+  );
+}
+
+/** A modern schedule takes precedence over the legacy Karras flag. */
+export function styleScheduleOverride(
+  policy: StyleParameterPolicy | null | undefined,
+  scheduler: ImageGenerationParams['scheduler'],
+): 'scheduler' | 'karras' | undefined {
+  if (styleAllowsParameter(policy, 'scheduler')) return 'scheduler';
+  if (scheduler === undefined && styleAllowsParameter(policy, 'karras')) {
+    return 'karras';
+  }
+  return undefined;
+}
+
+export function styleAllowsField(
+  policy: StyleParameterPolicy | null | undefined,
+  forced: AppliedStyle['forcedParams'],
+  field: StylePinnedField,
+): boolean {
+  if (field === 'model' || field === 'extraModels') return false;
+  if (field === 'scheduler') {
+    return styleScheduleOverride(policy, forced.scheduler) !== undefined;
+  }
+  if (!policy && (field === 'width' || field === 'height')) {
+    return forced[field] === undefined;
+  }
+  return styleAllowsParameter(policy, field);
+}
+
 const MODERN_SAMPLER_PARAMS = [
   'scheduler',
   'sampler_eta',
@@ -2512,24 +2561,52 @@ export function buildStyledImageRequest(
  * style's use, pays its creator and lets a shared key attached to it pay for the
  * render.
  *
- * The horde replaces the request's parameters with the style's, keeping only
- * the number of images and taking the size only where the style names none, and
- * it fills the style's own prompt template from the prompt and the negative it
- * is sent. So the request carries the prompt as written, the count, the size and
- * the source picture, and nothing the horde would throw away: a request that
- * spelled out a sampler or a model the style overrules would read as a promise
- * the render does not keep.
+ * The policy governs which generation parameters the server reads from the
+ * request. The server fills the prompt template and routes to the style's models.
  */
 export function buildHordeStyleRequest(
   value: GenerateFormValue,
   record: StyleRecord,
   options: BuildImageRequestOptions = {},
 ): ImageGenerationRequest {
-  const request = buildImageRequest(value, options);
+  const applied = applyStyle(record, value.prompt, value.negativePrompt);
+  const effective = styledFormValue(value, applied);
+  const request = buildImageRequest(effective, options);
   const built = request.params ?? {};
-  const params: ImageGenerationParams = { n: built.n ?? value.n };
-  if (built.width !== undefined) params.width = built.width;
-  if (built.height !== undefined) params.height = built.height;
+  const policy = record.parameterPolicy;
+  const params: ImageGenerationParams = { n: value.n };
+  if (!policy) {
+    params.width = value.width;
+    params.height = value.height;
+  }
+  for (const field of STYLE_PINNED_FIELDS) {
+    if (field === 'model' || field === 'extraModels' || field === 'scheduler')
+      continue;
+    if (!styleAllowsParameter(policy, field)) continue;
+    const explicitValue =
+      field === 'post_processing' ||
+      field === 'hires_fix' ||
+      field === 'tiling' ||
+      field === 'transparent'
+        ? effective[field]
+        : undefined;
+    const parameter = built[field] ?? explicitValue;
+    if (parameter !== undefined) Object.assign(params, { [field]: parameter });
+  }
+  const schedule = styleScheduleOverride(policy, record.params.scheduler);
+  if (schedule === 'scheduler') {
+    const scheduler =
+      built.scheduler ??
+      (LEGACY_SCHEDULERS.includes(effective.scheduler)
+        ? effective.scheduler
+        : undefined);
+    if (scheduler !== undefined) params.scheduler = scheduler;
+  } else if (
+    schedule === 'karras' &&
+    LEGACY_SCHEDULERS.includes(effective.scheduler)
+  ) {
+    params.karras = effective.scheduler === 'karras';
+  }
   request.params = params;
   // The style names the models its settings were written for and whether it is
   // adult, and the horde reads both off the style rather than off the request.
@@ -2558,12 +2635,20 @@ export function styledFormValue(
     return value;
   }
   const forced = applied.forcedParams;
-  // A style the horde applies leaves nothing to take back: it reads the style
-  // over whatever the request carries, so a detachment recorded against one
-  // would describe settings the render never sees.
-  const detached: readonly StyleLockSection[] = applied.hordeApplied
-    ? []
-    : detachedStyleSections(value);
+  if (applied.hordeApplied) {
+    const styled = { ...value };
+    const defaults = styleFormDefaults(value, forced, applied.parameterPolicy);
+    for (const field of STYLE_PINNED_FIELDS) {
+      if (
+        !styleAllowsField(applied.parameterPolicy, forced, field) &&
+        defaults[field] !== undefined
+      ) {
+        Object.assign(styled, { [field]: defaults[field] });
+      }
+    }
+    return styled;
+  }
+  const detached = detachedStyleSections(value);
   const pinned = (section: StyleLockSection): boolean =>
     !detached.includes(section);
   const styled: GenerateFormValue = { ...value };
@@ -2611,6 +2696,36 @@ export function styledFormValue(
     }
   }
   return styled;
+}
+
+export function styleFormDefaults(
+  value: GenerateFormValue,
+  forced: AppliedStyle['forcedParams'],
+  policy?: StyleParameterPolicy | null,
+): StyleValueSnapshot {
+  const { model, models, scheduler, karras, denoising_strength, ...params } =
+    forced;
+  return {
+    hires_fix_denoising_strength: DEFAULT_HIRES_DENOISE,
+    sampler_eta: null,
+    sampler_s_noise: null,
+    sampler_s_churn: null,
+    sampler_s_tmin: null,
+    sampler_s_tmax: null,
+    sampler_order: null,
+    sampler_solver_type: '',
+    flow_shift: null,
+    width: policy && !styleAllowsParameter(policy, 'width') ? 512 : undefined,
+    height: policy && !styleAllowsParameter(policy, 'height') ? 512 : undefined,
+    ...params,
+    model,
+    extraModels: model === undefined ? undefined : (models ?? [model]).slice(1),
+    scheduler:
+      scheduler ??
+      (karras === undefined ? undefined : karras ? 'karras' : 'normal'),
+    denoising_strength:
+      value.sourceMode === 'none' ? undefined : denoising_strength,
+  };
 }
 
 /**

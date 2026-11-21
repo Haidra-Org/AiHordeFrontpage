@@ -172,6 +172,9 @@ import {
   liftSizeBase,
   rescalePresetToBase,
   stepsAdvisory,
+  styleAllowsField,
+  styleFormDefaults,
+  styleScheduleOverride,
   styledFormValue,
   suggestedSamplers,
   suggestedSettings,
@@ -339,7 +342,7 @@ function stylePinsField(
   // keeps the reader's schedule otherwise, so the control locks only when the
   // request really carries the style's value.
   if (field === 'scheduler') {
-    return forced.karras !== undefined;
+    return forced.scheduler !== undefined || forced.karras !== undefined;
   }
   // The extra models are narrowed to the models a style names, so they are held
   // exactly when it names one.
@@ -991,13 +994,28 @@ export class GenerateFormComponent implements OnInit {
     // Without the contract there is no way to know which of the newer schedules
     // the horde would accept for this sampler, so only the pair every worker
     // has always understood is offered.
-    if (!contract) return [...LEGACY_SCHEDULERS];
     const baseline = this.modelBaseline();
-    return availableSchedulers(
-      contract,
-      this.selectedSampler(),
-      baseline ? [baseline] : [],
-    );
+    const options = contract
+      ? availableSchedulers(
+          contract,
+          this.selectedSampler(),
+          baseline ? [baseline] : [],
+        )
+      : [...LEGACY_SCHEDULERS];
+    const style = this.nativeStyle();
+    const forced = this.forcedParams()?.scheduler;
+    if (
+      forced !== undefined &&
+      this.isFieldLocked('scheduler') &&
+      !options.includes(forced)
+    ) {
+      return [...options, forced];
+    }
+    return style &&
+      styleScheduleOverride(style.parameterPolicy, style.params.scheduler) ===
+        'karras'
+      ? options.filter((scheduler) => LEGACY_SCHEDULERS.includes(scheduler))
+      : options;
   });
   public readonly flowShiftAllowed = computed(() => {
     const baseline = this.modelBaseline();
@@ -1016,11 +1034,18 @@ export class GenerateFormComponent implements OnInit {
     const schedulers = this.schedulerOptions();
     const solverTypes = this.solverTypeChoices();
     const controls = this.form().controls;
-    if (!schedulers.includes(controls.scheduler.value)) {
+    if (
+      !this.isFieldLocked('scheduler') &&
+      !schedulers.includes(controls.scheduler.value)
+    ) {
       controls.scheduler.setValue(schedulers[0] ?? 'karras');
     }
     const solverType = controls.sampler_solver_type.value;
-    if (solverType !== '' && !solverTypes.includes(solverType)) {
+    if (
+      !this.isFieldLocked('sampler_solver_type') &&
+      solverType !== '' &&
+      !solverTypes.includes(solverType)
+    ) {
       controls.sampler_solver_type.setValue('');
     }
     this.revealAdvancedSampling();
@@ -1030,11 +1055,15 @@ export class GenerateFormComponent implements OnInit {
   public readonly moduleDrawers = QR_MODULE_DRAWERS;
 
   public readonly minBatch = MIN_BATCH;
-  public readonly maxBatch = MAX_BATCH;
+  public readonly maxBatch = computed(() => this.styleCeiling('n', MAX_BATCH));
   public readonly minSteps = MIN_STEPS;
-  public readonly maxSteps = MAX_STEPS;
+  public readonly maxSteps = computed(() =>
+    this.styleCeiling('steps', MAX_STEPS),
+  );
   public readonly stepsSliderMin = STEPS_SLIDER_MIN;
-  public readonly stepsSliderMax = STEPS_SLIDER_MAX;
+  public readonly stepsSliderMax = computed(() =>
+    Math.min(STEPS_SLIDER_MAX, this.maxSteps()),
+  );
   public readonly minCfg = MIN_CFG_SCALE;
   public readonly maxCfg = MAX_CFG_SCALE;
   public readonly cfgStep = CFG_STEP;
@@ -2203,6 +2232,10 @@ export class GenerateFormComponent implements OnInit {
     this.sizeTouched.set(true);
   }
 
+  public sizeActionsLocked(): boolean {
+    return this.isFieldLocked('width') || this.isFieldLocked('height');
+  }
+
   public applyPreset(width: number, height: number): void {
     const controls = this.form().controls;
     const portrait = controls.height.value > controls.width.value;
@@ -2652,6 +2685,7 @@ export class GenerateFormComponent implements OnInit {
    * would submit a number nobody asked for.
    */
   public setNumberEntry(control: FormControl<number>, event: Event): void {
+    if (control.disabled) return;
     const typed = (event.target as HTMLInputElement).value;
     const parsed = Number(typed);
     if (typed.trim() === '' || !Number.isFinite(parsed)) {
@@ -2701,17 +2735,39 @@ export class GenerateFormComponent implements OnInit {
    */
   public readonly detachedSections = signal<readonly StyleLockSection[]>([]);
 
-  /**
-   * Keep every style-pinned control disabled while its section is locked. The
-   * submitted request is built from `getRawValue()`, so disabling changes
-   * nothing about what is sent; it only stops the user editing a value the
-   * style would silently override.
-   */
+  private readonly styleOwnedLocks = new Set<AbstractControl>();
+
   private readonly lockedControlSync = effect(() => {
     const controls = this.form().controls;
-    for (const field of LOCKED_FIELDS) {
-      this.setDisabled(controls[field], this.isFieldLocked(field));
+    const locked = new Set<AbstractControl>(
+      LOCKED_FIELDS.filter((field) => this.isFieldLocked(field)).map(
+        (field) => controls[field],
+      ),
+    );
+    // A control can already be disabled when a style starts pinning it.
+    for (const control of this.styleOwnedLocks) {
+      if (!locked.has(control)) {
+        this.setDisabled(control, false);
+        this.styleOwnedLocks.delete(control);
+      }
     }
+    for (const control of locked) {
+      if (control.enabled) {
+        this.setDisabled(control, true);
+        this.styleOwnedLocks.add(control);
+      }
+    }
+  });
+
+  private readonly styleUsesSource = computed(
+    () =>
+      (this.value()?.sourceMode ?? this.form().controls.sourceMode.value) !==
+      'none',
+  );
+
+  private readonly pinnedValueSync = effect(() => {
+    // The style's denoising value only applies while a source mode is selected.
+    this.styleUsesSource();
     this.syncPinnedFields();
   });
 
@@ -2727,25 +2783,14 @@ export class GenerateFormComponent implements OnInit {
       return false;
     }
     const section = STYLE_PINNED_FIELD_SECTION[field];
+    const style = this.nativeStyle();
+    if (style && section !== 'model') {
+      return !styleAllowsField(style.parameterPolicy, forced, field);
+    }
     if (this.activeDetachedSections().includes(section)) {
       return false;
     }
-    return stylePinsField(forced, field) || this.hordeOverrules(section);
-  }
-
-  /**
-   * Whether the horde's own reading of the selected style overrules `section`
-   * whole. It replaces the request's parameters with the style's, so every
-   * sampling and finishing control is overruled whether or not the style names
-   * a value for it. The size is the exception, because the horde keeps the
-   * reader's wherever the style names none, and the model is overruled only
-   * where the style names one: both are answered by what the style carries.
-   */
-  private hordeOverrules(section: StyleLockSection): boolean {
-    return (
-      this.hordeAppliesStyle() &&
-      (section === 'sampling' || section === 'finishing')
-    );
+    return stylePinsField(forced, field);
   }
 
   /**
@@ -2762,6 +2807,17 @@ export class GenerateFormComponent implements OnInit {
     const forced = this.forcedParams();
     if (forced === null) {
       return [];
+    }
+    const native = this.nativeStyle();
+    if (native) {
+      const defaults = styleFormDefaults(
+        this.form().getRawValue(),
+        forced,
+        native.parameterPolicy,
+      );
+      return STYLE_PINNED_FIELDS.filter(
+        (field) => defaults[field] !== undefined,
+      );
     }
     const detached = this.activeDetachedSections();
     return STYLE_PINNED_FIELDS.filter(
@@ -2791,6 +2847,11 @@ export class GenerateFormComponent implements OnInit {
     const value = form.getRawValue();
     const before: StyleValueSnapshot = { ...(value.valuesBeforeStyle ?? {}) };
     const pinned = this.pinnedFields();
+    const native = this.nativeStyle();
+    const forced = this.forcedParams();
+    const switchedStyle =
+      this.lastSyncedStyle !== undefined &&
+      this.lastSyncedStyle !== value.styleName;
     let snapshotChanged = false;
     let restoredSize = false;
 
@@ -2815,18 +2876,27 @@ export class GenerateFormComponent implements OnInit {
       this.lastHires = controls.hires_fix.value;
     }
 
-    const forced = this.forcedParams();
     if (pinned.length > 0 && forced !== null) {
       // The style's own values come from the same function the request and the
       // panel's advice read, so a control can never disagree with what is sent.
-      const styled = styledFormValue(value, {
-        prompt: '',
-        forcedParams: forced,
-      });
+      const styled = native
+        ? styleFormDefaults(value, forced, native.parameterPolicy)
+        : styledFormValue(value, {
+            prompt: '',
+            forcedParams: forced,
+          });
       // A size the style pins is the style's shape rather than one entered on
       // the controls, so the hires pass may still carry it between families.
       this.offeringSize = true;
       for (const field of pinned) {
+        if (
+          native &&
+          styleAllowsField(native.parameterPolicy, forced, field) &&
+          field in (value.valuesBeforeStyle ?? {}) &&
+          !switchedStyle
+        ) {
+          continue;
+        }
         this.writeField(field, styled[field]);
       }
       this.offeringSize = false;
@@ -2837,7 +2907,12 @@ export class GenerateFormComponent implements OnInit {
         Object.keys(before).length > 0 ? before : null,
       );
     }
+    if (forced !== null || value.styleName === '') {
+      this.lastSyncedStyle = value.styleName;
+    }
   }
+
+  private lastSyncedStyle: string | undefined;
 
   /**
    * Put `value` in the control named by `field`, leaving an equal value alone so
@@ -2867,9 +2942,9 @@ export class GenerateFormComponent implements OnInit {
   }
 
   /** The key of the style the form selects, or '' when none is selected. */
-  public selectedStyleKey(): string {
-    return this.form().controls.styleName.value;
-  }
+  public readonly selectedStyleKey = computed(
+    () => this.value()?.styleName ?? this.form().controls.styleName.value,
+  );
 
   /**
    * The selected style's name as the reader knows it. A key whose style is not
@@ -2906,8 +2981,20 @@ export class GenerateFormComponent implements OnInit {
    * the model and the settings this panel is showing.
    */
   public hordeAppliesStyle(): boolean {
+    return this.nativeStyle() !== undefined;
+  }
+
+  private readonly nativeStyle = computed(() => {
     const record = this.styleRecords().get(this.selectedStyleKey());
-    return record?.source === 'native';
+    return record?.source === 'native' ? record : undefined;
+  });
+
+  public styleCeiling(
+    field: 'n' | 'steps' | 'width' | 'height',
+    max: number,
+  ): number {
+    const ceiling = this.nativeStyle()?.parameterPolicy?.ceilings?.[field];
+    return ceiling === undefined ? max : Math.min(ceiling, max);
   }
 
   /** The key a preset is listed under, so the select can offer it. */
@@ -2969,8 +3056,12 @@ export class GenerateFormComponent implements OnInit {
     if (!forced) {
       return false;
     }
-    if (this.hordeOverrules(section)) {
-      return true;
+    if (this.hordeAppliesStyle() && section !== 'model') {
+      return LOCKED_FIELDS.some(
+        (field) =>
+          STYLE_PINNED_FIELD_SECTION[field] === section &&
+          this.isFieldLocked(field),
+      );
     }
     switch (section) {
       case 'model':
@@ -3043,7 +3134,7 @@ export class GenerateFormComponent implements OnInit {
     const control = this.form().controls.styleDetach;
     if (
       control.value.sections.length > 0 &&
-      control.value.style !== this.selectedStyleKey()
+      control.value.style !== this.form().controls.styleName.value
     ) {
       control.setValue({ style: '', sections: [] }, { emitEvent: false });
     }
@@ -3081,14 +3172,22 @@ export class GenerateFormComponent implements OnInit {
       return null;
     }
     const parts: string[] = [];
-    if (forced.sampler_name !== undefined) parts.push(forced.sampler_name);
-    if (forced.steps !== undefined) parts.push(`${forced.steps} steps`);
-    if (forced.cfg_scale !== undefined) parts.push(`cfg ${forced.cfg_scale}`);
-    if (forced.clip_skip !== undefined) parts.push(`clip ${forced.clip_skip}`);
-    if (forced.karras !== undefined) {
+    const show = (field: LockedField) =>
+      !this.hordeAppliesStyle() || this.isFieldLocked(field);
+    if (forced.sampler_name !== undefined && show('sampler_name'))
+      parts.push(forced.sampler_name);
+    if (forced.steps !== undefined && show('steps'))
+      parts.push(`${forced.steps} steps`);
+    if (forced.cfg_scale !== undefined && show('cfg_scale'))
+      parts.push(`cfg ${forced.cfg_scale}`);
+    if (forced.clip_skip !== undefined && show('clip_skip'))
+      parts.push(`clip ${forced.clip_skip}`);
+    if (forced.scheduler !== undefined && show('scheduler')) {
+      parts.push(forced.scheduler);
+    } else if (forced.karras !== undefined && show('scheduler')) {
       parts.push(forced.karras ? 'karras' : 'no karras');
     }
-    if (forced.hires_fix !== undefined) {
+    if (forced.hires_fix !== undefined && show('hires_fix')) {
       parts.push(forced.hires_fix ? 'hires fix' : 'no hires fix');
     }
     return parts.length > 0 ? parts.join(' · ') : null;

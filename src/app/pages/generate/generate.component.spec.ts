@@ -19,6 +19,7 @@ import { ToastService } from '../../services/toast.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
+import { fromNativeImageStyle } from '../../services/style-record';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { TutorialEngineService } from '../../services/tutorial-engine.service';
 import { GsHelpDockService } from '../../services/gs-help-dock.service';
@@ -349,6 +350,86 @@ describe('GenerateComponent', () => {
     // nothing will run at.
     expect(request?.style).toBe('style-1');
     expect(request?.params?.steps).toBeUndefined();
+  });
+
+  it('quotes and submits a permitted steps edit from a published style', async () => {
+    fixture.detectChanges();
+    vi.useFakeTimers();
+    const style = fromNativeImageStyle({
+      id: 'style-steps',
+      name: 'Inky',
+      prompt: '{p}, ink ### {np}',
+      public: true,
+      nsfw: false,
+      use_count: 4,
+      creator: 'someone#1',
+      params: { steps: 8, cfg_scale: 2, sampler_name: 'k_euler' },
+      parameter_policy: { override: 'listed', overridable: ['steps'] },
+      models: ['SDXL 1.0'],
+    });
+    component.registerStyle(style);
+    component.form.patchValue({
+      prompt: 'a cat',
+      styleName: style.key,
+      steps: 14,
+      cfg_scale: 9,
+    });
+    vi.advanceTimersByTime(1000);
+
+    const quoted = estimateKudos.mock.calls.at(
+      -1,
+    )?.[0] as ImageGenerationRequest;
+    expect(quoted).toMatchObject({
+      style: style.id,
+      prompt: 'a cat',
+      params: { n: 1, steps: 14 },
+    });
+    expect(quoted.params?.cfg_scale).toBeUndefined();
+    expect(quoted.params?.sampler_name).toBeUndefined();
+    await component.onCreate();
+
+    const submitted = enqueue.mock.calls.at(-1)?.[0] as ImageGenerationRequest;
+    expect(submitted.style).toBe(style.id);
+    expect(submitted.params).toEqual(quoted.params);
+  });
+
+  it('blocks a steps edit above the style ceiling and submits at the ceiling', async () => {
+    fixture.detectChanges();
+    component.registerStyle({
+      source: 'native',
+      key: 'native:style-ceiling',
+      id: 'style-ceiling',
+      name: 'Inky',
+      prompt: '{p}{np}',
+      params: { steps: 8 },
+      parameterPolicy: {
+        override: 'listed',
+        overridable: ['steps'],
+        ceilings: { steps: 16 },
+      },
+      models: ['SDXL 1.0'],
+    });
+    component.form.patchValue({
+      prompt: 'a cat',
+      styleName: 'native:style-ceiling',
+      steps: 17,
+    });
+
+    await component.onCreate();
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(component.pendingBlockers()).toEqual([
+      expect.objectContaining({
+        anchor: 'steps',
+        params: expect.objectContaining({ max: 16 }),
+      }),
+    ]);
+
+    component.form.controls.steps.setValue(16);
+    await component.onCreate();
+    expect(enqueue.mock.calls.at(-1)?.[0]).toMatchObject({
+      style: 'style-ceiling',
+      params: { steps: 16 },
+    });
   });
 
   it('goes on applying a preset here, where nothing on the horde knows it', async () => {
@@ -2648,6 +2729,57 @@ async function createWholeStudio(
     ],
   }).compileComponents();
 }
+
+describe('GenerateComponent style locks', () => {
+  it('releases the previous style’s lock and preserves a separately disabled control', async () => {
+    await createWholeStudio();
+    const fixture = TestBed.createComponent(GenerateComponent);
+    fixture.detectChanges();
+    const studio = fixture.componentInstance;
+    const { cfg_scale, prompt, steps, styleName } = studio.form.controls;
+    const lockedStyle = {
+      source: 'native' as const,
+      key: 'native:locked-style',
+      name: 'Locked style',
+      prompt: '{p}{np}',
+      params: { steps: 8, cfg_scale: 2 },
+      models: [],
+    };
+    const editableStyle = {
+      ...lockedStyle,
+      key: 'native:editable-style',
+      name: 'Editable style',
+      params: { steps: 12, cfg_scale: 3 },
+      parameterPolicy: { override: 'all' as const },
+    };
+    studio.registerStyle(lockedStyle);
+    studio.registerStyle(editableStyle);
+
+    cfg_scale.disable();
+    styleName.setValue(lockedStyle.key);
+    fixture.detectChanges();
+    expect(steps.disabled).toBe(true);
+    expect(steps.value).toBe(8);
+
+    styleName.setValue(editableStyle.key);
+    fixture.detectChanges();
+    expect(steps.enabled).toBe(true);
+    expect(steps.value).toBe(12);
+    expect(cfg_scale.disabled).toBe(true);
+
+    steps.setValue(16);
+    prompt.setValue('a fox');
+    fixture.detectChanges();
+    expect(steps.value).toBe(16);
+    expect(cfg_scale.disabled).toBe(true);
+
+    styleName.setValue('');
+    fixture.detectChanges();
+    expect(steps.value).toBe(DEFAULT_GENERATE_FORM_VALUE.steps);
+    expect(cfg_scale.disabled).toBe(true);
+    fixture.destroy();
+  });
+});
 
 describe('GenerateComponent bottom sheets', () => {
   it('puts the tutorial steps in a sheet, and stands them down for a reference entry', async () => {
