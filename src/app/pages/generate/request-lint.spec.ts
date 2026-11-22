@@ -1011,6 +1011,31 @@ describe('LoRA and embedding warnings', () => {
   });
 
   describe('a LoRA trained for another model family', () => {
+    it('compares LoRAs against the published compatibility mapping', () => {
+      const input = withLoras(
+        [lora('1', { baseModel: 'Future Image' })],
+        'another_family',
+      );
+      expect(
+        ids({
+          ...input,
+          civitaiBaseModels: {
+            future_image: ['Future Image'],
+            another_family: ['Another Image'],
+          },
+        }),
+      ).toContain('lora_baseline');
+      expect(
+        ids({
+          ...input,
+          civitaiBaseModels: {
+            future_image: ['Future Image'],
+            another_family: null,
+          },
+        }),
+      ).not.toContain('lora_baseline');
+    });
+
     it('is named when both families are known and differ', () => {
       const warning = evaluateRequestLint(
         withLoras(

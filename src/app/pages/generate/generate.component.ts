@@ -336,6 +336,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
   private readonly sentPrompts = inject(PromptHistoryDbService);
   private readonly styleUsage = inject(StyleUsageService);
   private readonly modelReference = inject(ModelReferenceService);
+  public readonly civitaiBaseModels = this.modelReference.civitaiBaseModels;
   private readonly licensing = inject(LicensingService);
   private readonly workerPool = inject(WorkerPoolService);
   private readonly controlHistory = inject(StudioControlHistoryService);
@@ -695,6 +696,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       tiValue: tiLintValue(value, this.resolveApplied(this.formValue())),
       baseline: this.modelBaseline(),
       selectedModels: this.selectedModels(),
+      civitaiBaseModels: this.civitaiBaseModels(),
       requirements: this.modelRequirements(),
       hasSourceImage: state.sourceBlob !== null,
       hordeStyleName: this.hordeStyleName(),
@@ -1036,6 +1038,7 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       this.fetchModels();
       this.fetchStyles();
       this.modelReference.load();
+      this.modelReference.loadCivitaiCompatibility();
       this.samplerConstraints.load();
       this.form.valueChanges
         .pipe(

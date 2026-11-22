@@ -211,6 +211,10 @@ import type { HordeWorker } from '../../../types/horde-worker';
 import { PromptDraftCardComponent } from '../../../components/prompt-draft/prompt-draft-card.component';
 import { loraIdentity } from '../../../types/civitai-asset';
 import {
+  CIVITAI_BASE_MODELS_BY_BASELINE,
+  type CivitaiBaseModelMap,
+} from '../../../services/civitai-base-models';
+import {
   ImageSchedulerName,
   MAX_FLOW_SHIFT,
   MIN_FLOW_SHIFT,
@@ -731,6 +735,9 @@ export class GenerateFormComponent implements OnInit {
    * drives the native-size guidance and the model-change size snap.
    */
   public readonly modelBaseline = input<string | null>(null);
+  public readonly civitaiBaseModels = input<CivitaiBaseModelMap>(
+    CIVITAI_BASE_MODELS_BY_BASELINE,
+  );
   public readonly effectiveModelName = input('');
   /**
    * The settings the selected model recommends. Null means the model names none

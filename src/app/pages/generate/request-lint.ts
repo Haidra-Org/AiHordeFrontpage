@@ -24,6 +24,7 @@ import {
 import {
   civitaiBaseModelMatchesBaseline,
   baselineForCivitaiBaseModel,
+  type CivitaiBaseModelMap,
 } from '../../services/civitai-base-models';
 import {
   cfgAdvisory,
@@ -187,6 +188,7 @@ export interface RequestLintInput {
    * it.
    */
   selectedModels?: readonly LintModelSelection[];
+  civitaiBaseModels?: CivitaiBaseModelMap;
   /** The settings the selected model recommends, or null when it names none. */
   requirements: ModelRequirements | null;
   /** Whether a source image blob is genuinely attached. */
@@ -576,6 +578,7 @@ export function tiLimitWarning(
 export function loraBaselineWarning(
   value: GenerateFormValue,
   baseline: string | null,
+  civitaiBaseModels?: CivitaiBaseModelMap,
 ): RequestWarning | null {
   if (baseline === null) {
     return null;
@@ -583,8 +586,12 @@ export function loraBaselineWarning(
   const mismatched = activeLoras(value.loras).filter(
     (lora) =>
       lora.baseModel !== undefined &&
-      baselineForCivitaiBaseModel(lora.baseModel) !== null &&
-      !civitaiBaseModelMatchesBaseline(lora.baseModel, baseline),
+      baselineForCivitaiBaseModel(lora.baseModel, civitaiBaseModels) !== null &&
+      !civitaiBaseModelMatchesBaseline(
+        lora.baseModel,
+        baseline,
+        civitaiBaseModels,
+      ),
   );
   if (mismatched.length === 0) {
     return null;
@@ -851,7 +858,7 @@ export function evaluateRequestLint(
   // model can serve the request. The line shown is the primary's, which is the
   // model the rest of the panel's advice speaks for.
   const loraLines = lintModelSelections(input).map((selection) =>
-    loraBaselineWarning(value, selection.baseline),
+    loraBaselineWarning(value, selection.baseline, input.civitaiBaseModels),
   );
   push(
     loraLines.length > 0 && loraLines.every((line) => line !== null)

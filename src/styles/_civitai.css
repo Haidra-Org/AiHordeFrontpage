@@ -891,7 +891,7 @@
   background: var(--gs-panel);
   color: var(--gs-label);
   font-family: inherit;
-  max-width: 220px;
+  max-width: 185px;
 }
 @media (pointer: coarse) {
   .gs-cv-model-scope select {

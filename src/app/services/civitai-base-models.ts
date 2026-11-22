@@ -1,17 +1,10 @@
-/**
- * Which CivitAI base-model labels a horde model baseline can actually serve.
- *
- * Two different kinds of data meet here and only one of them belongs in this
- * file. The *vocabulary* — which label strings CivitAI publishes — is CivitAI's
- * and changes without notice, so it is read from the live enums endpoint rather
- * than written down. The *mapping* below is a judgement about model
- * architecture that no endpoint publishes: `Pony` serves an SDXL-baseline model
- * because Pony Diffusion V6 XL is an SDXL finetune, and nothing in any API
- * response says so.
- */
+/** Null marks a baseline whose catalog compatibility is explicitly unknown. */
+export type CivitaiBaseModelMap = Readonly<
+  Record<string, readonly string[] | null>
+>;
 
 /**
- * Normalised horde baseline -> the CivitAI `baseModel` labels it can serve.
+ * Bundled compatibility for reference servers that have yet to publish it.
  *
  * Keys are what {@link normalizeBaseline} produces, not a closed enum: the live
  * model reference decides the vocabulary and has grown before. A baseline absent
@@ -82,11 +75,12 @@ export const SPLIT_BASELINE_TOKENS: readonly string[] = [
 /** The labels to search when a baseline is known; empty means "do not filter". */
 export function civitaiBaseModelsFor(
   baseline: string | null,
+  mapping: CivitaiBaseModelMap = CIVITAI_BASE_MODELS_BY_BASELINE,
 ): readonly string[] {
-  if (baseline === null) {
+  if (baseline === null || !Object.hasOwn(mapping, baseline)) {
     return [];
   }
-  return CIVITAI_BASE_MODELS_BY_BASELINE[baseline] ?? [];
+  return mapping[baseline] ?? [];
 }
 
 /**
@@ -94,12 +88,13 @@ export function civitaiBaseModelsFor(
  * A shared label answers with its combined token rather than a split one, so a
  * reverse lookup never invents a distinction the label does not carry.
  */
-export function baselineForCivitaiBaseModel(label: string): string | null {
+export function baselineForCivitaiBaseModel(
+  label: string,
+  mapping: CivitaiBaseModelMap = CIVITAI_BASE_MODELS_BY_BASELINE,
+): string | null {
   let fallback: string | null = null;
-  for (const [baseline, labels] of Object.entries(
-    CIVITAI_BASE_MODELS_BY_BASELINE,
-  )) {
-    if (!labels.includes(label)) {
+  for (const [baseline, labels] of Object.entries(mapping)) {
+    if (!labels?.includes(label)) {
       continue;
     }
     if (!SPLIT_BASELINE_TOKENS.includes(baseline)) {
@@ -121,24 +116,24 @@ export function baselineForCivitaiBaseModel(label: string): string | null {
 export function civitaiBaseModelMatchesBaseline(
   label: string | undefined,
   baseline: string | null,
+  mapping: CivitaiBaseModelMap = CIVITAI_BASE_MODELS_BY_BASELINE,
 ): boolean {
   if (!label || baseline === null) {
     return true;
   }
-  const labels = CIVITAI_BASE_MODELS_BY_BASELINE[baseline];
-  if (labels === undefined) {
+  const labels = Object.hasOwn(mapping, baseline) ? mapping[baseline] : null;
+  if (labels == null) {
     return true;
   }
-  if (baselineForCivitaiBaseModel(label) === null) {
+  if (baselineForCivitaiBaseModel(label, mapping) === null) {
     return true;
   }
   return labels.includes(label);
 }
 
 /** One group per baseline, for the picker's base-model selector. */
-export const CIVITAI_BASE_MODEL_GROUPS: readonly {
-  baseline: string;
-  labels: readonly string[];
-}[] = Object.entries(CIVITAI_BASE_MODELS_BY_BASELINE).map(
-  ([baseline, labels]) => ({ baseline, labels }),
-);
+export function civitaiBaseModelGroups(mapping: CivitaiBaseModelMap) {
+  return Object.entries(mapping).flatMap(([baseline, labels]) =>
+    labels?.length ? [{ baseline, labels }] : [],
+  );
+}

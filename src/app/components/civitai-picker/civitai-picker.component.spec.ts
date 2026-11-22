@@ -291,6 +291,28 @@ describe('CivitaiPickerComponent', () => {
       ).toBe(true);
     });
 
+    it('can search and pin an entirely new family once the reference supplies its labels', () => {
+      fixture.componentRef.setInput('modelName', 'Future image model');
+      fixture.componentRef.setInput('baseline', 'future_image');
+      start();
+      expect(searchModels).not.toHaveBeenCalled();
+      const asset = model(7, {
+        versions: [version(77, { baseModel: 'Future Image' })],
+      });
+      respond([asset]);
+      fixture.componentRef.setInput('civitaiBaseModels', {
+        future_image: ['Future Image'],
+      });
+      fixture.detectChanges();
+      expect(lastParams()['baseModels']).toEqual(['Future Image']);
+      const add = vi.fn();
+      component.lorasChange.subscribe(add);
+      component.toggle(asset);
+      expect(add).toHaveBeenCalledWith([
+        expect.objectContaining({ name: '77', is_version: true }),
+      ]);
+    });
+
     it('pins a matching downloadable version and offers All models for an incompatible listing', () => {
       const mixed = model(1, {
         versions: [

@@ -22,6 +22,7 @@ import { ToastService } from '../../services/toast.service';
 import { StudioHandoffService } from '../../services/studio-handoff.service';
 import { TranslatorService } from '../../services/translator.service';
 import { HordeStylesService } from '../../services/horde-styles.service';
+import { CIVITAI_BASE_MODELS_BY_BASELINE } from '../../services/civitai-base-models';
 import { fromNativeImageStyle } from '../../services/style-record';
 import { StyleUsageService } from '../../services/style-usage.service';
 import { TutorialEngineService } from '../../services/tutorial-engine.service';
@@ -196,6 +197,8 @@ describe('GenerateComponent', () => {
             requirements: signal(null),
             requirementsFor: vi.fn().mockReturnValue(null),
             load: () => undefined,
+            loadCivitaiCompatibility: () => undefined,
+            civitaiBaseModels: signal(CIVITAI_BASE_MODELS_BY_BASELINE),
             supportsRemix: (model: string) =>
               baselineSupportsRemix(baselines()?.[model] ?? null),
             supportsQrCode: (model: string) =>
@@ -2715,6 +2718,8 @@ async function createWholeStudio(
           baselines: signal(baselines),
           requirements: signal(null),
           load: () => undefined,
+          loadCivitaiCompatibility: () => undefined,
+          civitaiBaseModels: signal(CIVITAI_BASE_MODELS_BY_BASELINE),
           baselineFor: (model: string) => baselines?.[model] ?? null,
           requirementsFor: () => null,
           supportsRemix: (model: string) =>
@@ -2832,8 +2837,9 @@ describe('GenerateComponent style LoRAs', () => {
     expect(root.textContent).toContain('Review the current sampling settings');
     expect(root.textContent).toContain('8 steps');
     studio.openPreview();
-    expect(studio.previewRequest()?.params?.loras).toBeUndefined();
-    expect(studio.previewRequest()?.params?.steps).toBe(8);
+    const preview = studio.previewRequest() as ImageGenerationRequest | null;
+    expect(preview?.params?.loras).toBeUndefined();
+    expect(preview?.params?.steps).toBe(8);
 
     studio.closePreview();
     studio.form.controls.styleName.setValue('');
@@ -2893,10 +2899,12 @@ describe('GenerateComponent style LoRAs', () => {
       'Review the current sampling settings',
     );
     studio.openPreview();
-    expect(studio.previewRequest()?.style).toBe('editable');
-    expect(
-      studio.previewRequest()?.params?.loras?.map((lora) => lora.name),
-    ).toEqual(['247778', 'second']);
+    const preview = studio.previewRequest() as ImageGenerationRequest | null;
+    expect(preview?.style).toBe('editable');
+    expect(preview?.params?.loras?.map((lora) => lora.name)).toEqual([
+      '247778',
+      'second',
+    ]);
 
     studio.closePreview();
     studio.form.controls.styleName.setValue(locked.key);

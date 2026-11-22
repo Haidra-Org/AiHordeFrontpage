@@ -44,7 +44,9 @@ import {
 } from '../../services/civitai.service';
 import { CivitaiCacheService } from '../../services/civitai-cache.service';
 import {
-  CIVITAI_BASE_MODEL_GROUPS,
+  CIVITAI_BASE_MODELS_BY_BASELINE,
+  type CivitaiBaseModelMap,
+  civitaiBaseModelGroups,
   civitaiBaseModelMatchesBaseline,
   civitaiBaseModelsFor,
 } from '../../services/civitai-base-models';
@@ -139,6 +141,9 @@ export class CivitaiPickerComponent implements OnInit {
   public readonly tis = input<readonly TiSelection[]>([]);
   /** The host model's normalised baseline; drives the default filter. */
   public readonly baseline = input<string | null>(null);
+  public readonly civitaiBaseModels = input<CivitaiBaseModelMap>(
+    CIVITAI_BASE_MODELS_BY_BASELINE,
+  );
   public readonly modelName = input('');
   public readonly allowSha256 = input(false);
 
@@ -162,7 +167,9 @@ export class CivitaiPickerComponent implements OnInit {
 
   public readonly sorts = CIVITAI_SORTS;
   public readonly periods = CIVITAI_PERIODS;
-  public readonly baseModelGroups = CIVITAI_BASE_MODEL_GROUPS;
+  public readonly baseModelGroups = computed(() =>
+    civitaiBaseModelGroups(this.civitaiBaseModels()),
+  );
 
   public readonly sort = signal<CivitaiSort>('Most Downloaded');
   public readonly period = signal<CivitaiPeriod>('AllTime');
@@ -242,6 +249,13 @@ export class CivitaiPickerComponent implements OnInit {
     () => this.baseModelChoice() === 'mine' && this.myBaseModels().length === 0,
   );
 
+  public readonly scopeHasNoLabels = computed(() => {
+    const baseline = this.baseline();
+    return (
+      baseline !== null && this.civitaiBaseModels()[baseline]?.length === 0
+    );
+  });
+
   public readonly scopedLoraLabels = computed(() =>
     this.tab() === 'lora' && this.baseModelChoice() === 'mine'
       ? this.myBaseModels()
@@ -255,14 +269,14 @@ export class CivitaiPickerComponent implements OnInit {
       return [];
     }
     if (choice === 'mine') {
-      return civitaiBaseModelsFor(this.baseline());
+      return this.myBaseModels();
     }
-    return civitaiBaseModelsFor(choice);
+    return civitaiBaseModelsFor(choice, this.civitaiBaseModels());
   });
 
   /** What "fits my model" is offered as, or null when nothing is known. */
   public readonly myBaseModels = computed(() =>
-    civitaiBaseModelsFor(this.baseline()),
+    civitaiBaseModelsFor(this.baseline(), this.civitaiBaseModels()),
   );
   private readonly searchScope = computed(() => ({
     type:
@@ -459,7 +473,11 @@ export class CivitaiPickerComponent implements OnInit {
 
   public suits(model: CivitaiModel): boolean {
     return model.versions.some((version) =>
-      civitaiBaseModelMatchesBaseline(version.baseModel, this.baseline()),
+      civitaiBaseModelMatchesBaseline(
+        version.baseModel,
+        this.baseline(),
+        this.civitaiBaseModels(),
+      ),
     );
   }
 
@@ -474,7 +492,11 @@ export class CivitaiPickerComponent implements OnInit {
               isFetchableLoraVersion(version),
           );
     return pickDefaultVersion(versions, (baseModel) =>
-      civitaiBaseModelMatchesBaseline(baseModel, this.baseline()),
+      civitaiBaseModelMatchesBaseline(
+        baseModel,
+        this.baseline(),
+        this.civitaiBaseModels(),
+      ),
     );
   }
 

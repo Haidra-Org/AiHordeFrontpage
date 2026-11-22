@@ -2,6 +2,10 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { DatabaseService } from './database.service';
+import {
+  CIVITAI_BASE_MODELS_BY_BASELINE,
+  type CivitaiBaseModelMap,
+} from './civitai-base-models';
 
 /**
  * The official image model reference. Each entry is a model record; the fields
@@ -34,6 +38,10 @@ const CACHE_KEY = 'aihorde.generate.model_baselines';
 
 /** Pending records expire independently from the main image reference. */
 const PENDING_CACHE_KEY = 'aihorde.generate.pending_model_reference';
+const CIVITAI_COMPATIBILITY_CACHE_KEY =
+  'aihorde.generate.civitai_compatibility';
+const IMAGE_BASELINE_EXPORT_URL =
+  'https://models.aihorde.net/api/model_references/v2/image_generation/baselines/export?include_lora_compatibility=true';
 
 /** Where the text reference is kept. The image reference keeps its own key. */
 const TEXT_CACHE_KEY = 'aihorde.generate.text_model_reference';
@@ -564,6 +572,9 @@ export class ModelReferenceService {
   public readonly records = signal<ModelRecordMap | null>(null);
   /** Beta model records awaiting acceptance into the main image reference. */
   public readonly pendingRecords = signal<ModelRecordMap | null>(null);
+  public readonly civitaiBaseModels = signal<CivitaiBaseModelMap>(
+    CIVITAI_BASE_MODELS_BY_BASELINE,
+  );
   /** Whether a network round trip is in flight. */
   public readonly loading = signal(false);
 
@@ -576,6 +587,74 @@ export class ModelReferenceService {
 
   private started = false;
   private textStarted = false;
+  private civitaiStarted = false;
+
+  public loadCivitaiCompatibility(): void {
+    if (this.civitaiStarted) return;
+    this.civitaiStarted = true;
+    const cached = this.readEnvelope(CIVITAI_COMPATIBILITY_CACHE_KEY);
+    const cachedCatalog = cached?.['catalog'];
+    if (
+      this.applyCivitaiCompatibility(cachedCatalog) &&
+      this.now() - Number(cached?.['fetchedAt']) < MODEL_REFERENCE_TTL_MS
+    ) {
+      return;
+    }
+    this.http
+      .get<unknown>(IMAGE_BASELINE_EXPORT_URL)
+      .pipe(catchError(() => of(null)))
+      .subscribe((catalog) => {
+        if (this.applyCivitaiCompatibility(catalog)) {
+          this.persist(CIVITAI_COMPATIBILITY_CACHE_KEY, {
+            version: CACHE_VERSION,
+            fetchedAt: this.now(),
+            catalog,
+          });
+        }
+      });
+  }
+
+  private applyCivitaiCompatibility(raw: unknown): boolean {
+    if (typeof raw !== 'object' || raw === null || !('baselines' in raw))
+      return false;
+    const records = raw.baselines;
+    if (
+      typeof records !== 'object' ||
+      records === null ||
+      Array.isArray(records)
+    )
+      return false;
+    const vetted: [string, readonly string[] | null][] = [];
+    for (const [name, record] of Object.entries(
+      records as Record<string, unknown>,
+    )) {
+      if (
+        typeof record !== 'object' ||
+        record === null ||
+        !('civitai_lora_base_models' in record)
+      )
+        continue;
+      const labels = record.civitai_lora_base_models;
+      if (labels === 'unknown') {
+        vetted.push([normalizeBaseline(name), null]);
+      } else if (
+        Array.isArray(labels) &&
+        labels.every(
+          (label) =>
+            typeof label === 'string' && label !== '' && label.trim() === label,
+        )
+      ) {
+        vetted.push([normalizeBaseline(name), [...new Set<string>(labels)]]);
+      }
+    }
+    // Older exports can refresh model metadata without replacing a usable cached mapping.
+    if (vetted.length === 0) return false;
+    this.civitaiBaseModels.set({
+      ...CIVITAI_BASE_MODELS_BY_BASELINE,
+      ...Object.fromEntries(vetted),
+    });
+    return true;
+  }
 
   /**
    * Publish any cached image reference and revalidate when it is stale. Safe to

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CIVITAI_BASE_MODELS_BY_BASELINE,
-  CIVITAI_BASE_MODEL_GROUPS,
+  civitaiBaseModelGroups,
   SPLIT_BASELINE_TOKENS,
   baselineForCivitaiBaseModel,
   civitaiBaseModelMatchesBaseline,
@@ -93,11 +93,10 @@ describe('the CivitAI base-model table', () => {
   });
 
   it('groups every row for the selector', () => {
-    expect(CIVITAI_BASE_MODEL_GROUPS).toHaveLength(
+    const groups = civitaiBaseModelGroups(CIVITAI_BASE_MODELS_BY_BASELINE);
+    expect(groups).toHaveLength(
       Object.keys(CIVITAI_BASE_MODELS_BY_BASELINE).length,
     );
-    expect(
-      CIVITAI_BASE_MODEL_GROUPS.every((group) => group.labels.length > 0),
-    ).toBe(true);
+    expect(groups.every((group) => group.labels.length > 0)).toBe(true);
   });
 });

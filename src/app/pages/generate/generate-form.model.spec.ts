@@ -919,7 +919,10 @@ describe('LoRAs in styles', () => {
     for (const [draft, record] of [
       [form, locked],
       [
-        { ...form, styleLoraOverride: { style: 'native:other', loras: [] } },
+        value({
+          ...form,
+          styleLoraOverride: { style: 'native:other', loras: [] },
+        }),
         style,
       ],
     ] as const) {

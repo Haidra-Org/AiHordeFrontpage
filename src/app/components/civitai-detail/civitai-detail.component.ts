@@ -29,7 +29,11 @@ import {
   CivitaiService,
 } from '../../services/civitai.service';
 import { CivitaiCacheService } from '../../services/civitai-cache.service';
-import { civitaiBaseModelMatchesBaseline } from '../../services/civitai-base-models';
+import {
+  CIVITAI_BASE_MODELS_BY_BASELINE,
+  type CivitaiBaseModelMap,
+  civitaiBaseModelMatchesBaseline,
+} from '../../services/civitai-base-models';
 import {
   DEFAULT_LORA_STRENGTH,
   INJECT_TRIGGER_ANY,
@@ -83,6 +87,9 @@ export class CivitaiDetailComponent {
 
   public readonly target = input.required<CivitaiDetailTarget>();
   public readonly baseline = input<string | null>(null);
+  public readonly civitaiBaseModels = input<CivitaiBaseModelMap>(
+    CIVITAI_BASE_MODELS_BY_BASELINE,
+  );
   public readonly allowedLoraBaseModels = input<readonly string[] | null>(null);
   /** The entry already chosen, when opened from the selected list. */
   public readonly current = input<LoraSelection | TiSelection | null>(null);
@@ -292,7 +299,11 @@ export class CivitaiDetailComponent {
 
   private defaultVersion(): CivitaiModelVersion | null {
     return pickDefaultVersion(this.versions(), (baseModel) =>
-      civitaiBaseModelMatchesBaseline(baseModel, this.baseline()),
+      civitaiBaseModelMatchesBaseline(
+        baseModel,
+        this.baseline(),
+        this.civitaiBaseModels(),
+      ),
     );
   }
 
@@ -316,7 +327,11 @@ export class CivitaiDetailComponent {
   public suitsBaseline(version: CivitaiModelVersion): boolean {
     return (
       this.baseline() !== null &&
-      civitaiBaseModelMatchesBaseline(version.baseModel, this.baseline())
+      civitaiBaseModelMatchesBaseline(
+        version.baseModel,
+        this.baseline(),
+        this.civitaiBaseModels(),
+      )
     );
   }
 

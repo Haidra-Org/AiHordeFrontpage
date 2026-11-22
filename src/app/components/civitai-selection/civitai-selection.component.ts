@@ -11,6 +11,10 @@ import {
 } from '../../types/ti-prompt';
 import type { TiInjectTarget } from '../../types/civitai-asset';
 import {
+  CIVITAI_BASE_MODELS_BY_BASELINE,
+  type CivitaiBaseModelMap,
+} from '../../services/civitai-base-models';
+import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
@@ -101,6 +105,9 @@ export class CivitaiSelectionComponent {
   public readonly showCap = input(true);
   /** The host model's baseline, for the detail panel's compatibility marks. */
   public readonly baseline = input<string | null>(null);
+  public readonly civitaiBaseModels = input<CivitaiBaseModelMap>(
+    CIVITAI_BASE_MODELS_BY_BASELINE,
+  );
   /** A style may pin a file hash; a generation never does. */
   public readonly allowSha256 = input(false);
 

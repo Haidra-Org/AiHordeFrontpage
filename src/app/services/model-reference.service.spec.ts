@@ -26,6 +26,10 @@ const PENDING_MODEL_REFERENCE_URL =
   '?statuses=pending&categories=image_generation&limit=500';
 const TEXT_MODEL_REFERENCE_URL =
   'https://models.aihorde.net/api/model_references/v1/text_generation';
+const CIVITAI_COMPATIBILITY_URL =
+  'https://models.aihorde.net/api/model_references/v2/image_generation/baselines/export?include_lora_compatibility=true';
+const CIVITAI_COMPATIBILITY_CACHE_KEY =
+  'aihorde.generate.civitai_compatibility';
 const CACHE_KEY = 'aihorde.generate.model_baselines';
 const PENDING_CACHE_KEY = 'aihorde.generate.pending_model_reference';
 const TEXT_CACHE_KEY = 'aihorde.generate.text_model_reference';
@@ -360,6 +364,46 @@ describe('ModelReferenceService', () => {
     const { service, http } = setup();
     http.expectNone(MODEL_REFERENCE_URL);
     expect(service.baselines()).toBeNull();
+  });
+
+  it('uses published compatibility for new baselines and overrides bundled decisions', () => {
+    const { service, http } = setup();
+    service.loadCivitaiCompatibility();
+    service.loadCivitaiCompatibility();
+    http.expectOne(CIVITAI_COMPATIBILITY_URL).flush({
+      baselines: {
+        'Future Family': { civitai_lora_base_models: ['Future Image'] },
+        moss_image: { civitai_lora_base_models: 'unknown' },
+        flux_1: { civitai_lora_base_models: [] },
+      },
+    });
+
+    expect(service.civitaiBaseModels()).toMatchObject({
+      future_family: ['Future Image'],
+      moss_image: null,
+      flux_1: [],
+      stable_diffusion_1: expect.arrayContaining(['SD 1.5']),
+    });
+  });
+
+  it('keeps cached compatibility when a refreshed reference has the legacy export shape', () => {
+    localStorage.setItem(
+      CIVITAI_COMPATIBILITY_CACHE_KEY,
+      JSON.stringify({
+        version: CACHE_VERSION,
+        fetchedAt: Date.now() - MODEL_REFERENCE_TTL_MS - 1,
+        catalog: {
+          baselines: { future_image: { civitai_lora_base_models: ['Future'] } },
+        },
+      }),
+    );
+    const { service, http } = setup();
+    service.loadCivitaiCompatibility();
+    expect(service.civitaiBaseModels()['future_image']).toEqual(['Future']);
+    http.expectOne(CIVITAI_COMPATIBILITY_URL).flush({
+      baselines: { future_image: { name: 'future_image' } },
+    });
+    expect(service.civitaiBaseModels()['future_image']).toEqual(['Future']);
   });
 
   it('loads baselines and gates on them', () => {

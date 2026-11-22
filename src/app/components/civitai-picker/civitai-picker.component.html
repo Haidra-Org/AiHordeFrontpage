@@ -49,7 +49,7 @@
     </div>
 
     <div class="gs-modal-search-bar flex-wrap">
-      <div class="gs-modal-search min-w-40">
+      <div class="gs-modal-search min-w-48">
         <app-icon name="magnifying-glass" class="gs-ico-sm gs-muted" />
         <input
           type="text"
@@ -75,7 +75,7 @@
           <option value="all" [selected]="baseModelChoice() === 'all'">
             {{ "generate.civitai.base_model_all" | transloco }}
           </option>
-          @for (group of baseModelGroups; track group.baseline) {
+          @for (group of baseModelGroups(); track group.baseline) {
             <option
               [value]="group.baseline"
               [selected]="baseModelChoice() === group.baseline"
@@ -162,7 +162,14 @@
     <div class="gs-modal-body">
       @if (scopeUnavailable()) {
         <div class="gs-modal-state">
-          <p>{{ "generate.civitai.base_model_scope_unknown" | transloco }}</p>
+          <p>
+            {{
+              (scopeHasNoLabels()
+                ? "generate.civitai.base_model_scope_empty"
+                : "generate.civitai.base_model_scope_unknown"
+              ) | transloco
+            }}
+          </p>
           <button type="button" class="hd-btn" (click)="setBaseModel('all')">
             {{ "generate.civitai.base_model_all" | transloco }}
           </button>
@@ -417,6 +424,7 @@
     [target]="target"
     [current]="detailCurrent()"
     [baseline]="baseline()"
+    [civitaiBaseModels]="civitaiBaseModels()"
     [allowedLoraBaseModels]="scopedLoraLabels()"
     [allowSha256]="allowSha256()"
     (apply)="onDetailApply($event)"

@@ -199,6 +199,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
   private readonly destroyRef = inject(DestroyRef);
   private readonly samplerConstraints = inject(SamplerConstraintsService);
   private readonly modelReference = inject(ModelReferenceService);
+  public readonly civitaiBaseModels = this.modelReference.civitaiBaseModels;
 
   /**
    * The samplers a style may pin: the horde's published contract when it has
@@ -495,6 +496,7 @@ export class StyleFormComponent implements OnInit, OnChanges {
     if (this.isImageStyle()) {
       this.samplerConstraints.load();
       this.modelReference.load();
+      this.modelReference.loadCivitaiCompatibility();
     }
     this.initialPayloadSnapshot = this.getCurrentPayloadSnapshot();
   }

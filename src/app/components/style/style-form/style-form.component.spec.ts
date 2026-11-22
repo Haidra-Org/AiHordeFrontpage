@@ -8,6 +8,7 @@ import { signal } from '@angular/core';
 import { AiHordeService } from '../../../services/ai-horde.service';
 import { SamplerConstraintsService } from '../../../services/sampler-constraints.service';
 import { ModelReferenceService } from '../../../services/model-reference.service';
+import { CIVITAI_BASE_MODELS_BY_BASELINE } from '../../../services/civitai-base-models';
 import { ImageStyle, TextStyle } from '../../../types/style';
 import { SamplerConstraintsDocument } from '../../../types/sampler-constraints';
 import { SAMPLERS } from '../../../pages/generate/generate-form.model';
@@ -66,6 +67,8 @@ describe('StyleFormComponent', () => {
   const referenceNames = signal<string[] | null>(null);
   const referenceBaselines = signal<Record<string, string> | null>(null);
   const modelReferenceMock = {
+    civitaiBaseModels: signal(CIVITAI_BASE_MODELS_BY_BASELINE),
+    loadCivitaiCompatibility: vi.fn(),
     names: referenceNames,
     baselines: referenceBaselines,
     load: vi.fn(),
