@@ -1,7 +1,7 @@
 {
   "guild_id": "781145214752129095",
-  "synced_at": "2026-05-15T21:03:12.209112+00:00",
-  "channel_count": 115,
+  "synced_at": "2026-11-23T17:29:12.533773+00:00",
+  "channel_count": 107,
   "channels": {
     "rules": {
       "id": "977495527950262302",
@@ -98,11 +98,6 @@
       "type": "forum",
       "category": "AI Horde"
     },
-    "horde-worker-faq": {
-      "id": "1184491564358180875",
-      "type": "text",
-      "category": "AI Horde Q&A + Tech Support"
-    },
     "horde-support": {
       "id": "1020708029102043291",
       "type": "forum",
@@ -115,11 +110,6 @@
     },
     "local-workers": {
       "id": "1076124012305993768",
-      "type": "text",
-      "category": "AI Horde Q&A + Tech Support"
-    },
-    "worker-vpn-access-request": {
-      "id": "1184492706609770517",
       "type": "text",
       "category": "AI Horde Q&A + Tech Support"
     },
@@ -138,23 +128,8 @@
       "type": "text",
       "category": "AI Horde Development"
     },
-    "ratings-notices": {
-      "id": "1086456013827362846",
-      "type": "text",
-      "category": "AI Horde Monitoring"
-    },
-    "mod-notifications": {
-      "id": "1123910734032674836",
-      "type": "text",
-      "category": "AI Horde Monitoring"
-    },
     "image-model-reference": {
       "id": "1290309549290422314",
-      "type": "text",
-      "category": "AI Horde Monitoring"
-    },
-    "grafana-notifications": {
-      "id": "1380897098525966577",
       "type": "text",
       "category": "AI Horde Monitoring"
     },
@@ -215,11 +190,6 @@
     },
     "anime-art": {
       "id": "1042125419920502836",
-      "type": "text",
-      "category": "sharing"
-    },
-    "risque-art": {
-      "id": "1070703363534102679",
       "type": "text",
       "category": "sharing"
     },
@@ -298,7 +268,7 @@
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
-    "📱aislingeach": {
+    "📱aislingeach-dreamers-guild": {
       "id": "1112310729429745764",
       "type": "text",
       "category": "AI Horde Integrations UIs"
@@ -390,6 +360,11 @@
     },
     "📱silly-tavern": {
       "id": "1107645027536093184",
+      "type": "text",
+      "category": "AI Horde Integrations UIs"
+    },
+    "📱sixfingers": {
+      "id": "1561926471843577866",
       "type": "text",
       "category": "AI Horde Integrations UIs"
     },
@@ -498,15 +473,15 @@
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
     },
-    "🎮roll-e": {
-      "id": "1107657288589779066",
-      "type": "text",
-      "category": "AI Horde Integrations Cont'd"
-    },
     "🎮tensor-tales": {
       "id": "1236754350668251297",
       "type": "text",
       "category": "AI Horde Integrations Cont'd"
+    },
+    "🎮roll-e": {
+      "id": "1107657288589779066",
+      "type": "text",
+      "category": "AI Horde Retired Integrations"
     },
     "📱aipainter": {
       "id": "1108160262873301012",
@@ -562,21 +537,6 @@
       "id": "1107634131841601577",
       "type": "text",
       "category": "AI Horde Retired Integrations"
-    },
-    "sdxl-bug-reports": {
-      "id": "1158098421111066705",
-      "type": "text",
-      "category": "AI Horde Retired Channels"
-    },
-    "uis-index-original": {
-      "id": "1339333106712444958",
-      "type": "text",
-      "category": "AI Horde Retired Channels"
-    },
-    "horde-invites": {
-      "id": "1027513635691561021",
-      "type": "text",
-      "category": "AI Horde Retired Channels"
     }
   }
 }
