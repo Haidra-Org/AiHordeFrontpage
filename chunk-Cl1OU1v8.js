@@ -1,0 +1,1 @@
+import{O as Dw,Wr as vb,hn as Yl,jt as Ql}from"./chunk-CYbA-I0V.js";var m=(()=>{class e{static{this.ɵfac=function(t){return new(t||e)}}static{this.ɵcmp=Dw({type:e,selectors:[[`app-register`]],decls:2,vars:0,template:function(t,p){t&1&&(Ql(0,`p`),vb(1,`register works!`),Yl())},encapsulation:2})}}return e})();export{m as RegisterComponent};
