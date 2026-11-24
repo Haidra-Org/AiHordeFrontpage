@@ -246,7 +246,7 @@
            The history quick-pick sits in the box's top-right corner, over the
            padding the placeholder never reaches. -->
         <section
-          class="gs-sec--prompt flex flex-col gap-3"
+          class="gs-lead gs-sec--prompt flex flex-col gap-3"
           appTutAnchor="prompt"
           aria-labelledby="gs-card-prompt"
         >
@@ -318,6 +318,42 @@
               </button>
             </p>
           }
+          <!-- Negative prompt (one row by default; drag the grip to grow it).
+             It carries its name as well as the placeholder: the placeholder
+             explains the field to a reader meeting it, the label names it for
+             one who already knows the term. It sits inside the prompt card
+             because the two boxes are read and written together. -->
+          <div appTutAnchor="negative_prompt">
+            <div class="gs-field-head">
+              <label class="gs-slabel" for="generate-negative-prompt">
+                {{ "generate.form.negative_prompt_label" | transloco }} </label
+              ><app-gs-help topic="negative" />
+            </div>
+            <div class="flex flex-wrap items-start gap-1.5">
+              <textarea
+                id="generate-negative-prompt"
+                class="gs-neg-input min-w-0 flex-1"
+                formControlName="negativePrompt"
+                rows="1"
+                appRememberedHeight="aihorde.generate.negative_height"
+                [placeholder]="
+                  'generate.form.negative_prompt_placeholder' | transloco
+                "
+                (keydown.control.enter)="onSubmitShortcut()"
+                (keydown.meta.enter)="onSubmitShortcut()"
+              ></textarea>
+              <button
+                type="button"
+                class="gs-prompt-expand gs-prompt-expand--inline"
+                (click)="openPromptEditor('negative')"
+                [attr.aria-label]="'generate.form.negative_expand' | transloco"
+                [title]="'generate.form.negative_expand' | transloco"
+              >
+                <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
+              </button>
+            </div>
+          </div>
+
           <!-- The two ways a prompt gets written for you: a text model on the
                horde rewrites what is in the box, or a picture is read for a
                caption and tags to start from. Folded until asked, so the
@@ -331,41 +367,6 @@
             (use)="applyPrompt($event, $event.source)"
           />
         </section>
-
-        <!-- Negative prompt (one row by default; drag the grip to grow it). It
-           carries its name as well as the placeholder: the placeholder explains
-           the field to a reader meeting it, the label names it for one who
-           already knows the term. -->
-        <div appTutAnchor="negative_prompt">
-          <div class="gs-field-head">
-            <label class="gs-slabel" for="generate-negative-prompt">
-              {{ "generate.form.negative_prompt_label" | transloco }} </label
-            ><app-gs-help topic="negative" />
-          </div>
-          <div class="flex flex-wrap items-start gap-1.5">
-            <textarea
-              id="generate-negative-prompt"
-              class="gs-neg-input min-w-0 flex-1"
-              formControlName="negativePrompt"
-              rows="1"
-              appRememberedHeight="aihorde.generate.negative_height"
-              [placeholder]="
-                'generate.form.negative_prompt_placeholder' | transloco
-              "
-              (keydown.control.enter)="onSubmitShortcut()"
-              (keydown.meta.enter)="onSubmitShortcut()"
-            ></textarea>
-            <button
-              type="button"
-              class="gs-prompt-expand gs-prompt-expand--inline"
-              (click)="openPromptEditor('negative')"
-              [attr.aria-label]="'generate.form.negative_expand' | transloco"
-              [title]="'generate.form.negative_expand' | transloco"
-            >
-              <app-icon name="arrows-pointing-out" class="gs-ico-sm" />
-            </button>
-          </div>
-        </div>
 
         @if (promptEditor(); as field) {
           <app-gs-prompt-editor
@@ -392,7 +393,7 @@
 
         <!-- Model & style -->
         <section
-          class="gs-sec--model flex flex-col gap-3"
+          class="gs-lead gs-sec--model flex flex-col gap-3"
           aria-labelledby="gs-card-model"
         >
           <div class="gs-sec-head">
@@ -403,108 +404,10 @@
               {{ "generate.form.model_style_section" | transloco }}
             </h2>
           </div>
-          <div appTutAnchor="style">
-            <label
-              class="gs-label flex flex-wrap items-center gap-2"
-              for="generate-style"
-            >
-              {{ "generate.form.style_label" | transloco }}
-              <app-gs-help topic="style" />
-            </label>
-            <div class="mt-1.5 flex items-center gap-1.5">
-              <select
-                #styleSelect
-                id="generate-style"
-                class="gs-native-select min-w-0 flex-1"
-                formControlName="styleName"
-              >
-                <option value="">
-                  {{ "generate.form.style_none" | transloco }}
-                </option>
-                @if (selectedStyleOffCatalogue()) {
-                  <option [value]="selectedStyleKey()">
-                    {{ selectedStyleName() }}
-                  </option>
-                }
-                @for (group of styleGroups(); track group.category) {
-                  <optgroup [label]="group.category">
-                    @for (name of group.names; track name) {
-                      <option [value]="curatedKey(name)">{{ name }}</option>
-                    }
-                  </optgroup>
-                }
-              </select>
-              @if (selectedStyleName()) {
-                <button
-                  type="button"
-                  class="gs-btn gs-btn-ghost gs-btn--icon gs-clear-style"
-                  (click)="clearStyle()"
-                  [attr.aria-label]="'generate.form.clear_style' | transloco"
-                  [title]="'generate.form.clear_style' | transloco"
-                >
-                  <app-icon name="x-mark" class="gs-ico-sm" />
-                </button>
-              }
-              <button
-                type="button"
-                class="gs-browse-btn"
-                (click)="openStyleBrowser()"
-                [title]="'generate.form.browse_styles' | transloco"
-              >
-                <app-icon name="squares-2x2" class="gs-ico-sm" />
-                {{ "generate.form.browse_styles" | transloco }}
-              </button>
-            </div>
-            <!-- The select lists every style under the name its author gave
-                 it, which says nothing to a reader who has never picked one.
-                 These few are named for what comes out, and each writes the
-                 same control the select writes. -->
-            @if (offeredLooks().length > 0) {
-              <div class="mt-2">
-                <span id="generate-looks-label" class="gs-looks-label">
-                  {{ "generate.form.looks_label" | transloco }}
-                </span>
-                <div
-                  class="gs-looks-row"
-                  role="group"
-                  aria-labelledby="generate-looks-label"
-                >
-                  @for (look of offeredLooks(); track look.key) {
-                    <button
-                      type="button"
-                      class="gs-chip gs-chip--look"
-                      [class.gs-chip--active]="selectedStyleKey() === look.key"
-                      [attr.aria-pressed]="selectedStyleKey() === look.key"
-                      (click)="toggleLook(look.key)"
-                    >
-                      {{ look.labelKey | transloco }}
-                    </button>
-                  }
-                </div>
-              </div>
-            }
-            <!-- A style the horde applies leaves most of this panel out of
-                 the request, so the field it was chosen in says so: the
-                 settings below are still shown, and a reader who was not told
-                 would read them as what runs. -->
-            @if (hordeAppliesStyle()) {
-              <p class="gs-sublabel mt-1">
-                {{ "generate.form.style_horde_note" | transloco }}
-              </p>
-            }
-            <!-- The hint explains what a style is; once one is chosen the
-                 select and the lit chip say it. -->
-            @if (!selectedStyleName()) {
-              <p class="gs-sublabel mt-1">
-                {{ "generate.form.style_hint" | transloco }}
-              </p>
-            }
-          </div>
-
           <!-- Model -->
           <div appTutAnchor="model">
             <label
-              class="gs-label flex flex-wrap items-center gap-2"
+              class="gs-label gs-label--lead flex flex-wrap items-center gap-2"
               for="generate-model"
             >
               {{ "generate.form.model_label" | transloco }}
@@ -671,6 +574,107 @@
             <ng-container
               *ngTemplateOutlet="fieldError; context: { anchor: 'model' }"
             />
+          </div>
+
+          <!-- Style comes second: a model is chosen for every request and a
+               style only for some. -->
+          <div class="gs-lead-sub" appTutAnchor="style">
+            <label
+              class="gs-label flex flex-wrap items-center gap-2"
+              for="generate-style"
+            >
+              {{ "generate.form.style_label" | transloco }}
+              <app-gs-help topic="style" />
+            </label>
+            <div class="mt-1.5 flex items-center gap-1.5">
+              <select
+                #styleSelect
+                id="generate-style"
+                class="gs-native-select min-w-0 flex-1"
+                formControlName="styleName"
+              >
+                <option value="">
+                  {{ "generate.form.style_none" | transloco }}
+                </option>
+                @if (selectedStyleOffCatalogue()) {
+                  <option [value]="selectedStyleKey()">
+                    {{ selectedStyleName() }}
+                  </option>
+                }
+                @for (group of styleGroups(); track group.category) {
+                  <optgroup [label]="group.category">
+                    @for (name of group.names; track name) {
+                      <option [value]="curatedKey(name)">{{ name }}</option>
+                    }
+                  </optgroup>
+                }
+              </select>
+              @if (selectedStyleName()) {
+                <button
+                  type="button"
+                  class="gs-btn gs-btn-ghost gs-btn--icon gs-clear-style"
+                  (click)="clearStyle()"
+                  [attr.aria-label]="'generate.form.clear_style' | transloco"
+                  [title]="'generate.form.clear_style' | transloco"
+                >
+                  <app-icon name="x-mark" class="gs-ico-sm" />
+                </button>
+              }
+              <button
+                type="button"
+                class="gs-browse-btn"
+                (click)="openStyleBrowser()"
+                [title]="'generate.form.browse_styles' | transloco"
+              >
+                <app-icon name="squares-2x2" class="gs-ico-sm" />
+                {{ "generate.form.browse_styles" | transloco }}
+              </button>
+            </div>
+            <!-- A style the horde applies leaves most of this panel out of
+                 the request, so the field it was chosen in says so: the
+                 settings below are still shown, and a reader who was not told
+                 would read them as what runs. -->
+            @if (hordeAppliesStyle()) {
+              <p class="gs-sublabel mt-1">
+                {{ "generate.form.style_horde_note" | transloco }}
+              </p>
+            }
+            <!-- The hint explains what a style is; once one is chosen the
+                 select and the lit chip say it. -->
+            @if (!selectedStyleName()) {
+              <p class="gs-sublabel mt-1">
+                {{ "generate.form.style_hint" | transloco }}
+              </p>
+            }
+            <!-- The select lists every style under the name its author gave
+                 it, which says nothing to a reader who has never picked one.
+                 These few are named for what comes out, and each writes the
+                 same control the select writes. They sit in a tray under the
+                 select, with a caption rather than a field label, so they read
+                 as shortcuts into the style field and not as a field of their
+                 own. -->
+            @if (offeredLooks().length > 0) {
+              <div
+                class="gs-looks"
+                role="group"
+                aria-labelledby="generate-looks-label"
+              >
+                <span id="generate-looks-label" class="gs-looks-label">
+                  {{ "generate.form.looks_label" | transloco }}
+                </span>
+                @for (look of offeredLooks(); track look.key) {
+                  <button
+                    type="button"
+                    class="gs-chip gs-chip--look"
+                    [class.gs-chip--active]="selectedStyleKey() === look.key"
+                    [attr.aria-pressed]="selectedStyleKey() === look.key"
+                    (click)="toggleLook(look.key)"
+                  >
+                    {{ look.labelKey | transloco }}
+                  </button>
+                }
+              </div>
+            }
           </div>
         </section>
 

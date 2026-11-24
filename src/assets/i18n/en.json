@@ -699,7 +699,7 @@
   "generate.form.anonymous_login": "Log in",
   "generate.form.style_hint": "A style presets the prompt wording and generation settings for you.",
   "generate.form.style_horde_note": "The Horde applies this community style. You can change the settings its creator has made available. If the creator attached a shared key, it can pay for the picture.",
-  "generate.form.looks_label": "Try a look",
+  "generate.form.looks_label": "Try a preset style",
   "generate.form.looks.flux": "Flux",
   "generate.form.looks.cartoon": "Cartoon",
   "generate.form.looks.oil_painting": "Oil painting",

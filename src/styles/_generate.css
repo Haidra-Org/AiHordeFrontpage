@@ -1147,6 +1147,81 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
   }
 }
 
+/* ------- lead cards (prompt, model) ---------------------------------- */
+/* The prompt and the model are the two choices every request makes, so their
+   cards stand above the folding groups under them. They are set apart by
+   elevation rather than colour: a raised surface and a soft shadow, against
+   groups that lie flat on the card tone. The section hue is kept to the icon
+   mark, the focus ring and a chosen chip, so it marks what is chosen and does
+   not tint the whole card. */
+.gen-studio .gs-lead {
+  padding: var(--gs-space-3);
+  border: 1px solid var(--gs-card-border);
+  border-radius: var(--gs-radius-lg);
+  background: var(--gs-field);
+  box-shadow:
+    var(--shadow-sm),
+    0 6px 16px -10px rgb(0 0 0 / 0.12);
+}
+/* The dark theme's field tone is darker than its card tone, and the boxes inside
+   the card use it. A raised surface there is a lighter one, so the card mixes a
+   little ink into the card tone instead; the shadow barely shows on a dark
+   ground and the lighter surface carries the lift. */
+.dark .gen-studio .gs-lead {
+  background: color-mix(in srgb, var(--gs-ink) 4%, var(--gs-card));
+  box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.45);
+}
+/* A real heading rather than the uppercase eyebrow and trailing hairline the
+   groups wear, so the two lead cards read as a level above them. */
+.gen-studio .gs-lead > .gs-sec-head .gs-card-title {
+  font-size: var(--gs-text-lg);
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.gen-studio .gs-lead > .gs-sec-head .gs-card-title::after {
+  content: none;
+}
+.gen-studio .gs-lead > .gs-sec-head .gs-sec-chip {
+  width: 22px;
+  height: 22px;
+}
+.gen-studio .gs-lead > .gs-sec-head .gs-sec-chip svg {
+  width: 14px;
+  height: 14px;
+}
+/* An unchosen chip keeps a neutral edge here; only hover and the chosen state
+   take the hue. */
+.gen-studio .gs-lead .gs-chip:not(.gs-chip--active) {
+  border-color: var(--gs-border);
+}
+/* A second field in a lead card that is chosen less often than the first, set
+   off by a neutral rule so the card reads as one choice followed by an optional
+   one. */
+.gen-studio .gs-lead-sub {
+  padding-top: var(--gs-space-3);
+  border-top: 1px solid var(--gs-border-soft);
+}
+/* The label of the field a lead card exists for, one step up from the other
+   field labels so it reads as the card's main control. Doubled so it outranks
+   the general field label rule further down this sheet. */
+.gen-studio .gs-label.gs-label--lead {
+  font-size: var(--gs-text-md);
+  font-weight: 700;
+  color: var(--gs-ink);
+}
+/* The review bar renders nothing until the prompt has something to review, but
+   as a flex item it would still take a row gap and double the space under the
+   prompt box. */
+.gen-studio .gs-lead > app-prompt-review-bar:empty {
+  display: none;
+}
+@media (max-width: 639.98px) {
+  .gen-studio .gs-lead {
+    padding: var(--gs-space-2-5);
+  }
+}
+
 /* Every column and every stacked run of cards is named. The names are what
    tells the reader which pass they are reading, and in one column they are also
    what says where the cards a request cannot be described without end. */
@@ -8801,19 +8876,24 @@ body.gs-immersive .gen-studio .gs-submitrow--pinned {
    second style list. A chip is a choice, so it wears the chip's chosen state;
    it stands a finger tall wherever a finger is what presses it, which the
    general chip cannot be without moving every dense row in the panel. */
-/* A row label in the same register as "Style" and "Model" above it: the
-   uppercase eyebrow is the section landmarks' and would read as one. */
-.gen-studio .gs-looks-label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: var(--gs-text-sm);
-  font-weight: 600;
-  color: var(--gs-ink-2);
-}
-.gen-studio .gs-looks-row {
+/* The chips sit directly under the select they write, under a caption, so they
+   read as shortcuts into the style field. A field label here made them read as
+   a third field between Style and the next control. */
+.gen-studio .gs-looks {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
+  margin-top: var(--gs-space-2-5);
+}
+/* A caption in the sublabel's size rather than a field label: the uppercase
+   eyebrow is the section landmarks' and the field label's weight is the
+   select's. */
+.gen-studio .gs-looks-label {
+  flex: 1 0 100%;
+  font-size: var(--gs-text-xs);
+  font-weight: 600;
+  color: var(--gs-ink-2);
 }
 @media (pointer: coarse) {
   .gen-studio .gs-chip--look {

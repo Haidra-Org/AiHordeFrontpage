@@ -295,18 +295,23 @@
 }
 
 /* --- A prompt drafted by a text model ----------------------------- */
-/* Under the studio's prompt box the card is a block of the section, on the
-   card tone, a step below the box it improves. */
+/* Under the studio's prompt box the card is a block of the section, spaced by
+   the section's own gap. It sits on the prompt card, which is itself near the
+   card tone, so it takes a shade darker than that tone to read as a separate
+   block. The dark theme's ink is light, so there it shades towards the field
+   tone instead. */
 .gen-studio .gs-prompt-improve {
   display: block;
-  margin-top: var(--gs-space-2);
 }
 .gen-studio .gs-prompt-improve .alchemy-result {
   padding: var(--gs-space-2) var(--gs-space-3);
   border: 1px solid var(--gs-border);
   border-top: 1px solid var(--gs-border);
   border-radius: var(--gs-radius-md);
-  background: var(--gs-card);
+  background: color-mix(in srgb, var(--gs-ink) 4%, var(--gs-card));
+}
+.dark .gen-studio .gs-prompt-improve .alchemy-result {
+  background: color-mix(in srgb, var(--gs-field) 45%, var(--gs-card));
 }
 .gen-studio .alchemy-draft__body {
   align-items: stretch;
