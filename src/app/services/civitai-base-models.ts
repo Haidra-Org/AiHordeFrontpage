@@ -4,7 +4,10 @@ export type CivitaiBaseModelMap = Readonly<
 >;
 
 /**
- * Bundled compatibility for reference servers that have yet to publish it.
+ * The CivitAI base-model labels whose LoRAs each horde baseline can load.
+ *
+ * The table lives here because this site is its only reader and the CivitAI
+ * vocabulary changes at CivitAI's pace. The model reference does not publish it.
  *
  * Keys are what {@link normalizeBaseline} produces, not a closed enum: the live
  * model reference decides the vocabulary and has grown before. A baseline absent
@@ -58,6 +61,10 @@ export const CIVITAI_BASE_MODELS_BY_BASELINE: Readonly<
   flux_schnell: ['Flux.1 S'],
   qwen_image: ['Qwen'],
   moss_image: ['MOSS Image'],
+  // CivitAI files Z-Image LoRAs under two labels. Only the Turbo one is listed
+  // because the horde serves Turbo, and Base LoRAs have not been shown to load
+  // on it.
+  z_image_turbo: ['ZImageTurbo'],
 };
 
 /**

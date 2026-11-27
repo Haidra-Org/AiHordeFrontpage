@@ -68,7 +68,6 @@ describe('StyleFormComponent', () => {
   const referenceBaselines = signal<Record<string, string> | null>(null);
   const modelReferenceMock = {
     civitaiBaseModels: signal(CIVITAI_BASE_MODELS_BY_BASELINE),
-    loadCivitaiCompatibility: vi.fn(),
     names: referenceNames,
     baselines: referenceBaselines,
     load: vi.fn(),

@@ -60,16 +60,12 @@
       <label class="gs-cv-filter gs-cv-model-scope">
         <span>{{ "generate.civitai.base_model_label" | transloco }}</span>
         <select (change)="setBaseModel(selectValue($event))">
-          @if (offersModelScope() || baseModelChoice() === "mine") {
+          @if (offersModelScope()) {
             <option value="mine" [selected]="baseModelChoice() === 'mine'">
-              @if (myBaseModels().length > 0) {
-                {{
-                  "generate.civitai.base_model_mine"
-                    | transloco: { names: myBaseModels().join(", ") }
-                }}
-              } @else {
-                {{ "generate.civitai.base_model_mine_unknown" | transloco }}
-              }
+              {{
+                "generate.civitai.base_model_mine"
+                  | transloco: { names: myBaseModels().join(", ") }
+              }}
             </option>
           }
           <option value="all" [selected]="baseModelChoice() === 'all'">
@@ -160,21 +156,12 @@
     }
 
     <div class="gs-modal-body">
-      @if (scopeUnavailable()) {
-        <div class="gs-modal-state">
-          <p>
-            {{
-              (scopeHasNoLabels()
-                ? "generate.civitai.base_model_scope_empty"
-                : "generate.civitai.base_model_scope_unknown"
-              ) | transloco
-            }}
-          </p>
-          <button type="button" class="hd-btn" (click)="setBaseModel('all')">
-            {{ "generate.civitai.base_model_all" | transloco }}
-          </button>
-        </div>
-      } @else if (loading()) {
+      @if (scopeUnknown()) {
+        <p class="gs-cv-scope-note">
+          {{ "generate.civitai.base_model_scope_unknown" | transloco }}
+        </p>
+      }
+      @if (loading()) {
         <div class="gs-civit-grid" aria-hidden="true">
           @for (n of [1, 2, 3, 4, 5, 6]; track n) {
             <div class="gs-civit-card">

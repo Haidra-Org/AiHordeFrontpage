@@ -1038,7 +1038,6 @@ export class GenerateComponent implements TutorialStudioHost, TryItHost {
       this.fetchModels();
       this.fetchStyles();
       this.modelReference.load();
-      this.modelReference.loadCivitaiCompatibility();
       this.samplerConstraints.load();
       this.form.valueChanges
         .pipe(

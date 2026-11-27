@@ -197,7 +197,6 @@ describe('GenerateComponent', () => {
             requirements: signal(null),
             requirementsFor: vi.fn().mockReturnValue(null),
             load: () => undefined,
-            loadCivitaiCompatibility: () => undefined,
             civitaiBaseModels: signal(CIVITAI_BASE_MODELS_BY_BASELINE),
             supportsRemix: (model: string) =>
               baselineSupportsRemix(baselines()?.[model] ?? null),
@@ -2718,7 +2717,6 @@ async function createWholeStudio(
           baselines: signal(baselines),
           requirements: signal(null),
           load: () => undefined,
-          loadCivitaiCompatibility: () => undefined,
           civitaiBaseModels: signal(CIVITAI_BASE_MODELS_BY_BASELINE),
           baselineFor: (model: string) => baselines?.[model] ?? null,
           requirementsFor: () => null,

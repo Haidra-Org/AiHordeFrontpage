@@ -273,29 +273,44 @@ describe('CivitaiPickerComponent', () => {
       },
     );
 
-    it('waits for an explicit broad search if the selected model has no known compatibility', () => {
-      fixture.componentRef.setInput('modelName', 'Unlisted image model');
+    it('searches the CivitAI Turbo label for Z-Image-Turbo', () => {
+      fixture.componentRef.setInput('modelName', 'Z-Image-Turbo');
+      fixture.componentRef.setInput('baseline', 'z_image_turbo');
       start();
-      expect(searchModels).not.toHaveBeenCalled();
-      const scope = (
-        fixture.nativeElement as HTMLElement
-      ).querySelector<HTMLSelectElement>('.gs-cv-model-scope select');
-      expect(scope?.value).toBe('mine');
 
-      scope!.value = 'all';
-      scope!.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
-      expect(lastParams()['baseModels']).toEqual([]);
-      expect(
-        [...scope!.options].some((option) => option.value === 'mine'),
-      ).toBe(true);
+      expect(lastParams()).toMatchObject({
+        type: 'LORA',
+        baseModels: ['ZImageTurbo'],
+      });
     });
 
-    it('can search and pin an entirely new family once the reference supplies its labels', () => {
+    it('searches every base model and says so when the selected model has no labels', () => {
+      fixture.componentRef.setInput('modelName', 'Unlisted image model');
+      fixture.componentRef.setInput('baseline', 'unlisted_image');
+      start();
+
+      const host = fixture.nativeElement as HTMLElement;
+      const scope = host.querySelector<HTMLSelectElement>(
+        '.gs-cv-model-scope select',
+      );
+      expect(lastParams()['baseModels']).toEqual([]);
+      expect(scope?.value).toBe('all');
+      expect(
+        [...scope!.options].some((option) => option.value === 'mine'),
+      ).toBe(false);
+      expect(host.querySelector('.gs-cv-scope-note')).not.toBeNull();
+
+      // Choosing All models on purpose is not the unknown-family case.
+      component.setBaseModel('all');
+      fixture.detectChanges();
+      expect(host.querySelector('.gs-cv-scope-note')).toBeNull();
+    });
+
+    it('can search and pin an entirely new family once labels arrive for it', () => {
       fixture.componentRef.setInput('modelName', 'Future image model');
       fixture.componentRef.setInput('baseline', 'future_image');
       start();
-      expect(searchModels).not.toHaveBeenCalled();
+      expect(lastParams()['baseModels']).toEqual([]);
       const asset = model(7, {
         versions: [version(77, { baseModel: 'Future Image' })],
       });

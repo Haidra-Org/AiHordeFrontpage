@@ -550,9 +550,13 @@
   font-weight: 700;
 }
 .gs-cv-detail-by,
-.gs-cv-detail-note {
+.gs-cv-detail-note,
+.gs-cv-scope-note {
   font-size: 11px;
   color: var(--gs-muted);
+}
+.gs-cv-scope-note {
+  margin: 0 0 10px;
 }
 .gs-cv-detail-body {
   flex: 1;

@@ -496,7 +496,6 @@ export class StyleFormComponent implements OnInit, OnChanges {
     if (this.isImageStyle()) {
       this.samplerConstraints.load();
       this.modelReference.load();
-      this.modelReference.loadCivitaiCompatibility();
     }
     this.initialPayloadSnapshot = this.getCurrentPayloadSnapshot();
   }

@@ -236,25 +236,27 @@ export class CivitaiPickerComponent implements OnInit {
   );
 
   public readonly offersModelScope = computed(
-    () =>
-      this.myBaseModels().length > 0 ||
-      (this.tab() === 'lora' && this.modelName().trim() !== ''),
+    () => this.myBaseModels().length > 0,
   );
 
-  public readonly baseModelChoice = computed(
-    () => this.chosenBaseModel() ?? (this.offersModelScope() ? 'mine' : 'all'),
-  );
-
-  public readonly scopeUnavailable = computed(
-    () => this.baseModelChoice() === 'mine' && this.myBaseModels().length === 0,
-  );
-
-  public readonly scopeHasNoLabels = computed(() => {
-    const baseline = this.baseline();
-    return (
-      baseline !== null && this.civitaiBaseModels()[baseline]?.length === 0
-    );
+  // A baseline the table has no labels for searches every base model, matching
+  // the fail-open contract in civitai-base-models.ts. Blocking the search would
+  // hide every LoRA for a model whose family has no row in the table.
+  public readonly baseModelChoice = computed<BaseModelChoice>(() => {
+    const chosen = this.chosenBaseModel() ?? 'mine';
+    if (chosen === 'mine' && !this.offersModelScope()) {
+      return 'all';
+    }
+    return chosen;
   });
+
+  /** Whether results are unfiltered because the selected model's family has no labels. */
+  public readonly scopeUnknown = computed(
+    () =>
+      this.modelName().trim() !== '' &&
+      !this.offersModelScope() &&
+      (this.chosenBaseModel() ?? 'mine') === 'mine',
+  );
 
   public readonly scopedLoraLabels = computed(() =>
     this.tab() === 'lora' && this.baseModelChoice() === 'mine'
@@ -281,7 +283,7 @@ export class CivitaiPickerComponent implements OnInit {
   private readonly searchScope = computed(() => ({
     type:
       this.tab() === 'ti' ? ('TextualInversion' as const) : ('LORA' as const),
-    baseModels: this.scopeUnavailable() ? null : this.activeBaseModels(),
+    baseModels: this.activeBaseModels(),
   }));
 
   public readonly filtersActive = computed(
@@ -316,8 +318,7 @@ export class CivitaiPickerComponent implements OnInit {
           this.loadingMore.set(false);
           this.errored.set(false);
           const { type, baseModels } = this.searchScope();
-          this.loading.set(baseModels !== null);
-          if (baseModels === null) return EMPTY;
+          this.loading.set(true);
           const params = this.searchParams(type, baseModels);
           return this.civitai.searchModels(params).pipe(
             tap((result) => {
