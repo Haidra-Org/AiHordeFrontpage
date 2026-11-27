@@ -111,5 +111,17 @@
         "url": "https://discord.com/channels/781145214752129095/1107642180346073198/1395172494402523307"
       }
     ]
+  },
+  {
+    "name": "AI Assistant Direct",
+    "description": "An open-source AI assistant and P2P workspace with real-time OpenAI-compatible AI Horde SSE streaming (oai.aihorde.net), in-chat AI Horde image generation, and hybrid local Ollama inference. Includes a Work mode (private local RAG over documents, spreadsheets, and code) and a Fun mode for Roleplay with SillyTavern character card import, Personas, and voice TTS.",
+    "image": "assets/img/guis/direct.png",
+    "link": "https://aiassistant.direct",
+    "categories": ["Web", "Desktop"],
+    "itemType": "gui-text",
+    "domain": ["text"],
+    "functionKind": "frontend",
+    "platform": ["web", "windows", "linux", "macos"],
+    "sourceControlLink": "https://github.com/alexeyvolkoff/direct"
   }
 ]
