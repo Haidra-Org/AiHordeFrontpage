@@ -165,6 +165,21 @@ describe('GenerateResultsPanelComponent', () => {
     await TestBed.configureTestingModule({
       imports: [GenerateResultsPanelComponent],
       providers: [
+        // Opening the viewer loads the picture's stored reading through the
+        // real generation database, and jsdom has no IndexedDB.
+        {
+          provide: PromptCheckService,
+          useValue: {
+            reading: vi.fn(() => null),
+            load: vi.fn().mockResolvedValue(undefined),
+            priceVerdict: vi.fn().mockResolvedValue(undefined),
+            report: vi.fn(() => null),
+            isReading: vi.fn(() => false),
+            isJudging: vi.fn(() => false),
+            failure: signal(null),
+            verdictPrice: signal(null),
+          },
+        },
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: TextGenerationDbService, useValue: textDbStub() },
