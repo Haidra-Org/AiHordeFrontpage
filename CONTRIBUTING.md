@@ -99,7 +99,11 @@ On commit, staged files are checked:
 cast that feeds generic inference, which widens a type without a compile error. Remove a flagged cast by hand, and
 check the inferred type of whatever the cast fed. `npm run lint:fix` still applies that fix, so read its diff.
 
-On push, `npm run typecheck` runs, then the Vitest specs affected by changes since the branch left `main`.
+On push, `scripts/check-submodule-pins.sh` runs first. It refuses the push when a pushed commit pins a submodule
+commit that cannot be fetched from the URL in `.gitmodules`, because CI checks submodules out from those URLs. Push
+the submodule commit to that URL first. A submodule's local `origin` can be a different remote, so pushing there is
+not enough. Then `npm run typecheck` runs, followed by the Vitest specs affected by changes since the branch left
+`main`.
 
 ## CI Pipeline
 

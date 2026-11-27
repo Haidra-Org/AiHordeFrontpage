@@ -1,3 +1,4 @@
+sh scripts/check-submodule-pins.sh
 npm run typecheck
 # Only the specs affected by changes since the branch left main, so a push
 # stays quick. CI runs the whole suite.
